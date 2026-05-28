@@ -28,10 +28,11 @@ import {
   SupplierGroupResponseDto,
 } from './dto';
 import { ApiPaginatedResponse } from '../common/pagination';
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @ApiTags('Setup')
 @Controller('supplier-groups')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('settings')
 export class SupplierGroupsController {
   constructor(private readonly supplierGroupsService: SupplierGroupsService) {}
@@ -44,6 +45,7 @@ export class SupplierGroupsController {
     description: 'Retrieve a list of all supplier groups.',
   })
   @ApiPaginatedResponse(SupplierGroupResponseDto)
+  @ApiFieldMask()
   findAll() {
     return this.supplierGroupsService.findAll();
   }
@@ -55,6 +57,7 @@ export class SupplierGroupsController {
     description: 'Retrieve detailed information for a specific supplier group.',
   })
   @ApiOkResponse({ type: SupplierGroupResponseDto })
+  @ApiFieldMask()
   findOne(@Param('id') id: string) {
     return this.supplierGroupsService.findOne(id);
   }

@@ -28,9 +28,11 @@ import {
   TaxCategoryResponseDto,
 } from './dto';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @ApiTags('Tax')
 @Controller('tax-categories')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('settings')
 export class TaxCategoriesController {
   constructor(private readonly taxService: TaxCategoriesService) {}
@@ -42,6 +44,7 @@ export class TaxCategoriesController {
     description: 'Retrieve a list of all tax categories.',
   })
   @ApiOkResponse({ type: [TaxCategoryResponseDto] })
+  @ApiFieldMask()
   findAll() {
     return this.taxService.findAll();
   }
@@ -53,6 +56,7 @@ export class TaxCategoriesController {
     description: 'Retrieve detailed information about a specific tax category.',
   })
   @ApiOkResponse({ type: TaxCategoryResponseDto })
+  @ApiFieldMask()
   findOne(@Param('id') id: string) {
     return this.taxService.getById(id);
   }

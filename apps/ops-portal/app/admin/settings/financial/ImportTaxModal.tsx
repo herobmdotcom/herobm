@@ -35,9 +35,9 @@ export default function ImportTaxModal({ isOpen, onClose, onImportComplete }: Pr
     try {
       setIsLoading(true);
       const res = await api.glControllerListTaxSettingsFiles();
-      const data = (res as unknown as { data: any[] })?.data || (res as unknown as any[]) || [];
+      const data = res.data.items as unknown as SettingsFile[];
       setFiles(data);
-      if (data.length > 0) {
+      if (data?.length > 0) {
         setSelectedFile(data[0].filename);
       }
     } catch (err: any) {
@@ -52,8 +52,8 @@ export default function ImportTaxModal({ isOpen, onClose, onImportComplete }: Pr
     try {
       setIsImporting(true);
       const res = await api.glControllerSeedTaxSettings({ filename: selectedFile });
-      const data = (res as unknown as { data: any })?.data || (res as unknown as any) || {};
-      toast.success(`Successfully imported ${data.created} tax categories.`);
+      const data = res.data;
+      toast.success(`Successfully imported ${(data as unknown as { created?: number })?.created || 0} tax categories.`);
       onImportComplete();
       onClose();
     } catch (err: any) {

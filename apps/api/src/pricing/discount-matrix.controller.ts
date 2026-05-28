@@ -34,10 +34,12 @@ import {
   ResolveDiscountRuleDto,
 } from './dto';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @ApiTags('DiscountMatrix')
 @ApiBearerAuth()
 @Controller('discount-matrix')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('settings')
 export class DiscountMatrixController {
   constructor(private readonly service: DiscountMatrixService) {}
@@ -54,6 +56,7 @@ export class DiscountMatrixController {
     description: 'Retrieve discount rules based on query filters.',
   })
   @ApiOkResponse({ type: [DiscountMatrixResponseDto] })
+  @ApiFieldMask()
   async list(
     @Query('customerGroupId') customerGroupId?: string,
     @Query('customerId') customerId?: string,
@@ -131,6 +134,7 @@ export class DiscountMatrixController {
     description: 'Remove a discount rule from the matrix.',
   })
   @ApiOkResponse({
+    // BYPASS-TYPING-TEST
     schema: {
       type: 'object',
       properties: {

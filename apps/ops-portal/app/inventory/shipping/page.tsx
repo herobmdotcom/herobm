@@ -91,7 +91,7 @@ export default function ShippingPage() {
         api.inventoryControllerFindAllLocations({} )
             .then((response) => {
                 const res = response.data;
-                const locs = (res as any)?.data || res || [];
+                const locs = (res as unknown as { data: any[] }).data || [];
                 setLocations(locs);
                 if (locs.length > 0) {
                     const defaultLocId = app?.defaultFulfillmentLocationId || locs[0].locationId;
@@ -111,7 +111,7 @@ export default function ShippingPage() {
         api.orderPickingControllerGetShippingQueue(params)
             .then(response => {
                 const data = response.data;
-                setOrders((data as any)?.data || []);
+                setOrders((data as unknown as { data: ShippingOrder[] })?.data || []);
             }).catch(err => {
                 reportError(err, t('errors.failedToLoadOrdersError'));
                 setOrders([]);
@@ -140,11 +140,11 @@ export default function ShippingPage() {
         api.orderPickingControllerGetShippingContext(selectedOrder.id)
             .then((response) => {
                 const res = response.data;
-                const data = (res as any).data || res;
+                const data = (res as unknown as { data: ShippingContext }).data;
                 setContext(data);
                 // Pre-fill ship quantities with available-to-ship
                 const defaults: Record<string, string> = {};
-                data.lines.forEach((line: any) => {
+                data.lines.forEach((line: ShippingLine) => {
                     const available = parseFloat(line.availableToShip);
                     if (available > 0) {
                         defaults[line.salesOrderLineId] = String(available);
@@ -263,7 +263,7 @@ export default function ShippingPage() {
                             </div>
                         ) : filteredOrders.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
-                                {/* eslint-disable i18next/no-literal-string */}
+                                {/* eslint-disable-next-line i18next/no-literal-string */}
                                 <span className="material-symbols-outlined text-4xl mb-2 opacity-50">local_shipping</span>
                                 {/* eslint-enable i18next/no-literal-string */}
                                 {t('noOrders', { tab: activeTab })}
@@ -278,7 +278,7 @@ export default function ShippingPage() {
                                     >
                                         <div className="flex justify-between items-start mb-1">
                                             <div className="flex items-center gap-2">
-                                                {/* eslint-disable i18next/no-literal-string */}
+                                                {/* eslint-disable-next-line i18next/no-literal-string */}
                                                 <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.shippabilityStatus === 'ready' ? 'text-[var(--success)]' : 'text-[var(--warning)]'}`} style={{ fontVariationSettings: "'FILL' 1" }}>fiber_manual_record</span>
                                                 {/* eslint-enable i18next/no-literal-string */}
                                                 <div className="font-bold text-[var(--text-primary)] text-sm">{order.orderNumber}</div>
@@ -303,7 +303,7 @@ export default function ShippingPage() {
                 <div className="flex-1 flex flex-col bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-sm overflow-hidden">
                     {!selectedOrder ? (
                         <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
-                            {/* eslint-disable i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
                             <span className="material-symbols-outlined text-4xl mb-2 opacity-50">local_shipping</span>
                             {/* eslint-enable i18next/no-literal-string */}
                             {t('selectOrder')}
@@ -336,7 +336,7 @@ export default function ShippingPage() {
                                 <div className="flex flex-col h-full w-full">
                                     {error && (
                                         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md flex items-center gap-2">
-                                            {/* eslint-disable i18next/no-literal-string */}
+                                            {/* eslint-disable-next-line i18next/no-literal-string */}
                                             <span className="material-symbols-outlined text-sm">error</span>
                                             {/* eslint-enable i18next/no-literal-string */}
                                             {error}
@@ -467,7 +467,7 @@ export default function ShippingPage() {
                                                             className="flex items-center justify-between p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors"
                                                         >
                                                             <div className="flex items-center gap-3">
-                                                                {/* eslint-disable i18next/no-literal-string */}
+                                                                {/* eslint-disable-next-line i18next/no-literal-string */}
                                                                 <span className="material-symbols-outlined text-[var(--text-muted)] text-lg">inventory_2</span>
                                                                 {/* eslint-enable i18next/no-literal-string */}
                                                                 <div>
@@ -491,7 +491,7 @@ export default function ShippingPage() {
                                                                         try {
                                                                             const { reportError } = await import('@/lib/api');
                                                                             const api = await import('@modbm/sdk');
-                                                                            const res = await api.reportsControllerRunHook('shipping-docket', { shipmentId: shipment.shipmentId }, { id: shipment.shipmentId, context: 'shipment' } as any);
+                                                                            const res = await api.reportsControllerRunHook('shipping-docket', { shipmentId: shipment.shipmentId }, { id: shipment.shipmentId, context: 'shipment' });
                                                                             const blob = res.data as Blob;
                                                                             const url = URL.createObjectURL(blob);
                                                                             window.open(url, '_blank');

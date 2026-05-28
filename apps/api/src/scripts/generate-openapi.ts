@@ -46,6 +46,7 @@ async function generateDocs() {
     .addTag('Macros', 'Automated macros')
     .addTag('GoodsReceived', 'Goods Receipt Notes (GRNI)')
     .addTag('Reports', 'Reporting hooks')
+    .addTag('Events', 'System events')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

@@ -63,9 +63,9 @@ export default function GeneralLedgerContent() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   useEffect(() => {
-    api.glControllerGetAccounts({ format: 'flat' } as any)
-      .then((res: unknown) => {
-        const data = (res as any)?.data || res || [];
+    api.glControllerGetAccounts({ format: 'flat' })
+      .then(res => {
+        const data = res.data || [];
         const leafAccounts = data.filter((a: unknown) => !(a as { isGroup: boolean }).isGroup);
         setAccounts(leafAccounts.map((a: unknown) => ({ accountCode: (a as { accountCode: string }).accountCode, name: (a as { name: string }).name })));
       })
@@ -94,8 +94,8 @@ export default function GeneralLedgerContent() {
     })
       .then((res) => {
         const payload = res.data;
-        setRows(payload.data as any);
-        setTotal(payload.total as any);
+        setRows(payload.data as unknown as GlEntry[]);
+        setTotal(payload.total as unknown as number);
       })
       .catch((err) => reportError(err, 'GeneralLedgerContent'))
       .finally(() => setLoading(false));
@@ -216,7 +216,7 @@ export default function GeneralLedgerContent() {
           onClick={() => setIsCodesOpen(true)}
           className="btn btn-secondary btn-sm whitespace-nowrap"
         >
-          {/* eslint-disable i18next/no-literal-string */}
+          {/* eslint-disable-next-line i18next/no-literal-string */}
           <span className="material-symbols-outlined text-sm">visibility</span>
           {/* eslint-enable i18next/no-literal-string */}
           {tCodes('button')}

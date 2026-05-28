@@ -4,6 +4,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -51,7 +52,7 @@ import { ApiPaginatedResponse } from '../common/pagination';
 
 @ApiTags('GL')
 @Controller('gl')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('gl')
 export class GlController {
   constructor(
@@ -71,8 +72,10 @@ export class GlController {
     description: 'Retrieve the chart of accounts or a flat list of accounts.',
   })
   @ApiOkResponse({ type: [GlAccountResponseDto] })
+  @ApiQuery({ name: 'format', required: false, enum: ['tree', 'flat'] })
+  @ApiQuery({ name: 'isBankAccount', required: false, type: String })
   async getAccounts(
-    @Query('format') format?: string,
+    @Query('format') format?: 'tree' | 'flat',
     @Query('isBankAccount') isBankAccount?: string,
   ) {
     if (format === 'tree') {

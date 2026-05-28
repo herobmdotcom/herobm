@@ -15,12 +15,8 @@ export function useTransferOrder(id: string) {
   const loadOrder = useCallback(async () => {
     try {
       setLoading(true);
-      const results = await Promise.all([
-        api.transfersControllerFindOne(id).then((res: any) => res.data),
-        api.inventoryControllerFindAllLocations().then((res: any) => res.data?.data || []),
-        (api as any).transfersControllerFindLines(id).then((res: any) => res.data?.data || []),
-      ]);
-      const res = results[0] as any;
+      const orderRes = await api.transfersControllerFindOne(id);
+      const res = orderRes.data;
       setOrder(res);
       setEditNotes(res.notes || '');
       setEditSourceLoc(res.sourceLocationId || '');

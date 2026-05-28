@@ -120,8 +120,8 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         api.suppliersControllerFindOne(params.id),
         api.tradingTermsControllerFindAll().catch(() => ({ data: [] })),
       ]);
-      const data = dataRes[0]?.data || dataRes[0];
-      const termsData = dataRes[1]?.data || dataRes[1] || [];
+      const data = dataRes[0]?.data;
+      const termsData = dataRes[1]?.data || [];
       setSupplier(data);
       setAvailableTradingTerms(termsData);
       

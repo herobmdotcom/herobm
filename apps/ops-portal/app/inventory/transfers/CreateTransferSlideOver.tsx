@@ -128,7 +128,7 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
       }
     >
       <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('columns.sourceLocation')} *
@@ -199,7 +199,7 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
                   className="text-gray-400 hover:text-red-500"
                   onClick={() => handleRemoveLine(index)}
                 >
-                  {/* eslint-disable i18next/no-literal-string */}
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined">delete</span>
                   {/* eslint-enable i18next/no-literal-string */}
                 </button>

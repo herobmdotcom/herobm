@@ -5,8 +5,9 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { GlControllerGetAccountsFormat } from './glControllerGetAccountsFormat';
 
 export type GlControllerGetAccountsParams = {
-format: string;
-isBankAccount: string;
+format?: GlControllerGetAccountsFormat;
+isBankAccount?: string;
 };

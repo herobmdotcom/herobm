@@ -46,7 +46,7 @@ export default function ReallocateModal({
     if (isOpen) {
       api.inventoryControllerFindAllLocations()
         .then((res) => {
-          setLocations((res.data?.data || []) as RawLocation[]);
+          setLocations((res.data?.data || []) as unknown as RawLocation[]);
         })
         .catch((err) => reportError(err, 'Failed to load locations'));
     }

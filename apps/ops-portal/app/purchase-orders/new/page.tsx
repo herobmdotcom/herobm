@@ -87,7 +87,7 @@ export default function NewPurchaseOrderPage() {
   useEffect(() => {
     api.taxCategoriesControllerFindAll()
       .then((res) => {
-        setTaxCategories((res.data as unknown as TaxCategory[]) || []);
+        setTaxCategories(res.data.map(t => ({ ...t, taxCategoryId: t.taxCategoryId })) as TaxCategory[] || []);
       })
       .catch((err) => reportError(err, 'NewPurchaseOrderPage'));
   }, []);
@@ -296,7 +296,7 @@ export default function NewPurchaseOrderPage() {
             <span className="material-symbols-outlined">receipt_long</span>
             {t('purchaseOrders.orderDetails')}
           </h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Supplier selector */}
             <div className="relative">
               <label

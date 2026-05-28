@@ -99,11 +99,14 @@ export function useOrder(id: string) {
     const loadOrder = async (autoTransitions?: any[], showSpinner = true) => {
         if (showSpinner) setLoading(true);
         try {
-            const [data, pData] = await Promise.all([
+            const [response, pData] = await Promise.all([
                 api.ordersControllerFindOne(encodeURIComponent(id)),
                 api.orderPickingControllerGetPickingSummary(encodeURIComponent(id)).catch(() => null),
             ]);
-            const orderData = data as any;
+            const orderData = response.data as unknown as OrderDetail;
+            if (orderData && !orderData.lines) {
+                orderData.lines = [];
+            }
             setOrder(orderData);
             setEditName(orderData?.name || '');
             setEditPO(orderData?.customerOrderNumber || '');
@@ -127,8 +130,8 @@ export function useOrder(id: string) {
     const loadReturns = async () => {
         setReturnsLoading(true);
         try {
-            const data = await api.orderReturnsControllerFindReturns(encodeURIComponent(id));
-            setReturns(data as unknown as OrderReturn[] || []);
+            const res = await api.orderReturnsControllerFindReturns(encodeURIComponent(id));
+            setReturns(res.data as unknown as OrderReturn[] || []);
         } catch {
             setReturns([]);
         } finally {
@@ -139,7 +142,7 @@ export function useOrder(id: string) {
     const loadInvoices = async () => {
         try {
             const res = await api.salesInvoiceControllerGetSalesInvoices(encodeURIComponent(id));
-            setInvoices(res?.data as unknown as SalesInvoice[] || []);
+            setInvoices(((res.data as unknown as { data: SalesInvoice[] }).data || []));
         } catch {
             setInvoices([]);
         }
@@ -151,13 +154,13 @@ export function useOrder(id: string) {
     useEffect(() => {
         loadOrder();
         api.taxCategoriesControllerFindAll()
-            .then(res => setTaxCategories(res.data as unknown as TaxCategory[] || []))
+            .then(res => setTaxCategories(res.data.map(t => ({ ...t, taxCategoryId: (t as unknown as { id?: string }).id || t.taxCategoryId })) as unknown as TaxCategory[] || []))
             .catch(err => reportError(err, 'OrderDetailPage'));
     }, [id]);
 
     // Load returns and invoices when order state involves invoicing
     useEffect(() => {
-        if (['invoiced', 'legacy', 'picking', 'shipped'].some(s => s === order?.stateCode)) {
+        if ([SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.LEGACY, SALES_ORDER_STATE.PICKING, SALES_ORDER_STATE.SHIPPED].some(s => s === order?.stateCode)) {
             loadInvoices();
         }
         if ([
@@ -179,7 +182,7 @@ export function useOrder(id: string) {
         
         setInventoryLoading(true);
         api.inventoryControllerFindByProductIdsBulk({ productIds })
-            .then((res: unknown) => setInventoryData(((res as { data: unknown[] }).data || res) as InventoryLevel[]))
+            .then((res: unknown) => setInventoryData(((res as { data: unknown[] }).data) as InventoryLevel[]))
             .catch((err: any) => reportError(err, 'OrderDetailPage'))
             .finally(() => setInventoryLoading(false));
     }, [activeTab, order]);
@@ -266,7 +269,7 @@ export function useOrder(id: string) {
         if (!order) return;
         setCopying(true);
         try {
-            const newOrder = await api.ordersControllerCreate({
+            const res = await api.ordersControllerCreate({
                 salesOrderId: crypto.randomUUID(),
                 name: order.name ? `Copy of ${order.name}` : undefined,
                 customerId: order.customerId || '',
@@ -283,7 +286,7 @@ export function useOrder(id: string) {
                     unitOfMeasure: l.unitOfMeasure || 'EA',
                 })),
             });
-            router.push(`/sales-orders/${newOrder.data.salesOrderId}`);
+            router.push(`/sales-orders/${res.data.salesOrderId}`);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToCopy'));
         } finally {
@@ -408,19 +411,19 @@ export function useOrder(id: string) {
     /* ── Computed values ─────────────────────────────────────────── */
 
     const isOrderDetailsEditable =
-        !['cancelled', 'legacy', 'archived'].includes((order?.stateCode as string) ?? '');
+        !([SALES_ORDER_STATE.CANCELLED, SALES_ORDER_STATE.LEGACY, SALES_ORDER_STATE.ARCHIVED] as string[]).includes((order?.stateCode as string) ?? '');
 
-    const isOrderLinesEditable = order?.stateCode === 'draft';
+    const isOrderLinesEditable = order?.stateCode === SALES_ORDER_STATE.DRAFT;
 
-    const isHeaderEditable = (order?.stateCode as unknown) !== 'archived' && (order?.stateCode as unknown) !== 'cancelled' && (order?.stateCode as unknown) !== 'legacy';
+    const isHeaderEditable = order?.stateCode !== SALES_ORDER_STATE.ARCHIVED && order?.stateCode !== SALES_ORDER_STATE.CANCELLED && order?.stateCode !== SALES_ORDER_STATE.LEGACY;
 
     const allowedTransitions = STATE_TRANSITIONS[order?.stateCode ?? ''] || [];
 
-    const subtotal = order?.lines.reduce(
+    const subtotal = order?.lines?.reduce(
         (sum, l) => sum + parseFloat(l.amount || '0'), 0,
     ) ?? 0;
 
-    const totalTax = order?.lines.reduce(
+    const totalTax = order?.lines?.reduce(
         (sum, l) => sum + parseFloat(l.tax || '0'), 0,
     ) ?? 0;
 

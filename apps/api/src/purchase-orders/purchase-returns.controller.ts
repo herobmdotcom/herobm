@@ -32,7 +32,7 @@ import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
 @Controller('purchase-orders/:id/returns')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('purchase-orders')
 @ApiTags('PurchaseReturns')
 export class PurchaseReturnsController {

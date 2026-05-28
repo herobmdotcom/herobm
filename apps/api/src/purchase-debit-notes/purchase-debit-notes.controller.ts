@@ -30,7 +30,7 @@ import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
 @Controller('purchase-debit-notes')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('purchase-debit-notes')
 @ApiTags('PurchaseDebitNotes')
 export class PurchaseDebitNotesController {

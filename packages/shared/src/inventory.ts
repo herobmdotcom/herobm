@@ -58,10 +58,12 @@ export interface InventoryGap {
  * Handles string-to-number conversion and location fallback.
  */
 export function calculateInventoryGaps(
-  lines: OrderLineMinimal[],
-  inventoryLevels: InventoryLevelMinimal[],
+  lines: OrderLineMinimal[] = [],
+  inventoryLevels: InventoryLevelMinimal[] = [],
   headerLocationId?: string | null,
 ): InventoryGap[] {
+  lines = lines || [];
+  inventoryLevels = inventoryLevels || [];
   // Roll up available quantities by product AND location
   const availabilityMap = new Map<string, number>();
   for (const lvl of inventoryLevels) {

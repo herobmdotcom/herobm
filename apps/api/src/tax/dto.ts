@@ -53,7 +53,7 @@ export class UpdateTaxCategoryDto {
 
 export class TaxCategoryResponseDto {
   @ApiProperty()
-  id!: string;
+  taxCategoryId!: string;
 
   @ApiProperty()
   code!: string;

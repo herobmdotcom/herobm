@@ -28,7 +28,7 @@ import { SystemLogResponseDto } from './dto';
  */
 @ApiTags('System')
 @Controller('admin')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('system_logs')
 export class SystemController {
   @Get('system-logs')

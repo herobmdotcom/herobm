@@ -65,7 +65,7 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
 
     async function fetchTimeline() {
       try {
-        const result = await api.dashboardControllerGetTimeline({ types: enabledEvents.join(','), limit: '20' } as any);
+        const result = await api.dashboardControllerGetTimeline({ types: enabledEvents.join(','), limit: '20' });
         if (mounted) {
           setData(result.data as unknown as { events: TimelineEvent[] });
           setError(false);
@@ -145,7 +145,7 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
               </div>
               
               <div className="text-[13px] opacity-80 mt-1" style={{ color: 'var(--text-muted)' }}>
-                {t(('types.' + evt.eventType) as any)}
+                {t(('types.' + evt.eventType) as Parameters<typeof t>[0])}
                 {evt.actor && (
                   <span className="opacity-70 ml-1">
                     {tCommon('by')} {evt.actor}

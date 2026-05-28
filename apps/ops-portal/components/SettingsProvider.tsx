@@ -9,6 +9,7 @@ interface GlSettings {
   fiscalYearStartMonth: number;
   revenueRoutingPrecedence: string;
   expenseRoutingPrecedence: string;
+  supportedBatchPaymentFormats: string[];
 }
 
 interface AppSettings {

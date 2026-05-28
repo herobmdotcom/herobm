@@ -59,7 +59,7 @@ export default function PutawayPage() {
         api.inventoryControllerFindAllLocations({} )
             .then((response) => {
                 const res = response.data;
-                const locs = res.data || res || [];
+                const locs = res.data || [];
                 setLocations(locs);
                 if (locs.length > 0) {
                     const defaultLocId = app?.defaultFulfillmentLocationId || locs[0].locationId;
@@ -80,7 +80,7 @@ export default function PutawayPage() {
         api.inventoryControllerGetPendingPutaway({ locationId: selectedLocationId })
             .then(response => {
                 const data = response.data;
-                setPendingLines(data as any || []);
+                setPendingLines((data as unknown as PutawayLine[]) || []);
             })
             .catch(err => reportError(err, 'Failed to load pending lines'))
             .finally(() => setLoadingLines(false));
@@ -98,16 +98,16 @@ export default function PutawayPage() {
         api.inventoryControllerGetPutawayContext({ productId: selectedLine.productId, locationId: selectedLocationId })
             .then((response) => {
                 const data = response.data;
-                const contextData = data || data;
-                setContext(contextData as any);
-                if ((contextData as any).primaryBinId) {
-                    setSelectedBinId((contextData as any).primaryBinId);
-                    setBinSearch((contextData as any).primaryBinNumber || '');
+                const contextData = data as unknown as PutawayContext;
+                setContext(contextData);
+                if (contextData.primaryBinId) {
+                    setSelectedBinId(contextData.primaryBinId);
+                    setBinSearch(contextData.primaryBinNumber || '');
                 } else {
                     setSelectedBinId('');
                     setBinSearch('');
                 }
-                const expectedTotal = (contextData as any).currentQuantity + parseFloat(selectedLine.quantity);
+                const expectedTotal = contextData.currentQuantity + parseFloat(selectedLine.quantity);
                 setNewTotalQuantity(expectedTotal.toString());
             })
             .catch(err => setError(err.message))
@@ -187,7 +187,7 @@ export default function PutawayPage() {
                             </div>
                         ) : pendingLines.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
-                                {/* eslint-disable i18next/no-literal-string */}
+                                {/* eslint-disable-next-line i18next/no-literal-string */}
                                 <span className="material-symbols-outlined text-4xl mb-2 opacity-50">inventory_2</span>
                                 {/* eslint-enable i18next/no-literal-string */}
                                 {t('putaway.noItemsPending')}
@@ -250,7 +250,7 @@ export default function PutawayPage() {
 
                                 {error && (
                                     <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md flex items-center gap-2">
-                                        {/* eslint-disable i18next/no-literal-string */}
+                                        {/* eslint-disable-next-line i18next/no-literal-string */}
                                         <span className="material-symbols-outlined text-sm">error</span>
                                         {/* eslint-enable i18next/no-literal-string */}
                                         {error}
@@ -340,7 +340,7 @@ export default function PutawayPage() {
 
                                         {context.primaryBinId && selectedBinId && selectedBinId !== context.primaryBinId && (
                                             <p className="mt-2 text-[11px] text-[var(--warning)] flex items-center gap-1">
-                                                {/* eslint-disable i18next/no-literal-string */}
+                                                {/* eslint-disable-next-line i18next/no-literal-string */}
                                                 <span className="material-symbols-outlined text-[14px]">warning</span>
                                                 {/* eslint-enable i18next/no-literal-string */}
                                                 {t('putaway.warningNotPrimary', { bin: context.primaryBinNumber || '' })}
@@ -375,14 +375,14 @@ export default function PutawayPage() {
                                     >
                                         {isSubmitting ? (
                                             <>
-                                                {/* eslint-disable i18next/no-literal-string */}
+                                                {/* eslint-disable-next-line i18next/no-literal-string */}
                                                 <span className="material-symbols-outlined animate-spin text-[18px]">sync</span>
                                                 {/* eslint-enable i18next/no-literal-string */}
                                                 {t('putaway.processing')}
                                             </>
                                         ) : (
                                             <>
-                                                {/* eslint-disable i18next/no-literal-string */}
+                                                {/* eslint-disable-next-line i18next/no-literal-string */}
                                                 <span className="material-symbols-outlined text-[18px]">done_all</span>
                                                 {/* eslint-enable i18next/no-literal-string */}
                                                 {t('putaway.confirmPutaway')}

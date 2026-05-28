@@ -418,7 +418,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     </div>
 
                     {activeTab === 'lines' ? (() => {
-                        const hasActionColumn = isOrderLinesEditable || order.lines.some((l: any) => l.isPostConfirmation && isOrderDetailsEditable) || isPostConfirmationAddingEnabled;
+                        const hasActionColumn = isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable) || isPostConfirmationAddingEnabled;
 
                         const lineColumns: any[] = [
                             {
@@ -484,7 +484,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     const hasGap = gapMap.has(line.salesOrderLineId);
                                     const warningIcon = hasGap ? (
                                         <>
-                                            {/* eslint-disable i18next/no-literal-string */}
+                                            {/* eslint-disable-next-line i18next/no-literal-string */}
                                             <span 
                                                 className="material-symbols-outlined" 
                                                 style={{ fontSize: 14, color: 'var(--danger)', position: isEditable ? 'absolute' : 'relative', left: isEditable ? -16 : undefined, top: isEditable ? '50%' : undefined, transform: isEditable ? 'translateY(-50%)' : undefined, verticalAlign: !isEditable ? 'middle' : undefined, marginRight: !isEditable ? 4 : 0, zIndex: 1 }}
@@ -655,14 +655,18 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         <span style={{ fontSize: 12 }}>
                                             {(() => {
                                                 const c = taxCategories.find((c: TaxCategory) => c.taxCategoryId === line.taxCategoryId);
-                                                if (c) return getTaxLabel(c);
+                                                if (c) {
+                                                    const pct = parseFloat(c.rate || '0');
+                                                    const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
+                                                    return <span title={getTaxLabel(c)} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>{formattedPct}%</span>;
+                                                }
                                                 const amt = parseFloat(line.amount || '0');
                                                 const tax = parseFloat(line.tax || '0');
                                                 if (amt > 0 && tax > 0) {
                                                     const pct = (tax / amt) * 100;
                                                     return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
                                                 }
-                                                if (amt > 0 && tax === 0) return tCommon('taxLabels.exempt');
+                                                if (amt > 0 && tax === 0) return <span title={tCommon('taxLabels.exempt')} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>0%</span>;
                                                 return '—';
                                             })()}
                                         </span>
@@ -748,7 +752,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     );
                                 }}
                             footer={
-                                order.lines.length > 0 ? (() => {
+                                (order.lines || []).length > 0 ? (() => {
                                     const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
                                     return (
                                         <>
@@ -759,7 +763,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                                                     {formatAmount(subtotal, order.currencyCode || 'EUR')}
                                                 </td>
-                                                {(isOrderLinesEditable || order.lines.some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
+                                                {(isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
                                             </tr>
                                             <tr className="hidden lg:table-row">
                                                 <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
@@ -768,7 +772,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                                                     {formatAmount(totalTax, order.currencyCode || 'EUR')}
                                                 </td>
-                                                {(isOrderLinesEditable || order.lines.some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
+                                                {(isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
                                             </tr>
                                             <tr className="hidden lg:table-row" style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
                                                 <td colSpan={8} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
@@ -777,7 +781,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
                                                     {formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}
                                                 </td>
-                                                {(isOrderLinesEditable || order.lines.some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
+                                                {(isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
                                             </tr>
                                             
                                             {/* Mobile summary rows - hidden on lg, visible on mobile because the footer is wrapped in a normal div */}

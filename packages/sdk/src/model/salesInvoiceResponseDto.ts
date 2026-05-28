@@ -5,23 +5,23 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { InvoiceLineResponseDto } from './invoiceLineResponseDto';
+import type { SalesInvoiceResponseDtoAllocationsItem } from './salesInvoiceResponseDtoAllocationsItem';
 
 export interface SalesInvoiceResponseDto {
   invoiceId: string;
   invoiceNumber: string;
-  salesOrderId: string;
+  customerId: string;
+  customerName: string;
   totalAmount: string;
   outstandingAmount: string;
-  /** @nullable */
-  taxAmount?: string | null;
+  taxAmount: string;
   currencyCode: string;
   stateCode: string;
-  /** @nullable */
-  notes?: string | null;
-  /** @nullable */
-  createdBy?: string | null;
-  /** @nullable */
-  createdOn?: string | null;
-  /** @nullable */
-  modifiedOn?: string | null;
+  notes?: string;
+  salesOrderId?: string;
+  createdBy: string;
+  createdOn: string;
+  lines: InvoiceLineResponseDto[];
+  allocations?: SalesInvoiceResponseDtoAllocationsItem[];
 }

@@ -14,7 +14,7 @@ export default function CsvImportPage() {
   const t = useTranslations('setup.dataImport');
   
   const [step, setStep] = useState<Step>('config');
-  const [tables, setTables] = useState<any[]>([]);
+  const [tables, setTables] = useState<{ id: string; name: string; uniqueKey: string; columns: string[] }[]>([]);
   const [selectedTable, setSelectedTable] = useState<string>('');
   
   const [file, setFile] = useState<File | null>(null);
@@ -44,11 +44,11 @@ export default function CsvImportPage() {
   };
 
   useEffect(() => {
-    api.setupControllerGetCsvMetadata().then((data: any) => {
-      const arr = data?.data || data || [];
+    api.setupControllerGetCsvMetadata().then((res) => {
+      const arr = res.data;
       setTables(arr);
       if (arr.length > 0) setSelectedTable(arr[0].id);
-    }).catch(err => toast.error('Failed to load table metadata'));
+    }).catch(() => toast.error('Failed to load table metadata'));
   }, []);
 
   const handleDownloadTemplate = () => {
@@ -82,8 +82,13 @@ export default function CsvImportPage() {
       formData.append('file', file);
 
       // Using SDK with FormData
-      const data: any = await api.setupControllerExecuteElt(formData as any);
+      const res = await api.setupControllerExecuteCsv({
+        tableName: selectedTable,
+        strategy: strategy,
+        file: file,
+      });
 
+      const data = res.data as any;
       jobIdRef.current = data.jobId;
       startPolling(data.jobId);
     } catch (err: any) {
@@ -98,24 +103,23 @@ export default function CsvImportPage() {
     
     pollTimerRef.current = setInterval(async () => {
       try {
-        const progressRes: any = await api.setupControllerGetProgress(jobIdRef.current as any) as any;
-        if (progressRes) {
-          if (progressRes.logs) {
-            setLogs(progressRes.logs);
+        const progressRes = await api.setupControllerGetProgress(jobIdRef.current!);
+        const progress = progressRes.data;
+        if (progress) {
+          if (progress.logs) {
+             setLogs([`--- Initializing CSV processing pipeline ---`, ...progress.logs]);
           }
-          if (progressRes.status === 'completed' || progressRes.status === 'done') {
+          if (progress.status === 'completed') {
             setStatus('completed');
             clearInterval(pollTimerRef.current);
-            api.setupControllerGetImportSummary().then(summary => {
-               setImportSummary(summary as unknown as import('@modbm/sdk').ImportSummaryDto);
-               setStep('finalisation');
-            }).catch(err => {
-               reportError(err, 'CsvImportPage.pollProgress.importSummary');
+            api.setupControllerGetImportSummary().then((summaryRes) => {
+               setImportSummary(summaryRes.data);
                setStep('finalisation');
             });
-          } else if (progressRes.status === 'failed') {
+          } else if (progress.status === 'failed') {
             setStatus('failed');
-            setErrorMsg(progressRes.error || 'Execution failed on backend.');
+            const errorLog = progress.logs?.find((l: string) => l.includes('[ERROR]')) || 'Execution failed on backend.';
+            setErrorMsg(errorLog);
             clearInterval(pollTimerRef.current);
           }
         }

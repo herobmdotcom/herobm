@@ -234,7 +234,7 @@ describe('API E2E — Purchase Order Returns', () => {
         )
         .set('Authorization', `Bearer ${adminToken}`)
         .send({})
-        .expect(201);
+        .expect(200);
 
       // Ship the return
       const res = await request(app.getHttpServer())
@@ -243,7 +243,7 @@ describe('API E2E — Purchase Order Returns', () => {
         )
         .set('Authorization', `Bearer ${adminToken}`)
         .send({})
-        .expect(201);
+        .expect(200);
 
       expect(res.body.returnId).toBe(returnId);
       expect(res.body.stateCode).toBe(PURCHASE_RETURN_STATE.SHIPPED); // Returns flow immediately marks it as processed

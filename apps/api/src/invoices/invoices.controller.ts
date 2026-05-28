@@ -33,6 +33,10 @@ import {
   UpdateInvoiceLineDto,
   ResolveInvoiceLineDto,
   AutoMatchPurchaseOrderDto,
+  PurchaseInvoiceResponseDto,
+  SalesInvoiceResponseDto,
+  PurchaseInvoiceListResponseDto,
+  SalesInvoiceListResponseDto,
 } from './dto';
 
 export class EmptyBodyDto {}
@@ -42,7 +46,7 @@ export class EmptyBodyDto {}
  * Uses the same 'sales-orders' prefix so routes nest under that path.
  */
 @Controller('sales-orders')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('sales-orders')
 @ApiTags('Invoices')
 export class SalesInvoiceController {
@@ -54,7 +58,7 @@ export class SalesInvoiceController {
     summary: 'Create Sales Invoice',
     description: 'Create an invoice for a sales order',
   })
-  @ApiCreatedResponse({ type: Object })
+  @ApiCreatedResponse({ type: SalesInvoiceResponseDto })
   async createSalesInvoice(
     @Param('id') id: string,
     @Body() dto: CreateSalesInvoiceDto,
@@ -70,7 +74,7 @@ export class SalesInvoiceController {
     summary: 'Get Sales Invoices',
     description: 'Retrieve invoices for a sales order',
   })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: SalesInvoiceResponseDto })
   async getSalesInvoices(@Param('id') id: string) {
     return { data: await this.salesInvoiceService.findByOrder(id) };
   }
@@ -81,7 +85,7 @@ export class SalesInvoiceController {
  * Uses the same 'purchase-orders' prefix so routes nest under that path.
  */
 @Controller('purchase-orders')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('purchase-orders')
 @ApiTags('Invoices')
 export class PurchaseInvoiceController {
@@ -95,7 +99,7 @@ export class PurchaseInvoiceController {
     summary: 'Get Purchase Bills',
     description: 'Retrieve purchase bills for a purchase order',
   })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async getPurchaseBills(@Param('id') id: string) {
     return { data: await this.purchaseInvoiceService.findByOrder(id) };
   }
@@ -105,7 +109,7 @@ export class PurchaseInvoiceController {
  * Standalone invoice detail endpoints (not scoped to an order).
  */
 @Controller()
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @ApiTags('Invoices')
 export class InvoiceDetailController {
   constructor(
@@ -120,7 +124,7 @@ export class InvoiceDetailController {
     summary: 'Get Sales Invoice Details',
     description: 'Retrieve details for a specific sales invoice',
   })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: SalesInvoiceResponseDto })
   async getSalesInvoiceDetails(@Param('id') id: string) {
     return this.salesInvoiceService.findOne(id);
   }
@@ -132,17 +136,19 @@ export class InvoiceDetailController {
     summary: 'Get All Sales Invoices',
     description: 'Retrieve all sales invoices across orders',
   })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: SalesInvoiceListResponseDto })
   async getSalesInvoicesGlobal(
     @Query('days') days?: string,
     @Query('customerId') customerId?: string,
     @Query('invoiceId') invoiceId?: string,
+    @Query('balanceStatus') balanceStatus?: string,
     @Query('limit') limit?: string,
   ) {
     const data = await this.salesInvoiceService.findActiveInvoices({
       days: days ? parseInt(days, 10) : undefined,
       customerId,
       invoiceId,
+      balanceStatus,
       limit: limit ? parseInt(limit, 10) : undefined,
     });
     return { data };
@@ -155,17 +161,19 @@ export class InvoiceDetailController {
     summary: 'Get All Purchase Invoices',
     description: 'Retrieve all purchase invoices across orders',
   })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: PurchaseInvoiceListResponseDto })
   async getPurchaseInvoicesGlobal(
     @Query('days') days?: string,
     @Query('vendorId') vendorId?: string,
     @Query('invoiceId') invoiceId?: string,
+    @Query('balanceStatus') balanceStatus?: string,
     @Query('limit') limit?: string,
   ) {
     const data = await this.purchaseInvoiceService.findActiveInvoices({
       days: days ? parseInt(days, 10) : undefined,
       vendorId,
       invoiceId,
+      balanceStatus,
       limit: limit ? parseInt(limit, 10) : undefined,
     });
     return { data };
@@ -178,7 +186,7 @@ export class InvoiceDetailController {
     summary: 'Get Purchase Invoice Details',
     description: 'Retrieve details for a specific purchase invoice',
   })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async getPurchaseBillDetails(@Param('id') id: string) {
     return this.purchaseInvoiceService.findOne(id);
   }
@@ -190,7 +198,7 @@ export class InvoiceDetailController {
     summary: 'Create Draft Invoice',
     description: 'Create a standalone draft purchase invoice',
   })
-  @ApiCreatedResponse({ type: Object })
+  @ApiCreatedResponse({ type: PurchaseInvoiceResponseDto })
   async createDraftInvoice(
     @Body() dto: CreateStandaloneInvoiceDto,
     @Request() req: any,
@@ -208,7 +216,7 @@ export class InvoiceDetailController {
     description: 'Post a purchase invoice',
   })
   @ApiBody({ type: EmptyBodyDto })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async postInvoice(@Param('id') id: string, @Request() req: any) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.postInvoice(id, actor);
@@ -221,7 +229,7 @@ export class InvoiceDetailController {
     summary: 'Change Invoice State',
     description: 'Change the state of a purchase invoice',
   })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async changeInvoiceState(
     @Param('id') id: string,
     @Body() dto: ChangeInvoiceStateDto,
@@ -243,7 +251,7 @@ export class InvoiceDetailController {
     summary: 'Update Invoice',
     description: 'Update a purchase invoice',
   })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async updateInvoice(
     @Param('id') id: string,
     @Body() dto: UpdateInvoiceLineDto,
@@ -260,7 +268,7 @@ export class InvoiceDetailController {
     summary: 'Update Invoice Line',
     description: 'Update a specific line item on a purchase invoice',
   })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async updateInvoiceLine(
     @Param('id') invoiceId: string,
     @Param('lineId') lineId: string,
@@ -283,7 +291,7 @@ export class InvoiceDetailController {
     summary: 'Remove Invoice Line',
     description: 'Remove a line item from a purchase invoice',
   })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async removeInvoiceLine(
     @Param('id') invoiceId: string,
     @Param('lineId') lineId: string,
@@ -300,7 +308,7 @@ export class InvoiceDetailController {
     summary: 'Add Invoice Line',
     description: 'Add a new line item to a purchase invoice',
   })
-  @ApiCreatedResponse({ type: Object })
+  @ApiCreatedResponse({ type: PurchaseInvoiceResponseDto })
   async addInvoiceLine(
     @Param('id') invoiceId: string,
     @Body() dto: UpdateInvoiceLineDto,
@@ -318,7 +326,7 @@ export class InvoiceDetailController {
     description: 'Resolve a discrepancy on an invoice line',
   })
   @HttpCode(200)
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async resolveInvoiceLine(
     @Param('lineId') lineId: string,
     @Body() dto: ResolveInvoiceLineDto,
@@ -341,7 +349,7 @@ export class InvoiceDetailController {
   })
   @ApiBody({ type: EmptyBodyDto })
   @HttpCode(200)
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async unresolveInvoiceLine(
     @Param('lineId') lineId: string,
     @Request() req: any,
@@ -358,7 +366,7 @@ export class InvoiceDetailController {
     description: 'Automatically match a purchase order',
   })
   @HttpCode(200)
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async autoMatchPurchaseOrder(
     @Param('id') invoiceId: string,
     @Body() dto: AutoMatchPurchaseOrderDto,

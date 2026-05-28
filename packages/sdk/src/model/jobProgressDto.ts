@@ -9,6 +9,6 @@ import type { JobProgressDtoProgressItem } from './jobProgressDtoProgressItem';
 
 export interface JobProgressDto {
   status: string;
-  progress: JobProgressDtoProgressItem[];
+  progress?: JobProgressDtoProgressItem[];
   logs: string[];
 }

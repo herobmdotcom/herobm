@@ -5,14 +5,21 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { TransferLineResponseDto } from './transferLineResponseDto';
+import type { TransferEventResponseDto } from './transferEventResponseDto';
 
 export interface TransferResponseDto {
   id: string;
-  transferNumber: string;
+  transferOrderId: string;
+  orderNumber: string;
+  stateCode: string;
   sourceLocationId: string;
+  sourceLocationName?: string;
   destinationLocationId: string;
-  status: string;
+  destinationLocationName?: string;
   notes?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdBy?: string;
+  createdOn: string;
+  lines?: TransferLineResponseDto[];
+  events?: TransferEventResponseDto[];
 }

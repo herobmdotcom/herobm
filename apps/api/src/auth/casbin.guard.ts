@@ -1,46 +1,14 @@
 import {
   Injectable,
+  Inject,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { newEnforcer, Enforcer } from 'casbin';
-import * as path from 'path';
-import * as fs from 'fs';
-
-/**
- * Resolve a Casbin asset file. Tries the compiled dist/ path first
- * (__dirname), then falls back to the source tree so local dev
- * survives a dist/ wipe from `nest start --watch`.
- */
-function resolveCasbinAsset(filename: string): string {
-  // 1. Normal dist/auth/casbin or src/auth/casbin (ts-node)
-  const dirPath = path.join(__dirname, 'casbin', filename);
-  if (fs.existsSync(dirPath)) return dirPath;
-
-  // 2. If tsc inferred root differently and compiled to dist/apps/api/src/auth
-  // but nest-cli assets copied to dist/auth
-  const distAuthPath = path.join(
-    __dirname,
-    '..',
-    '..',
-    '..',
-    '..',
-    'auth',
-    'casbin',
-    filename,
-  );
-  if (fs.existsSync(distAuthPath)) return distAuthPath;
-
-  // 3. Fallback to raw src/ directory based on process cwd (apps/api)
-  const srcPath = path.join(process.cwd(), 'src', 'auth', 'casbin', filename);
-  if (fs.existsSync(srcPath)) return srcPath;
-
-  // If neither exists, return the direct path so the original error surfaces with expected structure
-  return dirPath;
-}
+import { Enforcer } from 'casbin';
+import { CASBIN_ENFORCER } from './casbin.provider';
 
 // Decorators for controllers
 import { SetMetadata } from '@nestjs/common';
@@ -51,32 +19,17 @@ export const CasbinResource = (resource: string) =>
 export const CasbinAction = (action: string) =>
   SetMetadata(CASBIN_ACTION, action);
 
-/**
- * Decorator to explicitly skip Casbin authorization for a handler or controller.
- * Use only for intentionally public endpoints (e.g. /auth/login).
- * The /metrics endpoint in main.ts is outside the NestJS pipeline and does not
- * need this decorator — it is documented as an architectural exception.
- */
 export const SKIP_CASBIN = 'skip_casbin';
 export const SkipCasbin = () => SetMetadata(SKIP_CASBIN, true);
 
 @Injectable()
 export class CasbinGuard implements CanActivate {
-  private enforcer: Enforcer | null = null;
-
-  constructor(private reflector: Reflector) {}
-
-  private async getEnforcer(): Promise<Enforcer> {
-    if (!this.enforcer) {
-      const modelPath = resolveCasbinAsset('model.conf');
-      const policyPath = resolveCasbinAsset('policy.csv');
-      this.enforcer = await newEnforcer(modelPath, policyPath);
-    }
-    return this.enforcer;
-  }
+  constructor(
+    private reflector: Reflector,
+    @Inject(CASBIN_ENFORCER) private enforcer: Enforcer,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // Check for explicit @SkipCasbin() decorator
     const skipCasbin = this.reflector.getAllAndOverride<boolean>(SKIP_CASBIN, [
       context.getHandler(),
       context.getClass(),
@@ -94,7 +47,6 @@ export class CasbinGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    // DENY by default if decorators are missing (ADV-026 fix)
     if (!resource || !action) {
       throw new ForbiddenException(
         'Endpoint is missing @CasbinResource/@CasbinAction decorators. ' +
@@ -109,8 +61,7 @@ export class CasbinGuard implements CanActivate {
       throw new UnauthorizedException('No authenticated user');
     }
 
-    const enforcer = await this.getEnforcer();
-    const allowed = await enforcer.enforce(user.role, resource, action);
+    const allowed = await this.enforcer.enforce(user.role, resource, action);
 
     if (!allowed) {
       throw new ForbiddenException(

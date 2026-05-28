@@ -29,9 +29,11 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @ApiTags('System')
 @Controller('settings/cost-centers')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('settings')
 export class CostCentersController {
   constructor(private readonly service: CostCentersService) {}
@@ -43,6 +45,7 @@ export class CostCentersController {
     summary: 'List all cost centers',
     description: 'List all cost centers',
   })
+  @ApiFieldMask()
   findAll() {
     return this.service.findAll();
   }

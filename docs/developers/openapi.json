@@ -57,11 +57,110 @@
         ]
       }
     },
+    "/roles": {
+      "get": {
+        "operationId": "RolesController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Roles"
+        ]
+      }
+    },
+    "/roles/{role}": {
+      "get": {
+        "operationId": "RolesController_findOne",
+        "parameters": [
+          {
+            "name": "role",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Roles"
+        ]
+      },
+      "post": {
+        "operationId": "RolesController_setPermissions",
+        "parameters": [
+          {
+            "name": "role",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetRolePermissionsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Roles"
+        ]
+      },
+      "delete": {
+        "operationId": "RolesController_remove",
+        "parameters": [
+          {
+            "name": "role",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Roles"
+        ]
+      }
+    },
     "/customers": {
       "get": {
         "description": "Retrieve a paginated list of customers.",
         "operationId": "AccountsController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -134,6 +233,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -285,7 +393,17 @@
       "get": {
         "description": "Retrieve a list of all customer groups.",
         "operationId": "AccountGroupsController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -347,6 +465,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -449,7 +576,17 @@
       "get": {
         "description": "Retrieve a paginated list of all products in the catalog.",
         "operationId": "ProductsController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -522,6 +659,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -1093,7 +1239,17 @@
       "get": {
         "description": "Retrieve all product groups configured in the system.",
         "operationId": "ProductGroupsController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -1166,6 +1322,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -1268,6 +1433,15 @@
             "name": "locationNo",
             "required": true,
             "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -1783,15 +1957,19 @@
         "parameters": [
           {
             "name": "format",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
+              "enum": [
+                "tree",
+                "flat"
+              ],
               "type": "string"
             }
           },
           {
             "name": "isBankAccount",
-            "required": true,
+            "required": false,
             "in": "query",
             "schema": {
               "type": "string"
@@ -2665,7 +2843,17 @@
       "get": {
         "description": "findAll operation",
         "operationId": "UomDictionaryController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2727,6 +2915,15 @@
             "name": "code",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -2824,7 +3021,17 @@
       "get": {
         "description": "findAll operation",
         "operationId": "ExchangeRatesController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -2886,6 +3093,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -3091,7 +3307,17 @@
       "get": {
         "description": "List all trading terms",
         "operationId": "TradingTermsController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -3117,7 +3343,17 @@
       "get": {
         "description": "List all cost centers",
         "operationId": "CostCentersController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -3282,7 +3518,17 @@
       "get": {
         "description": "List all activities",
         "operationId": "ActivitiesController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -3665,7 +3911,17 @@
       "get": {
         "description": "Retrieve a paginated list of sales orders globally.",
         "operationId": "OrdersController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -3738,6 +3994,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -4118,7 +4383,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/CreateReturnDto"
               }
             }
           }
@@ -4129,7 +4394,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ReturnResponseDto"
                 }
               }
             }
@@ -4159,7 +4424,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ReturnResponseDto"
                 }
               }
             }
@@ -4199,7 +4464,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ReturnResponseDto"
                 }
               }
             }
@@ -4236,7 +4501,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/UpdateReturnDto"
               }
             }
           }
@@ -4247,7 +4512,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ReturnResponseDto"
                 }
               }
             }
@@ -4286,7 +4551,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/ChangeReturnStateDto"
               }
             }
           }
@@ -4297,7 +4562,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ReturnResponseDto"
                 }
               }
             }
@@ -4336,7 +4601,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/AddReturnLineDto"
               }
             }
           }
@@ -4347,7 +4612,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ReturnResponseDto"
                 }
               }
             }
@@ -4394,7 +4659,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/UpdateReturnLineDto"
               }
             }
           }
@@ -4405,7 +4670,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ReturnResponseDto"
                 }
               }
             }
@@ -4451,7 +4716,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ReturnResponseDto"
                 }
               }
             }
@@ -4490,7 +4755,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/ReceiveReturnDto"
               }
             }
           }
@@ -4501,7 +4766,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ReturnResponseDto"
                 }
               }
             }
@@ -4532,7 +4797,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/CreateShipmentDto"
               }
             }
           }
@@ -4543,7 +4808,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ShipmentResponseDto"
                 }
               }
             }
@@ -4653,7 +4918,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/UpdateShipmentDto"
               }
             }
           }
@@ -4664,7 +4929,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ShipmentResponseDto"
                 }
               }
             }
@@ -4703,7 +4968,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/ChangeShipmentStateDto"
               }
             }
           }
@@ -4714,7 +4979,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ShipmentResponseDto"
                 }
               }
             }
@@ -4753,7 +5018,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/EmptyBodyDto"
               }
             }
           }
@@ -4764,7 +5029,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ShipmentResponseDto"
                 }
               }
             }
@@ -4803,7 +5068,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/AddShipmentLineDto"
               }
             }
           }
@@ -4814,7 +5079,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ShipmentResponseDto"
                 }
               }
             }
@@ -4861,7 +5126,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/UpdateShipmentLineDto"
               }
             }
           }
@@ -4872,7 +5137,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ShipmentResponseDto"
                 }
               }
             }
@@ -4918,7 +5183,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/ShipmentResponseDto"
                 }
               }
             }
@@ -4958,6 +5223,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4987,6 +5261,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -5668,7 +5951,17 @@
       "get": {
         "description": "Retrieve a paginated list of transfer orders.",
         "operationId": "TransfersController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -5741,6 +6034,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -5938,7 +6240,17 @@
       "get": {
         "description": "Retrieve a list of all tax categories.",
         "operationId": "TaxCategoriesController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -6000,6 +6312,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -6128,7 +6449,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EmptyBodyDto"
+                "$ref": "#/components/schemas/RunHookBodyDto"
               }
             }
           }
@@ -6492,7 +6813,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SalesInvoiceResponseDto"
                 }
               }
             }
@@ -6524,7 +6845,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SalesInvoiceResponseDto"
                 }
               }
             }
@@ -6556,7 +6877,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
                 }
               }
             }
@@ -6588,7 +6909,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SalesInvoiceResponseDto"
                 }
               }
             }
@@ -6630,6 +6951,14 @@
             }
           },
           {
+            "name": "balanceStatus",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "limit",
             "required": true,
             "in": "query",
@@ -6644,7 +6973,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SalesInvoiceListResponseDto"
                 }
               }
             }
@@ -6686,6 +7015,14 @@
             }
           },
           {
+            "name": "balanceStatus",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "limit",
             "required": true,
             "in": "query",
@@ -6700,7 +7037,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PurchaseInvoiceListResponseDto"
                 }
               }
             }
@@ -6731,7 +7068,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
                 }
               }
             }
@@ -6763,7 +7100,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
                 }
               }
             }
@@ -6803,7 +7140,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
                 }
               }
             }
@@ -6845,7 +7182,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
                 }
               }
             }
@@ -6887,7 +7224,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
                 }
               }
             }
@@ -6937,7 +7274,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
                 }
               }
             }
@@ -6975,7 +7312,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
                 }
               }
             }
@@ -7017,7 +7354,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
                 }
               }
             }
@@ -7059,7 +7396,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
                 }
               }
             }
@@ -7101,7 +7438,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
                 }
               }
             }
@@ -7143,7 +7480,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
                 }
               }
             }
@@ -7293,6 +7630,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -7367,6 +7713,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -7544,6 +7899,39 @@
           }
         },
         "summary": "Export ABA",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/payments/export-nacha": {
+      "post": {
+        "description": "Export selected payments into a NACHA ACH file format.",
+        "operationId": "PaymentsController_exportNacha",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchPaymentActionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportAbaResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Export NACHA",
         "tags": [
           "Payments"
         ]
@@ -7756,7 +8144,17 @@
       "get": {
         "description": "Retrieve a paginated list of all suppliers.",
         "operationId": "SuppliersController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -7853,6 +8251,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -8202,7 +8609,17 @@
       "get": {
         "description": "Retrieve a list of all supplier groups.",
         "operationId": "SupplierGroupsController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -8264,6 +8681,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -8392,7 +8818,17 @@
       "get": {
         "description": "Retrieve a paginated list of purchase orders.",
         "operationId": "PurchaseOrdersController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -8512,6 +8948,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -9484,7 +9929,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/TestAbmConnectionDto"
               }
             }
           }
@@ -9517,7 +9962,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/TestOdooConnectionDto"
               }
             }
           }
@@ -9596,7 +10041,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Object"
+                "$ref": "#/components/schemas/ExecuteEltDto"
               }
             }
           }
@@ -9761,7 +10206,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobResultDto"
+                  "type": "object"
                 }
               }
             }
@@ -9808,7 +10253,17 @@
       "get": {
         "description": "Retrieve a paginated list of goods receipts.",
         "operationId": "GoodsReceivedController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -9884,6 +10339,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -10111,6 +10575,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -10143,6 +10616,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -10240,7 +10722,17 @@
       "get": {
         "description": "Retrieves a paginated list of all system users.",
         "operationId": "UsersController_findAll",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -10302,6 +10794,15 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -10462,6 +10963,15 @@
             "name": "ownerType",
             "required": true,
             "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -10921,6 +11431,52 @@
           "ApiKeys"
         ]
       }
+    },
+    "/events/publish": {
+      "post": {
+        "description": "Publishes an event to the backend message queue (outbox) to trigger workflows or webhooks.",
+        "operationId": "EventsController_publish",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishEventDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The event was successfully published.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "outboxId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Publish Event",
+        "tags": [
+          "Events"
+        ]
+      }
     }
   },
   "info": {
@@ -11029,6 +11585,10 @@
     {
       "name": "Reports",
       "description": "Reporting hooks"
+    },
+    {
+      "name": "Events",
+      "description": "System events"
     }
   ],
   "servers": [
@@ -11093,6 +11653,35 @@
         "required": [
           "username",
           "role"
+        ]
+      },
+      "PermissionDto": {
+        "type": "object",
+        "properties": {
+          "resource": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource",
+          "action"
+        ]
+      },
+      "SetRolePermissionsDto": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionDto"
+            }
+          }
+        },
+        "required": [
+          "permissions"
         ]
       },
       "PaginatedResponse": {
@@ -12496,7 +13085,6 @@
           }
         },
         "required": [
-          "journalEntryId",
           "lines"
         ]
       },
@@ -12539,6 +13127,9 @@
         "properties": {
           "id": {
             "type": "string"
+          },
+          "accountMetadataSchema": {
+            "type": "object"
           }
         },
         "required": [
@@ -13437,6 +14028,263 @@
           }
         }
       },
+      "CreateReturnLineDto": {
+        "type": "object",
+        "properties": {
+          "salesOrderLineId": {
+            "type": "string"
+          },
+          "quantityReturned": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "returnFee": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesOrderLineId",
+          "quantityReturned"
+        ]
+      },
+      "CreateReturnDto": {
+        "type": "object",
+        "properties": {
+          "notes": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateReturnLineDto"
+            }
+          }
+        },
+        "required": [
+          "lines"
+        ]
+      },
+      "ReturnLineResponseDto": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "quantityReturned": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lineId",
+          "description",
+          "quantityReturned"
+        ]
+      },
+      "ReturnResponseDto": {
+        "type": "object",
+        "properties": {
+          "returnId": {
+            "type": "string"
+          },
+          "returnNumber": {
+            "type": "string"
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReturnLineResponseDto"
+            }
+          }
+        },
+        "required": [
+          "returnId",
+          "returnNumber",
+          "stateCode",
+          "lines"
+        ]
+      },
+      "UpdateReturnDto": {
+        "type": "object",
+        "properties": {
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "ChangeReturnStateDto": {
+        "type": "object",
+        "properties": {
+          "stateCode": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "stateCode"
+        ]
+      },
+      "AddReturnLineDto": {
+        "type": "object",
+        "properties": {
+          "salesOrderLineId": {
+            "type": "string"
+          },
+          "quantityReturned": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "returnFee": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesOrderLineId",
+          "quantityReturned"
+        ]
+      },
+      "UpdateReturnLineDto": {
+        "type": "object",
+        "properties": {
+          "quantityReturned": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "returnFee": {
+            "type": "string"
+          }
+        }
+      },
+      "ReceiveReturnLineDto": {
+        "type": "object",
+        "properties": {
+          "returnLineId": {
+            "type": "string"
+          },
+          "quantityReceived": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "returnLineId",
+          "quantityReceived"
+        ]
+      },
+      "ReceiveReturnDto": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReceiveReturnLineDto"
+            }
+          }
+        },
+        "required": [
+          "locationId",
+          "lines"
+        ]
+      },
+      "CreateShipmentLineDto": {
+        "type": "object",
+        "properties": {
+          "salesOrderLineId": {
+            "type": "string"
+          },
+          "quantityShipped": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesOrderLineId",
+          "quantityShipped"
+        ]
+      },
+      "CreateShipmentDto": {
+        "type": "object",
+        "properties": {
+          "notes": {
+            "type": "string"
+          },
+          "trackingNumber": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateShipmentLineDto"
+            }
+          }
+        },
+        "required": [
+          "lines"
+        ]
+      },
+      "UpdateShipmentDto": {
+        "type": "object",
+        "properties": {
+          "notes": {
+            "type": "string"
+          },
+          "trackingNumber": {
+            "type": "string"
+          }
+        }
+      },
+      "ChangeShipmentStateDto": {
+        "type": "object",
+        "properties": {
+          "stateCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "stateCode"
+        ]
+      },
+      "AddShipmentLineDto": {
+        "type": "object",
+        "properties": {
+          "salesOrderLineId": {
+            "type": "string"
+          },
+          "quantityShipped": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "salesOrderLineId",
+          "quantityShipped"
+        ]
+      },
+      "UpdateShipmentLineDto": {
+        "type": "object",
+        "properties": {
+          "quantityShipped": {
+            "type": "string"
+          }
+        }
+      },
       "CreateTransferFromDemandsDto": {
         "type": "object",
         "properties": {
@@ -13455,47 +14303,68 @@
           "backorderIds"
         ]
       },
-      "TransferResponseDto": {
+      "TransferLineResponseDto": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "transferNumber": {
+          "transferOrderLineId": {
             "type": "string"
           },
-          "sourceLocationId": {
+          "productId": {
             "type": "string"
           },
-          "destinationLocationId": {
+          "productNumber": {
             "type": "string"
           },
-          "status": {
+          "productDescription": {
             "type": "string"
           },
-          "notes": {
+          "quantity": {
             "type": "string"
           },
-          "createdAt": {
-            "format": "date-time",
+          "quantityShipped": {
             "type": "string"
           },
-          "updatedAt": {
-            "format": "date-time",
+          "quantityReceived": {
             "type": "string"
           }
         },
         "required": [
           "id",
-          "transferNumber",
-          "sourceLocationId",
-          "destinationLocationId",
-          "status",
-          "createdAt",
-          "updatedAt"
+          "transferOrderLineId",
+          "productId",
+          "quantity"
         ]
       },
       "TransferEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "eventId": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "payload": {
+            "type": "object"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "eventId",
+          "eventType",
+          "createdOn"
+        ]
+      },
+      "TransferResponseDto": {
         "type": "object",
         "properties": {
           "id": {
@@ -13504,23 +14373,55 @@
           "transferOrderId": {
             "type": "string"
           },
-          "eventType": {
+          "orderNumber": {
             "type": "string"
           },
-          "eventData": {
-            "type": "object"
+          "stateCode": {
+            "type": "string"
           },
-          "createdAt": {
+          "sourceLocationId": {
+            "type": "string"
+          },
+          "sourceLocationName": {
+            "type": "string"
+          },
+          "destinationLocationId": {
+            "type": "string"
+          },
+          "destinationLocationName": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdOn": {
             "format": "date-time",
             "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransferLineResponseDto"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransferEventResponseDto"
+            }
           }
         },
         "required": [
           "id",
           "transferOrderId",
-          "eventType",
-          "eventData",
-          "createdAt"
+          "orderNumber",
+          "stateCode",
+          "sourceLocationId",
+          "destinationLocationId",
+          "createdOn"
         ]
       },
       "TransferPickingSummaryResponseDto": {
@@ -13637,7 +14538,7 @@
       "TaxCategoryResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "taxCategoryId": {
             "type": "string"
           },
           "code": {
@@ -13657,7 +14558,7 @@
           }
         },
         "required": [
-          "id",
+          "taxCategoryId",
           "code",
           "title",
           "type",
@@ -13708,6 +14609,10 @@
             "type": "boolean"
           }
         }
+      },
+      "RunHookBodyDto": {
+        "type": "object",
+        "properties": {}
       },
       "HookDto": {
         "type": "object",
@@ -13791,11 +14696,7 @@
           "contextSlug": {
             "type": "string"
           }
-        },
-        "required": [
-          "reportId",
-          "contextSlug"
-        ]
+        }
       },
       "RandomIdData": {
         "type": "object",
@@ -13989,6 +14890,232 @@
             }
           }
         }
+      },
+      "InvoiceLineResponseDto": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "invoiceId": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "quantityInvoiced": {
+            "type": "string"
+          },
+          "pricePerUnit": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "productId": {
+            "type": "string"
+          },
+          "productNumber": {
+            "type": "string"
+          },
+          "glAccountId": {
+            "type": "string"
+          },
+          "matchStatus": {
+            "type": "string"
+          },
+          "purchaseOrderId": {
+            "type": "string"
+          },
+          "purchaseOrderNumber": {
+            "type": "string"
+          },
+          "purchaseOrderLineId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lineId",
+          "invoiceId",
+          "description",
+          "quantityInvoiced",
+          "pricePerUnit",
+          "amount",
+          "matchStatus"
+        ]
+      },
+      "SalesInvoiceResponseDto": {
+        "type": "object",
+        "properties": {
+          "invoiceId": {
+            "type": "string"
+          },
+          "invoiceNumber": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string"
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "outstandingAmount": {
+            "type": "string"
+          },
+          "taxAmount": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "salesOrderId": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLineResponseDto"
+            }
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "invoiceId",
+          "invoiceNumber",
+          "customerId",
+          "customerName",
+          "totalAmount",
+          "outstandingAmount",
+          "taxAmount",
+          "currencyCode",
+          "stateCode",
+          "createdBy",
+          "createdOn",
+          "lines"
+        ]
+      },
+      "PurchaseInvoiceResponseDto": {
+        "type": "object",
+        "properties": {
+          "invoiceId": {
+            "type": "string"
+          },
+          "invoiceNumber": {
+            "type": "string"
+          },
+          "vendorId": {
+            "type": "string"
+          },
+          "vendorName": {
+            "type": "string"
+          },
+          "supplierInvoiceNumber": {
+            "type": "string"
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "outstandingAmount": {
+            "type": "string"
+          },
+          "taxAmount": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "purchaseOrderId": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLineResponseDto"
+            }
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "invoiceId",
+          "invoiceNumber",
+          "vendorId",
+          "vendorName",
+          "totalAmount",
+          "outstandingAmount",
+          "taxAmount",
+          "currencyCode",
+          "stateCode",
+          "createdBy",
+          "createdOn",
+          "lines"
+        ]
+      },
+      "SalesInvoiceListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SalesInvoiceResponseDto"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "PurchaseInvoiceListResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
       },
       "CreateStandaloneInvoiceLineDto": {
         "type": "object",
@@ -15864,6 +16991,34 @@
           }
         }
       },
+      "TestAbmConnectionDto": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "database": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "port": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 65535
+          }
+        },
+        "required": [
+          "host",
+          "database",
+          "username",
+          "password"
+        ]
+      },
       "TestConnectionResultDto": {
         "type": "object",
         "properties": {
@@ -15882,6 +17037,34 @@
           "message"
         ]
       },
+      "TestOdooConnectionDto": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "database": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "port": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 65535
+          }
+        },
+        "required": [
+          "host",
+          "database",
+          "username",
+          "password"
+        ]
+      },
       "ResumeStateDto": {
         "type": "object",
         "properties": {
@@ -15895,6 +17078,55 @@
         "required": [
           "completedTables"
         ]
+      },
+      "DbConfigDto": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "database": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "port": {
+            "type": "number"
+          }
+        }
+      },
+      "ExecuteEltDto": {
+        "type": "object",
+        "properties": {
+          "dbConfig": {
+            "$ref": "#/components/schemas/DbConfigDto"
+          },
+          "abmImport": {
+            "type": "boolean"
+          },
+          "odooImport": {
+            "type": "boolean"
+          },
+          "resumeExtraction": {
+            "type": "boolean"
+          },
+          "skipExtraction": {
+            "type": "boolean"
+          },
+          "defaultLocationCode": {
+            "type": "string"
+          },
+          "baseCurrency": {
+            "type": "string"
+          },
+          "defaultTaxCategoryCode": {
+            "type": "string"
+          }
+        }
       },
       "JobResultDto": {
         "type": "object",
@@ -15928,7 +17160,6 @@
         },
         "required": [
           "status",
-          "progress",
           "logs"
         ]
       },
@@ -15946,9 +17177,7 @@
           }
         },
         "required": [
-          "status",
-          "metrics",
-          "dataCounts"
+          "status"
         ]
       },
       "ImportSummaryDto": {
@@ -16557,6 +17786,9 @@
           "prefix": {
             "type": "string"
           },
+          "role": {
+            "type": "string"
+          },
           "createdOn": {
             "format": "date-time",
             "type": "string"
@@ -16566,6 +17798,7 @@
           "apiKeyId",
           "name",
           "prefix",
+          "role",
           "createdOn"
         ]
       },
@@ -16574,10 +17807,15 @@
         "properties": {
           "name": {
             "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "description": "The Casbin role granted to this API key (e.g. agent, webhook)"
           }
         },
         "required": [
-          "name"
+          "name",
+          "role"
         ]
       },
       "ApiKeyCreatedResponseDto": {
@@ -16591,6 +17829,9 @@
             "type": "string"
           },
           "prefix": {
+            "type": "string"
+          },
+          "role": {
             "type": "string"
           },
           "keyHash": {
@@ -16615,6 +17856,7 @@
           "apiKeyId",
           "name",
           "prefix",
+          "role",
           "keyHash",
           "createdBy",
           "createdOn",
@@ -16633,6 +17875,9 @@
             "type": "string"
           },
           "prefix": {
+            "type": "string"
+          },
+          "role": {
             "type": "string"
           },
           "keyHash": {
@@ -16654,10 +17899,28 @@
           "apiKeyId",
           "name",
           "prefix",
+          "role",
           "keyHash",
           "createdBy",
           "createdOn",
           "modifiedOn"
+        ]
+      },
+      "PublishEventDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of event to publish (e.g. order.created)"
+          },
+          "payload": {
+            "type": "object",
+            "description": "The payload of the event"
+          }
+        },
+        "required": [
+          "type",
+          "payload"
         ]
       }
     }

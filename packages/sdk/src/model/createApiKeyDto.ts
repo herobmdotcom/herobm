@@ -8,4 +8,6 @@
 
 export interface CreateApiKeyDto {
   name: string;
+  /** The Casbin role granted to this API key (e.g. agent, webhook) */
+  role: string;
 }

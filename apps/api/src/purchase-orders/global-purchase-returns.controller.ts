@@ -54,7 +54,7 @@ export class GlobalPurchaseReturnsListDto {
 }
 
 @Controller('purchase-returns')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('purchase-orders')
 @ApiTags('PurchaseReturns')
 export class GlobalPurchaseReturnsController {

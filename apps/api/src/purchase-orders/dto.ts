@@ -183,7 +183,11 @@ export class PurchaseOrderResponseDto {
   modifiedOn?: Date | null;
 
   vendorName?: string;
-  @ApiProperty({ type: () => PurchaseOrderLineResponseDto, isArray: true, required: false })
+  @ApiProperty({
+    type: () => PurchaseOrderLineResponseDto,
+    isArray: true,
+    required: false,
+  })
   lines?: PurchaseOrderLineResponseDto[];
 }
 

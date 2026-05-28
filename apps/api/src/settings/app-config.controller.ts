@@ -16,7 +16,7 @@ import { AppConfigService } from './app-config.service';
 import { AppConfigResponseDto, UpdateAppConfigDto } from './dto';
 
 @Controller('settings/app')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('settings')
 @ApiTags('System')
 export class AppConfigController {

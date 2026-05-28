@@ -101,8 +101,10 @@ export default function ReportingHooksPage() {
         api.reportsControllerGetAssignments(),
         api.reportsControllerGetAllReports()
       ]);
-      setAssignments((assignRes.data as unknown as Assignment[]) || []);
-      setTemplates((templRes.data as unknown as ReportTemplate[]) || []);
+      const { data: assignPage } = assignRes;
+      const { data: templPage } = templRes;
+      setAssignments(assignPage.data as unknown as Assignment[]);
+      setTemplates(templPage.data as unknown as ReportTemplate[]);
     } catch (e) {
       reportError(e, 'ReportingHooksPage');
     } finally {

@@ -27,9 +27,11 @@ import {
 } from '../auth/casbin.guard';
 import { MacroResponseDto } from './dto/macro-response.dto';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @ApiTags('Macros')
 @Controller('macros')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('settings')
 export class MacrosController {
   constructor(private readonly macrosService: MacrosService) {}
@@ -53,6 +55,7 @@ export class MacrosController {
     description: 'Retrieves all configured automation macros.',
   })
   @ApiOkResponse({ type: MacroResponseDto, isArray: true })
+  @ApiFieldMask()
   findAll(@Query('macroType') macroType?: string) {
     return this.macrosService.findAll(macroType);
   }
@@ -64,6 +67,7 @@ export class MacrosController {
     description: 'Retrieves a single macro configuration by ID.',
   })
   @ApiOkResponse({ type: MacroResponseDto })
+  @ApiFieldMask()
   findOne(@Param('id') id: string) {
     return this.macrosService.findOne(id);
   }

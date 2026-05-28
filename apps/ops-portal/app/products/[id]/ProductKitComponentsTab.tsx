@@ -37,12 +37,12 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
       cellRenderer: (params: any) => params.data ? (
         <div className="flex gap-1 items-center h-full">
           <button className="btn btn-sm btn-ghost min-h-0 h-8 px-2 text-[#006b5c] hover:bg-[#006b5c]/10" onClick={() => handleEdit(params.data)} title={tCommon('edit')}>
-            {/* eslint-disable i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined text-[18px]">edit</span>
             {/* eslint-enable i18next/no-literal-string */}
           </button>
           <button className="btn btn-sm btn-ghost text-red-500 hover:bg-red-50 min-h-0 h-8 px-2" onClick={() => handleDelete(params.data)} title={tCommon('delete')}>
-            {/* eslint-disable i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined text-[18px]">delete</span>
             {/* eslint-enable i18next/no-literal-string */}
           </button>
@@ -104,7 +104,7 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
                   onClick={() => setSlideOverState({ isOpen: true })}
                   disabled={!isEditable}
                 >
-                  {/* eslint-disable i18next/no-literal-string */}
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
           <span className="material-symbols-outlined text-[16px]">add</span>
           {/* eslint-enable i18next/no-literal-string */}
                   {t('addComponent')}

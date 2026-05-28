@@ -223,9 +223,9 @@ dev-docs-dbt:
 dev-docs-schema: dev-docs-dbt
 	"$(VENV_PYTHON)" tools/generate_schema_reference.py
 
-dev-docs-api:
+dev-docs-api: build-api
 	@echo "Generating OpenAPI spec from source..."
-	npx tsx --tsconfig apps/api/tsconfig.json apps/api/src/scripts/export-openapi.ts
+	node apps/api/dist/scripts/generate-openapi.js
 
 dev-generate-sdk: dev-docs-api
 	@echo "Generating TypeScript SDK..."
@@ -246,14 +246,17 @@ extract-docker-dry:
 # --- Local Development ---
 # Hot-reloads FE and API natively, assuming database containers are running.
 dev-local:
-	$(DEV_LOCAL_CMD) $(DEV_LOCAL_PROFILE_ARG)
+	$(DEV_LOCAL_CMD) $(DEV_LOCAL_PROFILE_ARG) $(ARGS)
 
 # Production-like local environment. Builds both FE and API and runs them locally.
 prod-local: build-api build-portal
-	$(PROD_LOCAL_CMD) $(DEV_LOCAL_PROFILE_ARG)
+	$(PROD_LOCAL_CMD) $(DEV_LOCAL_PROFILE_ARG) $(ARGS)
 
 dev-api:
 	node --env-file=.env apps/api/dist/main.js
+
+dev-mcp:
+	node --env-file=.env apps/mcp-server/dist/index.js
 
 rebuild-api:
 	podman build -t localhost/modbm_custom-api:latest -f Dockerfile.api .
@@ -318,6 +321,10 @@ migrate-dry:
 seed:
 	npm run seed
 
+seed-demo:
+	@echo "Running demo seed script..."
+	npm run seed:demo -w apps/api
+
 init: init-db migrate seed elt
 
 init-no-extract: init-db migrate seed elt-no-extract
@@ -329,6 +336,9 @@ typecheck-portal:
 
 build-api:
 	npm run build -w apps/api
+
+build-mcp:
+	npm run build -w apps/mcp-server
 
 build-portal:
 	npm run build -w apps/ops-portal

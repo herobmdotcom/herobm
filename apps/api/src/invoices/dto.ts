@@ -8,6 +8,78 @@ import {
   IsNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class InvoiceLineResponseDto {
+  @ApiProperty() lineId!: string;
+  @ApiProperty() invoiceId!: string;
+  @ApiProperty() description!: string;
+  @ApiProperty() quantityInvoiced!: string;
+  @ApiProperty() pricePerUnit!: string;
+  @ApiProperty() amount!: string;
+  @ApiPropertyOptional() productId?: string;
+  @ApiPropertyOptional() productNumber?: string;
+  @ApiPropertyOptional() glAccountId?: string;
+  @ApiProperty() matchStatus!: string;
+  @ApiPropertyOptional() purchaseOrderId?: string;
+  @ApiPropertyOptional() purchaseOrderNumber?: string;
+  @ApiPropertyOptional() purchaseOrderLineId?: string;
+}
+
+export class PurchaseInvoiceResponseDto {
+  @ApiProperty() invoiceId!: string;
+  @ApiProperty() invoiceNumber!: string;
+  @ApiProperty() vendorId!: string;
+  @ApiProperty() vendorName!: string;
+  @ApiPropertyOptional() supplierInvoiceNumber?: string;
+  @ApiProperty() totalAmount!: string;
+  @ApiProperty() outstandingAmount!: string;
+  @ApiProperty() taxAmount!: string;
+  @ApiProperty() currencyCode!: string;
+  @ApiProperty() stateCode!: string;
+  @ApiPropertyOptional() notes?: string;
+  @ApiPropertyOptional() purchaseOrderId?: string;
+  @ApiProperty() createdBy!: string;
+  @ApiProperty() createdOn!: Date;
+
+  @ApiProperty({ type: () => [InvoiceLineResponseDto] })
+  lines!: InvoiceLineResponseDto[];
+
+  @ApiPropertyOptional({ type: () => [Object] })
+  allocations?: any[];
+}
+
+export class PurchaseInvoiceListResponseDto {
+  @ApiProperty({ type: () => [PurchaseInvoiceResponseDto] })
+  data!: PurchaseInvoiceResponseDto[];
+}
+
+export class SalesInvoiceResponseDto {
+  @ApiProperty() invoiceId!: string;
+  @ApiProperty() invoiceNumber!: string;
+  @ApiProperty() customerId!: string;
+  @ApiProperty() customerName!: string;
+  @ApiProperty() totalAmount!: string;
+  @ApiProperty() outstandingAmount!: string;
+  @ApiProperty() taxAmount!: string;
+  @ApiProperty() currencyCode!: string;
+  @ApiProperty() stateCode!: string;
+  @ApiPropertyOptional() notes?: string;
+  @ApiPropertyOptional() salesOrderId?: string;
+  @ApiProperty() createdBy!: string;
+  @ApiProperty() createdOn!: Date;
+
+  @ApiProperty({ type: () => [InvoiceLineResponseDto] })
+  lines!: InvoiceLineResponseDto[];
+
+  @ApiPropertyOptional({ type: () => [Object] })
+  allocations?: any[];
+}
+
+export class SalesInvoiceListResponseDto {
+  @ApiProperty({ type: () => [SalesInvoiceResponseDto] })
+  data!: SalesInvoiceResponseDto[];
+}
 
 export class CreateSalesInvoiceLineDto {
   @IsUUID()

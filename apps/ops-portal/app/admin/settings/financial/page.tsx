@@ -152,11 +152,11 @@ export default function FinancialSettingsPage() {
       setGlLoading(true);
       const [settingsRes, accountsRes] = await Promise.all([
         api.glControllerGetSettings(),
-        api.glControllerGetAccounts({} as any)
+        api.glControllerGetAccounts({} as Record<string, never>)
       ]);
       setGlSettings(settingsRes.data);
       setGlAccounts(accountsRes.data);
-      setSchemaObj((settingsRes.data as any).accountMetadataSchema || { type: 'object', properties: {} });
+      setSchemaObj((settingsRes.data as unknown as Record<string, unknown>).accountMetadataSchema || { type: 'object', properties: {} });
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.gl }) + ': ' + err.message);
     } finally {
@@ -217,8 +217,7 @@ export default function FinancialSettingsPage() {
     try {
       setTaxLoading(true);
       const res = await api.taxCategoriesControllerFindAll();
-      const data = res.data;
-      setCategories([...data].sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })) as unknown as TaxCategory[]);
+      setCategories((res.data as TaxCategory[]).sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })));
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.tax }) + ': ' + err.message);
     } finally {
@@ -478,13 +477,13 @@ export default function FinancialSettingsPage() {
             : <span className={`${data.isGroup ? 'font-bold' : 'font-medium'} flex items-center gap-2`}>
                 {data.isGroup ? (
                   <>
-                    {/* eslint-disable i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="material-symbols-outlined text-[16px]">folder</span>
                     {/* eslint-enable i18next/no-literal-string */}
                   </>
                 ) : (
                   <>
-                    {/* eslint-disable i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="material-symbols-outlined text-[16px] text-muted">receipt_long</span>
                     {/* eslint-enable i18next/no-literal-string */}
                   </>
@@ -504,7 +503,7 @@ export default function FinancialSettingsPage() {
             <input type="checkbox" checked={coaForm.isGroup} onChange={e => setCoaForm({ ...coaForm, isGroup: e.target.checked })} />
           ) : data.isGroup ? (
             <>
-              {/* eslint-disable i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>check</span>
               {/* eslint-enable i18next/no-literal-string */}
             </>
@@ -515,7 +514,7 @@ export default function FinancialSettingsPage() {
             <input type="checkbox" checked={coaForm.isBankAccount} onChange={e => setCoaForm({ ...coaForm, isBankAccount: e.target.checked })} />
           ) : data.isBankAccount ? (
             <>
-              {/* eslint-disable i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>check</span>
               {/* eslint-enable i18next/no-literal-string */}
             </>
@@ -610,7 +609,7 @@ export default function FinancialSettingsPage() {
           <input type="checkbox" checked={taxForm.isDefault === true || taxForm.isDefault === 'true'} onChange={e => setTaxForm({ ...taxForm, isDefault: e.target.checked })} />
         ) : data.isDefault ? (
           <>
-            {/* eslint-disable i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--primary)' }}>check_circle</span>
             {/* eslint-enable i18next/no-literal-string */}
           </>
@@ -965,7 +964,7 @@ export default function FinancialSettingsPage() {
             </h3>
             <div className="flex gap-2">
               <button className="btn btn-secondary btn-sm" onClick={() => setImportTaxModalOpen(true)}>
-                {/* eslint-disable i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined text-base">upload_file</span>
                 {/* eslint-enable i18next/no-literal-string */}
                 {tSettings('actions.importSettings')}

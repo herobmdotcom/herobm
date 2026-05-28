@@ -49,6 +49,7 @@ p, admin, api_keys, read
 p, admin, api_keys, write
 p, admin, webhooks, read
 p, admin, webhooks, write
+p, admin, events, write
 
 # system — bootstrap role for setup execution only
 p, system, setup, execute
@@ -82,3 +83,5 @@ g, finance, viewer
 g, sales, viewer
 g, warehouse, viewer
 g, procurement, viewer
+g, agent, viewer
+g, webhook, viewer

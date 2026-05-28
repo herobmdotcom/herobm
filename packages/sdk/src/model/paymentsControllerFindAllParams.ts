@@ -9,4 +9,8 @@
 export type PaymentsControllerFindAllParams = {
 days: string;
 allocation: string;
+/**
+ * Comma separated list of fields to include in the response (e.g. "id,name")
+ */
+fields?: string;
 };

@@ -7,12 +7,19 @@
  */
 import type {
   AccountGroupResponseDto,
+  AccountGroupsControllerFindAllParams,
+  AccountGroupsControllerFindOneParams,
   AccountGroupsControllerRemove200,
   AccountResponseDto,
   AccountsControllerFindAll200,
+  AccountsControllerFindAllParams,
+  AccountsControllerFindOneParams,
+  ActivitiesControllerFindAllParams,
   ActivityResponseDto,
   AddProductComponentDto,
   AddProductUomDto,
+  AddReturnLineDto,
+  AddShipmentLineDto,
   AddSupplierDto,
   AllocatePaymentDto,
   AllocationsControllerGeneratePOs201,
@@ -37,10 +44,13 @@ import type {
   CancelReceptionResponseDto,
   ChangeInvoiceStateDto,
   ChangeOrderStateDto,
+  ChangeReturnStateDto,
+  ChangeShipmentStateDto,
   ChangeStateDto,
   ClientErrorDto,
   ConfirmRejectResponseDto,
   CostCenterResponseDto,
+  CostCentersControllerFindAllParams,
   CreateAccountDto,
   CreateAccountGroupDto,
   CreateAccountRequestDto,
@@ -66,7 +76,9 @@ import type {
   CreateReconciliationDto,
   CreateReconciliationResponseDto,
   CreateReportDto,
+  CreateReturnDto,
   CreateSalesInvoiceDto,
+  CreateShipmentDto,
   CreateStandaloneInvoiceDto,
   CreateSupplierDto,
   CreateSupplierExpiryDto,
@@ -92,7 +104,11 @@ import type {
   DiscountMatrixControllerResolveParams,
   DiscountMatrixResponseDto,
   EmptyBodyDto,
+  EventsControllerPublish201,
   ExchangeRateResponseDto,
+  ExchangeRatesControllerFindAllParams,
+  ExchangeRatesControllerFindOneParams,
+  ExecuteEltDto,
   ExportAbaResponseDto,
   ExternalSyncControllerClearEventsByTypeParams,
   ExternalSyncControllerGetEventsByTypeParams,
@@ -112,8 +128,11 @@ import type {
   GlobalShipmentsControllerFindAll200,
   GlobalShipmentsControllerFindAllParams,
   GlobalShipmentsControllerFindOne200,
+  GlobalShipmentsControllerFindOneParams,
   GoodsReceivedControllerCancelReception200,
   GoodsReceivedControllerFindAllLinesParams,
+  GoodsReceivedControllerFindAllParams,
+  GoodsReceivedControllerFindOneParams,
   GoodsReceivedLineResponseDto,
   GoodsReceivedResponseDto,
   HookAssignmentsResponseDto,
@@ -135,22 +154,8 @@ import type {
   InventoryLedgerResponseDto,
   InventoryMovementResponseDto,
   InventoryResponseDto,
-  InvoiceDetailControllerAddInvoiceLine201,
-  InvoiceDetailControllerAutoMatchPurchaseOrder200,
-  InvoiceDetailControllerChangeInvoiceState200,
-  InvoiceDetailControllerCreateDraftInvoice201,
-  InvoiceDetailControllerGetPurchaseBillDetails200,
-  InvoiceDetailControllerGetPurchaseInvoicesGlobal200,
   InvoiceDetailControllerGetPurchaseInvoicesGlobalParams,
-  InvoiceDetailControllerGetSalesInvoiceDetails200,
-  InvoiceDetailControllerGetSalesInvoicesGlobal200,
   InvoiceDetailControllerGetSalesInvoicesGlobalParams,
-  InvoiceDetailControllerPostInvoice200,
-  InvoiceDetailControllerRemoveInvoiceLine200,
-  InvoiceDetailControllerResolveInvoiceLine200,
-  InvoiceDetailControllerUnresolveInvoiceLine200,
-  InvoiceDetailControllerUpdateInvoice200,
-  InvoiceDetailControllerUpdateInvoiceLine200,
   JobProgressDto,
   JobResultDto,
   JournalEntryResponseDto,
@@ -161,6 +166,7 @@ import type {
   LoginResponseDto,
   MacroResponseDto,
   MacrosControllerFindAllParams,
+  MacrosControllerFindOneParams,
   MeResponseDto,
   Object,
   OrderPickingControllerCancelPick200,
@@ -171,23 +177,9 @@ import type {
   OrderPickingControllerGetShippingQueueParams,
   OrderPickingControllerPickLine201,
   OrderResponseDto,
-  OrderReturnsControllerAddReturnLine201,
-  OrderReturnsControllerChangeReturnState200,
-  OrderReturnsControllerCreateReturn201,
-  OrderReturnsControllerFindReturn200,
-  OrderReturnsControllerFindReturns200,
-  OrderReturnsControllerReceiveReturn201,
-  OrderReturnsControllerRemoveReturnLine200,
-  OrderReturnsControllerUpdateReturn200,
-  OrderReturnsControllerUpdateReturnLine200,
-  OrderShipmentsControllerAddShipmentLine201,
-  OrderShipmentsControllerCancelShipment201,
-  OrderShipmentsControllerChangeShipmentState200,
-  OrderShipmentsControllerCreateShipment201,
-  OrderShipmentsControllerRemoveShipmentLine200,
-  OrderShipmentsControllerUpdateShipment200,
-  OrderShipmentsControllerUpdateShipmentLine200,
   OrdersControllerFindAll200,
+  OrdersControllerFindAllParams,
+  OrdersControllerFindOneParams,
   OrganizationResponseDto,
   PaginatedGoodsReceivedDto,
   PaginatedGoodsReceivedLineDto,
@@ -195,26 +187,36 @@ import type {
   PaymentResponseDto,
   PaymentsControllerFindAll200,
   PaymentsControllerFindAllParams,
+  PaymentsControllerFindOneParams,
   PendingPutawayResponseDto,
   PickLineDto,
   PostReconciliationResponseDto,
   PreviewReportDto,
   ProductGroupResponseDto,
   ProductGroupsControllerFindAll200,
+  ProductGroupsControllerFindAllParams,
+  ProductGroupsControllerFindOneParams,
   ProductResponseDto,
   ProductsControllerFindAll200,
+  ProductsControllerFindAllParams,
+  ProductsControllerFindOneParams,
   ProductsControllerGetComponents200,
+  PublishEventDto,
   PurchaseDebitNoteResponseDto,
-  PurchaseInvoiceControllerGetPurchaseBills200,
+  PurchaseInvoiceListResponseDto,
+  PurchaseInvoiceResponseDto,
   PurchaseOrderLineResponseDto,
   PurchaseOrderResponseDto,
   PurchaseOrdersControllerFindAll200,
+  PurchaseOrdersControllerFindAllParams,
+  PurchaseOrdersControllerFindOneParams,
   PurchaseOrdersControllerFindPendingLinesParams,
   PurchaseOrdersControllerFindReturnableLinesParams,
   PurchaseReturnResponseDto,
   PutawayBulkDto,
   PutawayContextResponseDto,
   RandomIdResponseDto,
+  ReceiveReturnDto,
   ReceiveTransferDto,
   ReconciliationDetailResponseDto,
   ReconciliationListResponseDto,
@@ -226,34 +228,51 @@ import type {
   ResolveDiscountRuleDto,
   ResolveInvoiceLineDto,
   ResumeStateDto,
-  SalesInvoiceControllerCreateSalesInvoice201,
-  SalesInvoiceControllerGetSalesInvoices200,
+  ReturnResponseDto,
+  RunHookBodyDto,
+  SalesInvoiceListResponseDto,
+  SalesInvoiceResponseDto,
   SeedRequestDto,
   SeedTaxRequestDto,
+  SetRolePermissionsDto,
   SettingsResponseDto,
+  SetupControllerExecuteCsv201,
   SetupControllerExecuteCsvBody,
   SetupValidationDto,
   ShipmentResponseDto,
   ShippingContextDto,
   SuccessMessageResponseDto,
   SupplierGroupResponseDto,
+  SupplierGroupsControllerFindAllParams,
+  SupplierGroupsControllerFindOneParams,
   SupplierResponseDto,
+  SuppliersControllerFindAllParams,
+  SuppliersControllerFindOneParams,
   SyncEventsResponseDto,
   SyncStatusResponseDto,
   SystemControllerGetSystemLogsParams,
   SystemLogResponseDto,
+  TaxCategoriesControllerFindAllParams,
+  TaxCategoriesControllerFindOneParams,
   TaxCategoryResponseDto,
+  TestAbmConnectionDto,
   TestConnectionResultDto,
+  TestOdooConnectionDto,
   ToggleLineDto,
   ToggleLineResponseDto,
   ToggleQuarantineDto,
   TradingTermResponseDto,
+  TradingTermsControllerFindAllParams,
   TransferEventResponseDto,
   TransferPickingSummaryResponseDto,
   TransferResponseDto,
   TransfersControllerFindAll200,
+  TransfersControllerFindAllParams,
+  TransfersControllerFindOneParams,
   TrialBalanceResponseDto,
   UnreconciledLinesResponseDto,
+  UomDictionaryControllerFindAllParams,
+  UomDictionaryControllerFindOneParams,
   UomResponseDto,
   UpdateAccountDto,
   UpdateAccountGroupDto,
@@ -276,6 +295,10 @@ import type {
   UpdatePurchaseOrderDto,
   UpdatePurchaseOrderLineDto,
   UpdateReportDto,
+  UpdateReturnDto,
+  UpdateReturnLineDto,
+  UpdateShipmentDto,
+  UpdateShipmentLineDto,
   UpdateSupplierDto,
   UpdateSupplierExpiryDto,
   UpdateSupplierGroupDto,
@@ -287,6 +310,8 @@ import type {
   UpdateWebhookDto,
   UpdateZoneDto,
   UserResponseDto,
+  UsersControllerFindAllParams,
+  UsersControllerFindOneParams,
   WebhookResponseDto,
   WebhooksControllerRemove200,
   ZoneResponseDto
@@ -369,6 +394,140 @@ export const authControllerMe = async ( options?: RequestInit): Promise<authCont
 
 
 
+export type rolesControllerFindAllResponse200 = {
+  data: void
+  status: 200
+}
+    
+export type rolesControllerFindAllResponseSuccess = (rolesControllerFindAllResponse200) & {
+  headers: Headers;
+};
+;
+
+export type rolesControllerFindAllResponse = (rolesControllerFindAllResponseSuccess)
+
+export const getRolesControllerFindAllUrl = () => {
+
+
+  
+
+  return `/roles`
+}
+
+export const rolesControllerFindAll = async ( options?: RequestInit): Promise<rolesControllerFindAllResponse> => {
+  
+  return customFetch<rolesControllerFindAllResponse>(getRolesControllerFindAllUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+export type rolesControllerFindOneResponse200 = {
+  data: void
+  status: 200
+}
+    
+export type rolesControllerFindOneResponseSuccess = (rolesControllerFindOneResponse200) & {
+  headers: Headers;
+};
+;
+
+export type rolesControllerFindOneResponse = (rolesControllerFindOneResponseSuccess)
+
+export const getRolesControllerFindOneUrl = (role: string,) => {
+
+
+  
+
+  return `/roles/${role}`
+}
+
+export const rolesControllerFindOne = async (role: string, options?: RequestInit): Promise<rolesControllerFindOneResponse> => {
+  
+  return customFetch<rolesControllerFindOneResponse>(getRolesControllerFindOneUrl(role),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+export type rolesControllerSetPermissionsResponse201 = {
+  data: void
+  status: 201
+}
+    
+export type rolesControllerSetPermissionsResponseSuccess = (rolesControllerSetPermissionsResponse201) & {
+  headers: Headers;
+};
+;
+
+export type rolesControllerSetPermissionsResponse = (rolesControllerSetPermissionsResponseSuccess)
+
+export const getRolesControllerSetPermissionsUrl = (role: string,) => {
+
+
+  
+
+  return `/roles/${role}`
+}
+
+export const rolesControllerSetPermissions = async (role: string,
+    setRolePermissionsDto: SetRolePermissionsDto, options?: RequestInit): Promise<rolesControllerSetPermissionsResponse> => {
+  
+  return customFetch<rolesControllerSetPermissionsResponse>(getRolesControllerSetPermissionsUrl(role),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      setRolePermissionsDto,)
+  }
+);}
+
+
+
+export type rolesControllerRemoveResponse200 = {
+  data: void
+  status: 200
+}
+    
+export type rolesControllerRemoveResponseSuccess = (rolesControllerRemoveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type rolesControllerRemoveResponse = (rolesControllerRemoveResponseSuccess)
+
+export const getRolesControllerRemoveUrl = (role: string,) => {
+
+
+  
+
+  return `/roles/${role}`
+}
+
+export const rolesControllerRemove = async (role: string, options?: RequestInit): Promise<rolesControllerRemoveResponse> => {
+  
+  return customFetch<rolesControllerRemoveResponse>(getRolesControllerRemoveUrl(role),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
 /**
  * Retrieve a paginated list of customers.
  * @summary List Customers
@@ -385,17 +544,24 @@ export type accountsControllerFindAllResponseSuccess = (accountsControllerFindAl
 
 export type accountsControllerFindAllResponse = (accountsControllerFindAllResponseSuccess)
 
-export const getAccountsControllerFindAllUrl = () => {
+export const getAccountsControllerFindAllUrl = (params?: AccountsControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/customers`
+  return stringifiedParams.length > 0 ? `/customers?${stringifiedParams}` : `/customers`
 }
 
-export const accountsControllerFindAll = async ( options?: RequestInit): Promise<accountsControllerFindAllResponse> => {
+export const accountsControllerFindAll = async (params?: AccountsControllerFindAllParams, options?: RequestInit): Promise<accountsControllerFindAllResponse> => {
   
-  return customFetch<accountsControllerFindAllResponse>(getAccountsControllerFindAllUrl(),
+  return customFetch<accountsControllerFindAllResponse>(getAccountsControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -460,17 +626,26 @@ export type accountsControllerFindOneResponseSuccess = (accountsControllerFindOn
 
 export type accountsControllerFindOneResponse = (accountsControllerFindOneResponseSuccess)
 
-export const getAccountsControllerFindOneUrl = (id: string,) => {
+export const getAccountsControllerFindOneUrl = (id: string,
+    params?: AccountsControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/customers/${id}`
+  return stringifiedParams.length > 0 ? `/customers/${id}?${stringifiedParams}` : `/customers/${id}`
 }
 
-export const accountsControllerFindOne = async (id: string, options?: RequestInit): Promise<accountsControllerFindOneResponse> => {
+export const accountsControllerFindOne = async (id: string,
+    params?: AccountsControllerFindOneParams, options?: RequestInit): Promise<accountsControllerFindOneResponse> => {
   
-  return customFetch<accountsControllerFindOneResponse>(getAccountsControllerFindOneUrl(id),
+  return customFetch<accountsControllerFindOneResponse>(getAccountsControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -614,17 +789,24 @@ export type accountGroupsControllerFindAllResponseSuccess = (accountGroupsContro
 
 export type accountGroupsControllerFindAllResponse = (accountGroupsControllerFindAllResponseSuccess)
 
-export const getAccountGroupsControllerFindAllUrl = () => {
+export const getAccountGroupsControllerFindAllUrl = (params?: AccountGroupsControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/customer-groups`
+  return stringifiedParams.length > 0 ? `/customer-groups?${stringifiedParams}` : `/customer-groups`
 }
 
-export const accountGroupsControllerFindAll = async ( options?: RequestInit): Promise<accountGroupsControllerFindAllResponse> => {
+export const accountGroupsControllerFindAll = async (params?: AccountGroupsControllerFindAllParams, options?: RequestInit): Promise<accountGroupsControllerFindAllResponse> => {
   
-  return customFetch<accountGroupsControllerFindAllResponse>(getAccountGroupsControllerFindAllUrl(),
+  return customFetch<accountGroupsControllerFindAllResponse>(getAccountGroupsControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -689,17 +871,26 @@ export type accountGroupsControllerFindOneResponseSuccess = (accountGroupsContro
 
 export type accountGroupsControllerFindOneResponse = (accountGroupsControllerFindOneResponseSuccess)
 
-export const getAccountGroupsControllerFindOneUrl = (id: string,) => {
+export const getAccountGroupsControllerFindOneUrl = (id: string,
+    params?: AccountGroupsControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/customer-groups/${id}`
+  return stringifiedParams.length > 0 ? `/customer-groups/${id}?${stringifiedParams}` : `/customer-groups/${id}`
 }
 
-export const accountGroupsControllerFindOne = async (id: string, options?: RequestInit): Promise<accountGroupsControllerFindOneResponse> => {
+export const accountGroupsControllerFindOne = async (id: string,
+    params?: AccountGroupsControllerFindOneParams, options?: RequestInit): Promise<accountGroupsControllerFindOneResponse> => {
   
-  return customFetch<accountGroupsControllerFindOneResponse>(getAccountGroupsControllerFindOneUrl(id),
+  return customFetch<accountGroupsControllerFindOneResponse>(getAccountGroupsControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -802,17 +993,24 @@ export type productsControllerFindAllResponseSuccess = (productsControllerFindAl
 
 export type productsControllerFindAllResponse = (productsControllerFindAllResponseSuccess)
 
-export const getProductsControllerFindAllUrl = () => {
+export const getProductsControllerFindAllUrl = (params?: ProductsControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/products`
+  return stringifiedParams.length > 0 ? `/products?${stringifiedParams}` : `/products`
 }
 
-export const productsControllerFindAll = async ( options?: RequestInit): Promise<productsControllerFindAllResponse> => {
+export const productsControllerFindAll = async (params?: ProductsControllerFindAllParams, options?: RequestInit): Promise<productsControllerFindAllResponse> => {
   
-  return customFetch<productsControllerFindAllResponse>(getProductsControllerFindAllUrl(),
+  return customFetch<productsControllerFindAllResponse>(getProductsControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -877,17 +1075,26 @@ export type productsControllerFindOneResponseSuccess = (productsControllerFindOn
 
 export type productsControllerFindOneResponse = (productsControllerFindOneResponseSuccess)
 
-export const getProductsControllerFindOneUrl = (id: string,) => {
+export const getProductsControllerFindOneUrl = (id: string,
+    params?: ProductsControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/products/${id}`
+  return stringifiedParams.length > 0 ? `/products/${id}?${stringifiedParams}` : `/products/${id}`
 }
 
-export const productsControllerFindOne = async (id: string, options?: RequestInit): Promise<productsControllerFindOneResponse> => {
+export const productsControllerFindOne = async (id: string,
+    params?: ProductsControllerFindOneParams, options?: RequestInit): Promise<productsControllerFindOneResponse> => {
   
-  return customFetch<productsControllerFindOneResponse>(getProductsControllerFindOneUrl(id),
+  return customFetch<productsControllerFindOneResponse>(getProductsControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -1421,17 +1628,24 @@ export type productGroupsControllerFindAllResponseSuccess = (productGroupsContro
 
 export type productGroupsControllerFindAllResponse = (productGroupsControllerFindAllResponseSuccess)
 
-export const getProductGroupsControllerFindAllUrl = () => {
+export const getProductGroupsControllerFindAllUrl = (params?: ProductGroupsControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/product-groups`
+  return stringifiedParams.length > 0 ? `/product-groups?${stringifiedParams}` : `/product-groups`
 }
 
-export const productGroupsControllerFindAll = async ( options?: RequestInit): Promise<productGroupsControllerFindAllResponse> => {
+export const productGroupsControllerFindAll = async (params?: ProductGroupsControllerFindAllParams, options?: RequestInit): Promise<productGroupsControllerFindAllResponse> => {
   
-  return customFetch<productGroupsControllerFindAllResponse>(getProductGroupsControllerFindAllUrl(),
+  return customFetch<productGroupsControllerFindAllResponse>(getProductGroupsControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -1496,17 +1710,26 @@ export type productGroupsControllerFindOneResponseSuccess = (productGroupsContro
 
 export type productGroupsControllerFindOneResponse = (productGroupsControllerFindOneResponseSuccess)
 
-export const getProductGroupsControllerFindOneUrl = (id: string,) => {
+export const getProductGroupsControllerFindOneUrl = (id: string,
+    params?: ProductGroupsControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/product-groups/${id}`
+  return stringifiedParams.length > 0 ? `/product-groups/${id}?${stringifiedParams}` : `/product-groups/${id}`
 }
 
-export const productGroupsControllerFindOne = async (id: string, options?: RequestInit): Promise<productGroupsControllerFindOneResponse> => {
+export const productGroupsControllerFindOne = async (id: string,
+    params?: ProductGroupsControllerFindOneParams, options?: RequestInit): Promise<productGroupsControllerFindOneResponse> => {
   
-  return customFetch<productGroupsControllerFindOneResponse>(getProductGroupsControllerFindOneUrl(id),
+  return customFetch<productGroupsControllerFindOneResponse>(getProductGroupsControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -2189,7 +2412,7 @@ export type glControllerGetAccountsResponseSuccess = (glControllerGetAccountsRes
 
 export type glControllerGetAccountsResponse = (glControllerGetAccountsResponseSuccess)
 
-export const getGlControllerGetAccountsUrl = (params: GlControllerGetAccountsParams,) => {
+export const getGlControllerGetAccountsUrl = (params?: GlControllerGetAccountsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -2204,7 +2427,7 @@ export const getGlControllerGetAccountsUrl = (params: GlControllerGetAccountsPar
   return stringifiedParams.length > 0 ? `/gl/accounts?${stringifiedParams}` : `/gl/accounts`
 }
 
-export const glControllerGetAccounts = async (params: GlControllerGetAccountsParams, options?: RequestInit): Promise<glControllerGetAccountsResponse> => {
+export const glControllerGetAccounts = async (params?: GlControllerGetAccountsParams, options?: RequestInit): Promise<glControllerGetAccountsResponse> => {
   
   return customFetch<glControllerGetAccountsResponse>(getGlControllerGetAccountsUrl(params),
   {      
@@ -3124,17 +3347,24 @@ export type uomDictionaryControllerFindAllResponseSuccess = (uomDictionaryContro
 
 export type uomDictionaryControllerFindAllResponse = (uomDictionaryControllerFindAllResponseSuccess)
 
-export const getUomDictionaryControllerFindAllUrl = () => {
+export const getUomDictionaryControllerFindAllUrl = (params?: UomDictionaryControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/settings/uom-dictionary`
+  return stringifiedParams.length > 0 ? `/settings/uom-dictionary?${stringifiedParams}` : `/settings/uom-dictionary`
 }
 
-export const uomDictionaryControllerFindAll = async ( options?: RequestInit): Promise<uomDictionaryControllerFindAllResponse> => {
+export const uomDictionaryControllerFindAll = async (params?: UomDictionaryControllerFindAllParams, options?: RequestInit): Promise<uomDictionaryControllerFindAllResponse> => {
   
-  return customFetch<uomDictionaryControllerFindAllResponse>(getUomDictionaryControllerFindAllUrl(),
+  return customFetch<uomDictionaryControllerFindAllResponse>(getUomDictionaryControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -3199,17 +3429,26 @@ export type uomDictionaryControllerFindOneResponseSuccess = (uomDictionaryContro
 
 export type uomDictionaryControllerFindOneResponse = (uomDictionaryControllerFindOneResponseSuccess)
 
-export const getUomDictionaryControllerFindOneUrl = (code: string,) => {
+export const getUomDictionaryControllerFindOneUrl = (code: string,
+    params?: UomDictionaryControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/settings/uom-dictionary/${code}`
+  return stringifiedParams.length > 0 ? `/settings/uom-dictionary/${code}?${stringifiedParams}` : `/settings/uom-dictionary/${code}`
 }
 
-export const uomDictionaryControllerFindOne = async (code: string, options?: RequestInit): Promise<uomDictionaryControllerFindOneResponse> => {
+export const uomDictionaryControllerFindOne = async (code: string,
+    params?: UomDictionaryControllerFindOneParams, options?: RequestInit): Promise<uomDictionaryControllerFindOneResponse> => {
   
-  return customFetch<uomDictionaryControllerFindOneResponse>(getUomDictionaryControllerFindOneUrl(code),
+  return customFetch<uomDictionaryControllerFindOneResponse>(getUomDictionaryControllerFindOneUrl(code,params),
   {      
     ...options,
     method: 'GET'
@@ -3312,17 +3551,24 @@ export type exchangeRatesControllerFindAllResponseSuccess = (exchangeRatesContro
 
 export type exchangeRatesControllerFindAllResponse = (exchangeRatesControllerFindAllResponseSuccess)
 
-export const getExchangeRatesControllerFindAllUrl = () => {
+export const getExchangeRatesControllerFindAllUrl = (params?: ExchangeRatesControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/settings/exchange-rates`
+  return stringifiedParams.length > 0 ? `/settings/exchange-rates?${stringifiedParams}` : `/settings/exchange-rates`
 }
 
-export const exchangeRatesControllerFindAll = async ( options?: RequestInit): Promise<exchangeRatesControllerFindAllResponse> => {
+export const exchangeRatesControllerFindAll = async (params?: ExchangeRatesControllerFindAllParams, options?: RequestInit): Promise<exchangeRatesControllerFindAllResponse> => {
   
-  return customFetch<exchangeRatesControllerFindAllResponse>(getExchangeRatesControllerFindAllUrl(),
+  return customFetch<exchangeRatesControllerFindAllResponse>(getExchangeRatesControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -3387,17 +3633,26 @@ export type exchangeRatesControllerFindOneResponseSuccess = (exchangeRatesContro
 
 export type exchangeRatesControllerFindOneResponse = (exchangeRatesControllerFindOneResponseSuccess)
 
-export const getExchangeRatesControllerFindOneUrl = (id: string,) => {
+export const getExchangeRatesControllerFindOneUrl = (id: string,
+    params?: ExchangeRatesControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/settings/exchange-rates/${id}`
+  return stringifiedParams.length > 0 ? `/settings/exchange-rates/${id}?${stringifiedParams}` : `/settings/exchange-rates/${id}`
 }
 
-export const exchangeRatesControllerFindOne = async (id: string, options?: RequestInit): Promise<exchangeRatesControllerFindOneResponse> => {
+export const exchangeRatesControllerFindOne = async (id: string,
+    params?: ExchangeRatesControllerFindOneParams, options?: RequestInit): Promise<exchangeRatesControllerFindOneResponse> => {
   
-  return customFetch<exchangeRatesControllerFindOneResponse>(getExchangeRatesControllerFindOneUrl(id),
+  return customFetch<exchangeRatesControllerFindOneResponse>(getExchangeRatesControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -3650,17 +3905,24 @@ export type tradingTermsControllerFindAllResponseSuccess = (tradingTermsControll
 
 export type tradingTermsControllerFindAllResponse = (tradingTermsControllerFindAllResponseSuccess)
 
-export const getTradingTermsControllerFindAllUrl = () => {
+export const getTradingTermsControllerFindAllUrl = (params?: TradingTermsControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/settings/trading-terms`
+  return stringifiedParams.length > 0 ? `/settings/trading-terms?${stringifiedParams}` : `/settings/trading-terms`
 }
 
-export const tradingTermsControllerFindAll = async ( options?: RequestInit): Promise<tradingTermsControllerFindAllResponse> => {
+export const tradingTermsControllerFindAll = async (params?: TradingTermsControllerFindAllParams, options?: RequestInit): Promise<tradingTermsControllerFindAllResponse> => {
   
-  return customFetch<tradingTermsControllerFindAllResponse>(getTradingTermsControllerFindAllUrl(),
+  return customFetch<tradingTermsControllerFindAllResponse>(getTradingTermsControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -3687,17 +3949,24 @@ export type costCentersControllerFindAllResponseSuccess = (costCentersController
 
 export type costCentersControllerFindAllResponse = (costCentersControllerFindAllResponseSuccess)
 
-export const getCostCentersControllerFindAllUrl = () => {
+export const getCostCentersControllerFindAllUrl = (params?: CostCentersControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/settings/cost-centers`
+  return stringifiedParams.length > 0 ? `/settings/cost-centers?${stringifiedParams}` : `/settings/cost-centers`
 }
 
-export const costCentersControllerFindAll = async ( options?: RequestInit): Promise<costCentersControllerFindAllResponse> => {
+export const costCentersControllerFindAll = async (params?: CostCentersControllerFindAllParams, options?: RequestInit): Promise<costCentersControllerFindAllResponse> => {
   
-  return customFetch<costCentersControllerFindAllResponse>(getCostCentersControllerFindAllUrl(),
+  return customFetch<costCentersControllerFindAllResponse>(getCostCentersControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -3876,17 +4145,24 @@ export type activitiesControllerFindAllResponseSuccess = (activitiesControllerFi
 
 export type activitiesControllerFindAllResponse = (activitiesControllerFindAllResponseSuccess)
 
-export const getActivitiesControllerFindAllUrl = () => {
+export const getActivitiesControllerFindAllUrl = (params?: ActivitiesControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/settings/activities`
+  return stringifiedParams.length > 0 ? `/settings/activities?${stringifiedParams}` : `/settings/activities`
 }
 
-export const activitiesControllerFindAll = async ( options?: RequestInit): Promise<activitiesControllerFindAllResponse> => {
+export const activitiesControllerFindAll = async (params?: ActivitiesControllerFindAllParams, options?: RequestInit): Promise<activitiesControllerFindAllResponse> => {
   
-  return customFetch<activitiesControllerFindAllResponse>(getActivitiesControllerFindAllUrl(),
+  return customFetch<activitiesControllerFindAllResponse>(getActivitiesControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -4307,17 +4583,24 @@ export type ordersControllerFindAllResponseSuccess = (ordersControllerFindAllRes
 
 export type ordersControllerFindAllResponse = (ordersControllerFindAllResponseSuccess)
 
-export const getOrdersControllerFindAllUrl = () => {
+export const getOrdersControllerFindAllUrl = (params?: OrdersControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/sales-orders`
+  return stringifiedParams.length > 0 ? `/sales-orders?${stringifiedParams}` : `/sales-orders`
 }
 
-export const ordersControllerFindAll = async ( options?: RequestInit): Promise<ordersControllerFindAllResponse> => {
+export const ordersControllerFindAll = async (params?: OrdersControllerFindAllParams, options?: RequestInit): Promise<ordersControllerFindAllResponse> => {
   
-  return customFetch<ordersControllerFindAllResponse>(getOrdersControllerFindAllUrl(),
+  return customFetch<ordersControllerFindAllResponse>(getOrdersControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -4382,17 +4665,26 @@ export type ordersControllerFindOneResponseSuccess = (ordersControllerFindOneRes
 
 export type ordersControllerFindOneResponse = (ordersControllerFindOneResponseSuccess)
 
-export const getOrdersControllerFindOneUrl = (id: string,) => {
+export const getOrdersControllerFindOneUrl = (id: string,
+    params?: OrdersControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/sales-orders/${id}`
+  return stringifiedParams.length > 0 ? `/sales-orders/${id}?${stringifiedParams}` : `/sales-orders/${id}`
 }
 
-export const ordersControllerFindOne = async (id: string, options?: RequestInit): Promise<ordersControllerFindOneResponse> => {
+export const ordersControllerFindOne = async (id: string,
+    params?: OrdersControllerFindOneParams, options?: RequestInit): Promise<ordersControllerFindOneResponse> => {
   
-  return customFetch<ordersControllerFindOneResponse>(getOrdersControllerFindOneUrl(id),
+  return customFetch<ordersControllerFindOneResponse>(getOrdersControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -4722,7 +5014,7 @@ export const ordersControllerAddPostConfirmationLine = async (id: string,
  * @summary Create Return
  */
 export type orderReturnsControllerCreateReturnResponse201 = {
-  data: OrderReturnsControllerCreateReturn201
+  data: ReturnResponseDto
   status: 201
 }
     
@@ -4742,7 +5034,7 @@ export const getOrderReturnsControllerCreateReturnUrl = (id: string,) => {
 }
 
 export const orderReturnsControllerCreateReturn = async (id: string,
-    orderReturnsControllerCreateReturnBody: Object, options?: RequestInit): Promise<orderReturnsControllerCreateReturnResponse> => {
+    createReturnDto: CreateReturnDto, options?: RequestInit): Promise<orderReturnsControllerCreateReturnResponse> => {
   
   return customFetch<orderReturnsControllerCreateReturnResponse>(getOrderReturnsControllerCreateReturnUrl(id),
   {      
@@ -4750,7 +5042,7 @@ export const orderReturnsControllerCreateReturn = async (id: string,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      orderReturnsControllerCreateReturnBody,)
+      createReturnDto,)
   }
 );}
 
@@ -4761,7 +5053,7 @@ export const orderReturnsControllerCreateReturn = async (id: string,
  * @summary Find Order Returns
  */
 export type orderReturnsControllerFindReturnsResponse200 = {
-  data: OrderReturnsControllerFindReturns200
+  data: ReturnResponseDto
   status: 200
 }
     
@@ -4798,7 +5090,7 @@ export const orderReturnsControllerFindReturns = async (id: string, options?: Re
  * @summary Find Return
  */
 export type orderReturnsControllerFindReturnResponse200 = {
-  data: OrderReturnsControllerFindReturn200
+  data: ReturnResponseDto
   status: 200
 }
     
@@ -4837,7 +5129,7 @@ export const orderReturnsControllerFindReturn = async (id: string,
  * @summary Update Return
  */
 export type orderReturnsControllerUpdateReturnResponse200 = {
-  data: OrderReturnsControllerUpdateReturn200
+  data: ReturnResponseDto
   status: 200
 }
     
@@ -4859,7 +5151,7 @@ export const getOrderReturnsControllerUpdateReturnUrl = (id: string,
 
 export const orderReturnsControllerUpdateReturn = async (id: string,
     returnId: string,
-    orderReturnsControllerUpdateReturnBody: Object, options?: RequestInit): Promise<orderReturnsControllerUpdateReturnResponse> => {
+    updateReturnDto: UpdateReturnDto, options?: RequestInit): Promise<orderReturnsControllerUpdateReturnResponse> => {
   
   return customFetch<orderReturnsControllerUpdateReturnResponse>(getOrderReturnsControllerUpdateReturnUrl(id,returnId),
   {      
@@ -4867,7 +5159,7 @@ export const orderReturnsControllerUpdateReturn = async (id: string,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      orderReturnsControllerUpdateReturnBody,)
+      updateReturnDto,)
   }
 );}
 
@@ -4878,7 +5170,7 @@ export const orderReturnsControllerUpdateReturn = async (id: string,
  * @summary Change Return State
  */
 export type orderReturnsControllerChangeReturnStateResponse200 = {
-  data: OrderReturnsControllerChangeReturnState200
+  data: ReturnResponseDto
   status: 200
 }
     
@@ -4900,7 +5192,7 @@ export const getOrderReturnsControllerChangeReturnStateUrl = (id: string,
 
 export const orderReturnsControllerChangeReturnState = async (id: string,
     returnId: string,
-    orderReturnsControllerChangeReturnStateBody: Object, options?: RequestInit): Promise<orderReturnsControllerChangeReturnStateResponse> => {
+    changeReturnStateDto: ChangeReturnStateDto, options?: RequestInit): Promise<orderReturnsControllerChangeReturnStateResponse> => {
   
   return customFetch<orderReturnsControllerChangeReturnStateResponse>(getOrderReturnsControllerChangeReturnStateUrl(id,returnId),
   {      
@@ -4908,7 +5200,7 @@ export const orderReturnsControllerChangeReturnState = async (id: string,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      orderReturnsControllerChangeReturnStateBody,)
+      changeReturnStateDto,)
   }
 );}
 
@@ -4919,7 +5211,7 @@ export const orderReturnsControllerChangeReturnState = async (id: string,
  * @summary Add Return Line
  */
 export type orderReturnsControllerAddReturnLineResponse201 = {
-  data: OrderReturnsControllerAddReturnLine201
+  data: ReturnResponseDto
   status: 201
 }
     
@@ -4941,7 +5233,7 @@ export const getOrderReturnsControllerAddReturnLineUrl = (id: string,
 
 export const orderReturnsControllerAddReturnLine = async (id: string,
     returnId: string,
-    orderReturnsControllerAddReturnLineBody: Object, options?: RequestInit): Promise<orderReturnsControllerAddReturnLineResponse> => {
+    addReturnLineDto: AddReturnLineDto, options?: RequestInit): Promise<orderReturnsControllerAddReturnLineResponse> => {
   
   return customFetch<orderReturnsControllerAddReturnLineResponse>(getOrderReturnsControllerAddReturnLineUrl(id,returnId),
   {      
@@ -4949,7 +5241,7 @@ export const orderReturnsControllerAddReturnLine = async (id: string,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      orderReturnsControllerAddReturnLineBody,)
+      addReturnLineDto,)
   }
 );}
 
@@ -4960,7 +5252,7 @@ export const orderReturnsControllerAddReturnLine = async (id: string,
  * @summary Update Return Line
  */
 export type orderReturnsControllerUpdateReturnLineResponse200 = {
-  data: OrderReturnsControllerUpdateReturnLine200
+  data: ReturnResponseDto
   status: 200
 }
     
@@ -4984,7 +5276,7 @@ export const getOrderReturnsControllerUpdateReturnLineUrl = (id: string,
 export const orderReturnsControllerUpdateReturnLine = async (id: string,
     returnId: string,
     lineId: string,
-    orderReturnsControllerUpdateReturnLineBody: Object, options?: RequestInit): Promise<orderReturnsControllerUpdateReturnLineResponse> => {
+    updateReturnLineDto: UpdateReturnLineDto, options?: RequestInit): Promise<orderReturnsControllerUpdateReturnLineResponse> => {
   
   return customFetch<orderReturnsControllerUpdateReturnLineResponse>(getOrderReturnsControllerUpdateReturnLineUrl(id,returnId,lineId),
   {      
@@ -4992,7 +5284,7 @@ export const orderReturnsControllerUpdateReturnLine = async (id: string,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      orderReturnsControllerUpdateReturnLineBody,)
+      updateReturnLineDto,)
   }
 );}
 
@@ -5003,7 +5295,7 @@ export const orderReturnsControllerUpdateReturnLine = async (id: string,
  * @summary Remove Return Line
  */
 export type orderReturnsControllerRemoveReturnLineResponse200 = {
-  data: OrderReturnsControllerRemoveReturnLine200
+  data: ReturnResponseDto
   status: 200
 }
     
@@ -5044,7 +5336,7 @@ export const orderReturnsControllerRemoveReturnLine = async (id: string,
  * @summary Receive Return
  */
 export type orderReturnsControllerReceiveReturnResponse201 = {
-  data: OrderReturnsControllerReceiveReturn201
+  data: ReturnResponseDto
   status: 201
 }
     
@@ -5066,7 +5358,7 @@ export const getOrderReturnsControllerReceiveReturnUrl = (id: string,
 
 export const orderReturnsControllerReceiveReturn = async (id: string,
     returnId: string,
-    orderReturnsControllerReceiveReturnBody: Object, options?: RequestInit): Promise<orderReturnsControllerReceiveReturnResponse> => {
+    receiveReturnDto: ReceiveReturnDto, options?: RequestInit): Promise<orderReturnsControllerReceiveReturnResponse> => {
   
   return customFetch<orderReturnsControllerReceiveReturnResponse>(getOrderReturnsControllerReceiveReturnUrl(id,returnId),
   {      
@@ -5074,7 +5366,7 @@ export const orderReturnsControllerReceiveReturn = async (id: string,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      orderReturnsControllerReceiveReturnBody,)
+      receiveReturnDto,)
   }
 );}
 
@@ -5085,7 +5377,7 @@ export const orderReturnsControllerReceiveReturn = async (id: string,
  * @summary Create Shipment
  */
 export type orderShipmentsControllerCreateShipmentResponse201 = {
-  data: OrderShipmentsControllerCreateShipment201
+  data: ShipmentResponseDto
   status: 201
 }
     
@@ -5105,7 +5397,7 @@ export const getOrderShipmentsControllerCreateShipmentUrl = (id: string,) => {
 }
 
 export const orderShipmentsControllerCreateShipment = async (id: string,
-    orderShipmentsControllerCreateShipmentBody: Object, options?: RequestInit): Promise<orderShipmentsControllerCreateShipmentResponse> => {
+    createShipmentDto: CreateShipmentDto, options?: RequestInit): Promise<orderShipmentsControllerCreateShipmentResponse> => {
   
   return customFetch<orderShipmentsControllerCreateShipmentResponse>(getOrderShipmentsControllerCreateShipmentUrl(id),
   {      
@@ -5113,7 +5405,7 @@ export const orderShipmentsControllerCreateShipment = async (id: string,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      orderShipmentsControllerCreateShipmentBody,)
+      createShipmentDto,)
   }
 );}
 
@@ -5200,7 +5492,7 @@ export const orderShipmentsControllerFindShipment = async (id: string,
  * @summary Update Shipment
  */
 export type orderShipmentsControllerUpdateShipmentResponse200 = {
-  data: OrderShipmentsControllerUpdateShipment200
+  data: ShipmentResponseDto
   status: 200
 }
     
@@ -5222,7 +5514,7 @@ export const getOrderShipmentsControllerUpdateShipmentUrl = (id: string,
 
 export const orderShipmentsControllerUpdateShipment = async (id: string,
     shipmentId: string,
-    orderShipmentsControllerUpdateShipmentBody: Object, options?: RequestInit): Promise<orderShipmentsControllerUpdateShipmentResponse> => {
+    updateShipmentDto: UpdateShipmentDto, options?: RequestInit): Promise<orderShipmentsControllerUpdateShipmentResponse> => {
   
   return customFetch<orderShipmentsControllerUpdateShipmentResponse>(getOrderShipmentsControllerUpdateShipmentUrl(id,shipmentId),
   {      
@@ -5230,7 +5522,7 @@ export const orderShipmentsControllerUpdateShipment = async (id: string,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      orderShipmentsControllerUpdateShipmentBody,)
+      updateShipmentDto,)
   }
 );}
 
@@ -5241,7 +5533,7 @@ export const orderShipmentsControllerUpdateShipment = async (id: string,
  * @summary Change Shipment State
  */
 export type orderShipmentsControllerChangeShipmentStateResponse200 = {
-  data: OrderShipmentsControllerChangeShipmentState200
+  data: ShipmentResponseDto
   status: 200
 }
     
@@ -5263,7 +5555,7 @@ export const getOrderShipmentsControllerChangeShipmentStateUrl = (id: string,
 
 export const orderShipmentsControllerChangeShipmentState = async (id: string,
     shipmentId: string,
-    orderShipmentsControllerChangeShipmentStateBody: Object, options?: RequestInit): Promise<orderShipmentsControllerChangeShipmentStateResponse> => {
+    changeShipmentStateDto: ChangeShipmentStateDto, options?: RequestInit): Promise<orderShipmentsControllerChangeShipmentStateResponse> => {
   
   return customFetch<orderShipmentsControllerChangeShipmentStateResponse>(getOrderShipmentsControllerChangeShipmentStateUrl(id,shipmentId),
   {      
@@ -5271,7 +5563,7 @@ export const orderShipmentsControllerChangeShipmentState = async (id: string,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      orderShipmentsControllerChangeShipmentStateBody,)
+      changeShipmentStateDto,)
   }
 );}
 
@@ -5282,7 +5574,7 @@ export const orderShipmentsControllerChangeShipmentState = async (id: string,
  * @summary Cancel Shipment
  */
 export type orderShipmentsControllerCancelShipmentResponse201 = {
-  data: OrderShipmentsControllerCancelShipment201
+  data: ShipmentResponseDto
   status: 201
 }
     
@@ -5304,7 +5596,7 @@ export const getOrderShipmentsControllerCancelShipmentUrl = (id: string,
 
 export const orderShipmentsControllerCancelShipment = async (id: string,
     shipmentId: string,
-    orderShipmentsControllerCancelShipmentBody: Object, options?: RequestInit): Promise<orderShipmentsControllerCancelShipmentResponse> => {
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<orderShipmentsControllerCancelShipmentResponse> => {
   
   return customFetch<orderShipmentsControllerCancelShipmentResponse>(getOrderShipmentsControllerCancelShipmentUrl(id,shipmentId),
   {      
@@ -5312,7 +5604,7 @@ export const orderShipmentsControllerCancelShipment = async (id: string,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      orderShipmentsControllerCancelShipmentBody,)
+      emptyBodyDto,)
   }
 );}
 
@@ -5323,7 +5615,7 @@ export const orderShipmentsControllerCancelShipment = async (id: string,
  * @summary Add Shipment Line
  */
 export type orderShipmentsControllerAddShipmentLineResponse201 = {
-  data: OrderShipmentsControllerAddShipmentLine201
+  data: ShipmentResponseDto
   status: 201
 }
     
@@ -5345,7 +5637,7 @@ export const getOrderShipmentsControllerAddShipmentLineUrl = (id: string,
 
 export const orderShipmentsControllerAddShipmentLine = async (id: string,
     shipmentId: string,
-    orderShipmentsControllerAddShipmentLineBody: Object, options?: RequestInit): Promise<orderShipmentsControllerAddShipmentLineResponse> => {
+    addShipmentLineDto: AddShipmentLineDto, options?: RequestInit): Promise<orderShipmentsControllerAddShipmentLineResponse> => {
   
   return customFetch<orderShipmentsControllerAddShipmentLineResponse>(getOrderShipmentsControllerAddShipmentLineUrl(id,shipmentId),
   {      
@@ -5353,7 +5645,7 @@ export const orderShipmentsControllerAddShipmentLine = async (id: string,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      orderShipmentsControllerAddShipmentLineBody,)
+      addShipmentLineDto,)
   }
 );}
 
@@ -5364,7 +5656,7 @@ export const orderShipmentsControllerAddShipmentLine = async (id: string,
  * @summary Update Shipment Line
  */
 export type orderShipmentsControllerUpdateShipmentLineResponse200 = {
-  data: OrderShipmentsControllerUpdateShipmentLine200
+  data: ShipmentResponseDto
   status: 200
 }
     
@@ -5388,7 +5680,7 @@ export const getOrderShipmentsControllerUpdateShipmentLineUrl = (id: string,
 export const orderShipmentsControllerUpdateShipmentLine = async (id: string,
     shipmentId: string,
     lineId: string,
-    orderShipmentsControllerUpdateShipmentLineBody: Object, options?: RequestInit): Promise<orderShipmentsControllerUpdateShipmentLineResponse> => {
+    updateShipmentLineDto: UpdateShipmentLineDto, options?: RequestInit): Promise<orderShipmentsControllerUpdateShipmentLineResponse> => {
   
   return customFetch<orderShipmentsControllerUpdateShipmentLineResponse>(getOrderShipmentsControllerUpdateShipmentLineUrl(id,shipmentId,lineId),
   {      
@@ -5396,7 +5688,7 @@ export const orderShipmentsControllerUpdateShipmentLine = async (id: string,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      orderShipmentsControllerUpdateShipmentLineBody,)
+      updateShipmentLineDto,)
   }
 );}
 
@@ -5407,7 +5699,7 @@ export const orderShipmentsControllerUpdateShipmentLine = async (id: string,
  * @summary Remove Shipment Line
  */
 export type orderShipmentsControllerRemoveShipmentLineResponse200 = {
-  data: OrderShipmentsControllerRemoveShipmentLine200
+  data: ShipmentResponseDto
   status: 200
 }
     
@@ -5503,17 +5795,26 @@ export type globalShipmentsControllerFindOneResponseSuccess = (globalShipmentsCo
 
 export type globalShipmentsControllerFindOneResponse = (globalShipmentsControllerFindOneResponseSuccess)
 
-export const getGlobalShipmentsControllerFindOneUrl = (id: string,) => {
+export const getGlobalShipmentsControllerFindOneUrl = (id: string,
+    params?: GlobalShipmentsControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/shipments/${id}`
+  return stringifiedParams.length > 0 ? `/shipments/${id}?${stringifiedParams}` : `/shipments/${id}`
 }
 
-export const globalShipmentsControllerFindOne = async (id: string, options?: RequestInit): Promise<globalShipmentsControllerFindOneResponse> => {
+export const globalShipmentsControllerFindOne = async (id: string,
+    params?: GlobalShipmentsControllerFindOneParams, options?: RequestInit): Promise<globalShipmentsControllerFindOneResponse> => {
   
-  return customFetch<globalShipmentsControllerFindOneResponse>(getGlobalShipmentsControllerFindOneUrl(id),
+  return customFetch<globalShipmentsControllerFindOneResponse>(getGlobalShipmentsControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -6241,17 +6542,24 @@ export type transfersControllerFindAllResponseSuccess = (transfersControllerFind
 
 export type transfersControllerFindAllResponse = (transfersControllerFindAllResponseSuccess)
 
-export const getTransfersControllerFindAllUrl = () => {
+export const getTransfersControllerFindAllUrl = (params?: TransfersControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/transfers`
+  return stringifiedParams.length > 0 ? `/transfers?${stringifiedParams}` : `/transfers`
 }
 
-export const transfersControllerFindAll = async ( options?: RequestInit): Promise<transfersControllerFindAllResponse> => {
+export const transfersControllerFindAll = async (params?: TransfersControllerFindAllParams, options?: RequestInit): Promise<transfersControllerFindAllResponse> => {
   
-  return customFetch<transfersControllerFindAllResponse>(getTransfersControllerFindAllUrl(),
+  return customFetch<transfersControllerFindAllResponse>(getTransfersControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -6316,17 +6624,26 @@ export type transfersControllerFindOneResponseSuccess = (transfersControllerFind
 
 export type transfersControllerFindOneResponse = (transfersControllerFindOneResponseSuccess)
 
-export const getTransfersControllerFindOneUrl = (id: string,) => {
+export const getTransfersControllerFindOneUrl = (id: string,
+    params?: TransfersControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/transfers/${id}`
+  return stringifiedParams.length > 0 ? `/transfers/${id}?${stringifiedParams}` : `/transfers/${id}`
 }
 
-export const transfersControllerFindOne = async (id: string, options?: RequestInit): Promise<transfersControllerFindOneResponse> => {
+export const transfersControllerFindOne = async (id: string,
+    params?: TransfersControllerFindOneParams, options?: RequestInit): Promise<transfersControllerFindOneResponse> => {
   
-  return customFetch<transfersControllerFindOneResponse>(getTransfersControllerFindOneUrl(id),
+  return customFetch<transfersControllerFindOneResponse>(getTransfersControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -6511,17 +6828,24 @@ export type taxCategoriesControllerFindAllResponseSuccess = (taxCategoriesContro
 
 export type taxCategoriesControllerFindAllResponse = (taxCategoriesControllerFindAllResponseSuccess)
 
-export const getTaxCategoriesControllerFindAllUrl = () => {
+export const getTaxCategoriesControllerFindAllUrl = (params?: TaxCategoriesControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/tax-categories`
+  return stringifiedParams.length > 0 ? `/tax-categories?${stringifiedParams}` : `/tax-categories`
 }
 
-export const taxCategoriesControllerFindAll = async ( options?: RequestInit): Promise<taxCategoriesControllerFindAllResponse> => {
+export const taxCategoriesControllerFindAll = async (params?: TaxCategoriesControllerFindAllParams, options?: RequestInit): Promise<taxCategoriesControllerFindAllResponse> => {
   
-  return customFetch<taxCategoriesControllerFindAllResponse>(getTaxCategoriesControllerFindAllUrl(),
+  return customFetch<taxCategoriesControllerFindAllResponse>(getTaxCategoriesControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -6586,17 +6910,26 @@ export type taxCategoriesControllerFindOneResponseSuccess = (taxCategoriesContro
 
 export type taxCategoriesControllerFindOneResponse = (taxCategoriesControllerFindOneResponseSuccess)
 
-export const getTaxCategoriesControllerFindOneUrl = (id: string,) => {
+export const getTaxCategoriesControllerFindOneUrl = (id: string,
+    params?: TaxCategoriesControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/tax-categories/${id}`
+  return stringifiedParams.length > 0 ? `/tax-categories/${id}?${stringifiedParams}` : `/tax-categories/${id}`
 }
 
-export const taxCategoriesControllerFindOne = async (id: string, options?: RequestInit): Promise<taxCategoriesControllerFindOneResponse> => {
+export const taxCategoriesControllerFindOne = async (id: string,
+    params?: TaxCategoriesControllerFindOneParams, options?: RequestInit): Promise<taxCategoriesControllerFindOneResponse> => {
   
-  return customFetch<taxCategoriesControllerFindOneResponse>(getTaxCategoriesControllerFindOneUrl(id),
+  return customFetch<taxCategoriesControllerFindOneResponse>(getTaxCategoriesControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -6716,7 +7049,7 @@ export const getReportsControllerRunHookUrl = (hookSlug: string,
 }
 
 export const reportsControllerRunHook = async (hookSlug: string,
-    emptyBodyDto: EmptyBodyDto,
+    runHookBodyDto: RunHookBodyDto,
     params: ReportsControllerRunHookParams, options?: RequestInit): Promise<reportsControllerRunHookResponse> => {
   
   return customFetch<reportsControllerRunHookResponse>(getReportsControllerRunHookUrl(hookSlug,params),
@@ -6725,7 +7058,7 @@ export const reportsControllerRunHook = async (hookSlug: string,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      emptyBodyDto,)
+      runHookBodyDto,)
   }
 );}
 
@@ -7112,7 +7445,7 @@ export const reportsControllerPreview = async (previewReportDto: PreviewReportDt
  * @summary Create Sales Invoice
  */
 export type salesInvoiceControllerCreateSalesInvoiceResponse201 = {
-  data: SalesInvoiceControllerCreateSalesInvoice201
+  data: SalesInvoiceResponseDto
   status: 201
 }
     
@@ -7151,7 +7484,7 @@ export const salesInvoiceControllerCreateSalesInvoice = async (id: string,
  * @summary Get Sales Invoices
  */
 export type salesInvoiceControllerGetSalesInvoicesResponse200 = {
-  data: SalesInvoiceControllerGetSalesInvoices200
+  data: SalesInvoiceResponseDto
   status: 200
 }
     
@@ -7188,7 +7521,7 @@ export const salesInvoiceControllerGetSalesInvoices = async (id: string, options
  * @summary Get Purchase Bills
  */
 export type purchaseInvoiceControllerGetPurchaseBillsResponse200 = {
-  data: PurchaseInvoiceControllerGetPurchaseBills200
+  data: PurchaseInvoiceResponseDto
   status: 200
 }
     
@@ -7225,7 +7558,7 @@ export const purchaseInvoiceControllerGetPurchaseBills = async (id: string, opti
  * @summary Get Sales Invoice Details
  */
 export type invoiceDetailControllerGetSalesInvoiceDetailsResponse200 = {
-  data: InvoiceDetailControllerGetSalesInvoiceDetails200
+  data: SalesInvoiceResponseDto
   status: 200
 }
     
@@ -7262,7 +7595,7 @@ export const invoiceDetailControllerGetSalesInvoiceDetails = async (id: string, 
  * @summary Get All Sales Invoices
  */
 export type invoiceDetailControllerGetSalesInvoicesGlobalResponse200 = {
-  data: InvoiceDetailControllerGetSalesInvoicesGlobal200
+  data: SalesInvoiceListResponseDto
   status: 200
 }
     
@@ -7306,7 +7639,7 @@ export const invoiceDetailControllerGetSalesInvoicesGlobal = async (params: Invo
  * @summary Get All Purchase Invoices
  */
 export type invoiceDetailControllerGetPurchaseInvoicesGlobalResponse200 = {
-  data: InvoiceDetailControllerGetPurchaseInvoicesGlobal200
+  data: PurchaseInvoiceListResponseDto
   status: 200
 }
     
@@ -7350,7 +7683,7 @@ export const invoiceDetailControllerGetPurchaseInvoicesGlobal = async (params: I
  * @summary Create Draft Invoice
  */
 export type invoiceDetailControllerCreateDraftInvoiceResponse201 = {
-  data: InvoiceDetailControllerCreateDraftInvoice201
+  data: PurchaseInvoiceResponseDto
   status: 201
 }
     
@@ -7388,7 +7721,7 @@ export const invoiceDetailControllerCreateDraftInvoice = async (createStandalone
  * @summary Get Purchase Invoice Details
  */
 export type invoiceDetailControllerGetPurchaseBillDetailsResponse200 = {
-  data: InvoiceDetailControllerGetPurchaseBillDetails200
+  data: PurchaseInvoiceResponseDto
   status: 200
 }
     
@@ -7425,7 +7758,7 @@ export const invoiceDetailControllerGetPurchaseBillDetails = async (id: string, 
  * @summary Update Invoice
  */
 export type invoiceDetailControllerUpdateInvoiceResponse200 = {
-  data: InvoiceDetailControllerUpdateInvoice200
+  data: PurchaseInvoiceResponseDto
   status: 200
 }
     
@@ -7464,7 +7797,7 @@ export const invoiceDetailControllerUpdateInvoice = async (id: string,
  * @summary Post Invoice
  */
 export type invoiceDetailControllerPostInvoiceResponse200 = {
-  data: InvoiceDetailControllerPostInvoice200
+  data: PurchaseInvoiceResponseDto
   status: 200
 }
     
@@ -7503,7 +7836,7 @@ export const invoiceDetailControllerPostInvoice = async (id: string,
  * @summary Change Invoice State
  */
 export type invoiceDetailControllerChangeInvoiceStateResponse200 = {
-  data: InvoiceDetailControllerChangeInvoiceState200
+  data: PurchaseInvoiceResponseDto
   status: 200
 }
     
@@ -7542,7 +7875,7 @@ export const invoiceDetailControllerChangeInvoiceState = async (id: string,
  * @summary Update Invoice Line
  */
 export type invoiceDetailControllerUpdateInvoiceLineResponse200 = {
-  data: InvoiceDetailControllerUpdateInvoiceLine200
+  data: PurchaseInvoiceResponseDto
   status: 200
 }
     
@@ -7583,7 +7916,7 @@ export const invoiceDetailControllerUpdateInvoiceLine = async (id: string,
  * @summary Remove Invoice Line
  */
 export type invoiceDetailControllerRemoveInvoiceLineResponse200 = {
-  data: InvoiceDetailControllerRemoveInvoiceLine200
+  data: PurchaseInvoiceResponseDto
   status: 200
 }
     
@@ -7622,7 +7955,7 @@ export const invoiceDetailControllerRemoveInvoiceLine = async (id: string,
  * @summary Add Invoice Line
  */
 export type invoiceDetailControllerAddInvoiceLineResponse201 = {
-  data: InvoiceDetailControllerAddInvoiceLine201
+  data: PurchaseInvoiceResponseDto
   status: 201
 }
     
@@ -7661,7 +7994,7 @@ export const invoiceDetailControllerAddInvoiceLine = async (id: string,
  * @summary Resolve Invoice Line
  */
 export type invoiceDetailControllerResolveInvoiceLineResponse200 = {
-  data: InvoiceDetailControllerResolveInvoiceLine200
+  data: PurchaseInvoiceResponseDto
   status: 200
 }
     
@@ -7700,7 +8033,7 @@ export const invoiceDetailControllerResolveInvoiceLine = async (lineId: string,
  * @summary Unresolve Invoice Line
  */
 export type invoiceDetailControllerUnresolveInvoiceLineResponse200 = {
-  data: InvoiceDetailControllerUnresolveInvoiceLine200
+  data: PurchaseInvoiceResponseDto
   status: 200
 }
     
@@ -7739,7 +8072,7 @@ export const invoiceDetailControllerUnresolveInvoiceLine = async (lineId: string
  * @summary Auto-Match Purchase Order
  */
 export type invoiceDetailControllerAutoMatchPurchaseOrderResponse200 = {
-  data: InvoiceDetailControllerAutoMatchPurchaseOrder200
+  data: PurchaseInvoiceResponseDto
   status: 200
 }
     
@@ -8003,17 +8336,26 @@ export type paymentsControllerFindOneResponseSuccess = (paymentsControllerFindOn
 
 export type paymentsControllerFindOneResponse = (paymentsControllerFindOneResponseSuccess)
 
-export const getPaymentsControllerFindOneUrl = (id: string,) => {
+export const getPaymentsControllerFindOneUrl = (id: string,
+    params?: PaymentsControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/payments/${id}`
+  return stringifiedParams.length > 0 ? `/payments/${id}?${stringifiedParams}` : `/payments/${id}`
 }
 
-export const paymentsControllerFindOne = async (id: string, options?: RequestInit): Promise<paymentsControllerFindOneResponse> => {
+export const paymentsControllerFindOne = async (id: string,
+    params?: PaymentsControllerFindOneParams, options?: RequestInit): Promise<paymentsControllerFindOneResponse> => {
   
-  return customFetch<paymentsControllerFindOneResponse>(getPaymentsControllerFindOneUrl(id),
+  return customFetch<paymentsControllerFindOneResponse>(getPaymentsControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -8168,6 +8510,44 @@ export const getPaymentsControllerExportAbaUrl = () => {
 export const paymentsControllerExportAba = async (batchPaymentActionDto: BatchPaymentActionDto, options?: RequestInit): Promise<paymentsControllerExportAbaResponse> => {
   
   return customFetch<paymentsControllerExportAbaResponse>(getPaymentsControllerExportAbaUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      batchPaymentActionDto,)
+  }
+);}
+
+
+
+/**
+ * Export selected payments into a NACHA ACH file format.
+ * @summary Export NACHA
+ */
+export type paymentsControllerExportNachaResponse201 = {
+  data: ExportAbaResponseDto
+  status: 201
+}
+    
+export type paymentsControllerExportNachaResponseSuccess = (paymentsControllerExportNachaResponse201) & {
+  headers: Headers;
+};
+;
+
+export type paymentsControllerExportNachaResponse = (paymentsControllerExportNachaResponseSuccess)
+
+export const getPaymentsControllerExportNachaUrl = () => {
+
+
+  
+
+  return `/payments/export-nacha`
+}
+
+export const paymentsControllerExportNacha = async (batchPaymentActionDto: BatchPaymentActionDto, options?: RequestInit): Promise<paymentsControllerExportNachaResponse> => {
+  
+  return customFetch<paymentsControllerExportNachaResponse>(getPaymentsControllerExportNachaUrl(),
   {      
     ...options,
     method: 'POST',
@@ -8439,17 +8819,24 @@ export type suppliersControllerFindAllResponseSuccess = (suppliersControllerFind
 
 export type suppliersControllerFindAllResponse = (suppliersControllerFindAllResponseSuccess)
 
-export const getSuppliersControllerFindAllUrl = () => {
+export const getSuppliersControllerFindAllUrl = (params?: SuppliersControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/suppliers`
+  return stringifiedParams.length > 0 ? `/suppliers?${stringifiedParams}` : `/suppliers`
 }
 
-export const suppliersControllerFindAll = async ( options?: RequestInit): Promise<suppliersControllerFindAllResponse> => {
+export const suppliersControllerFindAll = async (params?: SuppliersControllerFindAllParams, options?: RequestInit): Promise<suppliersControllerFindAllResponse> => {
   
-  return customFetch<suppliersControllerFindAllResponse>(getSuppliersControllerFindAllUrl(),
+  return customFetch<suppliersControllerFindAllResponse>(getSuppliersControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -8551,17 +8938,26 @@ export type suppliersControllerFindOneResponseSuccess = (suppliersControllerFind
 
 export type suppliersControllerFindOneResponse = (suppliersControllerFindOneResponseSuccess)
 
-export const getSuppliersControllerFindOneUrl = (id: string,) => {
+export const getSuppliersControllerFindOneUrl = (id: string,
+    params?: SuppliersControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/suppliers/${id}`
+  return stringifiedParams.length > 0 ? `/suppliers/${id}?${stringifiedParams}` : `/suppliers/${id}`
 }
 
-export const suppliersControllerFindOne = async (id: string, options?: RequestInit): Promise<suppliersControllerFindOneResponse> => {
+export const suppliersControllerFindOne = async (id: string,
+    params?: SuppliersControllerFindOneParams, options?: RequestInit): Promise<suppliersControllerFindOneResponse> => {
   
-  return customFetch<suppliersControllerFindOneResponse>(getSuppliersControllerFindOneUrl(id),
+  return customFetch<suppliersControllerFindOneResponse>(getSuppliersControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -8898,17 +9294,24 @@ export type supplierGroupsControllerFindAllResponseSuccess = (supplierGroupsCont
 
 export type supplierGroupsControllerFindAllResponse = (supplierGroupsControllerFindAllResponseSuccess)
 
-export const getSupplierGroupsControllerFindAllUrl = () => {
+export const getSupplierGroupsControllerFindAllUrl = (params?: SupplierGroupsControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/supplier-groups`
+  return stringifiedParams.length > 0 ? `/supplier-groups?${stringifiedParams}` : `/supplier-groups`
 }
 
-export const supplierGroupsControllerFindAll = async ( options?: RequestInit): Promise<supplierGroupsControllerFindAllResponse> => {
+export const supplierGroupsControllerFindAll = async (params?: SupplierGroupsControllerFindAllParams, options?: RequestInit): Promise<supplierGroupsControllerFindAllResponse> => {
   
-  return customFetch<supplierGroupsControllerFindAllResponse>(getSupplierGroupsControllerFindAllUrl(),
+  return customFetch<supplierGroupsControllerFindAllResponse>(getSupplierGroupsControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -8973,17 +9376,26 @@ export type supplierGroupsControllerFindOneResponseSuccess = (supplierGroupsCont
 
 export type supplierGroupsControllerFindOneResponse = (supplierGroupsControllerFindOneResponseSuccess)
 
-export const getSupplierGroupsControllerFindOneUrl = (id: string,) => {
+export const getSupplierGroupsControllerFindOneUrl = (id: string,
+    params?: SupplierGroupsControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/supplier-groups/${id}`
+  return stringifiedParams.length > 0 ? `/supplier-groups/${id}?${stringifiedParams}` : `/supplier-groups/${id}`
 }
 
-export const supplierGroupsControllerFindOne = async (id: string, options?: RequestInit): Promise<supplierGroupsControllerFindOneResponse> => {
+export const supplierGroupsControllerFindOne = async (id: string,
+    params?: SupplierGroupsControllerFindOneParams, options?: RequestInit): Promise<supplierGroupsControllerFindOneResponse> => {
   
-  return customFetch<supplierGroupsControllerFindOneResponse>(getSupplierGroupsControllerFindOneUrl(id),
+  return customFetch<supplierGroupsControllerFindOneResponse>(getSupplierGroupsControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -9124,17 +9536,24 @@ export type purchaseOrdersControllerFindAllResponseSuccess = (purchaseOrdersCont
 
 export type purchaseOrdersControllerFindAllResponse = (purchaseOrdersControllerFindAllResponseSuccess)
 
-export const getPurchaseOrdersControllerFindAllUrl = () => {
+export const getPurchaseOrdersControllerFindAllUrl = (params?: PurchaseOrdersControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/purchase-orders`
+  return stringifiedParams.length > 0 ? `/purchase-orders?${stringifiedParams}` : `/purchase-orders`
 }
 
-export const purchaseOrdersControllerFindAll = async ( options?: RequestInit): Promise<purchaseOrdersControllerFindAllResponse> => {
+export const purchaseOrdersControllerFindAll = async (params?: PurchaseOrdersControllerFindAllParams, options?: RequestInit): Promise<purchaseOrdersControllerFindAllResponse> => {
   
-  return customFetch<purchaseOrdersControllerFindAllResponse>(getPurchaseOrdersControllerFindAllUrl(),
+  return customFetch<purchaseOrdersControllerFindAllResponse>(getPurchaseOrdersControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -9249,17 +9668,26 @@ export type purchaseOrdersControllerFindOneResponseSuccess = (purchaseOrdersCont
 
 export type purchaseOrdersControllerFindOneResponse = (purchaseOrdersControllerFindOneResponseSuccess)
 
-export const getPurchaseOrdersControllerFindOneUrl = (id: string,) => {
+export const getPurchaseOrdersControllerFindOneUrl = (id: string,
+    params?: PurchaseOrdersControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/purchase-orders/${id}`
+  return stringifiedParams.length > 0 ? `/purchase-orders/${id}?${stringifiedParams}` : `/purchase-orders/${id}`
 }
 
-export const purchaseOrdersControllerFindOne = async (id: string, options?: RequestInit): Promise<purchaseOrdersControllerFindOneResponse> => {
+export const purchaseOrdersControllerFindOne = async (id: string,
+    params?: PurchaseOrdersControllerFindOneParams, options?: RequestInit): Promise<purchaseOrdersControllerFindOneResponse> => {
   
-  return customFetch<purchaseOrdersControllerFindOneResponse>(getPurchaseOrdersControllerFindOneUrl(id),
+  return customFetch<purchaseOrdersControllerFindOneResponse>(getPurchaseOrdersControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -10234,7 +10662,7 @@ export const getSetupControllerTestAbmUrl = () => {
   return `/setup/test-abm`
 }
 
-export const setupControllerTestAbm = async (setupControllerTestAbmBody: Object, options?: RequestInit): Promise<setupControllerTestAbmResponse> => {
+export const setupControllerTestAbm = async (testAbmConnectionDto: TestAbmConnectionDto, options?: RequestInit): Promise<setupControllerTestAbmResponse> => {
   
   return customFetch<setupControllerTestAbmResponse>(getSetupControllerTestAbmUrl(),
   {      
@@ -10242,7 +10670,7 @@ export const setupControllerTestAbm = async (setupControllerTestAbmBody: Object,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      setupControllerTestAbmBody,)
+      testAbmConnectionDto,)
   }
 );}
 
@@ -10272,7 +10700,7 @@ export const getSetupControllerTestOdooUrl = () => {
   return `/setup/test-odoo`
 }
 
-export const setupControllerTestOdoo = async (setupControllerTestOdooBody: Object, options?: RequestInit): Promise<setupControllerTestOdooResponse> => {
+export const setupControllerTestOdoo = async (testOdooConnectionDto: TestOdooConnectionDto, options?: RequestInit): Promise<setupControllerTestOdooResponse> => {
   
   return customFetch<setupControllerTestOdooResponse>(getSetupControllerTestOdooUrl(),
   {      
@@ -10280,7 +10708,7 @@ export const setupControllerTestOdoo = async (setupControllerTestOdooBody: Objec
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      setupControllerTestOdooBody,)
+      testOdooConnectionDto,)
   }
 );}
 
@@ -10384,7 +10812,7 @@ export const getSetupControllerExecuteEltUrl = () => {
   return `/setup/execute-elt`
 }
 
-export const setupControllerExecuteElt = async (setupControllerExecuteEltBody: Object, options?: RequestInit): Promise<setupControllerExecuteEltResponse> => {
+export const setupControllerExecuteElt = async (executeEltDto: ExecuteEltDto, options?: RequestInit): Promise<setupControllerExecuteEltResponse> => {
   
   return customFetch<setupControllerExecuteEltResponse>(getSetupControllerExecuteEltUrl(),
   {      
@@ -10392,7 +10820,7 @@ export const setupControllerExecuteElt = async (setupControllerExecuteEltBody: O
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      setupControllerExecuteEltBody,)
+      executeEltDto,)
   }
 );}
 
@@ -10551,7 +10979,7 @@ export const setupControllerGetCsvMetadata = async ( options?: RequestInit): Pro
  * @summary Execute CSV Import
  */
 export type setupControllerExecuteCsvResponse201 = {
-  data: JobResultDto
+  data: SetupControllerExecuteCsv201
   status: 201
 }
     
@@ -10642,17 +11070,24 @@ export type goodsReceivedControllerFindAllResponseSuccess = (goodsReceivedContro
 
 export type goodsReceivedControllerFindAllResponse = (goodsReceivedControllerFindAllResponseSuccess)
 
-export const getGoodsReceivedControllerFindAllUrl = () => {
+export const getGoodsReceivedControllerFindAllUrl = (params?: GoodsReceivedControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/goods-received`
+  return stringifiedParams.length > 0 ? `/goods-received?${stringifiedParams}` : `/goods-received`
 }
 
-export const goodsReceivedControllerFindAll = async ( options?: RequestInit): Promise<goodsReceivedControllerFindAllResponse> => {
+export const goodsReceivedControllerFindAll = async (params?: GoodsReceivedControllerFindAllParams, options?: RequestInit): Promise<goodsReceivedControllerFindAllResponse> => {
   
-  return customFetch<goodsReceivedControllerFindAllResponse>(getGoodsReceivedControllerFindAllUrl(),
+  return customFetch<goodsReceivedControllerFindAllResponse>(getGoodsReceivedControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -10723,17 +11158,26 @@ export type goodsReceivedControllerFindOneResponseSuccess = (goodsReceivedContro
 
 export type goodsReceivedControllerFindOneResponse = (goodsReceivedControllerFindOneResponseSuccess)
 
-export const getGoodsReceivedControllerFindOneUrl = (id: string,) => {
+export const getGoodsReceivedControllerFindOneUrl = (id: string,
+    params?: GoodsReceivedControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/goods-received/${id}`
+  return stringifiedParams.length > 0 ? `/goods-received/${id}?${stringifiedParams}` : `/goods-received/${id}`
 }
 
-export const goodsReceivedControllerFindOne = async (id: string, options?: RequestInit): Promise<goodsReceivedControllerFindOneResponse> => {
+export const goodsReceivedControllerFindOne = async (id: string,
+    params?: GoodsReceivedControllerFindOneParams, options?: RequestInit): Promise<goodsReceivedControllerFindOneResponse> => {
   
-  return customFetch<goodsReceivedControllerFindOneResponse>(getGoodsReceivedControllerFindOneUrl(id),
+  return customFetch<goodsReceivedControllerFindOneResponse>(getGoodsReceivedControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -10974,17 +11418,26 @@ export type macrosControllerFindOneResponseSuccess = (macrosControllerFindOneRes
 
 export type macrosControllerFindOneResponse = (macrosControllerFindOneResponseSuccess)
 
-export const getMacrosControllerFindOneUrl = (id: string,) => {
+export const getMacrosControllerFindOneUrl = (id: string,
+    params?: MacrosControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/macros/${id}`
+  return stringifiedParams.length > 0 ? `/macros/${id}?${stringifiedParams}` : `/macros/${id}`
 }
 
-export const macrosControllerFindOne = async (id: string, options?: RequestInit): Promise<macrosControllerFindOneResponse> => {
+export const macrosControllerFindOne = async (id: string,
+    params?: MacrosControllerFindOneParams, options?: RequestInit): Promise<macrosControllerFindOneResponse> => {
   
-  return customFetch<macrosControllerFindOneResponse>(getMacrosControllerFindOneUrl(id),
+  return customFetch<macrosControllerFindOneResponse>(getMacrosControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -11087,17 +11540,24 @@ export type usersControllerFindAllResponseSuccess = (usersControllerFindAllRespo
 
 export type usersControllerFindAllResponse = (usersControllerFindAllResponseSuccess)
 
-export const getUsersControllerFindAllUrl = () => {
+export const getUsersControllerFindAllUrl = (params?: UsersControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/users`
+  return stringifiedParams.length > 0 ? `/users?${stringifiedParams}` : `/users`
 }
 
-export const usersControllerFindAll = async ( options?: RequestInit): Promise<usersControllerFindAllResponse> => {
+export const usersControllerFindAll = async (params?: UsersControllerFindAllParams, options?: RequestInit): Promise<usersControllerFindAllResponse> => {
   
-  return customFetch<usersControllerFindAllResponse>(getUsersControllerFindAllUrl(),
+  return customFetch<usersControllerFindAllResponse>(getUsersControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -11162,17 +11622,26 @@ export type usersControllerFindOneResponseSuccess = (usersControllerFindOneRespo
 
 export type usersControllerFindOneResponse = (usersControllerFindOneResponseSuccess)
 
-export const getUsersControllerFindOneUrl = (id: string,) => {
+export const getUsersControllerFindOneUrl = (id: string,
+    params?: UsersControllerFindOneParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/users/${id}`
+  return stringifiedParams.length > 0 ? `/users/${id}?${stringifiedParams}` : `/users/${id}`
 }
 
-export const usersControllerFindOne = async (id: string, options?: RequestInit): Promise<usersControllerFindOneResponse> => {
+export const usersControllerFindOne = async (id: string,
+    params?: UsersControllerFindOneParams, options?: RequestInit): Promise<usersControllerFindOneResponse> => {
   
-  return customFetch<usersControllerFindOneResponse>(getUsersControllerFindOneUrl(id),
+  return customFetch<usersControllerFindOneResponse>(getUsersControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -11758,6 +12227,44 @@ export const apiKeysControllerRevoke = async (id: string, options?: RequestInit)
     method: 'DELETE'
     
     
+  }
+);}
+
+
+
+/**
+ * Publishes an event to the backend message queue (outbox) to trigger workflows or webhooks.
+ * @summary Publish Event
+ */
+export type eventsControllerPublishResponse201 = {
+  data: EventsControllerPublish201
+  status: 201
+}
+    
+export type eventsControllerPublishResponseSuccess = (eventsControllerPublishResponse201) & {
+  headers: Headers;
+};
+;
+
+export type eventsControllerPublishResponse = (eventsControllerPublishResponseSuccess)
+
+export const getEventsControllerPublishUrl = () => {
+
+
+  
+
+  return `/events/publish`
+}
+
+export const eventsControllerPublish = async (publishEventDto: PublishEventDto, options?: RequestInit): Promise<eventsControllerPublishResponse> => {
+  
+  return customFetch<eventsControllerPublishResponse>(getEventsControllerPublishUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      publishEventDto,)
   }
 );}
 

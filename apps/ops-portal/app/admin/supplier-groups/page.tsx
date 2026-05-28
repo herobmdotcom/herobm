@@ -41,19 +41,19 @@ export default function SupplierGroupsAdmin() {
     try {
       setLoading(true);
       const [data, customers, cc, act] = await Promise.all([
-        api.supplierGroupsControllerFindAll().then((r: unknown) => (r as { data?: unknown[] })?.data || r || []),
-        api.glControllerGetAccounts({} as any).then((r: any) => r?.data || r || []),
-        api.costCentersControllerFindAll().then((r: unknown) => (r as { data?: unknown[] })?.data || r || []),
-        api.activitiesControllerFindAll().then((r: unknown) => (r as { data?: unknown[] })?.data || r || [])
+        api.supplierGroupsControllerFindAll().then(r => r.data || []),
+        api.glControllerGetAccounts({ format: 'flat' }).then(r => r.data || []),
+        api.costCentersControllerFindAll().then(r => r.data || []),
+        api.activitiesControllerFindAll().then(r => r.data || [])
       ]);
-      const sorted = (data as any[]).sort((a: any, b: any) => 
-        (a.groupCode || '').localeCompare(b.groupCode || '', undefined, { numeric: true })
+      const sorted = [...data].sort((a: any, b: any) => 
+        a.name.localeCompare(b.name, undefined, { numeric: true })
       );
       setGroups(sorted);
-      setGlAccounts(customers as any[]);
-      setCostCenters(cc as any[]);
-      setActivities(act as any[]);
-    } catch(err: unknown) {
+      setGlAccounts(customers);
+      setCostCenters(cc);
+      setActivities(act);
+    } catch(err) {
       toast.error(t('toasts.loadFailed') + ': ' + (err as Error).message);
       reportError(err as Error, 'SupplierGroupsAdmin_loadData');
     } finally {
@@ -97,10 +97,8 @@ export default function SupplierGroupsAdmin() {
     try {
       if (editingId) {
         await api.supplierGroupsControllerUpdate(editingId, editForm);
-        toast.success(t('toasts.updated'));
       } else {
         await api.supplierGroupsControllerCreate(editForm);
-        toast.success(t('toasts.created'));
       }
       handleCancel();
       loadData();

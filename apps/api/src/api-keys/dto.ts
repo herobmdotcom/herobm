@@ -6,6 +6,14 @@ export class CreateApiKeyDto {
   @IsString()
   @IsNotEmpty()
   name!: string;
+
+  @ApiProperty({
+    description:
+      'The Casbin role granted to this API key (e.g. agent, webhook)',
+  })
+  @IsString()
+  @IsNotEmpty()
+  role!: string;
 }
 
 export class ApiKeyResponseDto {
@@ -17,6 +25,9 @@ export class ApiKeyResponseDto {
 
   @ApiProperty()
   prefix!: string;
+
+  @ApiProperty()
+  role!: string;
 
   @ApiProperty({ format: 'date-time' })
   createdOn!: Date;
@@ -31,6 +42,9 @@ export class ApiKeyFullResponseDto {
 
   @ApiProperty()
   prefix!: string;
+
+  @ApiProperty()
+  role!: string;
 
   @ApiProperty()
   keyHash!: string;

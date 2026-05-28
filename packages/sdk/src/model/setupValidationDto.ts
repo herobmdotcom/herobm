@@ -10,6 +10,6 @@ import type { SetupValidationDtoDataCounts } from './setupValidationDtoDataCount
 
 export interface SetupValidationDto {
   status: string;
-  metrics: SetupValidationDtoMetrics;
-  dataCounts: SetupValidationDtoDataCounts;
+  metrics?: SetupValidationDtoMetrics;
+  dataCounts?: SetupValidationDtoDataCounts;
 }

@@ -701,9 +701,16 @@ export class SalesInvoiceService {
     days?: number;
     customerId?: string;
     invoiceId?: string;
+    balanceStatus?: string;
     limit?: number;
   }) {
-    const { days = 30, customerId, invoiceId, limit = 100 } = query;
+    const {
+      days = 30,
+      customerId,
+      invoiceId,
+      balanceStatus,
+      limit = 100,
+    } = query;
 
     const conditions: any[] = [];
 
@@ -723,6 +730,12 @@ export class SalesInvoiceService {
           eq(customers.externalId, customerId),
         ),
       );
+    }
+
+    if (balanceStatus === 'unpaid') {
+      conditions.push(sql`${salesInvoices.outstandingAmount}::numeric > 0`);
+    } else if (balanceStatus === 'paid') {
+      conditions.push(sql`${salesInvoices.outstandingAmount}::numeric <= 0`);
     }
 
     const dataQuery = this.db

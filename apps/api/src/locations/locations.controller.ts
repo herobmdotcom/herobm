@@ -36,7 +36,7 @@ import {
 
 @ApiTags('Locations')
 @Controller('inventory')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('settings')
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}

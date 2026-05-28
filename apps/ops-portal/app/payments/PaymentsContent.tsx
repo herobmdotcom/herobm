@@ -29,7 +29,10 @@ interface UnifiedPayment {
 }
 
 export default function PaymentsContent() {
-  const { baseCurrency } = useSettings();
+  const { baseCurrency, gl } = useSettings();
+  const supportedFormats = gl?.supportedBatchPaymentFormats || (baseCurrency === 'USD' ? ['NACHA'] : ['ABA']);
+  const showNacha = supportedFormats.includes('NACHA');
+  const showAba = supportedFormats.includes('ABA');
   const [slideOverOpen, setSlideOverOpen] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const [payments, setPayments] = useState<UnifiedPayment[]>([]);
@@ -161,6 +164,29 @@ export default function PaymentsContent() {
     }
   };
 
+  const handleExportNacha = async () => {
+    if (selectedPayments.length === 0) return;
+    setIsProcessingBatch(true);
+    try {
+      const response = await api.paymentsControllerExportNacha({ paymentIds: selectedPayments.map(p => p.paymentId) });
+      
+      const blob = new Blob([(response as any)?.fileContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `NACHA_${new Date().toISOString().slice(0,10)}.txt`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
+      setSelectedPayments([]);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsProcessingBatch(false);
+    }
+  };
+
   const handleBatchAction = async (endpoint: string) => {
     if (selectedPayments.length === 0) return;
     setIsProcessingBatch(true);
@@ -225,13 +251,23 @@ export default function PaymentsContent() {
       }
       headerActions={
         <>
-          {hasDraftSelected && (
+          {hasDraftSelected && showAba && (
             <button 
               onClick={handleExportAba} 
               disabled={isProcessingBatch}
               className="px-4 py-2 bg-[var(--brand-blue)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
             >
               {isProcessingBatch ? t('processing') : t('exportAba', { count: draftSelected.length })}
+            </button>
+          )}
+
+          {hasDraftSelected && showNacha && (
+            <button 
+              onClick={handleExportNacha} 
+              disabled={isProcessingBatch}
+              className="px-4 py-2 bg-[var(--brand-blue)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
+            >
+              {isProcessingBatch ? t('processing') : `Export NACHA (${draftSelected.length})`}
             </button>
           )}
           

@@ -56,7 +56,7 @@ export default function PickingStatusSection({ pickingSummary }: Props) {
         <div id="picking-section" className="card">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="section-heading">
-                    {/* eslint-disable i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="material-symbols-outlined">inventory</span>
                     {/* eslint-enable i18next/no-literal-string */}
                     {tPicking('title')}
@@ -67,7 +67,7 @@ export default function PickingStatusSection({ pickingSummary }: Props) {
                     </span>
                     {pickingSummary.isFullyPicked && (
                         <span className="text-xs font-bold text-[var(--success)]">
-                            {/* eslint-disable i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
                             <span className="material-symbols-outlined text-sm align-middle mr-0.5">check_circle</span>
                             {/* eslint-enable i18next/no-literal-string */}
                             {tPicking('statuses.done')}
@@ -119,13 +119,13 @@ export default function PickingStatusSection({ pickingSummary }: Props) {
                             <td style={{ textAlign: 'center' }}>
                                 {line.isFullyPicked ? (
                                     <>
-                                        {/* eslint-disable i18next/no-literal-string */}
+                                        {/* eslint-disable-next-line i18next/no-literal-string */}
                                         <span className="material-symbols-outlined text-[var(--success)] text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                                         {/* eslint-enable i18next/no-literal-string */}
                                     </>
                                 ) : remaining > 0 ? (
                                     <>
-                                        {/* eslint-disable i18next/no-literal-string */}
+                                        {/* eslint-disable-next-line i18next/no-literal-string */}
                                         <span className="material-symbols-outlined text-[var(--warning)] text-base">pending</span>
                                         {/* eslint-enable i18next/no-literal-string */}
                                     </>

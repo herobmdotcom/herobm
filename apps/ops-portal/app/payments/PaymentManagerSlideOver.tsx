@@ -187,10 +187,10 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     try {
       const queryParams = { [data.partyType === 'customer' ? 'customerId' : 'vendorId']: data.partyId };
       const res = data.partyType === 'customer'
-        ? await api.invoiceDetailControllerGetSalesInvoicesGlobal({ ...(queryParams as any), balanceStatus: 'unpaid' } as any)
-        : await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ ...(queryParams as any), balanceStatus: 'unpaid' } as any);
+        ? await api.invoiceDetailControllerGetSalesInvoicesGlobal({ ...(queryParams as unknown as Record<string, unknown>), balanceStatus: 'unpaid' } as unknown as Parameters<typeof api.invoiceDetailControllerGetSalesInvoicesGlobal>[0])
+        : await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ ...(queryParams as unknown as Record<string, unknown>), balanceStatus: 'unpaid' } as unknown as Parameters<typeof api.invoiceDetailControllerGetPurchaseInvoicesGlobal>[0]);
       
-      const invoices = (res as any).data
+      const invoices = (res as unknown as { data: any[] }).data
         .filter((inv: any) => inv.stateCode !== SALES_INVOICE_STATE.PAID && inv.stateCode !== PURCHASE_INVOICE_STATE.PAID && parseFloat(inv.outstandingAmount) > 0)
         .map((inv: any) => ({
           id: inv.invoiceId,
@@ -274,7 +274,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         totalAmount: parseFloat(form.totalAmount),
         submitImmediately: true,
       };
-      await api.paymentsControllerCreate(payload as any);
+      await api.paymentsControllerCreate(payload as unknown as Parameters<typeof api.paymentsControllerCreate>[0]);
       toast.success(t('manager.messages.paymentCreated'));
       onSaved();
     } catch (err: any) {
@@ -350,7 +350,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
     setSubmitting(true);
     try {
-      await api.paymentsControllerAllocate(paymentId, { allocations: allocations as any });
+      await api.paymentsControllerAllocate(paymentId, { allocations: allocations as unknown as Parameters<typeof api.paymentsControllerAllocate>[1]['allocations'] });
       toast.success(t('manager.messages.allocationsSaved'));
       loadPayment();
       onSaved(false);
@@ -471,7 +471,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
           <div className="space-y-4">
             {!paymentId ? (
               <form onSubmit={e => e.preventDefault()} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.type')}</label>
                     <select 
@@ -558,7 +558,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.amount')}</label>
                     <div className="relative">
@@ -604,7 +604,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                   <>
                     {/* Metadata Section (Mirror GL View) */}
                     <div className="card space-y-3 p-4">
-                      <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
                         <div>
                           <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('manager.labels.party')}</span>
                           <span className="text-[#041627] font-medium">{data?.partyName || '—'}</span>
@@ -744,7 +744,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     ) : outstandingInvoices.length > 0 ? (
                       <>
                         {data && (
-                          <div className="grid grid-cols-4 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="p-3 bg-white rounded-lg border border-gray-200">
                               <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('manager.labels.paymentUnallocated')}</div>
                               <div className="text-xl font-bold mt-0.5 text-gray-900">

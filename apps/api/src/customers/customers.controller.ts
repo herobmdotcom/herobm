@@ -32,9 +32,11 @@ import {
   ApiCreatedResponse,
 } from '@nestjs/swagger';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @ApiTags('Customers')
 @Controller('customers')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('customers')
 export class AccountsController {
   constructor(
@@ -48,6 +50,7 @@ export class AccountsController {
     summary: 'List Customers',
     description: 'Retrieve a paginated list of customers.',
   })
+  @ApiFieldMask()
   @ApiPaginatedResponse(AccountResponseDto)
   findAll(@Query() query: PaginationQuery) {
     return this.accountsService.findAll(query);
@@ -59,6 +62,7 @@ export class AccountsController {
     summary: 'Get Customer',
     description: 'Retrieve a single customer by ID.',
   })
+  @ApiFieldMask()
   @ApiOkResponse({ type: AccountResponseDto })
   findOne(@Param('id') id: string) {
     return this.accountsService.findOne(id);

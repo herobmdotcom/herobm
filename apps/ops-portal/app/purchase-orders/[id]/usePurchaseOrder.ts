@@ -139,7 +139,7 @@ export function usePurchaseOrder(id: string) {
     if (showSpinner) setLoading(true);
     try {
       const res = await api.purchaseOrdersControllerFindOne(id);
-      const data = res?.data || res;
+      const data = res?.data;
       setOrder(data as unknown as OrderDetail);
       setEditName(data.name || '');
       setEditReferenceNumber(data.referenceNumber || '');
@@ -173,7 +173,7 @@ export function usePurchaseOrder(id: string) {
   const loadInvoices = async () => {
     try {
       const { data } = await api.purchaseInvoiceControllerGetPurchaseBills(id);
-      setInvoices(data as unknown as PurchaseInvoice[] || []);
+      setInvoices((data as unknown as { data: PurchaseInvoice[] }).data || []);
     } catch {
       setInvoices([]);
     }
@@ -183,7 +183,7 @@ export function usePurchaseOrder(id: string) {
     setAllocationsLoading(true);
     try {
       const { data } = await api.allocationsControllerGetAllocationsByPo(id);
-      setAllocations(data as unknown as Allocation[] || []);
+      setAllocations((data as unknown as { data: Allocation[] }).data || []);
     } catch {
       setAllocations([]);
     } finally {
@@ -197,7 +197,7 @@ export function usePurchaseOrder(id: string) {
   useEffect(() => {
     loadOrder();
     api.taxCategoriesControllerFindAll()
-      .then(res => setTaxCategories(res.data as unknown as TaxCategory[] || []))
+      .then(res => setTaxCategories(res.data.map(t => ({ ...t, taxCategoryId: (t as unknown as { id?: string }).id || t.taxCategoryId })) as unknown as TaxCategory[] || []))
       .catch((err) => reportError(err, 'OrderDetailPage'));
   }, [id]);
 

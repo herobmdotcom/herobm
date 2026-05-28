@@ -98,7 +98,7 @@ export default function GlobalError({
           }}
         >
           <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
-            {/* eslint-disable i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             Something went wrong
             {/* eslint-enable i18next/no-literal-string */}
           </h2>
@@ -120,7 +120,7 @@ export default function GlobalError({
               marginBottom: 24,
             }}
           >
-            {/* eslint-disable i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             Try Again
             {/* eslint-enable i18next/no-literal-string */}
           </button>
@@ -134,7 +134,7 @@ export default function GlobalError({
               }}
             >
               <p style={{ marginBottom: 8 }}>
-                {/* eslint-disable i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 If this problem persists, please contact support:
                 {/* eslint-enable i18next/no-literal-string */}
               </p>
@@ -148,7 +148,7 @@ export default function GlobalError({
               )}
               {mailto && (
                 <p>
-                  {/* eslint-disable i18next/no-literal-string */}
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
                   ✉️{' '}
                   {/* eslint-enable i18next/no-literal-string */}
                   <a href={mailto} style={{ color: '#f59e0b' }}>

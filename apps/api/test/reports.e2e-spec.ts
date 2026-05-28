@@ -88,8 +88,8 @@ describe('Dynamic Reports Engine (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .responseType('blob');
 
-    // NestJS @Post routes default to 201 Created
-    expect(pdfRes.status).toBe(201);
+    // NestJS @Post routes default to 201, but we added @HttpCode(200)
+    expect(pdfRes.status).toBe(200);
     expect(pdfRes.headers['content-type']).toBe('application/pdf');
 
     const buf = pdfRes.body;
@@ -151,7 +151,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .responseType('blob');
 
-    expect(pdfRes.status).toBe(201);
+    expect(pdfRes.status).toBe(200);
     expect(pdfRes.headers['content-type']).toBe('application/pdf');
 
     const buf = pdfRes.body;

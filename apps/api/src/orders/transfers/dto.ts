@@ -84,28 +84,48 @@ export class ReceiveTransferDto {
 
 export class EmptyBodyDto {}
 
-export class TransferResponseDto {
-  id!: string;
-  transferNumber!: string;
-  sourceLocationId!: string;
-  destinationLocationId!: string;
-  status!: string;
-  notes?: string;
-  createdAt!: Date;
-  updatedAt!: Date;
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class TransferLineResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() transferOrderLineId!: string;
+  @ApiProperty() productId!: string;
+  @ApiPropertyOptional() productNumber?: string;
+  @ApiPropertyOptional() productDescription?: string;
+  @ApiProperty() quantity!: string;
+  @ApiPropertyOptional() quantityShipped?: string;
+  @ApiPropertyOptional() quantityReceived?: string;
 }
 
 export class TransferEventResponseDto {
-  id!: string;
-  transferOrderId!: string;
-  eventType!: string;
-  eventData!: any;
-  createdAt!: Date;
+  @ApiProperty() eventId!: string;
+  @ApiProperty() eventType!: string;
+  @ApiPropertyOptional() payload?: any;
+  @ApiPropertyOptional() actor?: string;
+  @ApiProperty() createdOn!: Date;
+}
+
+export class TransferResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() transferOrderId!: string;
+  @ApiProperty() orderNumber!: string;
+  @ApiProperty() stateCode!: string;
+  @ApiProperty() sourceLocationId!: string;
+  @ApiPropertyOptional() sourceLocationName?: string;
+  @ApiProperty() destinationLocationId!: string;
+  @ApiPropertyOptional() destinationLocationName?: string;
+  @ApiPropertyOptional() notes?: string;
+  @ApiPropertyOptional() createdBy?: string;
+  @ApiProperty() createdOn!: Date;
+  @ApiPropertyOptional({ type: [TransferLineResponseDto] })
+  lines?: TransferLineResponseDto[];
+  @ApiPropertyOptional({ type: [TransferEventResponseDto] })
+  events?: TransferEventResponseDto[];
 }
 
 export class TransferPickingSummaryResponseDto {
-  lineId!: string;
-  productId!: string;
-  orderedQuantity!: string;
-  pickedQuantity!: string;
+  @ApiProperty() lineId!: string;
+  @ApiProperty() productId!: string;
+  @ApiProperty() orderedQuantity!: string;
+  @ApiProperty() pickedQuantity!: string;
 }

@@ -38,6 +38,7 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
   await client.exec(`
     ALTER TABLE "modbm_core"."sales_invoices" ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
     ALTER TABLE "modbm_core"."purchase_invoices" ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
+    ALTER TABLE "modbm_core"."api_keys" ADD COLUMN IF NOT EXISTS "role" text DEFAULT 'system' NOT NULL;
   `);
 
   // Run extensions (Views, triggers, etc)

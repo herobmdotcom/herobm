@@ -72,7 +72,7 @@ export default function PickingPage() {
     useDocumentTitle(t('title'));
     const { app } = useSettings();
 
-    const [locations, setLocations] = useState<any[]>([]);
+    const [locations, setLocations] = useState<{ locationId: string; code: string; name: string }[]>([]);
     const [selectedLocationId, setSelectedLocationId] = useState<string>('');
     const [pendingOrders, setPendingOrders] = useState<UnifiedOrder[]>([]);
     const [selectedOrder, setSelectedOrder] = useState<UnifiedOrder | null>(null);
@@ -91,9 +91,9 @@ export default function PickingPage() {
 
     // Fetch Locations
     useEffect(() => {
-        api.inventoryControllerFindAllLocations().then((res: any) => {
-                const locs = res.data;
-                setLocations(locs as any);
+        api.inventoryControllerFindAllLocations().then(({ data: page }) => {
+                const locs = page.data;
+                setLocations(locs);
                 if (locs.length > 0) {
                     const defaultLocId = app?.defaultFulfillmentLocationId || locs[0].locationId;
                     setSelectedLocationId(defaultLocId);
@@ -110,7 +110,7 @@ export default function PickingPage() {
 
         api.orderPickingControllerGetPickingQueue(params)
             .then(data => {
-                setPendingOrders((data as any).data || data || []);
+                setPendingOrders((data as unknown as { data: UnifiedOrder[] }).data || []);
             })
             .catch(err => reportError(err, 'Failed to load pending orders'))
             .finally(() => setLoadingOrders(false));
@@ -147,11 +147,11 @@ export default function PickingPage() {
         summaryPromise
             .then((res) => {
                 const data = res.data;
-                setPickingSummary(data as any);
+                setPickingSummary(data as unknown as PickingSummary);
                 
                 // Initialize default quantities (what's remaining and fits in a bin)
                 const defaultInputs: Record<string, { quantity: string, binId: string }> = {};
-                (data as any).lines.forEach((line: any) => {
+                (data as unknown as PickingSummary).lines.forEach((line: PickingLine) => {
                     if (line.isPhysical && !line.isFullyPicked && parseFloat(line.remaining) > 0) {
                         const bestBin = line.availableBins[0];
                         if (bestBin) {
@@ -222,7 +222,7 @@ export default function PickingPage() {
         if (!selectedOrder) return;
         setIsGeneratingPdf(true);
         try {
-            const response = await api.reportsControllerRunHook('picking-ticket', { shipmentId: selectedOrder.id }, { id: selectedOrder.id, context: 'picking-ticket' } as any);
+            const response = await api.reportsControllerRunHook('picking-ticket', { shipmentId: selectedOrder.id }, { id: selectedOrder.id, context: 'picking-ticket' });
             const blob = response.data as Blob;
             const url = window.URL.createObjectURL(blob);
             window.open(url, '_blank');

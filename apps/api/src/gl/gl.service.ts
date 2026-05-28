@@ -779,8 +779,18 @@ export class GlService {
   async getSettings(tx?: DrizzleDB) {
     const db = tx || this.db;
     const [settings] = await db.select().from(glSettings).limit(1);
+
+    const supportedFormats =
+      settings?.supportedBatchPaymentFormats &&
+      settings.supportedBatchPaymentFormats.length > 0
+        ? settings.supportedBatchPaymentFormats
+        : settings?.baseCurrency === 'USD'
+          ? ['NACHA']
+          : ['ABA'];
+
     return {
       ...(settings || {}),
+      supportedBatchPaymentFormats: supportedFormats,
       revenueRoutingPrecedence: REVENUE_ROUTING_PRECEDENCE,
       expenseRoutingPrecedence: EXPENSE_ROUTING_PRECEDENCE,
     };

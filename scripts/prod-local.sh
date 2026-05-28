@@ -3,9 +3,19 @@
 cd "$(dirname "$0")/.."
 
 PROFILE=""
-if [ "$1" == "-Profile" ] && [ -n "$2" ]; then
-    PROFILE="$2"
-fi
+ENABLE_SWAGGER="false"
+ENABLE_MCP="false"
+ENABLE_DBT_DOCS="false"
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -Profile) PROFILE="$2"; shift ;;
+        -WithSwagger|--with-swagger) ENABLE_SWAGGER="true" ;;
+        -Mcp|--mcp) ENABLE_MCP="true" ;;
+        -WithDbt|--with-dbt) ENABLE_DBT_DOCS="true" ;;
+    esac
+    shift
+done
 
 ACTIVE_PROFILE="$PROFILE"
 if [ -z "$ACTIVE_PROFILE" ] && [ -f ".active_profile" ]; then
@@ -39,6 +49,8 @@ else
     echo -e "\e[33mWarning: $ENV_FILE not found!\e[0m"
 fi
 
+ENV_EXPORTS="$ENV_EXPORTS ENABLE_SWAGGER='$ENABLE_SWAGGER'"
+
 echo -e "\e[32mStarting local Prod Environment...\e[0m"
 echo -e "\e[36mAPI will start on port $API_PORT\e[0m"
 echo -e "\e[36mPortal will start on port $FE_PORT\e[0m"
@@ -52,7 +64,21 @@ API_PID=$!
 
 # Start FE in foreground
 echo -e "\e[32mPortal connecting to API at: http://localhost:$API_PORT\e[0m"
-eval "env ENV_FILE='$ENV_FILE' $ENV_EXPORTS API_URL='http://localhost:$API_PORT' PORT=$FE_PORT npm run start:prod -w apps/ops-portal"
+eval "env ENV_FILE='$ENV_FILE' $ENV_EXPORTS API_URL='http://localhost:$API_PORT' PORT=$FE_PORT npm run start:prod -w apps/ops-portal &"
+FE_PID=$!
 
-# Cleanup API when user terminates the script
-trap "kill $API_PID 2>/dev/null" EXIT
+if [ "$ENABLE_MCP" == "true" ]; then
+    echo -e "\e[36mMCP Server will start in prod mode\e[0m"
+    eval "env ENV_FILE='$ENV_FILE' $ENV_EXPORTS npm run start -w apps/mcp-server &"
+    MCP_PID=$!
+fi
+
+if [ "$ENABLE_DBT_DOCS" == "true" ]; then
+    echo -e "\e[36mdbt docs will be served\e[0m"
+    (cd pipelines/abm_transform && ../../.venv/bin/dbt docs serve) &
+    DBT_PID=$!
+fi
+
+# Cleanup when user terminates the script
+trap "kill $API_PID $FE_PID $MCP_PID $DBT_PID 2>/dev/null" EXIT
+wait

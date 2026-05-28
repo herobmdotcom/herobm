@@ -34,8 +34,8 @@ export default function OdooImportPage() {
   const [status, setStatus] = useState<'pending' | 'starting' | 'running' | 'completed' | 'failed'>('pending');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [completedTables, setCompletedTables] = useState<string[] | null>(null);
-  const [odooLocations, setOdooLocations] = useState<any[]>([]);
-  const [odooTaxCategories, setOdooTaxCategories] = useState<any[]>([]);
+  const [odooLocations, setOdooLocations] = useState<{ code: string; name: string }[]>([]);
+  const [odooTaxCategories, setOdooTaxCategories] = useState<{ code: string; name: string; rate: number }[]>([]);
   const [importSummary, setImportSummary] = useState<{products: number, customers: number, orders: number} | null>(null);
   
   const jobIdRef = useRef<string | null>(null);
@@ -59,7 +59,7 @@ export default function OdooImportPage() {
   useEffect(() => {
     if (step === 'preview') {
       api.setupControllerGetResumeStateOdoo()
-        .then((res: any) => setCompletedTables((res?.completedTables as string[]) || []))
+        .then((res) => setCompletedTables(res.data.completedTables || []))
         .catch(() => setCompletedTables([]));
     }
     return () => {
@@ -75,28 +75,31 @@ export default function OdooImportPage() {
   const handleTestConnection = async () => {
     try {
       setLoading(true);
-      const res: any = await api.setupControllerTestOdoo({
+      const res = await api.setupControllerTestOdoo({
         host: config.host,
         port: parseInt(config.port, 10),
         database: config.database,
         username: config.username,
         password: config.password,
       });
+      const result = res.data;
       
-      if (res.success === false) {
-        toast.error(res.message || tExt('toasts.connectionFailed', { fallback: 'Connection Failed' }));
+      if (result.success === false) {
+        toast.error(result.message || tExt('toasts.connectionFailed', { fallback: 'Connection Failed' }));
       } else {
-        toast.success(res.message || tExt('toasts.connectionVerified', { fallback: 'Connection Verified' }));
-        const locs = res.preview?.locations || [];
+        toast.success(result.message || tExt('toasts.connectionVerified', { fallback: 'Connection Verified' }));
+        const preview = result.preview as Record<string, unknown> | undefined;
+        const locs = (preview?.locations || []) as { code: string; name: string }[];
         setOdooLocations(locs);
         if (locs.length > 0) {
            setConfig(prev => ({ ...prev, defaultLocationCode: locs[0].code }));
         }
-        if (res.preview?.baseCurrencyCode !== undefined) {
-           setConfig(prev => ({ ...prev, baseCurrency: res.preview.baseCurrencyCode }));
+        const mappedCurr = getCurrencyByAbmCode(preview?.baseCurrencyAbmCode as number);
+        if (mappedCurr !== undefined && preview?.baseCurrencyCode !== undefined) {
+           setConfig(prev => ({ ...prev, baseCurrency: preview!.baseCurrencyCode as string }));
         }
         
-        const taxes = res.preview?.taxCategories || [];
+        const taxes = (preview?.taxCategories || []) as { code: string; name: string; rate: number }[];
         setOdooTaxCategories(taxes);
         if (taxes.length > 0) {
           // Find tax category with highest rate > 0
@@ -135,10 +138,10 @@ export default function OdooImportPage() {
       setLogs([`--- Initializing Odoo Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`]);
       setStatus('starting');
 
-      const res: any = await (api as any).setupControllerExecuteElt(executePayload as any);
-      jobIdRef.current = res.jobId;
+      const res = await api.setupControllerExecuteElt(executePayload);
+      jobIdRef.current = res.data.jobId;
       setStatus('running');
-      startPolling(res.jobId);
+      startPolling(res.data.jobId);
     } catch (err: any) {
       setStatus('failed');
       setErrorMsg(err.message || 'Failed to start ELT execution.');
@@ -149,18 +152,20 @@ export default function OdooImportPage() {
   const startPolling = (jobId: string) => {
     pollTimerRef.current = setInterval(async () => {
       try {
-        const progressRes: any = await api.setupControllerGetProgress(jobId);
-        if (progressRes) {
-          if (progressRes.logs && progressRes.logs.length > 0) {
-             setLogs([`--- Initializing Odoo Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`, ...progressRes.logs]);
+        const progressRes = await api.setupControllerGetProgress(jobId);
+        const progress = progressRes.data;
+        if (progress) {
+          if (progress.logs && progress.logs.length > 0) {
+             setLogs([`--- Initializing Odoo Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`, ...progress.logs]);
           }
           
-          if (progressRes.status === 'completed' || progressRes.status === 'done') {
+          if (progress.status === 'completed' || progress.status === 'done') {
             setStatus('completed');
             clearInterval(pollTimerRef.current);
-          } else if (progressRes.status === 'failed') {
+          } else if (progress.status === 'failed') {
             setStatus('failed');
-            setErrorMsg(progressRes.error || 'Execution failed on backend.');
+            const errorLog = progress.logs?.find((l: string) => l.includes('[ERROR]')) || 'Execution failed on backend.';
+            setErrorMsg(errorLog);
             clearInterval(pollTimerRef.current);
           }
         }
@@ -462,8 +467,8 @@ export default function OdooImportPage() {
         <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
            <button
             onClick={() => {
-              api.setupControllerGetImportSummary().then(summary => {
-                 setImportSummary(summary as unknown as import('@modbm/sdk').ImportSummaryDto);
+              api.setupControllerGetImportSummary().then((summaryRes) => {
+                 setImportSummary(summaryRes.data);
                  setStep('finalisation');
               }).catch(err => {
                  reportError(err, 'OdooImportPage.pollProgress.importSummary');

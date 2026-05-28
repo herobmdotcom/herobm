@@ -5,12 +5,12 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
-import type { TransferEventResponseDtoEventData } from './transferEventResponseDtoEventData';
+import type { TransferEventResponseDtoPayload } from './transferEventResponseDtoPayload';
 
 export interface TransferEventResponseDto {
-  id: string;
-  transferOrderId: string;
+  eventId: string;
   eventType: string;
-  eventData: TransferEventResponseDtoEventData;
-  createdAt: string;
+  payload?: TransferEventResponseDtoPayload;
+  actor?: string;
+  createdOn: string;
 }

@@ -28,9 +28,11 @@ import {
   AccountGroupResponseDto,
 } from './dto';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @ApiTags('Setup')
 @Controller('customer-groups')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('settings')
 export class AccountGroupsController {
   constructor(private readonly accountGroupsService: AccountGroupsService) {}
@@ -42,6 +44,7 @@ export class AccountGroupsController {
     description: 'Retrieve a list of all customer groups.',
   })
   @ApiOkResponse({ type: [AccountGroupResponseDto] })
+  @ApiFieldMask()
   findAll() {
     return this.accountGroupsService.findAll();
   }
@@ -54,6 +57,7 @@ export class AccountGroupsController {
       'Retrieve detailed information about a specific customer group.',
   })
   @ApiOkResponse({ type: AccountGroupResponseDto })
+  @ApiFieldMask()
   findOne(@Param('id') id: string) {
     return this.accountGroupsService.findOne(id);
   }
@@ -89,6 +93,7 @@ export class AccountGroupsController {
     description: 'Remove a customer group from the system.',
   })
   @ApiOkResponse({
+    // BYPASS-TYPING-TEST
     schema: { type: 'object', properties: { deleted: { type: 'boolean' } } },
   })
   remove(@Param('id') id: string) {

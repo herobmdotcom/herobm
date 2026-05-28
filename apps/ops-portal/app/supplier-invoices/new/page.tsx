@@ -72,7 +72,7 @@ export default function NewPurchaseInvoicePage() {
         }
         setCurrencyCode(order.currencyCode || baseCurrency || '');
 
-        const invoices = (invoicesRes.data || []) as unknown as PurchaseInvoice[];
+        const invoices = ((invoicesRes as any).data || []) as unknown as PurchaseInvoice[];
         const linesToInvoice = calculatePurchaseInvoiceableQuantities(order.lines as any[], invoices);
         
         const prefilledLines: LineItem[] = linesToInvoice.map(lti => {

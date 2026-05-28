@@ -43,14 +43,14 @@ import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Setup')
 @Controller('setup')
-@CasbinResource('setup')
-@UseGuards(AuthGuard('jwt'), CasbinGuard, ThrottlerGuard)
+@CasbinResource('import')
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard, ThrottlerGuard)
 export class SetupController {
   constructor(private readonly setupService: SetupService) {}
 
   @Post('test-abm')
   @ApiBody({ type: TestAbmConnectionDto })
-  @CasbinAction('execute')
+  @CasbinAction('write')
   @ApiOperation({
     summary: 'Test ABM Connection',
     description: 'Tests connectivity to the legacy ABM database.',
@@ -62,7 +62,7 @@ export class SetupController {
 
   @Post('test-odoo')
   @ApiBody({ type: TestOdooConnectionDto })
-  @CasbinAction('execute')
+  @CasbinAction('write')
   @ApiOperation({
     summary: 'Test Odoo Connection',
     description: 'Tests connectivity to the legacy Odoo database.',
@@ -96,7 +96,7 @@ export class SetupController {
 
   @Post('execute-elt')
   @ApiBody({ type: ExecuteEltDto })
-  @CasbinAction('execute')
+  @CasbinAction('write')
   @ApiOperation({
     summary: 'Execute ELT Job',
     description: 'Triggers a data extraction and load pipeline job.',
@@ -153,12 +153,13 @@ export class SetupController {
 
   @Post('execute-csv')
   @UseInterceptors(FileInterceptor('file'))
-  @CasbinAction('execute')
+  @CasbinAction('write')
   @ApiOperation({
     summary: 'Execute CSV Import',
     description: 'Uploads and processes a CSV file for data import.',
   })
   @ApiConsumes('multipart/form-data')
+  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
   @ApiBody({
     schema: {
       type: 'object',

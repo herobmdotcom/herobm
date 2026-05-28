@@ -48,7 +48,7 @@ export default function ShipmentsSection({ orderId }: Props) {
         <div id="shipments-section" className="card">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="section-heading">
-                    {/* eslint-disable i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="material-symbols-outlined">inventory_2</span>
                     {/* eslint-enable i18next/no-literal-string */}
                     {tShipping('shipmentsTitle')}
@@ -72,7 +72,7 @@ export default function ShipmentsSection({ orderId }: Props) {
                             className="flex items-center justify-between p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors"
                         >
                             <div className="flex items-center gap-3">
-                                {/* eslint-disable i18next/no-literal-string */}
+                                {/* eslint-disable-next-line i18next/no-literal-string */}
                                 <span className="material-symbols-outlined text-[var(--text-muted)] text-lg">inventory_2</span>
                                 {/* eslint-enable i18next/no-literal-string */}
                                 <div>

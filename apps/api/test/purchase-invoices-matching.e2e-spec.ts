@@ -184,14 +184,14 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
     await request(app.getHttpServer())
       .post(`/api/purchase-invoices/${invoiceId}/post`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(201);
+      .expect(200);
 
     // 7. Unlink the invoice line (testing flexibility of standalone AP)
     const invLineId = invDetail.body.lines[0].lineId;
     await request(app.getHttpServer())
       .post(`/api/purchase-invoices/lines/${invLineId}/unresolve`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(201);
+      .expect(200);
 
     // Verify unlinked
     const unlinkedDetail = await request(app.getHttpServer())
@@ -208,7 +208,7 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
       .post(`/api/purchase-invoices/lines/${invLineId}/resolve`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ purchaseOrderLineId: poLineId })
-      .expect(201);
+      .expect(200);
 
     // Verify linked
     const relinkedDetail = await request(app.getHttpServer())

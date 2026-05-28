@@ -10,6 +10,7 @@ export interface ApiKeyFullResponseDto {
   apiKeyId: string;
   name: string;
   prefix: string;
+  role: string;
   keyHash: string;
   createdBy: string;
   createdOn: string;

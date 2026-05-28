@@ -137,7 +137,15 @@ export default function Sidebar() {
             { href: '/admin/settings/financial', label: t('items.financial') },
           ]
         },
-        { href: '/admin/users', label: t('items.users'), icon: 'group' },
+        { 
+          href: '/admin/users', 
+          label: t('items.users'), 
+          icon: 'group',
+          subItems: [
+            { href: '/admin/users', label: 'Users' },
+            { href: '/admin/users/roles', label: 'Roles & Permissions' },
+          ]
+        },
         { href: '/admin/developers', label: 'Developers', icon: 'code' },
         { href: '/admin/developers/api-reference', label: 'API Reference', icon: 'menu_book' },
         { 

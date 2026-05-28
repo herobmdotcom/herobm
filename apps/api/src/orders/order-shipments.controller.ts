@@ -28,20 +28,21 @@ import {
   AddShipmentLineDto,
   UpdateShipmentLineDto,
   ShipmentResponseDto,
+  ChangeShipmentStateDto,
+  EmptyBodyDto,
 } from './dto';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
 @ApiTags('Orders')
 @Controller('sales-orders')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('sales-orders')
 export class OrderShipmentsController {
   constructor(private readonly shipmentService: ShipmentService) {}
 
   @Post(':id/shipments')
-  @ApiBody({ type: Object })
-  @ApiCreatedResponse({ type: Object })
+  @ApiCreatedResponse({ type: ShipmentResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Create Shipment',
@@ -82,8 +83,7 @@ export class OrderShipmentsController {
   }
 
   @Patch(':id/shipments/:shipmentId')
-  @ApiBody({ type: Object })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: ShipmentResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Update Shipment',
@@ -99,8 +99,7 @@ export class OrderShipmentsController {
   }
 
   @Patch(':id/shipments/:shipmentId/state')
-  @ApiBody({ type: Object })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: ShipmentResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Change Shipment State',
@@ -109,7 +108,7 @@ export class OrderShipmentsController {
   changeShipmentState(
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,
-    @Body() dto: import('./dto').ChangeShipmentStateDto,
+    @Body() dto: ChangeShipmentStateDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.shipmentService.changeShipmentState(
@@ -120,8 +119,7 @@ export class OrderShipmentsController {
   }
 
   @Post(':id/shipments/:shipmentId/cancel')
-  @ApiBody({ type: Object })
-  @ApiCreatedResponse({ type: Object })
+  @ApiCreatedResponse({ type: ShipmentResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Cancel Shipment',
@@ -130,14 +128,14 @@ export class OrderShipmentsController {
   cancelShipment(
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,
+    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.shipmentService.cancelShipment(shipmentId, user.username);
   }
 
   @Post(':id/shipments/:shipmentId/lines')
-  @ApiBody({ type: Object })
-  @ApiCreatedResponse({ type: Object })
+  @ApiCreatedResponse({ type: ShipmentResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Add Shipment Line',
@@ -157,8 +155,7 @@ export class OrderShipmentsController {
   }
 
   @Patch(':id/shipments/:shipmentId/lines/:lineId')
-  @ApiBody({ type: Object })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: ShipmentResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Update Shipment Line',
@@ -180,7 +177,7 @@ export class OrderShipmentsController {
   }
 
   @Delete(':id/shipments/:shipmentId/lines/:lineId')
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: ShipmentResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Remove Shipment Line',

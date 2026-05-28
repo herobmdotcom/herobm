@@ -7,7 +7,7 @@
  */
 
 export interface TaxCategoryResponseDto {
-  id: string;
+  taxCategoryId: string;
   code: string;
   title: string;
   type: string;

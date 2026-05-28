@@ -87,7 +87,7 @@ export default function NewSupplierPage() {
                 {t('generalInfo')}
               </h3>
               <div className="grid grid-cols-1 gap-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                       {t('columns.vendorNumber')} *
@@ -115,7 +115,7 @@ export default function NewSupplierPage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                       {tCommon('columns.currency')}
@@ -190,7 +190,7 @@ export default function NewSupplierPage() {
                 {tCommon('columns.address')}
               </h3>
               <div className="grid grid-cols-1 gap-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                       {tCommon('columns.email')}
@@ -231,7 +231,7 @@ export default function NewSupplierPage() {
                     disabled={submitting}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                       {tCommon('columns.city')}

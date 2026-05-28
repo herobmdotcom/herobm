@@ -85,7 +85,7 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
           <h2 className="text-xl font-bold text-gray-900">{t('generateQuoteTitle')}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            {/* eslint-disable i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">close</span>
             {/* eslint-enable i18next/no-literal-string */}
           </button>
@@ -148,7 +148,7 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
             >
               {generating && (
                 <>
-                  {/* eslint-disable i18next/no-literal-string */}
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
                   {/* eslint-enable i18next/no-literal-string */}
                 </>

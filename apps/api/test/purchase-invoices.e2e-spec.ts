@@ -194,7 +194,7 @@ describe('API E2E — Purchase Invoices', () => {
       await request(app.getHttpServer())
         .post(`/api/purchase-invoices/${createdInvoiceId}/post`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .expect(201);
+        .expect(200);
     });
 
     it('GL Integration — posted a journal entry for the AP invoice', async () => {

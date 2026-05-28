@@ -121,9 +121,9 @@ export default function ProductDetailPage() {
       if (data.structureType === 'kit') {
         try {
           const componentsData = await api.productsControllerGetComponents(id as string);
-          if ((componentsData.data as any)?.data?.length) {
-            setKitComponents((componentsData.data as any).data);
-            productIdsToFetch = ((componentsData.data as any).data).map((c: any) => c.childProductId);
+          if ((componentsData.data as unknown as { data: Record<string, any>[] })?.data?.length) {
+            setKitComponents((componentsData.data as unknown as { data: Record<string, any>[] }).data);
+            productIdsToFetch = ((componentsData.data as unknown as { data: Record<string, any>[] }).data).map((c: Record<string, any>) => c.childProductId);
           }
         } catch (e) {
           reportError(e, 'ProductDetailPage');
@@ -248,7 +248,7 @@ export default function ProductDetailPage() {
       valueFormatter: (p: any) => {
         if (!p.value) return '';
         const s = String(p.value).toLowerCase();
-        return tStates.has(s as any) ? tStates(s as any) : String(p.value);
+        return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(p.value);
       } 
     },
     {
@@ -819,7 +819,7 @@ export default function ProductDetailPage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                       {t('products.columns.barcode')}
@@ -857,7 +857,7 @@ export default function ProductDetailPage() {
                 <span className="material-symbols-outlined">category</span>
                 {t('products.cards.classification', { defaultValue: 'Classification' })}
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {t('common.columns.type')}
@@ -929,7 +929,7 @@ export default function ProductDetailPage() {
                 <span className="material-symbols-outlined">payments</span>
                 {t('products.pricing')}
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                   {t('products.columns.listPrice')}
@@ -1035,7 +1035,7 @@ export default function ProductDetailPage() {
                 <span className="material-symbols-outlined">account_balance</span>
                 {t('products.cards.taxation', { defaultValue: 'Taxation' })}
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {t('products.columns.purchaseTaxCategory')}

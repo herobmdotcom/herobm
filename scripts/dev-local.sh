@@ -3,9 +3,19 @@
 cd "$(dirname "$0")/.."
 
 PROFILE=""
-if [ "$1" == "-Profile" ] && [ -n "$2" ]; then
-    PROFILE="$2"
-fi
+ENABLE_SWAGGER="true"
+ENABLE_MCP="true"
+ENABLE_DBT_DOCS="false"
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -Profile) PROFILE="$2"; shift ;;
+        -NoSwagger|--no-swagger) ENABLE_SWAGGER="false" ;;
+        -NoMcp|--no-mcp) ENABLE_MCP="false" ;;
+        -WithDbt|--with-dbt) ENABLE_DBT_DOCS="true" ;;
+    esac
+    shift
+done
 
 ACTIVE_PROFILE="$PROFILE"
 if [ -z "$ACTIVE_PROFILE" ] && [ -f ".active_profile" ]; then
@@ -39,6 +49,8 @@ else
     echo -e "\e[33mWarning: $ENV_FILE not found!\e[0m"
 fi
 
+ENV_EXPORTS="$ENV_EXPORTS ENABLE_SWAGGER='$ENABLE_SWAGGER'"
+
 echo -e "\e[32mStarting local Dev Environment...\e[0m"
 echo -e "\e[36mAPI will start on port $API_PORT\e[0m"
 echo -e "\e[36mPortal will start on port $FE_PORT\e[0m"
@@ -51,7 +63,17 @@ eval "env ENV_FILE='$ENV_FILE' PORT=$API_PORT PIPELINE_LOG_DIR='$LOG_DIR' $ENV_E
 API_PID=$!
 
 # Start FE in foreground
-eval "env ENV_FILE='$ENV_FILE' API_URL='http://localhost:$API_PORT' $ENV_EXPORTS npm run dev:local -w apps/ops-portal -- -p $FE_PORT"
+eval "env ENV_FILE='$ENV_FILE' API_URL='http://localhost:$API_PORT' $ENV_EXPORTS npm run dev:local -w apps/ops-portal -- -p $FE_PORT &"
+FE_PID=$!
 
-# Cleanup API when user terminates the script
-trap "kill $API_PID 2>/dev/null" EXIT
+
+
+if [ "$ENABLE_DBT_DOCS" == "true" ]; then
+    echo -e "\e[36mdbt docs will be served\e[0m"
+    (cd pipelines/abm_transform && ../../.venv/bin/dbt docs serve) &
+    DBT_PID=$!
+fi
+
+# Cleanup when user terminates the script
+trap "kill $API_PID $FE_PID $MCP_PID $DBT_PID 2>/dev/null" EXIT
+wait

@@ -60,8 +60,8 @@ export default function EventQueueDashboard() {
 
   const loadData = async () => {
     try {
-      const res: unknown = await api.externalSyncControllerGetSyncStatus({ limit: '100' });
-      setData(((res as any)?.data || res || null) as any);
+      const res = await api.externalSyncControllerGetSyncStatus({ limit: '100' });
+      setData(res.data as unknown as SyncData);
       setError('');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('errors.loadFailed'));
@@ -90,8 +90,8 @@ export default function EventQueueDashboard() {
     setDrawerLoading(true);
     setDrawerExpandedId(null);
     try {
-      const res: unknown = await api.externalSyncControllerGetEventsByType({ type: eventType, status: 'failed', limit: '50' });
-      setDrawerEvents((res as any)?.data?.events || (res as any)?.events || (res as any)?.data || res || []);
+      const { data: page } = await api.externalSyncControllerGetEventsByType({ type: eventType, status: 'failed', limit: '50' });
+      setDrawerEvents(page.data as unknown as OutboxEvent[]);
     } catch (err: unknown) {
       setDrawerEvents([]);
       reportError(err, 'EventQueueDashboard_handleViewEvents');
@@ -173,7 +173,7 @@ export default function EventQueueDashboard() {
         {data && (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <div
                 className="card"
                 style={{

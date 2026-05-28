@@ -39,9 +39,11 @@ import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @ApiTags('Products')
 @Controller('products')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('products')
 export class ProductsController {
   constructor(
@@ -55,6 +57,7 @@ export class ProductsController {
     summary: 'List Products',
     description: 'Retrieve a paginated list of all products in the catalog.',
   })
+  @ApiFieldMask()
   @ApiPaginatedResponse(ProductResponseDto)
   findAll(@Query() query: PaginationQuery) {
     return this.productsService.findAll(query);
@@ -67,6 +70,7 @@ export class ProductsController {
     description:
       'Retrieve detailed information for a specific product by its unique identifier.',
   })
+  @ApiFieldMask()
   @ApiOkResponse({ type: ProductResponseDto })
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(id);
@@ -276,12 +280,12 @@ export class ProductsController {
   @Patch(':id/components/:componentId')
   @ApiBody({ type: UpdateProductComponentDto })
   @CasbinAction('write')
+  @ApiOkResponse({ type: ProductResponseDto })
   @ApiOperation({
     summary: 'Update Component',
     description:
       'Modify the details (like quantity) of an existing product component.',
   })
-  @ApiOkResponse({ type: ProductResponseDto })
   updateComponent(
     @Param('id') productId: string,
     @Param('componentId') componentId: string,

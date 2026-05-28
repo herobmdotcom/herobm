@@ -72,6 +72,7 @@ export async function runStandardSeeds(db: any, dryRun = false) {
     console.log('Dry run mode -- no data will be written.');
   }
 
+  await seedCasbinPolicies(db, dryRun);
   await seedUsers(db, dryRun);
   await seedProducts(db, dryRun);
   await seedOrganization(db, dryRun);
@@ -83,71 +84,216 @@ export async function runStandardSeeds(db: any, dryRun = false) {
   console.log('\nDone.');
 }
 
-async function seedUsers(db: any, dryRun: boolean) {
-  const reqVars = [
-    'DEV_ADMIN_PASSWORD',
-    'DEV_VIEWER_PASSWORD',
-    'DEV_SALES_PASSWORD',
-    'DEV_WAREHOUSE_PASSWORD',
-    'DEV_PROCUREMENT_PASSWORD',
-    'DEV_FINANCE_PASSWORD',
-  ];
-  const missing = reqVars.filter((v) => !process.env[v]);
-  if (missing.length > 0) {
-    console.log(`  SKIP: Missing env vars: ${missing.join(', ')}`);
-    return;
-  }
-
+async function seedCasbinPolicies(db: any, dryRun: boolean) {
   if (dryRun) {
-    console.log(
-      '  [DRY RUN] Would seed users: admin, viewer, sales, warehouse, procurement, finance',
-    );
+    console.log('  [DRY RUN] Would seed standard casbin policies');
     return;
   }
 
-  const rolePasswords = [
-    { username: 'admin', pass: process.env.DEV_ADMIN_PASSWORD, role: 'admin' },
-    {
-      username: 'viewer',
-      pass: process.env.DEV_VIEWER_PASSWORD,
-      role: 'viewer',
-    },
-    { username: 'sales', pass: process.env.DEV_SALES_PASSWORD, role: 'sales' },
-    {
-      username: 'warehouse',
-      pass: process.env.DEV_WAREHOUSE_PASSWORD,
-      role: 'warehouse',
-    },
-    {
-      username: 'procurement',
-      pass: process.env.DEV_PROCUREMENT_PASSWORD,
-      role: 'procurement',
-    },
-    {
-      username: 'finance',
-      pass: process.env.DEV_FINANCE_PASSWORD,
-      role: 'finance',
-    },
+  const { casbinRule } = await import('../drizzle/modbm-core-schema.js');
+
+  const existing = await db.select().from(casbinRule);
+  const existingSet = new Set(
+    existing.map((r: any) =>
+      [
+        r.ptype || '',
+        r.v0 || '',
+        r.v1 || '',
+        r.v2 || '',
+        r.v3 || '',
+        r.v4 || '',
+        r.v5 || '',
+      ].join('|'),
+    ),
+  );
+
+  const policies = [
+    { ptype: 'p', v0: 'viewer', v1: 'customers', v2: 'read' },
+    { ptype: 'p', v0: 'viewer', v1: 'products', v2: 'read' },
+    { ptype: 'p', v0: 'viewer', v1: 'inventory', v2: 'read' },
+    { ptype: 'p', v0: 'viewer', v1: 'sales-orders', v2: 'read' },
+    { ptype: 'p', v0: 'viewer', v1: 'purchase-orders', v2: 'read' },
+    { ptype: 'p', v0: 'viewer', v1: 'suppliers', v2: 'read' },
+    { ptype: 'p', v0: 'viewer', v1: 'receptions', v2: 'read' },
+    { ptype: 'p', v0: 'viewer', v1: 'goods-received', v2: 'read' },
+    { ptype: 'p', v0: 'viewer', v1: 'dashboard', v2: 'read' },
+    { ptype: 'p', v0: 'viewer', v1: 'tax-categories', v2: 'read' },
+    { ptype: 'p', v0: 'viewer', v1: 'settings', v2: 'read' },
+    { ptype: 'p', v0: 'viewer', v1: 'report', v2: 'read' },
+    { ptype: 'p', v0: 'viewer', v1: 'payments', v2: 'read' },
+
+    { ptype: 'p', v0: 'admin', v1: 'report', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'report', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'report', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'customers', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'customers', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'customers', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'products', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'products', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'products', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'purchase-orders', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'purchase-orders', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'purchase-orders', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'suppliers', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'suppliers', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'suppliers', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'receptions', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'receptions', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'receptions', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'goods-received', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'goods-received', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'goods-received', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'inventory', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'inventory', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'inventory', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'users', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'users', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'users', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'roles', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'roles', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'roles', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'settings', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'settings', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'settings', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'gl', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'gl', v2: 'write' },
+
+    { ptype: 'p', v0: 'admin', v1: 'payments', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'payments', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'payments', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'system_logs', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'system_logs', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'system_logs', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'import', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'import', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'import', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'api_keys', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'api_keys', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'api_keys', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'webhooks', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'webhooks', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'webhooks', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'events', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'events', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'events', v2: 'archive' },
+
+    { ptype: 'p', v0: 'admin', v1: 'tax-categories', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'tax-categories', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'tax-categories', v2: 'archive' },
+
+    { ptype: 'p', v0: 'system', v1: 'import', v2: 'write' },
+    { ptype: 'p', v0: 'system', v1: 'import', v2: 'read' },
+
+    { ptype: 'p', v0: 'finance', v1: 'gl', v2: 'read' },
+    { ptype: 'p', v0: 'finance', v1: 'gl', v2: 'write' },
+    { ptype: 'p', v0: 'finance', v1: 'payments', v2: 'write' },
+    { ptype: 'p', v0: 'finance', v1: 'sales-orders', v2: 'write' },
+    { ptype: 'p', v0: 'finance', v1: 'purchase-orders', v2: 'write' },
+
+    { ptype: 'p', v0: 'sales', v1: 'customers', v2: 'write' },
+    { ptype: 'p', v0: 'sales', v1: 'sales-orders', v2: 'write' },
+
+    { ptype: 'p', v0: 'warehouse', v1: 'sales-orders', v2: 'write' },
+    { ptype: 'p', v0: 'warehouse', v1: 'purchase-orders', v2: 'write' },
+    { ptype: 'p', v0: 'warehouse', v1: 'receptions', v2: 'write' },
+    { ptype: 'p', v0: 'warehouse', v1: 'goods-received', v2: 'write' },
+    { ptype: 'p', v0: 'warehouse', v1: 'inventory', v2: 'write' },
+
+    { ptype: 'p', v0: 'procurement', v1: 'suppliers', v2: 'write' },
+    { ptype: 'p', v0: 'procurement', v1: 'purchase-orders', v2: 'write' },
+
+    { ptype: 'g', v0: 'admin', v1: 'viewer' },
+    { ptype: 'g', v0: 'finance', v1: 'viewer' },
+    { ptype: 'g', v0: 'sales', v1: 'viewer' },
+    { ptype: 'g', v0: 'warehouse', v1: 'viewer' },
+    { ptype: 'g', v0: 'procurement', v1: 'viewer' },
+    { ptype: 'g', v0: 'agent', v1: 'viewer' },
+    { ptype: 'g', v0: 'webhook', v1: 'viewer' },
   ];
 
-  for (const item of rolePasswords) {
-    const hash = await bcrypt.hash(item.pass!, 10);
-    await db
-      .insert(users)
-      .values({
-        username: item.username,
-        passwordHash: hash,
-        role: item.role as any,
-        isActive: true,
-      })
-      .onConflictDoUpdate({
-        target: users.username,
-        set: { passwordHash: hash, role: item.role as any, isActive: true },
-      });
+  const toInsert = policies.filter((p: any) => {
+    const key = [
+      p.ptype || '',
+      p.v0 || '',
+      p.v1 || '',
+      p.v2 || '',
+      p.v3 || '',
+      p.v4 || '',
+      p.v5 || '',
+    ].join('|');
+    return !existingSet.has(key);
+  });
+
+  if (toInsert.length > 0) {
+    await db.insert(casbinRule).values(toInsert);
+    console.log(`  Seeded ${toInsert.length} new Casbin policies`);
+  } else {
+    console.log('  All standard Casbin policies already seeded.');
   }
-  console.log(
-    '  Seeded users: admin, viewer, sales, warehouse, procurement, finance',
-  );
+}
+
+async function seedUsers(db: any, dryRun: boolean) {
+  if (dryRun) {
+    console.log('  [DRY RUN] Would seed user: admin');
+    return;
+  }
+
+  let adminPass = process.env.DEV_ADMIN_PASSWORD;
+  let generated = false;
+
+  if (!adminPass) {
+    adminPass = crypto.randomBytes(16).toString('hex');
+    generated = true;
+  }
+
+  const hash = await bcrypt.hash(adminPass, 10);
+
+  await db
+    .insert(users)
+    .values({
+      username: 'admin',
+      passwordHash: hash,
+      role: 'admin' as any,
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: { passwordHash: hash, role: 'admin' as any, isActive: true },
+    });
+
+  console.log('  Seeded user: admin');
+
+  if (generated) {
+    console.log(
+      '\n=============================================================',
+    );
+    console.log('  [SECURE] Generated Admin Password:');
+    console.log(`  ${adminPass}`);
+    console.log('  Please save this password, it will not be shown again.');
+    console.log(
+      '=============================================================\n',
+    );
+  }
 }
 
 async function seedProducts(db: any, dryRun: boolean) {
@@ -272,13 +418,13 @@ async function seedAppSettings(db: any, dryRun: boolean) {
   console.log('  Seeded default app_settings');
 }
 
-function loadCoaSettings() {
+function loadCoaSettings(prefix = 'au_standard') {
   const p = path.join(
     __dirname,
     '..',
     'gl',
     'charts',
-    'au_standard_settings.json',
+    `${prefix}_settings.json`,
   );
   if (!fs.existsSync(p)) return null;
   return JSON.parse(fs.readFileSync(p, 'utf-8'));
@@ -308,14 +454,12 @@ async function seedBaseGlSettings(db: any, dryRun: boolean) {
   console.log('  Seeded base gl_settings (without accounts)');
 }
 
-export async function seedCoaAccounts(db: any, dryRun: boolean) {
-  const coaPath = path.join(
-    __dirname,
-    '..',
-    'gl',
-    'charts',
-    'au_standard.json',
-  );
+export async function seedCoaAccounts(
+  db: any,
+  dryRun: boolean,
+  prefix = 'au_standard',
+) {
+  const coaPath = path.join(__dirname, '..', 'gl', 'charts', `${prefix}.json`);
   if (!fs.existsSync(coaPath)) {
     console.log(`  SKIP: COA file not found at ${coaPath}`);
     return;
@@ -325,7 +469,7 @@ export async function seedCoaAccounts(db: any, dryRun: boolean) {
 
   if (dryRun) {
     console.log(
-      '  [DRY RUN] Would seed Chart of Customers from au_standard.json',
+      `  [DRY RUN] Would seed Chart of Customers from ${prefix}.json`,
     );
     return;
   }
@@ -377,7 +521,7 @@ export async function seedCoaAccounts(db: any, dryRun: boolean) {
         accountType: row.accountType,
         isGroup: row.isGroup,
         isSystem: true,
-        currencyCode: 'AUD',
+        currencyCode: prefix === 'us_standard' ? 'USD' : 'AUD',
       })
       .onConflictDoUpdate({
         target: glAccounts.accountCode,
@@ -404,8 +548,12 @@ export async function seedCoaAccounts(db: any, dryRun: boolean) {
   );
 }
 
-export async function seedCoaSettings(db: any, dryRun: boolean) {
-  const settings = loadCoaSettings();
+export async function seedCoaSettings(
+  db: any,
+  dryRun: boolean,
+  prefix = 'au_standard',
+) {
+  const settings = loadCoaSettings(prefix);
   if (!settings) {
     console.log('  SKIP: No COA settings file found.');
     return;

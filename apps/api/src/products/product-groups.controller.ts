@@ -29,9 +29,11 @@ import {
 } from './dto';
 import { ApiPaginatedResponse } from '../common/pagination';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @ApiTags('Setup')
 @Controller('product-groups')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('settings')
 export class ProductGroupsController {
   constructor(private readonly productGroupsService: ProductGroupsService) {}
@@ -43,6 +45,7 @@ export class ProductGroupsController {
     description: 'Retrieve all product groups configured in the system.',
   })
   @ApiPaginatedResponse(ProductGroupResponseDto)
+  @ApiFieldMask()
   findAll() {
     return this.productGroupsService.findAll();
   }
@@ -54,6 +57,7 @@ export class ProductGroupsController {
     description: 'Retrieve details of a specific product group.',
   })
   @ApiOkResponse({ type: ProductGroupResponseDto })
+  @ApiFieldMask()
   findOne(@Param('id') id: string) {
     return this.productGroupsService.findOne(id);
   }

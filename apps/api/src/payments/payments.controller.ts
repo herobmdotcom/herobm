@@ -37,9 +37,11 @@ import {
 import { AuthUser } from '../auth/auth-user.decorator';
 import { ApiPaginatedResponse } from '../common/pagination';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @ApiTags('Payments')
 @Controller('payments')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('payments')
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
@@ -52,6 +54,7 @@ export class PaymentsController {
       'Retrieve a list of payments with optional filters for days and allocation status.',
   })
   @ApiPaginatedResponse(PaymentResponseDto)
+  @ApiFieldMask()
   findAll(
     @Query('days') days?: string,
     @Query('allocation') allocation?: string,
@@ -66,6 +69,7 @@ export class PaymentsController {
     description: 'Retrieve detailed information for a specific payment.',
   })
   @ApiOkResponse({ type: PaymentResponseDto })
+  @ApiFieldMask()
   findOne(@Param('id') id: string) {
     return this.paymentsService.findOne(id);
   }
@@ -143,13 +147,29 @@ export class PaymentsController {
     summary: 'Export ABA',
     description: 'Export selected payments into an ABA file format.',
   })
-  @ApiCreatedResponse({ type: ExportAbaResponseDto })
+  @ApiCreatedResponse({ type: ExportAbaResponseDto }) // Uses same response DTO
   async exportAba(@Body() dto: BatchPaymentActionDto, @AuthUser() user: any) {
     const fileContent = await this.paymentsService.exportAba(
       dto.paymentIds,
       user.username,
     );
     return { fileContent }; // Return as json for the frontend to blobify
+  }
+
+  @Post('export-nacha')
+  @ApiBody({ type: BatchPaymentActionDto })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Export NACHA',
+    description: 'Export selected payments into a NACHA ACH file format.',
+  })
+  @ApiCreatedResponse({ type: ExportAbaResponseDto }) // Uses same response DTO { fileContent: string }
+  async exportNacha(@Body() dto: BatchPaymentActionDto, @AuthUser() user: any) {
+    const fileContent = await this.paymentsService.exportNacha(
+      dto.paymentIds,
+      user.username,
+    );
+    return { fileContent };
   }
 
   @Post('confirm-exported')

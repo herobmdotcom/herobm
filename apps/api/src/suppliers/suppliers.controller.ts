@@ -36,9 +36,10 @@ import {
   EmptyBodyDto,
 } from './dto';
 import { ApiPaginatedResponse } from '../common/pagination';
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @ApiTags('Suppliers')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @Controller('suppliers')
 @CasbinResource('suppliers')
 export class SuppliersController {
@@ -55,6 +56,7 @@ export class SuppliersController {
     description: 'Retrieve a paginated list of all suppliers.',
   })
   @ApiPaginatedResponse(SupplierResponseDto)
+  @ApiFieldMask()
   async findAll(@Query() query: PaginationQuery) {
     return this.suppliersService.findAll(query);
   }
@@ -93,6 +95,7 @@ export class SuppliersController {
     description: 'Retrieve detailed information for a specific supplier.',
   })
   @ApiOkResponse({ type: SupplierResponseDto })
+  @ApiFieldMask()
   async findOne(@Param('id') id: string) {
     return this.suppliersService.findOne(id);
   }

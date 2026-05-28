@@ -124,7 +124,7 @@ export default function Error({
             )}
             {mailto && (
               <p>
-                {/* eslint-disable i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span>✉️</span>
                 {/* eslint-enable i18next/no-literal-string */}
                 {' '}

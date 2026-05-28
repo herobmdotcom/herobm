@@ -34,7 +34,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
 
   useEffect(() => {
     api.reportsControllerGetHooks().then(res => {
-      setAvailableHooks((res.data as unknown as unknown[]) || []);
+      setAvailableHooks(res.data as unknown as Record<string, unknown>[] || []);
     }).catch(() => {});
   }, []);
 
@@ -93,8 +93,8 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
     if (!previewVars.hookSlug) return;
     try {
       const res = await api.reportsControllerGetRandomId(previewVars.hookSlug);
-      if ((res as unknown as { data: { id: string } }).data?.id || (res as unknown as { data: { data: { id: string } } }).data?.data?.id) {
-        setPreviewVars(p => ({ ...p, entityId: (res as unknown as { data: { data: { id: string } } }).data?.data?.id || (res as unknown as { data: { id: string } }).data?.id }));
+      if ((res as unknown as { data?: { id?: string }, id?: string }).data?.id || (res as unknown as { id?: string }).id) {
+        setPreviewVars(p => ({ ...p, entityId: (res as unknown as { data?: { id?: string }, id?: string }).data?.id || (res as unknown as { id?: string }).id as string }));
       }
     } catch (err) {
       reportError(err, 'TemplateForm.randomizeId');
@@ -107,8 +107,8 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
       // Automatically fetch a random ID when changing hooks
       api.reportsControllerGetRandomId(newHookSlug)
         .then((res: unknown) => {
-          const newId = (res as any)?.data?.data?.id || (res as any)?.data?.id;
-          if (newId) setPreviewVars(p => ({ ...p, hookSlug: newHookSlug, entityId: newId }));
+          const newId = (res as unknown as { data?: { id?: string }, id?: string }).data?.id || (res as unknown as { id?: string }).id;
+          if (newId) setPreviewVars(p => ({ ...p, hookSlug: newHookSlug, entityId: newId as string }));
         })
         .catch(() => {});
     }

@@ -74,8 +74,8 @@ export default function UsersPage() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const res: unknown = await api.usersControllerFindAll();
-      setUsers((res as any)?.data || res || []);
+      const res = await api.usersControllerFindAll();
+      setUsers(res.data as unknown as User[]);
     } catch (err: any) {
       toast.error(t('toasts.loadFailed') + ': ' + err.message);
     } finally {

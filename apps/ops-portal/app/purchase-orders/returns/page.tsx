@@ -83,13 +83,13 @@ function ReturnsFlow() {
       if (data.length > 0) {
         selectLine(data[0] as unknown as ReturnableLine);
       } else if (poId) {
-        const matches = (data as any[]).filter((x: any) => x.purchaseOrderId === poId);
+        const matches = (data as unknown as ReturnableLine[]).filter((x) => x.purchaseOrderId === poId);
         if (matches.length > 0) {
-             selectLine(matches[0] as unknown as ReturnableLine);
+             selectLine(matches[0]);
          }
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoadingLines(false);
     }

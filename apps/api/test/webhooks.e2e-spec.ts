@@ -30,6 +30,7 @@ describe('Webhooks & API Keys (e2e)', () => {
       name: 'Test Key',
       keyHash,
       prefix: rawKey.substring(0, 4),
+      role: 'admin',
       isActive: true,
       createdBy: 'test',
     });

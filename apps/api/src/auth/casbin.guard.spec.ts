@@ -10,6 +10,30 @@ import {
   CASBIN_ACTION,
   SKIP_CASBIN,
 } from './casbin.guard';
+import { newEnforcer } from 'casbin';
+import * as path from 'path';
+import * as fs from 'fs';
+
+function resolveCasbinAsset(filename: string): string {
+  const dirPath = path.join(__dirname, 'casbin', filename);
+  if (fs.existsSync(dirPath)) return dirPath;
+
+  const srcPath = path.join(
+    process.cwd(),
+    'apps',
+    'api',
+    'src',
+    'auth',
+    'casbin',
+    filename,
+  );
+  if (fs.existsSync(srcPath)) return srcPath;
+
+  const srcPath2 = path.join(process.cwd(), 'src', 'auth', 'casbin', filename);
+  if (fs.existsSync(srcPath2)) return srcPath2;
+
+  return dirPath;
+}
 
 /**
  * Helper to build a mock ExecutionContext with configurable metadata and request.
@@ -43,10 +67,17 @@ function createMockContext(opts: {
 describe('CasbinGuard', () => {
   let guard: CasbinGuard;
   let reflector: Reflector;
+  let enforcer: any;
+
+  beforeAll(async () => {
+    const modelPath = resolveCasbinAsset('model.conf');
+    const policyPath = resolveCasbinAsset('policy.csv');
+    enforcer = await newEnforcer(modelPath, policyPath);
+  });
 
   beforeEach(() => {
     reflector = new Reflector();
-    guard = new CasbinGuard(reflector);
+    guard = new CasbinGuard(reflector, enforcer);
   });
 
   describe('SkipCasbin decorator', () => {

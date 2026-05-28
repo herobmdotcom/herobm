@@ -234,14 +234,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 <span className="text-sm tabular-nums text-right block">
                     {(() => {
                         const c = taxCategories.find((cat) => cat.taxCategoryId === line.taxCategoryId);
-                        if (c) return <TaxLabel category={c} />;
+                        if (c) {
+                            const pct = parseFloat(c.rate || '0');
+                            const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
+                            return <span title={getTaxLabel(c)} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>{formattedPct}%</span>;
+                        }
                         const amt = parseFloat(line.amount || '0');
                         const tax = parseFloat(line.tax || '0');
                         if (amt > 0 && tax > 0) {
                             const pct = (tax / amt) * 100;
                             return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
                         }
-                        if (amt > 0 && tax === 0) return tCommon('taxLabels.exempt');
+                        if (amt > 0 && tax === 0) return <span title={tCommon('taxLabels.exempt')} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>0%</span>;
                         return '—';
                     })()}
                 </span>
@@ -341,7 +345,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   >
                     {t.icon === 'close' ? (
                       <>
-                        {/* eslint-disable i18next/no-literal-string */}
+                        {/* eslint-disable-next-line i18next/no-literal-string */}
                         <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
                         {/* eslint-enable i18next/no-literal-string */}
                       </>
@@ -923,7 +927,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
           {latestAutoTransition && (
             tToast('orderMovedToReason', {
-              state: tCommon(`states.${latestAutoTransition.to}` as any),
+              state: tCommon(`states.${latestAutoTransition.to}` as never),
               reason: latestAutoTransition.reason.toLowerCase()
             })
           )}

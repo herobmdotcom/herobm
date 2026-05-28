@@ -8,7 +8,22 @@ import {
   IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class ReturnLineResponseDto {
+  @ApiProperty() lineId!: string;
+  @ApiProperty() description!: string;
+  @ApiProperty() quantityReturned!: string;
+}
+
+export class ReturnResponseDto {
+  @ApiProperty() returnId!: string;
+  @ApiProperty() returnNumber!: string;
+  @ApiProperty() stateCode!: string;
+  @ApiPropertyOptional() notes?: string;
+  @ApiProperty({ type: () => [ReturnLineResponseDto] })
+  lines!: ReturnLineResponseDto[];
+}
 
 // ── Order Line DTOs ──
 
@@ -403,7 +418,11 @@ export class ShipmentResponseDto {
   carrierId?: string;
   notes?: string;
   createdOn?: Date;
-  @ApiProperty({ type: () => ShipmentLineResponseDto, isArray: true, required: false })
+  @ApiProperty({
+    type: () => ShipmentLineResponseDto,
+    isArray: true,
+    required: false,
+  })
   lines?: ShipmentLineResponseDto[];
 }
 

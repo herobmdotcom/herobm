@@ -1,5 +1,8 @@
 param (
-    [string]$TargetProfile = ""
+    [string]$TargetProfile = "",
+    [switch]$NoSwagger,
+    [switch]$NoMcp,
+    [switch]$WithDbt
 )
 
 Push-Location $PSScriptRoot\..
@@ -17,7 +20,11 @@ if ($activeProfile) {
     Write-Host "Targeting Default Environment" -ForegroundColor Magenta
 }
 
-$envInjection = "`$env:ENV_FILE='$envFile'; "
+$enableSwagger = if ($NoSwagger) { 'false' } else { 'true' }
+$enableMcp = if ($NoMcp) { 'false' } else { 'true' }
+$enableDbtDocs = if ($WithDbt) { 'true' } else { 'false' }
+
+$envInjection = "`$env:ENV_FILE='$envFile'; `$env:ENABLE_SWAGGER='$enableSwagger'; "
 $apiPort = 3002
 $fePort = 4301
 if (Test-Path $envFile) {
@@ -46,5 +53,13 @@ Start-Process pwsh -ArgumentList "-NoExit", "-Command", $apiCmd
 # Start FE in a new window
 $feCmd = $envInjection + "`$env:API_URL='http://localhost:$apiPort'; npm run dev:local -w apps/ops-portal -- -p $fePort"
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", $feCmd
+
+
+
+if ($enableDbtDocs -eq 'true') {
+    Write-Host "dbt docs will be served" -ForegroundColor Cyan
+    $dbtCmd = $envInjection + "Push-Location pipelines\abm_transform; ..\..\.venv\Scripts\dbt docs serve; Pop-Location"
+    Start-Process pwsh -ArgumentList "-NoExit", "-Command", $dbtCmd
+}
 
 Pop-Location

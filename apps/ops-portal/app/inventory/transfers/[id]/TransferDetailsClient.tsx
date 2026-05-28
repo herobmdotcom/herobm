@@ -90,7 +90,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                   onClick={handleCancel}
                   disabled={saving}
                 >
-                  {/* eslint-disable i18next/no-literal-string */}
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
                   {/* eslint-enable i18next/no-literal-string */}
                   {tCommon('cancel')}
@@ -117,7 +117,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
         )}
 
         <div className="card">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {tTransfers('columns.sourceLocation')}
@@ -161,7 +161,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading">
-              {/* eslint-disable i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">inventory_2</span>
               {/* eslint-enable i18next/no-literal-string */}
               {tTransfers('lineItems')}

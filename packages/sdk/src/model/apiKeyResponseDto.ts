@@ -10,5 +10,6 @@ export interface ApiKeyResponseDto {
   apiKeyId: string;
   name: string;
   prefix: string;
+  role: string;
   createdOn: string;
 }

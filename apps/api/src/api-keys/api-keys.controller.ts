@@ -38,24 +38,25 @@ import {
 @ApiTags('ApiKeys')
 @ApiBearerAuth()
 @Controller('api-keys')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('api_keys')
 export class ApiKeysController {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   @Get()
   @CasbinAction('read')
+  @ApiOkResponse({ type: [ApiKeyResponseDto] })
   @ApiOperation({
     summary: 'List API Keys',
     description: 'Retrieves all service API keys (without raw secrets).',
   })
-  @ApiOkResponse({ type: [ApiKeyResponseDto] })
   async list() {
     const keys = await this.db
       .select({
         apiKeyId: apiKeys.apiKeyId,
         name: apiKeys.name,
         prefix: apiKeys.prefix,
+        role: apiKeys.role,
         createdOn: apiKeys.createdOn,
       })
       .from(apiKeys);
@@ -82,6 +83,7 @@ export class ApiKeysController {
       .values({
         name: body.name,
         prefix: prefix,
+        role: body.role,
         keyHash: hash,
         createdBy: 'api', // Temporarily hardcoded for API-created keys
       })

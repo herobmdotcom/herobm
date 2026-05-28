@@ -10,7 +10,13 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.0.0",
     "orval": "^7.3.0",
     "typescript": "^5.0.0"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./server": "./dist/server/index.js"
   }
 }

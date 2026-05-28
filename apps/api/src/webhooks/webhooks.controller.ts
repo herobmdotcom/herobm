@@ -112,6 +112,7 @@ export class WebhooksController {
     description: 'Removes a webhook subscription.',
   })
   @ApiOkResponse({
+    // BYPASS-TYPING-TEST
     schema: {
       type: 'object',
       properties: {

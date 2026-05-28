@@ -8,7 +8,7 @@
 import type { JournalLineDto } from './journalLineDto';
 
 export interface CreateJournalEntryDto {
-  journalEntryId: string;
+  journalEntryId?: string;
   lines: JournalLineDto[];
   memo?: string;
   entryDate?: string;

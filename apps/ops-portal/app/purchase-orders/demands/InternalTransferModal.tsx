@@ -55,7 +55,7 @@ export default function InternalTransferModal({
     const params = productId ? { productId } : {};
     api.inventoryControllerFindAllLocations(params)
       .then((res) => {
-        setLocations((res.data?.data || []) as RawLocationWithAvailability[]);
+        setLocations((res.data?.data || []) as unknown as RawLocationWithAvailability[]);
       })
       .catch((err) => reportError(err, 'InternalTransferModal'));
   }, [isOpen, selectedDemands]);

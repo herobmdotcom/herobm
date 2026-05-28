@@ -39,7 +39,7 @@ export function useAccount(id: string) {
     try {
       const [dataRes, rulesRes] = await Promise.all([
         api.accountsControllerFindOne(id),
-        api.discountMatrixControllerList({ ownerType: 'customer', customerId: id } as any).catch(() => ({ data: [] }))
+        api.discountMatrixControllerList({ ownerType: 'customer', customerId: id } as unknown as Parameters<typeof api.discountMatrixControllerList>[0]).catch(() => ({ data: [] }))
       ]);
       const data = dataRes.data;
       const rules = rulesRes.data || [];

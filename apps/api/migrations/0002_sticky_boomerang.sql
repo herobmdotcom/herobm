@@ -1,0 +1,1 @@
+ALTER TABLE "modbm_core"."api_keys" ADD COLUMN "role" text NOT NULL;

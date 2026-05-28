@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import AuthGate from '@/components/AuthGate';
+import { SettingsProvider } from '@/components/SettingsProvider';
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -16,7 +17,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthGate>
-      <div className="flex h-[100dvh] overflow-hidden relative">
+      <SettingsProvider>
+        <div className="flex h-[100dvh] overflow-hidden relative">
         {/* Mobile Sidebar Overlay */}
         {isSidebarOpen && (
           <div 
@@ -50,6 +52,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           </span>
         </button>
       </div>
+      </SettingsProvider>
     </AuthGate>
   );
 }

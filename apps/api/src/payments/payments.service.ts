@@ -25,6 +25,7 @@ import { GlService } from '../gl/gl.service';
 import { evaluateInvoiceLifecycleRules } from '../invoices/invoice-lifecycle-rules';
 import { CreatePaymentDto, AllocatePaymentDto } from './dto';
 import { AbaGeneratorService } from './aba-generator.service';
+import { NachaGeneratorService } from './nacha-generator.service';
 import { inArray } from 'drizzle-orm';
 import {
   PAYMENT_STATE,
@@ -45,6 +46,7 @@ export class PaymentsService {
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly glService: GlService,
     private readonly abaGenerator: AbaGeneratorService,
+    private readonly nachaGenerator: NachaGeneratorService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -731,6 +733,119 @@ export class PaymentsService {
       }
 
       return abaContent;
+    });
+  }
+
+  async exportNacha(paymentIds: string[], actor: string): Promise<string> {
+    return await this.db.transaction(async (tx) => {
+      // 1. Fetch payments and their payee bank details
+      const payments = await tx
+        .select({
+          paymentId: paymentEntries.paymentId,
+          totalAmount: paymentEntries.totalAmount,
+          stateCode: paymentEntries.stateCode,
+          paymentNumber: paymentEntries.paymentNumber,
+          glAccountBank: paymentEntries.glAccountBank,
+          customerBankName: customers.bankAccountName,
+          customerRouting: customers.bankBsb, // BSB acts as Routing for US
+          customerAccount: customers.bankAccountNumber,
+          supplierBankName: suppliers.bankAccountName,
+          supplierRouting: suppliers.bankBsb,
+          supplierAccount: suppliers.bankAccountNumber,
+        })
+        .from(paymentEntries)
+        .leftJoin(customers, eq(paymentEntries.partyId, customers.customerId))
+        .leftJoin(suppliers, eq(paymentEntries.partyId, suppliers.vendorId))
+        .where(inArray(paymentEntries.paymentId, paymentIds));
+
+      if (payments.length === 0) {
+        throw new BadRequestException('No payments found to export');
+      }
+
+      // Check states
+      for (const p of payments) {
+        if (p.stateCode !== PAYMENT_STATE.DRAFT) {
+          throw new BadRequestException(
+            `Payment ${p.paymentNumber} is not in DRAFT state`,
+          );
+        }
+      }
+
+      // 2. Determine the company bank account
+      const bankAccountId = payments[0].glAccountBank;
+      if (!bankAccountId)
+        throw new BadRequestException('No GL Account Bank set on payment');
+
+      const [bankGl] = await tx
+        .select()
+        .from(glAccounts)
+        .where(eq(glAccounts.glAccountId, bankAccountId));
+
+      if (!bankGl) throw new NotFoundException('GL Account Bank not found');
+
+      const meta = (bankGl.metadata || {}) as any;
+      if (
+        !meta.companyId ||
+        !meta.immediateDestination ||
+        !meta.companyName ||
+        !meta.immediateDestinationName
+      ) {
+        throw new BadRequestException(
+          'Company Bank GL Account metadata is missing NACHA details (companyId, companyName, immediateDestination, immediateDestinationName)',
+        );
+      }
+
+      // 3. Build transactions
+      const transactions = payments.map((p) => {
+        const routing = p.supplierRouting || p.customerRouting;
+        const account = p.supplierAccount || p.customerAccount;
+        const name = p.supplierBankName || p.customerBankName;
+
+        if (!routing || !account || !name) {
+          throw new BadRequestException(
+            `Missing bank details for payee on payment ${p.paymentNumber}. Make sure routing number (bank bsb field) and account number are set.`,
+          );
+        }
+
+        return {
+          routingNumber: routing,
+          accountNumber: account,
+          accountName: name,
+          amount: parseFloat(p.totalAmount),
+          reference: p.paymentNumber,
+        };
+      });
+
+      // 4. Generate NACHA file content
+      const nachaContent = this.nachaGenerator.generateNachaFile({
+        companyName: meta.companyName,
+        companyId: meta.companyId,
+        immediateDestination: meta.immediateDestination,
+        immediateDestinationName: meta.immediateDestinationName,
+        description: 'PAYMENTS',
+        processDate: new Date(),
+        transactions,
+      });
+
+      // 5. Update payments state
+      for (const p of payments) {
+        await this.changePaymentState(
+          p.paymentId,
+          PAYMENT_STATE.EXPORTED,
+          actor,
+          tx as any,
+        );
+
+        await tx
+          .update(paymentEntries)
+          .set({
+            abaExportedAt: new Date(), // Reusing this timestamp for batch export
+            modifiedOn: new Date(),
+          })
+          .where(eq(paymentEntries.paymentId, p.paymentId));
+      }
+
+      return nachaContent;
     });
   }
 

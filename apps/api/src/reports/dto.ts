@@ -1,4 +1,5 @@
-﻿import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
 
 export class EmptyBodyDto {}
 
@@ -76,6 +77,15 @@ export class PreviewReportDto {
 }
 
 export class UpdateHookAssignmentDto {
-  @ApiProperty() reportId!: string;
-  @ApiProperty() contextSlug!: string;
+  @IsString()
+  @IsOptional()
+  reportId?: string;
+
+  @IsString()
+  @IsOptional()
+  contextSlug?: string;
+}
+
+export class RunHookBodyDto {
+  [key: string]: any;
 }

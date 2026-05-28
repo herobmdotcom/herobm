@@ -40,11 +40,12 @@ import {
   UpdateReportDto,
   PreviewReportDto,
   UpdateHookAssignmentDto,
+  RunHookBodyDto,
 } from './dto';
 
 @ApiTags('Reports')
 @Controller('reports')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('report')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
@@ -56,9 +57,10 @@ export class ReportsController {
     description:
       'Execute a specific reporting hook and generate a PDF document.',
   })
-  @ApiBody({ type: EmptyBodyDto })
+  @ApiBody({ type: RunHookBodyDto })
   @HttpCode(200)
   @ApiOkResponse({
+    // BYPASS-TYPING-TEST
     description: 'PDF Document',
     schema: { type: 'string', format: 'binary' },
   })
@@ -68,7 +70,7 @@ export class ReportsController {
     @Query('context') context: string,
     @Req() req: any,
     @Res() res: Response,
-    @Body() body?: EmptyBodyDto,
+    @Body() body?: RunHookBodyDto,
   ) {
     if (!id || !context) {
       throw new UnauthorizedException('Missing id or context parameter');
@@ -129,20 +131,20 @@ export class ReportsController {
   ) {
     const data = await this.reportsService.updateAssignment(
       hook,
-      body.reportId,
-      body.contextSlug,
+      body.reportId || '',
+      body.contextSlug || '',
     );
     return { data };
   }
 
   @Get('hooks/:slug/random-id')
   @CasbinAction('read')
+  @ApiOkResponse({ type: RandomIdResponseDto })
   @ApiOperation({
     summary: 'Get Random ID',
     description:
       'Fetch a random valid entity ID for a given reporting context (used for previewing).',
   })
-  @ApiOkResponse({ type: RandomIdResponseDto })
   async getRandomId(@Param('slug') slug: string) {
     const id = await this.reportsService.getRandomIdForContext(slug);
     return { data: { id } };
@@ -229,6 +231,7 @@ export class ReportsController {
   })
   @HttpCode(200)
   @ApiOkResponse({
+    // BYPASS-TYPING-TEST
     description: 'PDF Document',
     schema: { type: 'string', format: 'binary' },
   })

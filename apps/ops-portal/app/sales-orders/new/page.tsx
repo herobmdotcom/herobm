@@ -130,11 +130,11 @@ export default function NewOrderPage() {
     api.inventoryControllerFindAllLocations({} )
       .then((res) => {
         const payload = res.data?.data || [];
-        setLocations(payload as unknown as Location[]);
+        setLocations(payload);
         if (res.data?.defaultFulfillmentLocationId) {
           setFulfillmentLocationId(res.data.defaultFulfillmentLocationId);
         } else if (payload[0]) {
-          setFulfillmentLocationId((payload[0] as any).locationId);
+          setFulfillmentLocationId((payload[0] as unknown as { locationId: string }).locationId);
         }
       })
       .catch((err) => reportError(err, 'NewOrderPage_Locations'));
@@ -144,7 +144,7 @@ export default function NewOrderPage() {
   useEffect(() => {
     api.taxCategoriesControllerFindAll()
       .then((res) => {
-        settaxCategories(res.data as unknown as TaxCategory[]);
+        settaxCategories(res.data.map(t => ({ ...t, taxCategoryId: (t as unknown as { id?: string }).id || t.taxCategoryId })) as unknown as TaxCategory[]);
       })
       .catch((err) => reportError(err, 'NewOrderPage'));
   }, []);
@@ -357,7 +357,7 @@ export default function NewOrderPage() {
             <span className="material-symbols-outlined">receipt_long</span>
             {tSales('salesOrders.orderDetails')}
           </h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Customer selector */}
             <div className="relative">
               <label

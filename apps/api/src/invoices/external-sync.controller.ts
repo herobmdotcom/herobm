@@ -45,7 +45,7 @@ export class DeleteEventsResponseDto {
 
 @ApiTags('Invoices')
 @Controller('settings/external-sync')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('settings')
 export class ExternalSyncController {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}

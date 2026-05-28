@@ -1,5 +1,0 @@
-﻿            conname             |                                            pg_get_constraintdef                                            
---------------------------------+------------------------------------------------------------------------------------------------------------
- sales_order_return_state_check | CHECK ((state_code = ANY (ARRAY['draft'::text, 'confirmed'::text, 'processed'::text, 'cancelled'::text])))
-(1 row)
-

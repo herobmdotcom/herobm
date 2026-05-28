@@ -16,7 +16,7 @@ import {
 import { UpdateOrganizationDto, OrganizationResponseDto } from './dto';
 
 @Controller('settings/organization')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('settings')
 @ApiTags('System')
 export class OrganizationController {

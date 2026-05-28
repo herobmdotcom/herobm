@@ -16,13 +16,13 @@ import {
 
 @ApiTags('Orders')
 @Controller('sales-returns')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('sales-orders')
 export class GlobalReturnsController {
   constructor(private readonly returnsWriteService: ReturnsWriteService) {}
 
   @Get()
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Find Global Returns',

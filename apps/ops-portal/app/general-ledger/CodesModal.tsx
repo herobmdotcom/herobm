@@ -133,7 +133,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
 
     setLoading(true);
     Promise.all([
-      api.glControllerGetAccounts({ format: 'tree' } as any).then((res: unknown) => (res as { data: unknown }).data as unknown as CoaNode[]),
+      api.glControllerGetAccounts({ format: 'tree' }).then(res => res.data as unknown as CoaNode[]),
       api.costCentersControllerFindAll().then(res => res.data as unknown as CostCenter[]),
       api.activitiesControllerFindAll().then(res => res.data as unknown as Activity[]),
     ])
@@ -183,7 +183,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
       <div className="relative bg-white w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl border border-[var(--border)] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
         
         {/* Header */}
-        <div className="grid grid-cols-3 items-center px-8 py-5 border-b border-[var(--border)] shrink-0 bg-white">
+        <div className="grid grid-cols-1 md:grid-cols-3 items-center px-8 py-5 border-b border-[var(--border)] shrink-0 bg-white">
           
           {/* Left: Title & Icon */}
           <div className="flex items-center gap-3 overflow-hidden">

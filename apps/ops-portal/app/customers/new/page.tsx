@@ -110,7 +110,7 @@ export default function NewAccountPage() {
                 {t('customers.generalInfo')}
               </h3>
               <div className="grid grid-cols-1 gap-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                       {t('customers.columns.customerNumber')} *
@@ -138,7 +138,7 @@ export default function NewAccountPage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                       {t('customers.placeholders.customerGroup')}
@@ -169,7 +169,7 @@ export default function NewAccountPage() {
                     </select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                       {t('customers.fields.parentCustomer')}
@@ -248,7 +248,7 @@ export default function NewAccountPage() {
                 <span className="material-symbols-outlined">location_on</span>
                 {t('customers.company')}
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {t('common.columns.email')}

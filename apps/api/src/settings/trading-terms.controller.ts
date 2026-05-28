@@ -15,8 +15,10 @@ import {
 } from '../auth/casbin.guard';
 import { TradingTermResponseDto } from './dto';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @Controller('settings/trading-terms')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('settings')
 @ApiTags('System')
 export class TradingTermsController {
@@ -29,6 +31,7 @@ export class TradingTermsController {
     summary: 'List trading terms',
     description: 'List all trading terms',
   })
+  @ApiFieldMask()
   findAll() {
     return this.termsService.findAll();
   }

@@ -1,0 +1,25 @@
+{
+  "fiscal_year_start_month": 1,
+  "base_currency": "USD",
+  "defaults": {
+    "ar_account_code": "1100",
+    "ap_account_code": "2100",
+    "revenue_account_code": "4100",
+    "cogs_account_code": "5100",
+    "tax_account_code": "2200",
+    "expense_account_code": "6900"
+  },
+  "gst_categories": [
+    { "code": "STATE", "title": "State Sales Tax (8.25%)", "type": "tax_applies", "rate": 8.25, "is_default": true },
+    { "code": "EXEMPT", "title": "Tax Exempt", "type": "exempt", "rate": 0, "is_default": false },
+    { "code": "ZERO", "title": "Zero Rated", "type": "zero_rated", "rate": 0, "is_default": false }
+  ],
+  "trading_terms": [
+    { "code": "COD", "description": "Cash on Delivery", "days": 0, "type": "cash_on_delivery" },
+    { "code": "CIA", "description": "Cash in Advance", "days": 0, "type": "cash_on_delivery" },
+    { "code": "NET7", "description": "Net 7 Days", "days": 7, "type": "net" },
+    { "code": "NET14", "description": "Net 14 Days", "days": 14, "type": "net" },
+    { "code": "NET30", "description": "Net 30 Days", "days": 30, "type": "net" },
+    { "code": "EOM", "description": "End of Month", "days": 30, "type": "end_of_month" }
+  ]
+}

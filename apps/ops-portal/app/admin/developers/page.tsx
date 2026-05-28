@@ -16,6 +16,7 @@ interface ApiKey {
   apiKeyId: string;
   name: string;
   prefix: string;
+  role: string;
   createdOn: string;
 }
 
@@ -41,7 +42,7 @@ export default function DevelopersPage() {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [keysLoading, setKeysLoading] = useState(true);
   const [keyCreating, setKeyCreating] = useState(false);
-  const [keyForm, setKeyForm] = useState({ name: '' });
+  const [keyForm, setKeyForm] = useState({ name: '', role: 'agent' });
   const [newSecret, setNewSecret] = useState<string | null>(null);
 
   // ── Webhooks State ──────────────────────────────────────────────────────────
@@ -116,7 +117,7 @@ export default function DevelopersPage() {
       toast.success('API Key created');
       setNewSecret(res.data.secretKey);
       setKeyCreating(false);
-      setKeyForm({ name: '' });
+      setKeyForm({ name: '', role: 'agent' });
       loadKeys();
     } catch (err: any) {
       toast.error(err.message);
@@ -249,13 +250,26 @@ export default function DevelopersPage() {
               {keyCreating && (
                 <tr style={{ background: 'var(--bg-secondary)' }}>
                   <td>
-                    <input
-                      className="input"
-                      autoFocus
-                      placeholder="e.g. Integration Script"
-                      value={keyForm.name}
-                      onChange={e => setKeyForm({ name: e.target.value })}
-                    />
+                    <div className="flex flex-col gap-2">
+                      <input
+                        className="input"
+                        autoFocus
+                        placeholder="e.g. Integration Script"
+                        value={keyForm.name}
+                        onChange={e => setKeyForm({ ...keyForm, name: e.target.value })}
+                      />
+                      <select
+                        className="input text-xs"
+                        value={keyForm.role}
+                        onChange={e => setKeyForm({ ...keyForm, role: e.target.value })}
+                        style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+                      >
+                        <option value="agent">Agent (Read/Write)</option>
+                        <option value="webhook">Webhook (Receiver)</option>
+                        <option value="viewer">Viewer (Read-only)</option>
+                        <option value="admin">Admin (Full Access)</option>
+                      </select>
+                    </div>
                   </td>
                   <td colSpan={2} className="text-muted text-sm">Will be generated...</td>
                   <td>
@@ -271,7 +285,10 @@ export default function DevelopersPage() {
               )}
               {(apiKeys || []).map(k => (
                 <tr key={k.apiKeyId}>
-                  <td className="font-medium">{k.name}</td>
+                  <td className="font-medium">
+                    <div>{k.name}</div>
+                    <div className="text-xs text-muted font-normal mt-0.5" style={{ color: 'var(--text-muted)' }}>Role: {k.role}</div>
+                  </td>
                   <td className="font-mono text-sm">{k.prefix}••••••••</td>
                   <td className="text-sm text-muted">{new Date(k.createdOn).toLocaleDateString()}</td>
                   <td style={{ textAlign: 'right' }}>

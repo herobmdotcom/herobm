@@ -36,8 +36,8 @@ export default function QuickAdjustmentModal({
 
   useEffect(() => {
     if (isOpen && accounts.length === 0) {
-      api.glControllerGetAccounts({} as any)
-        .then(res => setAccounts((res.data) || res))
+      api.glControllerGetAccounts({})
+        .then(res => setAccounts((res.data)))
         .catch(err => reportError(err, 'QuickAdjustmentModal_loadAccounts'));
     }
   }, [isOpen, accounts.length]);
@@ -78,7 +78,7 @@ export default function QuickAdjustmentModal({
       title={t('quickAdjustmentForm.title')}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-[var(--text-secondary)]">{t('quickAdjustmentForm.date')}</label>
             <input

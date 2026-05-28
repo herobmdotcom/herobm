@@ -5,29 +5,24 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { InvoiceLineResponseDto } from './invoiceLineResponseDto';
+import type { PurchaseInvoiceResponseDtoAllocationsItem } from './purchaseInvoiceResponseDtoAllocationsItem';
 
 export interface PurchaseInvoiceResponseDto {
   invoiceId: string;
   invoiceNumber: string;
   vendorId: string;
-  /** @nullable */
-  purchaseOrderId?: string | null;
-  /** @nullable */
-  supplierInvoiceNumber?: string | null;
-  /** @nullable */
-  receiptFilename?: string | null;
+  vendorName: string;
+  supplierInvoiceNumber?: string;
   totalAmount: string;
   outstandingAmount: string;
-  /** @nullable */
-  taxAmount?: string | null;
+  taxAmount: string;
   currencyCode: string;
   stateCode: string;
-  /** @nullable */
-  notes?: string | null;
-  /** @nullable */
-  createdBy?: string | null;
-  /** @nullable */
-  createdOn?: string | null;
-  /** @nullable */
-  modifiedOn?: string | null;
+  notes?: string;
+  purchaseOrderId?: string;
+  createdBy: string;
+  createdOn: string;
+  lines: InvoiceLineResponseDto[];
+  allocations?: PurchaseInvoiceResponseDtoAllocationsItem[];
 }

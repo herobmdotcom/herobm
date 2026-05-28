@@ -33,9 +33,11 @@ import {
   EmptyBodyDto,
 } from './dto';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @ApiTags('Users')
 @Controller('users')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -48,6 +50,7 @@ export class UsersController {
     description: 'Retrieves a paginated list of all system users.',
   })
   @ApiPaginatedResponse(UserResponseDto)
+  @ApiFieldMask()
   findAll() {
     return this.usersService.findAll();
   }
@@ -59,6 +62,7 @@ export class UsersController {
     description: 'Retrieves a single user by their unique identifier.',
   })
   @ApiOkResponse({ type: UserResponseDto })
+  @ApiFieldMask()
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }

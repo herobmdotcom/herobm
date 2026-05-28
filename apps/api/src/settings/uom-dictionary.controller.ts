@@ -24,8 +24,10 @@ import {
 } from '../auth/casbin.guard';
 import { CreateUomDto, UpdateUomDto, UomResponseDto } from './dto';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @Controller('settings/uom-dictionary')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('settings')
 @ApiTags('System')
 export class UomDictionaryController {
@@ -35,6 +37,7 @@ export class UomDictionaryController {
   @ApiOkResponse({ type: [UomResponseDto] })
   @CasbinAction('read')
   @ApiOperation({ summary: 'findAll', description: 'findAll operation' })
+  @ApiFieldMask()
   findAll() {
     return this.uomService.findAll();
   }
@@ -43,6 +46,7 @@ export class UomDictionaryController {
   @ApiOkResponse({ type: UomResponseDto })
   @CasbinAction('read')
   @ApiOperation({ summary: 'findOne', description: 'findOne operation' })
+  @ApiFieldMask()
   findOne(@Param('code') code: string) {
     return this.uomService.findOne(code);
   }

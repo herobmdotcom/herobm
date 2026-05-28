@@ -40,9 +40,11 @@ import {
 import { AuthUser } from '../../auth/auth-user.decorator';
 import type { JwtUser } from '../../auth/auth-user.decorator';
 
+import { ApiFieldMask } from '../../common/decorators/api-field-mask.decorator';
+
 @ApiTags('Orders')
 @Controller('transfers')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('sales-orders')
 export class TransfersController {
   constructor(private readonly transferService: TransferService) {}
@@ -179,6 +181,7 @@ export class TransfersController {
     description: 'Retrieve a paginated list of transfer orders.',
   })
   @ApiPaginatedResponse(TransferResponseDto)
+  @ApiFieldMask()
   async findAll(@Query() query: PaginationQuery) {
     return this.transferService.findAll(query);
   }
@@ -190,6 +193,7 @@ export class TransfersController {
     description: 'Retrieve detailed information for a specific transfer order.',
   })
   @ApiOkResponse({ type: TransferResponseDto })
+  @ApiFieldMask()
   async findOne(@Param('id') id: string) {
     return this.transferService.findOne(id);
   }

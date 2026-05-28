@@ -36,8 +36,8 @@ export default function ReceptionsSection({ orderId }: { orderId: string }) {
   const loadReceptions = async () => {
     setLoading(true);
     try {
-      const { data } = await api.goodsReceivedControllerFindAllLines({ purchaseOrderId: orderId } as any);
-      setReceptions((data as unknown as ReceptionLine[]) || []);
+      const { data } = await api.goodsReceivedControllerFindAllLines({ purchaseOrderId: orderId } as unknown as Parameters<typeof api.goodsReceivedControllerFindAllLines>[0]);
+      setReceptions((data.data || []) as unknown as ReceptionLine[]);
     } catch (err) {
       reportError(err, 'ReceptionsSection');
     } finally {

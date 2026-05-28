@@ -1,0 +1,15 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsObject } from 'class-validator';
+
+export class PublishEventDto {
+  @ApiProperty({
+    description: 'The type of event to publish (e.g. order.created)',
+  })
+  @IsString()
+  @IsNotEmpty()
+  type: string;
+
+  @ApiProperty({ description: 'The payload of the event' })
+  @IsObject()
+  payload: Record<string, any>;
+}

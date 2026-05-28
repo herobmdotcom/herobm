@@ -1,4 +1,4 @@
-import { pgSchema, uuid, text, jsonb, timestamp } from 'drizzle-orm/pg-core';
+import { pgSchema, uuid, text, jsonb, timestamp, boolean } from 'drizzle-orm/pg-core';
 
 export const modbmCore = pgSchema('modbm_core');
 

@@ -81,11 +81,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               },
             }}
           />
-          <SettingsProvider>
-            <Shell>
-              {children}
-            </Shell>
-          </SettingsProvider>
+          <Shell>
+            {children}
+          </Shell>
         </NextIntlClientProvider>
       </body>
     </html>

@@ -28,6 +28,7 @@ export class AuthController {
 
   @Post('login')
   @ApiBody({ type: LoginDto })
+  @ApiCreatedResponse({ type: LoginResponseDto })
   @SkipCasbin()
   @UseGuards(ThrottlerGuard)
   @Throttle({
@@ -37,7 +38,6 @@ export class AuthController {
     summary: 'Login User',
     description: 'Authenticates a user and returns a JWT token.',
   })
-  @ApiCreatedResponse({ type: LoginResponseDto })
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto.username, dto.password);
   }
@@ -45,7 +45,7 @@ export class AuthController {
   /** Return the current user's identity from JWT — used by frontend for role-aware UI. */
   @Get('me')
   @SkipCasbin()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard(['jwt', 'api-key']))
   @ApiOperation({
     summary: 'Get Current User',
     description:

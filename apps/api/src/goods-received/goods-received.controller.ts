@@ -42,7 +42,9 @@ import {
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @Controller('goods-received')
 @CasbinResource('goods-received')
 @ApiTags('GoodsReceived')
@@ -78,6 +80,7 @@ export class GoodsReceivedController {
     description: 'Retrieve a paginated list of goods receipts.',
   })
   @ApiPaginatedResponse(GoodsReceivedResponseDto)
+  @ApiFieldMask()
   async findAll(@Query() query: PaginationQuery) {
     return this.goodsReceivedService.findAll(query);
   }
@@ -111,6 +114,7 @@ export class GoodsReceivedController {
     description: 'Retrieve details for a specific goods receipt note.',
   })
   @ApiOkResponse({ type: GoodsReceivedResponseDto })
+  @ApiFieldMask()
   async findOne(@Param('id') id: string) {
     return this.goodsReceivedService.findOne(id);
   }

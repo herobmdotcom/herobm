@@ -22,8 +22,8 @@ export default function NewReconciliationPage() {
   useEffect(() => {
     async function fetchAccounts() {
       try {
-        const data = await api.glControllerGetAccounts({} as any);
-        setAccounts((data as any) || data);
+        const res = await api.glControllerGetAccounts({});
+        setAccounts(res.data);
       } catch (err) {
         reportError(err, 'NewReconciliationFetchAccounts');
       }

@@ -99,6 +99,26 @@ describe('Archive E2E — Full Round-Trip', () => {
       .expect(200);
     validLocationId = locations.body.data[0].locationId;
 
+    // Ensure a default tax category exists (required by SO/PO creation)
+    const taxRes = await request(app.getHttpServer())
+      .get('/api/tax-categories')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const hasDefault = taxRes.body.some((t: any) => t.isDefault === true);
+    if (!hasDefault) {
+      await request(app.getHttpServer())
+        .post('/api/tax-categories')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          code: 'GST',
+          title: 'GST 10%',
+          type: 'tax_applies',
+          rate: '10',
+          isDefault: true,
+        })
+        .expect(201);
+    }
+
     // Ensure the product is mapped to the vendor
     await request(app.getHttpServer())
       .post(`/api/products/${validProductId}/suppliers`)
@@ -374,7 +394,7 @@ describe('Archive E2E — Full Round-Trip', () => {
       const res = await request(app.getHttpServer())
         .post(`/api/purchase-orders/${poId}/archive`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .expect(201);
+        .expect(200);
 
       expect(res.body.stateCode).toBe(CUSTOMER_STATE.ARCHIVED);
     });
@@ -404,7 +424,7 @@ describe('Archive E2E — Full Round-Trip', () => {
       const res = await request(app.getHttpServer())
         .post(`/api/purchase-orders/${poId}/unarchive`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .expect(201);
+        .expect(200);
 
       // PO unarchive always defaults to 'cancelled' since there is no event log
       expect(res.body.stateCode).toBe(PURCHASE_ORDER_STATE.CANCELLED);

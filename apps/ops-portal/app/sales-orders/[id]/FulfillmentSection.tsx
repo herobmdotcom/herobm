@@ -93,7 +93,7 @@ export default function FulfillmentSection({ orderId, pickingSummary }: Props) {
         <div id="fulfillment-section" className="card">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="section-heading">
-                    {/* eslint-disable i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">local_shipping</span>
             {/* eslint-enable i18next/no-literal-string */}
                     {t('title')}

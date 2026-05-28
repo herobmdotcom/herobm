@@ -115,7 +115,7 @@ export default function SystemSettingsPage() {
         api.inventoryControllerFindAllLocations()
       ]);
       setAppForm(appDataRes.data);
-      setLocations((locsRes.data as any) || []);
+      setLocations(locsRes.data?.data as unknown as Record<string, unknown>[] || []);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: 'App Config' }) + ': ' + err.message);
     } finally {
@@ -126,7 +126,7 @@ export default function SystemSettingsPage() {
   const updateAppField = async (field: string, value: any) => {
     try {
       setAppForm((prev: unknown) => ({ ...(prev as Record<string, unknown>), [field]: value }));
-      await api.appConfigControllerUpdate({ [field]: value } as unknown as import('@modbm/sdk').UpdateAppConfigDto);
+      await api.appConfigControllerUpdate({ [field]: value });
       toast.success(t('common.updated'));
     } catch (err: any) {
       toast.error(err.message);
@@ -176,7 +176,7 @@ export default function SystemSettingsPage() {
   const loadMacros = async () => {
     try {
       setMacroLoading(true);
-      const mRes = await api.macrosControllerFindAll({} as any);
+      const mRes = await api.macrosControllerFindAll({ macroType: '' });
       setMacros(mRes.data as unknown as Macro[]);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.macros') }) + ': ' + err.message);
@@ -293,7 +293,7 @@ export default function SystemSettingsPage() {
 
   const flushCache = async () => {
     try {
-      await api.glControllerReloadSettings({} as unknown as import('@modbm/sdk').EmptyBodyDto);
+      await api.glControllerReloadSettings({});
       toast.success('Settings cache flushed successfully.');
     } catch (err: any) {
       toast.error(err.message);
@@ -339,7 +339,7 @@ export default function SystemSettingsPage() {
                   placeholder={tSettings('placeholders.companyName')}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.email')}
@@ -377,7 +377,7 @@ export default function SystemSettingsPage() {
                   placeholder={tSettings('placeholders.website')}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.companyNumber')}
@@ -442,7 +442,7 @@ export default function SystemSettingsPage() {
                   placeholder={tSettings('placeholders.address2')}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.city')}
@@ -468,7 +468,7 @@ export default function SystemSettingsPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.postCode')}
@@ -548,7 +548,7 @@ export default function SystemSettingsPage() {
                   onBlur={saveOrgField}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.iban')}

@@ -128,7 +128,7 @@ describe('OrdersController', () => {
     it('should call writeService.changeState with id, stateCode, and actor', async () => {
       const result = await controller.changeState(
         'uuid-1',
-        SALES_ORDER_STATE.QUOTED,
+        { stateCode: SALES_ORDER_STATE.QUOTED } as any,
         mockUser,
       );
       expect(result.stateCode).toBe(SALES_ORDER_STATE.QUOTED);

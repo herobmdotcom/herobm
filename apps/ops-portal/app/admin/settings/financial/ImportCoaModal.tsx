@@ -35,9 +35,9 @@ export default function ImportCoaModal({ isOpen, onClose, onImportComplete }: Pr
     try {
       setIsLoading(true);
       const res = await api.glControllerListCharts();
-      const data = (res as unknown as { data: any[] })?.data || (res as unknown as any[]) || [];
+      const data = res.data.items as unknown as ChartFile[];
       setCharts(data);
-      if (data.length > 0) {
+      if (data?.length > 0) {
         setSelectedFile(data[0].filename);
       }
     } catch (err: any) {
@@ -52,8 +52,8 @@ export default function ImportCoaModal({ isOpen, onClose, onImportComplete }: Pr
     try {
       setIsImporting(true);
       const res = await api.glControllerSeedChartOfAccounts({ filename: selectedFile });
-      const data = (res as unknown as { data: any })?.data || (res as unknown as any) || {};
-      toast.success(`Successfully imported ${data.created} accounts.`);
+      const data = res.data;
+      toast.success(`Successfully imported ${(data as unknown as { created?: number })?.created || 0} accounts.`);
       onImportComplete();
       onClose();
     } catch (err: any) {

@@ -49,9 +49,11 @@ import type { JwtUser } from '../auth/auth-user.decorator';
  * - OrderShipmentsController → /sales-orders/:id/shipments/*
  * - SalesInvoiceController  → /sales-orders/:id/invoice (in InvoicesModule)
  */
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @ApiTags('Orders')
 @Controller('sales-orders')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('sales-orders')
 export class OrdersController {
   constructor(
@@ -69,6 +71,7 @@ export class OrdersController {
     summary: 'Find All Orders',
     description: 'Retrieve a paginated list of sales orders globally.',
   })
+  @ApiFieldMask()
   @ApiPaginatedResponse(OrderResponseDto)
   findAll(@Query() query: PaginationQuery) {
     return this.ordersService.findAll(query);
@@ -80,6 +83,7 @@ export class OrdersController {
     summary: 'Find Order',
     description: 'Retrieve detailed information for a specific sales order.',
   })
+  @ApiFieldMask()
   @ApiOkResponse({ type: OrderResponseDto })
   findOne(@Param('id') id: string) {
     return this.ordersWriteService.findOne(id);

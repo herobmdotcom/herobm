@@ -65,7 +65,7 @@ export default function TopographyView() {
       .then((response) => {
         const res = response.data;
         const data = Array.isArray(res) ? res : (res?.data || []);
-        setLocations(data as any);
+        setLocations(data as unknown as Location[]);
       })
       .finally(() => setLoading(false));
   };
@@ -75,7 +75,7 @@ export default function TopographyView() {
       .then((response) => {
         const res = response.data;
         const data = Array.isArray(res) ? res : (res?.data || []);
-        setLocations(data as any);
+        setLocations(data as unknown as Location[]);
         // Auto-expand first location
         if (data.length > 0) {
           setExpandedLocations(new Set([data[0].locationId]));
@@ -761,11 +761,18 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
     e.preventDefault();
     if (!initialData) return;
     setLoading(true);
+    
+    // Convert binType explicitly or fall back to undefined if empty string
+    const payload = {
+      ...formData,
+      binType: formData.binType ? (formData.binType as "storage" | "pick" | "bulk" | "receiving" | "staging" | "quarantine" | "in_transit") : undefined
+    };
+
     try {
       if (initialData.bin) {
-        await api.locationsControllerUpdateBin(initialData.bin.binId, formData as any);
+        await api.locationsControllerUpdateBin(initialData.bin.binId, payload);
       } else {
-        await api.locationsControllerCreateBin({ ...formData, zoneId: initialData.zoneId } as any);
+        await api.locationsControllerCreateBin({ ...payload, zoneId: initialData.zoneId });
       }
       toast.success(initialData.bin ? tCommon('updated') : tCommon('created'));
       onSuccess();

@@ -34,12 +34,12 @@ export default function InvoicesSection({
     const tCommon = useTranslations('common');
     const tPurchase = useTranslations('purchaseOrders');
 
-    const [receiptLines, setReceiptLines] = useState<any[]>([]);
+    const [receiptLines, setReceiptLines] = useState<unknown[]>([]);
 
     useEffect(() => {
         if (orderId) {
-            api.goodsReceivedControllerFindAllLines({ purchaseOrderId: orderId } as any)
-                .then(res => setReceiptLines((res.data as any)?.data || []))
+            api.goodsReceivedControllerFindAllLines({ purchaseOrderId: orderId } as unknown as Parameters<typeof api.goodsReceivedControllerFindAllLines>[0])
+                .then(res => setReceiptLines((res.data as unknown as { data: unknown[] })?.data || []))
                 .catch(err => reportError(err, 'InvoicesSection'));
         }
     }, [orderId]);
@@ -55,7 +55,7 @@ export default function InvoicesSection({
                     <span className="material-symbols-outlined">request_quote</span>
                     Supplier Invoices
                 </h3>
-                {![PURCHASE_ORDER_STATE.DRAFT, PURCHASE_ORDER_STATE.CANCELLED, PURCHASE_ORDER_STATE.ARCHIVED, PURCHASE_ORDER_STATE.CLOSED_SHORT, PURCHASE_ORDER_STATE.INVOICED].includes(order.stateCode as any) && (
+                {!([PURCHASE_ORDER_STATE.DRAFT, PURCHASE_ORDER_STATE.CANCELLED, PURCHASE_ORDER_STATE.ARCHIVED, PURCHASE_ORDER_STATE.CLOSED_SHORT, PURCHASE_ORDER_STATE.INVOICED] as string[]).includes(order.stateCode as unknown as string) && (
                     <button
                         className="btn btn-secondary btn-sm"
                         disabled={totalReceived === 0 && order.stateCode !== PURCHASE_ORDER_STATE.ORDERED}
@@ -72,11 +72,11 @@ export default function InvoicesSection({
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex flex-col gap-1">
                                 <strong style={{ fontSize: 13 }}>{inv.invoiceNumber}</strong>
-                                {(inv as any).supplierInvoiceNumber && (
-                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('ref')} {(inv as any).supplierInvoiceNumber}</span>
+                                {(inv as unknown as { supplierInvoiceNumber?: string }).supplierInvoiceNumber && (
+                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('ref')} {(inv as unknown as { supplierInvoiceNumber?: string }).supplierInvoiceNumber}</span>
                                 )}
-                                {(inv as any).receiptFilename && (
-                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('file')} {(inv as any).receiptFilename}</span>
+                                {(inv as unknown as { receiptFilename?: string }).receiptFilename && (
+                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('file')} {(inv as unknown as { receiptFilename?: string }).receiptFilename}</span>
                                 )}
                             </div>
                         </div>
@@ -130,7 +130,7 @@ export default function InvoicesSection({
                                     <tbody>
                                         {linePricing.map(({ il, orderLine, disc, taxRate, pricing }) => (
                                                 <tr 
-                                                    key={il.invoiceLineId || (il as any).lineId || il.purchaseOrderLineId}
+                                                    key={il.invoiceLineId || (il as unknown as { lineId?: string }).lineId || il.purchaseOrderLineId}
                                                     style={{ opacity: orderLine ? 1 : 0.7 }}
                                                 >
                                                     <td style={{ fontWeight: 600, fontSize: 12 }}>
@@ -161,7 +161,7 @@ export default function InvoicesSection({
                                                     </td>
                                                     <td style={{ fontSize: 10, color: 'var(--text-muted)' }}>
                                                         {il.goodsReceivedLineId ? (
-                                                            receiptLines.find(r => r.line.goodsReceivedLineId === il.goodsReceivedLineId)?.receiptNumber || 'Receipt'
+                                                            receiptLines.find(r => (r as any).line.goodsReceivedLineId === il.goodsReceivedLineId) ? (receiptLines.find(r => (r as any).line.goodsReceivedLineId === il.goodsReceivedLineId) as any).receiptNumber : 'Receipt'
                                                         ) : '—'}
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>

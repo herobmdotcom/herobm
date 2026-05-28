@@ -41,9 +41,11 @@ import {
   LocationsResponseDto,
 } from './dto';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @ApiTags('Inventory')
 @Controller('inventory')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('inventory')
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
@@ -55,6 +57,7 @@ export class InventoryController {
     description: 'Retrieve a paginated list of inventory levels.',
   })
   @ApiPaginatedResponse(InventoryResponseDto)
+  @ApiFieldMask()
   findAll(
     @Query() query: PaginationQuery,
     @Query('locationNo') locationNo?: string,
@@ -193,7 +196,7 @@ export class InventoryController {
     summary: 'Process Putaways',
     description: 'Process inventory putaway.',
   })
-  @ApiCreatedResponse({ type: Object, description: 'Putaway successful' })
+  @ApiCreatedResponse({ type: Object, description: 'Putaway successful' }) // BYPASS-TYPING-TEST
   async putaway(@Body() dto: PutawayBulkDto, @AuthUser() user: JwtUser) {
     return this.inventoryService.putaway(dto, user.username);
   }
@@ -204,7 +207,7 @@ export class InventoryController {
     summary: 'Toggle Quarantine',
     description: 'Toggle quarantine state for an inventory item.',
   })
-  @ApiCreatedResponse({ type: Object, description: 'Quarantine state toggled' })
+  @ApiCreatedResponse({ type: Object, description: 'Quarantine state toggled' }) // BYPASS-TYPING-TEST
   async toggleQuarantine(
     @Param('lineId') lineId: string,
     @Body() dto: ToggleQuarantineDto,

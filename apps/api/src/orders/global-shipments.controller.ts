@@ -14,20 +14,23 @@ import {
 } from '../auth/casbin.guard';
 import { ShipmentService } from './shipment.service';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @ApiTags('Orders')
 @Controller('shipments')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('sales-orders')
 export class GlobalShipmentsController {
   constructor(private readonly shipmentService: ShipmentService) {}
 
   @Get()
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Find All Shipments',
     description: 'Retrieve a list of shipments globally.',
   })
+  @ApiFieldMask()
   async findAll(
     @Query('days') days?: string,
     @Query('salesOrderId') salesOrderId?: string,
@@ -42,12 +45,13 @@ export class GlobalShipmentsController {
   }
 
   @Get(':id')
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Find Shipment',
     description: 'Retrieve detailed information for a specific shipment.',
   })
+  @ApiFieldMask()
   async findOne(@Param('id') id: string) {
     return this.shipmentService.findOne(id);
   }

@@ -229,7 +229,7 @@ export default function ReturnsSection({
       try {
         setLoading(true);
         const listData = await api.purchaseReturnsControllerFindReturns(orderId) ;
-        const fetchedReturns = Array.isArray(listData) ? listData : (listData as any)?.data || [];
+        const fetchedReturns = Array.isArray(listData) ? listData : (listData as unknown as { data: any[] })?.data || [];
         
         // Fetch full data including lines for each setup
         const detailedReturns = await Promise.all(
@@ -239,7 +239,7 @@ export default function ReturnsSection({
         );
 
         if (active) {
-          setReturns((detailedReturns.map(r => (r).data || r)) as unknown as Return[]);
+          setReturns(detailedReturns.map(r => (r).data) as unknown as Return[]);
         }
       } catch (err) {
         // safely ignore missing if not supported yet, or show empty
@@ -255,13 +255,13 @@ export default function ReturnsSection({
   const refreshReturns = () => {
     setLoading(true);
     api.purchaseReturnsControllerFindReturns(orderId).then(async (listData: unknown) => {
-      const fetchedReturns: any[] = (listData as any).data || listData || [];
+      const fetchedReturns: any[] = (listData as unknown as { data: any[] }).data || listData || [];
       const detailedReturns = await Promise.all(
         fetchedReturns.map((rec) => 
           api.purchaseReturnsControllerFindReturn(orderId, rec.returnId)
         )
       );
-      setReturns(detailedReturns.map(r => (r as any).data || r) as any);
+      setReturns(detailedReturns.map(r => (r as unknown as { data: Return }).data) as unknown as Return[]);
       setLoading(false);
     });
   };

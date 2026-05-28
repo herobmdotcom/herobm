@@ -28,20 +28,21 @@ import {
   AddReturnLineDto,
   UpdateReturnLineDto,
   ReceiveReturnDto,
+  ReturnResponseDto,
+  ChangeReturnStateDto,
 } from './dto';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
 @ApiTags('Orders')
 @Controller('sales-orders')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('sales-orders')
 export class OrderReturnsController {
   constructor(private readonly returnsWriteService: ReturnsWriteService) {}
 
   @Post(':id/returns')
-  @ApiBody({ type: Object })
-  @ApiCreatedResponse({ type: Object })
+  @ApiCreatedResponse({ type: ReturnResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Create Return',
@@ -56,7 +57,7 @@ export class OrderReturnsController {
   }
 
   @Get(':id/returns')
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: ReturnResponseDto })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Find Order Returns',
@@ -67,7 +68,7 @@ export class OrderReturnsController {
   }
 
   @Get(':id/returns/:returnId')
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: ReturnResponseDto })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Find Return',
@@ -78,8 +79,7 @@ export class OrderReturnsController {
   }
 
   @Patch(':id/returns/:returnId')
-  @ApiBody({ type: Object })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: ReturnResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Update Return',
@@ -95,8 +95,7 @@ export class OrderReturnsController {
   }
 
   @Patch(':id/returns/:returnId/state')
-  @ApiBody({ type: Object })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: ReturnResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Change Return State',
@@ -105,7 +104,7 @@ export class OrderReturnsController {
   changeReturnState(
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
-    @Body() dto: import('./dto').ChangeReturnStateDto,
+    @Body() dto: ChangeReturnStateDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.returnsWriteService.changeReturnState(
@@ -117,8 +116,7 @@ export class OrderReturnsController {
   }
 
   @Post(':id/returns/:returnId/lines')
-  @ApiBody({ type: Object })
-  @ApiCreatedResponse({ type: Object })
+  @ApiCreatedResponse({ type: ReturnResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Add Return Line',
@@ -138,8 +136,7 @@ export class OrderReturnsController {
   }
 
   @Patch(':id/returns/:returnId/lines/:lineId')
-  @ApiBody({ type: Object })
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: ReturnResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Update Return Line',
@@ -161,8 +158,7 @@ export class OrderReturnsController {
   }
 
   @Post(':id/returns/:returnId/receive')
-  @ApiBody({ type: Object })
-  @ApiCreatedResponse({ type: Object })
+  @ApiCreatedResponse({ type: ReturnResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Receive Return',
@@ -182,7 +178,7 @@ export class OrderReturnsController {
   }
 
   @Delete(':id/returns/:returnId/lines/:lineId')
-  @ApiOkResponse({ type: Object })
+  @ApiOkResponse({ type: ReturnResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Remove Return Line',

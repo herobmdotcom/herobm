@@ -1113,9 +1113,16 @@ export class PurchaseInvoiceService {
     days?: number;
     vendorId?: string;
     invoiceId?: string;
+    balanceStatus?: string;
     limit?: number;
   }) {
-    const { days = 30, vendorId, invoiceId, limit = 100 } = query;
+    const {
+      days = 30,
+      vendorId,
+      invoiceId,
+      balanceStatus,
+      limit = 100,
+    } = query;
 
     const conditions: any[] = [];
 
@@ -1135,6 +1142,12 @@ export class PurchaseInvoiceService {
           eq(suppliers.externalId, vendorId),
         ),
       );
+    }
+
+    if (balanceStatus === 'unpaid') {
+      conditions.push(sql`${purchaseInvoices.outstandingAmount}::numeric > 0`);
+    } else if (balanceStatus === 'paid') {
+      conditions.push(sql`${purchaseInvoices.outstandingAmount}::numeric <= 0`);
     }
 
     const dataQuery = this.db

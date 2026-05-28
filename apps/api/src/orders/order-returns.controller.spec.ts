@@ -116,9 +116,8 @@ describe('OrderReturnsController', () => {
       const result = await controller.changeReturnState(
         'uuid-1',
         'ret-uuid-1',
-        RETURN_STATE.CONFIRMED,
-        undefined,
-        mockUser as any,
+        { stateCode: RETURN_STATE.CONFIRMED } as any,
+        mockUser,
       );
       expect(result.stateCode).toBe(RETURN_STATE.CONFIRMED);
       expect(returnsService.changeReturnState).toHaveBeenCalledWith(

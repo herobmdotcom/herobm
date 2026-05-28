@@ -29,9 +29,11 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
 @ApiTags('System')
 @Controller('settings/activities')
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('settings')
 export class ActivitiesController {
   constructor(private readonly service: ActivitiesService) {}
@@ -43,6 +45,7 @@ export class ActivitiesController {
     summary: 'List all activities',
     description: 'List all activities',
   })
+  @ApiFieldMask()
   findAll() {
     return this.service.findAll();
   }

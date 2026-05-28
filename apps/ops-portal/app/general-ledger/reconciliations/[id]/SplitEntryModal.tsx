@@ -73,7 +73,7 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
             onClick={onClose}
             className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1"
           >
-            {/* eslint-disable i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             ✕
             {/* eslint-enable i18next/no-literal-string */}
           </button>

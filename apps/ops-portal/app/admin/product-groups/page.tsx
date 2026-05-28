@@ -41,19 +41,19 @@ export default function ProductGroupsAdmin() {
     try {
       setLoading(true);
       const [data, glAccs, cc, act] = await Promise.all([
-        api.productGroupsControllerFindAll().then((r: unknown) => (r as { data?: unknown[] })?.data || r || []),
-        api.glControllerGetAccounts({} as any).then((r: any) => r?.data || r || []),
-        api.costCentersControllerFindAll().then((r: unknown) => (r as { data?: unknown[] })?.data || r || []),
-        api.activitiesControllerFindAll().then((r: unknown) => (r as { data?: unknown[] })?.data || r || [])
+        api.productGroupsControllerFindAll().then(({ data: page }) => page.data || []),
+        api.glControllerGetAccounts({ format: 'flat' }).then(r => r.data || []),
+        api.costCentersControllerFindAll().then(r => r.data),
+        api.activitiesControllerFindAll().then(r => r.data)
       ]);
-      const sorted = (data as any[]).sort((a: any, b: any) => 
-        (a.groupCode || '').localeCompare(b.groupCode || '', undefined, { numeric: true })
+      const sorted = [...data].sort((a: any, b: any) => 
+        a.name.localeCompare(b.name, undefined, { numeric: true })
       );
       setGroups(sorted);
-      setGlAccounts(glAccs as any[]);
-      setCostCenters(cc as any[]);
-      setActivities(act as any[]);
-    } catch(err: unknown) {
+      setGlAccounts(glAccs);
+      setCostCenters(cc);
+      setActivities(act);
+    } catch(err) {
       const e = err as Error;
       toast.error(t('toasts.loadFailed') + ': ' + e.message);
       reportError(e, 'ProductGroupsAdmin_loadData');
@@ -95,10 +95,10 @@ export default function ProductGroupsAdmin() {
     }
     try {
       if (editingId) {
-        await api.productGroupsControllerUpdate(editingId, editForm as unknown as api.UpdateProductGroupDto);
+        await api.productGroupsControllerUpdate(editingId, editForm);
         toast.success(t('toasts.updated'));
       } else {
-        await api.productGroupsControllerCreate(editForm as unknown as api.CreateProductGroupDto);
+        await api.productGroupsControllerCreate(editForm);
         toast.success(t('toasts.created'));
       }
       handleCancel();

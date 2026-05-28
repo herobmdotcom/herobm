@@ -110,6 +110,7 @@ describe('Invoices Controllers', () => {
         '30',
         'acc-1',
         'inv-1',
+        undefined,
         '50',
       );
 

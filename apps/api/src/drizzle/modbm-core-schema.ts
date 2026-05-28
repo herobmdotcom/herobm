@@ -2036,6 +2036,9 @@ export const glSettings = modbmCore.table('gl_settings', {
     () => glAccounts.glAccountId,
   ),
   baseCurrency: text('base_currency').notNull(),
+  supportedBatchPaymentFormats: jsonb('supported_batch_payment_formats')
+    .$type<string[]>()
+    .default([]),
   revenueRoutingPrecedence: text('revenue_routing_precedence')
     .notNull()
     .default('product_first'), // 'product_first' | 'customer_first'
@@ -2205,6 +2208,7 @@ export const apiKeys = modbmCore.table('api_keys', {
   name: text('name').notNull(),
   keyHash: text('key_hash').notNull(),
   prefix: text('prefix').notNull(),
+  role: text('role').notNull(),
   isActive: boolean('is_active').default(true).notNull(),
   createdBy: text('created_by').notNull(),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -2220,4 +2224,18 @@ export const webhooks = modbmCore.table('webhooks', {
   secretKey: text('secret_key').notNull(),
   isActive: boolean('is_active').default(true).notNull(),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// casbin_rule (Dynamic RBAC Policies)
+// ---------------------------------------------------------------------------
+export const casbinRule = modbmCore.table('casbin_rule', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  ptype: text('ptype').notNull(),
+  v0: text('v0'),
+  v1: text('v1'),
+  v2: text('v2'),
+  v3: text('v3'),
+  v4: text('v4'),
+  v5: text('v5'),
 });

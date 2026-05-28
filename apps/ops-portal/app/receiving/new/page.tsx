@@ -450,7 +450,7 @@ function ReceivingFlow() {
                           style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
                           onClick={() => removeDraftLine(line.id)}
                         >
-                          {/* eslint-disable i18next/no-literal-string */}
+                          {/* eslint-disable-next-line i18next/no-literal-string */}
                           ✕
                           {/* eslint-enable i18next/no-literal-string */}
                         </button>

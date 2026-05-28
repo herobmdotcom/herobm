@@ -33,6 +33,9 @@ import { PaymentsModule } from './payments/payments.module';
 import { PricingModule } from './pricing/pricing.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { ApiKeysModule } from './api-keys/api-keys.module';
+import { EventsModule } from './events/events.module';
+
+import { RolesModule } from './roles/roles.module';
 
 @Module({
   imports: [
@@ -46,6 +49,7 @@ import { ApiKeysModule } from './api-keys/api-keys.module';
     ]),
     DrizzleModule,
     AuthModule,
+    RolesModule,
     AccountsModule,
     ProductsModule,
     InventoryModule,
@@ -71,6 +75,7 @@ import { ApiKeysModule } from './api-keys/api-keys.module';
     PricingModule,
     WebhooksModule,
     ApiKeysModule,
+    EventsModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },

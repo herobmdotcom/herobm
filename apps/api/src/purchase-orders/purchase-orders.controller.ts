@@ -41,7 +41,9 @@ import {
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
-@UseGuards(AuthGuard('jwt'), CasbinGuard)
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @Controller('purchase-orders')
 @CasbinResource('purchase-orders')
 @ApiTags('PurchaseOrders')
@@ -78,6 +80,7 @@ export class PurchaseOrdersController {
     summary: 'List Purchase Orders',
     description: 'Retrieve a paginated list of purchase orders.',
   })
+  @ApiFieldMask()
   @ApiPaginatedResponse(PurchaseOrderResponseDto)
   async findAll(@Query() query: PaginationQuery) {
     return this.purchaseOrdersService.findAll(query);
@@ -114,6 +117,7 @@ export class PurchaseOrdersController {
     summary: 'Get Purchase Order',
     description: 'Retrieve a specific purchase order.',
   })
+  @ApiFieldMask()
   @ApiOkResponse({ type: PurchaseOrderResponseDto })
   async findOne(@Param('id') id: string) {
     return this.purchaseOrdersService.findOne(id);

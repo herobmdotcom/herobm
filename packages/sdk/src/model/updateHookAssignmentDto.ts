@@ -7,6 +7,6 @@
  */
 
 export interface UpdateHookAssignmentDto {
-  reportId: string;
-  contextSlug: string;
+  reportId?: string;
+  contextSlug?: string;
 }

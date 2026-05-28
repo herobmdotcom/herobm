@@ -1,5 +1,8 @@
 param (
-    [string]$TargetProfile = ""
+    [string]$TargetProfile = "",
+    [switch]$WithSwagger,
+    [switch]$Mcp,
+    [switch]$WithDbt
 )
 
 Push-Location $PSScriptRoot\..
@@ -17,7 +20,14 @@ if ($activeProfile) {
     Write-Host "Targeting Default Environment" -ForegroundColor Magenta
 }
 
-$envInjection = "`$env:ENV_FILE='$envFile'; "
+# -----------------------------------------------------------------------------
+# Default configurations
+# -----------------------------------------------------------------------------
+$enableSwagger = if ($WithSwagger) { 'true' } else { 'false' }
+$enableMcp = if ($Mcp) { 'true' } else { 'false' }
+$enableDbtDocs = if ($WithDbt) { 'true' } else { 'false' }
+
+$envInjection = "`$env:ENV_FILE='$envFile'; `$env:ENABLE_SWAGGER='$enableSwagger'; "
 $apiPort = if ($env:API_PORT) { $env:API_PORT } else { 3001 }
 $fePort = if ($env:FE_PORT) { $env:FE_PORT } else { 4301 }
 if (Test-Path $envFile) {
@@ -47,5 +57,17 @@ Start-Process pwsh -ArgumentList "-NoExit", "-Command", $apiCmd
 Write-Host "Portal connecting to API at: http://localhost:$apiPort" -ForegroundColor Green
 $feCmd = $envInjection + "npx cross-env API_URL='http://localhost:$apiPort' PORT=$fePort npm run start:prod -w apps/ops-portal"
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", $feCmd
+
+if ($enableMcp -eq 'true') {
+    Write-Host "MCP Server will start in prod mode" -ForegroundColor Cyan
+    $mcpCmd = $envInjection + "npm run start -w apps/mcp-server"
+    Start-Process pwsh -ArgumentList "-NoExit", "-Command", $mcpCmd
+}
+
+if ($enableDbtDocs -eq 'true') {
+    Write-Host "dbt docs will be served" -ForegroundColor Cyan
+    $dbtCmd = $envInjection + "Push-Location pipelines\abm_transform; ..\..\.venv\Scripts\dbt docs serve; Pop-Location"
+    Start-Process pwsh -ArgumentList "-NoExit", "-Command", $dbtCmd
+}
 
 Pop-Location
