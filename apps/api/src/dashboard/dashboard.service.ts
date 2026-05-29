@@ -197,53 +197,77 @@ export class DashboardService {
 
     const conditions = [];
 
+    // --- Sales Events ---
     if (types.includes('so_created')) {
-      conditions.push(
-        sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.CREATED})`,
-      );
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.CREATED})`);
     }
     if (types.includes('so_confirmed')) {
-      conditions.push(
-        sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.CONFIRMED})`,
-      );
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.CONFIRMED})`);
     }
     if (types.includes('so_shipped')) {
-      conditions.push(
-        sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.SHIPPED})`,
-      );
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.SHIPPED})`);
     }
     if (types.includes('so_invoiced')) {
-      conditions.push(
-        sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.INVOICED})`,
-      );
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.INVOICED})`);
+    }
+    if (types.includes('so_dispatched')) {
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STOCK_DISPATCHED})`);
+    }
+    if (types.includes('so_credit_note')) {
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.CREDIT_NOTE_POSTED})`);
+    }
+    if (types.includes('so_backorders')) {
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.BACKORDERS_ALLOCATED})`);
     }
 
+    // --- Purchasing Events ---
     if (types.includes('po_created')) {
-      conditions.push(
-        sql`(e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.CREATED})`,
-      );
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.CREATED})`);
     }
     if (types.includes('po_ordered')) {
-      conditions.push(
-        sql`(e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${PURCHASE_ORDER_STATE.ORDERED})`,
-      );
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${PURCHASE_ORDER_STATE.ORDERED})`);
     }
     if (types.includes('po_received')) {
-      conditions.push(
-        sql`(e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${PURCHASE_ORDER_STATE.RECEIVED})`,
-      );
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${PURCHASE_ORDER_STATE.RECEIVED})`);
+    }
+    if (types.includes('po_invoiced')) {
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.PURCHASE_INVOICED})`);
+    }
+    if (types.includes('po_over_received')) {
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.OVER_RECEIVED_WARNING})`);
+    }
+    if (types.includes('po_price_discrepancy')) {
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.PRICE_DISCREPANCY_WARNING})`);
     }
 
+    // --- Inventory & Warehouse Events ---
+    if (types.includes('stock_received')) {
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.GOODS_RECEIPT} AND e.event_type = ${EventType.STOCK_RECEIVED})`);
+    }
+    if (types.includes('stock_adjusted')) {
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.SYSTEM} AND e.event_type = ${EventType.STOCK_ADJUSTED})`);
+    }
+    if (types.includes('transfer_created')) {
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.TRANSFER_ORDER} AND e.event_type = ${EventType.CREATED})`);
+    }
+
+    // --- Finance Events ---
+    if (types.includes('payment_submitted')) {
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.PAYMENT} AND e.event_type = ${EventType.PAYMENT_SUBMITTED})`);
+    }
+    if (types.includes('payment_allocated')) {
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.PAYMENT} AND e.event_type = ${EventType.PAYMENT_ALLOCATED})`);
+    }
+    if (types.includes('payment_cancelled')) {
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.PAYMENT} AND e.event_type = ${EventType.PAYMENT_CANCELLED})`);
+    }
+
+    // --- Cross-Domain Entities ---
     if (types.includes('customer_created')) {
-      conditions.push(
-        sql`(e.aggregate_type = ${AggregateType.CUSTOMER} AND e.event_type = ${EventType.CREATED})`,
-      );
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.CUSTOMER} AND e.event_type = ${EventType.CREATED})`);
     }
-
     if (types.includes('supplier_created')) {
-      conditions.push(
-        sql`(e.aggregate_type = ${AggregateType.SUPPLIER} AND e.event_type = ${EventType.CREATED})`,
-      );
+      conditions.push(sql`(e.aggregate_type = ${AggregateType.SUPPLIER} AND e.event_type = ${EventType.CREATED})`);
     }
 
     if (conditions.length === 0) {
@@ -263,14 +287,30 @@ export class DashboardService {
           WHEN e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.CONFIRMED} THEN 'so_confirmed'
           WHEN e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.SHIPPED} THEN 'so_shipped'
           WHEN e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.INVOICED} THEN 'so_invoiced'
+          WHEN e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STOCK_DISPATCHED} THEN 'so_dispatched'
+          WHEN e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.CREDIT_NOTE_POSTED} THEN 'so_credit_note'
+          WHEN e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.BACKORDERS_ALLOCATED} THEN 'so_backorders'
+          
           WHEN e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.CREATED} THEN 'po_created'
           WHEN e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${PURCHASE_ORDER_STATE.ORDERED} THEN 'po_ordered'
           WHEN e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${PURCHASE_ORDER_STATE.RECEIVED} THEN 'po_received'
+          WHEN e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.PURCHASE_INVOICED} THEN 'po_invoiced'
+          WHEN e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.OVER_RECEIVED_WARNING} THEN 'po_over_received'
+          WHEN e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.PRICE_DISCREPANCY_WARNING} THEN 'po_price_discrepancy'
+          
+          WHEN e.aggregate_type = ${AggregateType.GOODS_RECEIPT} AND e.event_type = ${EventType.STOCK_RECEIVED} THEN 'stock_received'
+          WHEN e.aggregate_type = ${AggregateType.SYSTEM} AND e.event_type = ${EventType.STOCK_ADJUSTED} THEN 'stock_adjusted'
+          WHEN e.aggregate_type = ${AggregateType.TRANSFER_ORDER} AND e.event_type = ${EventType.CREATED} THEN 'transfer_created'
+          
+          WHEN e.aggregate_type = ${AggregateType.PAYMENT} AND e.event_type = ${EventType.PAYMENT_SUBMITTED} THEN 'payment_submitted'
+          WHEN e.aggregate_type = ${AggregateType.PAYMENT} AND e.event_type = ${EventType.PAYMENT_ALLOCATED} THEN 'payment_allocated'
+          WHEN e.aggregate_type = ${AggregateType.PAYMENT} AND e.event_type = ${EventType.PAYMENT_CANCELLED} THEN 'payment_cancelled'
+          
           WHEN e.aggregate_type = ${AggregateType.CUSTOMER} AND e.event_type = ${EventType.CREATED} THEN 'customer_created'
           WHEN e.aggregate_type = ${AggregateType.SUPPLIER} AND e.event_type = ${EventType.CREATED} THEN 'supplier_created'
         END as "eventType",
         e.aggregate_id as "entityId", 
-        COALESCE(so.order_number, po.order_number, a.name, s.name, e.aggregate_id::text) as "entityDisplay", 
+        COALESCE(so.order_number, po.order_number, a.name, s.name, gr.receipt_number, to_tbl.transfer_number, pe.payment_number, e.aggregate_id::text) as "entityDisplay", 
         e.actor, 
         e.created_on as "timestamp"
       FROM modbm_core.dashboard_timeline e
@@ -278,6 +318,9 @@ export class DashboardService {
       LEFT JOIN modbm_core.purchase_orders po ON e.aggregate_type = 'purchase_order' AND e.aggregate_id = po.purchase_order_id
       LEFT JOIN modbm_core.customers a ON e.aggregate_type = 'customer' AND e.aggregate_id = a.customer_id
       LEFT JOIN modbm_core.suppliers s ON e.aggregate_type = 'supplier' AND e.aggregate_id = s.vendor_id
+      LEFT JOIN modbm_core.goods_received gr ON e.aggregate_type = 'goods_receipt' AND e.aggregate_id = gr.goods_received_id
+      LEFT JOIN modbm_core.transfer_orders to_tbl ON e.aggregate_type = 'transfer_order' AND e.aggregate_id = to_tbl.transfer_order_id
+      LEFT JOIN modbm_core.payment_entries pe ON e.aggregate_type = 'payment' AND e.aggregate_id = pe.payment_id
       WHERE ${whereClause}
       ORDER BY e.created_on DESC
       LIMIT ${limit}

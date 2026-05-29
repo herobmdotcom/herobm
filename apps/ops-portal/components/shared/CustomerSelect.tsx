@@ -74,20 +74,17 @@ export default function CustomerSelect({
       return; 
     }
     try {
-      const res = await api.customFetch<{ data?: Customer[] }>(
-        `/customers?q=${encodeURIComponent(term)}&limit=10`,
-        { method: 'GET' }
-      );
-      const data = res.data;
+      const res = await api.accountsControllerFindAll({ q: term, limit: 10 } as any);
+      const dataArray = (res.data as any)?.data || res.data || [];
       if (excludeId) {
-        setFilteredAccounts(data?.filter((c: Customer) => c.customerId !== excludeId) || []);
+        setFilteredAccounts(dataArray.filter((c: any) => c.customerId !== excludeId));
       } else {
-        setFilteredAccounts(data || []);
+        setFilteredAccounts(dataArray as any);
       }
     } catch { 
       setFilteredAccounts([]); 
     }
-  }, []);
+  }, [excludeId]);
 
   const debouncedSearch = useDebounce((term: string) => searchAccounts(term), 300);
 
@@ -143,7 +140,7 @@ export default function CustomerSelect({
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
           }}
         >
-          {filteredAccounts.slice(0, 10).map((a) => (
+          {(Array.isArray(filteredAccounts) ? filteredAccounts : []).slice(0, 10).map((a) => (
             <div
               key={a.customerId}
               className="px-3 py-2 cursor-pointer text-sm"

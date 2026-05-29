@@ -292,6 +292,7 @@ export * from './paymentsControllerFindAllParams';
 export * from './paymentsControllerFindOneParams';
 export * from './pendingPutawayResponseDto';
 export * from './permissionDto';
+export * from './permissionDtoEffect';
 export * from './pickLineDto';
 export * from './postReconciliationResponseDto';
 export * from './previewReportDto';

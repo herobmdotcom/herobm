@@ -11663,11 +11663,19 @@
           },
           "action": {
             "type": "string"
+          },
+          "effect": {
+            "type": "string",
+            "enum": [
+              "allow",
+              "deny"
+            ]
           }
         },
         "required": [
           "resource",
-          "action"
+          "action",
+          "effect"
         ]
       },
       "SetRolePermissionsDto": {
@@ -11677,6 +11685,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PermissionDto"
+            }
+          },
+          "inherits": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           }
         },

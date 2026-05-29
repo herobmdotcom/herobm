@@ -344,37 +344,8 @@ export class CoaLoaderService {
             },
           });
 
-        // Seed GST Categories
-        if (settings.gst_categories && Array.isArray(settings.gst_categories)) {
-          // Neutralize defaults first to avoid unique constraint if we are updating
-          await tx.update(taxCategories).set({ isDefault: false });
-
-          for (const category of settings.gst_categories) {
-            const deterministicId = uuidv5(
-              'GST_CAT_' + category.code,
-              NAMESPACE_COA,
-            );
-            await tx
-              .insert(taxCategories)
-              .values({
-                taxCategoryId: deterministicId,
-                code: category.code,
-                title: category.title,
-                type: category.type,
-                rate: category.rate.toString(),
-                isDefault: category.is_default || false,
-              })
-              .onConflictDoUpdate({
-                target: [taxCategories.code],
-                set: {
-                  title: category.title,
-                  type: category.type,
-                  rate: category.rate.toString(),
-                  isDefault: category.is_default || false,
-                },
-              });
-          }
-        }
+        // Note: GST Categories are explicitly NOT seeded here anymore as they have been split
+        // out into their own loader (loadTaxSettingsFromFile) and are seeded on-demand via FE.
 
         // Seed Trading Terms
         if (settings.trading_terms && Array.isArray(settings.trading_terms)) {

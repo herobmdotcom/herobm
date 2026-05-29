@@ -227,8 +227,15 @@ export class AppConfigResponseDto {
   @ApiProperty() apiRateLimit!: string;
 }
 export class UpdateAppConfigDto {
-  @ApiProperty({ required: false }) defaultFulfillmentLocationId?: string;
-  @ApiProperty({ required: false }) apiRateLimit?: string;
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  defaultFulfillmentLocationId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumberString()
+  apiRateLimit?: string;
 }
 export class TradingTermResponseDto {
   @ApiProperty() id!: string;

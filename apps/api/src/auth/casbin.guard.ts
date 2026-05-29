@@ -22,11 +22,13 @@ export const CasbinAction = (action: string) =>
 export const SKIP_CASBIN = 'skip_casbin';
 export const SkipCasbin = () => SetMetadata(SKIP_CASBIN, true);
 
+import { Optional } from '@nestjs/common';
+
 @Injectable()
 export class CasbinGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    @Inject(CASBIN_ENFORCER) private enforcer: Enforcer,
+    @Optional() @Inject(CASBIN_ENFORCER) private enforcer?: Enforcer,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -59,6 +61,11 @@ export class CasbinGuard implements CanActivate {
 
     if (!user) {
       throw new UnauthorizedException('No authenticated user');
+    }
+
+    if (!this.enforcer) {
+      // In unit tests, this code shouldn't execute. In production, if it hits this, config is broken.
+      throw new Error('Casbin Enforcer is missing or failed to initialize');
     }
 
     const allowed = await this.enforcer.enforce(user.role, resource, action);

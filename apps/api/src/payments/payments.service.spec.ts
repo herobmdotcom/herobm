@@ -6,6 +6,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { AbaGeneratorService } from './aba-generator.service';
+import { NachaGeneratorService } from './nacha-generator.service';
 import {
   glAccounts,
   glSettings,
@@ -202,6 +203,10 @@ describe('PaymentsService', () => {
         PaymentsService,
         GlService,
         { provide: AbaGeneratorService, useValue: { generateAba: jest.fn() } },
+        {
+          provide: NachaGeneratorService,
+          useValue: { generateNacha: jest.fn() },
+        },
         { provide: DRIZZLE, useValue: pg.db },
         {
           provide: AppConfigService,

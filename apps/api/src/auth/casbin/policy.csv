@@ -2,80 +2,80 @@
 # Format: p, role, resource, action
 
 # viewer — read access to all data endpoints
-p, viewer, customers, read
-p, viewer, products, read
-p, viewer, inventory, read
-p, viewer, sales-orders, read
-p, viewer, purchase-orders, read
-p, viewer, suppliers, read
-p, viewer, receptions, read
-p, viewer, goods-received, read
-p, viewer, dashboard, read
-p, viewer, tax-categories, read
-p, viewer, settings, read
-p, viewer, report, read
-p, viewer, payments, read
+p, viewer, customers, read, allow
+p, viewer, products, read, allow
+p, viewer, inventory, read, allow
+p, viewer, sales-orders, read, allow
+p, viewer, purchase-orders, read, allow
+p, viewer, suppliers, read, allow
+p, viewer, receptions, read, allow
+p, viewer, goods-received, read, allow
+p, viewer, dashboard, read, allow
+p, viewer, tax-categories, read, allow
+p, viewer, settings, read, allow
+p, viewer, report, read, allow
+p, viewer, payments, read, allow
 
 # admin — full access to everything
-p, admin, report, write
-p, admin, customers, write
-p, admin, products, write
-p, admin, sales-orders, write
-p, admin, purchase-orders, write
-p, admin, suppliers, write
-p, admin, receptions, write
-p, admin, goods-received, write
-p, admin, inventory, write
+p, admin, report, write, allow
+p, admin, customers, write, allow
+p, admin, products, write, allow
+p, admin, sales-orders, write, allow
+p, admin, purchase-orders, write, allow
+p, admin, suppliers, write, allow
+p, admin, receptions, write, allow
+p, admin, goods-received, write, allow
+p, admin, inventory, write, allow
 
 # admin — full access to everything
-p, admin, users, read
-p, admin, users, write
-p, admin, customers, archive
-p, admin, products, archive
-p, admin, sales-orders, archive
-p, admin, purchase-orders, archive
-p, admin, suppliers, archive
-p, admin, receptions, archive
-p, admin, goods-received, archive
-p, admin, inventory, archive
-p, admin, settings, write
-p, admin, gl, read
-p, admin, gl, write
-p, admin, payments, write
-p, admin, system_logs, read
-p, admin, setup, execute
-p, admin, setup, read
-p, admin, api_keys, read
-p, admin, api_keys, write
-p, admin, webhooks, read
-p, admin, webhooks, write
-p, admin, events, write
+p, admin, users, read, allow
+p, admin, users, write, allow
+p, admin, customers, archive, allow
+p, admin, products, archive, allow
+p, admin, sales-orders, archive, allow
+p, admin, purchase-orders, archive, allow
+p, admin, suppliers, archive, allow
+p, admin, receptions, archive, allow
+p, admin, goods-received, archive, allow
+p, admin, inventory, archive, allow
+p, admin, settings, write, allow
+p, admin, gl, read, allow
+p, admin, gl, write, allow
+p, admin, payments, write, allow
+p, admin, system_logs, read, allow
+p, admin, setup, execute, allow
+p, admin, setup, read, allow
+p, admin, api_keys, read, allow
+p, admin, api_keys, write, allow
+p, admin, webhooks, read, allow
+p, admin, webhooks, write, allow
+p, admin, events, write, allow
 
 # system — bootstrap role for setup execution only
-p, system, setup, execute
-p, system, setup, read
+p, system, setup, execute, allow
+p, system, setup, read, allow
 
 # finance — viewer + GL read/write + AR/AP invoicing
-p, finance, gl, read
-p, finance, gl, write
-p, finance, payments, write
-p, finance, sales-orders, write
-p, finance, purchase-orders, write
+p, finance, gl, read, allow
+p, finance, gl, write, allow
+p, finance, payments, write, allow
+p, finance, sales-orders, write, allow
+p, finance, purchase-orders, write, allow
 
 # sales — viewer + customer/order writes
-p, sales, customers, write
-p, sales, sales-orders, write
+p, sales, customers, write, allow
+p, sales, sales-orders, write, allow
 
 # warehouse — viewer + order writes (pick/ship) + purchase/reception writes
-p, warehouse, sales-orders, write
-p, warehouse, purchase-orders, write
-p, warehouse, receptions, write
-p, warehouse, goods-received, write
-p, warehouse, inventory, write
+p, warehouse, sales-orders, write, allow
+p, warehouse, purchase-orders, write, allow
+p, warehouse, receptions, write, allow
+p, warehouse, goods-received, write, allow
+p, warehouse, inventory, write, allow
 
 # procurement — viewer + supplier/PO writes
-p, procurement, suppliers, write
-p, procurement, purchase-orders, write
+p, procurement, suppliers, write, allow
+p, procurement, purchase-orders, write, allow
 
 # Role inheritance: all roles inherit viewer (read-all)
 g, admin, viewer
@@ -85,3 +85,7 @@ g, warehouse, viewer
 g, procurement, viewer
 g, agent, viewer
 g, webhook, viewer
+
+# Test policies for Deny-Override
+p, restricted_user, dashboard, read, deny
+g, restricted_user, viewer

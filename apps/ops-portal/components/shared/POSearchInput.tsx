@@ -39,18 +39,9 @@ export default function POSearchInput({
 
   useEffect(() => {
     setLoading(true);
-    let url = `/purchase-orders?limit=20`;
-    if (vendorId) {
-      url += `&vendorId=${vendorId}`;
-    }
-    if (search) {
-      url += `&search=${encodeURIComponent(search)}`;
-    }
-    api.customFetch<unknown>(url, { method: 'GET' })
-      .then((data) => {
-
-        const pos = data as unknown as PurchaseOrder[];
-        setResults(pos);
+    api.purchaseOrdersControllerFindAll({ search: search || undefined, vendorId, limit: 20 } as any)
+      .then((res) => {
+        setResults(((res.data as any)?.data || res.data || []) as unknown as PurchaseOrder[]);
       })
       .catch(() => {
         setResults([]);
@@ -133,7 +124,7 @@ export default function POSearchInput({
                 Searching...
               </div>
             ) : results.length > 0 ? (
-              results.map((po) => (
+              (Array.isArray(results) ? results : []).map((po) => (
                 <button
                   key={po.purchaseOrderId}
                   className="dropdown-item flex items-center justify-between w-full"

@@ -44,6 +44,7 @@ export default function DevelopersPage() {
   const [keyCreating, setKeyCreating] = useState(false);
   const [keyForm, setKeyForm] = useState({ name: '', role: 'agent' });
   const [newSecret, setNewSecret] = useState<string | null>(null);
+  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
 
   // ── Webhooks State ──────────────────────────────────────────────────────────
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
@@ -99,10 +100,20 @@ export default function DevelopersPage() {
     }
   };
 
+  const loadRoles = async () => {
+    try {
+      const res = await api.rolesControllerFindAll();
+      setAvailableRoles((res.data as unknown as any[]) || []);
+    } catch (err: any) {
+      console.error('Failed to load roles', err);
+    }
+  };
+
   useEffect(() => {
     loadAppConfig();
     loadKeys();
     loadWebhooks();
+    loadRoles();
   }, []);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
@@ -268,6 +279,14 @@ export default function DevelopersPage() {
                         <option value="webhook">Webhook (Receiver)</option>
                         <option value="viewer">Viewer (Read-only)</option>
                         <option value="admin">Admin (Full Access)</option>
+                        <option disabled>──────────</option>
+                        {availableRoles
+                          .filter(r => !['agent', 'webhook', 'viewer', 'admin'].includes(r.role))
+                          .map((r) => (
+                          <option key={r.role} value={r.role}>
+                            {r.role} (Custom Role)
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </td>

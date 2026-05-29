@@ -33,7 +33,7 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 
 @Controller('purchase-orders/:id/returns')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('purchase-orders')
+@CasbinResource('purchase-returns')
 @ApiTags('PurchaseReturns')
 export class PurchaseReturnsController {
   constructor(
@@ -79,7 +79,7 @@ export class PurchaseReturnsController {
   }
 
   @Post(':returnId/stage')
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Stage Purchase Return',
     description: 'Mark a purchase return as staged for shipping.',
@@ -97,7 +97,7 @@ export class PurchaseReturnsController {
   }
 
   @Post(':returnId/ship')
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Ship Purchase Return',
     description: 'Mark a staged purchase return as shipped.',

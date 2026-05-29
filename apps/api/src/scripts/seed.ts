@@ -92,135 +92,357 @@ async function seedCasbinPolicies(db: any, dryRun: boolean) {
 
   const { casbinRule } = await import('../drizzle/modbm-core-schema.js');
 
-  const existing = await db.select().from(casbinRule);
-  const existingSet = new Set(
-    existing.map((r: any) =>
-      [
-        r.ptype || '',
-        r.v0 || '',
-        r.v1 || '',
-        r.v2 || '',
-        r.v3 || '',
-        r.v4 || '',
-        r.v5 || '',
-      ].join('|'),
-    ),
-  );
+  const existingSet = new Set();
+
+  if (!dryRun) {
+    console.log(
+      '  Wiping all existing Casbin rules for Deny-Override migration...',
+    );
+    await db.delete(casbinRule);
+  }
 
   const policies = [
-    { ptype: 'p', v0: 'viewer', v1: 'customers', v2: 'read' },
-    { ptype: 'p', v0: 'viewer', v1: 'products', v2: 'read' },
-    { ptype: 'p', v0: 'viewer', v1: 'inventory', v2: 'read' },
-    { ptype: 'p', v0: 'viewer', v1: 'sales-orders', v2: 'read' },
-    { ptype: 'p', v0: 'viewer', v1: 'purchase-orders', v2: 'read' },
-    { ptype: 'p', v0: 'viewer', v1: 'suppliers', v2: 'read' },
-    { ptype: 'p', v0: 'viewer', v1: 'receptions', v2: 'read' },
-    { ptype: 'p', v0: 'viewer', v1: 'goods-received', v2: 'read' },
-    { ptype: 'p', v0: 'viewer', v1: 'dashboard', v2: 'read' },
-    { ptype: 'p', v0: 'viewer', v1: 'tax-categories', v2: 'read' },
-    { ptype: 'p', v0: 'viewer', v1: 'settings', v2: 'read' },
-    { ptype: 'p', v0: 'viewer', v1: 'report', v2: 'read' },
-    { ptype: 'p', v0: 'viewer', v1: 'payments', v2: 'read' },
+    { ptype: 'p', v0: 'viewer', v1: 'customers', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'viewer', v1: 'products', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'viewer', v1: 'inventory', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'viewer', v1: 'sales-orders', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'viewer', v1: 'sales-returns', v2: 'read', v3: 'allow' },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: 'purchase-orders',
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: 'purchase-returns',
+      v2: 'read',
+      v3: 'allow',
+    },
+    { ptype: 'p', v0: 'viewer', v1: 'suppliers', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'viewer', v1: 'receptions', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'viewer', v1: 'goods-received', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'viewer', v1: 'dashboard', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'viewer', v1: 'tax-categories', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'viewer', v1: 'settings', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'viewer', v1: 'report', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'viewer', v1: 'payments', v2: 'read', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'report', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'report', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'report', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'report', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'report', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'report', v2: 'archive', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'customers', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'customers', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'customers', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'customers', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'customers', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'customers', v2: 'archive', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'products', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'products', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'products', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'products', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'products', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'products', v2: 'archive', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'archive', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'handle', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'invoice', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'purchase-orders', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'purchase-orders', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'purchase-orders', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'sales-returns', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'sales-returns', v2: 'write', v3: 'allow' },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: 'sales-returns',
+      v2: 'archive',
+      v3: 'allow',
+    },
+    { ptype: 'p', v0: 'admin', v1: 'sales-returns', v2: 'handle', v3: 'allow' },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: 'sales-returns',
+      v2: 'invoice',
+      v3: 'allow',
+    },
 
-    { ptype: 'p', v0: 'admin', v1: 'suppliers', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'suppliers', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'suppliers', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'purchase-orders', v2: 'read', v3: 'allow' },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: 'purchase-orders',
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: 'purchase-orders',
+      v2: 'archive',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: 'purchase-orders',
+      v2: 'handle',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: 'purchase-orders',
+      v2: 'invoice',
+      v3: 'allow',
+    },
 
-    { ptype: 'p', v0: 'admin', v1: 'receptions', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'receptions', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'receptions', v2: 'archive' },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: 'purchase-returns',
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: 'purchase-returns',
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: 'purchase-returns',
+      v2: 'archive',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: 'purchase-returns',
+      v2: 'handle',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: 'purchase-returns',
+      v2: 'invoice',
+      v3: 'allow',
+    },
 
-    { ptype: 'p', v0: 'admin', v1: 'goods-received', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'goods-received', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'goods-received', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'suppliers', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'suppliers', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'suppliers', v2: 'archive', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'inventory', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'inventory', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'inventory', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'receptions', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'receptions', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'receptions', v2: 'archive', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'receptions', v2: 'handle', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'users', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'users', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'users', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'goods-received', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'goods-received', v2: 'write', v3: 'allow' },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: 'goods-received',
+      v2: 'archive',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: 'goods-received',
+      v2: 'handle',
+      v3: 'allow',
+    },
 
-    { ptype: 'p', v0: 'admin', v1: 'roles', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'roles', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'roles', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'inventory', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'inventory', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'inventory', v2: 'archive', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'inventory', v2: 'handle', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'settings', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'settings', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'settings', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'users', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'users', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'users', v2: 'archive', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'gl', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'gl', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'roles', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'roles', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'roles', v2: 'archive', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'payments', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'payments', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'payments', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'settings', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'settings', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'settings', v2: 'archive', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'system_logs', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'system_logs', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'system_logs', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'gl', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'gl', v2: 'write', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'import', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'import', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'import', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'payments', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'payments', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'payments', v2: 'archive', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'api_keys', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'api_keys', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'api_keys', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'system_logs', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'system_logs', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'system_logs', v2: 'archive', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'webhooks', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'webhooks', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'webhooks', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'import', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'import', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'import', v2: 'archive', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'events', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'events', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'events', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'api_keys', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'api_keys', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'api_keys', v2: 'archive', v3: 'allow' },
 
-    { ptype: 'p', v0: 'admin', v1: 'tax-categories', v2: 'read' },
-    { ptype: 'p', v0: 'admin', v1: 'tax-categories', v2: 'write' },
-    { ptype: 'p', v0: 'admin', v1: 'tax-categories', v2: 'archive' },
+    { ptype: 'p', v0: 'admin', v1: 'webhooks', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'webhooks', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'webhooks', v2: 'archive', v3: 'allow' },
 
-    { ptype: 'p', v0: 'system', v1: 'import', v2: 'write' },
-    { ptype: 'p', v0: 'system', v1: 'import', v2: 'read' },
+    { ptype: 'p', v0: 'admin', v1: 'events', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'events', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'events', v2: 'archive', v3: 'allow' },
 
-    { ptype: 'p', v0: 'finance', v1: 'gl', v2: 'read' },
-    { ptype: 'p', v0: 'finance', v1: 'gl', v2: 'write' },
-    { ptype: 'p', v0: 'finance', v1: 'payments', v2: 'write' },
-    { ptype: 'p', v0: 'finance', v1: 'sales-orders', v2: 'write' },
-    { ptype: 'p', v0: 'finance', v1: 'purchase-orders', v2: 'write' },
+    { ptype: 'p', v0: 'admin', v1: 'tax-categories', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'tax-categories', v2: 'write', v3: 'allow' },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: 'tax-categories',
+      v2: 'archive',
+      v3: 'allow',
+    },
 
-    { ptype: 'p', v0: 'sales', v1: 'customers', v2: 'write' },
-    { ptype: 'p', v0: 'sales', v1: 'sales-orders', v2: 'write' },
+    { ptype: 'p', v0: 'finance', v1: 'gl', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'finance', v1: 'gl', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'finance', v1: 'payments', v2: 'write', v3: 'allow' },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: 'sales-orders',
+      v2: 'invoice',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: 'purchase-orders',
+      v2: 'invoice',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: 'sales-returns',
+      v2: 'invoice',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: 'purchase-returns',
+      v2: 'invoice',
+      v3: 'allow',
+    },
 
-    { ptype: 'p', v0: 'warehouse', v1: 'sales-orders', v2: 'write' },
-    { ptype: 'p', v0: 'warehouse', v1: 'purchase-orders', v2: 'write' },
-    { ptype: 'p', v0: 'warehouse', v1: 'receptions', v2: 'write' },
-    { ptype: 'p', v0: 'warehouse', v1: 'goods-received', v2: 'write' },
-    { ptype: 'p', v0: 'warehouse', v1: 'inventory', v2: 'write' },
+    { ptype: 'p', v0: 'sales', v1: 'customers', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'sales', v1: 'sales-orders', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'sales', v1: 'sales-orders', v2: 'invoice', v3: 'allow' },
+    { ptype: 'p', v0: 'sales', v1: 'sales-returns', v2: 'write', v3: 'allow' },
+    {
+      ptype: 'p',
+      v0: 'sales',
+      v1: 'sales-returns',
+      v2: 'invoice',
+      v3: 'allow',
+    },
 
-    { ptype: 'p', v0: 'procurement', v1: 'suppliers', v2: 'write' },
-    { ptype: 'p', v0: 'procurement', v1: 'purchase-orders', v2: 'write' },
+    {
+      ptype: 'p',
+      v0: 'warehouse',
+      v1: 'sales-orders',
+      v2: 'handle',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'warehouse',
+      v1: 'purchase-orders',
+      v2: 'handle',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'warehouse',
+      v1: 'sales-returns',
+      v2: 'handle',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'warehouse',
+      v1: 'purchase-returns',
+      v2: 'handle',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'warehouse',
+      v1: 'receptions',
+      v2: 'handle',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'warehouse',
+      v1: 'goods-received',
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'warehouse',
+      v1: 'goods-received',
+      v2: 'handle',
+      v3: 'allow',
+    },
+    { ptype: 'p', v0: 'warehouse', v1: 'inventory', v2: 'write', v3: 'allow' },
+    { ptype: 'p', v0: 'warehouse', v1: 'inventory', v2: 'handle', v3: 'allow' },
+
+    {
+      ptype: 'p',
+      v0: 'procurement',
+      v1: 'suppliers',
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'procurement',
+      v1: 'purchase-orders',
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'procurement',
+      v1: 'purchase-orders',
+      v2: 'invoice',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'procurement',
+      v1: 'purchase-returns',
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'procurement',
+      v1: 'purchase-returns',
+      v2: 'invoice',
+      v3: 'allow',
+    },
 
     { ptype: 'g', v0: 'admin', v1: 'viewer' },
     { ptype: 'g', v0: 'finance', v1: 'viewer' },
@@ -267,6 +489,9 @@ async function seedUsers(db: any, dryRun: boolean) {
   }
 
   const hash = await bcrypt.hash(adminPass, 10);
+  const viewerPass = process.env.DEV_VIEWER_PASSWORD || 'password';
+  const viewerHash = await bcrypt.hash(viewerPass, 10);
+  const salesHash = await bcrypt.hash('password', 10);
 
   await db
     .insert(users)
@@ -279,6 +504,32 @@ async function seedUsers(db: any, dryRun: boolean) {
     .onConflictDoUpdate({
       target: users.username,
       set: { passwordHash: hash, role: 'admin' as any, isActive: true },
+    });
+
+  await db
+    .insert(users)
+    .values({
+      username: 'viewer',
+      passwordHash: viewerHash,
+      role: 'viewer' as any,
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: { passwordHash: viewerHash, role: 'viewer' as any, isActive: true },
+    });
+
+  await db
+    .insert(users)
+    .values({
+      username: 'sales',
+      passwordHash: salesHash,
+      role: 'sales' as any,
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: { passwordHash: salesHash, role: 'sales' as any, isActive: true },
     });
 
   console.log('  Seeded user: admin');

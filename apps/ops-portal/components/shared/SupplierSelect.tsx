@@ -70,12 +70,8 @@ export default function SupplierSelect({
       return; 
     }
     try {
-      const res = await api.customFetch<{ data?: Supplier[] }>(
-        `/suppliers?q=${encodeURIComponent(term)}&limit=10`,
-        { method: 'GET' }
-      );
-
-      setFilteredSuppliers((res.data || res) as Supplier[]);
+      const res = await api.suppliersControllerFindAll({ q: term, limit: 10 } as any);
+      setFilteredSuppliers(((res.data as any)?.data || res.data || []) as unknown as Supplier[]);
     } catch { 
       setFilteredSuppliers([]); 
     }
@@ -135,7 +131,7 @@ export default function SupplierSelect({
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
           }}
         >
-          {filteredSuppliers.slice(0, 10).map((s) => (
+          {(Array.isArray(filteredSuppliers) ? filteredSuppliers : []).slice(0, 10).map((s) => (
             <div
               key={s.vendorId}
               className="px-3 py-2 cursor-pointer text-sm"

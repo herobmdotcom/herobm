@@ -9,4 +9,5 @@ import type { PermissionDto } from './permissionDto';
 
 export interface SetRolePermissionsDto {
   permissions: PermissionDto[];
+  inherits?: string[];
 }

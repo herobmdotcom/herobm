@@ -652,7 +652,7 @@
     "edit": "Edit",
     "errorBoundary": {
       "contactSupport": "If the problem persists, please contact support.",
-      "page": "Page",
+      "page": "Page: {path}",
       "reference": "Reference",
       "title": "Something went wrong",
       "tryAgain": "Try Again",
@@ -931,15 +931,27 @@
       "settings": "Timeline Settings",
       "title": "Recent Events",
       "types": {
-        "account_created": "Customer Customer created",
+        "account_created": "Customer created",
+        "payment_allocated": "Payment allocated",
+        "payment_cancelled": "Payment cancelled",
+        "payment_submitted": "Payment submitted",
         "po_created": "Purchase Order created",
+        "po_invoiced": "Purchase Order invoiced",
         "po_ordered": "Purchase Order ordered",
+        "po_over_received": "PO Over-received Warning",
+        "po_price_discrepancy": "PO Price Discrepancy Warning",
         "po_received": "Purchase Order received",
+        "so_backorders": "SO Backorders allocated",
         "so_confirmed": "Sales Order confirmed",
         "so_created": "Sales Order created",
+        "so_credit_note": "SO Credit Note posted",
+        "so_dispatched": "Sales Order dispatched",
         "so_invoiced": "Sales Order invoiced",
         "so_shipped": "Sales Order shipped",
-        "supplier_created": "Supplier created"
+        "stock_adjusted": "Stock adjusted",
+        "stock_received": "Stock received",
+        "supplier_created": "Supplier created",
+        "transfer_created": "Transfer Order created"
       }
     },
     "title": "Dashboard"
@@ -1433,7 +1445,7 @@
         "allocatedNow": "Allocated Now",
         "amount": "Amount",
         "date": "Date",
-        "glBank": "GL Bank Customer",
+        "glBank": "GL Bank Account",
         "mode": "Mode",
         "party": "Party",
         "paymentUnallocated": "Payment Unallocated",
@@ -2020,7 +2032,7 @@
       "unknownProduct": "Unknown Product"
     },
     "returnsHeading": "Returns",
-    "selectGlCustomer": "Select GL Customer...",
+    "selectGlAccount": "Select GL Account...",
     "statusTab": "Status",
     "subtitle": "Manage purchase orders",
     "supplierInvoice": {

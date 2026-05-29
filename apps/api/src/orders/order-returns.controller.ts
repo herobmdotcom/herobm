@@ -37,7 +37,7 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 @ApiTags('Orders')
 @Controller('sales-orders')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('sales-orders')
+@CasbinResource('sales-returns')
 export class OrderReturnsController {
   constructor(private readonly returnsWriteService: ReturnsWriteService) {}
 
@@ -96,7 +96,7 @@ export class OrderReturnsController {
 
   @Patch(':id/returns/:returnId/state')
   @ApiOkResponse({ type: ReturnResponseDto })
-  @CasbinAction('write')
+  @CasbinAction('invoice')
   @ApiOperation({
     summary: 'Change Return State',
     description: 'Update the processing state of a sales return.',
@@ -159,7 +159,7 @@ export class OrderReturnsController {
 
   @Post(':id/returns/:returnId/receive')
   @ApiCreatedResponse({ type: ReturnResponseDto })
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Receive Return',
     description: 'Process the receipt of returned goods into inventory.',

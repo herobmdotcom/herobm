@@ -3,9 +3,6 @@
 import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 
-const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE;
-const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
-
 /** Best-effort telemetry — doesn't depend on any shared lib import */
 function sendTelemetry(error: Error & { digest?: string }) {
   const message = error?.message || String(error) || 'Unknown error';
@@ -34,30 +31,6 @@ function sendTelemetry(error: Error & { digest?: string }) {
   }
 }
 
-function buildMailto(error: Error & { digest?: string }) {
-  if (!supportEmail) return null;
-  const subject = encodeURIComponent(`Error Report: ${error?.message?.slice(0, 80) || 'Unknown error'}`);
-  const body = encodeURIComponent(
-    [
-      '--- Error Report ---',
-      '',
-      `Message: ${error?.message || 'Unknown'}`,
-      `Digest:  ${error?.digest || 'N/A'}`,
-      `URL:     ${typeof window !== 'undefined' ? window.location.href : 'N/A'}`,
-      `Time:    ${new Date().toISOString()}`,
-      `Agent:   ${typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A'}`,
-      '',
-      '--- Stack Trace ---',
-      (error?.stack || 'Not available').slice(0, 1500),
-      '',
-      '--- Additional Context ---',
-      '(Please describe what you were doing when this error occurred)',
-      '',
-    ].join('\n'),
-  );
-  return `mailto:${supportEmail}?subject=${subject}&body=${body}`;
-}
-
 /**
  * Next.js page-level error boundary.
  *
@@ -80,7 +53,6 @@ export default function Error({
     sendTelemetry(error);
   }, [error]);
 
-  const mailto = buildMailto(error);
   const displayMessage = error?.message && error.message !== 'An error occurred in the Server Components render.'
     ? error.message
     : null;
@@ -108,33 +80,6 @@ export default function Error({
         <button onClick={reset} className="btn btn-primary mb-6">
           {t('tryAgain')}
         </button>
-        {(supportPhone || supportEmail) && (
-          <div
-            className="text-xs pt-4"
-            style={{ borderTop: '1px solid var(--border)', color: 'var(--text-muted)' }}
-          >
-            <p className="mb-2">{t('contactSupport')}</p>
-            {supportPhone && (
-              <p className="mb-1">
-                📞{' '}
-                <a href={`tel:${supportPhone}`} style={{ color: 'var(--accent)' }}>
-                  {supportPhone}
-                </a>
-              </p>
-            )}
-            {mailto && (
-              <p>
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span>✉️</span>
-                {/* eslint-enable i18next/no-literal-string */}
-                {' '}
-                <a href={mailto} style={{ color: 'var(--accent)' }}>
-                  {supportEmail}
-                </a>
-              </p>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

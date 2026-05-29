@@ -43,7 +43,7 @@ export class OrderShipmentsController {
 
   @Post(':id/shipments')
   @ApiCreatedResponse({ type: ShipmentResponseDto })
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Create Shipment',
     description: 'Create a new shipment for a sales order.',
@@ -84,7 +84,7 @@ export class OrderShipmentsController {
 
   @Patch(':id/shipments/:shipmentId')
   @ApiOkResponse({ type: ShipmentResponseDto })
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Update Shipment',
     description: 'Modify the details of an existing shipment.',
@@ -100,7 +100,7 @@ export class OrderShipmentsController {
 
   @Patch(':id/shipments/:shipmentId/state')
   @ApiOkResponse({ type: ShipmentResponseDto })
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Change Shipment State',
     description: 'Update the processing state of a shipment.',
@@ -120,7 +120,7 @@ export class OrderShipmentsController {
 
   @Post(':id/shipments/:shipmentId/cancel')
   @ApiCreatedResponse({ type: ShipmentResponseDto })
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Cancel Shipment',
     description: 'Cancel an open shipment and revert picked inventory.',
@@ -136,7 +136,7 @@ export class OrderShipmentsController {
 
   @Post(':id/shipments/:shipmentId/lines')
   @ApiCreatedResponse({ type: ShipmentResponseDto })
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Add Shipment Line',
     description: 'Add a new line item to a shipment.',
@@ -156,7 +156,7 @@ export class OrderShipmentsController {
 
   @Patch(':id/shipments/:shipmentId/lines/:lineId')
   @ApiOkResponse({ type: ShipmentResponseDto })
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Update Shipment Line',
     description: 'Modify an existing line item on a shipment.',
@@ -178,7 +178,7 @@ export class OrderShipmentsController {
 
   @Delete(':id/shipments/:shipmentId/lines/:lineId')
   @ApiOkResponse({ type: ShipmentResponseDto })
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Remove Shipment Line',
     description: 'Delete a line item from a shipment.',

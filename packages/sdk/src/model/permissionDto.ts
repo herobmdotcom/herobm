@@ -5,8 +5,10 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { PermissionDtoEffect } from './permissionDtoEffect';
 
 export interface PermissionDto {
   resource: string;
   action: string;
+  effect: PermissionDtoEffect;
 }

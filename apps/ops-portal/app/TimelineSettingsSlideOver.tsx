@@ -6,12 +6,18 @@ import SlideOver from '@/components/shared/SlideOver';
 
 export type EventType = 
   | 'so_created' | 'so_confirmed' | 'so_shipped' | 'so_invoiced'
+  | 'so_dispatched' | 'so_credit_note' | 'so_backorders'
   | 'po_created' | 'po_ordered' | 'po_received'
+  | 'po_invoiced' | 'po_over_received' | 'po_price_discrepancy'
+  | 'stock_received' | 'stock_adjusted' | 'transfer_created'
+  | 'payment_submitted' | 'payment_allocated' | 'payment_cancelled'
   | 'account_created' | 'supplier_created';
 
 export const DEFAULT_ENABLED_EVENTS: EventType[] = [
-  'so_created', 'so_confirmed', 'so_shipped', 'so_invoiced',
-  'po_created', 'po_ordered', 'po_received',
+  'so_created', 'so_confirmed', 'so_shipped', 'so_invoiced', 'so_dispatched',
+  'po_created', 'po_ordered', 'po_received', 'po_invoiced',
+  'stock_received', 'stock_adjusted', 'transfer_created',
+  'payment_submitted',
   'account_created', 'supplier_created'
 ];
 
@@ -66,7 +72,10 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
           <OptionRow event="so_created" />
           <OptionRow event="so_confirmed" />
           <OptionRow event="so_shipped" />
+          <OptionRow event="so_dispatched" />
           <OptionRow event="so_invoiced" />
+          <OptionRow event="so_credit_note" />
+          <OptionRow event="so_backorders" />
         </div>
 
         <div className="flex flex-col gap-1">
@@ -77,6 +86,27 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
           <OptionRow event="po_created" />
           <OptionRow event="po_ordered" />
           <OptionRow event="po_received" />
+          <OptionRow event="po_invoiced" />
+          <OptionRow event="po_over_received" />
+          <OptionRow event="po_price_discrepancy" />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50" style={{ color: 'var(--text-primary)' }}>
+            {tSidebar('inventory')}
+          </div>
+          <OptionRow event="stock_received" />
+          <OptionRow event="stock_adjusted" />
+          <OptionRow event="transfer_created" />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50" style={{ color: 'var(--text-primary)' }}>
+            {tSidebar('finance')}
+          </div>
+          <OptionRow event="payment_submitted" />
+          <OptionRow event="payment_allocated" />
+          <OptionRow event="payment_cancelled" />
         </div>
 
       </div>

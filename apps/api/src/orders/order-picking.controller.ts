@@ -60,7 +60,7 @@ export class OrderPickingController {
   @Post(':id/picking/lines/:lineId')
   @ApiBody({ type: Object }) // BYPASS-TYPING-TEST
   @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Pick Order Line',
     description:
@@ -83,7 +83,7 @@ export class OrderPickingController {
 
   @Delete(':id/picking/picks/:pickId')
   @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Cancel Pick',
     description: 'Cancel and revert a recorded pick for a sales order.',

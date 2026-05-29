@@ -1,8 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
-import { getTestToken } from './utils/memory-db';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const request = require('supertest');
+import { createE2eModule } from './utils/e2e-module';
 
 describe('Permissions & RBAC (e2e)', () => {
   let app: INestApplication;
@@ -12,18 +12,27 @@ describe('Permissions & RBAC (e2e)', () => {
   let testUserToken: string;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    const moduleFixture: TestingModule = await (
+      await createE2eModule()
+    ).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api');
     await app.init();
 
     // In a real e2e environment, we would use provision-e2e-db.
     // For this demonstration, assume standard users are seeded.
-    adminToken = await getTestToken(app, 'admin');
-    viewerToken = await getTestToken(app, 'viewer');
-    salesToken = await getTestToken(app, 'sales');
+    const getTestTokenDirect = async (username: string, pass: string) => {
+      const res = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ username, password: pass });
+      if (res.status !== 201) throw new Error(`Login failed for ${username}: ${res.status}`);
+      return res.body.access_token;
+    };
+
+    adminToken = await getTestTokenDirect('admin', process.env.DEV_ADMIN_PASSWORD || 'password');
+    viewerToken = await getTestTokenDirect('viewer', process.env.DEV_VIEWER_PASSWORD || 'password');
+    salesToken = await getTestTokenDirect('sales', 'password');
   });
 
   afterAll(async () => {
@@ -49,7 +58,7 @@ describe('Permissions & RBAC (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ name: 'Test Customer Admin' })
+      .send({ customerNumber: 'CUST-ADMIN-TEST', name: 'Test Customer Admin' })
       .expect(201);
   });
 
@@ -61,14 +70,21 @@ describe('Permissions & RBAC (e2e)', () => {
       .send({ targetUrl: 'http://test' })
       .expect(403);
 
+    // Fetch existing viewer permissions
+    const getRes = await request(app.getHttpServer())
+      .get('/api/roles/viewer')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const existingPermissions = getRes.body.permissions;
+
     // Admin adds webhooks write to viewer
     await request(app.getHttpServer())
       .post('/api/roles/viewer')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         permissions: [
-          { resource: 'webhooks', action: 'write' },
-          { resource: 'customers', action: 'read' }, // Keep existing for simplicity or use a separate test role
+          ...existingPermissions,
+          { resource: 'webhooks', action: 'write', effect: 'allow' },
         ],
       })
       .expect(201);
@@ -87,14 +103,23 @@ describe('Permissions & RBAC (e2e)', () => {
   });
 
   it('Remove a permission: Revoke webhooks write from viewer', async () => {
+    // Fetch existing viewer permissions
+    const getRes = await request(app.getHttpServer())
+      .get('/api/roles/viewer')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    
+    // Remove webhooks write
+    const restoredPermissions = getRes.body.permissions.filter(
+      (p: any) => !(p.resource === 'webhooks' && p.action === 'write')
+    );
+
     // Admin removes webhooks write from viewer
     await request(app.getHttpServer())
       .post('/api/roles/viewer')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        permissions: [
-          { resource: 'customers', action: 'read' }, // Only keep customers read
-        ],
+        permissions: restoredPermissions,
       })
       .expect(201);
 

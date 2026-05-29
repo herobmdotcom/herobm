@@ -11,29 +11,50 @@ export class RolesService {
     const subjects = await this.enforcer.getAllSubjects();
     const roles = await this.enforcer.getAllRoles();
 
-    // Casbin's subjects might include actual users (if they have direct policies, though we don't).
-    // The policy usually has: p, role, resource, action. So the 'subject' in policy is our 'role'.
-    const allRoles = new Set([...subjects, ...roles]);
+    const groupingPolicies = await this.enforcer.getGroupingPolicy();
+    const groupSubjects = groupingPolicies.map((p) => p[0]);
 
-    // Format response
+    const allRoles = new Set([...subjects, ...roles, ...groupSubjects]);
+
     const result = [];
     for (const r of allRoles) {
-      if (r === 'webhook' || r === 'agent') continue; // Skip internal system roles unless desired
       result.push({
         role: r,
-        permissions: await this.getRolePermissions(r),
+        ...(await this.getRoleDetails(r)),
       });
     }
 
     return result;
   }
 
-  async getRolePermissions(role: string): Promise<PermissionDto[]> {
-    const policies = await this.enforcer.getFilteredPolicy(0, role);
-    return policies.map((p) => ({
+  async getRoleDetails(role: string) {
+    const localPolicies = await this.enforcer.getFilteredPolicy(0, role);
+    const localPermissions = localPolicies.map((p) => ({
       resource: p[1],
       action: p[2],
+      effect: p[3] || 'allow',
     }));
+
+    const groupingPolicies = await this.enforcer.getFilteredGroupingPolicy(
+      0,
+      role,
+    );
+    const inherits = groupingPolicies.map((p) => p[1]);
+
+    const implicitPolicies =
+      await this.enforcer.getImplicitPermissionsForUser(role);
+    const implicitPermissions = implicitPolicies.map((p) => ({
+      sourceRole: p[0],
+      resource: p[1],
+      action: p[2],
+      effect: p[3] || 'allow',
+    }));
+
+    return {
+      permissions: localPermissions,
+      inherits,
+      implicitPermissions,
+    };
   }
 
   async setRolePermissions(role: string, dto: SetRolePermissionsDto) {
@@ -42,25 +63,32 @@ export class RolesService {
 
     // 2. Add new permissions
     for (const p of dto.permissions) {
-      await this.enforcer.addPolicy(role, p.resource, p.action);
+      await this.enforcer.addPolicy(role, p.resource, p.action, p.effect);
     }
 
-    // 3. Make sure the role inherits from 'viewer' as a baseline (optional but standard in modbm)
-    if (role !== 'admin' && role !== 'viewer') {
-      const hasInheritance = await this.enforcer.hasGroupingPolicy(
-        role,
-        'viewer',
-      );
-      if (!hasInheritance) {
+    // 3. Update inheritance
+    await this.enforcer.removeFilteredGroupingPolicy(0, role);
+    if (dto.inherits !== undefined) {
+      for (const parent of dto.inherits) {
+        await this.enforcer.addGroupingPolicy(role, parent);
+      }
+    } else {
+      // Default behavior if not explicitly provided
+      if (role !== 'admin' && role !== 'viewer') {
         await this.enforcer.addGroupingPolicy(role, 'viewer');
       }
     }
 
-    return { role, permissions: await this.getRolePermissions(role) };
+    return { role, ...(await this.getRoleDetails(role)) };
   }
 
   async deleteRole(role: string) {
-    if (role === 'admin' || role === 'viewer') {
+    if (
+      role === 'admin' ||
+      role === 'viewer' ||
+      role === 'webhook' ||
+      role === 'agent'
+    ) {
       throw new BadRequestException('Cannot delete system roles');
     }
     await this.enforcer.removeFilteredPolicy(0, role);

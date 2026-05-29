@@ -90,7 +90,7 @@ export class TransfersController {
   }
 
   @Post(':id/picking/lines/:lineId')
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Pick Transfer Line',
     description: 'Record a picked quantity for a transfer order line item.',
@@ -112,7 +112,7 @@ export class TransfersController {
   }
 
   @Delete(':id/picking/picks/:pickId')
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Cancel Transfer Pick',
     description: 'Cancel and revert a recorded pick for a transfer order.',
@@ -126,7 +126,7 @@ export class TransfersController {
     return this.transferService.cancelPick(id, pickId, user.username);
   }
   @Post(':id/ship')
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Ship Transfer Order',
     description: 'Mark a transfer order as shipped and dispatch inventory.',
@@ -141,7 +141,7 @@ export class TransfersController {
   }
 
   @Post(':id/receive')
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Receive Transfer Order',
     description: 'Process the receipt of a transferred inventory.',

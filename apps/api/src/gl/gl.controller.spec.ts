@@ -44,6 +44,10 @@ describe('GlController', () => {
       controllers: [GlController],
       providers: [
         { provide: GlService, useValue: glService },
+        {
+          provide: 'CASBIN_ENFORCER',
+          useValue: { enforce: jest.fn().mockResolvedValue(true) },
+        },
         { provide: CoaLoaderService, useValue: coaLoader },
         { provide: AppConfigService, useValue: { reload: jest.fn() } },
       ],

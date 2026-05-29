@@ -2,33 +2,6 @@
 
 import { useEffect } from 'react';
 
-const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE;
-const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
-
-function buildMailto(error: Error & { digest?: string }) {
-  if (!supportEmail) return null;
-  const subject = encodeURIComponent(`Error Report: ${error?.message?.slice(0, 80) || 'Unknown error'}`);
-  const body = encodeURIComponent(
-    [
-      '--- Error Report ---',
-      '',
-      `Message: ${error?.message || 'Unknown'}`,
-      `Digest:  ${error?.digest || 'N/A'}`,
-      `URL:     ${typeof window !== 'undefined' ? window.location.href : 'N/A'}`,
-      `Time:    ${new Date().toISOString()}`,
-      `Agent:   ${typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A'}`,
-      '',
-      '--- Stack Trace ---',
-      (error?.stack || 'Not available').slice(0, 1500),
-      '',
-      '--- Additional Context ---',
-      '(Please describe what you were doing when this error occurred)',
-      '',
-    ].join('\n'),
-  );
-  return `mailto:${supportEmail}?subject=${subject}&body=${body}`;
-}
-
 /**
  * Next.js global error boundary — catches errors in the root layout itself.
  *
@@ -70,8 +43,6 @@ export default function GlobalError({
       /* telemetry delivery is best-effort */
     }
   }, [error]);
-
-  const mailto = buildMailto(error);
 
   return (
     <html lang="en" className="dark">
@@ -124,40 +95,6 @@ export default function GlobalError({
             Try Again
             {/* eslint-enable i18next/no-literal-string */}
           </button>
-          {(supportPhone || supportEmail) && (
-            <div
-              style={{
-                borderTop: '1px solid rgba(255,255,255,0.08)',
-                paddingTop: 16,
-                fontSize: 12,
-                color: '#94a3b8',
-              }}
-            >
-              <p style={{ marginBottom: 8 }}>
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                If this problem persists, please contact support:
-                {/* eslint-enable i18next/no-literal-string */}
-              </p>
-              {supportPhone && (
-                <p style={{ marginBottom: 4 }}>
-                  📞{' '}
-                  <a href={`tel:${supportPhone}`} style={{ color: '#f59e0b' }}>
-                    {supportPhone}
-                  </a>
-                </p>
-              )}
-              {mailto && (
-                <p>
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
-                  ✉️{' '}
-                  {/* eslint-enable i18next/no-literal-string */}
-                  <a href={mailto} style={{ color: '#f59e0b' }}>
-                    {supportEmail}
-                  </a>
-                </p>
-              )}
-            </div>
-          )}
         </div>
       </body>
     </html>

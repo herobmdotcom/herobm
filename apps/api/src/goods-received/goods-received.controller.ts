@@ -53,7 +53,7 @@ export class GoodsReceivedController {
 
   @Post()
   @ApiBody({ type: CreateGoodsReceivedDto })
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Create Goods Receipt',
     description: 'Create a new goods receipt note.',
@@ -122,7 +122,7 @@ export class GoodsReceivedController {
   @Post(':id/cancel')
   @ApiBody({ type: EmptyBodyDto })
   @ApiCreatedResponse({ type: CancelReceptionResponseDto })
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Cancel Goods Receipt',
     description: 'Cancel an existing goods receipt note.',
@@ -141,7 +141,7 @@ export class GoodsReceivedController {
   @Post('lines/:lineId/resolve')
   @ApiBody({ type: ResolveAllocationDto })
   @ApiCreatedResponse({ type: ResolveAllocationResponseDto })
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Resolve Allocation',
     description: 'Resolve allocation for a received goods line.',
@@ -163,7 +163,7 @@ export class GoodsReceivedController {
   @Post('lines/:lineId/unresolve')
   @ApiBody({ type: EmptyBodyDto })
   @ApiCreatedResponse({ type: GoodsReceivedLineResponseDto })
-  @CasbinAction('write')
+  @CasbinAction('handle')
   @ApiOperation({
     summary: 'Unresolve Allocation',
     description: 'Unresolve allocation for a received goods line.',

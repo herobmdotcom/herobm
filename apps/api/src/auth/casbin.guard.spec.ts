@@ -377,5 +377,54 @@ describe('CasbinGuard', () => {
         expect(result).toBe(true);
       }
     });
+
+    describe('Deny-Override logic', () => {
+      it('should deny restricted_user from reading dashboard (explicit deny overrides inherited allow)', async () => {
+        const ctx = createMockContext({
+          metadata: {
+            [CASBIN_RESOURCE]: 'dashboard',
+            [CASBIN_ACTION]: 'read',
+          },
+          user: {
+            userId: '100',
+            username: 'restricted',
+            role: 'restricted_user',
+          },
+        });
+
+        jest
+          .spyOn(reflector, 'getAllAndOverride')
+          .mockImplementation((key: string) => {
+            return (ctx as any).__metadata[key];
+          });
+
+        await expect(guard.canActivate(ctx)).rejects.toThrow(
+          ForbiddenException,
+        );
+      });
+
+      it('should allow restricted_user to read products (inherited allow with no explicit deny)', async () => {
+        const ctx = createMockContext({
+          metadata: {
+            [CASBIN_RESOURCE]: 'products',
+            [CASBIN_ACTION]: 'read',
+          },
+          user: {
+            userId: '100',
+            username: 'restricted',
+            role: 'restricted_user',
+          },
+        });
+
+        jest
+          .spyOn(reflector, 'getAllAndOverride')
+          .mockImplementation((key: string) => {
+            return (ctx as any).__metadata[key];
+          });
+
+        const result = await guard.canActivate(ctx);
+        expect(result).toBe(true);
+      });
+    });
   });
 });

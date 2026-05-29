@@ -65,8 +65,8 @@ export default function AddSupplierModal({
   const fetchSuppliers = async (q: string) => {
     setLoading(true);
     try {
-      const res = await api.customFetch<any>(`/suppliers?limit=15&q=${encodeURIComponent(q)}`, { method: 'GET' });
-      setSuppliers(res.data || []);
+      const res = await api.suppliersControllerFindAll({ q, limit: 15 } as any);
+      setSuppliers((res.data as any)?.data || res.data || []);
       setLastSearchQuery(q);
     } catch (err: any) {
       // quiet fail
@@ -187,7 +187,7 @@ export default function AddSupplierModal({
             {suppliers.length > 0 && (
               <div className="absolute z-50 left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden max-h-60 overflow-y-auto w-[calc(100%+20px)] -ml-[10px] p-1">
                 <ul className="py-1">
-                  {suppliers.map(s => (
+                  {(Array.isArray(suppliers) ? suppliers : []).map(s => (
                     <li key={s.vendorId}>
                       <button
                         type="button"

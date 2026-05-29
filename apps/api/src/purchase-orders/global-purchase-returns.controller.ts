@@ -55,7 +55,7 @@ export class GlobalPurchaseReturnsListDto {
 
 @Controller('purchase-returns')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('purchase-orders')
+@CasbinResource('purchase-returns')
 @ApiTags('PurchaseReturns')
 export class GlobalPurchaseReturnsController {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}

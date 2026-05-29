@@ -17,7 +17,7 @@ import {
 @ApiTags('Orders')
 @Controller('sales-returns')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('sales-orders')
+@CasbinResource('sales-returns')
 export class GlobalReturnsController {
   constructor(private readonly returnsWriteService: ReturnsWriteService) {}
 
