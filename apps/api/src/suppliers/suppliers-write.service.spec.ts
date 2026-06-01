@@ -32,7 +32,11 @@ describe('SuppliersWriteService', () => {
 
   describe('create', () => {
     it('should create a supplier if vendor number is unique', async () => {
-      const dto = { vendorNumber: 'V-001', name: 'Vendor 1' };
+      const dto = {
+        vendorNumber: 'V-001',
+        name: 'Vendor 1',
+        address1Country: 'AU',
+      };
       const result = await service.create(dto, 'test-actor');
       expect(result.vendorNumber).toBe('V-001');
 
@@ -48,9 +52,14 @@ describe('SuppliersWriteService', () => {
         vendorNumber: 'V-001',
         name: 'Existing',
         currencyCode: 'EUR',
+        address1Country: 'AU',
       });
 
-      const dto = { vendorNumber: 'V-001', name: 'Duplicate' };
+      const dto = {
+        vendorNumber: 'V-001',
+        name: 'Duplicate',
+        address1Country: 'AU',
+      };
       await expect(service.create(dto, 'test-actor')).rejects.toThrow();
     });
   });
@@ -65,6 +74,7 @@ describe('SuppliersWriteService', () => {
           vendorNumber: 'V-EX',
           name: 'Old Name',
           currencyCode: 'EUR',
+          address1Country: 'AU',
         })
         .returning();
       existingId = s.vendorId;

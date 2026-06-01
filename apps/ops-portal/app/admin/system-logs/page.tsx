@@ -19,24 +19,48 @@ export default function SystemLogsPage() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [lineLimit, setLineLimit] = useState(1000);
   const [service, setService] = useState('api');
+  const [isInitialized, setIsInitialized] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
+  const fetchIdRef = useRef(0);
+
+  useEffect(() => {
+    const savedService = localStorage.getItem('modbm_logs_service');
+    if (savedService) {
+      setService(savedService);
+    }
+    setIsInitialized(true);
+  }, []);
+
+  const handleServiceChange = (newService: string) => {
+    setService(newService);
+    localStorage.setItem('modbm_logs_service', newService);
+  };
 
   const loadLogs = async () => {
+    const fetchId = ++fetchIdRef.current;
     try {
       setLoading(true);
       const res = await api.systemControllerGetSystemLogs({ service, lines: lineLimit.toString() });
-      setLines(res.data.lines);
-      setError('');
+      if (fetchId === fetchIdRef.current) {
+        setLines(res.data.lines);
+        setError('');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('toasts.loadFailed'));
+      if (fetchId === fetchIdRef.current) {
+        setError(err instanceof Error ? err.message : t('toasts.loadFailed'));
+      }
     } finally {
-      setLoading(false);
+      if (fetchId === fetchIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    loadLogs();
-  }, [lineLimit, service]);
+    if (isInitialized) {
+      loadLogs();
+    }
+  }, [lineLimit, service, isInitialized]);
 
   useEffect(() => {
     if (!autoRefresh) return;
@@ -73,7 +97,7 @@ export default function SystemLogsPage() {
               <select 
                 className="input-field py-1 px-2 text-xs h-auto"
                 value={service} 
-                onChange={(e) => setService(e.target.value)}
+                onChange={(e) => handleServiceChange(e.target.value)}
               >
                 <option value="api">{t('filters.services.api')}</option>
                 <option value="worker">{t('filters.services.worker')}</option>

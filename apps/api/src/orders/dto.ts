@@ -298,6 +298,7 @@ export class OrderResponseDto {
   notes?: string | null;
   customFields?: Record<string, any> | null;
   discrepanciesAcknowledged!: boolean;
+  taxProvider?: string | null;
   sourceId?: string | null;
   source!: string;
   createdBy?: string | null;

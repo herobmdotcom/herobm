@@ -38,9 +38,9 @@ export class CreateSupplierDto {
   @IsString()
   address1PostalCode?: string;
 
-  @IsOptional()
   @IsString()
-  address1Country?: string;
+  @IsNotEmpty()
+  address1Country!: string;
 
   @IsOptional()
   @IsString()
@@ -442,7 +442,7 @@ export class SupplierResponseDto {
   address1City: string | null;
   address1StateOrProvince: string | null;
   address1PostalCode: string | null;
-  address1Country: string | null;
+  address1Country: string;
   telephone1: string | null;
   fax: string | null;
   emailAddress1: string | null;

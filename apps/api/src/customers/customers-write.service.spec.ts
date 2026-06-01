@@ -23,7 +23,10 @@ describe('AccountsWriteService', () => {
         { provide: DRIZZLE, useValue: pg.db },
         {
           provide: AppConfigService,
-          useValue: { homeCurrency: () => 'EUR' },
+          useValue: {
+            homeCurrency: () => 'EUR',
+            taxProviderMappings: () => ({}),
+          },
         },
       ],
     }).compile();
@@ -38,7 +41,12 @@ describe('AccountsWriteService', () => {
   describe('create', () => {
     it('should create a new customer', async () => {
       const result = await service.create(
-        { customerNumber: 'TEST001', name: 'Test', currencyCode: 'EUR' },
+        {
+          customerNumber: 'TEST001',
+          name: 'Test',
+          currencyCode: 'EUR',
+          address1Country: 'AU',
+        },
         'actor',
       );
 
@@ -56,11 +64,17 @@ describe('AccountsWriteService', () => {
         customerNumber: 'TEST001',
         name: 'Existing',
         currencyCode: 'EUR',
+        address1Country: 'AU',
       });
 
       await expect(
         service.create(
-          { customerNumber: 'TEST001', name: 'Test', currencyCode: 'EUR' },
+          {
+            customerNumber: 'TEST001',
+            name: 'Test',
+            currencyCode: 'EUR',
+            address1Country: 'AU',
+          },
           'actor',
         ),
       ).rejects.toThrow(BadRequestException);
@@ -80,6 +94,7 @@ describe('AccountsWriteService', () => {
             customerNumber: 'ROLLBACK_001',
             name: 'Rollback Test',
             currencyCode: 'EUR',
+            address1Country: 'AU',
           },
           'fail-actor',
         ),
@@ -103,6 +118,7 @@ describe('AccountsWriteService', () => {
         customerNumber: 'UNQ-001',
         name: 'First',
         currencyCode: 'EUR',
+        address1Country: 'AU',
       });
 
       // Directly call DB to bypass service's manual existence check
@@ -111,10 +127,11 @@ describe('AccountsWriteService', () => {
           customerNumber: 'UNQ-001',
           name: 'Duplicate',
           currencyCode: 'EUR',
+          address1Country: 'AU',
         });
         fail('Should have thrown unique violation');
-      } catch (e: unknown) {
-        const code = getErrorMessage(e) || e.cause?.code;
+      } catch (e: any) {
+        const code = e.code || e.cause?.code;
         expect(code).toBe('23505');
       }
     });
@@ -124,6 +141,7 @@ describe('AccountsWriteService', () => {
         customerNumber: 'CONFLICT-001',
         name: 'First',
         currencyCode: 'EUR',
+        address1Country: 'AU',
       });
 
       // Bypass manual check by mocking the select? No, just rely on race condition potential.
@@ -147,6 +165,7 @@ describe('AccountsWriteService', () => {
             customerNumber: 'CONFLICT-001',
             name: 'Duplicate',
             currencyCode: 'EUR',
+            address1Country: 'AU',
           },
           'actor',
         ),
@@ -158,7 +177,12 @@ describe('AccountsWriteService', () => {
     it('should update an existing customer', async () => {
       const [acc] = await pg.db
         .insert(customers)
-        .values({ customerNumber: 'TEST001', name: 'Old', currencyCode: 'EUR' })
+        .values({
+          customerNumber: 'TEST001',
+          name: 'Old',
+          currencyCode: 'EUR',
+          address1Country: 'AU',
+        })
         .returning();
 
       const result = await service.update(

@@ -127,6 +127,21 @@ export class OrdersController {
     return this.ordersWriteService.update(id, body, user.username);
   }
 
+  @Post(':id/tax')
+  @ApiBody({ type: EmptyBodyDto })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Calculate Taxes',
+    description: 'Manually trigger an external tax calculation for the order.',
+  })
+  @ApiCreatedResponse({ type: OrderResponseDto })
+  async triggerTaxCalculation(
+    @Param('id') id: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.ordersWriteService.triggerTaxCalculation(id, user.username);
+  }
+
   @Patch(':id/state')
   @ApiBody({ type: ChangeOrderStateDto })
   @CasbinAction('write')

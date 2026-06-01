@@ -38,9 +38,9 @@ export class CreateAccountDto {
   @IsString()
   address1PostalCode?: string;
 
-  @IsOptional()
   @IsString()
-  address1Country?: string;
+  @IsNotEmpty()
+  address1Country!: string;
 
   @IsOptional()
   @IsString()
@@ -310,7 +310,7 @@ export class AccountResponseDto {
   address1City?: string;
   address1StateOrProvince?: string;
   address1PostalCode?: string;
-  address1Country?: string;
+  address1Country!: string;
   telephone1?: string;
   fax?: string;
   emailAddress1?: string;

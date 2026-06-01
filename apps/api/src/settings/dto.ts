@@ -225,6 +225,14 @@ export class OrganizationResponseDto {
 export class AppConfigResponseDto {
   @ApiProperty() defaultFulfillmentLocationId!: string;
   @ApiProperty() apiRateLimit!: string;
+  @ApiProperty({ required: false }) taxProviderMappings?: Record<
+    string,
+    string
+  >;
+  @ApiProperty({ required: false }) enrichmentProviderMappings?: Record<
+    string,
+    Record<string, string>
+  >;
 }
 export class UpdateAppConfigDto {
   @ApiProperty({ required: false })
@@ -236,6 +244,14 @@ export class UpdateAppConfigDto {
   @IsOptional()
   @IsNumberString()
   apiRateLimit?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  taxProviderMappings?: Record<string, string>;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  enrichmentProviderMappings?: Record<string, Record<string, string>>;
 }
 export class TradingTermResponseDto {
   @ApiProperty() id!: string;

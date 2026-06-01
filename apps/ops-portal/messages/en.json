@@ -755,6 +755,7 @@
     "noEvents": "No events recorded",
     "noMatchingResults": "No matching results",
     "none": "(None)",
+    "notConfigured": "Not configured",
     "notesCardHeading": "Notes",
     "notesCardPlaceholder": "Internal notes",
     "options": {
@@ -871,10 +872,12 @@
     "fields": {
       "accountNumber": "Account Number",
       "bankAccountName": "Bank Account Name",
+      "businessNumber": "Business Number",
       "childAccounts": "Child Accounts ({count})",
       "discountRules": "Discount Rules",
       "manage": "Manage",
-      "parentCustomer": "Parent Customer"
+      "parentCustomer": "Parent Customer",
+      "taxRegistered": "Tax Registered"
     },
     "financials": "Financials",
     "generalInfo": "General Information",
@@ -1637,6 +1640,8 @@
       "productNumber": "Product # (SKU)",
       "purchaseTaxCategory": "Purchase Tax Category",
       "quantity": "Component Quantity",
+      "salesTaxCategory": "Sales Tax Category",
+      "externalTaxCode": "External Tax Code",
       "quantityOnHand": "Qty On Hand",
       "ratio": "Ratio",
       "ratioBase": "Ratio (x Base)",
@@ -2087,6 +2092,7 @@
     "buttons": {
       "addPostConfirmationLine": "Add Line",
       "archive": "Archive",
+      "calculateTaxes": "Calculate Taxes",
       "confirmationPdf": "Confirmation PDF",
       "copyOrder": "Copy Order",
       "createInvoice": "Create Invoice",
@@ -2700,7 +2706,9 @@
     "fields": {
       "accountNumber": "Account Number",
       "bankAccountName": "Bank Account Name",
-      "selectCurrency": "Select Currency"
+      "businessNumber": "Business Number",
+      "selectCurrency": "Select Currency",
+      "taxRegistered": "Tax Registered"
     },
     "financials": "Financials",
     "generalInfo": "General Information",

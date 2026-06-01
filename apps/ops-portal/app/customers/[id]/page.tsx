@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
+import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichmentDecorator';
+import * as api from '@modbm/sdk';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { formatAmount } from '@/lib/currency';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
@@ -16,9 +18,9 @@ import PageNav from '@/components/shared/PageNav';
 import GroupSelect from '@/components/shared/GroupSelect';
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver';
-import LookupInput from '@/components/shared/LookupInput';
+
 import { useSettings } from '@/components/SettingsProvider';
-import { CUSTOMER_STATE } from '@modbm/shared';
+import { getErrorMessage, CURRENCIES, COUNTRIES, CUSTOMER_STATE, getCurrencyForCountry } from '@modbm/shared';
 import { useAccount } from './useCustomer';
 
 export default function AccountDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
@@ -275,7 +277,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.name')}
+                    {t('common.columns.name')} *
                   </label>
                   <input
                     type="text"
@@ -311,23 +313,53 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.taxPosition')}
+                    {t('customers.fields.parentCustomer')}
+                  </label>
+                  <CustomerSelect
+                    value={dto.parentCustomerId || null}
+                    onChange={(val) => {
+                      updateField('parentCustomerId', val?.customerId || null);
+                      saveField('parentCustomerId', val?.customerId || null);
+                    }}
+                    disabled={!isEditable || saving}
+                    excludeId={params.id}
+                    initialSearchTerm={dto.parentCustomerName || ''}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('common.columns.country')} *
                   </label>
                   <select
                     className="input"
+                    value={dto.address1Country || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      updateField('address1Country', val);
+                      const newCurrency = getCurrencyForCountry(val);
+                      if (newCurrency) {
+                        updateField('currencyCode', newCurrency);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      const val = e.target.value;
+                      saveField('address1Country', val);
+                      const newCurrency = getCurrencyForCountry(val);
+                      if (newCurrency) {
+                        saveField('currencyCode', newCurrency);
+                      }
+                    }}
                     disabled={!isEditable || saving}
-                    value={dto.taxCategoryId || ''}
-                    onChange={(e) => { updateField('taxCategoryId', e.target.value); saveField('taxCategoryId', e.target.value); }}
                   >
-                    <option value="">{t('common.options.none')}</option>
-                    {taxCategories.map((cat) => (
-                      <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
-                        {cat.title} ({cat.code})
-                      </option>
+                    <option value="">{t('common.notConfigured')}</option>
+                    {COUNTRIES.map(c => (
+                      <option key={c.code} value={c.code}>{c.name}</option>
                     ))}
                   </select>
                 </div>
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {t('common.notesCardHeading')}
                   </label>
@@ -342,64 +374,19 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Business Number (ABN)
-                  </label>
-                  <LookupInput
-                    value={dto.businessNumber || ''}
-                    onChange={(val) => updateField('businessNumber', val)}
-                    provider="abr"
-                    onEnrich={(data) => {
-                      if (data.name) {
-                        updateField('name', data.name);
-                        saveField('name', data.name);
-                      }
-                      if (data.isTaxRegistered !== undefined) {
-                        updateField('isTaxRegistered', data.isTaxRegistered);
-                        saveField('isTaxRegistered', data.isTaxRegistered);
-                      }
-                      saveField('businessNumber', dto.businessNumber || '');
-                    }}
-                    disabled={!isEditable || saving}
-                    onBlur={() => saveField('businessNumber', dto.businessNumber)}
-                    placeholder="Enter ABN to lookup..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5 opacity-0" style={{ color: 'var(--text-muted)' }}>
-                    Registered for GST
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer mt-1">
-                    <div className="switch" title={dto.isTaxRegistered ? 'Registered for GST' : 'Not Registered'}>
-                      <input
-                        type="checkbox"
-                        checked={dto.isTaxRegistered || false}
-                        onChange={(e) => {
-                          updateField('isTaxRegistered', e.target.checked);
-                          saveField('isTaxRegistered', e.target.checked);
-                        }}
-                        disabled={!isEditable || saving}
-                      />
-                    </div>
-                    <span className="text-sm font-medium">Registered for GST</span>
-                  </label>
-                </div>
-              </div>
             </div>
 
-          {/* Pricing & Currency Card */}
+          {/* Pricing & Tax Card */}
           <div id="pricing-section" className="card">
             <h3 className="section-heading">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">payments</span>
-              {t('customers.pricingCurrency')}
+              Pricing & Tax
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('common.columns.currency')}
+                  {t('common.columns.currency')} *
                 </label>
                 <select
                   className="input"
@@ -407,9 +394,9 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                   onChange={(e) => { updateField('currencyCode', e.target.value); saveField('currencyCode', e.target.value); }}
                   disabled={!isEditable || saving}
                 >
-                  <option value="EUR">EUR</option>
-                  <option value="USD">USD</option>
-                  <option value="GBP">GBP</option>
+                  {CURRENCIES.map(c => (
+                    <option key={c.code} value={c.code}>{c.code} - {c.name}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -472,9 +459,77 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                   </span>
                 </div>
               </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('common.columns.taxPosition')}
+                </label>
+                <select
+                  className="input"
+                  disabled={!isEditable || saving}
+                  value={dto.taxCategoryId || ''}
+                  onChange={(e) => { updateField('taxCategoryId', e.target.value); saveField('taxCategoryId', e.target.value); }}
+                >
+                  <option value="">{t('common.options.none')}</option>
+                  {taxCategories.map((cat) => (
+                    <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
+                      {cat.title} ({cat.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-          </div>
-
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('customers.fields.businessNumber')}
+                    <FrontendEnrichmentDecorator
+                      field="customer.business_number"
+                      country={dto.address1Country || ''}
+                      value={dto.businessNumber || ''}
+                      isSaving={saving}
+                      onEnrich={(data) => {
+                        if (data.name) {
+                          updateField('name', data.name);
+                          saveField('name', data.name);
+                        }
+                        if (data.isTaxRegistered !== undefined) {
+                          updateField('isTaxRegistered', data.isTaxRegistered);
+                          saveField('isTaxRegistered', data.isTaxRegistered);
+                        }
+                      }}
+                    />
+                  </label>
+                  <input
+                    type="text"
+                    className="input w-full"
+                    value={dto.businessNumber || ''}
+                    onChange={(e) => updateField('businessNumber', e.target.value)}
+                    disabled={!isEditable || saving}
+                    onBlur={() => saveField('businessNumber', dto.businessNumber)}
+                    placeholder="Enter business number..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5 opacity-0" style={{ color: 'var(--text-muted)' }}>
+                    {t('customers.fields.taxRegistered')}
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer mt-1">
+                    <div className="switch" title={dto.isTaxRegistered ? t('customers.fields.taxRegistered') : t('common.na')}>
+                      <input
+                        type="checkbox"
+                        checked={dto.isTaxRegistered || false}
+                        onChange={(e) => {
+                          updateField('isTaxRegistered', e.target.checked);
+                          saveField('isTaxRegistered', e.target.checked);
+                        }}
+                        disabled={!isEditable || saving}
+                      />
+                    </div>
+                    <span className="text-sm font-medium">{t('customers.fields.taxRegistered')}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
             {/* Address & Contact Card */}
             <div id="address-section" className="card">
               <h3 className="section-heading">
@@ -561,19 +616,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     disabled={!isEditable || saving}
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.country')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.address1Country || ''}
-                    onChange={(e) => updateField('address1Country', e.target.value)}
-                    onBlur={(e) => saveField('address1Country', e.target.value)}
-                    disabled={!isEditable || saving}
-                  />
-                </div>
+
               </div>
             </div>
 
@@ -680,57 +723,45 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                 </div>
               </div>
             </div>
-
             {/* Hierarchy Card */}
-            <div id="hierarchy-section" className="card h-fit">
-              <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined">account_tree</span>
-                Hierarchy
-              </h3>
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('customers.fields.parentCustomer')}
-                  </label>
-                  <CustomerSelect
-                    value={dto.parentCustomerId || null}
-                    onChange={(val) => {
-                      updateField('parentCustomerId', val?.customerId || null);
-                      saveField('parentCustomerId', val?.customerId || null);
-                    }}
-                    disabled={!isEditable || saving}
-                    excludeId={params.id}
-                    initialSearchTerm={dto.parentCustomerName || ''}
-                  />
-                </div>
-                
-                {customer.childAccounts && customer.childAccounts.length > 0 && (
+            {customer.childAccounts && customer.childAccounts.length > 0 && (
+              <div id="hierarchy-section" className="card h-fit">
+                <h3 className="section-heading">
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  <span className="material-symbols-outlined">account_tree</span>
+                  Hierarchy
+                </h3>
+                <div className="grid grid-cols-1 gap-4">
                   <div className="mt-4">
                     <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
                       {t('customers.fields.childAccounts', { count: customer.childAccounts.length })}
                     </label>
                     <div className="flex flex-col gap-2">
                       {customer.childAccounts.map((child: any) => (
-                        <div key={child.customerId} className="flex items-center justify-between py-2 border-b last:border-0" style={{ borderColor: 'var(--border)' }}>
-                          <div className="flex flex-col">
-                            <Link href={`/customers/${child.customerId}`} className="font-semibold text-sm hover:underline" style={{ color: 'var(--accent)' }}>
-                              {child.customerNumber} - {child.name}
-                            </Link>
+                        <Link 
+                          key={child.customerId}
+                          href={`/customers/${child.customerId}`}
+                          className="flex items-center gap-3 p-3 rounded-lg border border-[var(--border)] hover:border-[var(--accent)] hover:shadow-sm transition-all"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-[var(--accent)] bg-opacity-10 flex items-center justify-center text-[var(--accent)] font-semibold shrink-0">
+                            {child.name.charAt(0)}
                           </div>
-                          <span className="text-sm text-gray-500">
-                            {child.stateCode ? <StateName state={child.stateCode as ValidState} /> : ''}
-                          </span>
-                        </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-sm truncate">{child.name}</div>
+                            <div className="text-xs text-[var(--text-muted)] truncate">{child.customerNumber}</div>
+                          </div>
+                          {/* eslint-disable-next-line i18next/no-literal-string */}
+                          <span className="material-symbols-outlined text-[var(--text-muted)]">chevron_right</span>
+                        </Link>
                       ))}
                     </div>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            )}
 
           <div id="activity-section" className="card">
-            <ActivityTimeline events={((customer.events as any[]) || [])} />
+            <ActivityTimeline events={(customer.events as any[]) || []} />
           </div>
 
           {/* Bottom Actions */}

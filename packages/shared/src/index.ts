@@ -111,6 +111,12 @@ export {
 } from './uom';
 
 export {
+  COUNTRIES,
+  getCountryCode,
+} from './countries';
+export type { CountryDef } from './countries';
+
+export {
   CURRENCIES,
   CURRENCY_DISPLAY,
   getCurrency,
@@ -118,6 +124,7 @@ export {
   formatAmount,
   REVENUE_ROUTING_PRECEDENCE,
   EXPENSE_ROUTING_PRECEDENCE,
+  getCurrencyForCountry,
 } from './currency';
 
 export {

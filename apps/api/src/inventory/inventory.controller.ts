@@ -145,7 +145,7 @@ export class InventoryController {
   @ApiQuery({ name: 'productId', required: false, type: String })
   @ApiOkResponse({ type: [InventoryLocationResponseDto] })
   async findAllLocations(@Query('productId') productId?: string) {
-    return { data: await this.inventoryService.findAllLocations(productId) };
+    return this.inventoryService.findAllLocations(productId);
   }
 
   @Get('movements')

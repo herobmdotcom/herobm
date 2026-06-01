@@ -286,6 +286,9 @@ async function seedCasbinPolicies(db: any, dryRun: boolean) {
     { ptype: 'p', v0: 'admin', v1: 'system_logs', v2: 'write', v3: 'allow' },
     { ptype: 'p', v0: 'admin', v1: 'system_logs', v2: 'archive', v3: 'allow' },
 
+    { ptype: 'p', v0: 'admin', v1: 'external_api', v2: 'read', v3: 'allow' },
+    { ptype: 'p', v0: 'admin', v1: 'external_api', v2: 'write', v3: 'allow' },
+
     { ptype: 'p', v0: 'admin', v1: 'import', v2: 'read', v3: 'allow' },
     { ptype: 'p', v0: 'admin', v1: 'import', v2: 'write', v3: 'allow' },
     { ptype: 'p', v0: 'admin', v1: 'import', v2: 'archive', v3: 'allow' },
@@ -1052,10 +1055,11 @@ export async function seedAccounts(db: any, dryRun: boolean) {
       customerNumber: 'CUST-E2E-001',
       name: 'E2E Default Customer',
       currencyCode: 'AUD',
+      address1Country: 'AU',
     })
     .onConflictDoUpdate({
       target: customers.customerId,
-      set: { name: 'E2E Default Customer' },
+      set: { name: 'E2E Default Customer', address1Country: 'AU' },
     });
 
   // Seed vendor
@@ -1066,10 +1070,11 @@ export async function seedAccounts(db: any, dryRun: boolean) {
       vendorNumber: 'VEND-E2E-001',
       name: 'E2E Default Vendor',
       currencyCode: 'AUD',
+      address1Country: 'AU',
     })
     .onConflictDoUpdate({
       target: suppliers.vendorId,
-      set: { name: 'Seed Vendor' },
+      set: { name: 'Seed Vendor', address1Country: 'AU' },
     });
 
   console.log('  Seeded default customer and vendor');

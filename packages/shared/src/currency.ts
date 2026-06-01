@@ -2,6 +2,7 @@
  * Global currency configuration and utilities.
  * Shared between API, Background Workers, and Frontend.
  */
+import countryToCurrency from 'country-to-currency';
 
 // ----- Display preference -----
 // Set to 'symbol' to display €, $, etc. or 'code' to display EUR, USD, etc.
@@ -72,6 +73,15 @@ export function getCurrency(code: string): CurrencyDef {
  */
 export function getCurrencyByAbmCode(abmCode: number): CurrencyDef {
   return BY_ABM.get(abmCode) ?? FALLBACK_CURRENCY;
+}
+
+/**
+ * Get the default currency code for a given ISO 3166-1 alpha-2 country code.
+ * Returns undefined if no mapping is found.
+ */
+export function getCurrencyForCountry(countryCode: string): string | undefined {
+  if (!countryCode) return undefined;
+  return countryToCurrency[countryCode.toUpperCase() as keyof typeof countryToCurrency];
 }
 
 /**

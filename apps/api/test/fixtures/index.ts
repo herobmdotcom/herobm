@@ -38,6 +38,7 @@ export async function createTestCustomer(db: any, opts?: { name?: string }) {
     customerNumber: `CUST-TEST-${++_sequence}`,
     name: opts?.name || 'Test Customer',
     currencyCode: 'AUD',
+    address1Country: 'AU',
   });
   return { customerId };
 }
@@ -180,6 +181,7 @@ export async function createTestSupplier(db: any, opts?: { name?: string }) {
     customerNumber: `SUPP-TEST-${++_sequence}`,
     name: opts?.name || 'Test Supplier',
     currencyCode: 'AUD',
+    address1Country: 'AU',
   });
   return { customerId };
 }

@@ -9,7 +9,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import { useTranslations } from 'next-intl';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage, COUNTRIES } from '@modbm/shared';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -486,13 +486,19 @@ export default function SystemSettingsPage() {
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.country')}
                   </label>
-                  <input
+                  <select
                     className="input"
                     value={orgForm.country || ''}
                     onChange={(e) => updateOrgField('country', e.target.value)}
                     onBlur={saveOrgField}
-                    placeholder={tSettings('placeholders.country')}
-                  />
+                  >
+                    <option value="">{tSettings('placeholders.country')}</option>
+                    {COUNTRIES.map(c => (
+                      <option key={c.code} value={c.code}>
+                        {c.name} ({c.code})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

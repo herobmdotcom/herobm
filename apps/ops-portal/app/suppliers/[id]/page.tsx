@@ -13,6 +13,7 @@ import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import EntityHeader from '@/components/shared/EntityHeader';
+import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichmentDecorator';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { CURRENCIES } from '@/lib/currency';
 import PageNav from '@/components/shared/PageNav';
@@ -22,9 +23,7 @@ import { resolveSupplierRiskProfile } from '@/lib/supplier-risk';
 import SupplierStatusBadges from '@/components/suppliers/SupplierStatusBadges';
 import SupplierExpiries from '@/components/suppliers/SupplierExpiries';
 import { useSettings } from '@/components/SettingsProvider';
-import { SUPPLIER_STATE } from '@modbm/shared';
-import LookupInput from '@/components/shared/LookupInput';
-import { getErrorMessage } from '@modbm/shared';
+import { SUPPLIER_STATE, getErrorMessage, CURRENCIES as _CURRENCIES, COUNTRIES, getCurrencyForCountry } from '@modbm/shared';
 
 interface Supplier {
   vendorId: string;
@@ -395,65 +394,215 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         </div>
       )}
 
-        {/* Top row: General Info (left) + Financials (right) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {/* General Info Card */}
-          <div id="info-section" className="card">
-            <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">info</span>
-              {t('generalInfo')}
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {tCommon('columns.name')}
-                </label>
-                <input
-                  type="text"
-                  className="input"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onBlur={() => saveField('name', editName, supplier.name)}
-                  disabled={!isEditable || saving}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('columns.vendorNumber')}
-                </label>
-                <input
-                  type="text"
-                  className="input"
-                  value={supplier.vendorNumber}
-                  disabled
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('supplierGroup')}
-                </label>
-                <GroupSelect
-                  type="supplier"
-                  value={editSupplierGroupId}
-                  onChange={(val) => {
-                    setEditSupplierGroupId(val);
-                    saveField('supplierGroupId', val || '', supplier.supplierGroupId);
+        {/* General Info Card */}
+        <div id="info-section" className="card">
+          <h3 className="section-heading">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            <span className="material-symbols-outlined">info</span>
+            {t('generalInfo')}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {tCommon('columns.name')} *
+              </label>
+              <input
+                type="text"
+                className="input"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onBlur={() => saveField('name', editName, supplier.name)}
+                disabled={!isEditable || saving}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('columns.vendorNumber')}
+              </label>
+              <input
+                type="text"
+                className="input"
+                value={supplier.vendorNumber}
+                disabled
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('supplierGroup')}
+              </label>
+              <GroupSelect
+                type="supplier"
+                value={editSupplierGroupId}
+                onChange={(val) => {
+                  setEditSupplierGroupId(val);
+                  saveField('supplierGroupId', val || '', supplier.supplierGroupId);
+                }}
+                disabled={!isEditable || saving}
+                placeholder={t('placeholders.noGroup')}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('country')} *
+              </label>
+              <select
+                className="input"
+                value={editCountry}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setEditCountry(val);
+                  const newCurrency = getCurrencyForCountry(val);
+                  if (newCurrency && newCurrency !== editCurrency) {
+                    setEditCurrency(newCurrency);
+                  }
+                }}
+                onBlur={() => {
+                  saveField('address1Country', editCountry, supplier.address1Country);
+                  const newCurrency = getCurrencyForCountry(editCountry);
+                  if (newCurrency && newCurrency !== supplier.currencyCode) {
+                    saveField('currencyCode', newCurrency, supplier.currencyCode);
+                  }
+                }}
+                disabled={!isEditable || saving}
+              >
+                <option value="">{tCommon('notConfigured')}</option>
+                {COUNTRIES.map(c => (
+                  <option key={c.code} value={c.code}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {tCommon('notesCardHeading')}
+              </label>
+              <input
+                type="text"
+                className="input w-full"
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                onBlur={() => saveField('notes', editNotes, supplier.notes)}
+                placeholder={tCommon('notesCardPlaceholder')}
+                disabled={!isEditable || saving}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Financials Card */}
+        <div id="financials-section" className="card">
+          <h3 className="section-heading">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            <span className="material-symbols-outlined">payments</span>
+            {t('financials')}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {tCommon('columns.currency')} *
+              </label>
+              <select
+                className="input"
+                value={editCurrency}
+                onChange={(e) => {
+                  setEditCurrency(e.target.value);
+                  saveField('currencyCode', e.target.value, supplier.currencyCode);
+                }}
+                disabled={!isEditable || saving}
+              >
+                {CURRENCIES.map(c => (
+                  <option key={c.code} value={c.code}>{c.code} - {c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('paymentTerms')}
+              </label>
+              <select
+                className="input"
+                value={editTradingTermsId || ''}
+                onChange={(e) => {
+                  setEditTradingTermsId(e.target.value);
+                  saveField('tradingTermsId', e.target.value, supplier.tradingTermsId || null);
+                }}
+                disabled={!isEditable || saving}
+              >
+                <option value="">{tCommon('selectEllipsis')}</option>
+                {availableTradingTerms.map(t => (
+                  <option key={t.tradingTermsId} value={t.tradingTermsId}>{t.code} - {t.description}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {tCommon('columns.status')}
+              </label>
+              <div
+                className="flex items-center gap-3"
+                style={{ paddingTop: 6, cursor: !isEditable || saving ? 'not-allowed' : 'pointer' }}
+                onClick={toggleState}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 22,
+                    borderRadius: 11,
+                    background: supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 'var(--accent)' : 'var(--border)',
+                    position: 'relative',
+                    transition: 'background 0.2s ease',
+                    opacity: !isEditable || saving ? 0.5 : 1,
                   }}
-                  disabled={!isEditable || saving}
-                  placeholder={t('placeholders.noGroup')}
-                />
+                >
+                  <div
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      background: '#fff',
+                      position: 'absolute',
+                      top: 3,
+                      left: supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 21 : 3,
+                      transition: 'left 0.2s ease',
+                    }}
+                  />
+                </div>
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  <StateName state={supplier.stateCode as ValidState} />
+                </span>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Business Number (ABN)
-                </label>
-                <LookupInput
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('earlyPaymentDiscount')}
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  className="input w-full pr-8"
+                  value={editEarlyPaymentDiscount || ''}
+                  onChange={(e) => setEditEarlyPaymentDiscount(e.target.value)}
+                  onBlur={() => saveField('earlyPaymentDiscount', editEarlyPaymentDiscount || '', supplier.earlyPaymentDiscount || null)}
+                  disabled={!isEditable || saving}
+                  step="0.01"
+                  min="0"
+                  max="100"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('fields.businessNumber')}
+                <FrontendEnrichmentDecorator
+                  field="supplier.business_number"
+                  country={supplier.address1Country || ''}
                   value={editBusinessNumber}
-                  onChange={setEditBusinessNumber}
-                  provider="abr"
+                  isSaving={saving}
                   onEnrich={(data) => {
                     if (data.name) {
                       setEditName(data.name);
@@ -463,162 +612,39 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                       setEditIsTaxRegistered(data.isTaxRegistered);
                       saveField('isTaxRegistered', data.isTaxRegistered, supplier.isTaxRegistered);
                     }
-                    saveField('businessNumber', editBusinessNumber, supplier.businessNumber);
                   }}
-                  disabled={!isEditable || saving}
-                  onBlur={() => saveField('businessNumber', editBusinessNumber, supplier.businessNumber)}
-                  placeholder="Enter ABN to lookup..."
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5 opacity-0" style={{ color: 'var(--text-muted)' }}>
-                  Registered for GST
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer mt-1">
-                  <div className="switch" title={editIsTaxRegistered ? 'Registered for GST' : 'Not Registered'}>
-                    <input
-                      type="checkbox"
-                      checked={editIsTaxRegistered}
-                      onChange={(e) => {
-                        setEditIsTaxRegistered(e.target.checked);
-                        saveField('isTaxRegistered', e.target.checked, supplier.isTaxRegistered);
-                      }}
-                      disabled={!isEditable || saving}
-                    />
-                  </div>
-                  <span className="text-sm font-medium">Registered for GST</span>
-                </label>
-              </div>
+              </label>
+              <input
+                type="text"
+                className="input w-full"
+                value={editBusinessNumber}
+                onChange={(e) => setEditBusinessNumber(e.target.value)}
+                disabled={!isEditable || saving}
+                onBlur={() => saveField('businessNumber', editBusinessNumber, supplier.businessNumber)}
+                placeholder="Enter business number..."
+              />
             </div>
-          </div>
-
-          {/* Financials Card */}
-          <div id="financials-section" className="card">
-            <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">payments</span>
-              {t('financials')}
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {tCommon('columns.currency')}
-                  </label>
-                  <select
-                    className="input"
-                    value={editCurrency}
+            <div>
+              <label className="block text-xs font-medium mb-1.5 opacity-0" style={{ color: 'var(--text-muted)' }}>
+                {t('fields.taxRegistered')}
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer mt-1">
+                <div className="switch" title={editIsTaxRegistered ? t('fields.taxRegistered') : tCommon('na')}>
+                  <input
+                    type="checkbox"
+                    checked={editIsTaxRegistered}
                     onChange={(e) => {
-                      setEditCurrency(e.target.value);
-                      saveField('currencyCode', e.target.value, supplier.currencyCode);
+                      setEditIsTaxRegistered(e.target.checked);
+                      saveField('isTaxRegistered', e.target.checked, supplier.isTaxRegistered);
                     }}
                     disabled={!isEditable || saving}
-                  >
-                    {CURRENCIES.map(c => (
-                      <option key={c.code} value={c.code}>{c.code}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('paymentTerms')}
-                  </label>
-                  <select
-                    className="input"
-                    value={editTradingTermsId || ''}
-                    onChange={(e) => {
-                      setEditTradingTermsId(e.target.value);
-                      saveField('tradingTermsId', e.target.value, supplier.tradingTermsId || null);
-                    }}
-                    disabled={!isEditable || saving}
-                  >
-                    <option value="">{tCommon('selectEllipsis')}</option>
-                    {availableTradingTerms.map(t => (
-                      <option key={t.tradingTermsId} value={t.tradingTermsId}>{t.code} - {t.description}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {tCommon('columns.status')}
-                  </label>
-                  <div
-                    className="flex items-center gap-3"
-                    style={{ paddingTop: 6, cursor: !isEditable || saving ? 'not-allowed' : 'pointer' }}
-                    onClick={toggleState}
-                  >
-                    <div
-                      style={{
-                        width: 40,
-                        height: 22,
-                        borderRadius: 11,
-                        background: supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 'var(--accent)' : 'var(--border)',
-                        position: 'relative',
-                        transition: 'background 0.2s ease',
-                        opacity: !isEditable || saving ? 0.5 : 1,
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: '50%',
-                          background: '#fff',
-                          position: 'absolute',
-                          top: 3,
-                          left: supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 21 : 3,
-                          transition: 'left 0.2s ease',
-                        }}
-                      />
-                    </div>
-                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      <StateName state={supplier.stateCode as ValidState} />
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('earlyPaymentDiscount')}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      className="input w-full pr-8"
-                      value={editEarlyPaymentDiscount || ''}
-                      onChange={(e) => setEditEarlyPaymentDiscount(e.target.value)}
-                      onBlur={() => saveField('earlyPaymentDiscount', editEarlyPaymentDiscount || '', supplier.earlyPaymentDiscount || null)}
-                      disabled={!isEditable || saving}
-                      step="0.01"
-                      min="0"
-                      max="100"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
-                  </div>
-                </div>
-              </div>
-
+                <span className="text-sm font-medium">{t('fields.taxRegistered')}</span>
+              </label>
             </div>
           </div>
-        </div>
-
-        {/* Notes Card — full width */}
-        <div id="notes-section" className="card">
-          <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
-            <span className="material-symbols-outlined">notes</span>
-            {tCommon('notesCardHeading')}
-          </h3>
-          <textarea
-            className="input w-full"
-            style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
-            value={editNotes}
-            onChange={(e) => setEditNotes(e.target.value)}
-            onBlur={() => saveField('notes', editNotes, supplier.notes)}
-            placeholder={tCommon('notesCardPlaceholder')}
-            disabled={!isEditable || saving}
-          />
         </div>
 
         {/* Contact & Location Card — full width */}
@@ -678,19 +704,6 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 value={editCity}
                 onChange={(e) => setEditCity(e.target.value)}
                 onBlur={() => saveField('address1City', editCity, supplier.address1City)}
-                disabled={!isEditable || saving}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('country')}
-              </label>
-              <input
-                type="text"
-                className="input"
-                value={editCountry}
-                onChange={(e) => setEditCountry(e.target.value)}
-                onBlur={() => saveField('address1Country', editCountry, supplier.address1Country)}
                 disabled={!isEditable || saving}
               />
             </div>

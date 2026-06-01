@@ -96,7 +96,7 @@
       text(9pt)[#line.at("quantity", default: 0)],
       text(9pt)[#fmt(line.at("pricePerUnit", default: 0))],
       text(9pt)[#line.at("discountPercentage", default: 0)],
-      text(9pt)[#line.at("gstRate", default: 0)],
+      text(9pt)[#line.at("tax", default: 0)],
       text(9pt, weight: "semibold")[#fmt(line.at("amount", default: 0))],
     )
   }

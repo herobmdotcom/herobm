@@ -39,6 +39,7 @@ export default function NewProductPage() {
     priceLevel4: '0.00',
     purchaseTaxCategoryId: '',
     salesTaxCategoryId: '',
+    externalTaxCode: '',
     alternateProductNumber: '',
     stateCode: PRODUCT_STATE.ACTIVE,
     productGroupId: null,
@@ -201,6 +202,7 @@ export default function NewProductPage() {
                       <option value="inventory">{t('products.types.inventory')}</option>
                       <option value="non-stock">{t('products.types.nonStock')}</option>
                       <option value="service">{t('products.types.service')}</option>
+                      <option value="freight">Freight</option>
                     </select>
                   </div>
                   <div>
@@ -339,7 +341,7 @@ export default function NewProductPage() {
               <span className="material-symbols-outlined">account_balance</span>
               {t('products.cards.taxation', { defaultValue: 'Taxation' })}
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                   {t('products.columns.purchaseTaxCategory')}
@@ -375,6 +377,18 @@ export default function NewProductPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.externalTaxCode', { defaultValue: 'External Tax Code' })}
+                </label>
+                <input
+                  className="input w-full"
+                  disabled={submitting}
+                  value={dto.externalTaxCode}
+                  onChange={(e) => updateField('externalTaxCode', e.target.value)}
+                  placeholder="e.g. 20010"
+                />
               </div>
             </div>
           </div>

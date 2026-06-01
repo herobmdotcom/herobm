@@ -8,9 +8,10 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { eq, sql, inArray } from 'drizzle-orm';
+import { eq, sql, inArray, getTableColumns } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { AppConfigService } from '../settings/app-config.service';
+import { OrganizationService } from '../settings/organization.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -37,6 +38,7 @@ import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
 
 import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { EnrichmentService } from '../enrichment/enrichment.service';
 import { PickingService } from './picking.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { AccountsService } from '../customers/customers.service';
@@ -68,9 +70,29 @@ export class OrdersWriteService {
     private readonly productsService: ProductsService,
     private readonly backordersService: BackordersService,
     private readonly appConfig: AppConfigService,
+    private readonly organizationService: OrganizationService,
+    private readonly enrichmentService: EnrichmentService,
   ) {}
 
   private readonly logger = new Logger(OrdersWriteService.name);
+
+  /**
+   * Helper to set taxIsStale flag for an order if using an external tax provider.
+   */
+  private async setTaxIsStale(
+    orderId: string,
+    isExternalTax: boolean,
+    tx?: DrizzleDB,
+  ) {
+    if (!isExternalTax) return;
+    const db = tx || this.db;
+    await db
+      .update(salesOrders)
+      .set({
+        customFields: sql`jsonb_set(COALESCE(${salesOrders.customFields}, '{}'::jsonb), '{taxIsStale}', 'true'::jsonb)`,
+      })
+      .where(eq(salesOrders.salesOrderId, orderId));
+  }
 
   /**
    * Generate a human-readable order number (ORD-YYYYMMDD-NNNN).
@@ -733,6 +755,24 @@ export class OrdersWriteService {
       await this.pickingService.assertFullyShipped(id);
     }
 
+    if (
+      newState === SALES_ORDER_STATE.QUOTED ||
+      newState === SALES_ORDER_STATE.CONFIRMED
+    ) {
+      if (
+        (existing.customFields as any)?.taxIsStale === true ||
+        (existing.customFields as any)?.taxIsStale === 'true'
+      ) {
+        try {
+          await this.triggerTaxCalculation(id, actor);
+        } catch (e: any) {
+          throw new BadRequestException(
+            `Cannot transition to '${newState}': Tax calculation failed: ${e.message}`,
+          );
+        }
+      }
+    }
+
     const orderLines = await this.db
       .select()
       .from(salesOrderLineItems)
@@ -892,6 +932,132 @@ export class OrdersWriteService {
   }
 
   /**
+   * Manually trigger an external tax calculation.
+   */
+  async triggerTaxCalculation(id: string, actor: string) {
+    const order = await this.findOrder(id);
+    if (!order.customerId)
+      throw new BadRequestException(
+        'Order must have a customer to calculate taxes.',
+      );
+
+    const customer = await this.accountsService.findOne(order.customerId);
+    const mappings = this.appConfig.taxProviderMappings();
+    const country = customer.address1Country || 'US';
+    const taxProvider = mappings[country] || 'internal';
+
+    if (taxProvider === 'internal') {
+      return order;
+    }
+
+    const lines = await this.db
+      .select({
+        ...getTableColumns(salesOrderLineItems),
+        externalTaxCode: coreProducts.externalTaxCode,
+        productType: coreProducts.productType,
+      })
+      .from(salesOrderLineItems)
+      .leftJoin(
+        coreProducts,
+        eq(salesOrderLineItems.productId, coreProducts.productId),
+      )
+      .where(eq(salesOrderLineItems.salesOrderId, id));
+
+    if (lines.length === 0) return order;
+
+    const org = await this.organizationService.get();
+
+    const freightLines = lines.filter((l) => l.productType === 'freight');
+    const taxableLines = lines.filter((l) => l.productType !== 'freight');
+
+    const shippingTotal = freightLines.reduce((sum, l) => {
+      const qty = parseFloat(l.quantity || '0');
+      const unitPrice = parseFloat(l.pricePerUnit || '0');
+      const discountPct = parseFloat(l.discountPercentage || '0');
+      const discountAmt = unitPrice * (discountPct / 100) * qty;
+      return sum + qty * unitPrice - discountAmt;
+    }, 0);
+
+    const payload = {
+      from_country: org.country || 'US',
+      from_zip: org.postCode,
+      from_state: org.state,
+      from_city: org.city,
+      from_street: org.addressLine1,
+      to_country: country,
+      to_zip: customer.address1PostalCode,
+      to_state: customer.address1StateOrProvince,
+      to_city: customer.address1City,
+      to_street: customer.address1Line1,
+      shipping: shippingTotal,
+      line_items: taxableLines.map((l) => {
+        const qty = parseFloat(l.quantity || '0');
+        const unitPrice = parseFloat(l.pricePerUnit || '0');
+        const discountPct = parseFloat(l.discountPercentage || '0');
+        const discountAmt = unitPrice * (discountPct / 100) * qty;
+        const payloadLine: any = {
+          id: l.salesOrderLineId,
+          quantity: qty,
+          unit_price: unitPrice,
+          discount: discountAmt,
+        };
+        if (l.externalTaxCode) {
+          payloadLine.product_tax_code = l.externalTaxCode;
+        }
+        return payloadLine;
+      }),
+    };
+
+    const res = await this.enrichmentService.lookup(taxProvider, payload);
+    if (!res.isValid) {
+      throw new BadRequestException(
+        `Tax calculation failed: ${res.data?.error || 'Unknown error'}`,
+      );
+    }
+
+    const taxData = res.data;
+
+    await this.db.transaction(async (tx: DrizzleDB) => {
+      for (const l of lines) {
+        let taxAmt = 0;
+        if (taxData.breakdown?.line_items) {
+          const match = taxData.breakdown.line_items.find(
+            (i: any) => i.id === l.salesOrderLineId,
+          );
+          if (match) {
+            taxAmt = match.tax_collectable || 0;
+          }
+        }
+
+        const amt = parseFloat(l.amount || '0');
+        const totalAmount = (amt + taxAmt).toFixed(2);
+        await tx
+          .update(salesOrderLineItems)
+          .set({ tax: taxAmt.toString(), totalAmount })
+          .where(eq(salesOrderLineItems.salesOrderLineId, l.salesOrderLineId));
+      }
+
+      await tx
+        .update(salesOrders)
+        .set({
+          modifiedOn: new Date(),
+          customFields: sql`jsonb_set(COALESCE(${salesOrders.customFields}, '{}'::jsonb), '{taxIsStale}', 'false'::jsonb)`,
+        })
+        .where(eq(salesOrders.salesOrderId, id));
+
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: id,
+        eventType: 'TAX_CALCULATED' as any,
+        payload: { provider: taxProvider, totalTax: taxData.amount_to_collect },
+        actor,
+      });
+    });
+
+    return await this.findOrder(id);
+  }
+
+  /**
    * Add a line item to an existing order.
    */
   async addLine(orderId: string, dto: AddLineDto, actor: string) {
@@ -948,7 +1114,8 @@ export class OrdersWriteService {
       dto.taxCategoryId,
     );
     const taxCategoryId = lineTax.taxCategoryId;
-    const taxRate = lineTax.rate;
+    const isExternalTax = lineTax.taxProvider !== 'internal';
+    const taxRate = isExternalTax ? 0 : lineTax.rate;
 
     const lineDiscount = dto.discountPercentage ?? '0';
 
@@ -1076,6 +1243,8 @@ export class OrdersWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
+      await this.setTaxIsStale(orderId, isExternalTax, tx);
+
       await emitEvent(tx, {
         aggregateType: AggregateType.SALES_ORDER,
         aggregateId: orderId,
@@ -1154,7 +1323,8 @@ export class OrdersWriteService {
       dto.taxCategoryId,
     );
     const taxCategoryId = lineTax.taxCategoryId;
-    const taxRate = lineTax.rate;
+    const isExternalTax = lineTax.taxProvider !== 'internal';
+    const taxRate = isExternalTax ? 0 : lineTax.rate;
 
     const lineDiscount = dto.discountPercentage ?? '0';
 
@@ -1285,6 +1455,8 @@ export class OrdersWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
+      await this.setTaxIsStale(orderId, isExternalTax, tx);
+
       await emitEvent(tx, {
         aggregateType: AggregateType.SALES_ORDER,
         aggregateId: orderId,
@@ -1338,27 +1510,14 @@ export class OrdersWriteService {
     }
 
     // Resolve GST: DTO override → existing line category → default product/customer resolution
-    let taxCategoryId = existingLine.taxCategoryId;
-    let taxRate = 0;
-
-    if (dto.taxCategoryId) {
-      // 1. Explicit override via DTO
-      const cat = await this.taxService.getById(dto.taxCategoryId);
-      taxCategoryId = cat.taxCategoryId;
-      taxRate = parseFloat(cat.rate ?? '0');
-    } else if (taxCategoryId) {
-      // 2. Keep existing line category
-      const cat = await this.taxService.getById(taxCategoryId);
-      taxRate = parseFloat(cat.rate ?? '0');
-    } else {
-      // 3. Re-resolve dynamically from product x customer rules
-      const resolved = await this.resolveTaxForLine(
-        order.customerId ?? '',
-        existingLine.productId ?? undefined,
-      );
-      taxCategoryId = resolved.taxCategoryId;
-      taxRate = resolved.rate;
-    }
+    const resolvedTax = await this.resolveTaxForLine(
+      order.customerId ?? '',
+      existingLine.productId ?? undefined,
+      dto.taxCategoryId ?? existingLine.taxCategoryId ?? undefined,
+    );
+    const taxCategoryId = resolvedTax.taxCategoryId;
+    const isExternalTax = resolvedTax.taxProvider !== 'internal';
+    const taxRate = isExternalTax ? 0 : resolvedTax.rate;
 
     const quantity = dto.quantity ?? existingLine.quantity;
     const pricePerUnit = dto.pricePerUnit ?? existingLine.pricePerUnit;
@@ -1446,6 +1605,8 @@ export class OrdersWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
+      await this.setTaxIsStale(orderId, isExternalTax, tx);
+
       if (audit.hasChanges) {
         await emitEvent(tx, {
           aggregateType: AggregateType.SALES_ORDER,
@@ -1528,6 +1689,15 @@ export class OrdersWriteService {
         .update(salesOrders)
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
+
+      const resolvedTax = await this.resolveTaxForLine(
+        order.customerId ?? '',
+        existingLine.productId ?? undefined,
+        undefined,
+        tx,
+      );
+      const isExternalTax = resolvedTax.taxProvider !== 'internal';
+      await this.setTaxIsStale(orderId, isExternalTax, tx);
 
       await emitEvent(tx, {
         aggregateType: AggregateType.SALES_ORDER,
@@ -1640,6 +1810,8 @@ export class OrdersWriteService {
 
     return {
       ...order,
+      taxProvider:
+        this.appConfig.taxProviderMappings()[order.country || ''] || 'internal',
       lines: linesWithUoms,
       events,
       backorders: backorderList,
@@ -1668,6 +1840,7 @@ export class OrdersWriteService {
       .select({
         order: salesOrders,
         customerName: coreAccounts.name,
+        country: coreAccounts.address1Country,
       })
       .from(salesOrders)
       .leftJoin(
@@ -1680,7 +1853,11 @@ export class OrdersWriteService {
     if (rows.length === 0) {
       throw new NotFoundException(`Order '${id}' not found`);
     }
-    return { ...rows[0].order, customerName: rows[0].customerName };
+    return {
+      ...rows[0].order,
+      customerName: rows[0].customerName,
+      country: rows[0].country,
+    };
   }
 
   private async findLine(lineId: string, orderId: string) {

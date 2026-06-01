@@ -16,6 +16,7 @@ describe('BankFeedsService', () => {
       orderBy: jest.fn().mockReturnThis(),
       insert: jest.fn().mockReturnThis(),
       values: jest.fn().mockReturnThis(),
+      innerJoin: jest.fn().mockReturnThis(),
       returning: jest.fn().mockResolvedValue([{}]),
       transaction: jest.fn(),
     };

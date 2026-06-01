@@ -5,8 +5,12 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { UpdateAppConfigDtoTaxProviderMappings } from './updateAppConfigDtoTaxProviderMappings';
+import type { UpdateAppConfigDtoEnrichmentProviderMappings } from './updateAppConfigDtoEnrichmentProviderMappings';
 
 export interface UpdateAppConfigDto {
   defaultFulfillmentLocationId?: string;
   apiRateLimit?: string;
+  taxProviderMappings?: UpdateAppConfigDtoTaxProviderMappings;
+  enrichmentProviderMappings?: UpdateAppConfigDtoEnrichmentProviderMappings;
 }

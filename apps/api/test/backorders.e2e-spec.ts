@@ -41,7 +41,7 @@ describe('Backorders Workflow (e2e)', () => {
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    locationId = locRes.body.data[0].locationId;
+    locationId = locRes.body[0].locationId;
 
     // Fetch dependencies
     const customers = await request(app.getHttpServer())

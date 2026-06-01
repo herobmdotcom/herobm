@@ -58,6 +58,7 @@ describe('PurchaseOrdersService', () => {
       name: 'Test Vendor',
       currencyCode: 'EUR',
       stateCode: SUPPLIER_STATE.ACTIVE,
+      address1Country: 'AU',
     });
     await pg.db.insert(products).values({
       productId: PROD_ID,

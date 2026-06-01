@@ -1,5 +1,5 @@
-import { getErrorMessage } from '@modbm/shared';
 'use client';
+import { getErrorMessage } from '@modbm/shared';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';

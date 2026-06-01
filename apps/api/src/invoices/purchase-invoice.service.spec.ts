@@ -56,6 +56,7 @@ describe('PurchaseInvoiceService', () => {
       vendorNumber: 'V001',
       name: 'Steel Co',
       currencyCode: 'AUD',
+      address1Country: 'AU',
     });
 
     await pg.db.insert(products).values({

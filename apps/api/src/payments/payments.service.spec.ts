@@ -154,6 +154,7 @@ describe('PaymentsService', () => {
       name: 'Test Customer',
       currencyCode: 'AUD',
       customerGroupId,
+      address1Country: 'AU',
     });
 
     // 6. Supplier Group with AP routing
@@ -174,6 +175,7 @@ describe('PaymentsService', () => {
       name: 'Test Supplier',
       currencyCode: 'AUD',
       supplierGroupId,
+      address1Country: 'AU',
     });
   }
 
@@ -405,6 +407,7 @@ describe('PaymentsService', () => {
         externalId: 'UNGROUPED-001',
         name: 'Ungrouped Customer',
         currencyCode: 'AUD',
+        address1Country: 'AU',
         // No customerGroupId
       });
 

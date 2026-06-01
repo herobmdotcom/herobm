@@ -3097,7 +3097,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns bank statement lines"
+            "description": "Returns bank statement lines",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -3136,11 +3143,15 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "Match confirmed"
-          },
           "201": {
-            "description": ""
+            "description": "Match confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4382,6 +4393,48 @@
           }
         },
         "summary": "Update Order",
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
+    "/sales-orders/{id}/tax": {
+      "post": {
+        "description": "Manually trigger an external tax calculation for the order.",
+        "operationId": "OrdersController_triggerTaxCalculation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Calculate Taxes",
         "tags": [
           "Orders"
         ]
@@ -7928,6 +7981,300 @@
         "summary": "Clear Events By Type",
         "tags": [
           "Invoices"
+        ]
+      }
+    },
+    "/enrichment/lookup": {
+      "get": {
+        "description": "Lookup data by field",
+        "operationId": "EnrichmentController_lookup",
+        "parameters": [
+          {
+            "name": "field",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "country",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "query",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful lookup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lookup data",
+        "tags": [
+          "Enrichment"
+        ]
+      },
+      "post": {
+        "description": "Lookup data by field using POST",
+        "operationId": "EnrichmentController_lookupPost",
+        "parameters": [
+          {
+            "name": "field",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "country",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful lookup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Lookup data (POST)",
+        "tags": [
+          "Enrichment"
+        ]
+      }
+    },
+    "/enrichment/test": {
+      "get": {
+        "description": "Test provider lookup",
+        "operationId": "EnrichmentController_testLookup",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "query",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test provider lookup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test provider",
+        "tags": [
+          "Enrichment"
+        ]
+      },
+      "post": {
+        "description": "Test provider lookup using POST",
+        "operationId": "EnrichmentController_testLookupPost",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test provider lookup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Test provider (POST)",
+        "tags": [
+          "Enrichment"
+        ]
+      }
+    },
+    "/enrichment/providers": {
+      "get": {
+        "description": "List of available enrichment providers",
+        "operationId": "EnrichmentController_getProviders",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of providers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get providers",
+        "tags": [
+          "Enrichment"
+        ]
+      }
+    },
+    "/enrichment/config": {
+      "get": {
+        "description": "Get config for provider",
+        "operationId": "EnrichmentController_getConfig",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get config for provider",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get config",
+        "tags": [
+          "Enrichment"
+        ]
+      },
+      "put": {
+        "description": "Update config for provider",
+        "operationId": "EnrichmentController_updateConfig",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Update config for provider",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update config",
+        "tags": [
+          "Enrichment"
         ]
       }
     },
@@ -11842,166 +12189,6 @@
           "Events"
         ]
       }
-    },
-    "/enrichment/lookup": {
-      "get": {
-        "operationId": "EnrichmentController_lookup",
-        "parameters": [
-          {
-            "name": "provider",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "query",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful lookup",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Enrichment"
-        ]
-      }
-    },
-    "/enrichment/lookup/{provider}": {
-      "post": {
-        "operationId": "EnrichmentController_lookupPost",
-        "parameters": [
-          {
-            "name": "provider",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful lookup",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Enrichment"
-        ]
-      }
-    },
-    "/enrichment/providers": {
-      "get": {
-        "operationId": "EnrichmentController_getProviders",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of providers",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Enrichment"
-        ]
-      }
-    },
-    "/enrichment/config": {
-      "get": {
-        "operationId": "EnrichmentController_getConfig",
-        "parameters": [
-          {
-            "name": "provider",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Get config for provider",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Enrichment"
-        ]
-      },
-      "put": {
-        "operationId": "EnrichmentController_updateConfig",
-        "parameters": [
-          {
-            "name": "provider",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Update config for provider",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Enrichment"
-        ]
-      }
     }
   },
   "info": {
@@ -12086,6 +12273,14 @@
     {
       "name": "GL",
       "description": "General Ledger"
+    },
+    {
+      "name": "BankFeeds",
+      "description": "Bank statement feeds"
+    },
+    {
+      "name": "Enrichment",
+      "description": "External data enrichment"
     },
     {
       "name": "DiscountMatrix",
@@ -12754,6 +12949,10 @@
             "type": "string",
             "nullable": true
           },
+          "externalTaxCode": {
+            "type": "string",
+            "nullable": true
+          },
           "alternateProductNumber": {
             "type": "string",
             "nullable": true
@@ -12807,6 +13006,7 @@
           "priceLevel4",
           "purchaseTaxCategoryId",
           "salesTaxCategoryId",
+          "externalTaxCode",
           "alternateProductNumber",
           "productGroupId",
           "notes",
@@ -12859,6 +13059,9 @@
           "salesTaxCategoryId": {
             "type": "string",
             "format": "uuid"
+          },
+          "externalTaxCode": {
+            "type": "string"
           },
           "alternateProductNumber": {
             "type": "string"
@@ -12919,6 +13122,9 @@
           "salesTaxCategoryId": {
             "type": "string",
             "format": "uuid"
+          },
+          "externalTaxCode": {
+            "type": "string"
           },
           "alternateProductNumber": {
             "type": "string"
@@ -14418,6 +14624,12 @@
           },
           "apiRateLimit": {
             "type": "string"
+          },
+          "taxProviderMappings": {
+            "type": "object"
+          },
+          "enrichmentProviderMappings": {
+            "type": "object"
           }
         },
         "required": [
@@ -14433,6 +14645,12 @@
           },
           "apiRateLimit": {
             "type": "string"
+          },
+          "taxProviderMappings": {
+            "type": "object"
+          },
+          "enrichmentProviderMappings": {
+            "type": "object"
           }
         }
       },
@@ -15051,6 +15269,10 @@
           },
           "discrepanciesAcknowledged": {
             "type": "boolean"
+          },
+          "taxProvider": {
+            "type": "string",
+            "nullable": true
           },
           "sourceId": {
             "type": "string",

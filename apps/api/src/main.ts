@@ -64,6 +64,8 @@ async function bootstrap() {
       .addTag('Invoices', 'Sales invoices')
       .addTag('Payments', 'Payment reconciliation')
       .addTag('GL', 'General Ledger')
+      .addTag('BankFeeds', 'Bank statement feeds')
+      .addTag('Enrichment', 'External data enrichment')
       .addTag('DiscountMatrix', 'Pricing logic and discounts')
       .addTag('Webhooks', 'Outbound webhooks')
       .addTag('ApiKeys', 'Service API keys')

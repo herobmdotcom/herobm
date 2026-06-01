@@ -12,13 +12,19 @@ import { useTranslations } from 'next-intl';
 import { CURRENCIES } from '@/lib/currency';
 import GroupSelect from '@/components/shared/GroupSelect';
 import CustomerSelect from '@/components/shared/CustomerSelect';
-import LookupInput from '@/components/shared/LookupInput';
-import { getErrorMessage } from '@modbm/shared';
+import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichmentDecorator';
+import { getErrorMessage, COUNTRIES, getCurrencyForCountry } from '@modbm/shared';
+import { useSettings } from '@/components/SettingsProvider';
 
 export default function NewAccountPage() {
   useDocumentTitle('New Customer');
   const t = useTranslations();
   const router = useRouter();
+  const { baseCurrency, organization } = useSettings();
+  
+  const defaultCountry = organization?.country || '';
+  const defaultCurrency = getCurrencyForCountry(defaultCountry) || baseCurrency || 'EUR';
+
   const [submitting, setSubmitting] = useState(false);
   const [dto, setDto] = useState({
     customerNumber: '',
@@ -33,10 +39,10 @@ export default function NewAccountPage() {
     address1City: '',
     address1StateOrProvince: '',
     address1PostalCode: '',
-    address1Country: '',
+    address1Country: defaultCountry,
     customerGroupId: '',
     taxCategoryId: '',
-    currencyCode: 'EUR',
+    currencyCode: defaultCurrency,
     customerDiscount: '0',
     notes: '',
     parentCustomerId: '',
@@ -145,40 +151,6 @@ export default function NewAccountPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      Business Number (ABN)
-                    </label>
-                    <LookupInput
-                      value={dto.businessNumber}
-                      onChange={(val) => updateField('businessNumber', val)}
-                      provider="abr"
-                      onEnrich={(data) => {
-                        if (data.name) updateField('name', data.name);
-                        if (data.isTaxRegistered !== undefined) updateField('isTaxRegistered', data.isTaxRegistered);
-                      }}
-                      disabled={submitting}
-                      placeholder="Enter ABN to lookup..."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1.5 opacity-0" style={{ color: 'var(--text-muted)' }}>
-                      Registered for GST
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer mt-1">
-                      <div className="switch" title={dto.isTaxRegistered ? 'Registered for GST' : 'Not Registered'}>
-                        <input
-                          type="checkbox"
-                          checked={dto.isTaxRegistered}
-                          onChange={(e) => updateField('isTaxRegistered', e.target.checked)}
-                          disabled={submitting}
-                        />
-                      </div>
-                      <span className="text-sm font-medium">Registered for GST</span>
-                    </label>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                       {t('customers.placeholders.customerGroup')}
                     </label>
                     <GroupSelect
@@ -190,26 +162,6 @@ export default function NewAccountPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('common.columns.taxPosition')}
-                    </label>
-                    <select
-                      className="input"
-                      value={dto.taxCategoryId || ''}
-                      onChange={(e) => updateField('taxCategoryId', e.target.value)}
-                      disabled={submitting}
-                    >
-                      <option value="">{t('common.options.none')}</option>
-                      {taxCategories.map((cat) => (
-                        <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
-                          {cat.title} ({cat.code})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                       {t('customers.fields.parentCustomer')}
                     </label>
                     <CustomerSelect
@@ -218,6 +170,31 @@ export default function NewAccountPage() {
                       disabled={submitting}
                       excludeId={null}
                     />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('common.columns.country')} *
+                    </label>
+                    <select
+                      className="input"
+                      value={dto.address1Country}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        updateField('address1Country', val);
+                        const newCurrency = getCurrencyForCountry(val);
+                        if (newCurrency) {
+                          updateField('currencyCode', newCurrency);
+                        }
+                      }}
+                      disabled={submitting}
+                    >
+                      <option value="">{t('common.notConfigured')}</option>
+                      {COUNTRIES.map(c => (
+                        <option key={c.code} value={c.code}>{c.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -241,12 +218,12 @@ export default function NewAccountPage() {
               <h3 className="section-heading">
                 {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">payments</span>
-                {t('customers.pricingCurrency')}
+                Pricing & Tax
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.currency')}
+                    {t('common.columns.currency')} *
                   </label>
                   <select
                     className="input"
@@ -275,6 +252,65 @@ export default function NewAccountPage() {
                     onChange={(e) => updateField('customerDiscount', e.target.value)}
                     disabled={submitting}
                   />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('common.columns.taxPosition')}
+                  </label>
+                  <select
+                    className="input"
+                    value={dto.taxCategoryId || ''}
+                    onChange={(e) => updateField('taxCategoryId', e.target.value)}
+                    disabled={submitting}
+                  >
+                    <option value="">{t('common.options.none')}</option>
+                    {taxCategories.map((cat) => (
+                      <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
+                        {cat.title} ({cat.code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('customers.fields.businessNumber')}
+                    <FrontendEnrichmentDecorator
+                      field="customer.business_number"
+                      country={dto.address1Country || ''}
+                      value={dto.businessNumber}
+                      isSaving={submitting}
+                      onEnrich={(data) => {
+                        if (data.name) updateField('name', data.name);
+                        if (data.isTaxRegistered !== undefined) updateField('isTaxRegistered', data.isTaxRegistered);
+                      }}
+                    />
+                  </label>
+                  <input
+                    type="text"
+                    className="input w-full"
+                    value={dto.businessNumber}
+                    onChange={(e) => updateField('businessNumber', e.target.value)}
+                    disabled={submitting}
+                    placeholder="Enter business number..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5 opacity-0" style={{ color: 'var(--text-muted)' }}>
+                    {t('customers.fields.taxRegistered')}
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer mt-1">
+                    <div className="switch" title={dto.isTaxRegistered ? t('customers.fields.taxRegistered') : t('common.na')}>
+                      <input
+                        type="checkbox"
+                        checked={dto.isTaxRegistered}
+                        onChange={(e) => updateField('isTaxRegistered', e.target.checked)}
+                        disabled={submitting}
+                      />
+                    </div>
+                    <span className="text-sm font-medium">{t('customers.fields.taxRegistered')}</span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -365,19 +401,7 @@ export default function NewAccountPage() {
                     disabled={submitting}
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.country')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.address1Country}
-                    onChange={(e) => updateField('address1Country', e.target.value)}
-                    placeholder="Country"
-                    disabled={submitting}
-                  />
-                </div>
+
               </div>
             </div>
 

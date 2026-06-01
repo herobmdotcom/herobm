@@ -40,6 +40,7 @@ import { ProductsModule } from '../products/products.module';
 import { GlModule } from '../gl/gl.module';
 import { SettingsModule } from '../settings/settings.module';
 import { InvoicesModule } from '../invoices/invoices.module';
+import { EnrichmentModule } from '../enrichment/enrichment.module';
 import { PickingSlipService } from '../reports/picking-slip.service';
 import { SalesInvoiceService as ReportSalesInvoiceService } from '../reports/sales-invoice.service';
 import { SalesQuoteService } from '../reports/sales-quote.service';
@@ -58,6 +59,7 @@ import { ShippingDocketService } from '../reports/shipping-docket.service';
     SettingsModule,
     ReportsModule,
     InvoicesModule,
+    EnrichmentModule,
   ],
   controllers: [
     OrderPickingController,

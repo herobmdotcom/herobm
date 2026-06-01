@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
+import { getCountryCode } from '@modbm/shared';
 import { sql } from 'drizzle-orm';
 import {
   appSettings,
@@ -451,6 +452,17 @@ export class SetupService {
     file: Express.Multer.File,
     jobId: string,
   ) {
+    const mapCurrencyCode = (val: string | null): string | null => {
+      if (!val) return null;
+      const up = val.toUpperCase().trim();
+      if (up === 'AU') return 'AUD';
+      if (up === 'US') return 'USD';
+      if (up === 'GB') return 'GBP';
+      if (up === 'EU') return 'EUR';
+      if (up === 'NZ') return 'NZD';
+      return val;
+    };
+
     const tableCols = getTableColumns(entry.table);
     const colNames = Object.keys(tableCols).map((k) => tableCols[k].name);
 
@@ -472,6 +484,12 @@ export class SetupService {
       for (const col of colNames) {
         if (record[col] !== undefined) {
           dbRecord[col] = record[col] === '' ? null : record[col];
+          if (col === 'address1Country' && dbRecord[col]) {
+            dbRecord[col] = getCountryCode(dbRecord[col]) || dbRecord[col];
+          }
+          if (col === 'currencyCode') {
+            dbRecord[col] = mapCurrencyCode(dbRecord[col]);
+          }
         }
       }
       records.push(dbRecord);

@@ -38,7 +38,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    locationId = locRes.body.data[0].locationId;
+    locationId = locRes.body[0].locationId;
   });
 
   afterAll(async () => {

@@ -121,6 +121,10 @@ describe('OrdersWriteService', () => {
       }),
     };
 
+    const mockOrganizationService = {
+      get: jest.fn().mockResolvedValue({}),
+    };
+
     service = new OrdersWriteService(
       pg.db,
       mocktaxService,
@@ -135,6 +139,11 @@ describe('OrdersWriteService', () => {
           .fn()
           .mockReturnValue('10000000-0000-0000-0000-000000000001'),
         creditLimitBehavior: jest.fn().mockReturnValue('soft'),
+        taxProviderMappings: jest.fn().mockReturnValue({}),
+      } as any,
+      mockOrganizationService as any,
+      {
+        lookup: jest.fn(),
       } as any,
     );
     (service as any).logger = {
@@ -833,6 +842,7 @@ describe('OrdersWriteService', () => {
       );
       expect(mocktaxService.getById).toHaveBeenCalledWith(
         TAX_DEFAULT.taxCategoryId,
+        undefined,
       );
     });
 

@@ -87,6 +87,7 @@ export default function ProductDetailPage() {
     priceLevel4: '0',
     purchaseTaxCategoryId: '',
     salesTaxCategoryId: '',
+    externalTaxCode: '',
     alternateProductNumber: '',
     notes: '',
     stateCode: PRODUCT_STATE.ACTIVE,
@@ -112,6 +113,7 @@ export default function ProductDetailPage() {
         priceLevel4: formatMoney(data.priceLevel4),
         purchaseTaxCategoryId: data.purchaseTaxCategoryId || '',
         salesTaxCategoryId: data.salesTaxCategoryId || '',
+        externalTaxCode: data.externalTaxCode || '',
         alternateProductNumber: data.alternateProductNumber || '',
         notes: data.notes || '',
         stateCode: data.stateCode || PRODUCT_STATE.ACTIVE,
@@ -872,6 +874,7 @@ export default function ProductDetailPage() {
                     <option value="inventory">{t('products.types.inventory')}</option>
                     <option value="non-stock">{t('products.types.nonStock')}</option>
                     <option value="service">{t('products.types.service')}</option>
+                    <option value="freight">Freight</option>
                   </select>
                 </div>
                 <div>
@@ -1036,7 +1039,7 @@ export default function ProductDetailPage() {
                 <span className="material-symbols-outlined">account_balance</span>
                 {t('products.cards.taxation', { defaultValue: 'Taxation' })}
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {t('products.columns.purchaseTaxCategory')}
@@ -1080,6 +1083,19 @@ export default function ProductDetailPage() {
                       <option value={dto.salesTaxCategoryId}>{t('products.unknownCategory', { id: dto.salesTaxCategoryId })}</option>
                     )}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.columns.externalTaxCode', { defaultValue: 'External Tax Code' })}
+                  </label>
+                  <input
+                    className="input w-full"
+                    disabled={!isEditable || saving}
+                    value={dto.externalTaxCode}
+                    onChange={(e) => setDto({ ...dto, externalTaxCode: e.target.value })}
+                    onBlur={(e) => handleBlur('externalTaxCode', e.target.value)}
+                    placeholder="e.g. 20010"
+                  />
                 </div>
               </div>
             </div>

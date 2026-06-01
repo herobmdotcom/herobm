@@ -23,8 +23,18 @@ describe('SuppliersService', () => {
   describe('findAll', () => {
     it('should return paginated suppliers', async () => {
       await pg.db.insert(suppliers).values([
-        { vendorNumber: 'V1', name: 'Vendor 1', currencyCode: 'EUR' },
-        { vendorNumber: 'V2', name: 'Vendor 2', currencyCode: 'USD' },
+        {
+          vendorNumber: 'V1',
+          name: 'Vendor 1',
+          currencyCode: 'EUR',
+          address1Country: 'AU',
+        },
+        {
+          vendorNumber: 'V2',
+          name: 'Vendor 2',
+          currencyCode: 'USD',
+          address1Country: 'AU',
+        },
       ]);
 
       const result = await service.findAll({});
@@ -34,8 +44,18 @@ describe('SuppliersService', () => {
 
     it('should apply search filter', async () => {
       await pg.db.insert(suppliers).values([
-        { vendorNumber: 'V1', name: 'Alpha', currencyCode: 'EUR' },
-        { vendorNumber: 'V2', name: 'Beta', currencyCode: 'USD' },
+        {
+          vendorNumber: 'V1',
+          name: 'Alpha',
+          currencyCode: 'EUR',
+          address1Country: 'AU',
+        },
+        {
+          vendorNumber: 'V2',
+          name: 'Beta',
+          currencyCode: 'USD',
+          address1Country: 'AU',
+        },
       ]);
 
       const result = await service.findAll({ q: 'alpha' });
@@ -52,6 +72,7 @@ describe('SuppliersService', () => {
           vendorNumber: 'V-EX',
           name: 'Existing Vendor',
           currencyCode: 'EUR',
+          address1Country: 'AU',
         })
         .returning();
 

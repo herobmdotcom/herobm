@@ -9,6 +9,7 @@ import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
 import { integrations } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
 import { EncryptionService } from '../common/encryption.service';
+import { AppConfigService } from '../settings/app-config.service';
 
 @Injectable()
 export class EnrichmentService {
@@ -19,6 +20,7 @@ export class EnrichmentService {
     private readonly taxJarProvider: TaxJarProvider,
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly encryptionService: EncryptionService,
+    private readonly appConfig: AppConfigService,
     // Inject other providers here in the future
   ) {
     this.registerProvider(this.abrProvider);
@@ -32,6 +34,8 @@ export class EnrichmentService {
   getProviders() {
     return Array.from(this.providers.values()).map((p) => ({
       name: p.name,
+      type: p.type,
+      supportedCountries: p.supportedCountries,
       schema: p.getConfigSchema(),
     }));
   }
@@ -81,12 +85,26 @@ export class EnrichmentService {
     return this.getConfig(providerName);
   }
 
+  async lookupByField(
+    field: string,
+    country: string,
+    payload: string | Record<string, any>,
+  ): Promise<EnrichmentResult> {
+    const mappings = this.appConfig.enrichmentProviderMappings() || {};
+    const providerName = mappings[field]?.[country];
+
+    if (!providerName) {
+      return { isValid: false, data: {} };
+    }
+
+    return this.lookup(providerName, payload);
+  }
+
   async lookup(
     providerName: string,
     payload: string | Record<string, any>,
   ): Promise<EnrichmentResult> {
     const provider = this.providers.get(providerName);
-
     if (!provider) {
       throw new NotFoundException(
         `Enrichment provider '${providerName}' not found`,

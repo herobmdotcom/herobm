@@ -5,6 +5,8 @@ import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
+import { EnrichmentService } from '../enrichment/enrichment.service';
+import { OrganizationService } from '../settings/organization.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   salesOrders,
@@ -61,6 +63,7 @@ describe('SalesInvoiceService', () => {
       customerNumber: 'CUST001',
       name: 'Acme Corp',
       currencyCode: 'AUD',
+      address1Country: 'AU',
     });
 
     await pg.db.insert(products).values({
@@ -86,6 +89,7 @@ describe('SalesInvoiceService', () => {
       expenseRoutingPrecedence: jest.fn().mockReturnValue('product_first'),
       nonStockBillingMode: jest.fn().mockReturnValue('per_shipment'),
       homeCurrency: jest.fn().mockReturnValue('AUD'),
+      taxProviderMappings: jest.fn().mockReturnValue({}),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -98,6 +102,20 @@ describe('SalesInvoiceService', () => {
           provide: TaxCategoriesService,
           useValue: {
             getById: jest.fn().mockResolvedValue({ rate: '0.1' }),
+          },
+        },
+        {
+          provide: EnrichmentService,
+          useValue: {
+            lookup: jest.fn(),
+            recordTransaction: jest.fn(),
+            recordRefund: jest.fn(),
+          },
+        },
+        {
+          provide: OrganizationService,
+          useValue: {
+            get: jest.fn().mockResolvedValue({}),
           },
         },
       ],

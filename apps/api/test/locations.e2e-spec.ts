@@ -119,7 +119,7 @@ describe('Locations & Topography (e2e)', () => {
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`);
 
-    const myLoc = inventoryRes.body.data.find(
+    const myLoc = inventoryRes.body.find(
       (l: any) => l.locationId === locationId,
     );
     if (!myLoc) throw new Error('Location not found in full list');

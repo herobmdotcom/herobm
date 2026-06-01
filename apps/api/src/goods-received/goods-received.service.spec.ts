@@ -118,6 +118,7 @@ describe('GoodsReceivedService', () => {
       vendorNumber: 'V1',
       name: 'Supplier 1',
       currencyCode: 'EUR',
+      address1Country: 'AU',
     });
     await pg.db.insert(locations).values({
       locationId: LOCATION_ID,

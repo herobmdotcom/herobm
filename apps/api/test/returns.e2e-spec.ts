@@ -83,7 +83,7 @@ describe('API E2E — Sales Order Returns', () => {
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    locationId = locRes.body.data[0].locationId;
+    locationId = locRes.body[0].locationId;
 
     const viewerLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
@@ -102,10 +102,10 @@ describe('API E2E — Sales Order Returns', () => {
     validCustomerId = customers.body.data[0].customerId;
 
     const locations = await request(app.getHttpServer())
-      .get('/api/inventory/locations?limit=1')
+      .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    mainLocationId = locations.body.data[0].locationId;
+    mainLocationId = locations.body[0].locationId;
 
     const products = await request(app.getHttpServer())
       .get('/api/products?limit=2')

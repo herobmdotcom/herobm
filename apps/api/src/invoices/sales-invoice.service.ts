@@ -29,6 +29,7 @@ import { getCommittedPerLine } from '../orders/shipment-helpers';
 import { evaluateLifecycleRules } from '../orders/order-lifecycle-rules';
 import { computeLinePrice } from '@modbm/shared';
 import { AppConfigService } from '../settings/app-config.service';
+import { OrganizationService } from '../settings/organization.service';
 import { EnrichmentService } from '../enrichment/enrichment.service';
 import { CreateSalesInvoiceDto } from './dto';
 import {
@@ -49,6 +50,7 @@ export class SalesInvoiceService {
     private readonly glService: GlService,
     private readonly taxService: TaxCategoriesService,
     private readonly appConfig: AppConfigService,
+    private readonly organizationService: OrganizationService,
     private readonly enrichmentService: EnrichmentService,
   ) {}
 
@@ -112,6 +114,11 @@ export class SalesInvoiceService {
     let customerRevenueAccountId: string | null = null;
     let customerCostCenterId: string | null = null;
     let customerActivityId: string | null = null;
+    let address1Country: string | null = null;
+    let address1PostalCode: string | null = null;
+    let address1StateOrProvince: string | null = null;
+    let address1City: string | null = null;
+    let address1Line1: string | null = null;
 
     if (order.customerId) {
       // Find Party details to bind
@@ -128,6 +135,11 @@ export class SalesInvoiceService {
           defaultRevenueAccountId: customerGroups.defaultRevenueAccountId,
           defaultCostCenterId: customerGroups.defaultCostCenterId,
           defaultActivityId: customerGroups.defaultActivityId,
+          address1Country: customers.address1Country,
+          address1PostalCode: customers.address1PostalCode,
+          address1StateOrProvince: customers.address1StateOrProvince,
+          address1City: customers.address1City,
+          address1Line1: customers.address1Line1,
         })
         .from(customers)
         .leftJoin(
@@ -148,6 +160,11 @@ export class SalesInvoiceService {
         customerRevenueAccountId = custRows[0].defaultRevenueAccountId;
         customerCostCenterId = custRows[0].defaultCostCenterId;
         customerActivityId = custRows[0].defaultActivityId;
+        address1Country = custRows[0].address1Country;
+        address1PostalCode = custRows[0].address1PostalCode;
+        address1StateOrProvince = custRows[0].address1StateOrProvince;
+        address1City = custRows[0].address1City;
+        address1Line1 = custRows[0].address1Line1;
       }
     }
 
@@ -165,6 +182,7 @@ export class SalesInvoiceService {
         productRevenueAccountId: productGroups.defaultRevenueAccountId,
         productCostCenterId: productGroups.defaultCostCenterId,
         productActivityId: productGroups.defaultActivityId,
+        externalTaxCode: coreProducts.externalTaxCode,
       })
       .from(salesOrderLineItems)
       .leftJoin(
@@ -357,6 +375,11 @@ export class SalesInvoiceService {
         quantity: qtyToInvoice,
         amount: pricing.amount,
         tax: pricing.tax,
+        taxCategoryId: line.taxCategoryId,
+        externalTaxCode: line.externalTaxCode,
+        discountPercentage: disc,
+        pricePerUnit: price,
+        productType: line.productType,
       });
     }
 
@@ -561,12 +584,51 @@ export class SalesInvoiceService {
         orderTaxProvider !== 'internal' &&
         !orderTaxProvider.endsWith('-error')
       ) {
+        const org = await this.organizationService.get();
+
+        const freightLines = outboxLineDetails.filter(
+          (l) => l.productType === 'freight',
+        );
+        const taxableLines = outboxLineDetails.filter(
+          (l) => l.productType !== 'freight',
+        );
+
+        const shippingTotal = freightLines.reduce((sum, l) => {
+          const discountAmt =
+            l.pricePerUnit * (l.discountPercentage / 100) * l.quantity;
+          return sum + l.quantity * l.pricePerUnit - discountAmt;
+        }, 0);
+
         const payload = {
           transaction_id: invoice.invoiceId,
           transaction_date: new Date().toISOString(),
           amount: totalAmount,
-          shipping: 0,
+          shipping: shippingTotal,
           sales_tax: taxAmount,
+          from_country: org.country || 'US',
+          from_zip: org.postCode,
+          from_state: org.state,
+          from_city: org.city,
+          from_street: org.addressLine1,
+          to_country: address1Country || 'US',
+          to_zip: address1PostalCode,
+          to_state: address1StateOrProvince,
+          to_city: address1City,
+          to_street: address1Line1,
+          line_items: taxableLines.map((l) => {
+            const payloadLine: any = {
+              id: l.salesOrderLineId,
+              quantity: l.quantity,
+              unit_price: l.pricePerUnit,
+              discount:
+                l.pricePerUnit * (l.discountPercentage / 100) * l.quantity,
+              sales_tax: l.tax,
+            };
+            if (l.externalTaxCode) {
+              payloadLine.product_tax_code = l.externalTaxCode;
+            }
+            return payloadLine;
+          }),
         };
         try {
           const enrichRes = await this.enrichmentService.recordTransaction(

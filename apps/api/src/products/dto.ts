@@ -44,8 +44,8 @@ export class CreateProductDto {
   name!: string;
 
   @IsOptional()
-  @IsEnum(['inventory', 'non-stock', 'service'])
-  productType?: 'inventory' | 'non-stock' | 'service';
+  @IsEnum(['inventory', 'non-stock', 'service', 'freight'])
+  productType?: 'inventory' | 'non-stock' | 'service' | 'freight';
 
   @IsOptional()
   @IsEnum(['standard', 'kit'])
@@ -82,6 +82,10 @@ export class CreateProductDto {
   @IsOptional()
   @IsUUID()
   salesTaxCategoryId?: string;
+
+  @IsOptional()
+  @IsString()
+  externalTaxCode?: string;
 
   @IsOptional()
   @IsString()
@@ -110,8 +114,8 @@ export class UpdateProductDto {
   name?: string;
 
   @IsOptional()
-  @IsEnum(['inventory', 'non-stock', 'service'])
-  productType?: 'inventory' | 'non-stock' | 'service';
+  @IsEnum(['inventory', 'non-stock', 'service', 'freight'])
+  productType?: 'inventory' | 'non-stock' | 'service' | 'freight';
 
   @IsOptional()
   @IsEnum(['standard', 'kit'])
@@ -148,6 +152,10 @@ export class UpdateProductDto {
   @IsOptional()
   @IsUUID()
   salesTaxCategoryId?: string;
+
+  @IsOptional()
+  @IsString()
+  externalTaxCode?: string;
 
   @IsOptional()
   @IsString()
@@ -265,6 +273,7 @@ export class ProductResponseDto {
   priceLevel4: string | null;
   purchaseTaxCategoryId: string | null;
   salesTaxCategoryId: string | null;
+  externalTaxCode: string | null;
   alternateProductNumber: string | null;
   productGroupId: string | null;
   notes: string | null;

@@ -77,7 +77,7 @@ describe('Audit Events (e2e)', () => {
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    locationId = locRes.body.data[0].locationId;
+    locationId = locRes.body[0].locationId;
   }, 120_000);
 
   afterAll(async () => {

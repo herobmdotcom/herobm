@@ -232,9 +232,8 @@ dev-generate-sdk: dev-docs-api
 	npm run generate --workspace=@modbm/sdk
 
 dev-db-generate:
-	@if [ -z "$(NAME)" ]; then echo "Error: NAME is required. Usage: make dev-db-generate NAME=migration_name"; exit 1; fi
+	$(if $(NAME),,$(error Error: NAME is required. Usage: make dev-db-generate NAME=migration_name))
 	npx tsx tools/generate_migration.ts $(NAME)
-
 # --- ELT Pipeline (Container) ---
 
 extract-docker:

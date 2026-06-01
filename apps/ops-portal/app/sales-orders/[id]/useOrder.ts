@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { reportError, ApiError } from '@/lib/api';
+import { reportError, ApiError, apiMutate } from '@/lib/api';
 import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { 
@@ -58,7 +58,9 @@ export function useOrder(id: string) {
     useEffect(() => {
         api.inventoryControllerFindAllLocations()
             .then((res) => {
-                setLocations(((res as any).data as unknown as { locationId: string; name: string }[]) || []);
+                const payload = (res as any).data;
+                const arr = Array.isArray(payload) ? payload : (payload?.data || []);
+                setLocations(arr as { locationId: string; name: string }[]);
             })
             .catch((err) => reportError(err, 'Locations_Fetch'));
     }, []);
@@ -234,8 +236,23 @@ export function useOrder(id: string) {
             }
 
             setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
+            throw err;
         }
-        return null;
+    };
+
+    const calculateTaxes = async () => {
+        setSaving(true);
+        try {
+            await apiMutate(`/api/sales-orders/${encodeURIComponent(id)}/tax`, 'POST');
+            await loadOrder(undefined, false);
+            toast.success('Taxes calculated successfully', { icon: '✅' });
+        } catch (err) {
+            reportError(err, 'OrderDetailPage');
+            const msg = err instanceof ApiError ? err.message : 'Tax calculation failed';
+            toast.error(msg);
+        } finally {
+            setSaving(false);
+        }
     };
 
     const archiveOrder = async () => {
@@ -456,7 +473,7 @@ export function useOrder(id: string) {
         allowedTransitions, subtotal, totalTax,
 
         // Mutations
-        saveHeader, changeState, archiveOrder, unarchiveOrder, copyOrder,
+        saveHeader, changeState, calculateTaxes, archiveOrder, unarchiveOrder, copyOrder,
         updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
         loadOrder, loadReturns, loadInvoices,
         editFulfillmentLocationId, setEditFulfillmentLocationId,

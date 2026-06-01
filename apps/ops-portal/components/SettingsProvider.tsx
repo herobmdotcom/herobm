@@ -24,6 +24,7 @@ interface SettingsContextType {
   app: AppSettings | null;
   loading: boolean;
   baseCurrency: string;
+  organization: any | null;
 }
 
 const SettingsContext = createContext<SettingsContextType>({
@@ -31,6 +32,7 @@ const SettingsContext = createContext<SettingsContextType>({
   app: null,
   loading: true,
   baseCurrency: 'EUR', // Fallback, shouldn't be used if loading blocks render
+  organization: null,
 });
 
 export const useSettings = () => useContext(SettingsContext);
@@ -38,13 +40,18 @@ export const useSettings = () => useContext(SettingsContext);
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [gl, setGl] = useState<GlSettings | null>(null);
   const [app, setApp] = useState<AppSettings | null>(null);
+  const [organization, setOrganization] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const res = await api.glControllerGetSettings();
-        setGl(res.data as unknown as GlSettings);
+        const [glRes, orgRes] = await Promise.all([
+          api.glControllerGetSettings(),
+          api.organizationControllerGet()
+        ]);
+        setGl(glRes.data as unknown as GlSettings);
+        setOrganization(orgRes.data);
       } catch (err: any) {
         if (err.message !== 'Not authenticated' && err.status !== 401 && err.status !== 403) {
           reportError(err, 'SettingsProvider');
@@ -64,6 +71,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         app,
         loading,
         baseCurrency: gl?.baseCurrency || 'EUR',
+        organization,
       }}
     >
       {loading ? null : children}

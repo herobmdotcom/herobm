@@ -102,7 +102,7 @@
       text(8pt)[#line.at("quantity", default: 0)],
       text(8pt)[#fmt(line.at("pricePerUnit", default: 0))],
       text(8pt)[#line.at("discountPercentage", default: 0)],
-      text(8pt)[#line.at("gstRate", default: 0)],
+      text(8pt)[#line.at("tax", default: 0)],
       text(8pt)[#if rsn != "" [#rsn] else [—]],
       text(8pt)[#fmt(line.at("fee", default: 0))],
       text(8pt, weight: "semibold")[#fmt(line.at("amount", default: 0))],

@@ -91,7 +91,7 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    validLocationId = locationsRes.body.data[0].locationId;
+    validLocationId = locationsRes.body[0].locationId;
   }, 120_000);
 
   afterAll(async () => {

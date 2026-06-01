@@ -25,14 +25,6 @@ export class SalesInvoiceService {
 
   private readonly logger = new Logger(SalesInvoiceService.name);
 
-  /** Build a taxCategoryId → rate% map from the tax_categories table. */
-  private async buildtaxRateMap(): Promise<Map<string, number>> {
-    const rows = await this.db.select().from(taxCategories);
-    return new Map(
-      rows.map((r) => [r.taxCategoryId, parseFloat(r.rate ?? '0')]),
-    );
-  }
-
   async assembleData(
     orderId: string,
     source?: string,
@@ -45,14 +37,8 @@ export class SalesInvoiceService {
       source,
     );
 
-    const taxRateMap = await this.buildtaxRateMap();
-
     if (!invoiceId) {
-      return assembleOrderData(
-        orderDetail,
-        this.appConfig.homeCurrency(),
-        taxRateMap,
-      );
+      return assembleOrderData(orderDetail, this.appConfig.homeCurrency());
     }
 
     // Fetch the specific invoice and its lines
@@ -88,10 +74,20 @@ export class SalesInvoiceService {
       .filter((l: any) => invLineMap.has(l.salesOrderLineId))
       .map((l: any) => {
         const inv = invLineMap.get(l.salesOrderLineId)!;
+        const originalQty = parseFloat(l.quantity || '1');
+        const invoicedQty = parseFloat(inv.quantity);
+        const ratio = originalQty > 0 ? invoicedQty / originalQty : 0;
+
+        const proratedAmount = parseFloat(l.amount || '0') * ratio;
+        const proratedTax = parseFloat(l.tax || '0') * ratio;
+
         return {
           ...l,
           quantity: inv.quantity,
           pricePerUnit: inv.pricePerUnit,
+          amount: proratedAmount.toFixed(2),
+          tax: proratedTax.toFixed(2),
+          totalAmount: (proratedAmount + proratedTax).toFixed(2),
         };
       });
 
@@ -99,14 +95,12 @@ export class SalesInvoiceService {
     const invoiceData = assembleOrderData(
       { ...orderDetail, lines: filteredLines },
       this.appConfig.homeCurrency(),
-      taxRateMap,
     );
 
     // Compute the full (unfiltered) order total for comparison
     const fullOrderData = assembleOrderData(
       orderDetail,
       this.appConfig.homeCurrency(),
-      taxRateMap,
     );
 
     // Determine this invoice's ordinal position among all invoices for the order

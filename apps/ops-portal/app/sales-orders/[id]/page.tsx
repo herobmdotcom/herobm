@@ -167,7 +167,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
         invoices, pickingSummary,
         isOrderDetailsEditable, isOrderLinesEditable,
         allowedTransitions, subtotal, totalTax,
-        saveHeader, changeState, archiveOrder, unarchiveOrder, copyOrder,
+        saveHeader, changeState, calculateTaxes, archiveOrder, unarchiveOrder, copyOrder,
         updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
         loadOrder, loadReturns, loadInvoices,
         discrepanciesAcknowledged, setDiscrepanciesAcknowledged
@@ -625,11 +625,38 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                             },
                             {
                                 id: 'tax',
-                                header: tSales('columns.tax'),
+                                header: (
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                        {tSales('columns.tax')}
+                                        {isOrderDetailsEditable && (
+                                            <button
+                                                type="button"
+                                                onClick={calculateTaxes}
+                                                disabled={saving}
+                                                style={{ background: 'none', border: 'none', padding: 0, cursor: saving ? 'default' : 'pointer', color: 'var(--accent)', display: 'flex' }}
+                                                title={tSales('buttons.calculateTaxes', { defaultValue: 'Calculate Taxes' })}
+                                            >
+                                                <span className={`material-symbols-outlined ${saving ? 'animate-spin' : ''}`} style={{ fontSize: '16px' }}>sync</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                ),
                                 width: 110,
                                 align: 'right',
                                 render: (line: any) => {
                                     const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
+                                    const isExternalTax = !!(order as any).taxProvider && (order as any).taxProvider !== 'internal';
+
+                                    if (isExternalTax) {
+                                        const isStale = (order as any)?.customFields?.taxIsStale === true || (order as any)?.customFields?.taxIsStale === 'true';
+                                        if (isStale) {
+                                            return <span className="badge badge-warning" title={`Tax needs to be calculated by ${(order as any).taxProvider}`}>Pending</span>;
+                                        }
+                                        return <span title={`Calculated by ${(order as any).taxProvider}`} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>
+                                            {formatAmount(parseFloat(line.tax || '0'), order.currencyCode || 'EUR')}
+                                        </span>;
+                                    }
+
                                     if (isEditable) {
                                         return (
                                             <select
@@ -731,7 +758,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 {lineColumns.filter(c => ['qty', 'uom', 'unitPrice', 'discountPct', 'tax', 'amount'].includes(c.id!)).map(col => (
                                                     <MobileCardField 
                                                         key={col.id} 
-                                                        label={col.header} 
+                                                        label={col.id === 'tax' ? tSales('columns.tax') : col.header} 
                                                         value={
                                                             <div className={col.id === 'amount' ? 'font-bold text-[var(--accent)] text-base' : '[&_.input]:text-sm [&_.input]:h-8 [&_.input]:!py-1 [&_.input]:w-24 [&_select.input]:w-32'}>
                                                                 {col.render?.(line, 0)}
@@ -750,7 +777,9 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 }}
                             footer={
                                 (order.lines || []).length > 0 ? (() => {
-                                    const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
+                                    const isExternalTax = !!(order as any).taxProvider && (order as any).taxProvider !== 'internal';
+                                    const isStale = isExternalTax && ((order as any)?.customFields?.taxIsStale === true || (order as any)?.customFields?.taxIsStale === 'true');
+                                    const taxPct = subtotal > 0 && !isStale ? (totalTax / subtotal) * 100 : 0;
                                     return (
                                         <>
                                             <tr className="hidden lg:table-row" style={{ borderTop: '2px solid var(--border)' }}>
@@ -764,10 +793,10 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                             </tr>
                                             <tr className="hidden lg:table-row">
                                                 <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
-                                                    {tCommon('tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
+                                                    {tCommon('tax')}{taxPct > 0 && !isStale ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                                                    {formatAmount(totalTax, order.currencyCode || 'EUR')}
+                                                    {isStale ? <span className="badge badge-warning text-xs font-normal" style={{ marginLeft: 'auto' }}>Pending</span> : formatAmount(totalTax, order.currencyCode || 'EUR')}
                                                 </td>
                                                 {(isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
                                             </tr>
@@ -776,11 +805,11 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     {tCommon('total')}
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
-                                                    {formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}
+                                                    {isStale ? <span className="badge badge-warning text-xs font-normal" style={{ marginLeft: 'auto' }}>Pending</span> : formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}
                                                 </td>
                                                 {(isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
                                             </tr>
-                                            
+                                            {/* button moved to header */}
                                             {/* Mobile summary rows - hidden on lg, visible on mobile because the footer is wrapped in a normal div */}
                                             <tr className="lg:hidden">
                                                 <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tCommon('subtotal')}</td>
@@ -788,12 +817,13 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                             </tr>
                                             <tr className="lg:hidden">
                                                 <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tCommon('tax')}</td>
-                                                <td className="py-1 text-sm font-semibold text-right tabular-nums">{formatAmount(totalTax, order.currencyCode || 'EUR')}</td>
+                                                <td className="py-1 text-sm font-semibold text-right tabular-nums">{isStale ? <span className="badge badge-warning text-[10px] font-normal" style={{ display: 'inline-block' }}>Pending</span> : formatAmount(totalTax, order.currencyCode || 'EUR')}</td>
                                             </tr>
                                             <tr className="lg:hidden">
                                                 <td className="py-2 text-sm font-bold text-[var(--accent)] text-right pr-4">{tCommon('total')}</td>
-                                                <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums">{formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}</td>
+                                                <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums">{isStale ? <span className="badge badge-warning text-[10px] font-normal" style={{ display: 'inline-block' }}>Pending</span> : formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}</td>
                                             </tr>
+                                            {/* button moved to header */}
                                         </>
                                     );
                                 })() : null
@@ -832,7 +862,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     const canFulfil = !gap;
 
                                     const isCustom = !line.productId || line.productId === '00000000-0000-0000-0000-000000000000';
-                                    if (line.productType === 'non-stock' || line.productType === 'service' || isCustom) {
+                                    if (line.productType === 'non-stock' || line.productType === 'service' || line.productType === 'freight' || isCustom) {
                                         return (
                                             <tr key={line.salesOrderLineId} style={{ backgroundColor: 'var(--bg-subtle)' }}>
                                                 <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
@@ -945,7 +975,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 {line.productDescription} {isCustom && <span className="badge badge-sm badge-draft ml-2">{line.productType || 'custom'}</span>}
                                             </div>
                                             
-                                            {isCustom || line.productType === 'non-stock' || line.productType === 'service' ? (
+                                            {isCustom || line.productType === 'non-stock' || line.productType === 'service' || line.productType === 'freight' ? (
                                                 <div className="text-sm text-slate-500 italic text-center py-2 bg-slate-50 rounded border border-slate-100">{tSales('virtualFulfillmentBypass')} ✅</div>
                                             ) : lineInventory.length === 0 ? (
                                                 <div className="text-sm text-rose-500 italic text-center py-2 bg-rose-50 rounded border border-rose-100">{tSales('noInventoryFound')} ❌</div>

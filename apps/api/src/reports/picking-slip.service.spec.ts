@@ -99,6 +99,7 @@ describe('PickingSlipService', () => {
       customerNumber: 'CUST01',
       name: 'Acme Corp',
       currencyCode: 'AUD',
+      address1Country: 'AU',
       stateCode: CUSTOMER_STATE.ACTIVE,
       source: 'app',
     });

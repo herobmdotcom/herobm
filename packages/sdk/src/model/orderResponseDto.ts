@@ -24,6 +24,8 @@ export interface OrderResponseDto {
   customFields?: OrderResponseDtoCustomFields;
   discrepanciesAcknowledged: boolean;
   /** @nullable */
+  taxProvider?: string | null;
+  /** @nullable */
   sourceId?: string | null;
   source: string;
   /** @nullable */

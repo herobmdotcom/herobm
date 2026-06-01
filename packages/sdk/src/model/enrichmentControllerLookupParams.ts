@@ -7,6 +7,7 @@
  */
 
 export type EnrichmentControllerLookupParams = {
-provider: string;
+field: string;
+country: string;
 query: string;
 };

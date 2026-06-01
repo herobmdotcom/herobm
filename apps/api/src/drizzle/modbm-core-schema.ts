@@ -1321,6 +1321,7 @@ export const productTypeEnum = modbmCore.enum('product_type', [
   'inventory',
   'non-stock',
   'service',
+  'freight',
 ]);
 export const productStructureEnum = modbmCore.enum('product_structure', [
   'standard',
@@ -1467,7 +1468,7 @@ export const customers = modbmCore.table(
     address1City: text('address1_city'),
     address1StateOrProvince: text('address1_state_or_province'),
     address1PostalCode: text('address1_postal_code'),
-    address1Country: text('address1_country'),
+    address1Country: text('address1_country').notNull(),
     telephone1: text('telephone1'),
     fax: text('fax'),
     emailAddress1: text('email_address1'),
@@ -1538,7 +1539,7 @@ export const suppliers = modbmCore.table(
     address1City: text('address1_city'),
     address1StateOrProvince: text('address1_state_or_province'),
     address1PostalCode: text('address1_postal_code'),
-    address1Country: text('address1_country'),
+    address1Country: text('address1_country').notNull(),
     telephone1: text('telephone1'),
     fax: text('fax'),
     emailAddress1: text('email_address1'),
@@ -2077,6 +2078,9 @@ export const appSettings = modbmCore.table('app_settings', {
   setupCompletedAt: timestamp('setup_completed_at', { withTimezone: true }),
   taxProviderMappings: jsonb('tax_provider_mappings').$type<
     Record<string, string>
+  >(),
+  enrichmentProviderMappings: jsonb('enrichment_provider_mappings').$type<
+    Record<string, Record<string, string>>
   >(),
 });
 

@@ -56,10 +56,10 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
     vendorId = suppliers.body.data[0].vendorId;
 
     const locations = await request(app.getHttpServer())
-      .get('/api/inventory/locations?limit=1')
+      .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    locationId = locations.body.data[0].locationId;
+    locationId = locations.body[0].locationId;
 
     // Create a physical product
     const productRes = await request(app.getHttpServer())

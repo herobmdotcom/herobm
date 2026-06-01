@@ -27,6 +27,8 @@ export interface ProductResponseDto {
   /** @nullable */
   salesTaxCategoryId: string | null;
   /** @nullable */
+  externalTaxCode: string | null;
+  /** @nullable */
   alternateProductNumber: string | null;
   /** @nullable */
   productGroupId: string | null;

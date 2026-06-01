@@ -99,7 +99,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     console.log('Setting location');
-    validLocationId = locationsRes.body.data[0].locationId;
+    validLocationId = locationsRes.body[0].locationId;
 
     // Create an open PO for the test product to enable auto-matching
     console.log('Creating PO');

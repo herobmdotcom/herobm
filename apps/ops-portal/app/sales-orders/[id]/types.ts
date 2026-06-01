@@ -51,6 +51,7 @@ export interface OrderDetail {
     customerOrderNumber: string | null;
     fulfillmentLocationId?: string | null;
     stateCode: string;
+    taxProvider?: string | null;
     currencyCode: string;
     notes: string | null;
     discrepanciesAcknowledged?: boolean;

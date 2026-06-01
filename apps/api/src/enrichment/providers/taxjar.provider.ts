@@ -16,6 +16,14 @@ export class TaxJarProvider implements IEnrichmentProvider {
     return 'taxjar';
   }
 
+  get type(): 'enrichment' | 'tax_engine' {
+    return 'tax_engine';
+  }
+
+  get supportedCountries(): string[] | 'global' {
+    return 'global';
+  }
+
   getConfigSchema(): Record<string, any> {
     return {
       type: 'object',
@@ -29,6 +37,33 @@ export class TaxJarProvider implements IEnrichmentProvider {
           type: 'boolean',
           title: 'Use Sandbox Environment',
           default: true,
+        },
+        testPayload: {
+          type: 'string',
+          title: 'Test Payload',
+          default: JSON.stringify(
+            {
+              from_country: 'US',
+              from_zip: '07001',
+              from_state: 'NJ',
+              to_country: 'US',
+              to_zip: '07446',
+              to_state: 'NJ',
+              amount: 15,
+              shipping: 1.5,
+              line_items: [
+                {
+                  id: '1',
+                  quantity: 1,
+                  product_tax_code: '20010',
+                  unit_price: 15,
+                  discount: 0,
+                },
+              ],
+            },
+            null,
+            2,
+          ),
         },
       },
       required: ['apiKey'],
@@ -63,6 +98,10 @@ export class TaxJarProvider implements IEnrichmentProvider {
       ? 'https://api.sandbox.taxjar.com/v2'
       : 'https://api.taxjar.com/v2';
 
+    this.logger.log(
+      `[TaxJar] Sending request to TaxJar (${baseUrl}/taxes) | Data: ${JSON.stringify(payload)}`,
+    );
+
     try {
       const response = await fetch(`${baseUrl}/taxes`, {
         method: 'POST',
@@ -88,6 +127,9 @@ export class TaxJarProvider implements IEnrichmentProvider {
       }
 
       const data = await response.json();
+      this.logger.log(
+        `[TaxJar] Received successful response from TaxJar | Data: ${JSON.stringify(data.tax)}`,
+      );
       return {
         isValid: true,
         data: data.tax, // Return the tax object directly
@@ -114,7 +156,9 @@ export class TaxJarProvider implements IEnrichmentProvider {
       : 'https://api.taxjar.com/v2';
 
     try {
-      this.logger.log(`Recording transaction to TaxJar (${baseUrl}/transactions/orders)`, payload);
+      this.logger.log(
+        `Recording transaction to TaxJar (${baseUrl}/transactions/orders): ${JSON.stringify(payload)}`,
+      );
       const response = await fetch(`${baseUrl}/transactions/orders`, {
         method: 'POST',
         headers: {
@@ -126,12 +170,23 @@ export class TaxJarProvider implements IEnrichmentProvider {
 
       if (!response.ok) {
         const errorBody = await response.text();
-        this.logger.error(`TaxJar Transaction Error: ${response.status} ${errorBody}`);
-        return { isValid: false, data: { error: `TaxJar API Error (${response.status})`, details: errorBody } };
+        this.logger.error(
+          `TaxJar Transaction Error: ${response.status} ${errorBody}`,
+        );
+        return {
+          isValid: false,
+          data: {
+            error: `TaxJar API Error (${response.status})`,
+            details: errorBody,
+          },
+        };
       }
 
       const data = await response.json();
-      this.logger.log(`Transaction recorded successfully in TaxJar`, data.order);
+      this.logger.log(
+        `Transaction recorded successfully in TaxJar`,
+        data.order,
+      );
       return { isValid: true, data: data.order };
     } catch (error: any) {
       this.logger.error(`Failed to record transaction: ${error.message}`);
@@ -152,7 +207,9 @@ export class TaxJarProvider implements IEnrichmentProvider {
       : 'https://api.taxjar.com/v2';
 
     try {
-      this.logger.log(`Recording refund to TaxJar (${baseUrl}/transactions/refunds)`, payload);
+      this.logger.log(
+        `Recording refund to TaxJar (${baseUrl}/transactions/refunds): ${JSON.stringify(payload)}`,
+      );
       const response = await fetch(`${baseUrl}/transactions/refunds`, {
         method: 'POST',
         headers: {
@@ -164,8 +221,16 @@ export class TaxJarProvider implements IEnrichmentProvider {
 
       if (!response.ok) {
         const errorBody = await response.text();
-        this.logger.error(`TaxJar Refund Error: ${response.status} ${errorBody}`);
-        return { isValid: false, data: { error: `TaxJar API Error (${response.status})`, details: errorBody } };
+        this.logger.error(
+          `TaxJar Refund Error: ${response.status} ${errorBody}`,
+        );
+        return {
+          isValid: false,
+          data: {
+            error: `TaxJar API Error (${response.status})`,
+            details: errorBody,
+          },
+        };
       }
 
       const data = await response.json();

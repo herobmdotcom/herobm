@@ -10,6 +10,16 @@ export interface IEnrichmentProvider {
   get name(): string;
 
   /**
+   * The type of provider (e.g., 'enrichment', 'tax_engine')
+   */
+  get type(): 'enrichment' | 'tax_engine';
+
+  /**
+   * List of ISO Alpha-2 country codes this provider supports, or 'global' for all.
+   */
+  get supportedCountries(): string[] | 'global';
+
+  /**
    * Perform a lookup against the external service.
    * @param payload The input string (e.g. business number) or JSON object
    * @param config The provider configuration (e.g. API keys)

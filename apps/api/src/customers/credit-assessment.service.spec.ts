@@ -68,6 +68,7 @@ describe('CreditAssessmentService', () => {
           name: 'Test Customer',
           customerNumber: 'CUST-1',
           currencyCode: 'USD',
+          address1Country: 'AU',
           tradingTermsId: term.tradingTermsId,
         })
         .returning();
@@ -124,6 +125,7 @@ describe('CreditAssessmentService', () => {
           name: 'Overdue Customer',
           customerNumber: 'CUST-2',
           currencyCode: 'USD',
+          address1Country: 'AU',
           tradingTermsId: term.tradingTermsId,
         })
         .returning();

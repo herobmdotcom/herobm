@@ -37,11 +37,13 @@ describe('AccountsService', () => {
           name: 'Customer A',
           customerNumber: 'A1',
           currencyCode: 'USD',
+          address1Country: 'AU',
         },
         {
           name: 'Customer B',
           customerNumber: 'B1',
           currencyCode: 'USD',
+          address1Country: 'AU',
         },
       ]);
 
@@ -57,11 +59,13 @@ describe('AccountsService', () => {
           name: 'Acme Corp',
           customerNumber: 'ACME',
           currencyCode: 'USD',
+          address1Country: 'AU',
         },
         {
           name: 'Other Inc',
           customerNumber: 'OTHER',
           currencyCode: 'USD',
+          address1Country: 'AU',
         },
       ]);
 
@@ -92,6 +96,7 @@ describe('AccountsService', () => {
         name: 'VIP Client',
         customerNumber: 'VIP-001',
         currencyCode: 'AUD',
+        address1Country: 'AU',
         customerGroupId: ag.customerGroupId,
         taxCategoryId: tc.taxCategoryId,
       });
@@ -109,12 +114,14 @@ describe('AccountsService', () => {
           name: 'Active',
           customerNumber: 'ACT',
           currencyCode: 'USD',
+          address1Country: 'AU',
           stateCode: CUSTOMER_STATE.ACTIVE,
         },
         {
           name: 'Archived',
           customerNumber: 'ARC',
           currencyCode: 'USD',
+          address1Country: 'AU',
           stateCode: CUSTOMER_STATE.ARCHIVED,
         },
       ]);
@@ -138,6 +145,7 @@ describe('AccountsService', () => {
           name: 'Main Customer',
           customerNumber: 'MAIN',
           currencyCode: 'GBP',
+          address1Country: 'AU',
         })
         .returning();
 
@@ -158,6 +166,7 @@ describe('AccountsService', () => {
         name: 'Legacy Customer',
         customerNumber: 'LEG1',
         currencyCode: 'USD',
+        address1Country: 'AU',
         sourceId: 'ABM-999',
       });
 

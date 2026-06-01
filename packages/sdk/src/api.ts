@@ -34,7 +34,9 @@ import type {
   ArrayResponseDto,
   AutoMatchPurchaseOrderDto,
   AvailablePoLinesListResponseDto,
+  BankStatementControllerConfirmMatch201,
   BankStatementControllerConfirmMatchBody,
+  BankStatementControllerGetLines200,
   BankStatementControllerGetLinesParams,
   BatchPaymentActionDto,
   BinResponseDto,
@@ -113,7 +115,16 @@ import type {
   EnrichmentControllerLookupParams,
   EnrichmentControllerLookupPost200,
   EnrichmentControllerLookupPost201,
+  EnrichmentControllerLookupPostBody,
+  EnrichmentControllerLookupPostParams,
+  EnrichmentControllerTestLookup200,
+  EnrichmentControllerTestLookupParams,
+  EnrichmentControllerTestLookupPost200,
+  EnrichmentControllerTestLookupPost201,
+  EnrichmentControllerTestLookupPostBody,
+  EnrichmentControllerTestLookupPostParams,
   EnrichmentControllerUpdateConfig200,
+  EnrichmentControllerUpdateConfigBody,
   EnrichmentControllerUpdateConfigParams,
   EventsControllerPublish201,
   ExchangeRateResponseDto,
@@ -3612,7 +3623,7 @@ export const bankFeedsControllerCreateRule = async (createReconciliationRuleDto:
  * @summary Get bank statement lines
  */
 export type bankStatementControllerGetLinesResponse200 = {
-  data: void
+  data: BankStatementControllerGetLines200
   status: 200
 }
     
@@ -3655,17 +3666,12 @@ export const bankStatementControllerGetLines = async (params: BankStatementContr
  * Confirms a suggested match between a bank line and a journal line.
  * @summary Confirm a smart match
  */
-export type bankStatementControllerConfirmMatchResponse200 = {
-  data: void
-  status: 200
-}
-
 export type bankStatementControllerConfirmMatchResponse201 = {
-  data: void
+  data: BankStatementControllerConfirmMatch201
   status: 201
 }
     
-export type bankStatementControllerConfirmMatchResponseSuccess = (bankStatementControllerConfirmMatchResponse200 | bankStatementControllerConfirmMatchResponse201) & {
+export type bankStatementControllerConfirmMatchResponseSuccess = (bankStatementControllerConfirmMatchResponse201) & {
   headers: Headers;
 };
 ;
@@ -5093,6 +5099,45 @@ export const ordersControllerUpdate = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       updateOrderDto,)
+  }
+);}
+
+
+
+/**
+ * Manually trigger an external tax calculation for the order.
+ * @summary Calculate Taxes
+ */
+export type ordersControllerTriggerTaxCalculationResponse201 = {
+  data: OrderResponseDto
+  status: 201
+}
+    
+export type ordersControllerTriggerTaxCalculationResponseSuccess = (ordersControllerTriggerTaxCalculationResponse201) & {
+  headers: Headers;
+};
+;
+
+export type ordersControllerTriggerTaxCalculationResponse = (ordersControllerTriggerTaxCalculationResponseSuccess)
+
+export const getOrdersControllerTriggerTaxCalculationUrl = (id: string,) => {
+
+
+  
+
+  return `/sales-orders/${id}/tax`
+}
+
+export const ordersControllerTriggerTaxCalculation = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<ordersControllerTriggerTaxCalculationResponse> => {
+  
+  return customFetch<ordersControllerTriggerTaxCalculationResponse>(getOrdersControllerTriggerTaxCalculationUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
   }
 );}
 
@@ -8597,6 +8642,323 @@ export const externalSyncControllerClearEventsByType = async (params: ExternalSy
     method: 'DELETE'
     
     
+  }
+);}
+
+
+
+/**
+ * Lookup data by field
+ * @summary Lookup data
+ */
+export type enrichmentControllerLookupResponse200 = {
+  data: EnrichmentControllerLookup200
+  status: 200
+}
+    
+export type enrichmentControllerLookupResponseSuccess = (enrichmentControllerLookupResponse200) & {
+  headers: Headers;
+};
+;
+
+export type enrichmentControllerLookupResponse = (enrichmentControllerLookupResponseSuccess)
+
+export const getEnrichmentControllerLookupUrl = (params: EnrichmentControllerLookupParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/enrichment/lookup?${stringifiedParams}` : `/enrichment/lookup`
+}
+
+export const enrichmentControllerLookup = async (params: EnrichmentControllerLookupParams, options?: RequestInit): Promise<enrichmentControllerLookupResponse> => {
+  
+  return customFetch<enrichmentControllerLookupResponse>(getEnrichmentControllerLookupUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Lookup data by field using POST
+ * @summary Lookup data (POST)
+ */
+export type enrichmentControllerLookupPostResponse200 = {
+  data: EnrichmentControllerLookupPost200
+  status: 200
+}
+
+export type enrichmentControllerLookupPostResponse201 = {
+  data: EnrichmentControllerLookupPost201
+  status: 201
+}
+    
+export type enrichmentControllerLookupPostResponseSuccess = (enrichmentControllerLookupPostResponse200 | enrichmentControllerLookupPostResponse201) & {
+  headers: Headers;
+};
+;
+
+export type enrichmentControllerLookupPostResponse = (enrichmentControllerLookupPostResponseSuccess)
+
+export const getEnrichmentControllerLookupPostUrl = (params: EnrichmentControllerLookupPostParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/enrichment/lookup?${stringifiedParams}` : `/enrichment/lookup`
+}
+
+export const enrichmentControllerLookupPost = async (enrichmentControllerLookupPostBody: EnrichmentControllerLookupPostBody,
+    params: EnrichmentControllerLookupPostParams, options?: RequestInit): Promise<enrichmentControllerLookupPostResponse> => {
+  
+  return customFetch<enrichmentControllerLookupPostResponse>(getEnrichmentControllerLookupPostUrl(params),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      enrichmentControllerLookupPostBody,)
+  }
+);}
+
+
+
+/**
+ * Test provider lookup
+ * @summary Test provider
+ */
+export type enrichmentControllerTestLookupResponse200 = {
+  data: EnrichmentControllerTestLookup200
+  status: 200
+}
+    
+export type enrichmentControllerTestLookupResponseSuccess = (enrichmentControllerTestLookupResponse200) & {
+  headers: Headers;
+};
+;
+
+export type enrichmentControllerTestLookupResponse = (enrichmentControllerTestLookupResponseSuccess)
+
+export const getEnrichmentControllerTestLookupUrl = (params: EnrichmentControllerTestLookupParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/enrichment/test?${stringifiedParams}` : `/enrichment/test`
+}
+
+export const enrichmentControllerTestLookup = async (params: EnrichmentControllerTestLookupParams, options?: RequestInit): Promise<enrichmentControllerTestLookupResponse> => {
+  
+  return customFetch<enrichmentControllerTestLookupResponse>(getEnrichmentControllerTestLookupUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Test provider lookup using POST
+ * @summary Test provider (POST)
+ */
+export type enrichmentControllerTestLookupPostResponse200 = {
+  data: EnrichmentControllerTestLookupPost200
+  status: 200
+}
+
+export type enrichmentControllerTestLookupPostResponse201 = {
+  data: EnrichmentControllerTestLookupPost201
+  status: 201
+}
+    
+export type enrichmentControllerTestLookupPostResponseSuccess = (enrichmentControllerTestLookupPostResponse200 | enrichmentControllerTestLookupPostResponse201) & {
+  headers: Headers;
+};
+;
+
+export type enrichmentControllerTestLookupPostResponse = (enrichmentControllerTestLookupPostResponseSuccess)
+
+export const getEnrichmentControllerTestLookupPostUrl = (params: EnrichmentControllerTestLookupPostParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/enrichment/test?${stringifiedParams}` : `/enrichment/test`
+}
+
+export const enrichmentControllerTestLookupPost = async (enrichmentControllerTestLookupPostBody: EnrichmentControllerTestLookupPostBody,
+    params: EnrichmentControllerTestLookupPostParams, options?: RequestInit): Promise<enrichmentControllerTestLookupPostResponse> => {
+  
+  return customFetch<enrichmentControllerTestLookupPostResponse>(getEnrichmentControllerTestLookupPostUrl(params),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      enrichmentControllerTestLookupPostBody,)
+  }
+);}
+
+
+
+/**
+ * List of available enrichment providers
+ * @summary Get providers
+ */
+export type enrichmentControllerGetProvidersResponse200 = {
+  data: EnrichmentControllerGetProviders200Item[]
+  status: 200
+}
+    
+export type enrichmentControllerGetProvidersResponseSuccess = (enrichmentControllerGetProvidersResponse200) & {
+  headers: Headers;
+};
+;
+
+export type enrichmentControllerGetProvidersResponse = (enrichmentControllerGetProvidersResponseSuccess)
+
+export const getEnrichmentControllerGetProvidersUrl = () => {
+
+
+  
+
+  return `/enrichment/providers`
+}
+
+export const enrichmentControllerGetProviders = async ( options?: RequestInit): Promise<enrichmentControllerGetProvidersResponse> => {
+  
+  return customFetch<enrichmentControllerGetProvidersResponse>(getEnrichmentControllerGetProvidersUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Get config for provider
+ * @summary Get config
+ */
+export type enrichmentControllerGetConfigResponse200 = {
+  data: EnrichmentControllerGetConfig200
+  status: 200
+}
+    
+export type enrichmentControllerGetConfigResponseSuccess = (enrichmentControllerGetConfigResponse200) & {
+  headers: Headers;
+};
+;
+
+export type enrichmentControllerGetConfigResponse = (enrichmentControllerGetConfigResponseSuccess)
+
+export const getEnrichmentControllerGetConfigUrl = (params: EnrichmentControllerGetConfigParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/enrichment/config?${stringifiedParams}` : `/enrichment/config`
+}
+
+export const enrichmentControllerGetConfig = async (params: EnrichmentControllerGetConfigParams, options?: RequestInit): Promise<enrichmentControllerGetConfigResponse> => {
+  
+  return customFetch<enrichmentControllerGetConfigResponse>(getEnrichmentControllerGetConfigUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Update config for provider
+ * @summary Update config
+ */
+export type enrichmentControllerUpdateConfigResponse200 = {
+  data: EnrichmentControllerUpdateConfig200
+  status: 200
+}
+    
+export type enrichmentControllerUpdateConfigResponseSuccess = (enrichmentControllerUpdateConfigResponse200) & {
+  headers: Headers;
+};
+;
+
+export type enrichmentControllerUpdateConfigResponse = (enrichmentControllerUpdateConfigResponseSuccess)
+
+export const getEnrichmentControllerUpdateConfigUrl = (params: EnrichmentControllerUpdateConfigParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/enrichment/config?${stringifiedParams}` : `/enrichment/config`
+}
+
+export const enrichmentControllerUpdateConfig = async (enrichmentControllerUpdateConfigBody: EnrichmentControllerUpdateConfigBody,
+    params: EnrichmentControllerUpdateConfigParams, options?: RequestInit): Promise<enrichmentControllerUpdateConfigResponse> => {
+  
+  return customFetch<enrichmentControllerUpdateConfigResponse>(getEnrichmentControllerUpdateConfigUrl(params),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      enrichmentControllerUpdateConfigBody,)
   }
 );}
 
@@ -12629,197 +12991,6 @@ export const eventsControllerPublish = async (publishEventDto: PublishEventDto, 
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       publishEventDto,)
-  }
-);}
-
-
-
-export type enrichmentControllerLookupResponse200 = {
-  data: EnrichmentControllerLookup200
-  status: 200
-}
-    
-export type enrichmentControllerLookupResponseSuccess = (enrichmentControllerLookupResponse200) & {
-  headers: Headers;
-};
-;
-
-export type enrichmentControllerLookupResponse = (enrichmentControllerLookupResponseSuccess)
-
-export const getEnrichmentControllerLookupUrl = (params: EnrichmentControllerLookupParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/enrichment/lookup?${stringifiedParams}` : `/enrichment/lookup`
-}
-
-export const enrichmentControllerLookup = async (params: EnrichmentControllerLookupParams, options?: RequestInit): Promise<enrichmentControllerLookupResponse> => {
-  
-  return customFetch<enrichmentControllerLookupResponse>(getEnrichmentControllerLookupUrl(params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-export type enrichmentControllerLookupPostResponse200 = {
-  data: EnrichmentControllerLookupPost200
-  status: 200
-}
-
-export type enrichmentControllerLookupPostResponse201 = {
-  data: EnrichmentControllerLookupPost201
-  status: 201
-}
-    
-export type enrichmentControllerLookupPostResponseSuccess = (enrichmentControllerLookupPostResponse200 | enrichmentControllerLookupPostResponse201) & {
-  headers: Headers;
-};
-;
-
-export type enrichmentControllerLookupPostResponse = (enrichmentControllerLookupPostResponseSuccess)
-
-export const getEnrichmentControllerLookupPostUrl = (provider: string,) => {
-
-
-  
-
-  return `/enrichment/lookup/${provider}`
-}
-
-export const enrichmentControllerLookupPost = async (provider: string, options?: RequestInit): Promise<enrichmentControllerLookupPostResponse> => {
-  
-  return customFetch<enrichmentControllerLookupPostResponse>(getEnrichmentControllerLookupPostUrl(provider),
-  {      
-    ...options,
-    method: 'POST'
-    
-    
-  }
-);}
-
-
-
-export type enrichmentControllerGetProvidersResponse200 = {
-  data: EnrichmentControllerGetProviders200Item[]
-  status: 200
-}
-    
-export type enrichmentControllerGetProvidersResponseSuccess = (enrichmentControllerGetProvidersResponse200) & {
-  headers: Headers;
-};
-;
-
-export type enrichmentControllerGetProvidersResponse = (enrichmentControllerGetProvidersResponseSuccess)
-
-export const getEnrichmentControllerGetProvidersUrl = () => {
-
-
-  
-
-  return `/enrichment/providers`
-}
-
-export const enrichmentControllerGetProviders = async ( options?: RequestInit): Promise<enrichmentControllerGetProvidersResponse> => {
-  
-  return customFetch<enrichmentControllerGetProvidersResponse>(getEnrichmentControllerGetProvidersUrl(),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-export type enrichmentControllerGetConfigResponse200 = {
-  data: EnrichmentControllerGetConfig200
-  status: 200
-}
-    
-export type enrichmentControllerGetConfigResponseSuccess = (enrichmentControllerGetConfigResponse200) & {
-  headers: Headers;
-};
-;
-
-export type enrichmentControllerGetConfigResponse = (enrichmentControllerGetConfigResponseSuccess)
-
-export const getEnrichmentControllerGetConfigUrl = (params: EnrichmentControllerGetConfigParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/enrichment/config?${stringifiedParams}` : `/enrichment/config`
-}
-
-export const enrichmentControllerGetConfig = async (params: EnrichmentControllerGetConfigParams, options?: RequestInit): Promise<enrichmentControllerGetConfigResponse> => {
-  
-  return customFetch<enrichmentControllerGetConfigResponse>(getEnrichmentControllerGetConfigUrl(params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-export type enrichmentControllerUpdateConfigResponse200 = {
-  data: EnrichmentControllerUpdateConfig200
-  status: 200
-}
-    
-export type enrichmentControllerUpdateConfigResponseSuccess = (enrichmentControllerUpdateConfigResponse200) & {
-  headers: Headers;
-};
-;
-
-export type enrichmentControllerUpdateConfigResponse = (enrichmentControllerUpdateConfigResponseSuccess)
-
-export const getEnrichmentControllerUpdateConfigUrl = (params: EnrichmentControllerUpdateConfigParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/enrichment/config?${stringifiedParams}` : `/enrichment/config`
-}
-
-export const enrichmentControllerUpdateConfig = async (params: EnrichmentControllerUpdateConfigParams, options?: RequestInit): Promise<enrichmentControllerUpdateConfigResponse> => {
-  
-  return customFetch<enrichmentControllerUpdateConfigResponse>(getEnrichmentControllerUpdateConfigUrl(params),
-  {      
-    ...options,
-    method: 'PUT'
-    
-    
   }
 );}
 

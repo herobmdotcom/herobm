@@ -5,6 +5,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOkResponse,
+  ApiCreatedResponse,
   ApiQuery,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -31,7 +32,10 @@ export class BankStatementController {
     summary: 'Get bank statement lines',
     description: 'Fetch imported bank statement lines.',
   })
-  @ApiOkResponse({ description: 'Returns bank statement lines' })
+  @ApiOkResponse({
+    description: 'Returns bank statement lines',
+    schema: { type: 'object' },
+  })
   @ApiQuery({ name: 'isReconciled', required: false, type: Boolean })
   async getLines(
     @Query('glAccountId') glAccountId: string,
@@ -53,7 +57,10 @@ export class BankStatementController {
     description:
       'Confirms a suggested match between a bank line and a journal line.',
   })
-  @ApiOkResponse({ description: 'Match confirmed' })
+  @ApiCreatedResponse({
+    description: 'Match confirmed',
+    schema: { type: 'object' },
+  })
   @ApiBody({ schema: { type: 'object' } })
   async confirmMatch(@Param('id') id: string, @AuthUser() user: JwtUser) {
     const actor = user?.username || 'system';

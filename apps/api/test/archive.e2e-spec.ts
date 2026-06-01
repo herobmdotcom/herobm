@@ -62,7 +62,7 @@ describe('Archive E2E — Full Round-Trip', () => {
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    locationId = locRes.body.data[0].locationId;
+    locationId = locRes.body[0].locationId;
 
     // Login as viewer (read-only, no archive action)
     const viewerLogin = await request(app.getHttpServer())
@@ -97,7 +97,7 @@ describe('Archive E2E — Full Round-Trip', () => {
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    validLocationId = locations.body.data[0].locationId;
+    validLocationId = locations.body[0].locationId;
 
     // Ensure a default tax category exists (required by SO/PO creation)
     const taxRes = await request(app.getHttpServer())

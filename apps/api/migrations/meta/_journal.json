@@ -64,6 +64,20 @@
       "when": 1780089352504,
       "tag": "0008_add_taxjar_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1780325023604,
+      "tag": "0009_add_enrichment_provider_mappings",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1780342287865,
+      "tag": "0010_broad_zodiak",
+      "breakpoints": true
     }
   ]
 }

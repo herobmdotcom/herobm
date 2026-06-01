@@ -21,6 +21,7 @@ export interface CreateProductDto {
   priceLevel4?: string;
   purchaseTaxCategoryId?: string;
   salesTaxCategoryId?: string;
+  externalTaxCode?: string;
   alternateProductNumber?: string;
   productGroupId?: string;
   notes?: string;

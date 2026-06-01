@@ -178,6 +178,16 @@ export class AppConfigService implements OnModuleInit {
     return (this.appCache?.taxProviderMappings as Record<string, string>) || {};
   }
 
+  /** The mapping of field+country to external enrichment provider (e.g. {"customer.business_number": {"AU": "abr"}}). */
+  enrichmentProviderMappings(): Record<string, Record<string, string>> {
+    return (
+      (this.appCache?.enrichmentProviderMappings as Record<
+        string,
+        Record<string, string>
+      >) || {}
+    );
+  }
+
   /** The raw GL settings row, if available. */
   getGlSettingsRaw(): typeof glSettings.$inferSelect | null {
     return this.glCache;

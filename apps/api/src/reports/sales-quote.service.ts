@@ -1,12 +1,10 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
-import { join } from 'path';
 import { OrdersService } from '../orders/orders.service';
 import { OrdersWriteService } from '../orders/orders-write.service';
 import { resolveOrderDetail, assembleOrderData } from './report-data.helper';
 import { emitEvent } from '../common/emit-event';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { taxCategories } from '../drizzle/modbm-core-schema';
 import { AppConfigService } from '../settings/app-config.service';
 
 export interface SalesQuoteData {
@@ -51,14 +49,6 @@ export class SalesQuoteService {
 
   private readonly logger = new Logger(SalesQuoteService.name);
 
-  /** Build a taxCategoryId → rate% map from the tax_categories table. */
-  private async buildtaxRateMap(): Promise<Map<string, number>> {
-    const rows = await this.db.select().from(taxCategories);
-    return new Map(
-      rows.map((r) => [r.taxCategoryId, parseFloat(r.rate ?? '0')]),
-    );
-  }
-
   async assembleData(
     orderId: string,
     source?: string,
@@ -70,12 +60,7 @@ export class SalesQuoteService {
       orderId,
       source,
     );
-    const taxRateMap = await this.buildtaxRateMap();
-    const data = assembleOrderData(
-      orderDetail,
-      this.appConfig.homeCurrency(),
-      taxRateMap,
-    );
+    const data = assembleOrderData(orderDetail, this.appConfig.homeCurrency());
 
     if (options?.quoteIntroText) {
       this.logger.log('Macro text received: ' + options.quoteIntroText);

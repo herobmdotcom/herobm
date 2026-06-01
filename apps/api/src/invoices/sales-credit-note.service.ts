@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc, and } from 'drizzle-orm';
+import { eq, sql, desc, and, getTableColumns } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -18,12 +18,14 @@ import {
   salesInvoices,
   glAccounts,
   customers as coreAccounts,
+  products as coreProducts,
   customerGroups,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { OrganizationService } from '../settings/organization.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { EnrichmentService } from '../enrichment/enrichment.service';
 import { computeLinePrice, computeReturnCreditSummary } from '@modbm/shared';
@@ -44,6 +46,7 @@ export class SalesCreditNoteService {
     private readonly glService: GlService,
     private readonly taxService: TaxCategoriesService,
     private readonly appConfig: AppConfigService,
+    private readonly organizationService: OrganizationService,
     private readonly enrichmentService: EnrichmentService,
   ) {}
 
@@ -148,12 +151,22 @@ export class SalesCreditNoteService {
       // 3. Resolve customer cost center / activity dimensions
       let customerCostCenterId: string | undefined;
       let customerActivityId: string | undefined;
+      let address1Country: string | null = null;
+      let address1PostalCode: string | null = null;
+      let address1StateOrProvince: string | null = null;
+      let address1City: string | null = null;
+      let address1Line1: string | null = null;
 
       if (order.customerId) {
         const [custInfo] = await innerTx
           .select({
             costCenterId: customerGroups.defaultCostCenterId,
             activityId: customerGroups.defaultActivityId,
+            address1Country: coreAccounts.address1Country,
+            address1PostalCode: coreAccounts.address1PostalCode,
+            address1StateOrProvince: coreAccounts.address1StateOrProvince,
+            address1City: coreAccounts.address1City,
+            address1Line1: coreAccounts.address1Line1,
           })
           .from(coreAccounts)
           .leftJoin(
@@ -171,6 +184,11 @@ export class SalesCreditNoteService {
         if (custInfo) {
           customerCostCenterId = custInfo.costCenterId || undefined;
           customerActivityId = custInfo.activityId || undefined;
+          address1Country = custInfo.address1Country;
+          address1PostalCode = custInfo.address1PostalCode;
+          address1StateOrProvince = custInfo.address1StateOrProvince;
+          address1City = custInfo.address1City;
+          address1Line1 = custInfo.address1Line1;
         }
       }
 
@@ -189,6 +207,12 @@ export class SalesCreditNoteService {
         pricePerUnit: string;
         amount: string;
         taxAmount: string;
+        taxCategoryId: string | null;
+        externalTaxCode: string | null;
+        discountPercentage: string;
+        quantity: number;
+        tax: number;
+        productType?: string;
       }> = [];
       const creditLineInputs: Array<{
         quantity: number;
@@ -200,8 +224,16 @@ export class SalesCreditNoteService {
 
       for (const rl of returnLines) {
         const orderLine = await innerTx
-          .select()
+          .select({
+            ...getTableColumns(salesOrderLineItems),
+            externalTaxCode: coreProducts.externalTaxCode,
+            productType: coreProducts.productType,
+          })
           .from(salesOrderLineItems)
+          .leftJoin(
+            coreProducts,
+            eq(salesOrderLineItems.productId, coreProducts.productId),
+          )
           .where(eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId))
           .limit(1)
           .then((r: any[]) => r[0]);
@@ -237,6 +269,12 @@ export class SalesCreditNoteService {
           pricePerUnit: orderLine.pricePerUnit || '0',
           amount: pricing.amount.toFixed(2),
           taxAmount: pricing.tax.toFixed(2),
+          taxCategoryId: orderLine.taxCategoryId,
+          externalTaxCode: orderLine.externalTaxCode,
+          discountPercentage: orderLine.discountPercentage || '0',
+          quantity: qty,
+          tax: pricing.tax,
+          productType: orderLine.productType,
         });
 
         creditLineInputs.push({
@@ -363,14 +401,56 @@ export class SalesCreditNoteService {
         orderTaxProvider !== 'internal' &&
         !orderTaxProvider.endsWith('-error')
       ) {
+        const org = await this.organizationService.get();
+        const freightLines = cnLineValues.filter(
+          (l) => l.productType === 'freight',
+        );
+        const taxableLines = cnLineValues.filter(
+          (l) => l.productType !== 'freight',
+        );
+
+        const shippingTotal = freightLines.reduce((sum, l) => {
+          const discountAmt =
+            l.quantity *
+            parseFloat(l.pricePerUnit) *
+            (parseFloat(l.discountPercentage) / 100);
+          return sum + l.quantity * parseFloat(l.pricePerUnit) - discountAmt;
+        }, 0);
+
         const payload = {
           transaction_id: creditNote.creditNoteId,
           transaction_reference_id:
             latestInvoice?.invoiceId ?? order.salesOrderId,
           transaction_date: new Date().toISOString(),
           amount: totalCreditAmount,
-          shipping: 0,
+          shipping: shippingTotal,
           sales_tax: totalTaxAmount,
+          from_country: org.country || 'US',
+          from_zip: org.postCode,
+          from_state: org.state,
+          from_city: org.city,
+          from_street: org.addressLine1,
+          to_country: address1Country || 'US',
+          to_zip: address1PostalCode,
+          to_state: address1StateOrProvince,
+          to_city: address1City,
+          to_street: address1Line1,
+          line_items: taxableLines.map((l) => {
+            const payloadLine: any = {
+              id: l.salesOrderLineId,
+              quantity: l.quantity,
+              unit_price: parseFloat(l.pricePerUnit),
+              discount:
+                parseFloat(l.pricePerUnit) *
+                (parseFloat(l.discountPercentage) / 100) *
+                l.quantity,
+              sales_tax: l.tax,
+            };
+            if (l.externalTaxCode) {
+              payloadLine.product_tax_code = l.externalTaxCode;
+            }
+            return payloadLine;
+          }),
         };
         try {
           const enrichRes = await this.enrichmentService.recordRefund(
