@@ -47,7 +47,7 @@ export class SystemController {
     @Query('service') service?: string,
     @Query('lines') lines?: string,
   ) {
-    const validServices = ['api', 'worker', 'postgres'];
+    const validServices = ['api', 'worker', 'postgres', 'integration'];
     const resolvedService = service || 'api';
     const targetService = validServices.includes(resolvedService)
       ? resolvedService

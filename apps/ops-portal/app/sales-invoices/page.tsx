@@ -36,13 +36,13 @@ export default function GlobalInvoicesPage() {
         { field: 'invoiceNumber', headerName: t('columns.invoiceNumber', { defaultValue: 'Invoice No.' }), width: 180 },
         { field: 'orderNumber', headerName: t('columns.orderNumber', { defaultValue: 'Order No.' }), width: 160 },
         { field: 'customerName', headerName: t('columns.customer', { defaultValue: 'Customer' }), width: 250 },
-        { field: 'createdOn', headerName: t('columns.date', { defaultValue: 'Date' }), width: 200, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: t('columns.date', { defaultValue: 'Date' }), width: 200, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value).toLocaleDateString() : '' },
         { field: 'totalAmount', headerName: t('columns.amount', { defaultValue: 'Amount' }), type: 'numericColumn', width: 150,
-            valueGetter: (params: any) => {
+            valueGetter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
                 if (!params.data?.totalAmount) return null;
                 return parseFloat(params.data.totalAmount);
             },
-            valueFormatter: (params: any) => {
+            valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
                 if (!params.value || params.value === 0) return '—';
                 return formatAmount(params.value, params.data?.currencyCode || baseCurrency);
             },
@@ -51,7 +51,7 @@ export default function GlobalInvoicesPage() {
             field: 'stateCode', 
             headerName: t('columns.state', { defaultValue: 'State' }), 
             width: 140,
-            valueFormatter: (params: any) => {
+            valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
                 if (!params.value) return '';
                 const s = String(params.value).toLowerCase();
                 return tStates.has(s as any) ? tStates(s as any) : String(params.value);

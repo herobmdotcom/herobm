@@ -94,7 +94,7 @@ export default function GoodsReceivedListPage() {
                 const defaultLocId = app?.defaultFulfillmentLocationId || (locs.length > 0 ? locs[0].locationId : '');
                 setSelectedLocationId(defaultLocId);
             })
-            .catch((err: any) => reportError(err, 'GoodsReceivedListPage.loadLocations'));
+            .catch((err: unknown) => reportError(err, 'GoodsReceivedListPage.loadLocations'));
     }, [app?.defaultFulfillmentLocationId]);
 
     const [slideOverOpen, setSlideOverOpen] = useState(false);
@@ -177,7 +177,7 @@ export default function GoodsReceivedListPage() {
             field: 'putawayStatus',
             headerName: 'Putaway Status',
             width: 140,
-            valueFormatter: (p: any) => {
+            valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => {
                 if (!p.value) return '';
                 if (p.data?.stateCode === GOODS_RECEIVED_STATE.CANCELLED) return 'Cancelled';
                 if (p.value === PUTAWAY_STATUS.COMPLETED) return 'Completed';
@@ -187,14 +187,14 @@ export default function GoodsReceivedListPage() {
                 return p.value;
             }
         },
-        { field: 'createdOn', headerName: tCommon('columns.date'), width: 110, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: tCommon('columns.date'), width: 110, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value).toLocaleDateString() : '' },
         { field: 'vendorName', headerName: t('columns.supplier'), width: 160 },
         { field: 'locationName', headerName: tCommon('columns.location', { defaultValue: 'Location' }), width: 140 },
         { 
             field: 'productNumber', 
             headerName: tCommon('columns.product'), 
             width: 240,
-            cellRenderer: (p: any) => {
+            cellRenderer: (p: import("ag-grid-community").ICellRendererParams<any>) => {
                 if (!p.data) return null;
                 return (
                     <div style={{ lineHeight: '1.2', padding: '4px 0' }}>
@@ -215,7 +215,7 @@ export default function GoodsReceivedListPage() {
             field: 'orderNumber',
             headerName: 'PO Match',
             width: 220,
-            cellRenderer: (p: any) => <POAllocationCell data={p.data} />
+            cellRenderer: (p: import("ag-grid-community").ICellRendererParams<any>) => <POAllocationCell data={p.data} />
         },
 
         { field: 'packingSlipNumber', headerName: t('columns.packingSlip'), width: 140 },

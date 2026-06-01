@@ -4,9 +4,13 @@ import {
   EnrichmentResult,
 } from './enrichment-provider.interface';
 
+import { IntegrationLoggerService } from '../../common/integration-logger.service';
+
 @Injectable()
 export class TaxJarProvider implements IEnrichmentProvider {
-  private readonly logger = new Logger(TaxJarProvider.name);
+  constructor(private readonly logger: IntegrationLoggerService) {
+    this.logger.setContext(TaxJarProvider.name);
+  }
 
   get name(): string {
     return 'taxjar';
@@ -94,6 +98,82 @@ export class TaxJarProvider implements IEnrichmentProvider {
         isValid: false,
         data: { error: 'Network error communicating with TaxJar' },
       };
+    }
+  }
+
+  async recordTransaction(
+    payload: Record<string, any>,
+    config?: Record<string, any>,
+  ): Promise<EnrichmentResult> {
+    const apiKey = config?.apiKey as string;
+    if (!apiKey) return { isValid: false, data: { error: 'Missing API key' } };
+
+    const isSandbox = config?.sandbox !== false;
+    const baseUrl = isSandbox
+      ? 'https://api.sandbox.taxjar.com/v2'
+      : 'https://api.taxjar.com/v2';
+
+    try {
+      this.logger.log(`Recording transaction to TaxJar (${baseUrl}/transactions/orders)`, payload);
+      const response = await fetch(`${baseUrl}/transactions/orders`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        this.logger.error(`TaxJar Transaction Error: ${response.status} ${errorBody}`);
+        return { isValid: false, data: { error: `TaxJar API Error (${response.status})`, details: errorBody } };
+      }
+
+      const data = await response.json();
+      this.logger.log(`Transaction recorded successfully in TaxJar`, data.order);
+      return { isValid: true, data: data.order };
+    } catch (error: any) {
+      this.logger.error(`Failed to record transaction: ${error.message}`);
+      return { isValid: false, data: { error: 'Network error' } };
+    }
+  }
+
+  async recordRefund(
+    payload: Record<string, any>,
+    config?: Record<string, any>,
+  ): Promise<EnrichmentResult> {
+    const apiKey = config?.apiKey as string;
+    if (!apiKey) return { isValid: false, data: { error: 'Missing API key' } };
+
+    const isSandbox = config?.sandbox !== false;
+    const baseUrl = isSandbox
+      ? 'https://api.sandbox.taxjar.com/v2'
+      : 'https://api.taxjar.com/v2';
+
+    try {
+      this.logger.log(`Recording refund to TaxJar (${baseUrl}/transactions/refunds)`, payload);
+      const response = await fetch(`${baseUrl}/transactions/refunds`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        this.logger.error(`TaxJar Refund Error: ${response.status} ${errorBody}`);
+        return { isValid: false, data: { error: `TaxJar API Error (${response.status})`, details: errorBody } };
+      }
+
+      const data = await response.json();
+      this.logger.log(`Refund recorded successfully in TaxJar`, data.refund);
+      return { isValid: true, data: data.refund };
+    } catch (error: any) {
+      this.logger.error(`Failed to record refund: ${error.message}`);
+      return { isValid: false, data: { error: 'Network error' } };
     }
   }
 }

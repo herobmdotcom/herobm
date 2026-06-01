@@ -197,7 +197,7 @@ export function usePurchaseOrder(id: string) {
   useEffect(() => {
     loadOrder();
     api.taxCategoriesControllerFindAll()
-      .then(res => setTaxCategories((res.data as any[]).map(t => ({ ...t, taxCategoryId: t.id || t.taxCategoryId })) || []))
+      .then(res => setTaxCategories((res.data || []).map((t: any) => ({ ...t, taxCategoryId: t.id || t.taxCategoryId })) || []))
       .catch((err) => reportError(err, 'OrderDetailPage'));
   }, [id]);
 
@@ -315,7 +315,7 @@ export function usePurchaseOrder(id: string) {
     }
   };
 
-  const updateLineFields = async (lineId: string, payload: Record<string, any>) => {
+  const updateLineFields = async (lineId: string, payload: Record<string, unknown>) => {
     setSaving(true);
     try {
       await api.purchaseOrdersControllerUpdateLine(id, lineId, payload);

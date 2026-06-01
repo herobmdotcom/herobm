@@ -1,0 +1,11 @@
+const fs = require('fs');
+const file = 'apps/ops-portal/app/purchase-orders/[id]/page.tsx';
+let c = fs.readFileSync(file, 'utf8');
+c = c.replace(/DataTableColumn<any>\[\]/g, "DataTableColumn<import('./types').OrderLine>[]");
+c = c.replace(/\(line: any\)/g, "(line: import('./types').OrderLine)");
+c = c.replace(/mobileCard: \(line: any, defaultRender: any\)/g, "mobileCard: (line: import('./types').OrderLine, defaultRender: React.ReactNode)");
+c = c.replace(/\(colHeader: any\)/g, "(colHeader: string)");
+c = c.replace(/\(il: any\)/g, "(il: import('@/lib/purchase-order-utils').InvoiceLine)");
+c = c.replace(/\/\/ modbm-allow-explicit-any/g, "");
+fs.writeFileSync(file, c);
+console.log("Done");

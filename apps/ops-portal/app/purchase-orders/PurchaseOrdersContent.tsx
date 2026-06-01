@@ -44,10 +44,10 @@ export default function PurchaseOrdersContent() {
       field: 'stateCode',
       headerName: tCommon('columns.status'),
       width: 120,
-      valueFormatter: (params: any) => {
+      valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
         if (!params.value) return '';
         const s = String(params.value).toLowerCase();
-        return tStates.has(s as any) ? tStates(s as any) : String(params.value);
+        return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(params.value);
       },
     },
     { field: 'referenceNumber', headerName: tPurchase('columns.referenceNumber'), width: 140 },

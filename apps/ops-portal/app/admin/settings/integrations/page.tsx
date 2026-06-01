@@ -63,7 +63,7 @@ export default function IntegrationsSettingsPage() {
     if (!selectedProvider) return;
     try {
       setSaving(true);
-      await api.enrichmentControllerUpdateConfig({ provider: selectedProvider.name }, configData);
+      await api.enrichmentControllerUpdateConfig({ provider: selectedProvider.name }, configData as unknown as Parameters<typeof api.enrichmentControllerUpdateConfig>[1]);
       toast.success('Configuration saved');
       setSelectedProvider(null);
     } catch (err) {

@@ -25,6 +25,7 @@ import { AggregateType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { AppConfigService } from '../settings/app-config.service';
+import { EnrichmentService } from '../enrichment/enrichment.service';
 import { computeLinePrice, computeReturnCreditSummary } from '@modbm/shared';
 import {
   SALES_CREDIT_NOTE_STATE,
@@ -43,6 +44,7 @@ export class SalesCreditNoteService {
     private readonly glService: GlService,
     private readonly taxService: TaxCategoriesService,
     private readonly appConfig: AppConfigService,
+    private readonly enrichmentService: EnrichmentService,
   ) {}
 
   /**
@@ -353,6 +355,46 @@ export class SalesCreditNoteService {
         },
         innerTx,
       );
+
+      // Record Refund in External Engine if applicable
+      const orderTaxProvider = (order as any).taxProvider;
+      if (
+        orderTaxProvider &&
+        orderTaxProvider !== 'internal' &&
+        !orderTaxProvider.endsWith('-error')
+      ) {
+        const payload = {
+          transaction_id: creditNote.creditNoteId,
+          transaction_reference_id:
+            latestInvoice?.invoiceId ?? order.salesOrderId,
+          transaction_date: new Date().toISOString(),
+          amount: totalCreditAmount,
+          shipping: 0,
+          sales_tax: totalTaxAmount,
+        };
+        try {
+          const enrichRes = await this.enrichmentService.recordRefund(
+            orderTaxProvider,
+            payload,
+          );
+          if (!enrichRes.isValid) {
+            throw new BadRequestException(
+              `Tax provider rejected refund: ${enrichRes.data?.error}`,
+            );
+          }
+          this.logger.log(
+            `Refund recorded in ${orderTaxProvider} for credit note ${creditNoteNumber}`,
+          );
+        } catch (e: any) {
+          this.logger.error(
+            `Failed to record refund in ${orderTaxProvider}`,
+            e,
+          );
+          throw new BadRequestException(
+            `Failed to record refund in ${orderTaxProvider}: ${e.message}`,
+          );
+        }
+      }
 
       // 9. Outbox event
       await emitEvent(innerTx as any, {

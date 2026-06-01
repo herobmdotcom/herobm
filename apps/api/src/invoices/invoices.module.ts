@@ -10,9 +10,10 @@ import {
 import { ExternalSyncController } from './external-sync.controller';
 import { GlModule } from '../gl/gl.module';
 import { TaxModule } from '../tax/tax.module';
+import { EnrichmentModule } from '../enrichment/enrichment.module';
 
 @Module({
-  imports: [GlModule, TaxModule],
+  imports: [GlModule, TaxModule, EnrichmentModule],
   controllers: [
     SalesInvoiceController,
     PurchaseInvoiceController,

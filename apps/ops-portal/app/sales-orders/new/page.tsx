@@ -64,7 +64,7 @@ interface LineItem {
   unitOfMeasure: string;
   fulfillmentLocationId: string;
   baseUom?: string | null;
-  productUoms?: any[];
+  productUoms?: { uomCode: string; ratio?: string | number }[];
   productGroupId?: string | null;
 }
 
@@ -142,7 +142,7 @@ export default function NewOrderPage() {
   useEffect(() => {
     api.taxCategoriesControllerFindAll()
       .then((res) => {
-        settaxCategories((res.data as any[]).map(t => ({ ...t, taxCategoryId: t.id || t.taxCategoryId })) );
+        settaxCategories((res.data || []).map((t: import('@modbm/sdk').TaxCategoryResponseDto) => ({ ...t, taxCategoryId: (t as unknown as {id?: string}).id || t.taxCategoryId } as unknown as TaxCategory)) );
       })
       .catch((err) => reportError(err, 'NewOrderPage'));
   }, []);
@@ -211,7 +211,7 @@ export default function NewOrderPage() {
         unitOfMeasure: p.baseUom || 'EA',
         fulfillmentLocationId,
         baseUom: p.baseUom,
-        productUoms: p.productUoms,
+        productUoms: p.productUoms as any,
         productGroupId: p.productGroupId || null,
       },
     ]);
@@ -565,9 +565,9 @@ export default function NewOrderPage() {
                               const newVal = e.target.value;
                               const oldVal = line.unitOfMeasure || defaultUom;
                               if (newVal !== oldVal) {
-                                const oldO = selectOptions.find((o: any) => o.uomCode === oldVal);
+                                const oldO = selectOptions.find((o: { uomCode: string; ratio?: string | number }) => o.uomCode === oldVal);
                                 const oldRatio = typeof oldO?.ratio === 'string' ? parseFloat(oldO.ratio) : (oldO?.ratio || 1);
-                                const newO = selectOptions.find((o: any) => o.uomCode === newVal);
+                                const newO = selectOptions.find((o: { uomCode: string; ratio?: string | number }) => o.uomCode === newVal);
                                 const newRatio = typeof newO?.ratio === 'string' ? parseFloat(newO.ratio) : (newO?.ratio || 1);
                                 const newPrice = calculateUomPriceAdjustment(line.pricePerUnit || 0, oldRatio, newRatio);
                                 setLines((prev) =>
@@ -584,7 +584,7 @@ export default function NewOrderPage() {
                               }
                             }}
                           >
-                            {selectOptions.map((o: any) => (
+                            {selectOptions.map((o: { uomCode: string; ratio?: string | number }) => (
                               <option key={o.uomCode} value={o.uomCode}>
                                 {o.uomCode}
                               </option>
@@ -738,10 +738,10 @@ export default function NewOrderPage() {
                             const newVal = e.target.value;
                             const oldVal = line.unitOfMeasure || defaultUom;
                             if (newVal !== oldVal) {
-                              const oldO = selectOptions.find((o: any) => o.uomCode === oldVal);
+                              const oldO = selectOptions.find((o: { uomCode: string; ratio?: string | number }) => o.uomCode === oldVal);
                               const oldRatio = typeof oldO?.ratio === 'string' ? parseFloat(oldO.ratio) : (oldO?.ratio || 1);
 
-                              const newO = selectOptions.find((o: any) => o.uomCode === newVal);
+                              const newO = selectOptions.find((o: { uomCode: string; ratio?: string | number }) => o.uomCode === newVal);
                               const newRatio = typeof newO?.ratio === 'string' ? parseFloat(newO.ratio) : (newO?.ratio || 1);
 
                               const newPrice = calculateUomPriceAdjustment(line.pricePerUnit || 0, oldRatio, newRatio);
@@ -760,7 +760,7 @@ export default function NewOrderPage() {
                             }
                           }}
                         >
-                          {selectOptions.map((o: any) => (
+                          {selectOptions.map((o: { uomCode: string; ratio?: string | number }) => (
                             <option key={o.uomCode} value={o.uomCode}>
                               {o.uomCode}
                             </option>

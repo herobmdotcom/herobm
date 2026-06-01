@@ -6,7 +6,7 @@ import * as path from 'path';
 export class FileLoggerService extends ConsoleLogger {
   private readonly logFilePath: string;
 
-  constructor(context?: string) {
+  constructor(context?: string, filename = 'api.log') {
     super(context || 'App');
     const logDir =
       process.env.PIPELINE_LOG_DIR || path.join(process.cwd(), 'logs');
@@ -17,7 +17,7 @@ export class FileLoggerService extends ConsoleLogger {
         // Ignored
       }
     }
-    this.logFilePath = path.join(logDir, 'api.log');
+    this.logFilePath = path.join(logDir, filename);
   }
 
   private appendLog(level: string, message: any, context?: string) {
@@ -43,7 +43,15 @@ export class FileLoggerService extends ConsoleLogger {
       // Rotate if larger than 20MB
       const stats = fs.statSync(this.logFilePath);
       if (stats.size > 20 * 1024 * 1024) {
-        fs.writeFileSync(this.logFilePath, '');
+        const backupPath = `${this.logFilePath}.1`;
+        try {
+          if (fs.existsSync(backupPath)) {
+            fs.unlinkSync(backupPath);
+          }
+          fs.renameSync(this.logFilePath, backupPath);
+        } catch {
+          fs.writeFileSync(this.logFilePath, '');
+        }
       }
     } catch {
       // Silently fail if file system is inaccessible

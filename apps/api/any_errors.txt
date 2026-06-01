@@ -1,0 +1,1511 @@
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/main.ts:25
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: app.use((req: any, res: any, next: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/main.ts:25
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: app.use((req: any, res: any, next: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/main.ts:25
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: app.use((req: any, res: any, next: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/main.ts:94
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: httpAdapter.get('/metrics', async (_req: any, res: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/main.ts:94
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: httpAdapter.get('/metrics', async (_req: any, res: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/auth/api-key.strategy.ts:15
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async validate(req: any): Promise<any> {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/auth/api-key.strategy.ts:15
+Reason: Explicit 'any' detected in Generic type argument.
+Line: async validate(req: any): Promise<any> {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/auth/api-throttler.guard.ts:16
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @InjectThrottlerOptions() options: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/auth/api-throttler.guard.ts:24
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: protected async handleRequest(requestProps: any): Promise<boolean> {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/auth/auth.controller.ts:55
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: me(@Request() req: any) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/audit.ts:8
+Reason: Explicit 'any' detected in Generic type argument.
+Line: changes: Record<string, any>;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/audit.ts:10
+Reason: Explicit 'any' detected in Generic type argument.
+Line: previousValues: Record<string, any>;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/audit.ts:23
+Reason: Explicit 'any' detected in Generic type argument.
+Line: dto: Record<string, any>,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/audit.ts:25
+Reason: Explicit 'any' detected in Generic type argument.
+Line: existing: Record<string, any>,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/audit.ts:29
+Reason: Explicit 'any' detected in Generic type argument.
+Line: const changes: Record<string, any> = {};
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/audit.ts:31
+Reason: Explicit 'any' detected in Generic type argument.
+Line: const previousValues: Record<string, any> = {};
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/emit-event.ts:26
+Reason: Explicit 'any' detected in Property declaration.
+Line: const EVENT_TABLE_MAP: Record<string, { table: any; fkField: string | null }> =
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/emit-event.ts:57
+Reason: Explicit 'any' detected in Property declaration.
+Line: payload: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/emit-event.ts:73
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: tx: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/file-logger.service.ts:23
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: private appendLog(level: string, message: any, context?: string) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/file-logger.service.ts:53
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: log(message: any, context?: string) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/file-logger.service.ts:58
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: error(message: any, stack?: string, context?: string) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/file-logger.service.ts:63
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: warn(message: any, context?: string) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/file-logger.service.ts:68
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: debug(message: any, context?: string) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/file-logger.service.ts:73
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: verbose(message: any, context?: string) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/metrics.interceptor.ts:34
+Reason: Explicit 'any' detected in Generic type argument.
+Line: intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/pagination.ts:95
+Reason: Explicit 'any' detected in Generic type argument.
+Line: export function ApiPaginatedResponse<TModel extends Type<any>>(model: TModel) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/pagination.ts:144
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: export function encodeCursor(payload: any): string {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/pagination.ts:148
+Reason: Explicit 'any' detected in TypeParameter.
+Line: export function decodeCursor<T = any>(cursor: string): T | null {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/pagination.ts:212
+Reason: Explicit 'any' detected in TypeParameter.
+Line: export async function withCursorPagination<T = any>({
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/pagination.ts:221
+Reason: Explicit 'any' detected in Property declaration.
+Line: qb: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/pagination.ts:223
+Reason: Explicit 'any' detected in Property declaration.
+Line: cursorObj: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/pagination.ts:225
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: applyWhere: (q: any, cursor: any, dir: 'next' | 'prev') => any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/pagination.ts:225
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: applyWhere: (q: any, cursor: any, dir: 'next' | 'prev') => any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/pagination.ts:225
+Reason: Explicit 'any' detected in FunctionType.
+Line: applyWhere: (q: any, cursor: any, dir: 'next' | 'prev') => any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/pagination.ts:226
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: applyOrderBy: (q: any, dir: 'next' | 'prev') => any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/pagination.ts:226
+Reason: Explicit 'any' detected in FunctionType.
+Line: applyOrderBy: (q: any, dir: 'next' | 'prev') => any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/pagination.ts:227
+Reason: Explicit 'any' detected in FunctionType.
+Line: encodeRow: (row: T) => any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/customers/credit-assessment.service.ts:97
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: const rows = (result as any).rows ?? result;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/customers/customers-write.service.ts:82
+Reason: Explicit 'any' detected in VariableDeclaration.
+Line: const sanitizedDto: any = {};
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/customers/customers-write.service.ts:169
+Reason: Explicit 'any' detected in VariableDeclaration.
+Line: const sanitizedDto: any = {};
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/customers/dto.ts:344
+Reason: Explicit 'any' detected in ArrayType.
+Line: events?: any[];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/dashboard/dashboard.service.ts:372
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: const rows = (result as any).rows ?? result;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/drizzle/drizzle.module.ts:43
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: useFactory: (client: any) => drizzle(client, { schema }),
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/drizzle/drizzle.module.ts:49
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: constructor(@Inject(POSTGRES_CLIENT) private readonly client: any) {}
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/drizzle/modbm-core-schema.ts:2013
+Reason: Explicit 'any' detected in ArrayType.
+Line: .$type<any[]>()
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/bank-statement.service.ts:26
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: ) as any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/coa-loader.service.ts:246
+Reason: Explicit 'any' detected in VariableDeclaration.
+Line: let settings: any = {};
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/dto.ts:110
+Reason: Explicit 'any' detected in ArrayType.
+Line: items: any[];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/dto.ts:177
+Reason: Explicit 'any' detected in Property declaration.
+Line: meta!: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/dto.ts:182
+Reason: Explicit 'any' detected in Property declaration.
+Line: meta!: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/dto.ts:186
+Reason: Explicit 'any' detected in Property declaration.
+Line: @IsOptional() @IsObject() accountMetadataSchema?: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.controller.ts:107
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: return this.glService.createAccount(body as any);
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:478
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: return (rows as any).rows ?? rows;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:488
+Reason: Explicit 'any' detected in ArrayType.
+Line: const conditions: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:554
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: : (entriesResult as any).rows || []
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:555
+Reason: Explicit 'any' detected in ArrayType.
+Line: ) as any[];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:557
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: Array.isArray(countResult) ? countResult : (countResult as any).rows || []
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:558
+Reason: Explicit 'any' detected in ArrayType.
+Line: ) as any[];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:595
+Reason: Explicit 'any' detected in ArrayType.
+Line: const conditions: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:660
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: : (entriesResult as any).rows || []
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:661
+Reason: Explicit 'any' detected in ArrayType.
+Line: ) as any[];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:680
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: Array.isArray(countResult) ? countResult : (countResult as any).rows || []
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:681
+Reason: Explicit 'any' detected in ArrayType.
+Line: ) as any[];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:810
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: .values(data as any)
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:836
+Reason: Explicit 'any' detected in ArrayType.
+Line: private buildTree(accounts: any[]) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:837
+Reason: Explicit 'any' detected in ArrayType.
+Line: const map = new Map<string | null, any[]>();
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/gl.service.ts:846
+Reason: Explicit 'any' detected in ArrayType.
+Line: const build = (parentId: string | null): any[] => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/reconciliation.service.ts:190
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: const mappedLines = lines.map((line: any) => ({
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/reconciliation.service.ts:197
+Reason: Explicit 'any' detected in ArrayType.
+Line: const parentLines: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/reconciliation.service.ts:198
+Reason: Explicit 'any' detected in ArrayType.
+Line: const splitLinesByParent = new Map<string, any[]>();
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/reconciliation.service.ts:214
+Reason: Explicit 'any' detected in ArrayType.
+Line: const finalSortedLines: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/dto.ts:103
+Reason: Explicit 'any' detected in Property declaration.
+Line: meta!: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/dto.ts:108
+Reason: Explicit 'any' detected in Property declaration.
+Line: meta!: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/dto.ts:119
+Reason: Explicit 'any' detected in Property declaration.
+Line: splitLine?: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/goods-received.service.ts:91
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async create(createDto: any, userId: string) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/goods-received.service.ts:215
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: } as any);
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/goods-received.service.ts:220
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: .values(lineValues.map(({ unitCost, ...rest }: any) => rest));
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/goods-received.service.ts:370
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: glResult.lines as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/goods-received.service.ts:463
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: tx as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/goods-received.service.ts:630
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: reversedLines as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/goods-received.service.ts:938
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: eq(goodsReceivedLines.putawayStatus, putawayStatus as any),
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/goods-received.service.ts:1221
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async findOne(id: string, tx: any = this.db) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/goods-received.service.ts:1232
+Reason: Explicit 'any' detected in ArrayType.
+Line: .then((res: any[]) => res[0]);
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/goods-received.service.ts:1313
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: ].includes(poLine.stateCode as any)
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/goods-received.service.ts:1438
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: newState as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/goods-received/goods-received.service.ts:1586
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: newState as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/inventory.service.ts:183
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: txClient?: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/inventory.service.ts:425
+Reason: Explicit 'any' detected in ArrayType.
+Line: let allUoms: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/inventory.service.ts:578
+Reason: Explicit 'any' detected in ArrayType.
+Line: const zonesByLocation = new Map<string, any[]>();
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/inventory.service.ts:581
+Reason: Explicit 'any' detected in ArrayType.
+Line: arr.push({ ...z, bins: [] as any[] });
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/inventory.service.ts:587
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: const zone = zArr.find((z: any) => z.zoneId === b.zoneId);
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/inventory.service.ts:643
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: const rows = (result as any).rows ?? result;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/inventory.service.ts:682
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: const rows = (result as any).rows ?? result;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/inventory.service.ts:815
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: const lines = (linesResult as any).rows ?? linesResult;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/inventory.service.ts:833
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: tx: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/inventory.service.ts:881
+Reason: Explicit 'any' detected in NewExpression.
+Line: const binMap = new Map<string, any>(
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/inventory.service.ts:882
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: resolvedBins.map((row: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/inventory.service.ts:943
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: >(productRows.map((p: any) => [p.productId, p]));
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/inventory.service.ts:992
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: adjustmentGl.lines as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/inventory.service.ts:1230
+Reason: Explicit 'any' detected in ArrayType.
+Line: const movements: any[] = [
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/inventory/uom.service.ts:26
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: txClient?: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/dto.ts:49
+Reason: Explicit 'any' detected in ArrayType.
+Line: allocations?: any[];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/dto.ts:76
+Reason: Explicit 'any' detected in ArrayType.
+Line: allocations?: any[];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/external-sync.controller.ts:50
+Reason: Explicit 'any' detected in Property declaration.
+Line: @ApiProperty() payload!: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/external-sync.controller.ts:63
+Reason: Explicit 'any' detected in ArrayType.
+Line: @ApiProperty() data!: any[];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/invoice-lifecycle-rules.ts:89
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: .update(table as any)
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/invoices.controller.ts:66
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @Request() req: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/invoices.controller.ts:215
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @Request() req: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/invoices.controller.ts:231
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async postInvoice(@Param('id') id: string, @Request() req: any) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/invoices.controller.ts:247
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @Request() req: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/invoices.controller.ts:269
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @Request() req: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/invoices.controller.ts:287
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @Request() req: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/invoices.controller.ts:309
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @Request() req: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/invoices.controller.ts:326
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @Request() req: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/invoices.controller.ts:344
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @Request() req: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/invoices.controller.ts:366
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @Request() req: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/invoices.controller.ts:384
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @Request() req: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:257
+Reason: Explicit 'any' detected in ArrayType.
+Line: const groupedLines = new Map<string, any[]>();
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:279
+Reason: Explicit 'any' detected in Generic type argument.
+Line: ): Promise<any> {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:302
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: const linesToInsert = dto.lines.map((l: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:345
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: private async recalculateInvoiceTotals(invoiceId: string, tx: any) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:373
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async updateInvoice(invoiceId: string, dto: any, actor: string) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:383
+Reason: Explicit 'any' detected in VariableDeclaration.
+Line: const updateData: any = {};
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:409
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async updateLine(invoiceId: string, lineId: string, dto: any, actor: string) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:427
+Reason: Explicit 'any' detected in VariableDeclaration.
+Line: const updateData: any = {};
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:492
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async addLine(invoiceId: string, dto: any, actor: string) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:548
+Reason: Explicit 'any' detected in Generic type argument.
+Line: async postInvoice(invoiceId: string, actor: string): Promise<any> {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:685
+Reason: Explicit 'any' detected in ArrayType.
+Line: const glLines: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:784
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: ((invoice as any).lines || [])
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:785
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: .map((l: any) => l.purchaseOrderId)
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:827
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: const invoice = fullInvoice as any; // Full invoice with lines
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:842
+Reason: Explicit 'any' detected in ArrayType.
+Line: const discrepancies: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:843
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: invoice.lines.forEach((line: any, idx: number) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/purchase-invoice.service.ts:1127
+Reason: Explicit 'any' detected in ArrayType.
+Line: const conditions: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/sales-credit-note.service.ts:205
+Reason: Explicit 'any' detected in ArrayType.
+Line: .then((r: any[]) => r[0]);
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/sales-credit-note.service.ts:303
+Reason: Explicit 'any' detected in ArrayType.
+Line: const glLines: any[] = [
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/sales-invoice.service.ts:98
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: order.stateCode as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/sales-invoice.service.ts:212
+Reason: Explicit 'any' detected in ArrayType.
+Line: const invoiceLineValues: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/sales-invoice.service.ts:213
+Reason: Explicit 'any' detected in ArrayType.
+Line: const outboxLineDetails: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/sales-invoice.service.ts:478
+Reason: Explicit 'any' detected in ArrayType.
+Line: const glLines: any[] = [
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/sales-invoice.service.ts:679
+Reason: Explicit 'any' detected in ArrayType.
+Line: const groupedLines = new Map<string, any[]>();
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/invoices/sales-invoice.service.ts:715
+Reason: Explicit 'any' detected in ArrayType.
+Line: const conditions: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/locations/locations.controller.ts:54
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: createLocation(@Body() dto: CreateLocationDto, @Req() req: any) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/locations/locations.controller.ts:91
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: createZone(@Body() dto: CreateZoneDto, @Req() req: any) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/locations/locations.controller.ts:128
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: createBin(@Body() dto: CreateBinDto, @Req() req: any) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/backorders.service.ts:100
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: lines as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/backorders.service.ts:101
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: levels as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/backorders.service.ts:357
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async generatePOsFromDemands(payload: any, actor: string) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/backorders.service.ts:409
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: deliveryLocationId = (locs as any)[0]?.location_id;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/backorders.service.ts:482
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async generateTransfersFromDemands(payload: any, actor: string) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/dto.ts:387
+Reason: Explicit 'any' detected in ArrayType.
+Line: transfers?: any[];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/order-lifecycle-rules.ts:125
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: trigger.action as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/order-lifecycle-rules.ts:219
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: sql<string>`COALESCE(SUM(CAST(${salesInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:251
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: creditLimit: (customer as any).accountGroupCreditLimit,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:252
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: isOnCreditHold: (customer as any).accountGroupIsOnCreditHold,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:253
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: tradingTermsId: (customer as any).accountGroupTradingTermsId,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:280
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: creditLimit: (customer as any).accountGroupCreditLimit,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:281
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: isOnCreditHold: (customer as any).accountGroupIsOnCreditHold,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:282
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: tradingTermsId: (customer as any).accountGroupTradingTermsId,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:324
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: structureType: (product as any).structureType ?? 'standard',
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:464
+Reason: Explicit 'any' detected in ArrayType.
+Line: const lineValues: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:743
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: newState === ('allocated' as any) ||
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:805
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: stateCode: newState as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:888
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: (SALES_ORDER_STATE.CANCELLED as any);
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:904
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: ].includes(order.stateCode as any)
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:965
+Reason: Explicit 'any' detected in ArrayType.
+Line: const insertValues: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:966
+Reason: Explicit 'any' detected in VariableDeclaration.
+Line: let parentLine: any = null;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:1109
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: order.stateCode as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:1171
+Reason: Explicit 'any' detected in ArrayType.
+Line: const insertValues: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:1172
+Reason: Explicit 'any' detected in VariableDeclaration.
+Line: let parentLine: any = null;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:1324
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: ].includes(order.stateCode as any)
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:1330
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: order.stateCode as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:1480
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: ].includes(order.stateCode as any)
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:1486
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: order.stateCode as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders-write.service.ts:1594
+Reason: Explicit 'any' detected in ArrayType.
+Line: let allUoms: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders.module.ts:103
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: user: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders.module.ts:122
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: resolveData: async (id: string, user: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders.module.ts:146
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: resolveData: async (id: string, user: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders.module.ts:171
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: resolveData: async (id: string, user: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders.module.ts:183
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: resolveData: async (id: string, user: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders.service.ts:84
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: conditions.push(eq(salesOrders.stateCode, states[0] as any));
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/orders.service.ts:86
+Reason: Explicit 'any' detected in ArrayType.
+Line: conditions.push(inArray(salesOrders.stateCode, states as any[]));
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/picking.service.ts:186
+Reason: Explicit 'any' detected in ArrayType.
+Line: const availableBins = filterPickableBins(productLocationBins as any[])
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/picking.service.ts:192
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: .map((b: any) => ({
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/picking.service.ts:212
+Reason: Explicit 'any' detected in ArrayType.
+Line: onHand: String(calculatePickableOnHand(productLocationBins as any[])),
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/picking.service.ts:557
+Reason: Explicit 'any' detected in NewExpression.
+Line: const orderMap = new Map<string, any>();
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/picking.service.ts:779
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: .set({ stateCode: newState as any, modifiedOn: new Date() })
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/picking.service.ts:863
+Reason: Explicit 'any' detected in NewExpression.
+Line: const orderMap = new Map<string, any>();
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/returns-write.service.ts:152
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: order.stateCode as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/returns-write.service.ts:321
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: .set({ stateCode: newState as any, modifiedOn: new Date() })
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/returns-write.service.ts:513
+Reason: Explicit 'any' detected in ArrayType.
+Line: .then((r: any[]) => r[0]);
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/returns-write.service.ts:626
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: returnGlWithDims.lines as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/returns-write.service.ts:889
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: q = q.where(eq(salesOrderReturns.stateCode, stateCode as any));
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/returns-write.service.ts:891
+Reason: Explicit 'any' detected in ArrayType.
+Line: q = q.where(inArray(salesOrderReturns.stateCode, states as any[]));
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/shipment.service.ts:330
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: .set({ stateCode: newState as any, modifiedOn: new Date() })
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/shipment.service.ts:584
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: parseFloat(line.quantity as any),
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/shipment.service.ts:635
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: reversalGl.lines as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/shipment.service.ts:992
+Reason: Explicit 'any' detected in ArrayType.
+Line: const conditions: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/shipment.service.ts:1072
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: innerTx: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/shipment.service.ts:1073
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: shipment: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/shipment.service.ts:1074
+Reason: Explicit 'any' detected in ArrayType.
+Line: shipmentLines: any[],
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/shipment.service.ts:1075
+Reason: Explicit 'any' detected in ArrayType.
+Line: physicalStockLines: any[],
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/shipment.service.ts:1106
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: (p: any) => p.productId === line.productId && p.netPicked > 0,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/shipment.service.ts:1276
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: dispatchGl.lines as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/nacha-generator.service.ts:50
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: code: batchCodeFromString('PPD') as any, // Prearranged Payment and Deposit
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.controller.ts:94
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async create(@Body() dto: CreatePaymentDto, @AuthUser() user: any) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.controller.ts:109
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @AuthUser() user: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.controller.ts:125
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @AuthUser() user: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.controller.ts:141
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @AuthUser() user: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.controller.ts:154
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async exportAba(@Body() dto: BatchPaymentActionDto, @AuthUser() user: any) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.controller.ts:170
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async exportNacha(@Body() dto: BatchPaymentActionDto, @AuthUser() user: any) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.controller.ts:188
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @AuthUser() user: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.controller.ts:203
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @AuthUser() user: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.service.ts:81
+Reason: Explicit 'any' detected in ArrayType.
+Line: const whereClauses: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.service.ts:176
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: const paymentNumber = await this.generatePaymentNumber(tx as any);
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.service.ts:202
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: tx as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.service.ts:437
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: .update(targetTable as any)
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.service.ts:448
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: tx as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.service.ts:563
+Reason: Explicit 'any' detected in ArrayType.
+Line: let reversalLines: any[];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.service.ts:670
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: const meta = (bankGl.metadata || {}) as any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.service.ts:723
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: tx as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.service.ts:786
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: const meta = (bankGl.metadata || {}) as any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/payments/payments.service.ts:836
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: tx as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/products/products.controller.ts:191
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: dto as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/products/products.controller.ts:227
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: dto as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/products/products.controller.ts:275
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: dto as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/products/products.controller.ts:298
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: dto as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-debit-notes/purchase-debit-notes.service.ts:218
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: supplierReturnGl.lines as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-debit-notes/purchase-debit-notes.service.ts:284
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: stateCode: newState as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/global-purchase-returns.controller.ts:97
+Reason: Explicit 'any' detected in ArrayType.
+Line: inArray(purchaseOrderReturns.stateCode, states as any[]),
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/global-purchase-returns.controller.ts:98
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: ) as any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/global-purchase-returns.controller.ts:101
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: query = query.orderBy(desc(purchaseOrderReturns.createdOn)) as any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-order-lifecycle-rules.ts:65
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: ].includes(order.stateCode as any)
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-order-lifecycle-rules.ts:136
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: order.stateCode as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-order-lifecycle-rules.ts:218
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: ].includes(order.stateCode as any)
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-order-lifecycle-rules.ts:252
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-order-lifecycle-rules.ts:325
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: ].includes(order.stateCode as any)
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-order-lifecycle-rules.ts:372
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: stateCode: newState as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.controller.ts:164
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: body.stateCode as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:83
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: tx: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:147
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async create(createDto: any, userId: string) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:193
+Reason: Explicit 'any' detected in ArrayType.
+Line: const lineValues: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:282
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: conditions.push(eq(purchaseOrders.stateCode, states[0] as any));
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:284
+Reason: Explicit 'any' detected in ArrayType.
+Line: conditions.push(inArray(purchaseOrders.stateCode, states as any[]));
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:414
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async findOne(id: string, tx: any = this.db) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:428
+Reason: Explicit 'any' detected in ArrayType.
+Line: .then((res: any[]) => res[0]);
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:457
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: const lines = rawLines.map((r: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:469
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: .map((l: any) => l.productId as string | null)
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:471
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: (id: any): id is string =>
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:477
+Reason: Explicit 'any' detected in ArrayType.
+Line: let allUoms: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:485
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: const linesWithUoms = lines.map((line: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:505
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: lines: linesWithUoms.map((l: any) => ({
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:561
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: (l: any) => parseFloat(l.quantityReceived || '0') > 0,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:589
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:689
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async addLine(orderId: string, lineDto: any, actor: string = 'system') {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:699
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: (max: number, l: any) => Math.max(max, l.lineNumber || 0),
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:752
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: lineDto: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:763
+Reason: Explicit 'any' detected in VariableDeclaration.
+Line: const updateFields: any = {};
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:785
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: (l: any) => l.purchaseOrderLineId === lineId,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:878
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async update(id: string, updateDto: any, userId: string) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:910
+Reason: Explicit 'any' detected in ArrayType.
+Line: const lineValues: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-orders.service.ts:1151
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: stateCode: newState as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-returns.service.ts:415
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: glResult.lines as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-returns.service.ts:423
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: tx as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-returns.service.ts:430
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: tx as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/purchase-orders/purchase-returns.service.ts:492
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: .set({ stateCode: newState as any, modifiedOn: new Date() })
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/dto.ts:74
+Reason: Explicit 'any' detected in Property declaration.
+Line: @ApiProperty({ required: false }) mockData?: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/dto.ts:90
+Reason: Explicit 'any' detected in IndexSignature.
+Line: [key: string]: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/report-data.helper.ts:21
+Reason: Explicit 'any' detected in Generic type argument.
+Line: ): Promise<any> {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/reports.controller.ts:71
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @Req() req: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/reports.controller.ts:241
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: @Req() req: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/reports.module.ts:18
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: resolveData: async (id: string, user: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/reports.registry.ts:6
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: user: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/reports.service.ts:40
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: user: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/reports.service.ts:267
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: mockData: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/reports.service.ts:270
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: user?: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/reports.service.ts:288
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: data: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/reports.service.ts:339
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: typeof (error as any).stderr === 'string'
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/reports.service.ts:342
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: `Typst execution failed for report ${reportId}: ${(error as any).stderr}`,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/reports.service.ts:345
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: `Typst Compilation Error: ${(error as any).stderr}`,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/reports.service.ts:363
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: private formatOutputName(pattern: string | null, data: any): string {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/sales-invoice.service.ts:88
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: .filter((l: any) => invLineMap.has(l.salesOrderLineId))
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/sales-invoice.service.ts:89
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: .map((l: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/sales-quote.service.ts:91
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: actor: (options.user as any)?.userId,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/sales-return-credit.service.ts:34
+Reason: Explicit 'any' detected in Generic type argument.
+Line: async assembleData(returnId: string, source?: string): Promise<any> {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/sales-return-credit.service.ts:50
+Reason: Explicit 'any' detected in NewExpression.
+Line: const orderLineMap = new Map<string, any>(
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/sales-return-credit.service.ts:51
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: orderDetail.lines.map((l: any) => [l.salesOrderLineId, l]),
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/reports/sales-return-credit.service.ts:132
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: (cn: any) => cn.returnId === returnId,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-coa.ts:22
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: const loader = new CoaLoaderService(db as any);
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-demo.ts:59
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async function wipeDatabase(db: any) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-demo.ts:91
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async function seedMasterData(db: any): Promise<MasterData> {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-demo.ts:239
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async function generateTransactions(db: any, data: MasterData) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-demo.ts:314
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: .catch((e: any) => console.error('Ledger error:', e.message));
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-demo.ts:335
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: .catch((e: any) => console.error('Bin contents error:', e.message));
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-dynamic-reports.ts:138
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: if ('templateString' in seedData && (seedData as any).templateString) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-dynamic-reports.ts:139
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: typstContent = (seedData as any).templateString;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-dynamic-reports.ts:140
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: } else if ('templatePath' in seedData && (seedData as any).templatePath) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-dynamic-reports.ts:141
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: const absolutePath = join(__dirname, (seedData as any).templatePath);
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-dynamic-reports.ts:183
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: contextSlug: (seedData as any).contexts?.[0] || 'sales-order',
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-dynamic-reports.ts:190
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: contextSlug: (seedData as any).contexts?.[0] || 'sales-order',
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-dynamic-reports.ts:195
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: `✅ Assigned Hook: ${seedData.slug} -> ${seedData.name} (${(seedData as any).contexts?.[0]})`,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-dynamic-reports.ts:200
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: (seedData as any).contexts &&
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-dynamic-reports.ts:201
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: Array.isArray((seedData as any).contexts)
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed-dynamic-reports.ts:203
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: for (const ctx of (seedData as any).contexts) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:70
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: export async function runStandardSeeds(db: any, dryRun = false) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:87
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async function seedCasbinPolicies(db: any, dryRun: boolean) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:456
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: const toInsert = policies.filter((p: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:477
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async function seedUsers(db: any, dryRun: boolean) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:501
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: role: 'admin' as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:506
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: set: { passwordHash: hash, role: 'admin' as any, isActive: true },
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:514
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: role: 'viewer' as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:519
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: set: { passwordHash: viewerHash, role: 'viewer' as any, isActive: true },
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:527
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: role: 'sales' as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:532
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: set: { passwordHash: salesHash, role: 'sales' as any, isActive: true },
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:550
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async function seedProducts(db: any, dryRun: boolean) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:581
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async function seedFinancialDimensions(db: any, dryRun: boolean) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:621
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async function seedOrganization(db: any, dryRun: boolean) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:647
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async function seedAppSettings(db: any, dryRun: boolean) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:684
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async function seedBaseGlSettings(db: any, dryRun: boolean) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:709
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: db: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:735
+Reason: Explicit 'any' detected in ArrayType.
+Line: const insertRows: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:738
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: nodes: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:742
+Reason: Explicit 'any' detected in CallExpression.
+Line: for (const [name, node] of Object.entries<any>(nodes)) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:803
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: db: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:874
+Reason: Explicit 'any' detected in VariableDeclaration.
+Line: const glData: any = {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:923
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: async function seedReports(db: any, dryRun: boolean) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/scripts/seed.ts:1041
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: export async function seedAccounts(db: any, dryRun: boolean) {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/settings/activities.service.ts:45
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: if ((err as any)?.code === '23505') {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/settings/activities.service.ts:80
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: if ((err as any)?.code === '23503') {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/settings/cost-centers.service.ts:45
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: if ((err as any)?.code === '23505') {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/settings/cost-centers.service.ts:80
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: if ((err as any)?.code === '23503') {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/settings/exchange-rates.service.ts:63
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: if ((err as any)?.code === '23505') {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/settings/uom-dictionary.service.ts:48
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: if ((err as any)?.code === '23505') {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/settings/uom-dictionary.service.ts:81
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: if ((err as any)?.code === '23503') {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/setup/setup.dto.ts:233
+Reason: Explicit 'any' detected in Property declaration.
+Line: preview?: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/setup/setup.dto.ts:291
+Reason: Explicit 'any' detected in ArrayType.
+Line: progress: any[];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/setup/setup.service.ts:37
+Reason: Explicit 'any' detected in Generic type argument.
+Line: private validationContext: Record<string, any> = {};
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/setup/setup.service.ts:40
+Reason: Explicit 'any' detected in Generic type argument.
+Line: private activeJobs: Record<string, any> = {};
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/setup/setup.service.ts:78
+Reason: Explicit 'any' detected in Property declaration.
+Line: return new Promise<{ success: boolean; message: string; preview?: any }>(
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/setup/setup.service.ts:143
+Reason: Explicit 'any' detected in Property declaration.
+Line: return new Promise<{ success: boolean; message: string; preview?: any }>(
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/setup/setup.service.ts:397
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: const col = (cols as any)[k];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/setup/setup.service.ts:454
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: entry: any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/setup/setup.service.ts:464
+Reason: Explicit 'any' detected in ArrayType.
+Line: const records: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/setup/setup.service.ts:476
+Reason: Explicit 'any' detected in VariableDeclaration.
+Line: const dbRecord: any = {};
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/setup/setup.service.ts:511
+Reason: Explicit 'any' detected in VariableDeclaration.
+Line: const updateSet: any = {};
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/suppliers/suppliers-write.service.ts:285
+Reason: Explicit 'any' detected in VariableDeclaration.
+Line: const updateData: any = { modifiedOn: sql`NOW()` };
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/tax/tax-categories.service.ts:144
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: if ((err as any)?.code === '23503') {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/users/users.service.ts:114
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: if ((err as any)?.code === '23505') {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/auth/casbin/drizzle-adapter.ts:20
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: private loadPolicyLine(line: any, model: Model): void {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/auth/casbin/drizzle-adapter.ts:65
+Reason: Explicit 'any' detected in MethodDeclaration.
+Line: private getPolicyLine(ptype: string, rule: string[]): any {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/idempotency/idempotency.interceptor.ts:28
+Reason: Explicit 'any' detected in Generic type argument.
+Line: intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/idempotency/idempotency.interceptor.ts:80
+Reason: Explicit 'any' detected in Generic type argument.
+Line: ): Promise<any> {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/idempotency/idempotency.interceptor.ts:82
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: const table = (schema as any)[config.queryKey];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/idempotency/idempotency.interceptor.ts:98
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: const result = await (this.db.query as any)[config.queryKey].findFirst({
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/interceptors/field-mask.interceptor.ts:16
+Reason: Explicit 'any' detected in Generic type argument.
+Line: intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/interceptors/field-mask.interceptor.ts:35
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: private filterFields(data: any, fields: Set<string>): any {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/interceptors/field-mask.interceptor.ts:35
+Reason: Explicit 'any' detected in MethodDeclaration.
+Line: private filterFields(data: any, fields: Set<string>): any {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/common/interceptors/field-mask.interceptor.ts:49
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: data: data.data.map((item: any) => this.filterFields(item, fields)),
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/enrichment/providers/abr.provider.ts:13
+Reason: Explicit 'any' detected in MethodDeclaration.
+Line: getConfigSchema(): any {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/enrichment/providers/enrichment-provider.interface.ts:26
+Reason: Explicit 'any' detected in MethodSignature.
+Line: getConfigSchema(): any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/dto/bank-feeds.dto.ts:68
+Reason: Explicit 'any' detected in Property declaration.
+Line: file: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/dto/bank-feeds.dto.ts:85
+Reason: Explicit 'any' detected in Property declaration.
+Line: file: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/dto/reconciliation.dto.ts:61
+Reason: Explicit 'any' detected in ArrayType.
+Line: data!: any[];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/gl/dto/reconciliation.dto.ts:81
+Reason: Explicit 'any' detected in ArrayType.
+Line: data!: any[];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/transfers/dto.ts:103
+Reason: Explicit 'any' detected in Property declaration.
+Line: @ApiPropertyOptional() payload?: any;
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/transfers/transfers.service.ts:236
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: lines.map(async (line: any) => {
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/transfers/transfers.service.ts:238
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: (p: any) =>
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/transfers/transfers.service.ts:243
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: (acc: number, p: any) => acc + parseFloat(p.quantity),
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/transfers/transfers.service.ts:249
+Reason: Explicit 'any' detected in ArrayType.
+Line: let availableBins: any[] = [];
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/transfers/transfers.service.ts:293
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: const isFullyPicked = enrichedLines.every((l: any) => l.isFullyPicked);
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/transfers/transfers.service.ts:297
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: fullyPickedLines: enrichedLines.filter((l: any) => l.isFullyPicked)
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/transfers/transfers.service.ts:345
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: const bin = availableBins.find((b: any) => b.binId === binId);
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/transfers/transfers.service.ts:379
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: aggregateType: 'transfer_order' as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/transfers/transfers.service.ts:420
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: aggregateType: 'transfer_order' as any,
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/transfers/transfers.service.ts:1037
+Reason: Explicit 'any' detected in Type assertion (as any).
+Line: conditions.push(eq(transferOrders.stateCode, states[0] as any));
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/transfers/transfers.service.ts:1039
+Reason: Explicit 'any' detected in ArrayType.
+Line: conditions.push(inArray(transferOrders.stateCode, states as any[]));
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/api/src/orders/transfers/transfers.service.ts:1256
+Reason: Explicit 'any' detected in VariableDeclaration.
+Line: const updates: any = { modifiedOn: new Date() };

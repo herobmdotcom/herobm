@@ -96,4 +96,44 @@ export class EnrichmentService {
     const config = await this.getConfig(providerName);
     return provider.lookup(payload, config);
   }
+
+  async recordTransaction(
+    providerName: string,
+    payload: Record<string, any>,
+  ): Promise<EnrichmentResult> {
+    const provider = this.providers.get(providerName);
+
+    if (!provider) {
+      throw new NotFoundException(
+        `Enrichment provider '${providerName}' not found`,
+      );
+    }
+
+    if (!provider.recordTransaction) {
+      return { isValid: false, data: { error: 'Not supported' } };
+    }
+
+    const config = await this.getConfig(providerName);
+    return provider.recordTransaction(payload, config);
+  }
+
+  async recordRefund(
+    providerName: string,
+    payload: Record<string, any>,
+  ): Promise<EnrichmentResult> {
+    const provider = this.providers.get(providerName);
+
+    if (!provider) {
+      throw new NotFoundException(
+        `Enrichment provider '${providerName}' not found`,
+      );
+    }
+
+    if (!provider.recordRefund) {
+      return { isValid: false, data: { error: 'Not supported' } };
+    }
+
+    const config = await this.getConfig(providerName);
+    return provider.recordRefund(payload, config);
+  }
 }

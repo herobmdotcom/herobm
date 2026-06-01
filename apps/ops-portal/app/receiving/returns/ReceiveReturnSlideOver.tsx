@@ -45,9 +45,9 @@ export default function ReceiveReturnSlideOver({
                 }))
                 .filter((l: any) => parseFloat(l.quantityReceived) > 0);
 
-            if (linesToReceive.length > 0) {
-                await api.orderReturnsControllerReceiveReturn(returnRecord.salesOrderId, returnRecord.returnId, {
-                    locationId: returnRecord.locationId,
+            if ((linesToReceive as any[]).length > 0) {
+                await api.orderReturnsControllerReceiveReturn((returnRecord.salesOrderId as string), (returnRecord.returnId as string), {
+                    locationId: (returnRecord.locationId as string),
                     lines: linesToReceive
                 } );
             }
@@ -74,7 +74,7 @@ export default function ReceiveReturnSlideOver({
         <SlideOver
             isOpen={isOpen}
             onClose={onClose}
-            title={`Receive Return: ${returnRecord.returnNumber}`}
+            title={`Receive Return: ${(returnRecord.returnNumber as string)}`}
             width="max-w-xl"
             footer={
                 <div className="flex items-center justify-end gap-3 w-full">
@@ -97,8 +97,8 @@ export default function ReceiveReturnSlideOver({
         >
             <div className="mb-4">
                 <span className="text-sm text-[var(--text-secondary)] mr-2">{t('columns.return.order')}</span>
-                <Link href={`/sales-orders/${returnRecord.salesOrderId}`} className="text-sm font-medium text-[var(--accent)] hover:underline" onClick={onClose}>
-                    {returnRecord.orderNumber}
+                <Link href={`/sales-orders/${(returnRecord.salesOrderId as string)}`} className="text-sm font-medium text-[var(--accent)] hover:underline" onClick={onClose}>
+                    {((returnRecord as unknown as { orderNumber: string }).orderNumber)}
                 </Link>
             </div>
 

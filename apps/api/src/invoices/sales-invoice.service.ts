@@ -29,6 +29,7 @@ import { getCommittedPerLine } from '../orders/shipment-helpers';
 import { evaluateLifecycleRules } from '../orders/order-lifecycle-rules';
 import { computeLinePrice } from '@modbm/shared';
 import { AppConfigService } from '../settings/app-config.service';
+import { EnrichmentService } from '../enrichment/enrichment.service';
 import { CreateSalesInvoiceDto } from './dto';
 import {
   SALES_INVOICE_STATE,
@@ -48,6 +49,7 @@ export class SalesInvoiceService {
     private readonly glService: GlService,
     private readonly taxService: TaxCategoriesService,
     private readonly appConfig: AppConfigService,
+    private readonly enrichmentService: EnrichmentService,
   ) {}
 
   /**
@@ -549,6 +551,44 @@ export class SalesInvoiceService {
               `GL journal posted for sales invoice ${invoiceNumber}`,
             );
           }
+        }
+      }
+
+      // F. Record Transaction in External Engine if applicable
+      const orderTaxProvider = (order as any).taxProvider;
+      if (
+        orderTaxProvider &&
+        orderTaxProvider !== 'internal' &&
+        !orderTaxProvider.endsWith('-error')
+      ) {
+        const payload = {
+          transaction_id: invoice.invoiceId,
+          transaction_date: new Date().toISOString(),
+          amount: totalAmount,
+          shipping: 0,
+          sales_tax: taxAmount,
+        };
+        try {
+          const enrichRes = await this.enrichmentService.recordTransaction(
+            orderTaxProvider,
+            payload,
+          );
+          if (!enrichRes.isValid) {
+            throw new BadRequestException(
+              `Tax provider rejected transaction: ${enrichRes.data?.error}`,
+            );
+          }
+          this.logger.log(
+            `Transaction recorded in ${orderTaxProvider} for invoice ${invoiceNumber}`,
+          );
+        } catch (e: any) {
+          this.logger.error(
+            `Failed to record transaction in ${orderTaxProvider}`,
+            e,
+          );
+          throw new BadRequestException(
+            `Failed to record transaction in ${orderTaxProvider}: ${e.message}`,
+          );
         }
       }
 

@@ -29,9 +29,10 @@ export class AbrProvider implements IEnrichmentProvider {
     const cleanAbn = query.replace(/\s/g, '');
 
     if (!config?.apiKey) {
-      throw new Error('ABR API key not configured. Please configure it in Settings > Integrations.');
+      throw new Error(
+        'ABR API key not configured. Please configure it in Settings > Integrations.',
+      );
     }
-
 
     // For now, this is a mock implementation.
     // In the future, this will call https://abr.business.gov.au/json/AbnDetails.aspx

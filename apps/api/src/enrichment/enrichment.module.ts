@@ -6,6 +6,7 @@ import { TaxJarProvider } from './providers/taxjar.provider';
 import { AuthModule } from '../auth/auth.module';
 import { EncryptionService } from '../common/encryption.service';
 import { ConfigModule } from '@nestjs/config';
+import { IntegrationLoggerService } from '../common/integration-logger.service';
 
 @Module({
   imports: [AuthModule, ConfigModule],
@@ -15,6 +16,7 @@ import { ConfigModule } from '@nestjs/config';
     AbrProvider,
     TaxJarProvider,
     EncryptionService,
+    IntegrationLoggerService,
   ],
   exports: [EnrichmentService],
 })

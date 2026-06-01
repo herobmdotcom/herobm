@@ -24,4 +24,20 @@ export interface IEnrichmentProvider {
    * Return the JSON schema defining the required configuration for this provider.
    */
   getConfigSchema(): any;
+
+  /**
+   * Optional: Record a formal transaction to the provider (for stateful API engines like tax providers)
+   */
+  recordTransaction?(
+    payload: Record<string, any>,
+    config?: Record<string, any>,
+  ): Promise<EnrichmentResult>;
+
+  /**
+   * Optional: Reverse a previously recorded formal transaction
+   */
+  recordRefund?(
+    payload: Record<string, any>,
+    config?: Record<string, any>,
+  ): Promise<EnrichmentResult>;
 }

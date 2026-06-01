@@ -34,12 +34,12 @@ export default function ReceivingReturnsPage() {
     const gridColumns: any[] = useMemo(() => [
         { field: 'returnNumber', headerName: 'Return No', width: 140 },
         { field: 'orderNumber', headerName: 'Order No', width: 140 },
-        { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value).toLocaleDateString() : '' },
         { 
             field: 'lines', 
             headerName: 'Lines', 
             width: 100,
-            cellRenderer: (p: any) => {
+            cellRenderer: (p: import("ag-grid-community").ICellRendererParams<any>) => {
                 if (!p.value) return null;
                 return (
                     <span className="badge badge-sm badge-info">

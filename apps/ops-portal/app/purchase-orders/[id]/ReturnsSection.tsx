@@ -62,8 +62,8 @@ function ReturnCard({
   currencyCode,
 }: {
   r: Return;
-  orderLines: any[];
-  events: any[];
+  orderLines: import("./types").OrderLine[];
+  events: import("./types").OrderEvent[];
   currencyCode?: string;
 }) {
   const tPurchase = useTranslations('purchaseOrders');
@@ -160,14 +160,15 @@ function ReturnCard({
                         const priceWarning = relatedEvents.find(e => e.eventType === 'price_discrepancy_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
                         
                         if (priceWarning) {
+                          const payload = priceWarning.payload as any;
                           return (
                             <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }} title="Price discrepancy warning">
                               <span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: 11, color: 'var(--text-muted)' }}>
-                                {parseFloat(priceWarning.payload.poPrice).toFixed(2)}
+                                {parseFloat(payload.poPrice).toFixed(2)}
                               </span>
                               <strong style={{ fontSize: 12 }}>
                                 {currencyCode ? `${currencyCode} ` : ''}
-                                {parseFloat(priceWarning.payload.invoicePrice).toFixed(2)}
+                                {parseFloat(payload.invoicePrice).toFixed(2)}
                               </strong>
                             </div>
                           );
@@ -233,17 +234,20 @@ function ReturnCard({
                   },
                   {
                     label: tPurchase('columns.unitPrice'),
-                    value: priceWarning ? (
+                    value: priceWarning ? (() => {
+                      const payload = priceWarning.payload as any;
+                      return (
                       <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: 6 }} title="Price discrepancy warning">
                         <span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: 11, color: 'var(--text-muted)' }}>
-                          {parseFloat(priceWarning.payload.poPrice).toFixed(2)}
+                          {parseFloat(payload.poPrice).toFixed(2)}
                         </span>
                         <strong style={{ fontSize: 12 }}>
                           {currencyCode ? `${currencyCode} ` : ''}
-                          {parseFloat(priceWarning.payload.invoicePrice).toFixed(2)}
+                          {parseFloat(payload.invoicePrice).toFixed(2)}
                         </strong>
                       </div>
-                    ) : (
+                      );
+                    })() : (
                       <span>
                         {orderLine && orderLine.pricePerUnit !== '—' 
                           ? (currencyCode ? `${currencyCode} ${parseFloat(orderLine.pricePerUnit).toFixed(2)}` : parseFloat(orderLine.pricePerUnit).toFixed(2))
@@ -275,8 +279,8 @@ export default function ReturnsSection({
   orderState,
 }: {
   orderId: string;
-  orderLines: any[];
-  events: any[];
+  orderLines: import("./types").OrderLine[];
+  events: import("./types").OrderEvent[];
   currencyCode?: string;
   orderState?: string;
 }) {
@@ -292,7 +296,7 @@ export default function ReturnsSection({
       try {
         setLoading(true);
         const listData = await api.purchaseReturnsControllerFindReturns(orderId) ;
-        const fetchedReturns = Array.isArray(listData) ? listData : (listData as any)?.data || [];
+        const fetchedReturns: any[] = Array.isArray(listData) ? listData : (listData as { data?: any[] })?.data || [];
         
         // Fetch full data including lines for each setup
         const detailedReturns = await Promise.all(
@@ -318,9 +322,9 @@ export default function ReturnsSection({
   const refreshReturns = () => {
     setLoading(true);
     api.purchaseReturnsControllerFindReturns(orderId).then(async (listData: unknown) => {
-      const fetchedReturns: any[] = (listData as any)?.data || listData || [];
+      const fetchedReturns: any[] = (listData as { data?: any[] })?.data || (Array.isArray(listData) ? listData : []);
       const detailedReturns = await Promise.all(
-        fetchedReturns.map((rec) => 
+        fetchedReturns.map((rec: any) => 
           api.purchaseReturnsControllerFindReturn(orderId, rec.returnId)
         )
       );
