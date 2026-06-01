@@ -41,8 +41,8 @@ export class CostCentersService {
         })
         .returning();
       return rows[0];
-    } catch (err: any) {
-      if (err?.code === '23505') {
+    } catch (err: unknown) {
+      if ((err as any)?.code === '23505') {
         throw new BadRequestException(
           `Cost center code '${dto.code}' already exists`,
         );
@@ -76,8 +76,8 @@ export class CostCentersService {
     try {
       await this.db.delete(costCenters).where(eq(costCenters.costCenterId, id));
       return { deleted: true };
-    } catch (err: any) {
-      if (err?.code === '23503') {
+    } catch (err: unknown) {
+      if ((err as any)?.code === '23503') {
         throw new BadRequestException(
           `Cannot delete cost center '${existing.code}' because it is in use by journal entries.`,
         );

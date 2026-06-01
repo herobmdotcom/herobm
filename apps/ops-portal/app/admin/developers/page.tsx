@@ -9,6 +9,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import { useTranslations } from 'next-intl';
+import { getErrorMessage } from '@modbm/shared';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,8 +60,8 @@ export default function DevelopersPage() {
       setAppLoading(true);
       const res = await api.appConfigControllerGet();
       setAppForm(res.data || {});
-    } catch (err: any) {
-      toast.error('Failed to load settings: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Failed to load settings: ' + getErrorMessage(err));
     } finally {
       setAppLoading(false);
     }
@@ -71,8 +72,8 @@ export default function DevelopersPage() {
       setAppForm((prev: unknown) => ({ ...((prev as Record<string, unknown>) || {}), [field]: value }));
       await api.appConfigControllerUpdate({ [field]: value });
       toast.success('Updated successfully');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -103,8 +104,8 @@ export default function DevelopersPage() {
   const loadRoles = async () => {
     try {
       const res = await api.rolesControllerFindAll();
-      setAvailableRoles((res.data as unknown as any[]) || []);
-    } catch (err: any) {
+      setAvailableRoles((res.data ) || []);
+    } catch (err: unknown) {
       console.error('Failed to load roles', err);
     }
   };
@@ -130,8 +131,8 @@ export default function DevelopersPage() {
       setKeyCreating(false);
       setKeyForm({ name: '', role: 'agent' });
       loadKeys();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -141,8 +142,8 @@ export default function DevelopersPage() {
       await api.apiKeysControllerRevoke(id);
       toast.success('API Key revoked');
       loadKeys();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -160,8 +161,8 @@ export default function DevelopersPage() {
       setWebhookCreating(false);
       setWebhookForm({ targetUrl: '', eventTypes: '' });
       loadWebhooks();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -171,8 +172,8 @@ export default function DevelopersPage() {
       await api.webhooksControllerRemove(id);
       toast.success('Webhook deleted');
       loadWebhooks();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

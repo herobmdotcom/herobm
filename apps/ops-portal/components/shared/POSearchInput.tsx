@@ -41,7 +41,7 @@ export default function POSearchInput({
     setLoading(true);
     api.purchaseOrdersControllerFindAll({ search: search || undefined, vendorId, limit: 20 } as any)
       .then((res) => {
-        setResults(((res.data as any)?.data || res.data || []) as unknown as PurchaseOrder[]);
+        setResults(((res.data as any)?.data || res.data || []) );
       })
       .catch(() => {
         setResults([]);

@@ -284,7 +284,7 @@ export class GlService {
       ? await doInsert(tx)
       : await this.db.transaction(doInsert);
 
-    this.logger.log(
+    this.logger.debug(
       `Journal entry ${entryNumber} posted: ${lines.length} lines, ${meta.sourceType}`,
     );
 
@@ -812,9 +812,17 @@ export class GlService {
       return newSettings;
     }
 
+    const validData = Object.fromEntries(
+      Object.entries(data).filter(([_, v]) => v !== undefined),
+    );
+
+    if (Object.keys(validData).length === 0) {
+      return existing;
+    }
+
     const [updated] = await db
       .update(glSettings)
-      .set(data)
+      .set(validData)
       .where(eq(glSettings.settingsId, existing.settingsId))
       .returning();
 

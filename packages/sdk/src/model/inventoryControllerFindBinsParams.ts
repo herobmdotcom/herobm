@@ -7,5 +7,5 @@
  */
 
 export type InventoryControllerFindBinsParams = {
-locationNo: string;
+locationNo?: string;
 };

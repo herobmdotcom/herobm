@@ -19,6 +19,7 @@ import GroupSelect from '@/components/shared/GroupSelect';
 import { formatLocationDisplay } from '@/lib/formatters';
 import { PRODUCT_STATE } from '@modbm/shared';
 import { ProductKitComponentsTab } from './ProductKitComponentsTab';
+import { getErrorMessage } from '@modbm/shared';
 const formatMoney = (val: string | number | undefined | null) => {
   if (!val) return '0.00';
   const num = typeof val === 'string' ? parseFloat(val) : val;
@@ -121,9 +122,9 @@ export default function ProductDetailPage() {
       if (data.structureType === 'kit') {
         try {
           const componentsData = await api.productsControllerGetComponents(id as string);
-          if ((componentsData.data as unknown as { data: Record<string, any>[] })?.data?.length) {
-            setKitComponents((componentsData.data as unknown as { data: Record<string, any>[] }).data);
-            productIdsToFetch = ((componentsData.data as unknown as { data: Record<string, any>[] }).data).map((c: Record<string, any>) => c.childProductId);
+          if ((componentsData.data as any)?.data?.length) {
+            setKitComponents((componentsData.data as any).data);
+            productIdsToFetch = ((componentsData.data as any).data).map((c: Record<string, any>) => c.childProductId);
           }
         } catch (e) {
           reportError(e, 'ProductDetailPage');
@@ -134,8 +135,8 @@ export default function ProductDetailPage() {
 
       const invDataRes = await api.inventoryControllerFindByProductIdsBulk({ productIds: productIdsToFetch });
       setInventoryLevels(invDataRes?.data || []);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       if (showLoading) setLoading(false);
     }
@@ -145,7 +146,7 @@ export default function ProductDetailPage() {
     fetchProduct();
     api.taxCategoriesControllerFindAll().then((res) => setTaxCategories(res.data)).catch((err) => reportError(err, 'ProductDetailPage'));
     api.uomDictionaryControllerFindAll().then((res) => setUomDictionary(res.data)).catch((err) => reportError(err, 'ProductDetailPage'));
-    api.inventoryControllerFindAllLocations({ productId: id as string }).then((res) => setLocations((res.data?.data) || [])).catch((err) => reportError(err, 'ProductDetailPage'));
+    api.inventoryControllerFindAllLocations({ productId: id as string }).then((res) => setLocations((res.data) || [])).catch((err) => reportError(err, 'ProductDetailPage'));
   }, [fetchProduct, id]);
 
   useEffect(() => {
@@ -169,8 +170,8 @@ export default function ProductDetailPage() {
     try {
       await api.productsControllerUpdate(id as string, updatedValues);
       await fetchProduct(false);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -200,8 +201,8 @@ export default function ProductDetailPage() {
       await api.productsControllerArchive(id as string, {});
       toast.success(t('toast.productUpdated'));
       await fetchProduct(false);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -213,8 +214,8 @@ export default function ProductDetailPage() {
       await api.productsControllerUnarchive(id as string, {});
       toast.success(t('toast.productUpdated'));
       await fetchProduct(false);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -230,8 +231,8 @@ export default function ProductDetailPage() {
       await api.productsControllerRemoveSupplier(id as string, vendorId);
       toast.success(t('suppliers.toast.unlinked'));
       setRefreshGrid(prev => prev + 1);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -592,8 +593,8 @@ export default function ProductDetailPage() {
                         setAddingBinLink(false);
                         setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
                         await fetchProduct(false);
-                      } catch (err: any) {
-                        toast.error(err.message);
+                      } catch (err: unknown) {
+                        toast.error(getErrorMessage(err));
                       }
                     }}
                   >
@@ -693,8 +694,8 @@ export default function ProductDetailPage() {
                                         toast.success(t('products.storage.toastLinkUpdated', { defaultValue: 'Bin configuration updated' }));
                                         setEditingBinId(null);
                                         await fetchProduct(false);
-                                      } catch (err: any) {
-                                        toast.error(err.message);
+                                      } catch (err: unknown) {
+                                        toast.error(getErrorMessage(err));
                                       }
                                     }}
                                     title={tCommon('buttons.save')}
@@ -750,8 +751,8 @@ export default function ProductDetailPage() {
                                             await api.productsControllerRemoveDefaultBin(id as string, bin.productDefaultBinId);
                                             toast.success(t('products.storage.toastLinkRemoved'));
                                             await fetchProduct(false);
-                                          } catch (err: any) {
-                                            toast.error(err.message);
+                                          } catch (err: unknown) {
+                                            toast.error(getErrorMessage(err));
                                           }
                                         }}
                                         className="p-1 hover:bg-red-50 rounded text-red-500 transition-colors"
@@ -1218,8 +1219,8 @@ export default function ProductDetailPage() {
                       setNewUomCode('');
                       setNewUomRatio('1');
                       await fetchProduct(false);
-                    } catch (err: any) {
-                      toast.error(err.message);
+                    } catch (err: unknown) {
+                      toast.error(getErrorMessage(err));
                     }
                   }}
                 >
@@ -1263,8 +1264,8 @@ export default function ProductDetailPage() {
                                 await api.productsControllerRemoveUom(id as string, u.productUomId);
                                 toast.success(t('products.toast.conversionRemoved'));
                                 await fetchProduct(false);
-                              } catch (err: any) {
-                                toast.error(err.message);
+                              } catch (err: unknown) {
+                                toast.error(getErrorMessage(err));
                               }
                             }}
                             className="btn btn-xs btn-ghost text-red-500 hover:bg-red-50 px-2 h-7 min-h-7"

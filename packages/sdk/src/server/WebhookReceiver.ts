@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import { getErrorMessage } from '@modbm/shared';
 
 type Handler = (payload: any) => Promise<void> | void;
 
@@ -69,8 +70,8 @@ export class WebhookReceiver {
         await Promise.all(allHandlers.map(h => h(payload)));
 
         return res.status(200).json({ received: true });
-      } catch (err: any) {
-        console.error('Webhook processing error:', err.message);
+      } catch (err: unknown) {
+        console.error('Webhook processing error:', getErrorMessage(err));
         return res.status(500).json({ error: 'Internal Server Error' });
       }
     };

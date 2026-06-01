@@ -7,5 +7,5 @@
  */
 
 export type GlControllerGetTrialBalanceParams = {
-asOfDate: string;
+asOfDate?: string;
 };

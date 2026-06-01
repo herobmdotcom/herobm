@@ -13,6 +13,8 @@ import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTim
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { SHIPMENT_STATE } from '@modbm/shared';
+import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
+import { getErrorMessage } from '@modbm/shared';
 
 interface ShipmentLine {
   shipmentLineId: string;
@@ -74,9 +76,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
     try {
       await api.orderShipmentsControllerCancelShipment(shipment.salesOrderId, shipment.shipmentId, { body: JSON.stringify({}) });
       loadShipment();
-    } catch (err: any) {
+    } catch (err: unknown) {
       reportError(err, 'ShipmentDetailPage.handleCancel');
-      alert(err.message || t('cancelFailed'));
+      alert(getErrorMessage(err) || t('cancelFailed'));
     } finally {
       setIsCancelling(false);
     }
@@ -135,15 +137,15 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
       <div className="flex flex-col gap-3">
         {/* Shipment Details Card */}
         <div id="details-section" className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading">
+          <div className="flex items-center justify-between mb-4 gap-4">
+            <h3 className="section-heading flex items-center gap-2 truncate">
               {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">local_shipping</span>
+              <span className="material-symbols-outlined shrink-0">local_shipping</span>
               {/* eslint-enable i18next/no-literal-string */}
-              {t('shipmentDetails')}
+              <span className="truncate">{t('shipmentDetails')}</span>
             </h3>
             <button
-              className="btn btn-secondary btn-sm flex items-center"
+              className="btn btn-secondary btn-sm flex items-center shrink-0"
               onClick={async () => {
                 try {
                   const api = await import('@modbm/sdk');
@@ -161,7 +163,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
             </button>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {t('columns.customer')}
@@ -203,17 +205,19 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
         {/* Line Items Card */}
         <div id="lines-section" className="card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading">
+            <h3 className="section-heading flex items-center gap-2">
               {/* eslint-disable-next-line i18next/no-literal-string */}
-            <span className="material-symbols-outlined">list_alt</span>
-            {/* eslint-enable i18next/no-literal-string */}
-              {t('lineItems')}
+              <span className="material-symbols-outlined shrink-0">list_alt</span>
+              {/* eslint-enable i18next/no-literal-string */}
+              <span>{t('lineItems')}</span>
             </h3>
           </div>
           
-          <table className="table-lines">
-            <thead>
-              <tr>
+          {/* Desktop Table */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="table-lines min-w-[500px]">
+              <thead>
+                <tr>
                 <th style={{ width: 120 }}>{t('columns.orderNumber')}</th>
                 <th>{t('columns.product')}</th>
                 <th>{t('columns.description')}</th>
@@ -244,8 +248,40 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
                   </td>
                 </tr>
               )}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="flex flex-col lg:hidden mt-2">
+            {shipment.lines.map((line, idx) => (
+              <MobileLineItemCard
+                key={line.shipmentLineId}
+                title={
+                  <Link href={`/products/${line.productId}`} className="text-[var(--accent)] hover:underline">
+                    {line.productNumber || '—'}
+                  </Link>
+                }
+                subtitle={line.productDescription || '—'}
+                topRightBadge={`#${idx + 1}`}
+                details={[
+                  {
+                    label: t('columns.qty'),
+                    value: line.quantityShipped
+                  },
+                  {
+                    label: t('columns.orderNumber'),
+                    value: <span className="font-semibold text-[var(--text-secondary)]">{line.orderNumber}</span>
+                  }
+                ]}
+              />
+            ))}
+            {shipment.lines.length === 0 && (
+              <div className="text-center text-sm text-[var(--text-muted)] py-4 border border-[var(--border)] rounded-lg">
+                {tCommon('orderReadView.noLineItems')}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Activity Timeline Card */}

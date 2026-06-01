@@ -47,6 +47,7 @@ async function bootstrap() {
       .addServer('http://localhost:3000', 'Local Development Server')
       .addTag('Auth', 'Authentication and Authorization')
       .addTag('Users', 'User management')
+      .addTag('Roles', 'Role management')
       .addTag('System', 'System configuration')
       .addTag('Telemetry', 'Client-side telemetry')
       .addTag('Dashboard', 'Dashboard statistics and timeline')

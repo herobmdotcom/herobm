@@ -15,6 +15,7 @@ import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
 import LocationSelect from '@/components/shared/LocationSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
+import { MobileCardField } from '@/components/shared/DataTable';
 import { getTaxLabel } from '../[id]/types';
 import { useSettings } from '@/components/SettingsProvider';
 
@@ -382,7 +383,7 @@ export default function NewPurchaseOrderPage() {
               />
             </div>
 
-            <div className="col-span-2 mt-2">
+            <div className="md:col-span-2 mt-2">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {t('common.notesCardHeading')}
               </label>
@@ -401,25 +402,155 @@ export default function NewPurchaseOrderPage() {
 
         {/* Line items */}
         <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading !mb-0">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+            <h3 className="section-heading !mb-0 shrink-0">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">list</span>
               {t('purchaseOrders.lineItems')}
             </h3>
-            <div className="flex items-center gap-3">
-              <ProductSearchInput
-                onSelect={addLineFromProduct}
-                placeholder={t('purchaseOrders.placeholders.searchProduct')}
-                style={{ width: 240 }}
-              />
-              <button className="btn btn-secondary btn-sm" onClick={addLine}>
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
+              <div className="flex-1 min-w-[200px] max-w-sm">
+                <ProductSearchInput
+                  onSelect={addLineFromProduct}
+                  placeholder={t('purchaseOrders.placeholders.searchProduct', { defaultValue: 'Search Product' })}
+                  style={{ width: '100%' }}
+                />
+              </div>
+              <button className="btn btn-secondary btn-sm whitespace-nowrap" onClick={addLine}>
                 + {t('purchaseOrders.buttons.customLine')}
               </button>
             </div>
           </div>
 
-          <table className="table-lines">
+          <div className="lg:hidden flex flex-col gap-3 w-full mt-4">
+            {lines.length === 0 ? (
+              <div className="text-center text-slate-500 py-4 px-3 bg-slate-50 rounded-lg border border-slate-100 text-sm">
+                {t('purchaseOrders.noLineItems')}
+              </div>
+            ) : (
+              lines.map((line, idx) => (
+                <div key={line.key} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
+                  <div className="flex justify-between items-start gap-2 mb-2">
+                    <div className="font-semibold text-sm text-[var(--accent)]">
+                      {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                        <span>{line.productNumber}</span>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{idx + 1}</div>
+                  </div>
+                  <div className="text-sm text-slate-600 font-medium mb-3">
+                    {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                      line.productDescription || '—'
+                    ) : (
+                      <input
+                        className="input w-full text-sm h-8 !py-1"
+                        value={line.productDescription || ''}
+                        onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
+                        placeholder={t('salesOrders.placeholders.customDescription')}
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                    <MobileCardField label={t('purchaseOrders.columns.qty')} value={
+                      <input
+                        className="input text-right w-24 h-8 text-sm !py-1"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={line.quantity}
+                        onChange={(e) => updateLine(idx, 'quantity', e.target.value)}
+                      />
+                    } />
+                    <MobileCardField label={t('purchaseOrders.columns.uom')} value={
+                      <input
+                        className="input text-right w-24 h-8 text-sm !py-1"
+                        value={line.unitOfMeasure || ''}
+                        onChange={(e) => updateLine(idx, 'unitOfMeasure', e.target.value)}
+                      />
+                    } />
+                    <MobileCardField label={t('purchaseOrders.columns.unitPrice')} value={
+                      <input
+                        className="input text-right w-24 h-8 text-sm !py-1"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={line.pricePerUnit}
+                        onChange={(e) => updateLine(idx, 'pricePerUnit', e.target.value)}
+                        onBlur={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val)) updateLine(idx, 'pricePerUnit', val.toFixed(2));
+                        }}
+                      />
+                    } />
+                    <MobileCardField label={t('purchaseOrders.columns.discountPct')} value={
+                      <input
+                        className="input text-right w-20 h-8 text-sm !py-1"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={line.discountPercentage}
+                        onChange={(e) => updateLine(idx, 'discountPercentage', e.target.value)}
+                      />
+                    } />
+                    <MobileCardField label={t('purchaseOrders.columns.taxCategory')} value={
+                      <select
+                        className="input text-right w-32 h-8 text-sm !py-1"
+                        value={line.taxCategoryId || ''}
+                        onChange={(e) => updateLine(idx, 'taxCategoryId', e.target.value)}
+                      >
+                        {taxCategories.map((c) => (
+                          <option key={c.taxCategoryId} value={c.taxCategoryId}>
+                            {getTaxLabel(c)}
+                          </option>
+                        ))}
+                      </select>
+                    } />
+                    <MobileCardField label={t('purchaseOrders.columns.amount')} value={
+                      <span className="font-bold text-[var(--accent)] text-base">{formatAmount(computeAmount(line), currencyCode)}</span>
+                    } />
+                    {lines.length > 1 && (
+                      <div className="flex justify-end mt-2">
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => removeLine(idx)}
+                        >
+                          <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} /> {t('common.buttons.remove')}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+            
+            {lines.length > 0 && (() => {
+              const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
+              return (
+                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col mt-2">
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-sm font-semibold text-slate-500">{t('common.subtotal')}</span>
+                    <span className="text-sm font-semibold">{formatAmount(subtotal, currencyCode)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100 pb-2 mb-2">
+                    <span className="text-sm font-semibold text-slate-500">
+                      {t('common.tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
+                    </span>
+                    <span className="text-sm font-semibold">{formatAmount(totalTax, currencyCode)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-base font-bold text-slate-700">{t('common.total')}</span>
+                    <span className="text-lg font-bold text-[var(--accent)]">{formatAmount(subtotal + totalTax, currencyCode)}</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          <div className="hidden lg:block overflow-x-auto w-full">
+            <table className="table-lines w-full">
             <thead>
               <tr>
                 <th style={{ width: 40 }}>{t('purchaseOrders.columns.lineNumber')}</th>
@@ -598,6 +729,7 @@ export default function NewPurchaseOrderPage() {
               })()}
             </tbody>
           </table>
+          </div>
         </div>
         </div>
       </DetailsLayout>

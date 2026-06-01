@@ -19,23 +19,21 @@ describe('InventoryController', () => {
     total: 1,
   };
 
-  const mockLocationsResult = {
-    data: [
-      {
-        locationId: 'LOC001',
-        code: 'SIN',
-        name: 'Singapore',
-        zones: [
-          {
-            zoneId: 'Z001',
-            code: 'MAIN',
-            name: 'Main Zone',
-            bins: [{ binId: 'B001', binNumber: 'SHIPPING' }],
-          },
-        ],
-      },
-    ],
-  };
+  const mockLocationsResult = [
+    {
+      locationId: 'LOC001',
+      code: 'SIN',
+      name: 'Singapore',
+      zones: [
+        {
+          zoneId: 'Z001',
+          code: 'MAIN',
+          name: 'Main Zone',
+          bins: [{ binId: 'B001', binNumber: 'SHIPPING' }],
+        },
+      ],
+    },
+  ];
 
   const mockService = {
     findAll: jest.fn().mockResolvedValue(mockResult),
@@ -104,17 +102,26 @@ describe('InventoryController', () => {
   });
 
   describe('findAllLocations', () => {
-    it('should return the full topography hierarchy', async () => {
+    it('should return all locations without product filter', async () => {
       const result = await controller.findAllLocations();
-      expect(result).toEqual(mockLocationsResult);
+
       expect(mockService.findAllLocations).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(mockLocationsResult);
+    });
+
+    it('should return locations with product filter if productId is provided', async () => {
+      const PRODUCT_ID = 'PROD001';
+      const result = await controller.findAllLocations(PRODUCT_ID);
+
+      expect(mockService.findAllLocations).toHaveBeenCalledWith(PRODUCT_ID);
+      expect(result).toEqual(mockLocationsResult);
     });
 
     it('should return nested zones and bins', async () => {
       const result = await controller.findAllLocations();
-      expect(result.data[0].zones).toHaveLength(1);
-      expect(result.data[0].zones[0].bins).toHaveLength(1);
-      expect(result.data[0].zones[0].bins[0].binNumber).toBe('SHIPPING');
+      expect(result[0].zones).toHaveLength(1);
+      expect(result[0].zones[0].bins).toHaveLength(1);
+      expect(result[0].zones[0].bins[0].binNumber).toBe('SHIPPING');
     });
   });
 });

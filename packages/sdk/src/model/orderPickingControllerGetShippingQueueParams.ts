@@ -7,5 +7,5 @@
  */
 
 export type OrderPickingControllerGetShippingQueueParams = {
-locationId: string;
+locationId?: string;
 };

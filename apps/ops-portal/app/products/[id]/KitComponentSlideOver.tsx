@@ -5,6 +5,7 @@ import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
 import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@modbm/shared';
 
 interface KitComponentSlideOverProps {
   isOpen: boolean;
@@ -102,8 +103,8 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
         toast.success(t('toast.componentAdded'));
       }
       onSaved();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }

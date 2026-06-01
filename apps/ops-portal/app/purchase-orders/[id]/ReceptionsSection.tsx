@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import * as api from '@modbm/sdk';
 
 import { useTranslations } from 'next-intl';
+import { DataTable } from '@/components/shared/DataTable';
 
 interface ReceptionLine {
   goodsReceivedLineId: string;
@@ -82,49 +83,85 @@ export default function ReceptionsSection({ orderId }: { orderId: string }) {
           {t('noReceptions')}
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="table-lines w-full">
-            <thead>
-              <tr>
-                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('receipt')}</th>
-                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('product')}</th>
-                <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('receivedQty')}</th>
-                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('dateReceived')}</th>
-                <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)', width: 80 }}>{t('action')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {receptions.map((rec) => (
-                <tr key={rec.goodsReceivedLineId} style={{ borderBottom: '1px solid var(--border)' }}>
-                  <td style={{ padding: '12px 16px' }}>
-                    <Link href={`/receiving/${rec.goodsReceivedId}`} className="text-[var(--accent)] font-medium hover:underline">
-                      {rec.receiptNumber}
-                    </Link>
-                  </td>
-                  <td style={{ padding: '12px 16px', fontSize: 13 }}>
-                    <div className="font-semibold">{rec.productNumber || rec.productId.substring(0, 8)}</div>
-                    <div className="text-xs text-[var(--text-secondary)]">{rec.productName || tCommon('unknownProduct')}</div>
-                  </td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-                    {rec.quantityReceived}
-                  </td>
-                  <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
-                    {new Date(rec.createdOn).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: '8px 16px', textAlign: 'right' }}>
-                    <button 
-                      onClick={() => handleUnlink(rec.goodsReceivedLineId)}
-                      className="btn btn-secondary btn-sm"
-                      title={t('unlinkTitle')}
-                    >
-                      {t('unlink')}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          data={receptions}
+          keyExtractor={(rec) => rec.goodsReceivedLineId}
+          columns={[
+            {
+              header: t('receipt'),
+              render: (rec) => (
+                <Link href={`/receiving/${rec.goodsReceivedId}`} className="text-[var(--accent)] font-medium hover:underline">
+                  {rec.receiptNumber}
+                </Link>
+              )
+            },
+            {
+              header: t('product'),
+              render: (rec) => (
+                <div className="text-[13px]">
+                  <div className="font-semibold">{rec.productNumber || rec.productId.substring(0, 8)}</div>
+                  <div className="text-xs text-[var(--text-secondary)]">{rec.productName || tCommon('unknownProduct')}</div>
+                </div>
+              )
+            },
+            {
+              header: t('receivedQty'),
+              align: 'right',
+              render: (rec) => <span className="font-semibold tabular-nums">{rec.quantityReceived}</span>
+            },
+            {
+              header: t('dateReceived'),
+              render: (rec) => <span className="text-[13px] text-[var(--text-secondary)]">{new Date(rec.createdOn).toLocaleDateString()}</span>
+            },
+            {
+              header: t('action'),
+              align: 'right',
+              width: 80,
+              render: (rec) => (
+                <button 
+                  onClick={() => handleUnlink(rec.goodsReceivedLineId)}
+                  className="btn btn-secondary btn-sm"
+                  title={t('unlinkTitle')}
+                >
+                  {t('unlink')}
+                </button>
+              )
+            }
+          ]}
+          mobileCard={(rec: any) => (
+            <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
+              <div className="font-semibold text-sm text-[var(--accent)] mb-1 flex justify-between">
+                <Link href={`/receiving/${rec.goodsReceivedId}`} className="hover:underline">
+                  {rec.receiptNumber}
+                </Link>
+              </div>
+              <div className="text-sm text-slate-600 font-medium mb-3">
+                <div className="font-semibold text-slate-800">{rec.productNumber || rec.productId.substring(0, 8)}</div>
+                <div className="text-xs">{rec.productName || tCommon('unknownProduct')}</div>
+              </div>
+              
+              <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                <div className="flex justify-between py-1">
+                  <span className="text-xs font-medium text-slate-500">{t('receivedQty')}</span>
+                  <span className="font-bold tabular-nums text-sm">{rec.quantityReceived}</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="text-xs font-medium text-slate-500">{t('dateReceived')}</span>
+                  <span className="text-sm text-slate-600">{new Date(rec.createdOn).toLocaleDateString()}</span>
+                </div>
+              </div>
+              <div className="flex justify-end mt-2 pt-2 border-t border-slate-100">
+                <button 
+                  onClick={() => handleUnlink(rec.goodsReceivedLineId)}
+                  className="btn btn-secondary btn-sm"
+                  title={t('unlinkTitle')}
+                >
+                  {t('unlink')}
+                </button>
+              </div>
+            </div>
+          )}
+        />
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as api from '@modbm/sdk';
+import { getErrorMessage } from '@modbm/shared';
 
 export function useTransferOrder(id: string) {
   const [order, setOrder] = useState<any>(null);
@@ -22,8 +23,8 @@ export function useTransferOrder(id: string) {
       setEditSourceLoc(res.sourceLocationId || '');
       setEditDestLoc(res.destinationLocationId || '');
       setError(null);
-    } catch (e: any) {
-      setError(e.message || 'Failed to load transfer order');
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || 'Failed to load transfer order');
     } finally {
       setLoading(false);
     }
@@ -45,8 +46,8 @@ export function useTransferOrder(id: string) {
         destinationLocationId: editDestLoc !== order.destinationLocationId ? editDestLoc : undefined,
       });
       await loadOrder();
-    } catch (e: any) {
-      setError(e.message || 'Failed to save changes');
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || 'Failed to save changes');
     } finally {
       setSaving(false);
     }
@@ -57,8 +58,8 @@ export function useTransferOrder(id: string) {
       setSaving(true);
       await api.transfersControllerAddLine(id, { productId, quantity: quantity.toString() });
       await loadOrder();
-    } catch (e: any) {
-      setError(e.message || 'Failed to add line');
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || 'Failed to add line');
     } finally {
       setSaving(false);
     }
@@ -69,8 +70,8 @@ export function useTransferOrder(id: string) {
       setSaving(true);
       await api.transfersControllerUpdateLine(id, lineId, { quantity: quantity.toString() });
       await loadOrder();
-    } catch (e: any) {
-      setError(e.message || 'Failed to update line');
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || 'Failed to update line');
     } finally {
       setSaving(false);
     }
@@ -81,8 +82,8 @@ export function useTransferOrder(id: string) {
       setSaving(true);
       await api.transfersControllerRemoveLine(id, lineId);
       await loadOrder();
-    } catch (e: any) {
-      setError(e.message || 'Failed to remove line');
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || 'Failed to remove line');
     } finally {
       setSaving(false);
     }
@@ -93,8 +94,8 @@ export function useTransferOrder(id: string) {
       setSaving(true);
       await api.transfersControllerShipTransferOrder(id, {} as unknown as import('@modbm/sdk').EmptyBodyDto);
       await loadOrder();
-    } catch (e: any) {
-      setError(e.message || 'Failed to ship order');
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || 'Failed to ship order');
     } finally {
       setSaving(false);
     }
@@ -105,8 +106,8 @@ export function useTransferOrder(id: string) {
       setSaving(true);
       await api.transfersControllerCancelTransferOrder(id, {} as unknown as import('@modbm/sdk').EmptyBodyDto);
       await loadOrder();
-    } catch (e: any) {
-      setError(e.message || 'Failed to cancel order');
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || 'Failed to cancel order');
     } finally {
       setSaving(false);
     }
@@ -117,8 +118,8 @@ export function useTransferOrder(id: string) {
       setSaving(true);
       await api.transfersControllerReceiveTransferOrder(id, { destinationBinId });
       await loadOrder();
-    } catch (e: any) {
-      setError(e.message || 'Failed to receive order');
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || 'Failed to receive order');
     } finally {
       setSaving(false);
     }

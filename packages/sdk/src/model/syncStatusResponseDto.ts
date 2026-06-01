@@ -5,10 +5,12 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { SyncSummaryDto } from './syncSummaryDto';
+import type { TypeBreakdownDto } from './typeBreakdownDto';
+import type { OutboxEventDto } from './outboxEventDto';
 
 export interface SyncStatusResponseDto {
-  pending: number;
-  processed: number;
-  failed: number;
-  recentEvents: string[];
+  summary: SyncSummaryDto;
+  byType: TypeBreakdownDto[];
+  recentEvents: OutboxEventDto[];
 }

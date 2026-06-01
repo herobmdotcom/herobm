@@ -7,5 +7,5 @@
  */
 
 export type ExternalSyncControllerGetSyncStatusParams = {
-limit: string;
+limit?: string;
 };

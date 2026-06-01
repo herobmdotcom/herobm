@@ -20,11 +20,15 @@ export const accounts = modbmCore.table('accounts', {
   name: text('name').notNull(),
   currencyCode: text('currency_code').notNull(),
   externalId: text('external_id'),
+  businessNumber: text('business_number'),
+  isTaxRegistered: boolean('is_tax_registered').notNull().default(false),
 });
 
 export const suppliers = modbmCore.table('suppliers', {
   vendorId: uuid('vendor_id').primaryKey(),
   externalId: text('external_id'),
+  businessNumber: text('business_number'),
+  isTaxRegistered: boolean('is_tax_registered').notNull().default(false),
 });
 
 export const webhooks = modbmCore.table('webhooks', {

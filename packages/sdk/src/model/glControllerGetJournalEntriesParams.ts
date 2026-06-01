@@ -7,10 +7,10 @@
  */
 
 export type GlControllerGetJournalEntriesParams = {
-fromDate: string;
-toDate: string;
-sourceType: string;
-q: string;
-limit: string;
-page: string;
+fromDate?: string;
+toDate?: string;
+sourceType?: string;
+q?: string;
+limit?: string;
+page?: string;
 };

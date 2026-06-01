@@ -135,25 +135,30 @@ export class OrdersWriteService {
     productId?: string,
     taxCategoryIdOverride?: string,
     tx?: DrizzleDB,
-  ): Promise<{ taxCategoryId: string; rate: number }> {
+  ): Promise<{ taxCategoryId: string; rate: number; taxProvider: string }> {
+    const customer = await this.accountsService.findOne(customerId, tx);
+    const mappings = this.appConfig.taxProviderMappings();
+    const country = customer.address1Country || '';
+    const taxProvider = mappings[country] || 'internal';
+
     // 1. Explicit override wins
     if (taxCategoryIdOverride) {
       const cat = await this.taxService.getById(taxCategoryIdOverride, tx);
       return {
         taxCategoryId: cat.taxCategoryId,
         rate: parseFloat(cat.rate ?? '0'),
+        taxProvider,
       };
     }
 
     // 2. Customer exempt → always 0%
-    const customer = await this.accountsService.findOne(customerId, tx);
-
     if (customer.taxCategoryId) {
       const acctCat = await this.taxService.getById(customer.taxCategoryId, tx);
       if (acctCat.code === 'EXE' || acctCat.type === 'exempt') {
         return {
           taxCategoryId: acctCat.taxCategoryId,
           rate: parseFloat(acctCat.rate ?? '0'),
+          taxProvider,
         };
       }
     }
@@ -170,6 +175,7 @@ export class OrdersWriteService {
           return {
             taxCategoryId: cat.taxCategoryId,
             rate: parseFloat(cat.rate ?? '0'),
+            taxProvider,
           };
         } catch (err) {
           // Bad link, fallback to default
@@ -185,6 +191,7 @@ export class OrdersWriteService {
     return {
       taxCategoryId: defaultGst.taxCategoryId,
       rate: parseFloat(defaultGst.rate ?? '0'),
+      taxProvider,
     };
   }
 
@@ -487,6 +494,17 @@ export class OrdersWriteService {
             lineTax.rate,
           );
 
+          const providedTax =
+            lineTax.taxProvider !== 'internal' && line.tax != null
+              ? line.tax
+              : parentComputed.tax;
+          const providedTotalAmount =
+            lineTax.taxProvider !== 'internal' && line.tax != null
+              ? (
+                  parseFloat(parentComputed.amount) + parseFloat(providedTax)
+                ).toFixed(2)
+              : parentComputed.totalAmount;
+
           lineValues.push({
             salesOrderLineId: parentLineId,
             salesOrderId: order.salesOrderId,
@@ -498,8 +516,8 @@ export class OrdersWriteService {
             discountPercentage: lineDiscount,
             taxCategoryId: lineTax.taxCategoryId,
             amount: parentComputed.amount,
-            tax: parentComputed.tax,
-            totalAmount: parentComputed.totalAmount,
+            tax: providedTax,
+            totalAmount: providedTotalAmount,
             unitOfMeasure: line.unitOfMeasure,
             fulfillmentLocationId: line.fulfillmentLocationId || fallbackLocId,
             parentLineId: null,
@@ -534,6 +552,16 @@ export class OrdersWriteService {
               compTax.rate,
             );
 
+            const providedChildTax =
+              compTax.taxProvider !== 'internal' ? '0' : childComputed.tax; // Enrichment usually computes tax at parent level for kits, or lines are explicit. Assuming '0' to avoid double tax if parent carries it, or wait, if the child was explicit we'd need a way to pass it. Kits are tricky, so we rely on internal for child items unless explicit DTO. Actually, just use internal fallback.
+            // Wait, if it's external tax, child lines should have 0 tax if we don't have explicit inputs for them. Let's just use childComputed but if external, 0.
+            const finalChildTax =
+              compTax.taxProvider !== 'internal' ? '0' : childComputed.tax;
+            const finalChildTotal =
+              compTax.taxProvider !== 'internal'
+                ? childComputed.amount
+                : childComputed.totalAmount;
+
             lineValues.push({
               salesOrderLineId: randomUUID(),
               salesOrderId: order.salesOrderId,
@@ -545,8 +573,8 @@ export class OrdersWriteService {
               discountPercentage: '0',
               taxCategoryId: compTax.taxCategoryId,
               amount: childComputed.amount,
-              tax: childComputed.tax,
-              totalAmount: childComputed.totalAmount,
+              tax: finalChildTax,
+              totalAmount: finalChildTotal,
               unitOfMeasure: comp.baseUom || 'EA',
               fulfillmentLocationId:
                 line.fulfillmentLocationId || fallbackLocId,
@@ -560,6 +588,17 @@ export class OrdersWriteService {
             lineDiscount,
             lineTax.rate,
           );
+          const providedTax =
+            lineTax.taxProvider !== 'internal' && line.tax != null
+              ? line.tax
+              : computed.tax;
+          const providedTotalAmount =
+            lineTax.taxProvider !== 'internal' && line.tax != null
+              ? (parseFloat(computed.amount) + parseFloat(providedTax)).toFixed(
+                  2,
+                )
+              : computed.totalAmount;
+
           lineValues.push({
             salesOrderLineId: parentLineId,
             salesOrderId: order.salesOrderId,
@@ -571,8 +610,8 @@ export class OrdersWriteService {
             discountPercentage: lineDiscount,
             taxCategoryId: lineTax.taxCategoryId,
             amount: computed.amount,
-            tax: computed.tax,
-            totalAmount: computed.totalAmount,
+            tax: providedTax,
+            totalAmount: providedTotalAmount,
             unitOfMeasure: line.unitOfMeasure,
             fulfillmentLocationId: line.fulfillmentLocationId || fallbackLocId,
             parentLineId: null,

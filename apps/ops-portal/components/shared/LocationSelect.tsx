@@ -38,7 +38,7 @@ export default function LocationSelect({
     api.inventoryControllerFindAllLocations()
       .then((response) => {
         if (active) {
-          setLocations(response.data?.data || []);
+          setLocations(response.data || []);
         }
       })
       .catch((err) => reportError(err, 'LocationSelect'))

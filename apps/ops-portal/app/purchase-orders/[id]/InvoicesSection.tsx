@@ -39,7 +39,7 @@ export default function InvoicesSection({
     useEffect(() => {
         if (orderId) {
             api.goodsReceivedControllerFindAllLines({ purchaseOrderId: orderId } as unknown as Parameters<typeof api.goodsReceivedControllerFindAllLines>[0])
-                .then(res => setReceiptLines((res.data as unknown as { data: unknown[] })?.data || []))
+                .then(res => setReceiptLines((res.data )?.data || []))
                 .catch(err => reportError(err, 'InvoicesSection'));
         }
     }, [orderId]);
@@ -55,7 +55,7 @@ export default function InvoicesSection({
                     <span className="material-symbols-outlined">request_quote</span>
                     Supplier Invoices
                 </h3>
-                {!([PURCHASE_ORDER_STATE.DRAFT, PURCHASE_ORDER_STATE.CANCELLED, PURCHASE_ORDER_STATE.ARCHIVED, PURCHASE_ORDER_STATE.CLOSED_SHORT, PURCHASE_ORDER_STATE.INVOICED] as string[]).includes(order.stateCode as unknown as string) && (
+                {!([PURCHASE_ORDER_STATE.DRAFT, PURCHASE_ORDER_STATE.CANCELLED, PURCHASE_ORDER_STATE.ARCHIVED, PURCHASE_ORDER_STATE.CLOSED_SHORT, PURCHASE_ORDER_STATE.INVOICED] as string[]).includes(order.stateCode ) && (
                     <button
                         className="btn btn-secondary btn-sm"
                         disabled={totalReceived === 0 && order.stateCode !== PURCHASE_ORDER_STATE.ORDERED}
@@ -72,11 +72,11 @@ export default function InvoicesSection({
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex flex-col gap-1">
                                 <strong style={{ fontSize: 13 }}>{inv.invoiceNumber}</strong>
-                                {(inv as unknown as { supplierInvoiceNumber?: string }).supplierInvoiceNumber && (
-                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('ref')} {(inv as unknown as { supplierInvoiceNumber?: string }).supplierInvoiceNumber}</span>
+                                {(inv as any).supplierInvoiceNumber && (
+                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('ref')} {(inv as any).supplierInvoiceNumber}</span>
                                 )}
-                                {(inv as unknown as { receiptFilename?: string }).receiptFilename && (
-                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('file')} {(inv as unknown as { receiptFilename?: string }).receiptFilename}</span>
+                                {(inv as any).receiptFilename && (
+                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('file')} {(inv as any).receiptFilename}</span>
                                 )}
                             </div>
                         </div>
@@ -130,7 +130,7 @@ export default function InvoicesSection({
                                     <tbody>
                                         {linePricing.map(({ il, orderLine, disc, taxRate, pricing }) => (
                                                 <tr 
-                                                    key={il.invoiceLineId || (il as unknown as { lineId?: string }).lineId || il.purchaseOrderLineId}
+                                                    key={il.invoiceLineId || (il as any).lineId || il.purchaseOrderLineId}
                                                     style={{ opacity: orderLine ? 1 : 0.7 }}
                                                 >
                                                     <td style={{ fontWeight: 600, fontSize: 12 }}>

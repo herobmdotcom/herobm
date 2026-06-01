@@ -73,7 +73,7 @@ export class TransfersController {
     summary: 'Find Events',
     description: 'Retrieve the event history for a specific transfer order.',
   })
-  @ApiOkResponse({ type: TransferEventResponseDto, isArray: true })
+  @ApiOkResponse({ type: [TransferEventResponseDto] })
   async findEvents(@Param('id') id: string) {
     return this.transferService.findEvents(id);
   }
@@ -84,7 +84,7 @@ export class TransfersController {
     summary: 'Get Picking Summary',
     description: 'Retrieve the picking summary for a transfer order.',
   })
-  @ApiOkResponse({ type: TransferPickingSummaryResponseDto, isArray: true })
+  @ApiOkResponse({ type: [TransferPickingSummaryResponseDto] })
   async getPickingSummary(@Param('id') id: string) {
     return this.transferService.getPickingSummary(id);
   }

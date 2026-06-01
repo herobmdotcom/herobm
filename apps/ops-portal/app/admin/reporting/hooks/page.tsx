@@ -8,6 +8,7 @@ import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { getErrorMessage } from '@modbm/shared';
 
 interface Assignment {
   hookSlug: string;
@@ -43,9 +44,9 @@ function ReportingHooksRow(props: {
       await api.reportsControllerUpdateAssignment(assignment.hookSlug, { reportId: newReportId, contextSlug: assignment.contextSlug || '' });
       toast.success(t('toast.success'));
       onUpdate();
-    } catch (e: any) {
+    } catch (e: unknown) {
       reportError(e, 'ReportingHooksRow');
-      alert(t('errors.updateFailed') + e.message);
+      alert(t('errors.updateFailed') + getErrorMessage(e));
     } finally {
       setUpdating(false);
     }
@@ -103,8 +104,8 @@ export default function ReportingHooksPage() {
       ]);
       const { data: assignPage } = assignRes;
       const { data: templPage } = templRes;
-      setAssignments(assignPage.data as unknown as Assignment[]);
-      setTemplates(templPage.data as unknown as ReportTemplate[]);
+      setAssignments(((assignPage as any)?.data || assignPage || []) as unknown as Assignment[]);
+      setTemplates(((templPage as any)?.data || templPage || []) as unknown as ReportTemplate[]);
     } catch (e) {
       reportError(e, 'ReportingHooksPage');
     } finally {

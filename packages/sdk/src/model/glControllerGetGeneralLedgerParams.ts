@@ -7,9 +7,9 @@
  */
 
 export type GlControllerGetGeneralLedgerParams = {
-account: string;
-fromDate: string;
-toDate: string;
-limit: string;
-page: string;
+account?: string;
+fromDate?: string;
+toDate?: string;
+limit?: string;
+page?: string;
 };

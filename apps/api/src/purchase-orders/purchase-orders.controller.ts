@@ -4,6 +4,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -92,7 +93,9 @@ export class PurchaseOrdersController {
     summary: 'List Pending Lines',
     description: 'Find purchase order lines pending receipt.',
   })
-  @ApiOkResponse({ type: PurchaseOrderLineResponseDto, isArray: true })
+  @ApiOkResponse({ type: [PurchaseOrderLineResponseDto] })
+  @ApiQuery({ name: 'productId', required: false })
+  @ApiQuery({ name: 'vendorId', required: false })
   async findPendingLines(
     @Query('productId') productId?: string,
     @Query('vendorId') vendorId?: string,
@@ -106,7 +109,7 @@ export class PurchaseOrdersController {
     summary: 'List Returnable Lines',
     description: 'Find purchase order lines eligible for return.',
   })
-  @ApiOkResponse({ type: PurchaseOrderLineResponseDto, isArray: true })
+  @ApiOkResponse({ type: [PurchaseOrderLineResponseDto] })
   async findReturnableLines(@Query('productId') productId: string) {
     return this.purchaseOrdersService.findReturnableLines(productId);
   }

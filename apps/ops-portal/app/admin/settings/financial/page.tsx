@@ -18,6 +18,7 @@ import ImportTaxModal from './ImportTaxModal';
 import { getCurrency } from '@/lib/currency';
 import { CURRENCIES, GL_ACCOUNT_TYPE } from '@modbm/shared';
 import { useTranslations } from 'next-intl';
+import { getErrorMessage } from '@modbm/shared';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -156,9 +157,9 @@ export default function FinancialSettingsPage() {
       ]);
       setGlSettings(settingsRes.data);
       setGlAccounts(accountsRes.data);
-      setSchemaObj((settingsRes.data as unknown as Record<string, unknown>).accountMetadataSchema || { type: 'object', properties: {} });
-    } catch (err: any) {
-      toast.error(tSettings('toasts.loadFailed', { area: areaMap.gl }) + ': ' + err.message);
+      setSchemaObj((settingsRes.data as any).accountMetadataSchema || { type: 'object', properties: {} });
+    } catch (err: unknown) {
+      toast.error(tSettings('toasts.loadFailed', { area: areaMap.gl }) + ': ' + getErrorMessage(err));
     } finally {
       setGlLoading(false);
     }
@@ -171,8 +172,8 @@ export default function FinancialSettingsPage() {
       const updated = res.data;
       setGlSettings(Object.assign({}, glSettings || {}, updated));
       toast.success('Settings updated');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -208,7 +209,7 @@ export default function FinancialSettingsPage() {
         toast.success('Saved');
       }
       coaCancel(); loadGl();
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
   // ── Tax data ───────────────────────────────────────────────────────────────
@@ -218,8 +219,8 @@ export default function FinancialSettingsPage() {
       setTaxLoading(true);
       const res = await api.taxCategoriesControllerFindAll();
       setCategories((res.data as TaxCategory[]).sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })));
-    } catch (err: any) {
-      toast.error(tSettings('toasts.loadFailed', { area: areaMap.tax }) + ': ' + err.message);
+    } catch (err: unknown) {
+      toast.error(tSettings('toasts.loadFailed', { area: areaMap.tax }) + ': ' + getErrorMessage(err));
     } finally {
       setTaxLoading(false);
     }
@@ -240,13 +241,13 @@ export default function FinancialSettingsPage() {
         toast.success(tSettings('toasts.taxCreated'));
       }
       taxCancel(); loadTax();
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
   const taxDelete = async (id: string) => {
     if (!confirm(tSettings('confirmations.deleteTax'))) return;
     try { await api.taxCategoriesControllerRemove(id); toast.success(tSettings('toasts.taxDeleted')); loadTax(); }
-    catch (err: any) { toast.error(err.message); }
+    catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
   // ── Exchange Rates data ────────────────────────────────────────────────────
@@ -256,8 +257,8 @@ export default function FinancialSettingsPage() {
       setRateLoading(true);
       const res = await api.exchangeRatesControllerFindAll();
       setRates(res.data as unknown as ExchangeRate[]);
-    } catch (err: any) {
-      toast.error(tSettings('toasts.loadFailed', { area: areaMap.rates }) + ': ' + err.message);
+    } catch (err: unknown) {
+      toast.error(tSettings('toasts.loadFailed', { area: areaMap.rates }) + ': ' + getErrorMessage(err));
     } finally {
       setRateLoading(false);
     }
@@ -287,13 +288,13 @@ export default function FinancialSettingsPage() {
         toast.success(tSettings('toasts.rateCreated'));
       }
       rateCancel(); loadRates();
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
   const rateDelete = async (id: string) => {
     if (!confirm(tSettings('confirmations.deleteRate'))) return;
     try { await api.exchangeRatesControllerRemove(id); toast.success(tSettings('toasts.rateDeleted')); loadRates(); }
-    catch (err: any) { toast.error(err.message); }
+    catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
   // ── Cost Centers data ─────────────────────────────────────────────────────
@@ -303,8 +304,8 @@ export default function FinancialSettingsPage() {
       setCcLoading(true);
       const res = await api.costCentersControllerFindAll();
       setCcs(res.data as unknown as CostCenter[]);
-    } catch (err: any) {
-      toast.error(tSettings('toasts.loadFailed', { area: areaMap.cc }) + ': ' + err.message);
+    } catch (err: unknown) {
+      toast.error(tSettings('toasts.loadFailed', { area: areaMap.cc }) + ': ' + getErrorMessage(err));
     } finally {
       setCcLoading(false);
     }
@@ -330,7 +331,7 @@ export default function FinancialSettingsPage() {
         toast.success(tSettings('toasts.ccCreated'));
       }
       ccCancel(); loadCcs();
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
   const ccDelete = async (id: string) => {
@@ -340,7 +341,7 @@ export default function FinancialSettingsPage() {
       toast.success(tSettings('toasts.ccDeleted')); 
       loadCcs(); 
     }
-    catch (err: any) { toast.error(err.message); }
+    catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
   const handleImportCc = async (data: any[]) => {
@@ -350,8 +351,8 @@ export default function FinancialSettingsPage() {
       const responseData = res.data;
       toast.success(tSettings('toasts.importSuccess', { count: responseData.count }));
       loadCcs();
-    } catch (err: any) {
-      toast.error(tSettings('toasts.importFailed', { message: err.message }));
+    } catch (err: unknown) {
+      toast.error(tSettings('toasts.importFailed', { message: getErrorMessage(err) }));
     } finally {
       setIsImporting(false);
     }
@@ -364,8 +365,8 @@ export default function FinancialSettingsPage() {
       setActivityLoading(true);
       const res = await api.activitiesControllerFindAll();
       setActivitiesData(res.data as unknown as Activity[]);
-    } catch (err: any) {
-      toast.error(tSettings('toasts.loadFailed', { area: areaMap.activity }) + ': ' + err.message);
+    } catch (err: unknown) {
+      toast.error(tSettings('toasts.loadFailed', { area: areaMap.activity }) + ': ' + getErrorMessage(err));
     } finally {
       setActivityLoading(false);
     }
@@ -391,7 +392,7 @@ export default function FinancialSettingsPage() {
         toast.success(tSettings('toasts.activityCreated'));
       }
       activityCancel(); loadActivities();
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
   const activityDelete = async (id: string) => {
@@ -401,7 +402,7 @@ export default function FinancialSettingsPage() {
       toast.success(tSettings('toasts.activityDeleted')); 
       loadActivities(); 
     }
-    catch (err: any) { toast.error(err.message); }
+    catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
   const handleImportActivity = async (data: any[]) => {
@@ -411,8 +412,8 @@ export default function FinancialSettingsPage() {
       const responseData = res.data;
       toast.success(tSettings('toasts.importSuccess', { count: responseData.count }));
       loadActivities();
-    } catch (err: any) {
-      toast.error(tSettings('toasts.importFailed', { message: err.message }));
+    } catch (err: unknown) {
+      toast.error(tSettings('toasts.importFailed', { message: getErrorMessage(err) }));
     } finally {
       setIsImporting(false);
     }
@@ -451,7 +452,7 @@ export default function FinancialSettingsPage() {
       <select 
         className="input" 
         value={value || ''} 
-        onChange={(e) => updateGlSetting(field, e.target.value)}
+        onChange={(e) => updateGlSetting(field, e.target.value || null)}
       >
         <option value="">{tCommon('notConfigured')}</option>
         {glAccounts.filter(a => !a.isGroup).map(a => (

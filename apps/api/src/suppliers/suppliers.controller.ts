@@ -49,7 +49,6 @@ export class SuppliersController {
   ) {}
 
   @Get()
-  @ApiOkResponse({ type: [SupplierResponseDto] })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'List Suppliers',
@@ -74,7 +73,6 @@ export class SuppliersController {
   }
 
   @Get('by-product/:productId')
-  @ApiOkResponse({ type: [SupplierResponseDto] })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'List Product Suppliers',
@@ -117,7 +115,6 @@ export class SuppliersController {
   }
 
   @Get(':id/products')
-  @ApiOkResponse({ type: [SupplierResponseDto] })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'List Supplier Products',
@@ -166,7 +163,6 @@ export class SuppliersController {
   // --- Expiries ---
 
   @Get(':id/expiries')
-  @ApiOkResponse({ type: [SupplierResponseDto] })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'List Expiries',

@@ -6,6 +6,7 @@ import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@modbm/shared';
 
 interface LinkToPOSlideOverProps {
   isOpen: boolean;
@@ -161,7 +162,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
       await api.allocationsControllerLinkDemandToPo({
         demandId: demand.id,
         purchaseOrderLineId: poLine.purchaseOrderLineId,
-        quantity: qty,
+        quantity: qty.toString(),
       });
       
       let splitDemand = null;
@@ -178,8 +179,8 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
 
       markAllocated(demand.id, splitDemand);
       onRefresh();
-    } catch (err: any) {
-      toast.error(err.message || t('demands.allocationError'));
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || t('demands.allocationError'));
     }
   }, [onRefresh, markAllocated, t]);
 

@@ -8,6 +8,7 @@ import {
   IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class PutawayLineDto {
   @IsString()
@@ -51,7 +52,6 @@ export class ToggleQuarantineDto {
   reason?: string;
 }
 
-import { ApiProperty } from '@nestjs/swagger';
 export class InventoryResponseDto {
   inventoryLevelId!: string;
   productId!: string;
@@ -76,12 +76,27 @@ export class InventoryBinResponseDto {
   onHand!: string;
 }
 
+export class AvailableBinDto {
+  @ApiProperty()
+  binId!: string;
+  @ApiProperty()
+  binNumber!: string;
+  @ApiProperty()
+  binType!: string;
+}
+
 export class PutawayContextResponseDto {
-  productId!: string;
-  productName!: string;
-  locationId!: string;
-  bins!: any[];
-  defaultBinId?: string | null;
+  @ApiProperty({ required: false, nullable: true })
+  primaryBinId!: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  primaryBinNumber!: string | null;
+
+  @ApiProperty()
+  currentQuantity!: number;
+
+  @ApiProperty({ type: () => [AvailableBinDto] })
+  availableBins!: AvailableBinDto[];
 }
 
 export class InventoryLocationResponseDto {
@@ -127,15 +142,29 @@ export class FindByProductIdsBulkDto {
 }
 
 export class PendingPutawayResponseDto {
+  @ApiProperty()
   id!: string;
+  @ApiProperty()
+  sourceType!: string;
+  @ApiProperty()
+  referenceNumber!: string;
+  @ApiProperty()
   productId!: string;
+  @ApiProperty()
+  productName!: string;
+  @ApiProperty()
   quantity!: string;
+  @ApiProperty()
+  putawayStatus!: string;
+  @ApiProperty()
+  locationId!: string;
+  @ApiProperty({ required: false })
+  createdOn!: Date;
+  @ApiProperty()
+  sourceBinCode!: string;
 }
 
-export class LocationsResponseDto {
-  @ApiProperty({ type: () => [InventoryLocationResponseDto] })
-  data!: InventoryLocationResponseDto[];
-
-  @ApiProperty({ required: false, type: String })
-  defaultFulfillmentLocationId?: string;
+export class InventorySuccessResponseDto {
+  @ApiProperty()
+  success!: boolean;
 }

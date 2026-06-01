@@ -1,4 +1,9 @@
-import { locations, zones, bins } from '../../src/drizzle/modbm-core-schema';
+import {
+  locations,
+  zones,
+  bins,
+  appSettings,
+} from '../../src/drizzle/modbm-core-schema';
 
 export async function seedTestLocations(db: any, dryRun = false) {
   if (dryRun) {
@@ -63,6 +68,10 @@ export async function seedTestLocations(db: any, dryRun = false) {
       target: bins.binId,
       set: { binNumber: 'RECEIVING', binType: 'staging' },
     });
+
+  await db.update(appSettings).set({
+    defaultFulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+  });
 
   console.log("  Seeded test 'MAIN' location, zone, and bins");
 }

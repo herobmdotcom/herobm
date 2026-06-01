@@ -146,7 +146,7 @@ export class SetupController {
     summary: 'Get CSV Metadata',
     description: 'Retrieves metadata for configured CSV imports.',
   })
-  @ApiOkResponse({ type: CsvMetadataDto, isArray: true })
+  @ApiOkResponse({ type: [CsvMetadataDto] })
   async getCsvMetadata() {
     return this.setupService.getCsvMetadata();
   }

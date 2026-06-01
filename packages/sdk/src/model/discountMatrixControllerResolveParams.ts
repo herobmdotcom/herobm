@@ -8,5 +8,5 @@
 
 export type DiscountMatrixControllerResolveParams = {
 customerId: string;
-customerGroupId: string;
+customerGroupId?: string;
 };

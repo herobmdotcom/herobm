@@ -10,6 +10,7 @@ import type { ColDef } from 'ag-grid-community';
 import { useSettings } from '@/components/SettingsProvider';
 import PaymentManagerSlideOver from './PaymentManagerSlideOver';
 import { PAYMENT_STATE } from '@modbm/shared';
+import { getErrorMessage } from '@modbm/shared';
 
 interface UnifiedPayment {
   paymentId: string;
@@ -157,8 +158,8 @@ export default function PaymentsContent() {
       
       window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
       setSelectedPayments([]);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      alert(getErrorMessage(err));
     } finally {
       setIsProcessingBatch(false);
     }
@@ -180,8 +181,8 @@ export default function PaymentsContent() {
       
       window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
       setSelectedPayments([]);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      alert(getErrorMessage(err));
     } finally {
       setIsProcessingBatch(false);
     }
@@ -198,8 +199,8 @@ export default function PaymentsContent() {
       }
       window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
       setSelectedPayments([]);
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      alert(getErrorMessage(err));
     } finally {
       setIsProcessingBatch(false);
     }

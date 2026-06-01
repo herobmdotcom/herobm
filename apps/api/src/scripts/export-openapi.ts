@@ -15,6 +15,10 @@ async function bootstrap() {
     .setTitle('ModBM API')
     .setDescription('Core Forgeron API System endpoints')
     .setVersion('1.0')
+    .addTag('Auth', 'Authentication and Authorization')
+    .addTag('Users', 'User management')
+    .addTag('Roles', 'Role management')
+    .addTag('System', 'System configuration')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);

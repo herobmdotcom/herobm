@@ -142,7 +142,7 @@ export function setupPgliteSuite(opts?: {
       await context._client.exec(
         `TRUNCATE ${TRANSACTIONAL_TABLES.join(', ')} CASCADE`,
       );
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Fallback: truncate tables one-by-one if the batch fails
       for (const table of TRANSACTIONAL_TABLES) {
         try {

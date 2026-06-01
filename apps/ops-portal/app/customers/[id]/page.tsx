@@ -16,6 +16,7 @@ import PageNav from '@/components/shared/PageNav';
 import GroupSelect from '@/components/shared/GroupSelect';
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver';
+import LookupInput from '@/components/shared/LookupInput';
 import { useSettings } from '@/components/SettingsProvider';
 import { CUSTOMER_STATE } from '@modbm/shared';
 import { useAccount } from './useCustomer';
@@ -339,6 +340,51 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     placeholder={t('common.notesCardPlaceholder')}
                     disabled={!isEditable || saving}
                   />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Business Number (ABN)
+                  </label>
+                  <LookupInput
+                    value={dto.businessNumber || ''}
+                    onChange={(val) => updateField('businessNumber', val)}
+                    provider="abr"
+                    onEnrich={(data) => {
+                      if (data.name) {
+                        updateField('name', data.name);
+                        saveField('name', data.name);
+                      }
+                      if (data.isTaxRegistered !== undefined) {
+                        updateField('isTaxRegistered', data.isTaxRegistered);
+                        saveField('isTaxRegistered', data.isTaxRegistered);
+                      }
+                      saveField('businessNumber', dto.businessNumber || '');
+                    }}
+                    disabled={!isEditable || saving}
+                    onBlur={() => saveField('businessNumber', dto.businessNumber)}
+                    placeholder="Enter ABN to lookup..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5 opacity-0" style={{ color: 'var(--text-muted)' }}>
+                    Registered for GST
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer mt-1">
+                    <div className="switch" title={dto.isTaxRegistered ? 'Registered for GST' : 'Not Registered'}>
+                      <input
+                        type="checkbox"
+                        checked={dto.isTaxRegistered || false}
+                        onChange={(e) => {
+                          updateField('isTaxRegistered', e.target.checked);
+                          saveField('isTaxRegistered', e.target.checked);
+                        }}
+                        disabled={!isEditable || saving}
+                      />
+                    </div>
+                    <span className="text-sm font-medium">Registered for GST</span>
+                  </label>
                 </div>
               </div>
             </div>

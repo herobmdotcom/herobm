@@ -5,11 +5,13 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
+import MasterDetailLayout from '@/components/shared/MasterDetailLayout';
 
 import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
 import { useSettings } from '@/components/SettingsProvider';
 import { SALES_ORDER_PICK_STATE } from '@modbm/shared';
+import { getErrorMessage } from '@modbm/shared';
 
 interface UnifiedOrder {
     id: string;
@@ -91,8 +93,9 @@ export default function PickingPage() {
 
     // Fetch Locations
     useEffect(() => {
-        api.inventoryControllerFindAllLocations().then(({ data: page }) => {
-                const locs = page.data;
+        api.inventoryControllerFindAllLocations().then((response) => {
+                const res = response.data as any;
+                const locs = Array.isArray(res) ? res : (res.data || []);
                 setLocations(locs);
                 if (locs.length > 0) {
                     const defaultLocId = app?.defaultFulfillmentLocationId || locs[0].locationId;
@@ -110,7 +113,7 @@ export default function PickingPage() {
 
         api.orderPickingControllerGetPickingQueue(params)
             .then(data => {
-                setPendingOrders((data as unknown as { data: UnifiedOrder[] }).data || []);
+                setPendingOrders(((data as any).data || data) as unknown as UnifiedOrder[]);
             })
             .catch(err => reportError(err, 'Failed to load pending orders'))
             .finally(() => setLoadingOrders(false));
@@ -151,7 +154,7 @@ export default function PickingPage() {
                 
                 // Initialize default quantities (what's remaining and fits in a bin)
                 const defaultInputs: Record<string, { quantity: string, binId: string }> = {};
-                (data as unknown as PickingSummary).lines.forEach((line: PickingLine) => {
+                ((data as any).lines || []).forEach((line: PickingLine) => {
                     if (line.isPhysical && !line.isFullyPicked && parseFloat(line.remaining) > 0) {
                         const bestBin = line.availableBins[0];
                         if (bestBin) {
@@ -169,7 +172,7 @@ export default function PickingPage() {
                 });
                 setPickInputs(defaultInputs);
             })
-            .catch(err => setError(err.message))
+            .catch(err => setError(getErrorMessage(err)))
             .finally(() => setLoadingSummary(false));
     }, [selectedOrder]);
 
@@ -193,8 +196,8 @@ export default function PickingPage() {
                 await api.orderPickingControllerPickLine(selectedOrder.id, lineId, { quantity: input.quantity, binId: input.binId });
             }
             await loadSummary();
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
         } finally {
             setIsSubmitting(false);
         }
@@ -211,8 +214,8 @@ export default function PickingPage() {
                 await api.orderPickingControllerCancelPick(selectedOrder.id, pickId);
             }
             await loadSummary();
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
         } finally {
             setIsSubmitting(false);
         }
@@ -222,12 +225,12 @@ export default function PickingPage() {
         if (!selectedOrder) return;
         setIsGeneratingPdf(true);
         try {
-            const response = await api.reportsControllerRunHook('picking-ticket', { shipmentId: selectedOrder.id }, { id: selectedOrder.id, context: 'picking-ticket' });
+            const response = await api.reportsControllerRunHook('picking-slip', { shipmentId: selectedOrder.id }, { id: selectedOrder.id, context: 'picking-slip' });
             const blob = response.data as Blob;
             const url = window.URL.createObjectURL(blob);
             window.open(url, '_blank');
-        } catch (err: any) {
-            alert('Failed to generate PDF: ' + err.message);
+        } catch (err: unknown) {
+            alert('Failed to generate PDF: ' + getErrorMessage(err));
         } finally {
             setIsGeneratingPdf(false);
         }
@@ -253,20 +256,15 @@ export default function PickingPage() {
     }, [pickingSummary]);
 
     return (
-        <div className="h-full flex flex-col p-4 lg:p-6 bg-[var(--bg-primary)]">
-            <div className="flex items-center justify-between mb-4 shrink-0">
-                <div className="flex items-center gap-4">
-                    <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        {t('title')}
-                    </h1>
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-[var(--text-muted)]">{t('locationLabel')}</span>
+        <MasterDetailLayout
+            title={t('title')}
+            controls={
+                <>
+                    <span className="text-sm font-semibold text-[var(--text-muted)] hidden sm:inline">{t('locationLabel')}</span>
                     <select
                         value={selectedLocationId}
                         onChange={(e) => setSelectedLocationId(e.target.value)}
-                        className="input text-sm w-48"
+                        className="input text-sm w-full sm:w-48"
                     >
                         {locations.map(loc => (
                             <option key={loc.locationId} value={loc.locationId}>
@@ -274,13 +272,15 @@ export default function PickingPage() {
                             </option>
                         ))}
                     </select>
-                </div>
-            </div>
-
-            <div className="flex-1 min-h-0 flex gap-6">
-                {/* Left Pane: Order List */}
-                <div className="w-1/3 lg:w-1/4 flex flex-col bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-sm overflow-hidden">
-                    <div className="flex border-b border-[var(--border)] bg-[var(--bg-secondary)] text-xs font-bold pt-1 px-1 gap-1">
+                </>
+            }
+            masterWidthClass="lg:w-[350px] lg:shrink-0"
+            isDetailOpen={!!selectedOrder}
+            onCloseDetail={() => setSelectedOrder(null)}
+            detailTitle={selectedOrder ? selectedOrder.orderNumber : t('title')}
+            masterPane={
+                <>
+                    <div className="flex lg:border-b lg:border-[var(--border)] lg:bg-[var(--bg-secondary)] text-xs font-bold pt-1 lg:px-1 gap-1 border-b border-[var(--border)]">
                         <button 
                             className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'ready' ? 'border-[var(--success)] text-[var(--success)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
                             onClick={() => setActiveTab('ready')}
@@ -301,7 +301,7 @@ export default function PickingPage() {
                         </button>
                     </div>
                     
-                    <div className="flex-1 overflow-y-auto p-2">
+                    <div className="flex-1 overflow-y-auto p-2 bg-[var(--bg-card)] lg:bg-transparent rounded-b-md lg:rounded-none">
                         {loadingOrders ? (
                             <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
                                 {tCommon('loading')}
@@ -340,11 +340,13 @@ export default function PickingPage() {
                             </div>
                         )}
                     </div>
-                </div>
-
-                {/* Right Pane: Action Form */}
-                <div className="flex-1 flex flex-col bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-sm overflow-hidden">
-                    {!selectedOrder ? (
+                </>
+            }
+            detailPane={
+                (() => {
+                    const actionFormContent = (
+                        <>
+                            {!selectedOrder ? (
                         <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
                             {/* eslint-disable-next-line i18next/no-literal-string */}
                             <span className="material-symbols-outlined text-4xl mb-2 opacity-50">pallet</span>
@@ -360,10 +362,10 @@ export default function PickingPage() {
                             <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex justify-between items-center">
                                 <h2 className="text-sm text-[var(--text-primary)] uppercase tracking-wider truncate mr-4 flex items-center gap-4">
                                     <span className="font-bold shrink-0">{selectedOrder.orderNumber}</span>
-                                    <span className="text-[var(--text-muted)] opacity-50">&middot;</span>
-                                    <span className="truncate">{selectedOrder.name || t('noName')}</span>
-                                    <span className="text-[var(--text-muted)] opacity-50">&middot;</span>
-                                    <span className="truncate">{selectedOrder.customerName}</span>
+                                    <span className="text-[var(--text-muted)] opacity-50 hidden sm:inline">&middot;</span>
+                                    <span className="truncate hidden sm:inline">{selectedOrder.name || t('noName')}</span>
+                                    <span className="text-[var(--text-muted)] opacity-50 hidden sm:inline">&middot;</span>
+                                    <span className="truncate hidden sm:inline">{selectedOrder.customerName}</span>
                                 </h2>
                                 <div className="flex items-center gap-3 shrink-0">
                                     <button 
@@ -375,7 +377,8 @@ export default function PickingPage() {
                                             /* eslint-disable-next-line i18next/no-literal-string */
                                             <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>
                                         )}
-                                        {t('pickingSlipPdf')}
+                                        <span className="hidden sm:inline">{t('pickingSlipPdf')}</span>
+                                        <span className="sm:hidden material-symbols-outlined text-[16px]">print</span>
                                     </button>
                                     <span className="bg-[var(--accent)] text-white text-xs font-bold px-2 py-0.5 rounded-full">
                                         {pickingSummary.fullyPickedLines} / {pickingSummary.totalLines}
@@ -397,7 +400,7 @@ export default function PickingPage() {
                                     {/* To Pick Table */}
                                     <div>
                                         <h4 className="section-heading !mb-4">{t('toPick')}</h4>
-                                        <table className="table-lines">
+                                        <table className="table-lines hidden lg:table">
                                             <thead>
                                                 <tr>
                                                     <th>{t('columns.product')}</th>
@@ -480,7 +483,7 @@ export default function PickingPage() {
                                                                 type="button"
                                                                 onClick={() => handlePickLine(line.salesOrderLineId)}
                                                                 disabled={isSubmitting || !pickInputs[line.salesOrderLineId]?.quantity || !pickInputs[line.salesOrderLineId]?.binId}
-                                                                className="btn btn-secondary btn-sm"
+                                                                className="btn btn-primary btn-sm"
                                                             >
                                                                 {t('buttons.pick')}
                                                             </button>
@@ -496,13 +499,87 @@ export default function PickingPage() {
                                                 )}
                                             </tbody>
                                         </table>
+                                        <div className="flex flex-col gap-3 lg:hidden">
+                                            {itemsToPick.map((line, idx) => (
+                                                <div key={`mobile-topick-${line.salesOrderLineId}-${idx}`} className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border)]">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <div className="min-w-0 flex-1 pr-2">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <div className="font-bold text-sm text-[var(--text-primary)] truncate">{line.productNumber}</div>
+                                                                {line.hasAllocation && (
+                                                                    /* eslint-disable-next-line i18next/no-literal-string */
+                                                                    <span className="material-symbols-outlined indicator-icon text-[var(--accent)] text-sm shrink-0" title={t('tooltips.stockSpecificallyOrdered')} style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-xs text-[var(--text-muted)] truncate">{line.productDescription}</div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="grid grid-cols-3 gap-2 mb-3 bg-[var(--bg-card)] p-2 rounded border border-[var(--border)]">
+                                                        <div>
+                                                            <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.ordered')}</div>
+                                                            <div className="text-xs font-medium">{parseFloat(line.quantity).toLocaleString()}</div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.remaining')}</div>
+                                                            <div className="text-xs font-medium">{parseFloat(line.remaining).toLocaleString()}</div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.onHand')}</div>
+                                                            <div className="text-xs font-medium">{parseFloat(line.onHand).toLocaleString()}</div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="text-xs font-bold w-16 text-[var(--text-muted)]">{t('columns.binLocation')}</div>
+                                                            <select
+                                                                className="input text-sm flex-1 py-1"
+                                                                value={pickInputs[line.salesOrderLineId]?.binId || ''}
+                                                                onChange={e => setPickInputs(prev => ({ ...prev, [line.salesOrderLineId]: { ...prev[line.salesOrderLineId], binId: e.target.value } }))}
+                                                            >
+                                                                <option value="" disabled>{t('selectBin')}</option>
+                                                                {line.availableBins.map(b => (
+                                                                    <option key={b.binId} value={b.binId}>{b.binName} {t('qtyOption', { qty: parseFloat(b.onHand) })}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                        <div className="flex flex-col gap-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="text-xs font-bold w-16 text-[var(--text-muted)]">{t('columns.pickQty')}</div>
+                                                                <input
+                                                                    type="number" min="0.01" step="0.01"
+                                                                    max={Math.min(parseFloat(line.remaining), parseFloat(line.onHand))}
+                                                                    value={pickInputs[line.salesOrderLineId]?.quantity || ''}
+                                                                    onChange={(e) => setPickInputs(prev => ({ ...prev, [line.salesOrderLineId]: { ...prev[line.salesOrderLineId], quantity: e.target.value } }))}
+                                                                    className="input flex-1 py-1 px-2 text-right"
+                                                                />
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handlePickLine(line.salesOrderLineId)}
+                                                                disabled={isSubmitting || !pickInputs[line.salesOrderLineId]?.quantity || !pickInputs[line.salesOrderLineId]?.binId}
+                                                                className="btn btn-primary w-full justify-center mt-2"
+                                                            >
+                                                                {t('buttons.pick')}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {itemsToPick.length === 0 && (
+                                                <div className="p-4 text-center text-sm text-[var(--text-muted)] border border-[var(--border)] rounded-lg">
+                                                    {t('noItemsToPick')}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Unavailable Table */}
                                     {unavailableItems.length > 0 && (
                                         <div>
                                             <h4 className="section-heading !mb-4 !text-[var(--text-muted)]">{t('unavailable')}</h4>
-                                            <table className="table-lines opacity-70">
+                                            <table className="table-lines opacity-70 hidden lg:table">
                                                 <thead>
                                                     <tr>
                                                         <th>{t('columns.product')}</th>
@@ -541,6 +618,33 @@ export default function PickingPage() {
                                                     ))}
                                                 </tbody>
                                             </table>
+                                            <div className="flex flex-col gap-3 lg:hidden opacity-70">
+                                                {unavailableItems.map((line, idx) => (
+                                                    <div key={`mobile-unavail-${line.salesOrderLineId}-${idx}`} className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border)]">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div className="min-w-0 flex-1 pr-2">
+                                                                <div className="font-bold text-sm text-[var(--text-primary)] truncate">{line.productNumber}</div>
+                                                                <div className="text-xs text-[var(--text-muted)] truncate">{line.productDescription}</div>
+                                                            </div>
+                                                            <span className="text-xs italic text-[var(--text-muted)] shrink-0">{t('outOfStock')}</span>
+                                                        </div>
+                                                        <div className="grid grid-cols-3 gap-2 bg-[var(--bg-card)] p-2 rounded border border-[var(--border)]">
+                                                            <div>
+                                                                <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.ordered')}</div>
+                                                                <div className="text-xs font-medium">{parseFloat(line.quantity).toLocaleString()}</div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.remaining')}</div>
+                                                                <div className="text-xs font-medium text-[var(--text-muted)]">{parseFloat(line.remaining).toLocaleString()}</div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.onHand')}</div>
+                                                                <div className="text-xs font-medium text-[var(--danger)]">{parseFloat(line.onHand).toLocaleString()}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
 
@@ -548,7 +652,7 @@ export default function PickingPage() {
                                     {pickedItems.length > 0 && (
                                         <div>
                                             <h4 className="section-heading !mb-4">{t('picked')}</h4>
-                                            <table className="table-lines">
+                                            <table className="table-lines hidden lg:table">
                                                 <thead>
                                                     <tr>
                                                         <th>{t('columns.product')}</th>
@@ -591,10 +695,7 @@ export default function PickingPage() {
                                                                 </div>
                                                             </td>
                                                             <td>
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className="ml-2 text-xs font-bold text-[var(--success)] inline-flex items-center bg-green-50 px-2 py-1 rounded-full">
-                                                                        {t('statuses.picked')}
-                                                                    </span>
+                                                                <div className="flex justify-end">
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => handleCancelPick(pick.pickId)}
@@ -611,6 +712,46 @@ export default function PickingPage() {
                                                     ))}
                                                 </tbody>
                                             </table>
+                                            <div className="flex flex-col gap-3 lg:hidden">
+                                                {pickedItems.map(pick => (
+                                                    <div key={`mobile-picked-${pick.pickId}`} className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border)]">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div className="min-w-0 flex-1 pr-2">
+                                                                <div className="font-bold text-sm text-[var(--text-primary)] truncate">{pick.line?.productNumber || tCommon('unknown')}</div>
+                                                                <div className="text-xs text-[var(--text-muted)] truncate">{pick.line?.productDescription || ''}</div>
+                                                            </div>
+                                                            <div className="flex flex-col items-end shrink-0">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleCancelPick(pick.pickId)}
+                                                                    disabled={isSubmitting}
+                                                                    className="btn btn-secondary btn-sm !p-1 !text-[var(--text-muted)] hover:!text-[var(--danger)]"
+                                                                    title={t('tooltips.cancelPick')}
+                                                                >
+                                                                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                                    <span className="material-symbols-outlined text-[18px]">close</span>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2 bg-[var(--bg-card)] p-2 rounded border border-[var(--border)]">
+                                                            <div>
+                                                                <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.binLocation')}</div>
+                                                                <div className="text-xs font-medium">{pick.binName || '-'}</div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.pickQty')}</div>
+                                                                <div className="text-xs font-medium flex items-center gap-1">
+                                                                    {pick.line && !pick.line.isFullyPicked && (
+                                                                        /* eslint-disable-next-line i18next/no-literal-string */
+                                                                        <span className="material-symbols-outlined text-[16px] text-[var(--warning)]" title={t('tooltips.partiallyPicked')}>warning</span>
+                                                                    )}
+                                                                    {parseFloat(pick.quantity).toLocaleString()}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
 
@@ -618,7 +759,7 @@ export default function PickingPage() {
                                     {shippedItems.length > 0 && (
                                         <div>
                                             <h4 className="section-heading !mb-4 !text-[var(--text-muted)]">{t('shipped')}</h4>
-                                            <table className="table-lines opacity-70">
+                                            <table className="table-lines opacity-70 hidden lg:table">
                                                 <thead>
                                                     <tr>
                                                         <th>{t('columns.product')}</th>
@@ -661,6 +802,37 @@ export default function PickingPage() {
                                                     ))}
                                                 </tbody>
                                             </table>
+                                            <div className="flex flex-col gap-3 lg:hidden opacity-70">
+                                                {shippedItems.map(pick => (
+                                                    <div key={`mobile-shipped-${pick.pickId}`} className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border)]">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div className="min-w-0 flex-1 pr-2">
+                                                                <div className="font-bold text-sm text-[var(--text-primary)] truncate">{pick.line?.productNumber || tCommon('unknown')}</div>
+                                                                <div className="text-xs text-[var(--text-muted)] truncate">{pick.line?.productDescription || ''}</div>
+                                                            </div>
+                                                            <div className="flex flex-col items-end gap-2 shrink-0">
+                                                                <span className="text-xs font-bold text-[var(--text-muted)] inline-flex items-center">
+                                                                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                                    <span className="material-symbols-outlined text-[14px] mr-1">local_shipping</span>
+                                                                    {t('statuses.dispatched')}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2 bg-[var(--bg-card)] p-2 rounded border border-[var(--border)]">
+                                                            <div>
+                                                                <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.binLocation')}</div>
+                                                                <div className="text-xs font-medium">{pick.binName || '-'}</div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.pickQty')}</div>
+                                                                <div className="text-xs font-medium flex items-center gap-1">
+                                                                    {parseFloat(pick.quantity).toLocaleString()}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
 
@@ -669,8 +841,11 @@ export default function PickingPage() {
                         </div>
                     </>
                 ) : null}
-                </div>
-            </div>
-        </div>
+                        </>
+                    );
+                    
+                    return actionFormContent;
+                })()}
+        />
     );
 }

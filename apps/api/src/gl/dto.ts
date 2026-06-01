@@ -183,6 +183,20 @@ export class PaginatedGeneralLedgerDto {
 }
 
 export class UpdateGLSettingsDto {
-  // Allow dynamic key-value configuration settings
-  [key: string]: any;
+  @IsOptional() @IsObject() accountMetadataSchema?: any;
+  @IsOptional() @IsNumber() fiscalYearStartMonth?: number;
+  @IsOptional() @IsString() defaultArAccountId?: string | null;
+  @IsOptional() @IsString() defaultApAccountId?: string | null;
+  @IsOptional() @IsString() defaultRevenueAccountId?: string | null;
+  @IsOptional() @IsString() defaultCogsAccountId?: string | null;
+  @IsOptional() @IsString() defaultTaxAccountId?: string | null;
+  @IsOptional() @IsString() defaultExpenseAccountId?: string | null;
+  @IsOptional() @IsString() defaultInventoryAccountId?: string | null;
+  @IsOptional() @IsString() defaultGrniAccountId?: string | null;
+  @IsOptional() @IsString() defaultShrinkageAccountId?: string | null;
+  @IsOptional() @IsString() defaultFeeRevenueAccountId?: string | null;
+  @IsOptional() @IsString() baseCurrency?: string;
+  @IsOptional() @IsArray() supportedBatchPaymentFormats?: string[];
+  @IsOptional() @IsString() revenueRoutingPrecedence?: string;
+  @IsOptional() @IsString() expenseRoutingPrecedence?: string;
 }

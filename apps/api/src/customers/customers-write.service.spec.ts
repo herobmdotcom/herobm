@@ -10,6 +10,7 @@ import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { customers, customerEvents } from '../drizzle/modbm-core-schema';
 import { eq, sql } from 'drizzle-orm';
+import { getErrorMessage } from '@modbm/shared';
 
 describe('AccountsWriteService', () => {
   const pg = setupPgliteSuite();
@@ -112,8 +113,8 @@ describe('AccountsWriteService', () => {
           currencyCode: 'EUR',
         });
         fail('Should have thrown unique violation');
-      } catch (e: any) {
-        const code = e.code || e.cause?.code;
+      } catch (e: unknown) {
+        const code = getErrorMessage(e) || e.cause?.code;
         expect(code).toBe('23505');
       }
     });

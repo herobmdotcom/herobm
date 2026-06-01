@@ -10,12 +10,14 @@ import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import { MobileCardField } from '@/components/shared/DataTable';
 
 import React from 'react';
 import LocationSelect from '@/components/shared/LocationSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import { useTranslations } from 'next-intl';
 import { formatAmount } from '@/lib/currency';
+import { getErrorMessage } from '@modbm/shared';
 
 interface DraftLine {
   id: string;
@@ -130,7 +132,7 @@ function ReceivingFlow() {
       const mapped: CompletedLine[] = returnedLines.map((l: any) => ({
         goodsReceivedLineId: l.goodsReceivedLineId,
         productId: l.productId,
-        productNumber: l.productNumber || l.productId.substring(0,8),
+        productNumber: l.productNumber || l.productId.substring(0, 8),
         productName: l.productDescription || '',
         quantityReceived: l.quantityReceived,
         matchStatus: l.matchStatus || 'unmatched',
@@ -139,8 +141,8 @@ function ReceivingFlow() {
       setCompletedLines(mapped);
       toast.success(t('toast.confirmed'));
       setCompleted(true);
-    } catch (err: any) {
-      toast.error(err.message || t('toast.failed'));
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || t('toast.failed'));
     } finally {
       setSaving(false);
     }
@@ -179,14 +181,13 @@ function ReceivingFlow() {
         header={
           <EntityHeader
             title={t('completed.title')}
-            subtitle={t('completed.subtitle')}
             actions={
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2 w-full lg:w-auto">
                 <button className="btn btn-secondary" onClick={() => router.push('/receiving')}>
                   {t('completed.backToList')}
                 </button>
                 <button
-                  className="btn btn-primary"
+                  className="btn btn-primary w-full lg:w-auto"
                   onClick={() => {
                     setCompleted(false);
                     setDraftLines([]);
@@ -228,7 +229,7 @@ function ReceivingFlow() {
               </div>
             )}
 
-            <div className="overflow-x-auto w-full">
+            <div className="hidden lg:block overflow-x-auto w-full">
               <table className="table-lines">
                 <thead>
                   <tr>
@@ -264,6 +265,31 @@ function ReceivingFlow() {
                 </tbody>
               </table>
             </div>
+
+            <div className="lg:hidden flex flex-col gap-3 w-full">
+              {completedLines.map((line, idx) => (
+                <div key={line.goodsReceivedLineId} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                  <div className="flex justify-between items-start gap-2 mb-2">
+                    <div className="font-semibold text-sm text-[var(--accent)]">
+                      {line.productNumber || '—'}
+                    </div>
+                    <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{idx + 1}</div>
+                  </div>
+                  <div className="text-sm text-slate-600 font-medium mb-3">
+                    {line.productName || '—'}
+                  </div>
+                  <div className="flex flex-col gap-1 border-t border-slate-100 pt-2">
+                    <MobileCardField label={tCommon('columns.received')} value={line.quantityReceived} />
+                    <MobileCardField label={t('columns.matchStatus')} value={<MatchStatusBadge status={line.matchStatus} />} />
+                    <MobileCardField label={tCommon('columns.purchaseOrder')} value={line.orderNumber ? (
+                      <span style={{ fontWeight: 500, color: 'var(--accent)' }}>{line.orderNumber}</span>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)' }}>—</span>
+                    )} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </DetailsLayout>
@@ -280,7 +306,7 @@ function ReceivingFlow() {
           isSaving={saving}
           actions={
             <button
-              className="btn btn-primary"
+              className="btn btn-primary w-full lg:w-auto"
               onClick={commitReception}
               disabled={draftLines.length === 0 || saving || !vendorId || !locationId}
             >
@@ -294,7 +320,7 @@ function ReceivingFlow() {
       <div className="flex flex-col gap-6">
         {/* Package Header */}
         <div className="card flex flex-col gap-4" style={{ height: 'fit-content' }}>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block mb-1 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
                 {t('labels.supplier')} *
@@ -344,24 +370,24 @@ function ReceivingFlow() {
           {/* Product scanner */}
           <h3 className="section-heading mb-0 mt-2">{t('flow.scanProduct')}</h3>
 
-          <div className="flex items-end gap-3">
+          <div className="flex flex-col lg:flex-row lg:items-end gap-3">
             {!selectedProduct ? (
-              <div className="flex-1">
+              <div className="flex-1 w-full">
                 <ProductSearchInput
                   onSelect={handleProductSelect}
                   placeholder={t('placeholders.searchProduct')}
                 />
               </div>
             ) : (
-              <div className="flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col w-full">
                 <label className="block mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
                   {t('flow.selectedProduct', { fallback: 'Selected Product' })}
                 </label>
                 <div
                   className="text-sm px-3 flex items-center w-full border rounded outline-none"
-                  style={{ 
-                    background: 'var(--bg-card)', 
-                    color: 'var(--text-primary)', 
+                  style={{
+                    background: 'var(--bg-card)',
+                    color: 'var(--text-primary)',
                     borderColor: 'var(--border)',
                     height: '38px',
                     whiteSpace: 'nowrap',
@@ -377,8 +403,8 @@ function ReceivingFlow() {
             )}
 
             {selectedProduct && (
-              <>
-                <div style={{ width: 100 }}>
+              <div className="flex items-end gap-3 w-full lg:w-auto">
+                <div className="flex-1 lg:w-[100px]">
                   <label className="block mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
                     {tCommon('columns.qty')}
                   </label>
@@ -394,19 +420,21 @@ function ReceivingFlow() {
                     }}
                   />
                 </div>
-                <button className="btn btn-primary" onClick={addToDraft}>
-                  {tCommon('add')}
-                </button>
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    setSelectedProduct(null);
-                    setQtyToReceive('');
-                  }}
-                >
-                  {tCommon('cancel')}
-                </button>
-              </>
+                <div className="flex gap-2 shrink-0">
+                  <button className="btn btn-primary flex-1 lg:flex-none" onClick={addToDraft}>
+                    {tCommon('add')}
+                  </button>
+                  <button
+                    className="btn btn-secondary flex-1 lg:flex-none"
+                    onClick={() => {
+                      setSelectedProduct(null);
+                      setQtyToReceive('');
+                    }}
+                  >
+                    {tCommon('cancel')}
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 
@@ -420,31 +448,63 @@ function ReceivingFlow() {
           {draftLines.length === 0 ? (
             <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>{t('flow.noItems')}</p>
           ) : (
-            <div className="overflow-x-auto w-full">
-              <table className="table-lines">
-                <thead>
-                  <tr>
-                    <th>{tCommon('columns.product')}</th>
-                    <th>{tCommon('columns.description')}</th>
-                    <th style={{ width: 100, textAlign: 'right' }}>{tCommon('columns.qty')}</th>
-                    <th style={{ width: 80 }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {draftLines.map((line) => (
-                    <tr key={line.id}>
-                      <td style={{ fontWeight: 600, fontSize: 12 }}>{line.productNumber || '—'}</td>
-                      <td style={{ fontSize: 13 }}>{line.productName || '—'}</td>
-                      <td
-                        style={{
-                          textAlign: 'right',
-                          fontVariantNumeric: 'tabular-nums',
-                          fontSize: 13,
-                        }}
-                      >
-                        {line.quantityReceived}
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
+            <>
+              <div className="hidden lg:block overflow-x-auto w-full">
+                <table className="table-lines">
+                  <thead>
+                    <tr>
+                      <th>{tCommon('columns.product')}</th>
+                      <th>{tCommon('columns.description')}</th>
+                      <th style={{ width: 100, textAlign: 'right' }}>{tCommon('columns.qty')}</th>
+                      <th style={{ width: 80 }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {draftLines.map((line) => (
+                      <tr key={line.id}>
+                        <td style={{ fontWeight: 600, fontSize: 12 }}>{line.productNumber || '—'}</td>
+                        <td style={{ fontSize: 13 }}>{line.productName || '—'}</td>
+                        <td
+                          style={{
+                            textAlign: 'right',
+                            fontVariantNumeric: 'tabular-nums',
+                            fontSize: 13,
+                          }}
+                        >
+                          {line.quantityReceived}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                            onClick={() => removeDraftLine(line.id)}
+                          >
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            ✕
+                            {/* eslint-enable i18next/no-literal-string */}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="lg:hidden flex flex-col gap-3 w-full">
+                {draftLines.map((line, idx) => (
+                  <div key={line.id} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                      <div className="font-semibold text-sm text-[var(--accent)]">
+                        {line.productNumber || '—'}
+                      </div>
+                      <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{idx + 1}</div>
+                    </div>
+                    <div className="text-sm text-slate-600 font-medium mb-3">
+                      {line.productName || '—'}
+                    </div>
+                    <div className="flex flex-col gap-1 border-t border-slate-100 pt-2">
+                      <MobileCardField label={tCommon('columns.qty')} value={line.quantityReceived} />
+                      <div className="flex justify-end pt-2 mt-1 border-t border-slate-50">
                         <button
                           className="btn btn-secondary btn-sm"
                           style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
@@ -454,12 +514,12 @@ function ReceivingFlow() {
                           ✕
                           {/* eslint-enable i18next/no-literal-string */}
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>

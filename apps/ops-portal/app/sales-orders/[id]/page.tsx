@@ -188,7 +188,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                 { quoteIntroText: text }, 
                 { id, context: 'sales-order' }
             );
-            const blob = response.data as unknown as Blob;
+            const blob = response.data ;
             const url = URL.createObjectURL(blob);
             window.open(url, '_blank');
             loadOrder(); // Reload to show the new timeline event
@@ -245,18 +245,15 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                           }
                         }}
                         isSaving={saving}
-                        badges={order.stateCode ? <StateName state={order.stateCode as any} /> : ''}
+                        badges={order.stateCode ? <StateBadge state={order.stateCode as any} /> : ''}
                         nav={<PageNav sections={visibleSections} />}
                         actions={
                             <>
 
 
-                                {headerDirty && isOrderDetailsEditable && (
-                                    <button className="btn btn-primary btn-sm" onClick={saveHeader} disabled={saving}>
-                                        {tSales('buttons.save')}
-                                    </button>
-                                )}
+
                                 {[...allowedTransitions]
+                                    .filter(state => state !== SALES_ORDER_STATE.PICKING)
                                     .sort((a, b) => {
                                         const aBack = isBackTransition(order.stateCode, a);
                                         const bBack = isBackTransition(order.stateCode, b);
@@ -296,7 +293,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
             {order.stateCode === SALES_ORDER_STATE.ARCHIVED && (
                 <div
-                    className="mb-4 px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
+                    className="mb-4 px-4 py-3 rounded-lg flex items-center gap-3"
                     style={{
                         background: 'rgba(245, 158, 11, 0.1)',
                         border: '1px solid rgba(245, 158, 11, 0.3)',
@@ -720,7 +717,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 mobileCard={(line: any) => {
                                     const actionCol = lineColumns.find(c => c.id === 'actions')?.render?.(line, 0);
                                     return (
-                                        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                                        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                                             <div className="flex justify-between items-start gap-2 mb-2">
                                                 <div className="font-semibold text-sm text-[var(--accent)]">
                                                     {lineColumns.find(c => c.id === 'product')?.render?.(line, 0)}
@@ -937,7 +934,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     const isCustom = !line.productId || line.productId === '00000000-0000-0000-0000-000000000000';
 
                                     return (
-                                        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                                        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                                             <div className="flex justify-between items-start gap-2 mb-2">
                                                 <div className="font-semibold text-sm text-[var(--accent)]">
                                                     {line.productNumber || line.productId?.substring(0, 8) || '—'}
@@ -1046,7 +1043,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     
                                     return (
                                         <div 
-                                            className={`bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm ${isPo ? 'cursor-pointer active:bg-gray-50' : ''}`}
+                                            className={`bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col ${isPo ? 'cursor-pointer active:bg-gray-50' : ''}`}
                                             onClick={() => {
                                                 if (isPo) {
                                                     router.push(`/purchase-orders/${bo.purchaseOrderId}`);

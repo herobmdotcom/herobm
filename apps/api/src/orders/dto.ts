@@ -51,6 +51,10 @@ export class CreateOrderLineDto {
   taxCategoryId?: string;
 
   @IsOptional()
+  @IsNumberString()
+  tax?: string;
+
+  @IsOptional()
   @IsString()
   unitOfMeasure?: string;
 
@@ -75,6 +79,10 @@ export class UpdateOrderLineDto {
   @IsOptional()
   @IsString()
   taxCategoryId?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  tax?: string;
 
   @IsOptional()
   @IsString()
@@ -426,10 +434,192 @@ export class ShipmentResponseDto {
   lines?: ShipmentLineResponseDto[];
 }
 
-export class ShippingContextDto {
-  @ApiProperty({ type: () => Object, isArray: true })
-  lines!: any[];
+export class ShippingContextLineDto {
+  @ApiProperty() salesOrderLineId!: string;
+  @ApiProperty() lineNumber!: number;
+  @ApiProperty() productId!: string;
+  @ApiProperty() productNumber!: string;
+  @ApiProperty() productDescription!: string;
+  @ApiProperty() quantity!: string;
+  @ApiProperty() quantityPicked!: string;
+  @ApiProperty() quantityShipped!: string;
+  @ApiProperty() isPhysical!: boolean;
+  @ApiProperty() availableToShip!: string;
+}
 
-  @ApiProperty({ type: () => ShipmentResponseDto, isArray: true })
+export class ShippingContextDto {
+  @ApiProperty({ type: () => [ShippingContextLineDto] })
+  lines!: ShippingContextLineDto[];
+
+  @ApiProperty({ type: () => [ShipmentResponseDto] })
   shipments!: ShipmentResponseDto[];
+}
+
+export class PickingSummaryAvailableBinDto {
+  @ApiProperty() binId!: string;
+  @ApiProperty() binName!: string;
+  @ApiProperty() onHand!: string;
+}
+
+export class PickingSummaryLineDto {
+  @ApiProperty() salesOrderLineId!: string;
+  @ApiProperty() lineNumber!: number;
+  @ApiProperty() productId!: string;
+  @ApiProperty() productNumber!: string;
+  @ApiPropertyOptional() productType?: string;
+  @ApiProperty() productDescription!: string;
+  @ApiProperty() locationName!: string;
+  @ApiProperty() quantity!: string;
+  @ApiProperty() quantityPicked!: string;
+  @ApiProperty() quantityShipped!: string;
+  @ApiProperty() remaining!: string;
+  @ApiProperty() isFullyPicked!: boolean;
+  @ApiProperty() isPhysical!: boolean;
+  @ApiProperty() onHand!: string;
+  @ApiProperty({ type: () => [PickingSummaryAvailableBinDto] })
+  availableBins!: PickingSummaryAvailableBinDto[];
+  @ApiProperty() hasAllocation!: boolean;
+}
+
+export class PickingSummaryPickDto {
+  @ApiProperty() pickId!: string;
+  @ApiProperty() salesOrderId!: string;
+  @ApiProperty() salesOrderLineId!: string;
+  @ApiProperty() productId!: string;
+  @ApiPropertyOptional() binId?: string | null;
+  @ApiProperty() quantity!: string;
+  @ApiProperty() stateCode!: string;
+  @ApiProperty() createdBy!: string;
+  @ApiProperty() createdOn!: Date;
+  @ApiProperty() modifiedOn!: Date;
+  @ApiPropertyOptional() binName?: string | null;
+}
+
+export class PickingSummaryDto {
+  @ApiProperty() totalLines!: number;
+  @ApiProperty() fullyPickedLines!: number;
+  @ApiProperty() isFullyPicked!: boolean;
+  @ApiProperty({ type: () => [PickingSummaryLineDto] })
+  lines!: PickingSummaryLineDto[];
+  @ApiProperty({ type: () => [PickingSummaryPickDto] })
+  picks!: PickingSummaryPickDto[];
+}
+
+export class OrderQueueBaseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() orderNumber!: string;
+  @ApiPropertyOptional() name?: string | null;
+  @ApiProperty() customerName!: string;
+  @ApiPropertyOptional() customerOrderNumber?: string | null;
+  @ApiProperty() stateCode!: string;
+  @ApiProperty() createdOn!: Date;
+  @ApiProperty() createdBy!: string;
+  @ApiPropertyOptional() currencyCode?: string | null;
+}
+
+export class PickingQueueOrderDto extends OrderQueueBaseDto {
+  @ApiPropertyOptional() type?: string;
+  @ApiProperty() pickabilityStatus!: string;
+  @ApiProperty() hasAllocation!: boolean;
+}
+
+export class ShippingQueueOrderDto extends OrderQueueBaseDto {
+  @ApiProperty() shippabilityStatus!: string;
+  @ApiProperty() totalShippableLines!: number;
+  @ApiProperty() totalLines!: number;
+}
+
+export class GlobalShipmentListResponseDto {
+  @ApiProperty({ type: () => [ShipmentResponseDto] })
+  data!: ShipmentResponseDto[];
+}
+
+export class GlobalReturnListResponseDto {
+  @ApiProperty({ type: () => [ReturnResponseDto] })
+  data!: ReturnResponseDto[];
+
+  @ApiProperty({
+    type: 'object',
+    properties: {
+      total: { type: 'number' },
+    },
+  })
+  meta!: { total: number };
+}
+
+export class OpenDemandLocationAvailabilityDto {
+  @ApiProperty() locationId!: string;
+  @ApiProperty() locationName!: string;
+  @ApiProperty() availableQty!: number;
+}
+
+export class OpenDemandDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() salesOrderId!: string;
+  @ApiProperty() orderNumber!: string;
+  @ApiProperty() productId!: string;
+  @ApiProperty() productName!: string;
+  @ApiPropertyOptional() productDescription?: string | null;
+  @ApiProperty() quantity!: number;
+  @ApiProperty() createdOn!: string;
+  @ApiPropertyOptional() vendorId?: string | null;
+  @ApiPropertyOptional() vendorName?: string | null;
+  @ApiPropertyOptional() costPrice?: number | null;
+  @ApiPropertyOptional() currencyCode?: string | null;
+  @ApiPropertyOptional() locationId?: string | null;
+  @ApiPropertyOptional() locationName?: string | null;
+  @ApiPropertyOptional() purchaseOrderId?: string | null;
+  @ApiPropertyOptional() purchaseOrderNumber?: string | null;
+  @ApiPropertyOptional() purchaseOrderState?: string | null;
+  @ApiProperty({ type: () => [OpenDemandLocationAvailabilityDto] })
+  availableElsewhere!: OpenDemandLocationAvailabilityDto[];
+}
+
+export class OpenDemandsListResponseDto {
+  @ApiProperty({ type: () => [OpenDemandDto] })
+  data!: OpenDemandDto[];
+}
+
+export class PoAllocationDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() salesOrderId!: string;
+  @ApiProperty() orderNumber!: string;
+  @ApiProperty() productId!: string;
+  @ApiProperty() productName!: string;
+  @ApiProperty() quantity!: number;
+  @ApiProperty() createdOn!: string;
+  @ApiPropertyOptional() purchaseOrderLineId?: string | null;
+  @ApiProperty() stateCode!: string;
+}
+
+export class PoAllocationsListResponseDto {
+  @ApiProperty({ type: () => [PoAllocationDto] })
+  data!: PoAllocationDto[];
+}
+
+export class AvailablePoLineDto {
+  @ApiProperty() purchaseOrderId!: string;
+  @ApiProperty() purchaseOrderLineId!: string;
+  @ApiProperty() orderNumber!: string;
+  @ApiProperty() stateCode!: string;
+  @ApiProperty() quantity!: string;
+  @ApiProperty() vendorId!: string;
+  @ApiProperty() vendorName!: string;
+  @ApiProperty() deliveryLocationId!: string;
+  @ApiProperty() locationName!: string;
+  @ApiProperty() availableQty!: number;
+}
+
+export class AvailablePoLinesListResponseDto {
+  @ApiProperty({ type: () => [AvailablePoLineDto] })
+  data!: AvailablePoLineDto[];
+}
+
+export class AllocationSuccessResponseDto {
+  @ApiProperty() success!: boolean;
+}
+
+export class AllocationResolveResponseDto {
+  @ApiProperty() success!: boolean;
+  @ApiPropertyOptional() message?: string;
 }

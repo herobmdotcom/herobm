@@ -8,6 +8,7 @@ import * as api from '@modbm/sdk';
 
 import { useTranslations } from 'next-intl';
 import type { Allocation } from './types';
+import { DataTable } from '@/components/shared/DataTable';
 
 interface AllocationsSectionProps {
   orderId: string;
@@ -52,35 +53,69 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
           {t('allocationsSection.noAllocations')}
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="table-lines w-full">
-            <thead>
-              <tr>
-                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('allocationsSection.salesOrder')}</th>
-                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('allocationsSection.product')}</th>
-                <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('allocationsSection.allocatedQty')}</th>
-                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('allocationsSection.dateRequested')}</th>
-                <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)', width: 80 }}>{t('allocationsSection.action')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {allocations.map((alloc) => (
-                <tr key={alloc.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                  <td style={{ padding: '12px 16px' }}>
-                    <Link href={`/sales-orders/${alloc.salesOrderId}`} className="text-[var(--accent)] font-medium hover:underline">
+        <DataTable
+          data={allocations}
+          keyExtractor={(alloc) => alloc.id}
+          columns={[
+            {
+              header: t('allocationsSection.salesOrder'),
+              render: (alloc) => (
+                <Link href={`/sales-orders/${alloc.salesOrderId}`} className="text-[var(--accent)] font-medium hover:underline">
+                  {alloc.orderNumber || alloc.salesOrderId.substring(0, 8)}
+                </Link>
+              )
+            },
+            {
+              header: t('allocationsSection.product'),
+              render: (alloc) => <span className="text-[13px]">{alloc.productName || tCommon('unknownProduct')}</span>
+            },
+            {
+              header: t('allocationsSection.allocatedQty'),
+              align: 'right',
+              render: (alloc) => <span className="font-semibold tabular-nums">{alloc.quantity}</span>
+            },
+            {
+              header: t('allocationsSection.dateRequested'),
+              render: (alloc) => <span className="text-[13px] text-[var(--text-secondary)]">{new Date(alloc.createdOn).toLocaleDateString()}</span>
+            },
+            {
+              header: t('allocationsSection.action'),
+              align: 'right',
+              width: 80,
+              render: (alloc) => (
+                <button 
+                  onClick={() => handleUnlink(alloc.id)}
+                  className="btn btn-secondary btn-sm"
+                  title={t('allocationsSection.unallocateTitle')}
+                >
+                  {t('allocationsSection.unallocate')}
+                </button>
+              )
+            }
+          ]}
+          mobileCard={(alloc: any) => {
+             return (
+               <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
+                  <div className="font-semibold text-sm text-[var(--accent)] mb-1">
+                    <Link href={`/sales-orders/${alloc.salesOrderId}`} className="hover:underline">
                       {alloc.orderNumber || alloc.salesOrderId.substring(0, 8)}
                     </Link>
-                  </td>
-                  <td style={{ padding: '12px 16px', fontSize: 13 }}>
+                  </div>
+                  <div className="text-sm text-slate-600 font-medium mb-3">
                     {alloc.productName || tCommon('unknownProduct')}
-                  </td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-                    {alloc.quantity}
-                  </td>
-                  <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
-                    {new Date(alloc.createdOn).toLocaleDateString()}
-                  </td>
-                  <td style={{ padding: '8px 16px', textAlign: 'right' }}>
+                  </div>
+                  
+                  <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                    <div className="flex justify-between py-1">
+                      <span className="text-xs font-medium text-slate-500">{t('allocationsSection.allocatedQty')}</span>
+                      <span className="font-bold tabular-nums text-sm">{alloc.quantity}</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span className="text-xs font-medium text-slate-500">{t('allocationsSection.dateRequested')}</span>
+                      <span className="text-sm text-slate-600">{new Date(alloc.createdOn).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-end mt-2 pt-2 border-t border-slate-100">
                     <button 
                       onClick={() => handleUnlink(alloc.id)}
                       className="btn btn-secondary btn-sm"
@@ -88,12 +123,11 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
                     >
                       {t('allocationsSection.unallocate')}
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+               </div>
+             );
+          }}
+        />
       )}
     </div>
   );

@@ -3,6 +3,7 @@ import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import { getErrorMessage } from '@modbm/shared';
 
 interface SplitEntryModalProps {
   isOpen: boolean;
@@ -48,9 +49,9 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
       toast.success(t('splitEntryForm.splitSuccess'));
       onSuccess();
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       reportError(err, 'SplitEntryModal_submit');
-      toast.error(err.message || t('splitEntryForm.failedToSplitError'));
+      toast.error(getErrorMessage(err) || t('splitEntryForm.failedToSplitError'));
     } finally {
       setSubmitting(false);
     }

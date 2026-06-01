@@ -4,6 +4,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -21,6 +22,7 @@ import {
 import * as fs from 'fs';
 import * as path from 'path';
 import { SystemLogResponseDto } from './dto';
+import { getErrorMessage } from '@modbm/shared';
 
 /**
  * Endpoint for streaming backend logs securely to the frontend Ops Portal.
@@ -39,6 +41,8 @@ export class SystemController {
       'Retrieves tail of raw system logs for administrative monitoring.',
   })
   @ApiOkResponse({ type: SystemLogResponseDto })
+  @ApiQuery({ name: 'service', required: false })
+  @ApiQuery({ name: 'lines', required: false })
   getSystemLogs(
     @Query('service') service?: string,
     @Query('lines') lines?: string,
@@ -69,8 +73,10 @@ export class SystemController {
       const start = Math.max(0, allLines.length - numLines);
 
       return { lines: allLines.slice(start) };
-    } catch (e: any) {
-      throw new BadRequestException(`Failed to read log file: ${e.message}`);
+    } catch (e: unknown) {
+      throw new BadRequestException(
+        `Failed to read log file: ${getErrorMessage(e)}`,
+      );
     }
   }
 }

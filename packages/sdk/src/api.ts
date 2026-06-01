@@ -22,22 +22,20 @@ import type {
   AddShipmentLineDto,
   AddSupplierDto,
   AllocatePaymentDto,
-  AllocationsControllerGeneratePOs201,
-  AllocationsControllerGenerateTransfers201,
-  AllocationsControllerGetAllocationsByPo200,
-  AllocationsControllerGetAvailablePoLines200,
+  AllocationResolveResponseDto,
+  AllocationSuccessResponseDto,
   AllocationsControllerGetAvailablePoLinesParams,
-  AllocationsControllerGetOpenDemands200,
-  AllocationsControllerLinkDemandToPo201,
-  AllocationsControllerReallocateDemand201,
-  AllocationsControllerResolveOpenDemands201,
-  AllocationsControllerUnlinkDemand201,
+  AllocationsControllerResolveOpenDemandsBody,
+  AllocationsControllerUnlinkDemandBody,
   ApiKeyCreatedResponseDto,
   ApiKeyFullResponseDto,
   ApiKeyResponseDto,
   AppConfigResponseDto,
   ArrayResponseDto,
   AutoMatchPurchaseOrderDto,
+  AvailablePoLinesListResponseDto,
+  BankStatementControllerConfirmMatchBody,
+  BankStatementControllerGetLinesParams,
   BatchPaymentActionDto,
   BinResponseDto,
   BulkImportResultDto,
@@ -61,10 +59,13 @@ import type {
   CreateBinDto,
   CreateCostCenterDto,
   CreateDebitNoteDto,
+  CreateDiscountMatrixDto,
   CreateExchangeRateDto,
   CreateGoodsReceivedDto,
   CreateJournalEntryDto,
   CreateLocationDto,
+  CreateMacroDto,
+  CreateMappingProfileDto,
   CreateOrderDto,
   CreateOrderLineDto,
   CreatePaymentDto,
@@ -75,6 +76,7 @@ import type {
   CreatePurchaseReturnDto,
   CreateReconciliationDto,
   CreateReconciliationResponseDto,
+  CreateReconciliationRuleDto,
   CreateReportDto,
   CreateReturnDto,
   CreateSalesInvoiceDto,
@@ -104,6 +106,15 @@ import type {
   DiscountMatrixControllerResolveParams,
   DiscountMatrixResponseDto,
   EmptyBodyDto,
+  EnrichmentControllerGetConfig200,
+  EnrichmentControllerGetConfigParams,
+  EnrichmentControllerGetProviders200Item,
+  EnrichmentControllerLookup200,
+  EnrichmentControllerLookupParams,
+  EnrichmentControllerLookupPost200,
+  EnrichmentControllerLookupPost201,
+  EnrichmentControllerUpdateConfig200,
+  EnrichmentControllerUpdateConfigParams,
   EventsControllerPublish201,
   ExchangeRateResponseDto,
   ExchangeRatesControllerFindAllParams,
@@ -113,21 +124,24 @@ import type {
   ExternalSyncControllerClearEventsByTypeParams,
   ExternalSyncControllerGetEventsByTypeParams,
   ExternalSyncControllerGetSyncStatusParams,
+  FileUploadDto,
   FindByProductIdsBulkDto,
+  GeneratePOsDto,
+  GenerateTransfersDto,
   GlAccountResponseDto,
   GlControllerGetAccountsParams,
   GlControllerGetGeneralLedger200,
   GlControllerGetGeneralLedgerParams,
   GlControllerGetJournalEntriesParams,
   GlControllerGetTrialBalanceParams,
+  GlControllerUpdateSettingsBody,
   GlobalPurchaseReturnDto,
   GlobalPurchaseReturnsControllerGetPurchaseReturnsParams,
   GlobalPurchaseReturnsListDto,
-  GlobalReturnsControllerFindGlobalReturns200,
+  GlobalReturnListResponseDto,
   GlobalReturnsControllerFindGlobalReturnsParams,
-  GlobalShipmentsControllerFindAll200,
+  GlobalShipmentListResponseDto,
   GlobalShipmentsControllerFindAllParams,
-  GlobalShipmentsControllerFindOne200,
   GlobalShipmentsControllerFindOneParams,
   GoodsReceivedControllerCancelReception200,
   GoodsReceivedControllerFindAllLinesParams,
@@ -137,6 +151,8 @@ import type {
   GoodsReceivedResponseDto,
   HookAssignmentsResponseDto,
   HooksResponseDto,
+  ImportCsvDto,
+  ImportCsvResponseDto,
   ImportSummaryDto,
   InventoryControllerFindAll200,
   InventoryControllerFindAllLocationsParams,
@@ -148,34 +164,30 @@ import type {
   InventoryControllerGetMovementsParams,
   InventoryControllerGetPendingPutawayParams,
   InventoryControllerGetPutawayContextParams,
-  InventoryControllerPutaway201,
-  InventoryControllerToggleQuarantine201,
   InventoryEntryDetailsResponseDto,
   InventoryLedgerResponseDto,
+  InventoryLocationResponseDto,
   InventoryMovementResponseDto,
   InventoryResponseDto,
+  InventorySuccessResponseDto,
   InvoiceDetailControllerGetPurchaseInvoicesGlobalParams,
   InvoiceDetailControllerGetSalesInvoicesGlobalParams,
   JobProgressDto,
   JobResultDto,
   JournalEntryResponseDto,
   LinkBinDto,
+  LinkDemandToPoDto,
   LocationResponseDto,
-  LocationsResponseDto,
   LoginDto,
   LoginResponseDto,
   MacroResponseDto,
   MacrosControllerFindAllParams,
   MacrosControllerFindOneParams,
+  MappingProfileResponseDto,
   MeResponseDto,
-  Object,
-  OrderPickingControllerCancelPick200,
-  OrderPickingControllerGetPickingQueue200,
+  OpenDemandsListResponseDto,
   OrderPickingControllerGetPickingQueueParams,
-  OrderPickingControllerGetPickingSummary200,
-  OrderPickingControllerGetShippingQueue200,
   OrderPickingControllerGetShippingQueueParams,
-  OrderPickingControllerPickLine201,
   OrderResponseDto,
   OrdersControllerFindAll200,
   OrdersControllerFindAllParams,
@@ -184,12 +196,18 @@ import type {
   PaginatedGoodsReceivedDto,
   PaginatedGoodsReceivedLineDto,
   PaginatedJournalEntriesDto,
+  ParseCsvResponseDto,
   PaymentResponseDto,
   PaymentsControllerFindAll200,
   PaymentsControllerFindAllParams,
   PaymentsControllerFindOneParams,
   PendingPutawayResponseDto,
   PickLineDto,
+  PickOrderLineDto,
+  PickingQueueOrderDto,
+  PickingSummaryDto,
+  PickingSummaryPickDto,
+  PoAllocationsListResponseDto,
   PostReconciliationResponseDto,
   PreviewReportDto,
   ProductGroupResponseDto,
@@ -216,10 +234,12 @@ import type {
   PutawayBulkDto,
   PutawayContextResponseDto,
   RandomIdResponseDto,
+  ReallocateDemandDto,
   ReceiveReturnDto,
   ReceiveTransferDto,
   ReconciliationDetailResponseDto,
   ReconciliationListResponseDto,
+  ReconciliationRuleResponseDto,
   ReportResponseDto,
   ReportsControllerRunHookParams,
   ReportsResponseDto,
@@ -229,6 +249,7 @@ import type {
   ResolveInvoiceLineDto,
   ResumeStateDto,
   ReturnResponseDto,
+  RoleDetailsDto,
   RunHookBodyDto,
   SalesInvoiceListResponseDto,
   SalesInvoiceResponseDto,
@@ -241,13 +262,19 @@ import type {
   SetupValidationDto,
   ShipmentResponseDto,
   ShippingContextDto,
+  ShippingQueueOrderDto,
   SuccessMessageResponseDto,
+  SuccessResponseDto,
   SupplierGroupResponseDto,
   SupplierGroupsControllerFindAllParams,
   SupplierGroupsControllerFindOneParams,
   SupplierResponseDto,
+  SuppliersControllerFindAll200,
   SuppliersControllerFindAllParams,
+  SuppliersControllerFindByProduct200,
   SuppliersControllerFindOneParams,
+  SuppliersControllerFindSupplierExpiries200,
+  SuppliersControllerFindSupplierProducts200,
   SyncEventsResponseDto,
   SyncStatusResponseDto,
   SystemControllerGetSystemLogsParams,
@@ -281,11 +308,12 @@ import type {
   UpdateAppConfigDto,
   UpdateBinDto,
   UpdateCostCenterDto,
+  UpdateDiscountMatrixDto,
   UpdateExchangeRateDto,
-  UpdateGLSettingsDto,
   UpdateHookAssignmentDto,
   UpdateInvoiceLineDto,
   UpdateLocationDto,
+  UpdateMacroDto,
   UpdateOrderDto,
   UpdateOrderLineDto,
   UpdateOrganizationDto,
@@ -394,8 +422,12 @@ export const authControllerMe = async ( options?: RequestInit): Promise<authCont
 
 
 
+/**
+ * Returns a list of all roles.
+ * @summary Find all roles
+ */
 export type rolesControllerFindAllResponse200 = {
-  data: void
+  data: RoleDetailsDto[]
   status: 200
 }
     
@@ -427,8 +459,12 @@ export const rolesControllerFindAll = async ( options?: RequestInit): Promise<ro
 
 
 
+/**
+ * Returns details for a specific role.
+ * @summary Get role details
+ */
 export type rolesControllerFindOneResponse200 = {
-  data: void
+  data: RoleDetailsDto
   status: 200
 }
     
@@ -460,8 +496,12 @@ export const rolesControllerFindOne = async (role: string, options?: RequestInit
 
 
 
+/**
+ * Sets the permissions for a specific role.
+ * @summary Set role permissions
+ */
 export type rolesControllerSetPermissionsResponse201 = {
-  data: void
+  data: RoleDetailsDto
   status: 201
 }
     
@@ -495,8 +535,12 @@ export const rolesControllerSetPermissions = async (role: string,
 
 
 
+/**
+ * Deletes a specific role.
+ * @summary Delete role
+ */
 export type rolesControllerRemoveResponse200 = {
-  data: void
+  data: SuccessResponseDto
   status: 200
 }
     
@@ -1832,7 +1876,7 @@ export type inventoryControllerFindAllResponseSuccess = (inventoryControllerFind
 
 export type inventoryControllerFindAllResponse = (inventoryControllerFindAllResponseSuccess)
 
-export const getInventoryControllerFindAllUrl = (params: InventoryControllerFindAllParams,) => {
+export const getInventoryControllerFindAllUrl = (params?: InventoryControllerFindAllParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -1847,7 +1891,7 @@ export const getInventoryControllerFindAllUrl = (params: InventoryControllerFind
   return stringifiedParams.length > 0 ? `/inventory?${stringifiedParams}` : `/inventory`
 }
 
-export const inventoryControllerFindAll = async (params: InventoryControllerFindAllParams, options?: RequestInit): Promise<inventoryControllerFindAllResponse> => {
+export const inventoryControllerFindAll = async (params?: InventoryControllerFindAllParams, options?: RequestInit): Promise<inventoryControllerFindAllResponse> => {
   
   return customFetch<inventoryControllerFindAllResponse>(getInventoryControllerFindAllUrl(params),
   {      
@@ -1876,7 +1920,7 @@ export type inventoryControllerFindByProductIdsResponseSuccess = (inventoryContr
 
 export type inventoryControllerFindByProductIdsResponse = (inventoryControllerFindByProductIdsResponseSuccess)
 
-export const getInventoryControllerFindByProductIdsUrl = (params: InventoryControllerFindByProductIdsParams,) => {
+export const getInventoryControllerFindByProductIdsUrl = (params?: InventoryControllerFindByProductIdsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -1891,7 +1935,7 @@ export const getInventoryControllerFindByProductIdsUrl = (params: InventoryContr
   return stringifiedParams.length > 0 ? `/inventory/by-products?${stringifiedParams}` : `/inventory/by-products`
 }
 
-export const inventoryControllerFindByProductIds = async (params: InventoryControllerFindByProductIdsParams, options?: RequestInit): Promise<inventoryControllerFindByProductIdsResponse> => {
+export const inventoryControllerFindByProductIds = async (params?: InventoryControllerFindByProductIdsParams, options?: RequestInit): Promise<inventoryControllerFindByProductIdsResponse> => {
   
   return customFetch<inventoryControllerFindByProductIdsResponse>(getInventoryControllerFindByProductIdsUrl(params),
   {      
@@ -1958,7 +2002,7 @@ export type inventoryControllerFindBinsResponseSuccess = (inventoryControllerFin
 
 export type inventoryControllerFindBinsResponse = (inventoryControllerFindBinsResponseSuccess)
 
-export const getInventoryControllerFindBinsUrl = (params: InventoryControllerFindBinsParams,) => {
+export const getInventoryControllerFindBinsUrl = (params?: InventoryControllerFindBinsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -1973,7 +2017,7 @@ export const getInventoryControllerFindBinsUrl = (params: InventoryControllerFin
   return stringifiedParams.length > 0 ? `/inventory/bins?${stringifiedParams}` : `/inventory/bins`
 }
 
-export const inventoryControllerFindBins = async (params: InventoryControllerFindBinsParams, options?: RequestInit): Promise<inventoryControllerFindBinsResponse> => {
+export const inventoryControllerFindBins = async (params?: InventoryControllerFindBinsParams, options?: RequestInit): Promise<inventoryControllerFindBinsResponse> => {
   
   return customFetch<inventoryControllerFindBinsResponse>(getInventoryControllerFindBinsUrl(params),
   {      
@@ -2073,7 +2117,7 @@ export const inventoryControllerGetPutawayContext = async (params: InventoryCont
  * @summary List Locations
  */
 export type inventoryControllerFindAllLocationsResponse200 = {
-  data: LocationsResponseDto
+  data: InventoryLocationResponseDto[]
   status: 200
 }
     
@@ -2166,7 +2210,7 @@ export type inventoryControllerGetMovementsResponseSuccess = (inventoryControlle
 
 export type inventoryControllerGetMovementsResponse = (inventoryControllerGetMovementsResponseSuccess)
 
-export const getInventoryControllerGetMovementsUrl = (params: InventoryControllerGetMovementsParams,) => {
+export const getInventoryControllerGetMovementsUrl = (params?: InventoryControllerGetMovementsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -2181,7 +2225,7 @@ export const getInventoryControllerGetMovementsUrl = (params: InventoryControlle
   return stringifiedParams.length > 0 ? `/inventory/movements?${stringifiedParams}` : `/inventory/movements`
 }
 
-export const inventoryControllerGetMovements = async (params: InventoryControllerGetMovementsParams, options?: RequestInit): Promise<inventoryControllerGetMovementsResponse> => {
+export const inventoryControllerGetMovements = async (params?: InventoryControllerGetMovementsParams, options?: RequestInit): Promise<inventoryControllerGetMovementsResponse> => {
   
   return customFetch<inventoryControllerGetMovementsResponse>(getInventoryControllerGetMovementsUrl(params),
   {      
@@ -2210,7 +2254,7 @@ export type inventoryControllerGetLedgerResponseSuccess = (inventoryControllerGe
 
 export type inventoryControllerGetLedgerResponse = (inventoryControllerGetLedgerResponseSuccess)
 
-export const getInventoryControllerGetLedgerUrl = (params: InventoryControllerGetLedgerParams,) => {
+export const getInventoryControllerGetLedgerUrl = (params?: InventoryControllerGetLedgerParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -2225,7 +2269,7 @@ export const getInventoryControllerGetLedgerUrl = (params: InventoryControllerGe
   return stringifiedParams.length > 0 ? `/inventory/ledger?${stringifiedParams}` : `/inventory/ledger`
 }
 
-export const inventoryControllerGetLedger = async (params: InventoryControllerGetLedgerParams, options?: RequestInit): Promise<inventoryControllerGetLedgerResponse> => {
+export const inventoryControllerGetLedger = async (params?: InventoryControllerGetLedgerParams, options?: RequestInit): Promise<inventoryControllerGetLedgerResponse> => {
   
   return customFetch<inventoryControllerGetLedgerResponse>(getInventoryControllerGetLedgerUrl(params),
   {      
@@ -2291,7 +2335,7 @@ export type inventoryControllerGetPendingPutawayResponseSuccess = (inventoryCont
 
 export type inventoryControllerGetPendingPutawayResponse = (inventoryControllerGetPendingPutawayResponseSuccess)
 
-export const getInventoryControllerGetPendingPutawayUrl = (params: InventoryControllerGetPendingPutawayParams,) => {
+export const getInventoryControllerGetPendingPutawayUrl = (params?: InventoryControllerGetPendingPutawayParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -2306,7 +2350,7 @@ export const getInventoryControllerGetPendingPutawayUrl = (params: InventoryCont
   return stringifiedParams.length > 0 ? `/inventory/pending-putaway?${stringifiedParams}` : `/inventory/pending-putaway`
 }
 
-export const inventoryControllerGetPendingPutaway = async (params: InventoryControllerGetPendingPutawayParams, options?: RequestInit): Promise<inventoryControllerGetPendingPutawayResponse> => {
+export const inventoryControllerGetPendingPutaway = async (params?: InventoryControllerGetPendingPutawayParams, options?: RequestInit): Promise<inventoryControllerGetPendingPutawayResponse> => {
   
   return customFetch<inventoryControllerGetPendingPutawayResponse>(getInventoryControllerGetPendingPutawayUrl(params),
   {      
@@ -2324,7 +2368,7 @@ export const inventoryControllerGetPendingPutaway = async (params: InventoryCont
  * @summary Process Putaways
  */
 export type inventoryControllerPutawayResponse201 = {
-  data: InventoryControllerPutaway201
+  data: InventorySuccessResponseDto
   status: 201
 }
     
@@ -2362,7 +2406,7 @@ export const inventoryControllerPutaway = async (putawayBulkDto: PutawayBulkDto,
  * @summary Toggle Quarantine
  */
 export type inventoryControllerToggleQuarantineResponse201 = {
-  data: InventoryControllerToggleQuarantine201
+  data: InventorySuccessResponseDto
   status: 201
 }
     
@@ -2533,7 +2577,7 @@ export type glControllerGetJournalEntriesResponseSuccess = (glControllerGetJourn
 
 export type glControllerGetJournalEntriesResponse = (glControllerGetJournalEntriesResponseSuccess)
 
-export const getGlControllerGetJournalEntriesUrl = (params: GlControllerGetJournalEntriesParams,) => {
+export const getGlControllerGetJournalEntriesUrl = (params?: GlControllerGetJournalEntriesParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -2548,7 +2592,7 @@ export const getGlControllerGetJournalEntriesUrl = (params: GlControllerGetJourn
   return stringifiedParams.length > 0 ? `/gl/journal-entries?${stringifiedParams}` : `/gl/journal-entries`
 }
 
-export const glControllerGetJournalEntries = async (params: GlControllerGetJournalEntriesParams, options?: RequestInit): Promise<glControllerGetJournalEntriesResponse> => {
+export const glControllerGetJournalEntries = async (params?: GlControllerGetJournalEntriesParams, options?: RequestInit): Promise<glControllerGetJournalEntriesResponse> => {
   
   return customFetch<glControllerGetJournalEntriesResponse>(getGlControllerGetJournalEntriesUrl(params),
   {      
@@ -2691,7 +2735,7 @@ export type glControllerGetTrialBalanceResponseSuccess = (glControllerGetTrialBa
 
 export type glControllerGetTrialBalanceResponse = (glControllerGetTrialBalanceResponseSuccess)
 
-export const getGlControllerGetTrialBalanceUrl = (params: GlControllerGetTrialBalanceParams,) => {
+export const getGlControllerGetTrialBalanceUrl = (params?: GlControllerGetTrialBalanceParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -2706,7 +2750,7 @@ export const getGlControllerGetTrialBalanceUrl = (params: GlControllerGetTrialBa
   return stringifiedParams.length > 0 ? `/gl/trial-balance?${stringifiedParams}` : `/gl/trial-balance`
 }
 
-export const glControllerGetTrialBalance = async (params: GlControllerGetTrialBalanceParams, options?: RequestInit): Promise<glControllerGetTrialBalanceResponse> => {
+export const glControllerGetTrialBalance = async (params?: GlControllerGetTrialBalanceParams, options?: RequestInit): Promise<glControllerGetTrialBalanceResponse> => {
   
   return customFetch<glControllerGetTrialBalanceResponse>(getGlControllerGetTrialBalanceUrl(params),
   {      
@@ -2735,7 +2779,7 @@ export type glControllerGetGeneralLedgerResponseSuccess = (glControllerGetGenera
 
 export type glControllerGetGeneralLedgerResponse = (glControllerGetGeneralLedgerResponseSuccess)
 
-export const getGlControllerGetGeneralLedgerUrl = (params: GlControllerGetGeneralLedgerParams,) => {
+export const getGlControllerGetGeneralLedgerUrl = (params?: GlControllerGetGeneralLedgerParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -2750,7 +2794,7 @@ export const getGlControllerGetGeneralLedgerUrl = (params: GlControllerGetGenera
   return stringifiedParams.length > 0 ? `/gl/general-ledger?${stringifiedParams}` : `/gl/general-ledger`
 }
 
-export const glControllerGetGeneralLedger = async (params: GlControllerGetGeneralLedgerParams, options?: RequestInit): Promise<glControllerGetGeneralLedgerResponse> => {
+export const glControllerGetGeneralLedger = async (params?: GlControllerGetGeneralLedgerParams, options?: RequestInit): Promise<glControllerGetGeneralLedgerResponse> => {
   
   return customFetch<glControllerGetGeneralLedgerResponse>(getGlControllerGetGeneralLedgerUrl(params),
   {      
@@ -2824,7 +2868,7 @@ export const getGlControllerUpdateSettingsUrl = () => {
   return `/gl/settings`
 }
 
-export const glControllerUpdateSettings = async (updateGLSettingsDto: UpdateGLSettingsDto, options?: RequestInit): Promise<glControllerUpdateSettingsResponse> => {
+export const glControllerUpdateSettings = async (glControllerUpdateSettingsBody: GlControllerUpdateSettingsBody, options?: RequestInit): Promise<glControllerUpdateSettingsResponse> => {
   
   return customFetch<glControllerUpdateSettingsResponse>(getGlControllerUpdateSettingsUrl(),
   {      
@@ -2832,7 +2876,7 @@ export const glControllerUpdateSettings = async (updateGLSettingsDto: UpdateGLSe
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      updateGLSettingsDto,)
+      glControllerUpdateSettingsBody,)
   }
 );}
 
@@ -3326,6 +3370,326 @@ export const reconciliationControllerCreateAdjustment = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createAdjustmentDto,)
+  }
+);}
+
+
+
+/**
+ * Parses a CSV file and returns the headers and sample rows.
+ * @summary Parse CSV
+ */
+export type bankFeedsControllerParseCsvResponse201 = {
+  data: ParseCsvResponseDto
+  status: 201
+}
+    
+export type bankFeedsControllerParseCsvResponseSuccess = (bankFeedsControllerParseCsvResponse201) & {
+  headers: Headers;
+};
+;
+
+export type bankFeedsControllerParseCsvResponse = (bankFeedsControllerParseCsvResponseSuccess)
+
+export const getBankFeedsControllerParseCsvUrl = () => {
+
+
+  
+
+  return `/gl/bank-feeds/parse`
+}
+
+export const bankFeedsControllerParseCsv = async (fileUploadDto: FileUploadDto, options?: RequestInit): Promise<bankFeedsControllerParseCsvResponse> => {
+    const formData = new FormData();
+formData.append(`file`, fileUploadDto.file)
+
+  return customFetch<bankFeedsControllerParseCsvResponse>(getBankFeedsControllerParseCsvUrl(),
+  {      
+    ...options,
+    method: 'POST'
+    ,
+    body: 
+      formData,
+  }
+);}
+
+
+
+/**
+ * Imports a CSV file and creates journal entries based on rules.
+ * @summary Import CSV
+ */
+export type bankFeedsControllerImportCsvResponse201 = {
+  data: ImportCsvResponseDto
+  status: 201
+}
+    
+export type bankFeedsControllerImportCsvResponseSuccess = (bankFeedsControllerImportCsvResponse201) & {
+  headers: Headers;
+};
+;
+
+export type bankFeedsControllerImportCsvResponse = (bankFeedsControllerImportCsvResponseSuccess)
+
+export const getBankFeedsControllerImportCsvUrl = () => {
+
+
+  
+
+  return `/gl/bank-feeds/import`
+}
+
+export const bankFeedsControllerImportCsv = async (importCsvDto: ImportCsvDto, options?: RequestInit): Promise<bankFeedsControllerImportCsvResponse> => {
+    const formData = new FormData();
+formData.append(`file`, importCsvDto.file)
+formData.append(`glAccountId`, importCsvDto.glAccountId)
+formData.append(`profileId`, importCsvDto.profileId)
+
+  return customFetch<bankFeedsControllerImportCsvResponse>(getBankFeedsControllerImportCsvUrl(),
+  {      
+    ...options,
+    method: 'POST'
+    ,
+    body: 
+      formData,
+  }
+);}
+
+
+
+/**
+ * Retrieves all mapping profiles for a specific GL account.
+ * @summary Get Mapping Profiles
+ */
+export type bankFeedsControllerGetProfilesResponse200 = {
+  data: MappingProfileResponseDto[]
+  status: 200
+}
+    
+export type bankFeedsControllerGetProfilesResponseSuccess = (bankFeedsControllerGetProfilesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type bankFeedsControllerGetProfilesResponse = (bankFeedsControllerGetProfilesResponseSuccess)
+
+export const getBankFeedsControllerGetProfilesUrl = (glAccountId: string,) => {
+
+
+  
+
+  return `/gl/bank-feeds/profiles/${glAccountId}`
+}
+
+export const bankFeedsControllerGetProfiles = async (glAccountId: string, options?: RequestInit): Promise<bankFeedsControllerGetProfilesResponse> => {
+  
+  return customFetch<bankFeedsControllerGetProfilesResponse>(getBankFeedsControllerGetProfilesUrl(glAccountId),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Creates a new CSV mapping profile.
+ * @summary Create Mapping Profile
+ */
+export type bankFeedsControllerCreateProfileResponse201 = {
+  data: MappingProfileResponseDto
+  status: 201
+}
+    
+export type bankFeedsControllerCreateProfileResponseSuccess = (bankFeedsControllerCreateProfileResponse201) & {
+  headers: Headers;
+};
+;
+
+export type bankFeedsControllerCreateProfileResponse = (bankFeedsControllerCreateProfileResponseSuccess)
+
+export const getBankFeedsControllerCreateProfileUrl = () => {
+
+
+  
+
+  return `/gl/bank-feeds/profiles`
+}
+
+export const bankFeedsControllerCreateProfile = async (createMappingProfileDto: CreateMappingProfileDto, options?: RequestInit): Promise<bankFeedsControllerCreateProfileResponse> => {
+  
+  return customFetch<bankFeedsControllerCreateProfileResponse>(getBankFeedsControllerCreateProfileUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createMappingProfileDto,)
+  }
+);}
+
+
+
+/**
+ * Retrieves all reconciliation rules.
+ * @summary Get Rules
+ */
+export type bankFeedsControllerGetRulesResponse200 = {
+  data: ReconciliationRuleResponseDto[]
+  status: 200
+}
+    
+export type bankFeedsControllerGetRulesResponseSuccess = (bankFeedsControllerGetRulesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type bankFeedsControllerGetRulesResponse = (bankFeedsControllerGetRulesResponseSuccess)
+
+export const getBankFeedsControllerGetRulesUrl = () => {
+
+
+  
+
+  return `/gl/bank-feeds/rules`
+}
+
+export const bankFeedsControllerGetRules = async ( options?: RequestInit): Promise<bankFeedsControllerGetRulesResponse> => {
+  
+  return customFetch<bankFeedsControllerGetRulesResponse>(getBankFeedsControllerGetRulesUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Creates a new reconciliation rule.
+ * @summary Create Rule
+ */
+export type bankFeedsControllerCreateRuleResponse201 = {
+  data: ReconciliationRuleResponseDto
+  status: 201
+}
+    
+export type bankFeedsControllerCreateRuleResponseSuccess = (bankFeedsControllerCreateRuleResponse201) & {
+  headers: Headers;
+};
+;
+
+export type bankFeedsControllerCreateRuleResponse = (bankFeedsControllerCreateRuleResponseSuccess)
+
+export const getBankFeedsControllerCreateRuleUrl = () => {
+
+
+  
+
+  return `/gl/bank-feeds/rules`
+}
+
+export const bankFeedsControllerCreateRule = async (createReconciliationRuleDto: CreateReconciliationRuleDto, options?: RequestInit): Promise<bankFeedsControllerCreateRuleResponse> => {
+  
+  return customFetch<bankFeedsControllerCreateRuleResponse>(getBankFeedsControllerCreateRuleUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createReconciliationRuleDto,)
+  }
+);}
+
+
+
+/**
+ * Fetch imported bank statement lines.
+ * @summary Get bank statement lines
+ */
+export type bankStatementControllerGetLinesResponse200 = {
+  data: void
+  status: 200
+}
+    
+export type bankStatementControllerGetLinesResponseSuccess = (bankStatementControllerGetLinesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type bankStatementControllerGetLinesResponse = (bankStatementControllerGetLinesResponseSuccess)
+
+export const getBankStatementControllerGetLinesUrl = (params: BankStatementControllerGetLinesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/gl/bank-statement/lines?${stringifiedParams}` : `/gl/bank-statement/lines`
+}
+
+export const bankStatementControllerGetLines = async (params: BankStatementControllerGetLinesParams, options?: RequestInit): Promise<bankStatementControllerGetLinesResponse> => {
+  
+  return customFetch<bankStatementControllerGetLinesResponse>(getBankStatementControllerGetLinesUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Confirms a suggested match between a bank line and a journal line.
+ * @summary Confirm a smart match
+ */
+export type bankStatementControllerConfirmMatchResponse200 = {
+  data: void
+  status: 200
+}
+
+export type bankStatementControllerConfirmMatchResponse201 = {
+  data: void
+  status: 201
+}
+    
+export type bankStatementControllerConfirmMatchResponseSuccess = (bankStatementControllerConfirmMatchResponse200 | bankStatementControllerConfirmMatchResponse201) & {
+  headers: Headers;
+};
+;
+
+export type bankStatementControllerConfirmMatchResponse = (bankStatementControllerConfirmMatchResponseSuccess)
+
+export const getBankStatementControllerConfirmMatchUrl = (id: string,) => {
+
+
+  
+
+  return `/gl/bank-statement/lines/${id}/confirm-match`
+}
+
+export const bankStatementControllerConfirmMatch = async (id: string,
+    bankStatementControllerConfirmMatchBody: BankStatementControllerConfirmMatchBody, options?: RequestInit): Promise<bankStatementControllerConfirmMatchResponse> => {
+  
+  return customFetch<bankStatementControllerConfirmMatchResponse>(getBankStatementControllerConfirmMatchUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      bankStatementControllerConfirmMatchBody,)
   }
 );}
 
@@ -4330,7 +4694,7 @@ export const activitiesControllerImport = async (createActivityDto: CreateActivi
  * @summary Get Picking Queue
  */
 export type orderPickingControllerGetPickingQueueResponse200 = {
-  data: OrderPickingControllerGetPickingQueue200
+  data: PickingQueueOrderDto[]
   status: 200
 }
     
@@ -4341,7 +4705,7 @@ export type orderPickingControllerGetPickingQueueResponseSuccess = (orderPicking
 
 export type orderPickingControllerGetPickingQueueResponse = (orderPickingControllerGetPickingQueueResponseSuccess)
 
-export const getOrderPickingControllerGetPickingQueueUrl = (params: OrderPickingControllerGetPickingQueueParams,) => {
+export const getOrderPickingControllerGetPickingQueueUrl = (params?: OrderPickingControllerGetPickingQueueParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -4356,7 +4720,7 @@ export const getOrderPickingControllerGetPickingQueueUrl = (params: OrderPicking
   return stringifiedParams.length > 0 ? `/sales-orders/picking-queue?${stringifiedParams}` : `/sales-orders/picking-queue`
 }
 
-export const orderPickingControllerGetPickingQueue = async (params: OrderPickingControllerGetPickingQueueParams, options?: RequestInit): Promise<orderPickingControllerGetPickingQueueResponse> => {
+export const orderPickingControllerGetPickingQueue = async (params?: OrderPickingControllerGetPickingQueueParams, options?: RequestInit): Promise<orderPickingControllerGetPickingQueueResponse> => {
   
   return customFetch<orderPickingControllerGetPickingQueueResponse>(getOrderPickingControllerGetPickingQueueUrl(params),
   {      
@@ -4374,7 +4738,7 @@ export const orderPickingControllerGetPickingQueue = async (params: OrderPicking
  * @summary Get Picking Summary
  */
 export type orderPickingControllerGetPickingSummaryResponse200 = {
-  data: OrderPickingControllerGetPickingSummary200
+  data: PickingSummaryDto
   status: 200
 }
     
@@ -4411,7 +4775,7 @@ export const orderPickingControllerGetPickingSummary = async (id: string, option
  * @summary Pick Order Line
  */
 export type orderPickingControllerPickLineResponse201 = {
-  data: OrderPickingControllerPickLine201
+  data: PickingSummaryPickDto
   status: 201
 }
     
@@ -4433,7 +4797,7 @@ export const getOrderPickingControllerPickLineUrl = (id: string,
 
 export const orderPickingControllerPickLine = async (id: string,
     lineId: string,
-    orderPickingControllerPickLineBody: Object, options?: RequestInit): Promise<orderPickingControllerPickLineResponse> => {
+    pickOrderLineDto: PickOrderLineDto, options?: RequestInit): Promise<orderPickingControllerPickLineResponse> => {
   
   return customFetch<orderPickingControllerPickLineResponse>(getOrderPickingControllerPickLineUrl(id,lineId),
   {      
@@ -4441,7 +4805,7 @@ export const orderPickingControllerPickLine = async (id: string,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      orderPickingControllerPickLineBody,)
+      pickOrderLineDto,)
   }
 );}
 
@@ -4452,7 +4816,7 @@ export const orderPickingControllerPickLine = async (id: string,
  * @summary Cancel Pick
  */
 export type orderPickingControllerCancelPickResponse200 = {
-  data: OrderPickingControllerCancelPick200
+  data: PickingSummaryPickDto
   status: 200
 }
     
@@ -4491,7 +4855,7 @@ export const orderPickingControllerCancelPick = async (id: string,
  * @summary Get Shipping Queue
  */
 export type orderPickingControllerGetShippingQueueResponse200 = {
-  data: OrderPickingControllerGetShippingQueue200
+  data: ShippingQueueOrderDto[]
   status: 200
 }
     
@@ -4502,7 +4866,7 @@ export type orderPickingControllerGetShippingQueueResponseSuccess = (orderPickin
 
 export type orderPickingControllerGetShippingQueueResponse = (orderPickingControllerGetShippingQueueResponseSuccess)
 
-export const getOrderPickingControllerGetShippingQueueUrl = (params: OrderPickingControllerGetShippingQueueParams,) => {
+export const getOrderPickingControllerGetShippingQueueUrl = (params?: OrderPickingControllerGetShippingQueueParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -4517,7 +4881,7 @@ export const getOrderPickingControllerGetShippingQueueUrl = (params: OrderPickin
   return stringifiedParams.length > 0 ? `/sales-orders/shipping-queue?${stringifiedParams}` : `/sales-orders/shipping-queue`
 }
 
-export const orderPickingControllerGetShippingQueue = async (params: OrderPickingControllerGetShippingQueueParams, options?: RequestInit): Promise<orderPickingControllerGetShippingQueueResponse> => {
+export const orderPickingControllerGetShippingQueue = async (params?: OrderPickingControllerGetShippingQueueParams, options?: RequestInit): Promise<orderPickingControllerGetShippingQueueResponse> => {
   
   return customFetch<orderPickingControllerGetShippingQueueResponse>(getOrderPickingControllerGetShippingQueueUrl(params),
   {      
@@ -5740,7 +6104,7 @@ export const orderShipmentsControllerRemoveShipmentLine = async (id: string,
  * @summary Find All Shipments
  */
 export type globalShipmentsControllerFindAllResponse200 = {
-  data: GlobalShipmentsControllerFindAll200
+  data: GlobalShipmentListResponseDto
   status: 200
 }
     
@@ -5751,7 +6115,7 @@ export type globalShipmentsControllerFindAllResponseSuccess = (globalShipmentsCo
 
 export type globalShipmentsControllerFindAllResponse = (globalShipmentsControllerFindAllResponseSuccess)
 
-export const getGlobalShipmentsControllerFindAllUrl = (params: GlobalShipmentsControllerFindAllParams,) => {
+export const getGlobalShipmentsControllerFindAllUrl = (params?: GlobalShipmentsControllerFindAllParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -5766,7 +6130,7 @@ export const getGlobalShipmentsControllerFindAllUrl = (params: GlobalShipmentsCo
   return stringifiedParams.length > 0 ? `/shipments?${stringifiedParams}` : `/shipments`
 }
 
-export const globalShipmentsControllerFindAll = async (params: GlobalShipmentsControllerFindAllParams, options?: RequestInit): Promise<globalShipmentsControllerFindAllResponse> => {
+export const globalShipmentsControllerFindAll = async (params?: GlobalShipmentsControllerFindAllParams, options?: RequestInit): Promise<globalShipmentsControllerFindAllResponse> => {
   
   return customFetch<globalShipmentsControllerFindAllResponse>(getGlobalShipmentsControllerFindAllUrl(params),
   {      
@@ -5784,7 +6148,7 @@ export const globalShipmentsControllerFindAll = async (params: GlobalShipmentsCo
  * @summary Find Shipment
  */
 export type globalShipmentsControllerFindOneResponse200 = {
-  data: GlobalShipmentsControllerFindOne200
+  data: ShipmentResponseDto
   status: 200
 }
     
@@ -5830,7 +6194,7 @@ export const globalShipmentsControllerFindOne = async (id: string,
  * @summary Find Global Returns
  */
 export type globalReturnsControllerFindGlobalReturnsResponse200 = {
-  data: GlobalReturnsControllerFindGlobalReturns200
+  data: GlobalReturnListResponseDto
   status: 200
 }
     
@@ -5841,7 +6205,7 @@ export type globalReturnsControllerFindGlobalReturnsResponseSuccess = (globalRet
 
 export type globalReturnsControllerFindGlobalReturnsResponse = (globalReturnsControllerFindGlobalReturnsResponseSuccess)
 
-export const getGlobalReturnsControllerFindGlobalReturnsUrl = (params: GlobalReturnsControllerFindGlobalReturnsParams,) => {
+export const getGlobalReturnsControllerFindGlobalReturnsUrl = (params?: GlobalReturnsControllerFindGlobalReturnsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -5856,7 +6220,7 @@ export const getGlobalReturnsControllerFindGlobalReturnsUrl = (params: GlobalRet
   return stringifiedParams.length > 0 ? `/sales-returns?${stringifiedParams}` : `/sales-returns`
 }
 
-export const globalReturnsControllerFindGlobalReturns = async (params: GlobalReturnsControllerFindGlobalReturnsParams, options?: RequestInit): Promise<globalReturnsControllerFindGlobalReturnsResponse> => {
+export const globalReturnsControllerFindGlobalReturns = async (params?: GlobalReturnsControllerFindGlobalReturnsParams, options?: RequestInit): Promise<globalReturnsControllerFindGlobalReturnsResponse> => {
   
   return customFetch<globalReturnsControllerFindGlobalReturnsResponse>(getGlobalReturnsControllerFindGlobalReturnsUrl(params),
   {      
@@ -5874,7 +6238,7 @@ export const globalReturnsControllerFindGlobalReturns = async (params: GlobalRet
  * @summary Get Open Demands
  */
 export type allocationsControllerGetOpenDemandsResponse200 = {
-  data: AllocationsControllerGetOpenDemands200
+  data: OpenDemandsListResponseDto
   status: 200
 }
     
@@ -5911,7 +6275,7 @@ export const allocationsControllerGetOpenDemands = async ( options?: RequestInit
  * @summary Get PO Allocations
  */
 export type allocationsControllerGetAllocationsByPoResponse200 = {
-  data: AllocationsControllerGetAllocationsByPo200
+  data: PoAllocationsListResponseDto
   status: 200
 }
     
@@ -5948,7 +6312,7 @@ export const allocationsControllerGetAllocationsByPo = async (poId: string, opti
  * @summary Get Available PO Lines
  */
 export type allocationsControllerGetAvailablePoLinesResponse200 = {
-  data: AllocationsControllerGetAvailablePoLines200
+  data: AvailablePoLinesListResponseDto
   status: 200
 }
     
@@ -5992,7 +6356,7 @@ export const allocationsControllerGetAvailablePoLines = async (params: Allocatio
  * @summary Link Demand To PO
  */
 export type allocationsControllerLinkDemandToPoResponse201 = {
-  data: AllocationsControllerLinkDemandToPo201
+  data: AllocationSuccessResponseDto
   status: 201
 }
     
@@ -6011,7 +6375,7 @@ export const getAllocationsControllerLinkDemandToPoUrl = () => {
   return `/allocations/link-po`
 }
 
-export const allocationsControllerLinkDemandToPo = async (allocationsControllerLinkDemandToPoBody: Object, options?: RequestInit): Promise<allocationsControllerLinkDemandToPoResponse> => {
+export const allocationsControllerLinkDemandToPo = async (linkDemandToPoDto: LinkDemandToPoDto, options?: RequestInit): Promise<allocationsControllerLinkDemandToPoResponse> => {
   
   return customFetch<allocationsControllerLinkDemandToPoResponse>(getAllocationsControllerLinkDemandToPoUrl(),
   {      
@@ -6019,7 +6383,7 @@ export const allocationsControllerLinkDemandToPo = async (allocationsControllerL
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      allocationsControllerLinkDemandToPoBody,)
+      linkDemandToPoDto,)
   }
 );}
 
@@ -6030,7 +6394,7 @@ export const allocationsControllerLinkDemandToPo = async (allocationsControllerL
  * @summary Resolve Open Demands
  */
 export type allocationsControllerResolveOpenDemandsResponse201 = {
-  data: AllocationsControllerResolveOpenDemands201
+  data: AllocationResolveResponseDto
   status: 201
 }
     
@@ -6049,7 +6413,7 @@ export const getAllocationsControllerResolveOpenDemandsUrl = () => {
   return `/allocations/resolve`
 }
 
-export const allocationsControllerResolveOpenDemands = async (allocationsControllerResolveOpenDemandsBody: Object, options?: RequestInit): Promise<allocationsControllerResolveOpenDemandsResponse> => {
+export const allocationsControllerResolveOpenDemands = async (allocationsControllerResolveOpenDemandsBody: AllocationsControllerResolveOpenDemandsBody, options?: RequestInit): Promise<allocationsControllerResolveOpenDemandsResponse> => {
   
   return customFetch<allocationsControllerResolveOpenDemandsResponse>(getAllocationsControllerResolveOpenDemandsUrl(),
   {      
@@ -6068,7 +6432,7 @@ export const allocationsControllerResolveOpenDemands = async (allocationsControl
  * @summary Unlink Demand
  */
 export type allocationsControllerUnlinkDemandResponse201 = {
-  data: AllocationsControllerUnlinkDemand201
+  data: AllocationSuccessResponseDto
   status: 201
 }
     
@@ -6088,7 +6452,7 @@ export const getAllocationsControllerUnlinkDemandUrl = (id: string,) => {
 }
 
 export const allocationsControllerUnlinkDemand = async (id: string,
-    allocationsControllerUnlinkDemandBody: Object, options?: RequestInit): Promise<allocationsControllerUnlinkDemandResponse> => {
+    allocationsControllerUnlinkDemandBody: AllocationsControllerUnlinkDemandBody, options?: RequestInit): Promise<allocationsControllerUnlinkDemandResponse> => {
   
   return customFetch<allocationsControllerUnlinkDemandResponse>(getAllocationsControllerUnlinkDemandUrl(id),
   {      
@@ -6107,7 +6471,7 @@ export const allocationsControllerUnlinkDemand = async (id: string,
  * @summary Reallocate Demand
  */
 export type allocationsControllerReallocateDemandResponse201 = {
-  data: AllocationsControllerReallocateDemand201
+  data: AllocationSuccessResponseDto
   status: 201
 }
     
@@ -6127,7 +6491,7 @@ export const getAllocationsControllerReallocateDemandUrl = (id: string,) => {
 }
 
 export const allocationsControllerReallocateDemand = async (id: string,
-    allocationsControllerReallocateDemandBody: Object, options?: RequestInit): Promise<allocationsControllerReallocateDemandResponse> => {
+    reallocateDemandDto: ReallocateDemandDto, options?: RequestInit): Promise<allocationsControllerReallocateDemandResponse> => {
   
   return customFetch<allocationsControllerReallocateDemandResponse>(getAllocationsControllerReallocateDemandUrl(id),
   {      
@@ -6135,7 +6499,7 @@ export const allocationsControllerReallocateDemand = async (id: string,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      allocationsControllerReallocateDemandBody,)
+      reallocateDemandDto,)
   }
 );}
 
@@ -6146,7 +6510,7 @@ export const allocationsControllerReallocateDemand = async (id: string,
  * @summary Generate POs
  */
 export type allocationsControllerGeneratePOsResponse201 = {
-  data: AllocationsControllerGeneratePOs201
+  data: AllocationSuccessResponseDto
   status: 201
 }
     
@@ -6165,7 +6529,7 @@ export const getAllocationsControllerGeneratePOsUrl = () => {
   return `/allocations/generate-pos`
 }
 
-export const allocationsControllerGeneratePOs = async (allocationsControllerGeneratePOsBody: Object, options?: RequestInit): Promise<allocationsControllerGeneratePOsResponse> => {
+export const allocationsControllerGeneratePOs = async (generatePOsDto: GeneratePOsDto, options?: RequestInit): Promise<allocationsControllerGeneratePOsResponse> => {
   
   return customFetch<allocationsControllerGeneratePOsResponse>(getAllocationsControllerGeneratePOsUrl(),
   {      
@@ -6173,7 +6537,7 @@ export const allocationsControllerGeneratePOs = async (allocationsControllerGene
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      allocationsControllerGeneratePOsBody,)
+      generatePOsDto,)
   }
 );}
 
@@ -6184,7 +6548,7 @@ export const allocationsControllerGeneratePOs = async (allocationsControllerGene
  * @summary Generate Transfers
  */
 export type allocationsControllerGenerateTransfersResponse201 = {
-  data: AllocationsControllerGenerateTransfers201
+  data: AllocationSuccessResponseDto
   status: 201
 }
     
@@ -6203,7 +6567,7 @@ export const getAllocationsControllerGenerateTransfersUrl = () => {
   return `/allocations/generate-transfers`
 }
 
-export const allocationsControllerGenerateTransfers = async (allocationsControllerGenerateTransfersBody: Object, options?: RequestInit): Promise<allocationsControllerGenerateTransfersResponse> => {
+export const allocationsControllerGenerateTransfers = async (generateTransfersDto: GenerateTransfersDto, options?: RequestInit): Promise<allocationsControllerGenerateTransfersResponse> => {
   
   return customFetch<allocationsControllerGenerateTransfersResponse>(getAllocationsControllerGenerateTransfersUrl(),
   {      
@@ -6211,7 +6575,7 @@ export const allocationsControllerGenerateTransfers = async (allocationsControll
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      allocationsControllerGenerateTransfersBody,)
+      generateTransfersDto,)
   }
 );}
 
@@ -7606,7 +7970,7 @@ export type invoiceDetailControllerGetSalesInvoicesGlobalResponseSuccess = (invo
 
 export type invoiceDetailControllerGetSalesInvoicesGlobalResponse = (invoiceDetailControllerGetSalesInvoicesGlobalResponseSuccess)
 
-export const getInvoiceDetailControllerGetSalesInvoicesGlobalUrl = (params: InvoiceDetailControllerGetSalesInvoicesGlobalParams,) => {
+export const getInvoiceDetailControllerGetSalesInvoicesGlobalUrl = (params?: InvoiceDetailControllerGetSalesInvoicesGlobalParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -7621,7 +7985,7 @@ export const getInvoiceDetailControllerGetSalesInvoicesGlobalUrl = (params: Invo
   return stringifiedParams.length > 0 ? `/sales-invoices?${stringifiedParams}` : `/sales-invoices`
 }
 
-export const invoiceDetailControllerGetSalesInvoicesGlobal = async (params: InvoiceDetailControllerGetSalesInvoicesGlobalParams, options?: RequestInit): Promise<invoiceDetailControllerGetSalesInvoicesGlobalResponse> => {
+export const invoiceDetailControllerGetSalesInvoicesGlobal = async (params?: InvoiceDetailControllerGetSalesInvoicesGlobalParams, options?: RequestInit): Promise<invoiceDetailControllerGetSalesInvoicesGlobalResponse> => {
   
   return customFetch<invoiceDetailControllerGetSalesInvoicesGlobalResponse>(getInvoiceDetailControllerGetSalesInvoicesGlobalUrl(params),
   {      
@@ -7650,7 +8014,7 @@ export type invoiceDetailControllerGetPurchaseInvoicesGlobalResponseSuccess = (i
 
 export type invoiceDetailControllerGetPurchaseInvoicesGlobalResponse = (invoiceDetailControllerGetPurchaseInvoicesGlobalResponseSuccess)
 
-export const getInvoiceDetailControllerGetPurchaseInvoicesGlobalUrl = (params: InvoiceDetailControllerGetPurchaseInvoicesGlobalParams,) => {
+export const getInvoiceDetailControllerGetPurchaseInvoicesGlobalUrl = (params?: InvoiceDetailControllerGetPurchaseInvoicesGlobalParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -7665,7 +8029,7 @@ export const getInvoiceDetailControllerGetPurchaseInvoicesGlobalUrl = (params: I
   return stringifiedParams.length > 0 ? `/purchase-invoices?${stringifiedParams}` : `/purchase-invoices`
 }
 
-export const invoiceDetailControllerGetPurchaseInvoicesGlobal = async (params: InvoiceDetailControllerGetPurchaseInvoicesGlobalParams, options?: RequestInit): Promise<invoiceDetailControllerGetPurchaseInvoicesGlobalResponse> => {
+export const invoiceDetailControllerGetPurchaseInvoicesGlobal = async (params?: InvoiceDetailControllerGetPurchaseInvoicesGlobalParams, options?: RequestInit): Promise<invoiceDetailControllerGetPurchaseInvoicesGlobalResponse> => {
   
   return customFetch<invoiceDetailControllerGetPurchaseInvoicesGlobalResponse>(getInvoiceDetailControllerGetPurchaseInvoicesGlobalUrl(params),
   {      
@@ -8122,7 +8486,7 @@ export type externalSyncControllerGetSyncStatusResponseSuccess = (externalSyncCo
 
 export type externalSyncControllerGetSyncStatusResponse = (externalSyncControllerGetSyncStatusResponseSuccess)
 
-export const getExternalSyncControllerGetSyncStatusUrl = (params: ExternalSyncControllerGetSyncStatusParams,) => {
+export const getExternalSyncControllerGetSyncStatusUrl = (params?: ExternalSyncControllerGetSyncStatusParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -8137,7 +8501,7 @@ export const getExternalSyncControllerGetSyncStatusUrl = (params: ExternalSyncCo
   return stringifiedParams.length > 0 ? `/settings/external-sync?${stringifiedParams}` : `/settings/external-sync`
 }
 
-export const externalSyncControllerGetSyncStatus = async (params: ExternalSyncControllerGetSyncStatusParams, options?: RequestInit): Promise<externalSyncControllerGetSyncStatusResponse> => {
+export const externalSyncControllerGetSyncStatus = async (params?: ExternalSyncControllerGetSyncStatusParams, options?: RequestInit): Promise<externalSyncControllerGetSyncStatusResponse> => {
   
   return customFetch<externalSyncControllerGetSyncStatusResponse>(getExternalSyncControllerGetSyncStatusUrl(params),
   {      
@@ -8254,7 +8618,7 @@ export type paymentsControllerFindAllResponseSuccess = (paymentsControllerFindAl
 
 export type paymentsControllerFindAllResponse = (paymentsControllerFindAllResponseSuccess)
 
-export const getPaymentsControllerFindAllUrl = (params: PaymentsControllerFindAllParams,) => {
+export const getPaymentsControllerFindAllUrl = (params?: PaymentsControllerFindAllParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -8269,7 +8633,7 @@ export const getPaymentsControllerFindAllUrl = (params: PaymentsControllerFindAl
   return stringifiedParams.length > 0 ? `/payments?${stringifiedParams}` : `/payments`
 }
 
-export const paymentsControllerFindAll = async (params: PaymentsControllerFindAllParams, options?: RequestInit): Promise<paymentsControllerFindAllResponse> => {
+export const paymentsControllerFindAll = async (params?: PaymentsControllerFindAllParams, options?: RequestInit): Promise<paymentsControllerFindAllResponse> => {
   
   return customFetch<paymentsControllerFindAllResponse>(getPaymentsControllerFindAllUrl(params),
   {      
@@ -8808,7 +9172,7 @@ export const telemetryControllerReportClientError = async (clientErrorDto: Clien
  * @summary List Suppliers
  */
 export type suppliersControllerFindAllResponse200 = {
-  data: SupplierResponseDto[]
+  data: SuppliersControllerFindAll200
   status: 200
 }
     
@@ -8890,7 +9254,7 @@ export const suppliersControllerCreate = async (createSupplierDto: CreateSupplie
  * @summary List Product Suppliers
  */
 export type suppliersControllerFindByProductResponse200 = {
-  data: SupplierResponseDto[]
+  data: SuppliersControllerFindByProduct200
   status: 200
 }
     
@@ -9012,7 +9376,7 @@ export const suppliersControllerUpdate = async (id: string,
  * @summary List Supplier Products
  */
 export type suppliersControllerFindSupplierProductsResponse200 = {
-  data: SupplierResponseDto[]
+  data: SuppliersControllerFindSupplierProducts200
   status: 200
 }
     
@@ -9127,7 +9491,7 @@ export const suppliersControllerUnarchive = async (id: string,
  * @summary List Expiries
  */
 export type suppliersControllerFindSupplierExpiriesResponse200 = {
-  data: SupplierResponseDto[]
+  data: SuppliersControllerFindSupplierExpiries200
   status: 200
 }
     
@@ -9580,7 +9944,7 @@ export type purchaseOrdersControllerFindPendingLinesResponseSuccess = (purchaseO
 
 export type purchaseOrdersControllerFindPendingLinesResponse = (purchaseOrdersControllerFindPendingLinesResponseSuccess)
 
-export const getPurchaseOrdersControllerFindPendingLinesUrl = (params: PurchaseOrdersControllerFindPendingLinesParams,) => {
+export const getPurchaseOrdersControllerFindPendingLinesUrl = (params?: PurchaseOrdersControllerFindPendingLinesParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -9595,7 +9959,7 @@ export const getPurchaseOrdersControllerFindPendingLinesUrl = (params: PurchaseO
   return stringifiedParams.length > 0 ? `/purchase-orders/pending-lines?${stringifiedParams}` : `/purchase-orders/pending-lines`
 }
 
-export const purchaseOrdersControllerFindPendingLines = async (params: PurchaseOrdersControllerFindPendingLinesParams, options?: RequestInit): Promise<purchaseOrdersControllerFindPendingLinesResponse> => {
+export const purchaseOrdersControllerFindPendingLines = async (params?: PurchaseOrdersControllerFindPendingLinesParams, options?: RequestInit): Promise<purchaseOrdersControllerFindPendingLinesResponse> => {
   
   return customFetch<purchaseOrdersControllerFindPendingLinesResponse>(getPurchaseOrdersControllerFindPendingLinesUrl(params),
   {      
@@ -10186,7 +10550,7 @@ export type globalPurchaseReturnsControllerGetPurchaseReturnsResponseSuccess = (
 
 export type globalPurchaseReturnsControllerGetPurchaseReturnsResponse = (globalPurchaseReturnsControllerGetPurchaseReturnsResponseSuccess)
 
-export const getGlobalPurchaseReturnsControllerGetPurchaseReturnsUrl = (params: GlobalPurchaseReturnsControllerGetPurchaseReturnsParams,) => {
+export const getGlobalPurchaseReturnsControllerGetPurchaseReturnsUrl = (params?: GlobalPurchaseReturnsControllerGetPurchaseReturnsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -10201,7 +10565,7 @@ export const getGlobalPurchaseReturnsControllerGetPurchaseReturnsUrl = (params: 
   return stringifiedParams.length > 0 ? `/purchase-returns?${stringifiedParams}` : `/purchase-returns`
 }
 
-export const globalPurchaseReturnsControllerGetPurchaseReturns = async (params: GlobalPurchaseReturnsControllerGetPurchaseReturnsParams, options?: RequestInit): Promise<globalPurchaseReturnsControllerGetPurchaseReturnsResponse> => {
+export const globalPurchaseReturnsControllerGetPurchaseReturns = async (params?: GlobalPurchaseReturnsControllerGetPurchaseReturnsParams, options?: RequestInit): Promise<globalPurchaseReturnsControllerGetPurchaseReturnsResponse> => {
   
   return customFetch<globalPurchaseReturnsControllerGetPurchaseReturnsResponse>(getGlobalPurchaseReturnsControllerGetPurchaseReturnsUrl(params),
   {      
@@ -10344,7 +10708,7 @@ export type systemControllerGetSystemLogsResponseSuccess = (systemControllerGetS
 
 export type systemControllerGetSystemLogsResponse = (systemControllerGetSystemLogsResponseSuccess)
 
-export const getSystemControllerGetSystemLogsUrl = (params: SystemControllerGetSystemLogsParams,) => {
+export const getSystemControllerGetSystemLogsUrl = (params?: SystemControllerGetSystemLogsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -10359,7 +10723,7 @@ export const getSystemControllerGetSystemLogsUrl = (params: SystemControllerGetS
   return stringifiedParams.length > 0 ? `/admin/system-logs?${stringifiedParams}` : `/admin/system-logs`
 }
 
-export const systemControllerGetSystemLogs = async (params: SystemControllerGetSystemLogsParams, options?: RequestInit): Promise<systemControllerGetSystemLogsResponse> => {
+export const systemControllerGetSystemLogs = async (params?: SystemControllerGetSystemLogsParams, options?: RequestInit): Promise<systemControllerGetSystemLogsResponse> => {
   
   return customFetch<systemControllerGetSystemLogsResponse>(getSystemControllerGetSystemLogsUrl(params),
   {      
@@ -11114,7 +11478,7 @@ export type goodsReceivedControllerFindAllLinesResponseSuccess = (goodsReceivedC
 
 export type goodsReceivedControllerFindAllLinesResponse = (goodsReceivedControllerFindAllLinesResponseSuccess)
 
-export const getGoodsReceivedControllerFindAllLinesUrl = (params: GoodsReceivedControllerFindAllLinesParams,) => {
+export const getGoodsReceivedControllerFindAllLinesUrl = (params?: GoodsReceivedControllerFindAllLinesParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -11129,7 +11493,7 @@ export const getGoodsReceivedControllerFindAllLinesUrl = (params: GoodsReceivedC
   return stringifiedParams.length > 0 ? `/goods-received/lines?${stringifiedParams}` : `/goods-received/lines`
 }
 
-export const goodsReceivedControllerFindAllLines = async (params: GoodsReceivedControllerFindAllLinesParams, options?: RequestInit): Promise<goodsReceivedControllerFindAllLinesResponse> => {
+export const goodsReceivedControllerFindAllLines = async (params?: GoodsReceivedControllerFindAllLinesParams, options?: RequestInit): Promise<goodsReceivedControllerFindAllLinesResponse> => {
   
   return customFetch<goodsReceivedControllerFindAllLinesResponse>(getGoodsReceivedControllerFindAllLinesUrl(params),
   {      
@@ -11344,7 +11708,7 @@ export const getMacrosControllerCreateUrl = () => {
   return `/macros`
 }
 
-export const macrosControllerCreate = async (macrosControllerCreateBody: Object, options?: RequestInit): Promise<macrosControllerCreateResponse> => {
+export const macrosControllerCreate = async (createMacroDto: CreateMacroDto, options?: RequestInit): Promise<macrosControllerCreateResponse> => {
   
   return customFetch<macrosControllerCreateResponse>(getMacrosControllerCreateUrl(),
   {      
@@ -11352,7 +11716,7 @@ export const macrosControllerCreate = async (macrosControllerCreateBody: Object,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      macrosControllerCreateBody,)
+      createMacroDto,)
   }
 );}
 
@@ -11374,7 +11738,7 @@ export type macrosControllerFindAllResponseSuccess = (macrosControllerFindAllRes
 
 export type macrosControllerFindAllResponse = (macrosControllerFindAllResponseSuccess)
 
-export const getMacrosControllerFindAllUrl = (params: MacrosControllerFindAllParams,) => {
+export const getMacrosControllerFindAllUrl = (params?: MacrosControllerFindAllParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -11389,7 +11753,7 @@ export const getMacrosControllerFindAllUrl = (params: MacrosControllerFindAllPar
   return stringifiedParams.length > 0 ? `/macros?${stringifiedParams}` : `/macros`
 }
 
-export const macrosControllerFindAll = async (params: MacrosControllerFindAllParams, options?: RequestInit): Promise<macrosControllerFindAllResponse> => {
+export const macrosControllerFindAll = async (params?: MacrosControllerFindAllParams, options?: RequestInit): Promise<macrosControllerFindAllResponse> => {
   
   return customFetch<macrosControllerFindAllResponse>(getMacrosControllerFindAllUrl(params),
   {      
@@ -11473,7 +11837,7 @@ export const getMacrosControllerUpdateUrl = (id: string,) => {
 }
 
 export const macrosControllerUpdate = async (id: string,
-    macrosControllerUpdateBody: Object, options?: RequestInit): Promise<macrosControllerUpdateResponse> => {
+    updateMacroDto: UpdateMacroDto, options?: RequestInit): Promise<macrosControllerUpdateResponse> => {
   
   return customFetch<macrosControllerUpdateResponse>(getMacrosControllerUpdateUrl(id),
   {      
@@ -11481,7 +11845,7 @@ export const macrosControllerUpdate = async (id: string,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      macrosControllerUpdateBody,)
+      updateMacroDto,)
   }
 );}
 
@@ -11783,7 +12147,7 @@ export type discountMatrixControllerListResponseSuccess = (discountMatrixControl
 
 export type discountMatrixControllerListResponse = (discountMatrixControllerListResponseSuccess)
 
-export const getDiscountMatrixControllerListUrl = (params: DiscountMatrixControllerListParams,) => {
+export const getDiscountMatrixControllerListUrl = (params?: DiscountMatrixControllerListParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -11798,7 +12162,7 @@ export const getDiscountMatrixControllerListUrl = (params: DiscountMatrixControl
   return stringifiedParams.length > 0 ? `/discount-matrix?${stringifiedParams}` : `/discount-matrix`
 }
 
-export const discountMatrixControllerList = async (params: DiscountMatrixControllerListParams, options?: RequestInit): Promise<discountMatrixControllerListResponse> => {
+export const discountMatrixControllerList = async (params?: DiscountMatrixControllerListParams, options?: RequestInit): Promise<discountMatrixControllerListResponse> => {
   
   return customFetch<discountMatrixControllerListResponse>(getDiscountMatrixControllerListUrl(params),
   {      
@@ -11835,7 +12199,7 @@ export const getDiscountMatrixControllerCreateUrl = () => {
   return `/discount-matrix`
 }
 
-export const discountMatrixControllerCreate = async (discountMatrixControllerCreateBody: Object, options?: RequestInit): Promise<discountMatrixControllerCreateResponse> => {
+export const discountMatrixControllerCreate = async (createDiscountMatrixDto: CreateDiscountMatrixDto, options?: RequestInit): Promise<discountMatrixControllerCreateResponse> => {
   
   return customFetch<discountMatrixControllerCreateResponse>(getDiscountMatrixControllerCreateUrl(),
   {      
@@ -11843,7 +12207,7 @@ export const discountMatrixControllerCreate = async (discountMatrixControllerCre
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      discountMatrixControllerCreateBody,)
+      createDiscountMatrixDto,)
   }
 );}
 
@@ -11918,7 +12282,7 @@ export const getDiscountMatrixControllerUpdateUrl = (id: string,) => {
 }
 
 export const discountMatrixControllerUpdate = async (id: string,
-    discountMatrixControllerUpdateBody: Object, options?: RequestInit): Promise<discountMatrixControllerUpdateResponse> => {
+    updateDiscountMatrixDto: UpdateDiscountMatrixDto, options?: RequestInit): Promise<discountMatrixControllerUpdateResponse> => {
   
   return customFetch<discountMatrixControllerUpdateResponse>(getDiscountMatrixControllerUpdateUrl(id),
   {      
@@ -11926,7 +12290,7 @@ export const discountMatrixControllerUpdate = async (id: string,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      discountMatrixControllerUpdateBody,)
+      updateDiscountMatrixDto,)
   }
 );}
 
@@ -12265,6 +12629,197 @@ export const eventsControllerPublish = async (publishEventDto: PublishEventDto, 
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       publishEventDto,)
+  }
+);}
+
+
+
+export type enrichmentControllerLookupResponse200 = {
+  data: EnrichmentControllerLookup200
+  status: 200
+}
+    
+export type enrichmentControllerLookupResponseSuccess = (enrichmentControllerLookupResponse200) & {
+  headers: Headers;
+};
+;
+
+export type enrichmentControllerLookupResponse = (enrichmentControllerLookupResponseSuccess)
+
+export const getEnrichmentControllerLookupUrl = (params: EnrichmentControllerLookupParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/enrichment/lookup?${stringifiedParams}` : `/enrichment/lookup`
+}
+
+export const enrichmentControllerLookup = async (params: EnrichmentControllerLookupParams, options?: RequestInit): Promise<enrichmentControllerLookupResponse> => {
+  
+  return customFetch<enrichmentControllerLookupResponse>(getEnrichmentControllerLookupUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+export type enrichmentControllerLookupPostResponse200 = {
+  data: EnrichmentControllerLookupPost200
+  status: 200
+}
+
+export type enrichmentControllerLookupPostResponse201 = {
+  data: EnrichmentControllerLookupPost201
+  status: 201
+}
+    
+export type enrichmentControllerLookupPostResponseSuccess = (enrichmentControllerLookupPostResponse200 | enrichmentControllerLookupPostResponse201) & {
+  headers: Headers;
+};
+;
+
+export type enrichmentControllerLookupPostResponse = (enrichmentControllerLookupPostResponseSuccess)
+
+export const getEnrichmentControllerLookupPostUrl = (provider: string,) => {
+
+
+  
+
+  return `/enrichment/lookup/${provider}`
+}
+
+export const enrichmentControllerLookupPost = async (provider: string, options?: RequestInit): Promise<enrichmentControllerLookupPostResponse> => {
+  
+  return customFetch<enrichmentControllerLookupPostResponse>(getEnrichmentControllerLookupPostUrl(provider),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+
+export type enrichmentControllerGetProvidersResponse200 = {
+  data: EnrichmentControllerGetProviders200Item[]
+  status: 200
+}
+    
+export type enrichmentControllerGetProvidersResponseSuccess = (enrichmentControllerGetProvidersResponse200) & {
+  headers: Headers;
+};
+;
+
+export type enrichmentControllerGetProvidersResponse = (enrichmentControllerGetProvidersResponseSuccess)
+
+export const getEnrichmentControllerGetProvidersUrl = () => {
+
+
+  
+
+  return `/enrichment/providers`
+}
+
+export const enrichmentControllerGetProviders = async ( options?: RequestInit): Promise<enrichmentControllerGetProvidersResponse> => {
+  
+  return customFetch<enrichmentControllerGetProvidersResponse>(getEnrichmentControllerGetProvidersUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+export type enrichmentControllerGetConfigResponse200 = {
+  data: EnrichmentControllerGetConfig200
+  status: 200
+}
+    
+export type enrichmentControllerGetConfigResponseSuccess = (enrichmentControllerGetConfigResponse200) & {
+  headers: Headers;
+};
+;
+
+export type enrichmentControllerGetConfigResponse = (enrichmentControllerGetConfigResponseSuccess)
+
+export const getEnrichmentControllerGetConfigUrl = (params: EnrichmentControllerGetConfigParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/enrichment/config?${stringifiedParams}` : `/enrichment/config`
+}
+
+export const enrichmentControllerGetConfig = async (params: EnrichmentControllerGetConfigParams, options?: RequestInit): Promise<enrichmentControllerGetConfigResponse> => {
+  
+  return customFetch<enrichmentControllerGetConfigResponse>(getEnrichmentControllerGetConfigUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+export type enrichmentControllerUpdateConfigResponse200 = {
+  data: EnrichmentControllerUpdateConfig200
+  status: 200
+}
+    
+export type enrichmentControllerUpdateConfigResponseSuccess = (enrichmentControllerUpdateConfigResponse200) & {
+  headers: Headers;
+};
+;
+
+export type enrichmentControllerUpdateConfigResponse = (enrichmentControllerUpdateConfigResponseSuccess)
+
+export const getEnrichmentControllerUpdateConfigUrl = (params: EnrichmentControllerUpdateConfigParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/enrichment/config?${stringifiedParams}` : `/enrichment/config`
+}
+
+export const enrichmentControllerUpdateConfig = async (params: EnrichmentControllerUpdateConfigParams, options?: RequestInit): Promise<enrichmentControllerUpdateConfigResponse> => {
+  
+  return customFetch<enrichmentControllerUpdateConfigResponse>(getEnrichmentControllerUpdateConfigUrl(params),
+  {      
+    ...options,
+    method: 'PUT'
+    
+    
   }
 );}
 

@@ -5,10 +5,10 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
-import type { ShippingContextDtoLinesItem } from './shippingContextDtoLinesItem';
+import type { ShippingContextLineDto } from './shippingContextLineDto';
 import type { ShipmentResponseDto } from './shipmentResponseDto';
 
 export interface ShippingContextDto {
-  lines: ShippingContextDtoLinesItem[];
+  lines: ShippingContextLineDto[];
   shipments: ShipmentResponseDto[];
 }

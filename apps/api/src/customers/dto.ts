@@ -5,6 +5,7 @@ import {
   IsEmail,
   IsUUID,
   IsNumberString,
+  IsBoolean,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -114,6 +115,14 @@ export class CreateAccountDto {
   @IsOptional()
   @IsString()
   bankAccountNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  businessNumber?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isTaxRegistered?: boolean;
 }
 
 export class UpdateAccountDto {
@@ -222,6 +231,14 @@ export class UpdateAccountDto {
   @IsOptional()
   @IsString()
   bankAccountNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  businessNumber?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isTaxRegistered?: boolean;
 }
 
 export class CreateAccountGroupDto {
@@ -309,6 +326,8 @@ export class AccountResponseDto {
   bankAccountName?: string;
   bankBsb?: string;
   bankAccountNumber?: string;
+  businessNumber?: string;
+  isTaxRegistered?: boolean;
   stateCode!: string;
   sourceId?: string;
   source!: string;

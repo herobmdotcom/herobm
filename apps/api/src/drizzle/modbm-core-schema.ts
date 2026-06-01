@@ -1368,6 +1368,7 @@ export const products = modbmCore.table('products', {
   salesTaxCategoryId: uuid('sales_tax_category_id').references(
     () => taxCategories.taxCategoryId,
   ),
+  externalTaxCode: text('external_tax_code'),
   alternateProductNumber: text('alternate_product_number'),
   stateCode: text('state_code').notNull().default(PRODUCT_STATE.ACTIVE),
   notes: text('notes'),
@@ -1489,6 +1490,8 @@ export const customers = modbmCore.table(
     bankAccountName: text('bank_account_name'),
     bankBsb: text('bank_bsb'),
     bankAccountNumber: text('bank_account_number'),
+    businessNumber: text('business_number'),
+    isTaxRegistered: boolean('is_tax_registered').notNull().default(false),
 
     externalId: text('external_id'),
     sourceId: text('source_id').unique(),
@@ -1568,6 +1571,8 @@ export const suppliers = modbmCore.table(
     bankAccountName: text('bank_account_name'),
     bankBsb: text('bank_bsb'),
     bankAccountNumber: text('bank_account_number'),
+    businessNumber: text('business_number'),
+    isTaxRegistered: boolean('is_tax_registered').notNull().default(false),
     sourceId: text('source_id').unique(),
     source: text('source').notNull().default('app'),
     createdBy: text('created_by'),
@@ -2070,6 +2075,9 @@ export const appSettings = modbmCore.table('app_settings', {
   creditLimitBehavior: text('credit_limit_behavior').notNull().default('soft'), // 'hard' (block creation) | 'soft' (allow draft, block dispatch)
   apiRateLimit: numeric('api_rate_limit').notNull().default('1000'),
   setupCompletedAt: timestamp('setup_completed_at', { withTimezone: true }),
+  taxProviderMappings: jsonb('tax_provider_mappings').$type<
+    Record<string, string>
+  >(),
 });
 
 // ===========================================================================
@@ -2238,4 +2246,68 @@ export const casbinRule = modbmCore.table('casbin_rule', {
   v3: text('v3'),
   v4: text('v4'),
   v5: text('v5'),
+});
+
+// ---------------------------------------------------------------------------
+// csv_mapping_profiles (Saved column mappings for bank CSV imports)
+// ---------------------------------------------------------------------------
+export const csvMappingProfiles = modbmCore.table('csv_mapping_profiles', {
+  profileId: uuid('profile_id').primaryKey().defaultRandom(),
+  glAccountId: uuid('gl_account_id').references(() => glAccounts.glAccountId),
+  name: text('name').notNull(),
+  dateColumn: text('date_column').notNull(),
+  amountColumn: text('amount_column').notNull(),
+  descriptionColumn: text('description_column').notNull(),
+  referenceColumn: text('reference_column'),
+  headerRows: integer('header_rows').notNull().default(1),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// reconciliation_rules (Rules engine for auto-tagging bank statement lines)
+// ---------------------------------------------------------------------------
+export const reconciliationRules = modbmCore.table('reconciliation_rules', {
+  ruleId: uuid('rule_id').primaryKey().defaultRandom(),
+  glAccountId: uuid('gl_account_id').references(() => glAccounts.glAccountId), // Nullable for global rules
+  conditionType: text('condition_type').notNull(), // 'contains', 'starts_with', 'exact_match'
+  conditionValue: text('condition_value').notNull(),
+  targetGlAccountId: uuid('target_gl_account_id')
+    .notNull()
+    .references(() => glAccounts.glAccountId),
+  priority: integer('priority').notNull().default(10),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// bank_statement_lines (Staging queue for unmatched bank import rows)
+// ---------------------------------------------------------------------------
+export const bankStatementLines = modbmCore.table('bank_statement_lines', {
+  lineId: uuid('line_id').primaryKey().defaultRandom(),
+  glAccountId: uuid('gl_account_id')
+    .notNull()
+    .references(() => glAccounts.glAccountId),
+  date: date('date').notNull(),
+  description: text('description').notNull(),
+  amount: numeric('amount').notNull(),
+  reference: text('reference'),
+  isReconciled: boolean('is_reconciled').notNull().default(false),
+  reconciliationId: uuid('reconciliation_id').references(
+    () => glReconciliations.reconciliationId,
+  ),
+  matchedJournalLineId: uuid('matched_journal_line_id').references(
+    () => glJournalLines.journalLineId,
+  ),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// integrations (Enrichment Providers & Third-Party Configs)
+// ---------------------------------------------------------------------------
+export const integrations = modbmCore.table('integrations', {
+  integrationId: uuid('integration_id').primaryKey().defaultRandom(),
+  provider: text('provider').unique().notNull(),
+  config: jsonb('config').notNull().default({}),
+  isActive: boolean('is_active').notNull().default(true),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
 });

@@ -7,5 +7,5 @@
  */
 
 export type InventoryControllerGetPendingPutawayParams = {
-locationId: string;
+locationId?: string;
 };

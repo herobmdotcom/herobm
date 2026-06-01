@@ -4,6 +4,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -25,7 +26,14 @@ import {
 } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
-import { ShippingContextDto } from './dto';
+import {
+  ShippingContextDto,
+  PickingQueueOrderDto,
+  PickingSummaryDto,
+  ShippingQueueOrderDto,
+  PickOrderLineDto,
+  PickingSummaryPickDto,
+} from './dto';
 
 @ApiTags('Orders')
 @Controller('sales-orders')
@@ -35,19 +43,20 @@ export class OrderPickingController {
   constructor(private readonly pickingService: PickingService) {}
 
   @Get('picking-queue')
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: [PickingQueueOrderDto] })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Picking Queue',
     description:
       'Retrieve the queue of orders ready to be picked at a specific location.',
   })
+  @ApiQuery({ name: 'locationId', required: false })
   getPickingQueue(@Query('locationId') locationId?: string) {
     return this.pickingService.getPickingQueue(locationId);
   }
 
   @Get(':id/picking')
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: PickingSummaryDto })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Picking Summary',
@@ -58,8 +67,8 @@ export class OrderPickingController {
   }
 
   @Post(':id/picking/lines/:lineId')
-  @ApiBody({ type: Object }) // BYPASS-TYPING-TEST
-  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiBody({ type: PickOrderLineDto })
+  @ApiCreatedResponse({ type: PickingSummaryPickDto })
   @CasbinAction('handle')
   @ApiOperation({
     summary: 'Pick Order Line',
@@ -82,7 +91,7 @@ export class OrderPickingController {
   }
 
   @Delete(':id/picking/picks/:pickId')
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: PickingSummaryPickDto })
   @CasbinAction('handle')
   @ApiOperation({
     summary: 'Cancel Pick',
@@ -97,13 +106,14 @@ export class OrderPickingController {
   }
 
   @Get('shipping-queue')
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: [ShippingQueueOrderDto] })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Shipping Queue',
     description:
       'Retrieve the queue of orders ready to be shipped from a location.',
   })
+  @ApiQuery({ name: 'locationId', required: false })
   getShippingQueue(@Query('locationId') locationId?: string) {
     return this.pickingService.getShippingQueue(locationId);
   }

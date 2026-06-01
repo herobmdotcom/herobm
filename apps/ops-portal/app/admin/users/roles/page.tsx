@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import { getErrorMessage } from '@modbm/shared';
 
 const RESOURCES = [
   'customers', 'products', 'inventory', 'sales-orders', 'sales-returns',
@@ -88,8 +89,8 @@ export default function RolesPage() {
       setLoading(true);
       const res = await api.rolesControllerFindAll();
       setRoles(res.data as unknown as RoleWithDetails[]);
-    } catch (err: any) {
-      toast.error('Failed to load roles: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Failed to load roles: ' + getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -160,8 +161,8 @@ export default function RolesPage() {
       toast.success(isCreating ? 'Role created' : 'Permissions updated');
       cancel();
       loadRoles();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -175,8 +176,8 @@ export default function RolesPage() {
       await api.rolesControllerRemove(role);
       toast.success('Role deleted');
       loadRoles();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

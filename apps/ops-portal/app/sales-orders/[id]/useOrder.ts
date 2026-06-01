@@ -58,7 +58,7 @@ export function useOrder(id: string) {
     useEffect(() => {
         api.inventoryControllerFindAllLocations()
             .then((res) => {
-                setLocations((res.data?.data || []) as { locationId: string; name: string }[]);
+                setLocations(((res as any).data as unknown as { locationId: string; name: string }[]) || []);
             })
             .catch((err) => reportError(err, 'Locations_Fetch'));
     }, []);

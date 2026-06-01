@@ -7,6 +7,6 @@
  */
 
 export type InventoryControllerFindByProductIdsParams = {
-productIds: string;
-locationId: string;
+productIds?: string;
+locationId?: string;
 };

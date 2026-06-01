@@ -11,6 +11,7 @@ export interface UpdateOrderLineDto {
   pricePerUnit?: string;
   discountPercentage?: string;
   taxCategoryId?: string;
+  tax?: string;
   productDescription?: string;
   unitOfMeasure?: string;
   fulfillmentLocationId?: string;

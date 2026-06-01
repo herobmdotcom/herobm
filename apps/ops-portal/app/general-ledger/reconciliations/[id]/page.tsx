@@ -11,6 +11,8 @@ import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import BankMatchingView from './BankMatchingView';
+import { getErrorMessage } from '@modbm/shared';
 
 const ToggleCell = (p: any) => {
   const t = useTranslations('gl.reconciliations');
@@ -62,6 +64,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
   const [isAdjustmentModalOpen, setAdjustmentModalOpen] = useState(false);
   const [isSplitModalOpen, setSplitModalOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'bank' | 'ledger'>('bank');
 
   const fetchDetails = useCallback(async () => {
     try {
@@ -118,9 +121,9 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
       await api.reconciliationControllerDiscardReconciliation(id);
       toast.success(t('discardSuccess'));
       router.push('/general-ledger/reconciliations');
-    } catch (err: any) {
+    } catch (err: unknown) {
       reportError(err, 'ReconciliationDiscard');
-      toast.error(err.message || t('discardError'));
+      toast.error(getErrorMessage(err) || t('discardError'));
       setPosting(false);
     }
   };
@@ -200,135 +203,155 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
 
   return (
     <div className="h-full flex flex-col bg-white">
-      <div className="flex-1 min-h-0 flex flex-col">
-        <DataGrid
-          refreshTrigger={refreshKey}
-          endpoint={`/api/gl/reconciliations/${id}/unreconciled`}
-          columns={columns}
-          rowIdField="journalLineId"
-          fetchAll={true}
-          rowSelection="single"
-          onSelectionChanged={(rows) => setSelectedRow(rows[0] || null)}
-          context={{ handleToggle, isPosted }}
-          renderHeader={({ searchInput, optionsButton, rowCount, loading: gridLoading }) => (
-            <div className="flex flex-col bg-white border-b border-gray-200">
-              <div className="flex flex-col px-6 py-4 gap-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <button 
-                      onClick={() => router.back()} 
-                      className="btn btn-secondary btn-sm"
-                      aria-label="Go back"
-                      title={t('tooltips.back')}
-                    >
-                      ←
-                    </button>
-                    <h1 className="text-xl font-bold text-gray-900 tracking-tight">
-                      {t('reconciliationLabel', { account: reconciliation.accountName })}
-                    </h1>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                      isPosted 
-                        ? 'bg-emerald-50 text-[var(--success)] border-emerald-200' 
-                        : 'bg-amber-50 text-[var(--warning)] border-amber-200'
-                    }`}>
-                      {isPosted ? tCommon('states.posted') : tCommon('states.draft')}
-                    </span>
-                    <span className="text-sm text-gray-500 font-medium ml-2">
-                      {t('statementDateLabel', { date: reconciliation.statementDate })}
-                    </span>
-                    <div className="flex items-center bg-[#f0f8f6] rounded px-2 py-0.5 ml-2">
+      {/* GLOBAL HEADER (Outside of specific views) */}
+      <div className="flex flex-col bg-white border-b border-gray-200 px-6 py-4 gap-4 shrink-0 z-10 shadow-sm relative">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => router.back()} 
+              className="btn btn-secondary btn-sm"
+              aria-label="Go back"
+              title={t('tooltips.back')}
+            >
+              ←
+            </button>
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+              {t('reconciliationLabel', { account: reconciliation.accountName })}
+            </h1>
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+              isPosted 
+                ? 'bg-emerald-50 text-[var(--success)] border-emerald-200' 
+                : 'bg-amber-50 text-[var(--warning)] border-amber-200'
+            }`}>
+              {isPosted ? tCommon('states.posted') : tCommon('states.draft')}
+            </span>
+            <span className="text-sm text-gray-500 font-medium ml-2">
+              {t('statementDateLabel', { date: reconciliation.statementDate })}
+            </span>
+            
+            <div className="flex bg-gray-100 p-1 rounded-lg ml-6 items-center">
+              <button 
+                onClick={() => setViewMode('bank')} 
+                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'bank' ? 'bg-white shadow-sm text-[var(--accent)]' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Bank Statement Match
+              </button>
+              <button 
+                onClick={() => setViewMode('ledger')} 
+                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'ledger' ? 'bg-white shadow-sm text-[var(--accent)]' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Ledger Lines
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            {!isPosted && (
+              <>
+                <button
+                  onClick={handleDiscard}
+                  disabled={posting}
+                  className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+                >
+                  {t('discard')}
+                </button>
+                <button
+                  onClick={handlePost}
+                  disabled={posting || Math.abs(reconciliation.variance) > 0.001}
+                  className="px-5 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={Math.abs(reconciliation.variance) > 0.001 ? t('varianceMustBeZero') : ''}
+                >
+                  {posting ? t('posting') : t('postReconciliation')}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-4">
+          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('openingBalance')}</div>
+            <div className="text-xl font-bold mt-0.5 text-gray-900">
+              {formatCurrency(reconciliation.openingBalance)}
+            </div>
+          </div>
+          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('clearedBalance')}</div>
+            <div className="text-xl font-bold mt-0.5 text-gray-900">
+              {formatCurrency(reconciliation.clearedBalance)}
+            </div>
+          </div>
+          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('statementBalance')}</div>
+            <div className="text-xl font-bold mt-0.5 text-gray-900">
+              {formatCurrency(reconciliation.statementBalance)}
+            </div>
+          </div>
+          <div className={`p-3 rounded-lg border shadow-sm transition-colors ${Math.abs(reconciliation.variance) < 0.001 ? 'bg-[#f0f8f6] border-[#006b5c]/30' : 'bg-red-50 border-red-200'}`}>
+            <div className={`text-[10px] uppercase tracking-wider font-bold ${Math.abs(reconciliation.variance) < 0.001 ? 'text-[#006b5c]' : 'text-[var(--danger)]'}`}>
+              {t('variance')}
+            </div>
+            <div className={`text-xl font-bold mt-0.5 ${Math.abs(reconciliation.variance) < 0.001 ? 'text-[#006b5c]' : 'text-[var(--danger)]'}`}>
+              {formatCurrency(reconciliation.variance)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-0 flex flex-col bg-gray-50 relative">
+        {viewMode === 'bank' ? (
+          <BankMatchingView reconciliation={reconciliation} onUpdate={() => { fetchDetails(); setRefreshKey(k => k + 1); }} />
+        ) : (
+          <DataGrid
+            refreshTrigger={refreshKey}
+            endpoint={`/api/gl/reconciliations/${id}/unreconciled`}
+            columns={columns}
+            rowIdField="journalLineId"
+            fetchAll={true}
+            rowSelection="single"
+            onSelectionChanged={(rows) => setSelectedRow(rows[0] || null)}
+            context={{ handleToggle, isPosted }}
+            renderHeader={({ searchInput, optionsButton, rowCount, loading: gridLoading }) => (
+              <div className="flex flex-col bg-white border-b border-gray-200">
+                <div className="flex flex-col px-6 py-3">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center bg-[#f0f8f6] rounded px-2 py-0.5 mr-2">
                       <span className="text-[10px] font-bold text-[#006b5c] uppercase tracking-wider mr-1.5">{t('rows')}</span>
                       <span className="text-[11px] font-bold text-[#006b5c]">
                         {gridLoading ? '...' : rowCount.toLocaleString()}
                       </span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex-1 max-w-sm">
+                      {searchInput}
+                    </div>
                     {!isPosted && (
                       <>
                         <button
-                          onClick={handleDiscard}
-                          disabled={posting}
-                          className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => setAdjustmentModalOpen(true)}
+                          className="btn btn-secondary btn-sm flex items-center gap-2 font-semibold"
                         >
-                          {t('discard')}
+                          {/* eslint-disable-next-line i18next/no-literal-string */}
+                          <span className="material-symbols-outlined text-[18px]">add</span>
+                          {t('quickAdjustment')}
                         </button>
                         <button
-                          onClick={handlePost}
-                          disabled={posting || Math.abs(reconciliation.variance) > 0.001}
-                          className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                          title={Math.abs(reconciliation.variance) > 0.001 ? t('varianceMustBeZero') : ''}
+                          onClick={() => setSplitModalOpen(true)}
+                          disabled={!selectedRow || selectedRow.isCleared}
+                          className="btn btn-secondary btn-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
+                          title={!selectedRow ? t('tooltips.selectRowToSplit') : selectedRow.isCleared ? t('tooltips.splitRowDisabled') : ''}
                         >
-                          {posting ? t('posting') : t('postReconciliation')}
+                          {/* eslint-disable-next-line i18next/no-literal-string */}
+                          <span className="material-symbols-outlined text-[18px]">call_split</span>
+                          {t('splitEntry')}
                         </button>
                       </>
                     )}
+                    {optionsButton}
                   </div>
-                </div>
-
-                <div className="grid grid-cols-4 gap-4">
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('openingBalance')}</div>
-                    <div className="text-xl font-bold mt-0.5 text-gray-900">
-                      {formatCurrency(reconciliation.openingBalance)}
-                    </div>
-                  </div>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('clearedBalance')}</div>
-                    <div className="text-xl font-bold mt-0.5 text-gray-900">
-                      {formatCurrency(reconciliation.clearedBalance)}
-                    </div>
-                  </div>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('statementBalance')}</div>
-                    <div className="text-xl font-bold mt-0.5 text-gray-900">
-                      {formatCurrency(reconciliation.statementBalance)}
-                    </div>
-                  </div>
-                  <div className={`p-3 rounded-lg border ${Math.abs(reconciliation.variance) < 0.001 ? 'bg-[#f0f8f6] border-[#006b5c]/30' : 'bg-red-50 border-red-200'}`}>
-                    <div className={`text-[10px] uppercase tracking-wider font-bold ${Math.abs(reconciliation.variance) < 0.001 ? 'text-[#006b5c]' : 'text-[var(--danger)]'}`}>
-                      {t('variance')}
-                    </div>
-                    <div className={`text-xl font-bold mt-0.5 ${Math.abs(reconciliation.variance) < 0.001 ? 'text-[#006b5c]' : 'text-[var(--danger)]'}`}>
-                      {formatCurrency(reconciliation.variance)}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 mt-2">
-                  <div className="flex-1 max-w-sm">
-                    {searchInput}
-                  </div>
-                  {!isPosted && (
-                    <>
-                      <button
-                        onClick={() => setAdjustmentModalOpen(true)}
-                        className="btn btn-secondary btn-sm flex items-center gap-2"
-                      >
-                        {/* eslint-disable-next-line i18next/no-literal-string */}
-                        <span className="material-symbols-outlined text-[18px]">add</span>
-                        {/* eslint-enable i18next/no-literal-string */}
-                        {t('quickAdjustment')}
-                      </button>
-                      <button
-                        onClick={() => setSplitModalOpen(true)}
-                        disabled={!selectedRow || selectedRow.isCleared}
-                        className="btn btn-secondary btn-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={!selectedRow ? t('tooltips.selectRowToSplit') : selectedRow.isCleared ? t('tooltips.splitRowDisabled') : ''}
-                      >
-                        {/* eslint-disable-next-line i18next/no-literal-string */}
-                        <span className="material-symbols-outlined text-[18px]">call_split</span>
-                        {/* eslint-enable i18next/no-literal-string */}
-                        {t('splitEntry')}
-                      </button>
-                    </>
-                  )}
-                  {optionsButton}
                 </div>
               </div>
-            </div>
-          )}
-        />
+            )}
+          />
+        )}
       </div>
       <QuickAdjustmentModal 
         isOpen={isAdjustmentModalOpen} 

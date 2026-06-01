@@ -55,6 +55,9 @@ export interface SupplierResponseDto {
   /** @nullable */
   bankAccountNumber: string | null;
   /** @nullable */
+  businessNumber: string | null;
+  isTaxRegistered: boolean;
+  /** @nullable */
   stateCode: string | null;
   tenantId: string;
   createdAt: string;

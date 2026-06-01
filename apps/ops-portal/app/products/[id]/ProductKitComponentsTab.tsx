@@ -4,6 +4,7 @@ import DataGrid from '@/components/DataGrid';
 import { KitComponentSlideOver } from './KitComponentSlideOver';
 import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@modbm/shared';
 
 interface ProductKitComponentsTabProps {
   productId: string;
@@ -65,8 +66,8 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
       await api.productsControllerRemoveComponent(productId, row.componentId);
       toast.success(t('toast.componentRemoved'));
       setRefreshKey(k => k + 1);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

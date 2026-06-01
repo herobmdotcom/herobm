@@ -7,6 +7,7 @@ import { reportError } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { CUSTOMER_STATE } from '@modbm/shared';
 import type { ValidState } from '@/types/states';
+import { getErrorMessage } from '@modbm/shared';
 
 export type Customer = api.AccountResponseDto & { parentCustomerName?: string | null; childAccounts?: unknown[] };
 
@@ -39,7 +40,7 @@ export function useAccount(id: string) {
     try {
       const [dataRes, rulesRes] = await Promise.all([
         api.accountsControllerFindOne(id),
-        api.discountMatrixControllerList({ ownerType: 'customer', customerId: id } as unknown as Parameters<typeof api.discountMatrixControllerList>[0]).catch(() => ({ data: [] }))
+        api.discountMatrixControllerList({ ownerType: 'customer', customerId: id }).catch(() => ({ data: [] }))
       ]);
       const data = dataRes.data;
       const rules = rulesRes.data || [];
@@ -83,8 +84,8 @@ export function useAccount(id: string) {
       const refreshed = refreshedRes.data;
       setAccount(refreshed);
       setDto(refreshed);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -116,8 +117,8 @@ export function useAccount(id: string) {
       const refreshed = refreshedRes.data;
       setAccount(refreshed);
       setDto(refreshed);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -135,8 +136,8 @@ export function useAccount(id: string) {
       const refreshed = refreshedRes.data;
       setAccount(refreshed);
       setDto(refreshed);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -151,8 +152,8 @@ export function useAccount(id: string) {
       const refreshed = refreshedRes.data;
       setAccount(refreshed);
       setDto(refreshed);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }

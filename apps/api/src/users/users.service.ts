@@ -110,8 +110,8 @@ export class UsersService {
       );
 
       return result;
-    } catch (err: any) {
-      if (err?.code === '23505') {
+    } catch (err: unknown) {
+      if ((err as any)?.code === '23505') {
         throw new ConflictException(
           `Username '${dto.username}' is already taken`,
         );

@@ -71,7 +71,7 @@ export default function SupplierSelect({
     }
     try {
       const res = await api.suppliersControllerFindAll({ q: term, limit: 10 } as any);
-      setFilteredSuppliers(((res.data as any)?.data || res.data || []) as unknown as Supplier[]);
+      setFilteredSuppliers(((res.data as any)?.data || res.data || []) );
     } catch { 
       setFilteredSuppliers([]); 
     }

@@ -10,6 +10,7 @@ import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import { getErrorMessage } from '@modbm/shared';
 
 interface ReturnableLine {
   purchaseOrderId: string;
@@ -83,13 +84,13 @@ function ReturnsFlow() {
       if (data.length > 0) {
         selectLine(data[0] as unknown as ReturnableLine);
       } else if (poId) {
-        const matches = (data as unknown as ReturnableLine[]).filter((x) => x.purchaseOrderId === poId);
+        const matches = (data as any[]).filter((x) => x.purchaseOrderId === poId);
         if (matches.length > 0) {
-             selectLine(matches[0]);
+             selectLine(matches[0] as unknown as ReturnableLine);
          }
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? getErrorMessage(err) : 'Unknown error');
     } finally {
       setLoadingLines(false);
     }
@@ -203,8 +204,8 @@ function ReturnsFlow() {
       
       router.push('/purchase-orders');
       
-    } catch (err: any) {
-      setError(err.message || 'Failed to commit returns');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err) || 'Failed to commit returns');
       setSaving(false);
     }
   };

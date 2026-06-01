@@ -22,13 +22,13 @@ export default function PageNav({ sections }: PageNavProps) {
   
   return (
     <div
-        className="flex flex-col gap-1 items-end self-center hidden md:flex"
+        className="flex flex-col gap-1 items-start lg:items-end self-center w-full lg:w-auto"
         onMouseLeave={() => setHoveredSubId(null)}
     >
         {/* Top Row: Sub-pages & Direct anchors */}
         <div 
-            className="flex items-center gap-0.5 px-1.5 rounded-md overflow-x-auto transition-all"
-            style={{ border: '1px solid var(--accent)', height: 32, msOverflowStyle: 'none', scrollbarWidth: 'none' }}
+            className="flex items-center gap-1 lg:gap-0.5 px-2 lg:px-1.5 rounded-md overflow-x-auto transition-all w-full h-[40px] lg:h-[32px]"
+            style={{ border: '1px solid var(--accent)', msOverflowStyle: 'none', scrollbarWidth: 'none' }}
         >
             {visibleSections.map((section) => {
               const isSub = section.isSubPage;
@@ -37,7 +37,7 @@ export default function PageNav({ sections }: PageNavProps) {
               return (
                   <button
                       key={section.id}
-                      className={`text-[11px] px-1.5 py-0.5 rounded transition-all whitespace-nowrap ${isSub ? 'font-bold' : ''} ${isActive ? 'bg-[rgba(0,107,92,0.1)] text-[var(--accent)]' : ''}`}
+                      className={`text-[13px] lg:text-[11px] px-3 py-1.5 lg:px-1.5 lg:py-0.5 rounded transition-all whitespace-nowrap ${isSub ? 'font-bold' : ''} ${isActive ? 'bg-[rgba(0,107,92,0.1)] text-[var(--accent)]' : ''}`}
                       style={{
                           background: isActive && isSub ? 'rgba(0,107,92,0.1)' : 'none',
                           border: 'none',
@@ -69,11 +69,8 @@ export default function PageNav({ sections }: PageNavProps) {
         </div>
 
         {/* Bottom Row: Hovered/Active Subtargets */}
-        <div 
-            className="flex items-center gap-0.5 px-1.5 rounded-md overflow-x-auto transition-all min-h-[24px]"
-            style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
-        >
-            {visibleSections.map((section) => {
+        {(() => {
+            const visibleSubtargets = visibleSections.flatMap(section => {
               const isSub = section.isSubPage;
               const isActive = section.isActive;
 
@@ -81,34 +78,44 @@ export default function PageNav({ sections }: PageNavProps) {
                   hoveredSubId === section.id || (hoveredSubId === null && isActive)
               );
 
-              if (!shouldShowSubtargets) return null;
+              if (!shouldShowSubtargets) return [];
+              return section.subtargets!.filter(s => s.show !== false);
+            });
 
-              return section.subtargets!.filter(s => s.show !== false).map((sub) => (
-                <button
-                  key={sub.id}
-                  className="text-[11px] px-1.5 py-0.5 rounded transition-colors whitespace-nowrap"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'rgba(0,107,92,0.08)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none'; }}
-                  onClick={() => {
-                      if (sub.onClick) {
-                          sub.onClick();
-                      } else {
-                          const el = document.getElementById(sub.id);
-                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }
-                  }}
+            if (visibleSubtargets.length === 0) return null;
+
+            return (
+                <div 
+                    className="flex items-center gap-1 lg:gap-0.5 px-2 lg:px-1.5 rounded-md overflow-x-auto transition-all min-h-[32px] lg:min-h-[24px] w-full"
+                    style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
                 >
-                  {sub.label}
-                </button>
-              ));
-            })}
-        </div>
+                    {visibleSubtargets.map((sub) => (
+                        <button
+                          key={sub.id}
+                          className="text-[13px] lg:text-[11px] px-3 py-1.5 lg:px-1.5 lg:py-0.5 rounded transition-colors whitespace-nowrap"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'rgba(0,107,92,0.08)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none'; }}
+                          onClick={() => {
+                              if (sub.onClick) {
+                                  sub.onClick();
+                              } else {
+                                  const el = document.getElementById(sub.id);
+                                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              }
+                          }}
+                        >
+                          {sub.label}
+                        </button>
+                    ))}
+                </div>
+            );
+        })()}
     </div>
   );
 }

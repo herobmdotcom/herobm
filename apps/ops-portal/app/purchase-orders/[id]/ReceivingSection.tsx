@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { tDynamic } from '@/lib/i18n';
 import * as api from '@modbm/sdk';
 import { GOODS_RECEIVED_STATE } from '@modbm/shared';
+import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 
 interface ReceptionLine {
   receptionLineId: string;
@@ -117,75 +118,137 @@ function ReceptionCard({
         )}
       </div>
 
-      <table className="table-lines">
-        <thead>
-          <tr>
-            <th>{tPurchase('columns.product')}</th>
-            <th>{tPurchase('columns.description')}</th>
-            <th style={{ textAlign: 'right' }}>{tPurchase('columns.unitPrice')}</th>
-            <th style={{ textAlign: 'right' }}>{tPurchase('columns.qtyReceived')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {[...reception.lines]
-            .sort((a, b) => {
-              const aIdx = orderLines.findIndex((ol) => ol.purchaseOrderLineId === a.purchaseOrderLineId);
-              const bIdx = orderLines.findIndex((ol) => ol.purchaseOrderLineId === b.purchaseOrderLineId);
-              return aIdx - bIdx;
-            })
-            .map((rl) => {
-              const orderLine = orderLines.find(
-                (ol) => ol.purchaseOrderLineId === rl.purchaseOrderLineId,
-              );
-              return (
-                <tr key={rl.receptionLineId}>
-                  <td style={{ fontWeight: 600, fontSize: 12 }}>
-                    {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
-                  </td>
-                  <td>{orderLine?.productDescription || rl.productDescription || '—'}</td>
-                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                    {(() => {
-                      const relatedEvents = events?.filter(e => e.payload && e.payload.receptionId === reception.receptionId) || [];
-                      const priceWarning = relatedEvents.find(e => e.eventType === 'price_discrepancy_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
-                      
-                      if (priceWarning) {
-                        return (
-                          <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }} title="Price discrepancy warning">
-                            <span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: 11, color: 'var(--text-muted)' }}>
-                              {parseFloat(priceWarning.payload.poPrice).toFixed(2)}
+      {/* Desktop Table */}
+      <div className="hidden lg:block overflow-x-auto">
+        <table className="table-lines w-full">
+          <thead>
+            <tr>
+              <th>{tPurchase('columns.product')}</th>
+              <th>{tPurchase('columns.description')}</th>
+              <th style={{ textAlign: 'right' }}>{tPurchase('columns.unitPrice')}</th>
+              <th style={{ textAlign: 'right' }}>{tPurchase('columns.qtyReceived')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...reception.lines]
+              .sort((a, b) => {
+                const aIdx = orderLines.findIndex((ol) => ol.purchaseOrderLineId === a.purchaseOrderLineId);
+                const bIdx = orderLines.findIndex((ol) => ol.purchaseOrderLineId === b.purchaseOrderLineId);
+                return aIdx - bIdx;
+              })
+              .map((rl) => {
+                const orderLine = orderLines.find(
+                  (ol) => ol.purchaseOrderLineId === rl.purchaseOrderLineId,
+                );
+                return (
+                  <tr key={rl.receptionLineId}>
+                    <td style={{ fontWeight: 600, fontSize: 12 }}>
+                      {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
+                    </td>
+                    <td>{orderLine?.productDescription || rl.productDescription || '—'}</td>
+                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                      {(() => {
+                        const relatedEvents = events?.filter(e => e.payload && e.payload.receptionId === reception.receptionId) || [];
+                        const priceWarning = relatedEvents.find(e => e.eventType === 'price_discrepancy_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
+                        
+                        if (priceWarning) {
+                          return (
+                            <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }} title="Price discrepancy warning">
+                              <span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: 11, color: 'var(--text-muted)' }}>
+                                {parseFloat(priceWarning.payload.poPrice).toFixed(2)}
+                              </span>
+                              <strong style={{ fontSize: 12 }}>
+                                {currencyCode ? `${currencyCode} ` : ''}
+                                {parseFloat(priceWarning.payload.invoicePrice).toFixed(2)}
+                              </strong>
+                            </div>
+                          );
+                        }
+                        const poPrice = orderLine ? parseFloat(orderLine.pricePerUnit).toFixed(2) : '—';
+                        if (poPrice === '—') return poPrice;
+                        return currencyCode ? `${currencyCode} ${poPrice}` : poPrice;
+                      })()}
+                    </td>
+                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                      {(() => {
+                        const relatedEvents = events?.filter(e => e.payload && e.payload.receptionId === reception.receptionId) || [];
+                        const qtyWarning = relatedEvents.find(e => e.eventType === 'over_received_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
+                        
+                        if (qtyWarning) {
+                          return (
+                            <span style={{ color: '#d97706', fontWeight: 600 }} title="Over-received warning">
+                              {parseFloat(rl.quantityReceived || '0')}*
                             </span>
-                            <strong style={{ fontSize: 12 }}>
-                              {currencyCode ? `${currencyCode} ` : ''}
-                              {parseFloat(priceWarning.payload.invoicePrice).toFixed(2)}
-                            </strong>
-                          </div>
-                        );
-                      }
-                      const poPrice = orderLine ? parseFloat(orderLine.pricePerUnit).toFixed(2) : '—';
-                      if (poPrice === '—') return poPrice;
-                      return currencyCode ? `${currencyCode} ${poPrice}` : poPrice;
-                    })()}
-                  </td>
-                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                    {(() => {
-                      const relatedEvents = events?.filter(e => e.payload && e.payload.receptionId === reception.receptionId) || [];
-                      const qtyWarning = relatedEvents.find(e => e.eventType === 'over_received_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
-                      
-                      if (qtyWarning) {
-                        return (
-                          <span style={{ color: '#d97706', fontWeight: 600 }} title="Over-received warning">
-                            {parseFloat(rl.quantityReceived || '0')}*
-                          </span>
-                        );
-                      }
-                      return parseFloat(rl.quantityReceived || '0');
-                    })()}
-                  </td>
-                </tr>
-              );
-            })}
-        </tbody>
-      </table>
+                          );
+                        }
+                        return parseFloat(rl.quantityReceived || '0');
+                      })()}
+                    </td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="flex flex-col lg:hidden mt-2">
+        {[...reception.lines]
+          .sort((a, b) => {
+            const aIdx = orderLines.findIndex((ol) => ol.purchaseOrderLineId === a.purchaseOrderLineId);
+            const bIdx = orderLines.findIndex((ol) => ol.purchaseOrderLineId === b.purchaseOrderLineId);
+            return aIdx - bIdx;
+          })
+          .map((rl, idx) => {
+            const orderLine = orderLines.find(
+              (ol) => ol.purchaseOrderLineId === rl.purchaseOrderLineId,
+            );
+            
+            const relatedEvents = events?.filter(e => e.payload && e.payload.receptionId === reception.receptionId) || [];
+            const priceWarning = relatedEvents.find(e => e.eventType === 'price_discrepancy_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
+            const qtyWarning = relatedEvents.find(e => e.eventType === 'over_received_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
+            
+            return (
+              <MobileLineItemCard
+                key={rl.receptionLineId}
+                title={orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
+                subtitle={orderLine?.productDescription || rl.productDescription || '—'}
+                topRightBadge={`#${idx + 1}`}
+                details={[
+                  {
+                    label: tPurchase('columns.qtyReceived'),
+                    value: (
+                      <span className={qtyWarning ? 'text-[#d97706]' : ''}>
+                        {parseFloat(rl.quantityReceived || '0')}{qtyWarning ? '*' : ''}
+                      </span>
+                    )
+                  },
+                  {
+                    label: tPurchase('columns.unitPrice'),
+                    value: priceWarning ? (
+                      <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: 6 }} title="Price discrepancy warning">
+                        <span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: 11, color: 'var(--text-muted)' }}>
+                          {parseFloat(priceWarning.payload.poPrice).toFixed(2)}
+                        </span>
+                        <strong style={{ fontSize: 12 }}>
+                          {currencyCode ? `${currencyCode} ` : ''}
+                          {parseFloat(priceWarning.payload.invoicePrice).toFixed(2)}
+                        </strong>
+                      </div>
+                    ) : (
+                      <span>
+                        {orderLine && orderLine.pricePerUnit !== '—' 
+                          ? (currencyCode ? `${currencyCode} ${parseFloat(orderLine.pricePerUnit).toFixed(2)}` : parseFloat(orderLine.pricePerUnit).toFixed(2))
+                          : '—'
+                        }
+                      </span>
+                    )
+                  }
+                ]}
+              />
+            );
+        })}
+      </div>
 
       <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
         {reception.createdBy
@@ -218,7 +281,7 @@ export default function ReceivingSection({
       try {
         setLoading(true);
         const res = await api.goodsReceivedControllerFindAllLines({ purchaseOrderId: orderId } as unknown as Parameters<typeof api.goodsReceivedControllerFindAllLines>[0]);
-        const lines = (res.data as unknown as { data: any[] })?.data || [];
+        const lines = (res.data )?.data || [];
         
         // Extract unique reception IDs
         const grIds = Array.from(new Set<string>(lines.map((l: any) => l.goodsReceivedId)));
@@ -266,35 +329,70 @@ export default function ReceivingSection({
       
       <div style={{ marginBottom: 24 }}>
         <h4 style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 12, letterSpacing: '0.05em' }}>{tPurchase('receptionSummary')}</h4>
-        <table className="table-lines">
-          <thead>
-            <tr>
-              <th>{tPurchase('columns.product')}</th>
-              <th>{tPurchase('columns.description')}</th>
-              <th style={{ textAlign: 'right' }}>{tPurchase('columns.ordered')}</th>
-              <th style={{ textAlign: 'right' }}>{tPurchase('columns.qtyReceived')}</th>
-              <th style={{ textAlign: 'right' }}>{tPurchase('columns.remaining')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(orderLines || []).map(line => {
-              const ordered = parseFloat(line.quantity || '0');
-              const received = parseFloat(line.quantityReceived || '0');
-              const remaining = Math.max(0, ordered - received);
-              return (
-                <tr key={line.purchaseOrderLineId || line.salesOrderLineId}>
-                  <td style={{ fontWeight: 600, fontSize: 12 }}>
-                    {line.productNumber || line.productId?.substring(0, 8) || '—'}
-                  </td>
-                  <td>{line.productDescription || '—'}</td>
-                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{ordered}</td>
-                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: received >= ordered && ordered > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: received >= ordered && ordered > 0 ? 600 : 400 }}>{received}</td>
-                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: remaining === 0 ? 'var(--text-muted)' : undefined }}>{remaining}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        {/* Desktop Table */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="table-lines w-full">
+            <thead>
+              <tr>
+                <th>{tPurchase('columns.product')}</th>
+                <th>{tPurchase('columns.description')}</th>
+                <th style={{ textAlign: 'right' }}>{tPurchase('columns.ordered')}</th>
+                <th style={{ textAlign: 'right' }}>{tPurchase('columns.qtyReceived')}</th>
+                <th style={{ textAlign: 'right' }}>{tPurchase('columns.remaining')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(orderLines || []).map(line => {
+                const ordered = parseFloat(line.quantity || '0');
+                const received = parseFloat(line.quantityReceived || '0');
+                const remaining = Math.max(0, ordered - received);
+                return (
+                  <tr key={line.purchaseOrderLineId || line.salesOrderLineId}>
+                    <td style={{ fontWeight: 600, fontSize: 12 }}>
+                      {line.productNumber || line.productId?.substring(0, 8) || '—'}
+                    </td>
+                    <td>{line.productDescription || '—'}</td>
+                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{ordered}</td>
+                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: received >= ordered && ordered > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: received >= ordered && ordered > 0 ? 600 : 400 }}>{received}</td>
+                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: remaining === 0 ? 'var(--text-muted)' : undefined }}>{remaining}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="flex flex-col lg:hidden mt-2">
+          {(orderLines || []).map((line, idx) => {
+            const ordered = parseFloat(line.quantity || '0');
+            const received = parseFloat(line.quantityReceived || '0');
+            const remaining = Math.max(0, ordered - received);
+            
+            return (
+              <MobileLineItemCard
+                key={line.purchaseOrderLineId || line.salesOrderLineId}
+                title={line.productNumber || line.productId?.substring(0, 8) || '—'}
+                subtitle={line.productDescription || '—'}
+                topRightBadge={`#${idx + 1}`}
+                details={[
+                  {
+                    label: tPurchase('columns.ordered'),
+                    value: ordered
+                  },
+                  {
+                    label: tPurchase('columns.qtyReceived'),
+                    value: <span className={received >= ordered && ordered > 0 ? 'text-[var(--badge-shipped)] font-bold' : ''}>{received}</span>
+                  },
+                  {
+                    label: tPurchase('columns.remaining'),
+                    value: <span className={remaining === 0 ? 'text-[var(--text-muted)]' : ''}>{remaining}</span>
+                  }
+                ]}
+              />
+            );
+          })}
+        </div>
       </div>
       <div style={{ marginTop: 16 }}>
         {receptions.map((rec) => (

@@ -124,6 +124,14 @@ export class CreateSupplierDto {
   @IsOptional()
   @IsString()
   bankAccountNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  businessNumber?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isTaxRegistered?: boolean;
 }
 
 export class UpdateSupplierDto {
@@ -241,6 +249,14 @@ export class UpdateSupplierDto {
   @IsOptional()
   @IsString()
   stateCode?: string;
+
+  @IsOptional()
+  @IsString()
+  businessNumber?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isTaxRegistered?: boolean;
 }
 
 export class CreateSupplierGroupDto {
@@ -444,6 +460,8 @@ export class SupplierResponseDto {
   bankAccountName: string | null;
   bankBsb: string | null;
   bankAccountNumber: string | null;
+  businessNumber: string | null;
+  isTaxRegistered: boolean;
   stateCode: string | null;
   tenantId: string;
   createdAt: Date;

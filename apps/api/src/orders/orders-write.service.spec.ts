@@ -34,6 +34,7 @@ import {
 } from '../drizzle/modbm-core-schema';
 
 import { taxCategories } from '../drizzle/modbm-core-schema';
+import { getErrorMessage } from '@modbm/shared';
 
 // Default GST categories used across tests
 let TAX_DEFAULT: any;
@@ -380,9 +381,9 @@ describe('OrdersWriteService', () => {
       try {
         await service.create(validDto, 'admin');
         throw new Error('Should have thrown');
-      } catch (e: any) {
+      } catch (e: unknown) {
         // PG error for check constraint violation is 23514
-        const code = e.code || e.cause?.code;
+        const code = getErrorMessage(e) || e.cause?.code;
         expect(code).toBe('23514');
       }
 
@@ -417,8 +418,8 @@ describe('OrdersWriteService', () => {
       try {
         await service.create(validDto, 'admin');
         throw new Error('Should have thrown');
-      } catch (e: any) {
-        const msg = e.message + ' ' + (e.cause?.message || '');
+      } catch (e: unknown) {
+        const msg = getErrorMessage(e) + ' ' + (e.cause?.message || '');
         expect(msg.toLowerCase()).toContain('duplicate');
       }
     });

@@ -7,6 +7,6 @@
  */
 
 export type PurchaseOrdersControllerFindPendingLinesParams = {
-productId: string;
-vendorId: string;
+productId?: string;
+vendorId?: string;
 };

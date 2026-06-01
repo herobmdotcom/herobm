@@ -48,8 +48,8 @@ export default function POLineSearchInput({
     if (vendorId) params.vendorId = vendorId;
     
     api.purchaseOrdersControllerFindPendingLines(params as Parameters<typeof api.purchaseOrdersControllerFindPendingLines>[0])
-      .then((data) => {
-        const lines = data as unknown as POLine[];
+      .then((res) => {
+        const lines = res.data as any;
         setAllLines(lines);
         setResults(lines);
         if (lines.length > 0) {

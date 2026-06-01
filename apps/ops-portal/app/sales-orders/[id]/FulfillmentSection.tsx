@@ -179,7 +179,7 @@ export default function FulfillmentSection({ orderId, pickingSummary }: Props) {
                             const isShipped = shipped >= ordered;
 
                             return (
-                                <div className={`bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm ${isShipped ? 'opacity-60' : ''}`}>
+                                <div className={`bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col ${isShipped ? 'opacity-60' : ''}`}>
                                     <div className="flex justify-between items-start gap-2 mb-2">
                                         <div className="font-semibold text-sm text-[var(--accent)]">
                                             {line.productId ? (

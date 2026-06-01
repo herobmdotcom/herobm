@@ -6,6 +6,7 @@ import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import { getErrorMessage } from '@modbm/shared';
 
 export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?: boolean }) {
   const t = useTranslations('admin.reporting.form');
@@ -34,7 +35,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
 
   useEffect(() => {
     api.reportsControllerGetHooks().then(res => {
-      setAvailableHooks(res.data as unknown as Record<string, unknown>[] || []);
+      setAvailableHooks((res.data as any).data || (res.data as any) || []);
     }).catch(() => {});
   }, []);
 
@@ -50,8 +51,8 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
         toast.success(t('toasts.saved'));
         router.refresh();
       }
-    } catch (e: any) {
-      toast.error(e.message || t('toasts.saveFailed'));
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e) || t('toasts.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -65,8 +66,8 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
       await api.reportsControllerDeleteReport(initialData.id);
       toast.success(t('toasts.deleted'));
       router.push('/admin/reporting');
-    } catch (e: any) {
-      toast.error(e.message || t('toasts.deleteFailed'));
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e) || t('toasts.deleteFailed'));
       setDeleting(false);
     }
   };
@@ -82,8 +83,8 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
       const blob = res.data as Blob;
       const url = URL.createObjectURL(blob);
       setPdfBlobUrl(url);
-    } catch (e: any) {
-      toast.error(e.message || t('toasts.previewFailed'));
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e) || t('toasts.previewFailed'));
     } finally {
       setPreviewing(false);
     }
@@ -93,8 +94,8 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
     if (!previewVars.hookSlug) return;
     try {
       const res = await api.reportsControllerGetRandomId(previewVars.hookSlug);
-      if ((res as unknown as { data?: { id?: string }, id?: string }).data?.id || (res as unknown as { id?: string }).id) {
-        setPreviewVars(p => ({ ...p, entityId: (res as unknown as { data?: { id?: string }, id?: string }).data?.id || (res as unknown as { id?: string }).id as string }));
+      if ((res as any).data?.id || (res as any).id) {
+        setPreviewVars(p => ({ ...p, entityId: ((res as any).data?.id || (res as any).id) as string }));
       }
     } catch (err) {
       reportError(err, 'TemplateForm.randomizeId');
@@ -106,8 +107,8 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
     if (newHookSlug) {
       // Automatically fetch a random ID when changing hooks
       api.reportsControllerGetRandomId(newHookSlug)
-        .then((res: unknown) => {
-          const newId = (res as unknown as { data?: { id?: string }, id?: string }).data?.id || (res as unknown as { id?: string }).id;
+        .then((res: any) => {
+          const newId = res.data?.id || res.id;
           if (newId) setPreviewVars(p => ({ ...p, hookSlug: newHookSlug, entityId: newId as string }));
         })
         .catch(() => {});

@@ -59,7 +59,7 @@ export default function DiscountMatrixSlideOver({
         api.discountMatrixControllerList({
           ...(customerGroupId ? { customerGroupId } : {}),
           ...(customerId ? { customerId } : {}),
-        } as Parameters<typeof api.discountMatrixControllerList>[0]),
+        }),
         api.productGroupsControllerFindAll(),
       ]);
       setRules(rulesRes.data);

@@ -139,9 +139,9 @@ export class TaxCategoriesService {
         .delete(taxCategories)
         .where(eq(taxCategories.taxCategoryId, id));
       return { deleted: true };
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Postgres foreign_key_violation
-      if (err?.code === '23503') {
+      if ((err as any)?.code === '23503') {
         throw new BadRequestException(
           'Cannot delete this tax category because it is assigned to one or more customers or products. Remove the assignments first.',
         );

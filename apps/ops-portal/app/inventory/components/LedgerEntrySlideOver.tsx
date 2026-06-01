@@ -46,7 +46,7 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
 
     setLoading(true);
     api.inventoryControllerGetEntryDetails(entryId)
-      .then(res => setDetails((res as unknown as { data: EntryDetails }).data))
+      .then(res => setDetails(res.data as unknown as EntryDetails))
       .catch((err) => reportError(err, 'LedgerEntrySlideOver'))
       .finally(() => setLoading(false));
   }, [entryId]);

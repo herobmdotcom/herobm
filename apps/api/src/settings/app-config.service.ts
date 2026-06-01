@@ -173,6 +173,11 @@ export class AppConfigService implements OnModuleInit {
     return !!this.appCache?.setupCompletedAt;
   }
 
+  /** The mapping of country code to external tax provider (e.g. {"US": "taxjar"}). */
+  taxProviderMappings(): Record<string, string> {
+    return (this.appCache?.taxProviderMappings as Record<string, string>) || {};
+  }
+
   /** The raw GL settings row, if available. */
   getGlSettingsRaw(): typeof glSettings.$inferSelect | null {
     return this.glCache;

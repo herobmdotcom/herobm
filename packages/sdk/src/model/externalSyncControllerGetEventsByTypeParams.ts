@@ -8,6 +8,6 @@
 
 export type ExternalSyncControllerGetEventsByTypeParams = {
 type: string;
-status: string;
-limit: string;
+status?: string;
+limit?: string;
 };

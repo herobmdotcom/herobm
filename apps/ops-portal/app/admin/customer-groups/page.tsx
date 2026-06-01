@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver';
+import { getErrorMessage } from '@modbm/shared';
 
 export default function AccountGroupsAdmin() {
   useDocumentTitle('Customer Groups');
@@ -46,7 +47,7 @@ export default function AccountGroupsAdmin() {
         api.glControllerGetAccounts({ format: 'flat' }).then(r => r.data || []),
         api.costCentersControllerFindAll().then(r => r.data || []),
         api.activitiesControllerFindAll().then(r => r.data || []),
-        api.discountMatrixControllerList({ ownerType: 'account_group' } as unknown as api.DiscountMatrixControllerListParams).then(r => r.data || [])
+        api.discountMatrixControllerList({ ownerType: 'account_group' }).then(r => r.data || [])
       ]);
       const sorted = [...data].sort((a: any, b: any) => 
         a.name.localeCompare(b.name, undefined, { numeric: true })
@@ -56,8 +57,8 @@ export default function AccountGroupsAdmin() {
       setCostCenters(cc);
       setActivities(act);
       setMatrixRules(rules);
-    } catch(err: any) {
-      toast.error('Failed to load groups: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Failed to load groups: ' + getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -104,8 +105,8 @@ export default function AccountGroupsAdmin() {
       }
       handleCancel();
       loadData();
-    } catch(err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -115,8 +116,8 @@ export default function AccountGroupsAdmin() {
       await api.accountGroupsControllerRemove(id);
       toast.success(t('toasts.deleted'));
       loadData();
-    } catch(err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

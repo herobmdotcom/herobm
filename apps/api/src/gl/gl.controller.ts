@@ -135,6 +135,12 @@ export class GlController {
     description: 'Retrieve a paginated list of journal entries.',
   })
   @ApiPaginatedResponse(JournalEntryResponseDto)
+  @ApiQuery({ name: 'fromDate', required: false })
+  @ApiQuery({ name: 'toDate', required: false })
+  @ApiQuery({ name: 'sourceType', required: false })
+  @ApiQuery({ name: 'q', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'page', required: false })
   async getJournalEntries(
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
@@ -220,6 +226,7 @@ export class GlController {
       'Calculate and retrieve the trial balance as of a specific date.',
   })
   @ApiOkResponse({ type: [TrialBalanceResponseDto] })
+  @ApiQuery({ name: 'asOfDate', required: false })
   async getTrialBalance(@Query('asOfDate') asOfDate?: string) {
     return this.glService.getTrialBalance(asOfDate);
   }
@@ -232,6 +239,11 @@ export class GlController {
       'Retrieve the general ledger line items for specific accounts and date ranges.',
   })
   @ApiPaginatedResponse(GeneralLedgerResponseDto)
+  @ApiQuery({ name: 'account', required: false })
+  @ApiQuery({ name: 'fromDate', required: false })
+  @ApiQuery({ name: 'toDate', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'page', required: false })
   async getGeneralLedger(
     @Query('account') accountCode?: string,
     @Query('fromDate') fromDate?: string,
@@ -271,8 +283,9 @@ export class GlController {
     summary: 'Update Settings',
     description: 'Update the general ledger configuration settings.',
   })
+  @ApiBody({ schema: { type: 'object', additionalProperties: true } })
   @ApiOkResponse({ type: SettingsResponseDto })
-  async updateSettings(@Body() body: UpdateGLSettingsDto) {
+  async updateSettings(@Body() body: Record<string, any>) {
     const updated = await this.glService.updateSettings(body);
     // Automatically reload app config cache since settings changed
     await this.appConfig.reload();

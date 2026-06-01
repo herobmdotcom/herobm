@@ -7,6 +7,7 @@ import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import { getErrorMessage } from '@modbm/shared';
 
 export default function SupplierGroupsAdmin() {
   const t = useTranslations('admin.supplierGroups');
@@ -102,8 +103,8 @@ export default function SupplierGroupsAdmin() {
       }
       handleCancel();
       loadData();
-    } catch(err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
       reportError(err, 'SupplierGroupsAdmin_handleSave');
     }
   };
@@ -114,8 +115,8 @@ export default function SupplierGroupsAdmin() {
       await api.supplierGroupsControllerRemove(id);
       toast.success(t('toasts.deleted'));
       loadData();
-    } catch(err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
       reportError(err, 'SupplierGroupsAdmin_handleDelete');
     }
   };

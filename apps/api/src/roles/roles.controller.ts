@@ -7,11 +7,25 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common';
-import { CasbinGuard, CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import {
+  CasbinGuard,
+  CasbinResource,
+  CasbinAction,
+} from '../auth/casbin.guard';
 import { RolesService } from './roles.service';
-import { SetRolePermissionsDto, RoleDetailsDto, SuccessResponseDto } from './dto';
-import { ApiOkResponse, ApiCreatedResponse } from '@nestjs/swagger';
+import {
+  SetRolePermissionsDto,
+  RoleDetailsDto,
+  SuccessResponseDto,
+} from './dto';
+import {
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiTags,
+  ApiOperation,
+} from '@nestjs/swagger';
 
+@ApiTags('Roles')
 @UseGuards(CasbinGuard)
 @CasbinResource('roles')
 @Controller('roles')
@@ -19,6 +33,10 @@ export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find all roles',
+    description: 'Returns a list of all roles.',
+  })
   @ApiOkResponse({ type: [RoleDetailsDto] })
   @Get()
   async findAll() {
@@ -26,6 +44,10 @@ export class RolesController {
   }
 
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get role details',
+    description: 'Returns details for a specific role.',
+  })
   @ApiOkResponse({ type: RoleDetailsDto })
   @Get(':role')
   async findOne(@Param('role') role: string) {
@@ -34,6 +56,10 @@ export class RolesController {
   }
 
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Set role permissions',
+    description: 'Sets the permissions for a specific role.',
+  })
   @ApiCreatedResponse({ type: RoleDetailsDto })
   @Post(':role')
   async setPermissions(
@@ -44,6 +70,10 @@ export class RolesController {
   }
 
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Delete role',
+    description: 'Deletes a specific role.',
+  })
   @ApiOkResponse({ type: SuccessResponseDto })
   @Delete(':role')
   async remove(@Param('role') role: string) {

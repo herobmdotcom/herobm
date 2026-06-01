@@ -7,9 +7,9 @@
  */
 
 export type InvoiceDetailControllerGetSalesInvoicesGlobalParams = {
-days: string;
-customerId: string;
-invoiceId: string;
-balanceStatus: string;
-limit: string;
+days?: string;
+customerId?: string;
+invoiceId?: string;
+balanceStatus?: string;
+limit?: string;
 };

@@ -6,6 +6,7 @@ import * as api from '@modbm/sdk';
 import { useAuth } from '@/components/AuthGate';
 import SlideOver from '@/components/shared/SlideOver';
 import toast from 'react-hot-toast';
+import { getErrorMessage } from '@modbm/shared';
 
 interface Bin {
   binId: string;
@@ -63,8 +64,7 @@ export default function TopographyView() {
     setLoading(true);
     api.inventoryControllerFindAllLocations({} )
       .then((response) => {
-        const res = response.data;
-        const data = Array.isArray(res) ? res : (res?.data || []);
+        const data = response.data || [];
         setLocations(data as unknown as Location[]);
       })
       .finally(() => setLoading(false));
@@ -73,13 +73,13 @@ export default function TopographyView() {
   useEffect(() => {
     api.inventoryControllerFindAllLocations({})
       .then((response) => {
-        const res = response.data;
-        const data = Array.isArray(res) ? res : (res?.data || []);
-        setLocations(data as unknown as Location[]);
+        const resData = response.data || [];
+        const data = resData as unknown as Location[];
+        setLocations(data);
         // Auto-expand first location
         if (data.length > 0) {
           setExpandedLocations(new Set([data[0].locationId]));
-          if (data[0].zones.length > 0) {
+          if (data[0].zones?.length > 0) {
             setExpandedZones(new Set([data[0].zones[0].zoneId]));
           }
         }
@@ -276,7 +276,7 @@ export default function TopographyView() {
                                     toast.success(tCommon('deleted'));
                                     fetchLocations();
                                   })
-                                  .catch((err) => toast.error(err.message));
+                                  .catch((err) => toast.error(getErrorMessage(err)));
                               }
                             }}
                             className="p-1.5 hover:bg-red-50 rounded text-red-500 transition-colors"
@@ -379,7 +379,7 @@ export default function TopographyView() {
                                               toast.success(tCommon('deleted'));
                                               fetchLocations();
                                             })
-                                            .catch((err) => toast.error(err.message));
+                                            .catch((err) => toast.error(getErrorMessage(err)));
                                         }
                                       }}
                                       disabled={zone.code === 'HANDLING'}
@@ -505,7 +505,7 @@ export default function TopographyView() {
                                                           toast.success(tCommon('deleted'));
                                                           fetchLocations();
                                                         })
-                                                        .catch((err) => toast.error(err.message));
+                                                        .catch((err) => toast.error(getErrorMessage(err)));
                                                     }
                                                   }}
                                                   disabled={bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING'}
@@ -600,8 +600,8 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
       toast.success(editingLocation ? t('updated') : t('created'));
       onSuccess();
       onClose();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -690,8 +690,8 @@ function ZoneModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolea
       toast.success(initialData.zone ? t('updated') : t('created'));
       onSuccess();
       onClose();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -777,8 +777,8 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
       toast.success(initialData.bin ? tCommon('updated') : tCommon('created'));
       onSuccess();
       onClose();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

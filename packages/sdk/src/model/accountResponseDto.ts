@@ -32,6 +32,8 @@ export interface AccountResponseDto {
   bankAccountName?: string;
   bankBsb?: string;
   bankAccountNumber?: string;
+  businessNumber?: string;
+  isTaxRegistered?: boolean;
   stateCode: string;
   sourceId?: string;
   source: string;

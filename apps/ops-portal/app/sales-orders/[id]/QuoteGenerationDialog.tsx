@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import * as api from '@modbm/sdk';
+import { getErrorMessage } from '@modbm/shared';
 
 
 interface Macro {
@@ -48,8 +49,8 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
       const data = res.data;
       const textMacros = data.filter((m: any) => m.macroType === 'text_template');
       setMacros(textMacros);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load macros');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err) || 'Failed to load macros');
     } finally {
       setLoading(false);
     }
@@ -70,8 +71,8 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
     try {
       await onGenerate(customText);
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate quote');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err) || 'Failed to generate quote');
     } finally {
       setGenerating(false);
     }

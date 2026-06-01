@@ -7,5 +7,5 @@
  */
 
 export type InventoryControllerGetMovementsParams = {
-days: string;
+days?: string;
 };

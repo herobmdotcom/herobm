@@ -7,7 +7,7 @@
  */
 
 export type GoodsReceivedControllerFindAllLinesParams = {
-purchaseOrderId: string;
-putawayStatus: string;
-locationId: string;
+purchaseOrderId?: string;
+putawayStatus?: string;
+locationId?: string;
 };

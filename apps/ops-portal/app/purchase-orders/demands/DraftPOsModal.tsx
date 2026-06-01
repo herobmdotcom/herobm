@@ -113,15 +113,15 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
         const uniqueSoNumbers = Array.from(new Set(group.demands.map(d => d.orderNumber)));
 
         return {
-          vendorId: group.vendorId,
+          vendorId: group.vendorId || '',
           deliveryLocationId: group.locationId,
           currencyCode: group.demands[0] ? lineAssignments[group.demands[0].id]?.currencyCode : 'EUR',
           soNumbers: uniqueSoNumbers,
-          lines: Array.from(linesMap.values())
+          lines: Array.from(linesMap.values()).map(l => ({ ...l, quantity: l.quantity.toString(), pricePerUnit: l.pricePerUnit.toString() }))
         };
       });
 
-      await api.allocationsControllerGeneratePOs({ body: JSON.stringify({ pos: posPayload }) });
+      await api.allocationsControllerGeneratePOs({ pos: posPayload });
 
       toast.success(t('demands.posGeneratedSuccess'));
       onSuccess();

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import * as api from '@modbm/sdk';
+import { getErrorMessage } from '@modbm/shared';
 
 interface Expiry {
   expiryId: string;
@@ -32,9 +33,9 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
     try {
       setLoading(true);
       const data = await api.suppliersControllerFindSupplierExpiries(vendorId);
-      setExpiries(data as unknown as Expiry[]);
-    } catch(err: any) {
-      toast.error(tCommon('errors.failedToLoadExpiries') + ': ' + err.message);
+      setExpiries(((data as any)?.data || data || []) as unknown as Expiry[]);
+    } catch (err: unknown) {
+      toast.error(tCommon('errors.failedToLoadExpiries') + ': ' + getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -93,8 +94,8 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
       }
       handleCancel();
       loadData();
-    } catch(err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -104,8 +105,8 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
       await api.suppliersControllerDeleteExpiry(vendorId, id);
       toast.success(tCommon('toast.expiryDeleted'));
       loadData();
-    } catch(err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

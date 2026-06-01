@@ -62,7 +62,7 @@ export class PurchaseReturnsController {
     summary: 'List Purchase Returns',
     description: 'Retrieve all returns for a specific purchase order.',
   })
-  @ApiOkResponse({ type: PurchaseReturnResponseDto, isArray: true })
+  @ApiOkResponse({ type: [PurchaseReturnResponseDto] })
   findReturns(@Param('id') id: string) {
     return this.purchaseReturnsService.findByOrder(id);
   }

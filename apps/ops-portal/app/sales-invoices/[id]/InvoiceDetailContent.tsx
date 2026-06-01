@@ -11,6 +11,7 @@ import { ValidState } from '@/types/states';
 import Link from 'next/link';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useSalesInvoice } from './useSalesInvoice';
+import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 
 export default function InvoiceDetailContent({ id }: { id: string }) {
   const router = useRouter();
@@ -38,12 +39,13 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
     >
       <div className="flex flex-col gap-3">
         <div className="card">
-          <h3 className="section-heading">
+          <h3 className="section-heading flex items-center gap-2 mb-4">
             {/* eslint-disable-next-line i18next/no-literal-string */}
-            <span className="material-symbols-outlined">receipt_long</span>
-            {t('invoiceDetails')}
+            <span className="material-symbols-outlined shrink-0">receipt_long</span>
+            {/* eslint-enable i18next/no-literal-string */}
+            <span>{t('invoiceDetails')}</span>
           </h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
                 {t('customer')}
@@ -104,13 +106,18 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
         </div>
 
         <div className="card">
-          <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
-            <span className="material-symbols-outlined">list</span>
-            {t('lineItems')}
-          </h3>
-          <table className="table-lines">
-            <thead>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-heading flex items-center gap-2">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              <span className="material-symbols-outlined shrink-0">list</span>
+              {/* eslint-enable i18next/no-literal-string */}
+              <span>{t('lineItems')}</span>
+            </h3>
+          </div>
+          {/* Desktop Table */}
+          <div className="hidden sm:block overflow-x-auto">
+            <table className="table-lines min-w-[600px]">
+              <thead>
               <tr>
                 <th style={{ width: 40 }}>#</th>
                 <th style={{ width: 150 }}>{t('columns.product')}</th>
@@ -169,14 +176,82 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               </tr>
             </tfoot>
           </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="flex flex-col lg:hidden mt-2">
+            {invoice.lines?.map((line, idx) => (
+              <MobileLineItemCard
+                key={line.lineId}
+                title={line.productNumber}
+                subtitle={line.description || '—'}
+                topRightBadge={`#${idx + 1}`}
+                details={[
+                  {
+                    label: t('columns.qty'),
+                    value: parseFloat(line.quantityInvoiced)
+                  },
+                  {
+                    label: t('columns.price'),
+                    value: formatAmount(parseFloat(line.pricePerUnit), invoice.currencyCode)
+                  },
+                  {
+                    label: t('columns.amount'),
+                    value: formatAmount(parseFloat(line.amount), invoice.currencyCode),
+                    isHighlighted: true
+                  }
+                ]}
+              />
+            ))}
+            {(!invoice.lines || invoice.lines.length === 0) && (
+              <div className="text-center text-sm text-[var(--text-muted)] py-4 border border-[var(--border)] rounded-lg">
+                {tCommon('orderReadView.noLineItems')}
+              </div>
+            )}
+            
+            {/* Mobile Summary */}
+            <div className="mt-2 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4">
+              <table className="w-full text-sm">
+                <tbody>
+                  <tr>
+                    <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tCommon('subtotal')}</td>
+                    <td className="py-1 text-sm font-semibold text-right tabular-nums">
+                      {formatAmount(parseFloat(invoice.totalAmount) - parseFloat(invoice.taxAmount), invoice.currencyCode)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tCommon('tax')}</td>
+                    <td className="py-1 text-sm font-semibold text-right tabular-nums">
+                      {formatAmount(parseFloat(invoice.taxAmount), invoice.currencyCode)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 text-sm font-bold text-[var(--accent)] text-right pr-4">{tCommon('total')}</td>
+                    <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums">
+                      {formatAmount(parseFloat(invoice.totalAmount), invoice.currencyCode)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         {/* Payment Allocations Card */}
-        <div className="card mt-4 p-5">
-          <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">{t('paymentAllocations')}</h2>
-          <p className="text-sm text-gray-500">
-            {t('paymentAllocationsDesc')}
-          </p>
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-heading flex items-center gap-2">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              <span className="material-symbols-outlined shrink-0">payments</span>
+              {/* eslint-enable i18next/no-literal-string */}
+              <span>{t('paymentAllocations')}</span>
+            </h3>
+          </div>
+          <div className="overflow-x-auto -mx-5 sm:mx-0 px-5 sm:px-0">
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              {t('paymentAllocationsDesc')}
+            </p>
+          </div>
         </div>
       </div>
     </DetailsLayout>

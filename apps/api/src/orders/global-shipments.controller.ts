@@ -4,6 +4,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -13,6 +14,7 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 import { ShipmentService } from './shipment.service';
+import { GlobalShipmentListResponseDto, ShipmentResponseDto } from './dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
@@ -24,13 +26,16 @@ export class GlobalShipmentsController {
   constructor(private readonly shipmentService: ShipmentService) {}
 
   @Get()
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: GlobalShipmentListResponseDto })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Find All Shipments',
     description: 'Retrieve a list of shipments globally.',
   })
   @ApiFieldMask()
+  @ApiQuery({ name: 'days', required: false })
+  @ApiQuery({ name: 'salesOrderId', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   async findAll(
     @Query('days') days?: string,
     @Query('salesOrderId') salesOrderId?: string,
@@ -45,7 +50,7 @@ export class GlobalShipmentsController {
   }
 
   @Get(':id')
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: ShipmentResponseDto })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Find Shipment',

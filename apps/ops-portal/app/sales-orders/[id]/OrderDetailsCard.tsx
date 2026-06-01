@@ -85,7 +85,7 @@ export default function OrderDetailsCard({
                                         onClick={async () => {
                                             try {
                                                 const response = await api.reportsControllerRunHook('sales-order-confirmation', {}, { id: order.salesOrderId!, context: 'sales-order' });
-                                                const blob = response.data as unknown as Blob;
+                                                const blob = response.data ;
                                                 const url = URL.createObjectURL(blob);
                                                 window.open(url, '_blank');
                                             } catch (err) {
@@ -103,7 +103,7 @@ export default function OrderDetailsCard({
                                         onClick={async () => {
                                             try {
                                                 const response = await api.reportsControllerRunHook('pro-forma-invoice', {}, { id: order.salesOrderId!, context: 'sales-order' });
-                                                const blob = response.data as unknown as Blob;
+                                                const blob = response.data ;
                                                 const url = URL.createObjectURL(blob);
                                                 window.open(url, '_blank');
                                             } catch (err) {

@@ -4,6 +4,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -93,6 +94,9 @@ export class GoodsReceivedController {
     description: 'Retrieve a paginated list of received goods lines.',
   })
   @ApiPaginatedResponse(GoodsReceivedLineResponseDto)
+  @ApiQuery({ name: 'purchaseOrderId', required: false })
+  @ApiQuery({ name: 'putawayStatus', required: false })
+  @ApiQuery({ name: 'locationId', required: false })
   async findAllLines(
     @Query() query: PaginationQuery,
     @Query('purchaseOrderId') purchaseOrderId?: string,

@@ -4,6 +4,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -55,6 +56,8 @@ export class PaymentsController {
   })
   @ApiPaginatedResponse(PaymentResponseDto)
   @ApiFieldMask()
+  @ApiQuery({ name: 'days', required: false })
+  @ApiQuery({ name: 'allocation', required: false })
   findAll(
     @Query('days') days?: string,
     @Query('allocation') allocation?: string,

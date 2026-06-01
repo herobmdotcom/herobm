@@ -26,6 +26,17 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 import { BackordersService } from './backorders.service';
 import { Inject } from '@nestjs/common';
 import { BACKORDER_STATE, calculateAvailableQuantity } from '@modbm/shared';
+import {
+  OpenDemandsListResponseDto,
+  PoAllocationsListResponseDto,
+  AvailablePoLinesListResponseDto,
+  AllocationSuccessResponseDto,
+  AllocationResolveResponseDto,
+  LinkDemandToPoDto,
+  ReallocateDemandDto,
+  GeneratePOsDto,
+  GenerateTransfersDto,
+} from './dto';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -52,7 +63,7 @@ export class AllocationsController {
   ) {}
 
   @Get('open')
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: OpenDemandsListResponseDto })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Open Demands',
@@ -199,7 +210,7 @@ export class AllocationsController {
   }
 
   @Get('by-po/:poId')
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: PoAllocationsListResponseDto })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get PO Allocations',
@@ -230,7 +241,7 @@ export class AllocationsController {
   }
 
   @Get('available-po-lines')
-  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiOkResponse({ type: AvailablePoLinesListResponseDto })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Available PO Lines',
@@ -243,8 +254,7 @@ export class AllocationsController {
   }
 
   @Post('link-po')
-  @ApiBody({ type: Object }) // BYPASS-TYPING-TEST
-  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiCreatedResponse({ type: AllocationSuccessResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Link Demand To PO',
@@ -252,7 +262,7 @@ export class AllocationsController {
       'Manually allocate a backorder demand to an open purchase order line.',
   })
   async linkDemandToPo(
-    @Body() payload: import('./dto').LinkDemandToPoDto,
+    @Body() payload: LinkDemandToPoDto,
     @AuthUser() user: JwtUser,
   ) {
     const actor = user?.username || 'system';
@@ -267,14 +277,14 @@ export class AllocationsController {
   }
 
   @Post('resolve')
-  @ApiBody({ type: Object }) // BYPASS-TYPING-TEST
-  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiCreatedResponse({ type: AllocationResolveResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Resolve Open Demands',
     description:
       'Run the MRP engine to automatically resolve backorder demands.',
   })
+  @ApiBody({ schema: { type: 'object' } })
   async resolveOpenDemands(@AuthUser() user: JwtUser) {
     const actor = user?.username || 'system';
     await this.backordersService.resolveOpenDemands(actor);
@@ -282,14 +292,14 @@ export class AllocationsController {
   }
 
   @Post(':id/unlink')
-  @ApiBody({ type: Object }) // BYPASS-TYPING-TEST
-  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiCreatedResponse({ type: AllocationSuccessResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Unlink Demand',
     description:
       'Remove the link between a backorder demand and its allocated purchase order.',
   })
+  @ApiBody({ schema: { type: 'object' } })
   async unlinkDemand(@Param('id') id: string, @AuthUser() user: JwtUser) {
     const actor = user?.username || 'system';
     await this.backordersService.unlinkDemand(id, actor);
@@ -297,8 +307,7 @@ export class AllocationsController {
   }
 
   @Post(':id/reallocate')
-  @ApiBody({ type: Object }) // BYPASS-TYPING-TEST
-  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiCreatedResponse({ type: AllocationSuccessResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Reallocate Demand',
@@ -307,7 +316,7 @@ export class AllocationsController {
   })
   async reallocateDemand(
     @Param('id') id: string,
-    @Body() dto: import('./dto').ReallocateDemandDto,
+    @Body() dto: ReallocateDemandDto,
     @AuthUser() user: JwtUser,
   ) {
     const actor = user?.username || 'system';
@@ -316,15 +325,14 @@ export class AllocationsController {
   }
 
   @Post('generate-pos')
-  @ApiBody({ type: Object }) // BYPASS-TYPING-TEST
-  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiCreatedResponse({ type: AllocationSuccessResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Generate POs',
     description: 'Bulk create purchase orders from open backorder demands.',
   })
   async generatePOs(
-    @Body() payload: import('./dto').GeneratePOsDto,
+    @Body() payload: GeneratePOsDto,
     @AuthUser() user: JwtUser,
   ) {
     const actor = user?.username || 'system';
@@ -333,15 +341,14 @@ export class AllocationsController {
   }
 
   @Post('generate-transfers')
-  @ApiBody({ type: Object }) // BYPASS-TYPING-TEST
-  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
+  @ApiCreatedResponse({ type: AllocationSuccessResponseDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Generate Transfers',
     description: 'Bulk create inventory transfers from open backorder demands.',
   })
   async generateTransfers(
-    @Body() payload: import('./dto').GenerateTransfersDto,
+    @Body() payload: GenerateTransfersDto,
     @AuthUser() user: JwtUser,
   ) {
     const actor = user?.username || 'system';

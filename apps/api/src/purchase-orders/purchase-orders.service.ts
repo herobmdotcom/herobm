@@ -23,6 +23,7 @@ import {
   taxCategories,
 } from '../drizzle/modbm-core-schema';
 import { eq, or, ilike, desc, sql, inArray, and, asc } from 'drizzle-orm';
+import { getErrorMessage } from '@modbm/shared';
 import { InventoryService } from '../inventory/inventory.service';
 import {
   PaginationQuery,
@@ -182,8 +183,8 @@ export class PurchaseOrdersService {
           })
           .returning();
         order = inserted;
-      } catch (err: any) {
-        console.error('PO INSERT ERROR:', err.message || err);
+      } catch (err: unknown) {
+        console.error('PO INSERT ERROR:', getErrorMessage(err) || err);
         throw err;
       }
 

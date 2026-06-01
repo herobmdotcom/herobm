@@ -7,5 +7,5 @@
  */
 
 export type GlobalReturnsControllerFindGlobalReturnsParams = {
-stateCode: string;
+stateCode?: string;
 };

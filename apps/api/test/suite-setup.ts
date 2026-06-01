@@ -87,6 +87,7 @@ beforeAll(async () => {
               END LOOP;
 
               DELETE FROM modbm_core.purchase_order_return_shipment_lines WHERE return_line_id IN (SELECT return_line_id FROM modbm_core.purchase_order_return_lines WHERE return_id IN (SELECT return_id FROM modbm_core.purchase_order_returns WHERE purchase_order_id = r_po.purchase_order_id));
+              DELETE FROM modbm_core.purchase_order_return_shipments WHERE return_id IN (SELECT return_id FROM modbm_core.purchase_order_returns WHERE purchase_order_id = r_po.purchase_order_id);
               DELETE FROM modbm_core.purchase_order_return_lines WHERE return_id IN (SELECT return_id FROM modbm_core.purchase_order_returns WHERE purchase_order_id = r_po.purchase_order_id);
               DELETE FROM modbm_core.purchase_order_returns WHERE purchase_order_id = r_po.purchase_order_id;
 

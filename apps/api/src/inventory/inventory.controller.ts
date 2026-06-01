@@ -36,9 +36,9 @@ import {
   InventoryLedgerResponseDto,
   InventoryEntryDetailsResponseDto,
   FindByProductIdsBulkDto,
-  PendingPutawayResponseDto,
   InventoryLocationResponseDto,
-  LocationsResponseDto,
+  PendingPutawayResponseDto,
+  InventorySuccessResponseDto,
 } from './dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
@@ -58,6 +58,7 @@ export class InventoryController {
   })
   @ApiPaginatedResponse(InventoryResponseDto)
   @ApiFieldMask()
+  @ApiQuery({ name: 'locationNo', required: false })
   findAll(
     @Query() query: PaginationQuery,
     @Query('locationNo') locationNo?: string,
@@ -71,7 +72,9 @@ export class InventoryController {
     summary: 'Get By Products',
     description: 'Retrieve inventory items for specific product IDs.',
   })
-  @ApiOkResponse({ type: InventoryResponseDto, isArray: true })
+  @ApiOkResponse({ type: [InventoryResponseDto] })
+  @ApiQuery({ name: 'productIds', required: false })
+  @ApiQuery({ name: 'locationId', required: false })
   async findByProductIds(
     @Query('productIds') productIds?: string,
     @Query('locationId') locationId?: string,
@@ -92,7 +95,7 @@ export class InventoryController {
     summary: 'Bulk Get By Products',
     description: 'Retrieve inventory items for multiple product IDs in bulk.',
   })
-  @ApiCreatedResponse({ type: InventoryResponseDto, isArray: true })
+  @ApiCreatedResponse({ type: [InventoryResponseDto] })
   async findByProductIdsBulk(@Body() dto: FindByProductIdsBulkDto) {
     const res = await this.inventoryService.findByProductIds(
       dto.productIds || [],
@@ -108,6 +111,7 @@ export class InventoryController {
     description: 'Retrieve a paginated list of inventory bins.',
   })
   @ApiPaginatedResponse(InventoryBinResponseDto)
+  @ApiQuery({ name: 'locationNo', required: false })
   findBins(
     @Query() query: PaginationQuery,
     @Query('locationNo') locationNo?: string,
@@ -139,9 +143,9 @@ export class InventoryController {
     description: 'Retrieve all inventory locations.',
   })
   @ApiQuery({ name: 'productId', required: false, type: String })
-  @ApiOkResponse({ type: LocationsResponseDto })
-  findAllLocations(@Query('productId') productId?: string) {
-    return this.inventoryService.findAllLocations(productId);
+  @ApiOkResponse({ type: [InventoryLocationResponseDto] })
+  async findAllLocations(@Query('productId') productId?: string) {
+    return { data: await this.inventoryService.findAllLocations(productId) };
   }
 
   @Get('movements')
@@ -150,7 +154,8 @@ export class InventoryController {
     summary: 'List Movements',
     description: 'Retrieve inventory movements.',
   })
-  @ApiOkResponse({ type: InventoryMovementResponseDto, isArray: true })
+  @ApiOkResponse({ type: [InventoryMovementResponseDto] })
+  @ApiQuery({ name: 'days', required: false })
   getMovements(@Query('days') days?: string) {
     const daysInt = parseInt(days || '30', 10);
     return this.inventoryService.getMovements(isNaN(daysInt) ? 30 : daysInt);
@@ -162,7 +167,8 @@ export class InventoryController {
     summary: 'List Ledger Entries',
     description: 'Retrieve inventory ledger entries.',
   })
-  @ApiOkResponse({ type: InventoryLedgerResponseDto, isArray: true })
+  @ApiOkResponse({ type: [InventoryLedgerResponseDto] })
+  @ApiQuery({ name: 'days', required: false })
   getLedger(@Query('days') days?: string) {
     const daysInt = parseInt(days || '30', 10);
     return this.inventoryService.getLedger(isNaN(daysInt) ? 30 : daysInt);
@@ -185,7 +191,8 @@ export class InventoryController {
     summary: 'List Pending Putaways',
     description: 'Retrieve pending putaway lines.',
   })
-  @ApiOkResponse({ type: PendingPutawayResponseDto, isArray: true })
+  @ApiOkResponse({ type: [PendingPutawayResponseDto] })
+  @ApiQuery({ name: 'locationId', required: false })
   async getPendingPutaway(@Query('locationId') locationId?: string) {
     return this.inventoryService.getPendingPutaway(locationId);
   }
@@ -196,7 +203,10 @@ export class InventoryController {
     summary: 'Process Putaways',
     description: 'Process inventory putaway.',
   })
-  @ApiCreatedResponse({ type: Object, description: 'Putaway successful' }) // BYPASS-TYPING-TEST
+  @ApiCreatedResponse({
+    type: InventorySuccessResponseDto,
+    description: 'Putaway successful',
+  })
   async putaway(@Body() dto: PutawayBulkDto, @AuthUser() user: JwtUser) {
     return this.inventoryService.putaway(dto, user.username);
   }
@@ -207,7 +217,10 @@ export class InventoryController {
     summary: 'Toggle Quarantine',
     description: 'Toggle quarantine state for an inventory item.',
   })
-  @ApiCreatedResponse({ type: Object, description: 'Quarantine state toggled' }) // BYPASS-TYPING-TEST
+  @ApiCreatedResponse({
+    type: InventorySuccessResponseDto,
+    description: 'Quarantine state toggled',
+  })
   async toggleQuarantine(
     @Param('lineId') lineId: string,
     @Body() dto: ToggleQuarantineDto,

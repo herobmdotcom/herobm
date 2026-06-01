@@ -26,12 +26,19 @@ describe('Permissions & RBAC (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/api/auth/login')
         .send({ username, password: pass });
-      if (res.status !== 201) throw new Error(`Login failed for ${username}: ${res.status}`);
+      if (res.status !== 201)
+        throw new Error(`Login failed for ${username}: ${res.status}`);
       return res.body.access_token;
     };
 
-    adminToken = await getTestTokenDirect('admin', process.env.DEV_ADMIN_PASSWORD || 'password');
-    viewerToken = await getTestTokenDirect('viewer', process.env.DEV_VIEWER_PASSWORD || 'password');
+    adminToken = await getTestTokenDirect(
+      'admin',
+      process.env.DEV_ADMIN_PASSWORD || 'password',
+    );
+    viewerToken = await getTestTokenDirect(
+      'viewer',
+      process.env.DEV_VIEWER_PASSWORD || 'password',
+    );
     salesToken = await getTestTokenDirect('sales', 'password');
   });
 
@@ -108,10 +115,10 @@ describe('Permissions & RBAC (e2e)', () => {
       .get('/api/roles/viewer')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    
+
     // Remove webhooks write
     const restoredPermissions = getRes.body.permissions.filter(
-      (p: any) => !(p.resource === 'webhooks' && p.action === 'write')
+      (p: any) => !(p.resource === 'webhooks' && p.action === 'write'),
     );
 
     // Admin removes webhooks write from viewer

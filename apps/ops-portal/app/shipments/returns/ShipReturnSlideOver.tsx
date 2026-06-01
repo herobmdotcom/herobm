@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
 import * as api from '@modbm/sdk';
 import { PURCHASE_RETURN_STATE } from '@modbm/shared';
+import { getErrorMessage } from '@modbm/shared';
 
 interface ShipReturnSlideOverProps {
   isOpen: boolean;
@@ -33,7 +34,7 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
           setLoading(false);
         })
         .catch((err: any) => {
-          setError(err.message);
+          setError(getErrorMessage(err));
           setLoading(false);
         });
     }
@@ -46,8 +47,8 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
       await api.purchaseReturnsControllerStageReturn(returnRecord.purchaseOrderId, returnRecord.returnId, {} );
       onRefresh();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to stage return');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err) || 'Failed to stage return');
     } finally {
       setActionLoading(false);
     }
@@ -60,8 +61,8 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
       await api.purchaseReturnsControllerShipReturn(returnRecord.purchaseOrderId, returnRecord.returnId, {});
       onRefresh();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to ship return');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err) || 'Failed to ship return');
     } finally {
       setActionLoading(false);
     }

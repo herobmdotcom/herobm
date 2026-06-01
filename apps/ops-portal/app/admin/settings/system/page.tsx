@@ -9,6 +9,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import { useTranslations } from 'next-intl';
+import { getErrorMessage } from '@modbm/shared';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,8 +70,8 @@ export default function SystemSettingsPage() {
       const data = res.data;
       setOrgForm(data || {});
       setIsOrgDirty(false);
-    } catch (err: any) {
-      toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.company') }) + ': ' + err.message);
+    } catch (err: unknown) {
+      toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.company') }) + ': ' + getErrorMessage(err));
     } finally {
       setOrgLoading(false);
     }
@@ -100,8 +101,8 @@ export default function SystemSettingsPage() {
         if (payload[key] === '') payload[key] = null;
       });
       await api.organizationControllerUpdate(payload);
-    } catch (err: any) {
-      toast.error(err.message, { id: 'org-save-error' });
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err), { id: 'org-save-error' });
     } finally {
       setOrgSaving(false);
     }
@@ -115,9 +116,9 @@ export default function SystemSettingsPage() {
         api.inventoryControllerFindAllLocations()
       ]);
       setAppForm(appDataRes.data);
-      setLocations(locsRes.data?.data as unknown as Record<string, unknown>[] || []);
-    } catch (err: any) {
-      toast.error(tSettings('toasts.loadFailed', { area: 'App Config' }) + ': ' + err.message);
+      setLocations((locsRes.data as unknown as any[]) || []);
+    } catch (err: unknown) {
+      toast.error(tSettings('toasts.loadFailed', { area: 'App Config' }) + ': ' + getErrorMessage(err));
     } finally {
       setAppLoading(false);
     }
@@ -128,8 +129,8 @@ export default function SystemSettingsPage() {
       setAppForm((prev: unknown) => ({ ...(prev as Record<string, unknown>), [field]: value }));
       await api.appConfigControllerUpdate({ [field]: value });
       toast.success(t('common.updated'));
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -140,8 +141,8 @@ export default function SystemSettingsPage() {
       setUomLoading(true);
       const res = await api.uomDictionaryControllerFindAll();
       setUoms(res.data);
-    } catch (err: any) {
-      toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.uom') }) + ': ' + err.message);
+    } catch (err: unknown) {
+      toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.uom') }) + ': ' + getErrorMessage(err));
     } finally {
       setUomLoading(false);
     }
@@ -162,13 +163,13 @@ export default function SystemSettingsPage() {
         toast.success(tSettings('toasts.uomCreated'));
       }
       uomCancel(); loadUom();
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
   const uomDelete = async (code: string) => {
     if (!confirm(tSettings('confirmations.deleteUom', { code }))) return;
     try { await api.uomDictionaryControllerRemove(code); toast.success(tSettings('toasts.uomDeleted')); loadUom(); }
-    catch (err: any) { toast.error(err.message); }
+    catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
   // ── Macros data ────────────────────────────────────────────────────────────
@@ -178,8 +179,8 @@ export default function SystemSettingsPage() {
       setMacroLoading(true);
       const mRes = await api.macrosControllerFindAll({ macroType: '' });
       setMacros(mRes.data as unknown as Macro[]);
-    } catch (err: any) {
-      toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.macros') }) + ': ' + err.message);
+    } catch (err: unknown) {
+      toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.macros') }) + ': ' + getErrorMessage(err));
     } finally {
       setMacroLoading(false);
     }
@@ -207,13 +208,13 @@ export default function SystemSettingsPage() {
         toast.success(tSettings('toasts.macroCreated'));
       }
       macroCancel(); loadMacros();
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
   const macroDelete = async (id: string) => {
     if (!confirm(tSettings('confirmations.deleteMacro'))) return;
     try { await api.macrosControllerRemove(id); toast.success(tSettings('toasts.macroDeleted')); loadMacros(); }
-    catch (err: any) { toast.error(err.message); }
+    catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
   // ── Init ───────────────────────────────────────────────────────────────────
@@ -295,8 +296,8 @@ export default function SystemSettingsPage() {
     try {
       await api.glControllerReloadSettings({});
       toast.success('Settings cache flushed successfully.');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

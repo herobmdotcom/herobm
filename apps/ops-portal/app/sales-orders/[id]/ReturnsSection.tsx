@@ -284,7 +284,7 @@ export default function ReturnsSection({
                             const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === line.salesOrderLineId);
                             const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
                             return (
-                                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                                     <div className="flex justify-between items-start gap-2 mb-2">
                                         <div className="font-semibold text-sm text-[var(--accent)]">
                                             {line.productNumber || line.productId?.substring(0, 8) || '—'}
@@ -546,7 +546,7 @@ export default function ReturnsSection({
                                             onClick={async () => {
                                                 try {
                                                     const response = await api.reportsControllerRunHook('return-slip', {}, { id: ret.returnId, context: 'sales-return' });
-                                                    const blob = response.data as unknown as Blob;
+                                                    const blob = response.data ;
                                                     const url = URL.createObjectURL(blob);
                                                     window.open(url, '_blank');
                                                 } catch (err) {
@@ -562,7 +562,7 @@ export default function ReturnsSection({
                                                 onClick={async () => {
                                                     try {
                                                         const response = await api.reportsControllerRunHook('sales-return-credit', {}, { id: ret.returnId, context: 'sales-return' });
-                                                        const blob = response.data as unknown as Blob;
+                                                        const blob = response.data ;
                                                         const url = URL.createObjectURL(blob);
                                                         window.open(url, '_blank');
                                                     } catch (err) {
@@ -775,7 +775,7 @@ export default function ReturnsSection({
                                         });
                                         
                                         return (
-                                            <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                                            <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                                                 <div className="flex justify-between items-start gap-2 mb-2">
                                                     <div className="font-semibold text-sm text-[var(--accent)]">
                                                         {origLine?.productNumber || origLine?.productId?.substring(0, 8) || '—'}

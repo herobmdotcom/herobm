@@ -12,6 +12,7 @@ import { ValidState } from '@/types/states';
 import POMatchingPanel from '@/components/shared/POMatchingPanel';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import SupplierSelect from '@/components/shared/SupplierSelect';
+import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 import { cap, isBackTransition, PURCHASE_INVOICE_LIFECYCLE, PURCHASE_INVOICE_STATE, MATCH_STATUS } from '@modbm/shared';
 import { useSupplierInvoice, PurchaseInvoiceDetails } from './useSupplierInvoice';
 import PaymentManagerSlideOver from '@/app/payments/PaymentManagerSlideOver';
@@ -142,11 +143,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
           isSaving={saving}
           actions={
             <>
-              {headerDirty && isEditable && (
-                <button className="btn btn-primary btn-sm" onClick={() => saveHeader()} disabled={saving}>
-                  {tCommon('save', { defaultValue: 'Save' })}
-                </button>
-              )}
+
               {!headerDirty && allowedTransitions.includes(PURCHASE_INVOICE_STATE.CANCELLED) && (
                 <button
                   className="btn btn-danger btn-sm"
@@ -181,7 +178,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
             <span className="material-symbols-outlined">receipt_long</span>
             Invoice Details
           </h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
@@ -253,7 +250,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                 <div className="text-sm">{invoice.receiptFilename || '—'}</div>
               )}
             </div>
-            <div className="col-span-2 mt-2">
+            <div className="md:col-span-2 mt-2">
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
                 {tCommon('notesCardHeading')}
               </label>
@@ -315,7 +312,8 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                 </div>
               )}
             </div>
-            <table className="table-lines" style={isMatchingMode ? { fontSize: 11 } : undefined}>
+            {/* Desktop Table */}
+            <table className="table-lines hidden lg:table" style={isMatchingMode ? { fontSize: 11 } : undefined}>
               <thead>
                 <tr>
                   <th style={{ width: 40 }}>#</th>
@@ -515,6 +513,192 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                 </tr>
               </tbody>
             </table>
+
+            {/* Mobile Cards */}
+            <div className="flex flex-col gap-3 lg:hidden mt-2">
+              {invoice.lines?.map((line, idx) => {
+                const isSelected = isMatchingMode && selectedInvoiceLineId === line.lineId;
+                const isUnmatched = line.matchStatus !== MATCH_STATUS.MATCHED;
+                return (
+                  <div
+                    key={`mob-wrap-${line.lineId}`}
+                    onClick={isMatchingMode && isUnmatched && isEditable ? () => setSelectedInvoiceLineId(line.lineId) : undefined}
+                    style={{
+                      cursor: isMatchingMode && isUnmatched && isEditable ? 'pointer' : undefined,
+                      borderLeft: isSelected ? '3px solid var(--accent)' : undefined,
+                      background: isSelected ? 'rgba(0, 107, 92, 0.04)' : undefined,
+                      transition: 'background 0.15s, border-color 0.15s',
+                    }}
+                  >
+                    <MobileLineItemCard
+                      key={`mob-${line.lineId}`}
+                      topRightBadge={`#${idx + 1}`}
+                      title={
+                        <div className="flex items-center gap-2">
+                          {canEditLines && (!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') ? (
+                            <ProductSearchInput
+                              onSelect={(p) => handleProductSelect(line.lineId, p)}
+                              placeholder="Search product…"
+                            />
+                          ) : line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                            <span className="font-bold" style={{ color: 'var(--accent)' }}>
+                              {line.productNumber || line.productId.substring(0, 8)}
+                            </span>
+                          ) : (
+                            <span className="font-medium text-slate-500">Custom Item</span>
+                          )}
+                          {canEditLines && (
+                            <button className="text-gray-400 hover:text-red-500 ml-auto" onClick={(e) => { e.stopPropagation(); removeLine(line.lineId); }}>
+                              <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
+                            </button>
+                          )}
+                        </div>
+                      }
+                      subtitle={
+                        canEditLines ? (
+                          <input
+                            className="input w-full text-sm mt-1"
+                            defaultValue={line.description || ''}
+                            key={`desc-mob-${line.lineId}-${line.description}`}
+                            onBlur={(e) => {
+                              if (e.target.value !== (line.description || '')) {
+                                updateLine(line.lineId, 'description', e.target.value);
+                              }
+                            }}
+                            placeholder="Description"
+                          />
+                        ) : (
+                          <span>{line.description || '—'}</span>
+                        )
+                      }
+                      details={[
+                        ...(isMatchingMode ? [{
+                          label: 'Status',
+                          value: line.matchStatus === MATCH_STATUS.MATCHED ? (
+                            <span style={{ fontWeight: 600, color: 'var(--badge-shipped)' }}>{'✓ Matched'}</span>
+                          ) : (
+                            <span className="text-[var(--text-muted)]">Unmatched</span>
+                          )
+                        }] : []),
+                        {
+                          label: t('columns.qtyToBill', { defaultValue: 'Qty' }),
+                          value: canEditLines ? (
+                            <input
+                              className="input"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              style={{ width: '80px', textAlign: 'right' }}
+                              defaultValue={line.quantityInvoiced}
+                              key={`qty-mob-${line.lineId}-${line.quantityInvoiced}`}
+                              onBlur={(e) => {
+                                if (e.target.value !== line.quantityInvoiced) {
+                                  updateLine(line.lineId, 'quantityInvoiced', e.target.value);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span className="font-medium text-[var(--text-primary)]">{parseFloat(line.quantityInvoiced)}</span>
+                          ),
+                        },
+                        {
+                          label: t('columns.unitPrice'),
+                          value: canEditLines ? (
+                            <input
+                              className="input"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              style={{ width: '90px', textAlign: 'right' }}
+                              defaultValue={parseFloat(line.pricePerUnit || '0').toFixed(2)}
+                              key={`price-mob-${line.lineId}-${line.pricePerUnit}`}
+                              onBlur={(e) => {
+                                const val = parseFloat(e.target.value);
+                                const formatted = isNaN(val) ? '0.00' : val.toFixed(2);
+                                e.target.value = formatted;
+                                if (formatted !== parseFloat(line.pricePerUnit || '0').toFixed(2)) {
+                                  updateLine(line.lineId, 'pricePerUnit', formatted);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span className="font-medium text-[var(--text-primary)]">{formatAmount(parseFloat(line.pricePerUnit), invoice.currencyCode)}</span>
+                          ),
+                        },
+                        {
+                          label: t('columns.amount'),
+                          value: formatAmount(parseFloat(line.amount), invoice.currencyCode),
+                          isHighlighted: true
+                        }
+                      ]}
+                    >
+                      {!isMatchingMode && (
+                        <div className="pt-2 mt-2 border-t border-slate-100">
+                          <label className="text-[11px] uppercase tracking-wider font-semibold text-slate-500 mb-1.5 block">{t('columns.allocation')}</label>
+                          <div className="border border-slate-200 rounded p-2 bg-[var(--bg-primary)]">
+                            <InvoiceAllocationCell line={line} />
+                          </div>
+                        </div>
+                      )}
+                    </MobileLineItemCard>
+                  </div>
+                );
+              })}
+
+              {(!invoice.lines || invoice.lines.length === 0) && (
+                <div className="text-center text-[var(--text-muted)] py-6 text-sm">
+                  {t('noItems')}
+                </div>
+              )}
+
+              <div className="mt-2 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4">
+                <table className="w-full text-sm">
+                  <tbody>
+                    <tr>
+                      <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tCommon('subtotal')}</td>
+                      <td className="py-1 text-sm font-semibold text-right tabular-nums">
+                        {formatAmount(parseFloat(invoice.totalAmount) - parseFloat(invoice.taxAmount), invoice.currencyCode)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tCommon('tax')}</td>
+                      <td className="py-1 text-sm font-semibold text-right tabular-nums">
+                        {isEditable ? (
+                          <input
+                            className="input"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            style={{ width: 100, textAlign: 'right', padding: '2px 8px', height: 26 }}
+                            value={editTaxAmount}
+                            onFocus={(e) => {
+                              if (parseFloat(e.target.value) === 0) {
+                                setEditTaxAmount('');
+                              }
+                            }}
+                            onChange={(e) => setEditTaxAmount(e.target.value)}
+                            onBlur={() => {
+                              if (editTaxAmount === '') {
+                                setEditTaxAmount('0.00');
+                              }
+                              saveHeader();
+                            }}
+                          />
+                        ) : (
+                          formatAmount(parseFloat(invoice.taxAmount), invoice.currencyCode)
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 text-sm font-bold text-[var(--accent)] text-right pr-4">{tCommon('total')}</td>
+                      <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums">
+                        {formatAmount(parseFloat(invoice.totalAmount), invoice.currencyCode)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
 
           {/* Right: Matching Panel */}
@@ -598,32 +782,56 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
         <div className="card mt-4 p-5">
           <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">{t('paymentAllocations')}</h2>
           {invoice.allocations && invoice.allocations.length > 0 ? (
-            <table className="w-full text-left border-collapse mt-2">
-              <thead>
-                <tr className="border-b border-[var(--border)]">
-                  <th className="py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.paymentNo')}</th>
-                  <th className="py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.date')}</th>
-                  <th className="py-2 text-xs font-semibold text-right" style={{ color: 'var(--text-muted)' }}>{t('columns.allocatedAmount')}</th>
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="w-full text-left border-collapse mt-2">
+                  <thead>
+                    <tr className="border-b border-[var(--border)]">
+                      <th className="py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.paymentNo')}</th>
+                      <th className="py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.date')}</th>
+                      <th className="py-2 text-xs font-semibold text-right" style={{ color: 'var(--text-muted)' }}>{t('columns.allocatedAmount')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoice.allocations.map((alloc) => (
+                      <tr key={alloc.allocationId} className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--bg-card-hover)] transition-colors">
+                        <td className="py-2 text-sm font-medium">
+                          <span className="text-[var(--accent)] cursor-pointer hover:underline" onClick={() => setSelectedPaymentId(alloc.paymentId)}>
+                            {alloc.paymentNumber}
+                          </span>
+                        </td>
+                        <td className="py-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                          {new Date(alloc.paymentDate).toLocaleDateString()}
+                        </td>
+                        <td className="py-2 text-sm font-semibold text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                          {formatAmount(parseFloat(alloc.allocatedAmount), alloc.currencyCode)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex flex-col lg:hidden gap-3 mt-2">
                 {invoice.allocations.map((alloc) => (
-                  <tr key={alloc.allocationId} className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--bg-card-hover)] transition-colors">
-                    <td className="py-2 text-sm font-medium">
+                  <MobileLineItemCard
+                    key={alloc.allocationId}
+                    title={
                       <span className="text-[var(--accent)] cursor-pointer hover:underline" onClick={() => setSelectedPaymentId(alloc.paymentId)}>
                         {alloc.paymentNumber}
                       </span>
-                    </td>
-                    <td className="py-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      {new Date(alloc.paymentDate).toLocaleDateString()}
-                    </td>
-                    <td className="py-2 text-sm font-semibold text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      {formatAmount(parseFloat(alloc.allocatedAmount), alloc.currencyCode)}
-                    </td>
-                  </tr>
+                    }
+                    subtitle={new Date(alloc.paymentDate).toLocaleDateString()}
+                    details={[
+                      {
+                        label: t('columns.allocatedAmount'),
+                        value: formatAmount(parseFloat(alloc.allocatedAmount), alloc.currencyCode),
+                        isHighlighted: true
+                      }
+                    ]}
+                  />
                 ))}
-              </tbody>
-            </table>
+              </div>
+            </>
           ) : (
             <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
               {t('noPaymentsAllocated')}

@@ -7,6 +7,7 @@ import LocationSelect from '@/components/shared/LocationSelect';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@modbm/shared';
 
 interface LineItem {
   productId: string;
@@ -94,8 +95,8 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
       });
       onCreated();
       onClose();
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to create transfer order');
+    } catch (e: unknown) {
+      toast.error(getErrorMessage(e) || 'Failed to create transfer order');
     } finally {
       setIsSubmitting(false);
     }

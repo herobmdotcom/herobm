@@ -8,5 +8,5 @@
 
 export type ExternalSyncControllerClearEventsByTypeParams = {
 type: string;
-status: string;
+status?: string;
 };

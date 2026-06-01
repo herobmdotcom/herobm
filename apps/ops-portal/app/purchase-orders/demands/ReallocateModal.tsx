@@ -46,7 +46,7 @@ export default function ReallocateModal({
     if (isOpen) {
       api.inventoryControllerFindAllLocations()
         .then((res) => {
-          setLocations((res.data?.data || []) as unknown as RawLocation[]);
+          setLocations((res.data || []) );
         })
         .catch((err) => reportError(err, 'Failed to load locations'));
     }
@@ -86,14 +86,11 @@ export default function ReallocateModal({
     setIsSubmitting(true);
     try {
       for (const demand of selectedDemands) {
-        await api.allocationsControllerReallocateDemand(demand.id, {
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ locationId: selectedLocationId }),
-        });
+        await api.allocationsControllerReallocateDemand(demand.id, { locationId: selectedLocationId });
       }
       toast.success(`Successfully reallocated ${selectedDemands.length} line(s)`);
       onSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       reportError(err, 'Failed to reallocate demands');
     } finally {
       setIsSubmitting(false);

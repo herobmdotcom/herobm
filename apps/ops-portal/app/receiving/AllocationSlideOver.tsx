@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
+import { MobileCardField } from '@/components/shared/DataTable';
 import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 import { MATCH_STATUS, PUTAWAY_STATUS } from '@modbm/shared';
 import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@modbm/shared';
 
 interface AllocationSlideOverProps {
   isOpen: boolean;
@@ -76,7 +78,10 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
         return next;
       });
 
-      api.purchaseOrdersControllerFindPendingLines(line.productId)
+      api.purchaseOrdersControllerFindPendingLines({ 
+        productId: line.productId, 
+        vendorId: line.vendorId 
+      })
         .then((data: any) => {
           const lines = Array.isArray(data) ? data : data.data || [];
           const poIds = [...new Set(lines.map((l: any) => l.purchaseOrderId))] as string[];
@@ -194,8 +199,8 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
 
       markAllocated(grLine.goodsReceivedLineId, qtyStr, splitLine);
       onRefresh();
-    } catch (err: any) {
-      toast.error(err.message || t('allocation.matchError'));
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || t('allocation.matchError'));
     }
   }, [onRefresh, markAllocated, t]);
 
@@ -207,165 +212,252 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
 
         {/* Summary Table */}
         <div className="card mb-0">
-          <table className="table-lines">
-            <thead>
-              <tr>
-                <th>{t('columns.receiptNo')}</th>
-                <th>{t('columns.product')}</th>
-                <th>{t('columns.supplier')}</th>
-                <th style={{ textAlign: 'right' }}>{t('columns.receivedQty', { fallback: 'Received Qty' })}</th>
-                <th style={{ width: 90, textAlign: 'center' }}>{t('columns.status', { fallback: 'Status' })}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {unmatchedLines.map((line) => {
-                const state = lineStates.get(line.goodsReceivedLineId);
-                const isActive = activeLineId === line.goodsReceivedLineId;
-                return (
-                  <tr 
-                    key={line.goodsReceivedLineId}
-                    onClick={() => setActiveLineId(line.goodsReceivedLineId)}
-                    className={`cursor-pointer transition-colors ${isActive ? 'bg-[var(--bg-card-hover)] border-l-2 border-[var(--accent)]' : 'hover:bg-[var(--bg-card-hover)]/50 border-l-2 border-transparent'}`}
-                  >
-                    <td className="font-medium text-[var(--text-primary)]">{line.receiptNumber}</td>
-                    <td>
-                      <div className="font-semibold text-[var(--accent)]">{line.productNumber}</div>
-                      <div className="text-xs text-[var(--text-muted)] mt-0.5">{line.productName}</div>
-                    </td>
-                    <td className="text-[var(--text-primary)]">{line.vendorName}</td>
-                    <td className="text-right font-bold text-[var(--text-primary)] tabular-nums">
-                      {parseFloat(line.quantityReceived || '0')}
-                    </td>
-                    <td className="text-center">
-                      {state?.allocated ? (
+          <div className="hidden lg:block overflow-x-auto w-full">
+            <table className="table-lines w-full">
+              <thead>
+                <tr>
+                  <th>{t('columns.receiptNo')}</th>
+                  <th>{t('columns.product')}</th>
+                  <th>{t('columns.supplier')}</th>
+                  <th style={{ textAlign: 'right' }}>{t('columns.receivedQty', { fallback: 'Received Qty' })}</th>
+                  <th style={{ width: 90, textAlign: 'center' }}>{t('columns.status', { fallback: 'Status' })}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {unmatchedLines.map((line) => {
+                  const state = lineStates.get(line.goodsReceivedLineId);
+                  const isActive = activeLineId === line.goodsReceivedLineId;
+                  return (
+                    <tr 
+                      key={line.goodsReceivedLineId}
+                      onClick={() => setActiveLineId(line.goodsReceivedLineId)}
+                      className={`cursor-pointer transition-colors ${isActive ? 'bg-[var(--bg-card-hover)] border-l-2 border-[var(--accent)]' : 'hover:bg-[var(--bg-card-hover)]/50 border-l-2 border-transparent'}`}
+                    >
+                      <td className="font-medium text-[var(--text-primary)]">{line.receiptNumber}</td>
+                      <td>
+                        <div className="font-semibold text-[var(--accent)]">{line.productNumber}</div>
+                        <div className="text-xs text-[var(--text-muted)] mt-0.5">{line.productName}</div>
+                      </td>
+                      <td className="text-[var(--text-primary)]">{line.vendorName}</td>
+                      <td className="text-right font-bold text-[var(--text-primary)] tabular-nums">
+                        {parseFloat(line.quantityReceived || '0')}
+                      </td>
+                      <td className="text-center">
+                        {state?.allocated ? (
+                          <span className="badge badge-success">{t('status.allocated')}</span>
+                        ) : (
+                          <span className="text-xs text-[var(--text-muted)]">{t('status.pending')}</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="lg:hidden flex flex-col w-full gap-2 pt-2">
+            {unmatchedLines.map((line) => {
+              const state = lineStates.get(line.goodsReceivedLineId);
+              const isActive = activeLineId === line.goodsReceivedLineId;
+              return (
+                <div
+                  key={line.goodsReceivedLineId}
+                  className={`transition-colors rounded-lg border p-3 flex flex-col shadow-sm ${isActive ? 'bg-[var(--bg-card-hover)] border-[var(--accent)]' : 'bg-[var(--bg-card)] border-[var(--border)]'}`}
+                >
+                  <div className="flex justify-between items-start gap-2 mb-2 cursor-pointer" onClick={() => setActiveLineId(line.goodsReceivedLineId)}>
+                    <div className="font-semibold text-sm text-[var(--accent)]">
+                      {line.productNumber || '—'}
+                    </div>
+                    <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">
+                      {line.receiptNumber}
+                    </div>
+                  </div>
+                  <div className="text-sm text-[var(--text-primary)] font-medium mb-3 cursor-pointer" onClick={() => setActiveLineId(line.goodsReceivedLineId)}>
+                    {line.productName || '—'}
+                  </div>
+                  <div className="flex flex-col gap-1 border-t border-[var(--border)] pt-2 cursor-pointer" onClick={() => setActiveLineId(line.goodsReceivedLineId)}>
+                    <MobileCardField label={t('columns.supplier')} value={line.vendorName} />
+                    <MobileCardField label={t('columns.receivedQty', { fallback: 'Received Qty' })} value={
+                      <span className="font-bold tabular-nums">{parseFloat(line.quantityReceived || '0')}</span>
+                    } />
+                    <MobileCardField label={t('columns.status', { fallback: 'Status' })} value={
+                      state?.allocated ? (
                         <span className="badge badge-success">{t('status.allocated')}</span>
                       ) : (
                         <span className="text-xs text-[var(--text-muted)]">{t('status.pending')}</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      )
+                    } />
+                  </div>
+                  {isActive && state && !state.allocated && (
+                    <div className="mt-4 pt-4 border-t border-[rgba(196,198,205,0.4)]">
+                      <h4 className="text-xs font-bold mb-3 uppercase tracking-wider text-[var(--text-secondary)]">Eligible POs</h4>
+                      <POCandidatesList grLine={line} state={state} toggleExpand={toggleExpand} handleAllocate={handleAllocate} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Per-line PO candidates */}
-        {unmatchedLines.map((grLine) => {
-          if (grLine.goodsReceivedLineId !== activeLineId) return null;
-          
-          const state = lineStates.get(grLine.goodsReceivedLineId);
-          if (!state || state.allocated) return null;
+        <div className="hidden lg:block">
+          {unmatchedLines.map((grLine) => {
+            if (grLine.goodsReceivedLineId !== activeLineId) return null;
+            
+            const state = lineStates.get(grLine.goodsReceivedLineId);
+            if (!state || state.allocated) return null;
 
-          const originalQuantity = parseFloat(grLine.quantityReceived || '0');
+            const originalQuantity = parseFloat(grLine.quantityReceived || '0');
 
-          // Group pending lines by PO
-          const poGroups = new Map<string, any>();
-          for (const line of state.pendingLines) {
-            if (!poGroups.has(line.purchaseOrderId)) {
-              poGroups.set(line.purchaseOrderId, {
-                purchaseOrderId: line.purchaseOrderId,
-                orderNumber: line.orderNumber,
-                locationName: line.locationName,
-                lines: [],
-              });
-            }
-            poGroups.get(line.purchaseOrderId)!.lines.push(line);
-          }
-          const groups = Array.from(poGroups.values());
+            return (
+              <div key={grLine.goodsReceivedLineId}>
+                {/* Section header */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 mb-4 p-3 bg-[var(--bg-card)] rounded-lg border border-[var(--border)] lg:border-none lg:p-0 lg:bg-transparent">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold text-[var(--accent)]">{grLine.productNumber}</span>
+                    <span className="hidden lg:inline text-[var(--text-muted)]">—</span>
+                    <span className="text-sm text-[var(--text-primary)] w-full lg:w-auto">{grLine.productName}</span>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center justify-between lg:justify-end gap-4 mt-2 lg:mt-0 pt-2 lg:pt-0 border-t border-[var(--border)] lg:border-none w-full lg:w-auto">
+                    <span className="text-xs text-[var(--text-secondary)]">
+                      {t('allocation.receivedAt')} <span className="font-medium text-[var(--text-primary)]">{grLine.locationName || t('allocation.unknown')}</span>
+                    </span>
+                    <span className="text-xs font-semibold px-2 py-1 bg-[var(--bg-secondary)] rounded-md text-[var(--text-primary)] tabular-nums shrink-0">
+                      {t('allocation.qty')} {originalQuantity}
+                    </span>
+                  </div>
+                </div>
 
-          return (
-            <div key={grLine.goodsReceivedLineId}>
-              {/* Section header */}
-              <div className="flex items-center gap-2 mb-2">
-                <span className="font-bold text-[var(--accent)]">{grLine.productNumber}</span>
-                <span className="text-[var(--text-muted)]">—</span>
-                <span className="text-sm text-[var(--text-primary)]">{grLine.productName}</span>
-                
-                <span className="text-xs ml-4 text-[var(--text-secondary)]">
-                  {t('allocation.receivedAt')} <span className="font-medium text-[var(--text-primary)]">{grLine.locationName || t('allocation.unknown')}</span>
-                </span>
-
-                <span className="text-xs text-[var(--text-muted)] ml-auto tabular-nums">
-                  {t('allocation.qty')} {originalQuantity}
-                </span>
+                <POCandidatesList grLine={grLine} state={state} toggleExpand={toggleExpand} handleAllocate={handleAllocate} />
               </div>
-
-              {/* PO Cards */}
-              {state.loading ? (
-                <div className="p-6 text-center text-[var(--text-muted)] border border-[var(--border)] rounded-md bg-[var(--bg-card)]">
-                  {t('allocation.loadingEligible')}
-                </div>
-              ) : groups.length === 0 ? (
-                <div className="p-6 text-center text-[var(--text-muted)] border border-[var(--border)] rounded-md bg-[var(--bg-card)]">
-                  {t('allocation.noPendingPOs')}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {groups.map((group) => {
-                    const isExpanded = state.expandedPOs.has(group.purchaseOrderId);
-                    return (
-                      <div key={group.purchaseOrderId} style={{ borderRadius: 8, border: '1px solid var(--border)', overflow: 'hidden', background: 'var(--bg-card)' }}>
-                        {/* Card Header */}
-                        <button
-                          onClick={() => toggleExpand(grLine.goodsReceivedLineId, group.purchaseOrderId)}
-                          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
-                            <span className="material-symbols-outlined" style={{ fontSize: 18, transition: 'transform 0.15s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', color: 'var(--text-muted)' }}>
-                              chevron_right
-                            </span>
-                            <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: 14 }}>
-                              {group.orderNumber}
-                            </span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            {grLine.locationName && group.locationName && grLine.locationName !== group.locationName && (
-                              <span className="badge badge-sm badge-warning">{t('allocation.locationMismatch')}</span>
-                            )}
-                            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                              {t('allocation.destination')} <span className="font-medium text-[var(--text-primary)]">{group.locationName || t('allocation.unknown')}</span>
-                            </div>
-                          </div>
-                        </button>
-
-                        {/* Expanded Lines */}
-                        {isExpanded && (
-                          <div style={{ borderTop: '1px solid var(--border)' }}>
-                            <table className="table-lines">
-                              <thead>
-                                <tr>
-                                  <th>{t('columns.ordered', { fallback: 'Ordered' })}</th>
-                                  <th>{t('columns.received', { fallback: 'Received' })}</th>
-                                  <th>{t('columns.remaining', { fallback: 'Remaining' })}</th>
-                                  <th style={{ width: 160, textAlign: 'center' }}>{t('columns.allocate', { fallback: 'Allocate' })}</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {group.lines.map((poLine: any) => (
-                                  <POLineRow
-                                    key={poLine.purchaseOrderLineId}
-                                    line={poLine}
-                                    originalQuantity={originalQuantity}
-                                    onAllocate={(qty) => handleAllocate(grLine, poLine, qty)}
-                                  />
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
 
       </div>
     </SlideOver>
+  );
+}
+
+function POCandidatesList({
+  grLine,
+  state,
+  toggleExpand,
+  handleAllocate
+}: {
+  grLine: any;
+  state: any;
+  toggleExpand: (lineId: string, poId: string) => void;
+  handleAllocate: (grLine: any, poLine: any, qtyStr: string) => void;
+}) {
+  const t = useTranslations('goodsReceived');
+  const originalQuantity = parseFloat(grLine.quantityReceived || '0');
+
+  // Group pending lines by PO
+  const poGroups = new Map<string, any>();
+  for (const line of state.pendingLines) {
+    if (!poGroups.has(line.purchaseOrderId)) {
+      poGroups.set(line.purchaseOrderId, {
+        purchaseOrderId: line.purchaseOrderId,
+        orderNumber: line.orderNumber,
+        locationName: line.locationName,
+        lines: [],
+      });
+    }
+    poGroups.get(line.purchaseOrderId)!.lines.push(line);
+  }
+  const groups = Array.from(poGroups.values());
+
+  if (state.loading) {
+    return (
+      <div className="p-6 text-center text-[var(--text-muted)] border border-[var(--border)] rounded-md bg-[var(--bg-card)]">
+        {t('allocation.loadingEligible')}
+      </div>
+    );
+  }
+
+  if (groups.length === 0) {
+    return (
+      <div className="p-6 text-center text-[var(--text-muted)] border border-[var(--border)] rounded-md bg-[var(--bg-card)]">
+        {t('allocation.noPendingPOs')}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {groups.map((group) => {
+        const isExpanded = state.expandedPOs.has(group.purchaseOrderId);
+        return (
+          <div key={group.purchaseOrderId} style={{ borderRadius: 8, border: '1px solid var(--border)', overflow: 'hidden', background: 'var(--bg-card)' }}>
+            {/* Card Header */}
+            <button
+              onClick={() => toggleExpand(grLine.goodsReceivedLineId, group.purchaseOrderId)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined" style={{ fontSize: 18, transition: 'transform 0.15s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', color: 'var(--text-muted)' }}>
+                  chevron_right
+                </span>
+                <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: 14 }}>
+                  {group.orderNumber}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {grLine.locationName && group.locationName && grLine.locationName !== group.locationName && (
+                  <span className="badge badge-sm badge-warning">{t('allocation.locationMismatch')}</span>
+                )}
+                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                  {t('allocation.destination')} <span className="font-medium text-[var(--text-primary)]">{group.locationName || t('allocation.unknown')}</span>
+                </div>
+              </div>
+            </button>
+
+            {/* Expanded Lines */}
+            {isExpanded && (
+              <div style={{ borderTop: '1px solid var(--border)' }}>
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="table-lines w-full">
+                    <thead>
+                      <tr>
+                        <th>{t('columns.ordered', { fallback: 'Ordered' })}</th>
+                        <th>{t('columns.received', { fallback: 'Received' })}</th>
+                        <th>{t('columns.remaining', { fallback: 'Remaining' })}</th>
+                        <th style={{ width: 160, textAlign: 'center' }}>{t('columns.allocate', { fallback: 'Allocate' })}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.lines.map((poLine: any) => (
+                        <POLineRow
+                          key={poLine.purchaseOrderLineId}
+                          line={poLine}
+                          originalQuantity={originalQuantity}
+                          onAllocate={(qty) => handleAllocate(grLine, poLine, qty)}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="lg:hidden flex flex-col w-full divide-y divide-[var(--border)]">
+                  {group.lines.map((poLine: any) => (
+                    <POLineMobileCard
+                      key={poLine.purchaseOrderLineId}
+                      line={poLine}
+                      originalQuantity={originalQuantity}
+                      onAllocate={(qty) => handleAllocate(grLine, poLine, qty)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -411,5 +503,55 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: any; original
         </div>
       </td>
     </tr>
+  );
+}
+
+function POLineMobileCard({ line, originalQuantity, onAllocate }: { line: any; originalQuantity: number; onAllocate: (qty: string) => void }) {
+  const t = useTranslations('goodsReceived');
+  const ordered = parseFloat(line.quantity || '0');
+  const received = parseFloat(line.quantityReceived || '0');
+  const remaining = Math.max(0, ordered - received);
+
+  const suggestedQty = Math.min(originalQuantity, remaining);
+  const [qty, setQty] = useState(suggestedQty > 0 ? suggestedQty.toString() : originalQuantity.toString());
+  const [isAllocating, setIsAllocating] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-2 p-4 bg-[var(--bg-secondary)]">
+      <div className="flex items-center justify-between gap-4">
+        <MobileCardField className="flex-1 border-0 py-0" label={t('columns.ordered', { fallback: 'Ordered' })} value={ordered} />
+        <MobileCardField className="flex-1 border-0 py-0" label={t('columns.received', { fallback: 'Received' })} value={received} />
+      </div>
+      <div className="flex flex-col gap-2 border-t border-[var(--border)] pt-3 mt-1">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-slate-500">{t('columns.remaining', { fallback: 'Remaining' })}</span>
+          <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">{remaining}</span>
+        </div>
+        <div className="flex items-center justify-end gap-2 mt-2">
+          <input
+            type="number"
+            step="0.01"
+            min="0.01"
+            max={originalQuantity}
+            className="input text-right"
+            style={{ width: '80px', padding: '6px 8px', height: '32px', fontSize: '13px' }}
+            value={qty}
+            onChange={(e) => setQty(e.target.value)}
+          />
+          <button
+            onClick={async () => {
+              setIsAllocating(true);
+              await onAllocate(qty);
+              setIsAllocating(false);
+            }}
+            disabled={isAllocating || !qty}
+            className="btn btn-primary"
+            style={{ padding: '6px 16px', height: '32px', fontSize: '13px' }}
+          >
+            {isAllocating ? t('allocation.allocating') : t('allocation.match')}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

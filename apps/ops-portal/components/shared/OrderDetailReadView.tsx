@@ -12,6 +12,7 @@
 
 import { useTranslations } from 'next-intl';
 import { computeOrderTotals } from '@modbm/shared';
+import MobileLineItemCard from './MobileLineItemCard';
 
 /* ── Type definitions ────────────────────────────────────────────── */
 
@@ -182,8 +183,11 @@ export default function OrderDetailReadView({
         >
           {tRV('lineItems')}
         </h3>
-        <table className="table-lines">
-          <thead>
+        
+        {/* Desktop Table */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="table-lines w-full">
+            <thead>
             <tr>
               <th style={{ width: 40 }}>#</th>
               <th>{tCols('product')}</th>
@@ -249,8 +253,65 @@ export default function OrderDetailReadView({
         </table>
       </div>
 
+        {/* Mobile Cards */}
+        <div className="flex flex-col lg:hidden mt-2">
+          {order.lines.map((line, idx) => {
+            const hasDiscount = parseFloat(line.discountPercentage || '0') > 0;
+            return (
+              <MobileLineItemCard
+                key={line.salesOrderLineId}
+                title={line.productNumber || line.productId?.substring(0, 8) || '—'}
+                subtitle={line.productDescription || '—'}
+                topRightBadge={`#${line.lineNumber || idx + 1}`}
+                details={[
+                  {
+                    label: tCols('qty'),
+                    value: line.quantity
+                  },
+                  {
+                    label: tCols('uom', { fallback: 'UOM' }),
+                    value: line.unitOfMeasure || 'EA'
+                  },
+                  {
+                    label: tCols('unitPrice'),
+                    value: formatAmount(parseFloat(line.pricePerUnit || '0'), cc)
+                  },
+                  {
+                    label: tCols('discountPct'),
+                    value: hasDiscount ? `${line.discountPercentage}%` : '0.0%'
+                  },
+                  {
+                    label: tCols('tax'),
+                    value: (() => {
+                      const amt = parseFloat(line.amount || '0');
+                      const tax = parseFloat(line.tax || '0');
+                      if (amt > 0 && tax > 0) {
+                        const pct = (tax / amt) * 100;
+                        return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
+                      }
+                      if (amt > 0 && tax === 0) return tRV('exempt');
+                      return '—';
+                    })()
+                  },
+                  {
+                    label: tCols('amount'),
+                    value: formatAmount(parseFloat(line.amount || '0'), cc),
+                    isHighlighted: true
+                  }
+                ]}
+              />
+            );
+          })}
+          {order.lines.length === 0 && (
+            <div className="text-center text-sm text-[var(--text-muted)] py-4 border border-[var(--border)] rounded-lg">
+              {tRV('noLineItems')}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* ── Totals summary ──────────────────────────────────────── */}
-      <div className="card mb-6">
+      <div className="card mb-6 hidden lg:block">
         <div
           style={{
             display: 'flex',
@@ -287,6 +348,29 @@ export default function OrderDetailReadView({
             </span>
           </div>
         </div>
+      </div>
+
+      <div className="mt-2 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 lg:hidden mb-6">
+        <table className="w-full text-sm">
+          <tbody>
+            <tr>
+              <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tRV('subtotal')}</td>
+              <td className="py-1 text-sm font-semibold text-right tabular-nums">{formatAmount(subtotal, cc)}</td>
+            </tr>
+            <tr>
+              <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">
+                {taxPct > 0
+                  ? tRV('taxWithPct', { pct: taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1) })
+                  : tRV('tax')}
+              </td>
+              <td className="py-1 text-sm font-semibold text-right tabular-nums">{formatAmount(totalTax, cc)}</td>
+            </tr>
+            <tr>
+              <td className="py-2 text-sm font-bold text-[var(--accent)] text-right pr-4">{tRV('total')}</td>
+              <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums">{formatAmount(grandTotal, cc)}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       {/* ── Consumer-injected content (e.g. returns section) ────── */}

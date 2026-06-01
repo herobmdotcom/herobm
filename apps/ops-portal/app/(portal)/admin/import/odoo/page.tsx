@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 import { CURRENCIES, getCurrencyByAbmCode } from '@/lib/currency';
+import { getErrorMessage } from '@modbm/shared';
 
 type Step = 'config' | 'preview' | 'executing' | 'finalisation';
 
@@ -110,8 +111,8 @@ export default function OdooImportPage() {
         
         setStep('preview');
       }
-    } catch (err: any) {
-      toast.error(err.message || tExt('toasts.apiError', { fallback: 'API Error' }));
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || tExt('toasts.apiError', { fallback: 'API Error' }));
     } finally {
       setLoading(false);
     }
@@ -142,9 +143,9 @@ export default function OdooImportPage() {
       jobIdRef.current = res.data.jobId;
       setStatus('running');
       startPolling(res.data.jobId);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setStatus('failed');
-      setErrorMsg(err.message || 'Failed to start ELT execution.');
+      setErrorMsg(getErrorMessage(err) || 'Failed to start ELT execution.');
       setLogs(prev => [...prev, `[ERROR]: Failed to start ELT execution.`]);
     }
   };
@@ -169,12 +170,12 @@ export default function OdooImportPage() {
             clearInterval(pollTimerRef.current);
           }
         }
-      } catch (err: any) {
-        if (err.status === 404 || err.message?.includes('not found') || err.message?.toLowerCase().includes('job not found')) {
+      } catch (err: unknown) {
+        if ((err as any)?.status === 404 || getErrorMessage(err)?.includes('not found') || getErrorMessage(err)?.toLowerCase().includes('job not found')) {
           setStatus('failed');
           setErrorMsg('Job not found. The server might have restarted.');
           clearInterval(pollTimerRef.current);
-        } else {
+        } else if ((err as any)?.status === 409) {
           reportError(err, 'Polling error');
         }
       }

@@ -6,21 +6,7 @@ import { useState, useEffect, Fragment } from 'react';
 import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
-
-interface SyncSummary {
-  pending: number;
-  processed: number;
-  failed: number;
-  total: number;
-}
-
-interface TypeBreakdown {
-  eventType: string;
-  total: number;
-  pending: number;
-  processed: number;
-  failed: number;
-}
+import { getErrorMessage } from '@modbm/shared';
 
 interface OutboxEvent {
   outboxId: string;
@@ -33,17 +19,11 @@ interface OutboxEvent {
   lastError: string | null;
 }
 
-interface SyncData {
-  summary: SyncSummary;
-  byType: TypeBreakdown[];
-  recentEvents: OutboxEvent[];
-}
-
 export default function EventQueueDashboard() {
   const t = useTranslations('admin.eventQueue');
   useDocumentTitle(t('title'));
   
-  const [data, setData] = useState<SyncData | null>(null);
+  const [data, setData] = useState<api.SyncStatusResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -61,10 +41,10 @@ export default function EventQueueDashboard() {
   const loadData = async () => {
     try {
       const res = await api.externalSyncControllerGetSyncStatus({ limit: '100' });
-      setData(res.data as unknown as SyncData);
+      setData(res.data);
       setError('');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('errors.loadFailed'));
+      setError(err instanceof Error ? getErrorMessage(err) : t('errors.loadFailed'));
       reportError(err, 'EventQueueDashboard_loadData');
     } finally {
       setLoading(false);
@@ -91,7 +71,7 @@ export default function EventQueueDashboard() {
     setDrawerExpandedId(null);
     try {
       const { data: page } = await api.externalSyncControllerGetEventsByType({ type: eventType, status: 'failed', limit: '50' });
-      setDrawerEvents(page.data as unknown as OutboxEvent[]);
+      setDrawerEvents(((page as any).data || page || []) as unknown as OutboxEvent[]);
     } catch (err: unknown) {
       setDrawerEvents([]);
       reportError(err, 'EventQueueDashboard_handleViewEvents');
@@ -111,8 +91,8 @@ export default function EventQueueDashboard() {
         setDrawerEvents([]);
       }
       await loadData();
-    } catch (err: any) {
-      setError(err instanceof Error ? err.message : t('errors.clearFailed'));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? getErrorMessage(err) : t('errors.clearFailed'));
       reportError(err, 'EventQueueDashboard_handleClearEvents');
     } finally {
       setClearing(null);
@@ -223,7 +203,7 @@ export default function EventQueueDashboard() {
                   {t('summary.total')}
                 </div>
                 <div className="text-3xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {data.summary.total}
+                  {data.summary.pending + data.summary.processed + data.summary.failed}
                 </div>
               </div>
             </div>

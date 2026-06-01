@@ -604,12 +604,7 @@ export class InventoryService {
         : {}),
     }));
 
-    const defaultLocationId = this.appConfig.defaultFulfillmentLocationId();
-
-    return {
-      data,
-      defaultFulfillmentLocationId: defaultLocationId ?? undefined,
-    };
+    return data;
   }
 
   async getMovements(days: number) {
@@ -1108,7 +1103,7 @@ export class InventoryService {
       return dateB - dateA; // descending
     });
 
-    return { data: combined };
+    return combined;
   }
 
   async putaway(dto: import('./dto').PutawayBulkDto, userId: string) {

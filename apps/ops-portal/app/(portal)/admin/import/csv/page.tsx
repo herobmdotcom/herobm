@@ -6,6 +6,7 @@ import * as api from '@modbm/sdk';
 import { reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
+import { getErrorMessage } from '@modbm/shared';
 
 type Step = 'config' | 'preview' | 'executing' | 'finalisation';
 
@@ -91,9 +92,9 @@ export default function CsvImportPage() {
       const data = res.data as any;
       jobIdRef.current = data.jobId;
       startPolling(data.jobId);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setStatus('failed');
-      setErrorMsg(err.message);
+      setErrorMsg(getErrorMessage(err));
     }
   };
 

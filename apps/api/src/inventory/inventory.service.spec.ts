@@ -209,8 +209,8 @@ describe('InventoryService', () => {
   describe('findAllLocations', () => {
     it('omits availableQty when no productId is supplied', async () => {
       const result = await service.findAllLocations();
-      expect(result.data.length).toBeGreaterThan(0);
-      for (const loc of result.data) {
+      expect(result.length).toBeGreaterThan(0);
+      for (const loc of result) {
         expect((loc as any).availableQty).toBeUndefined();
       }
     });
@@ -239,9 +239,7 @@ describe('InventoryService', () => {
       });
 
       const result = await service.findAllLocations(PRODUCT_ID);
-      const main = (result.data as any[]).find(
-        (l) => l.locationId === LOCATION_ID,
-      );
+      const main = (result as any[]).find((l) => l.locationId === LOCATION_ID);
       expect(main).toBeDefined();
       expect(main.availableQty).toBe(42);
     });
@@ -249,9 +247,7 @@ describe('InventoryService', () => {
     it('returns 0 availableQty for locations with no stock of the product', async () => {
       const result = await service.findAllLocations(PRODUCT_ID);
       // The seeded LOCATION_ID has nothing in bin_contents for this product
-      const main = (result.data as any[]).find(
-        (l) => l.locationId === LOCATION_ID,
-      );
+      const main = (result as any[]).find((l) => l.locationId === LOCATION_ID);
       expect(main).toBeDefined();
       expect(main.availableQty).toBe(0);
     });

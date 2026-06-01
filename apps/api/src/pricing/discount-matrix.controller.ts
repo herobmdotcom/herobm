@@ -7,6 +7,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -57,6 +58,9 @@ export class DiscountMatrixController {
   })
   @ApiOkResponse({ type: [DiscountMatrixResponseDto] })
   @ApiFieldMask()
+  @ApiQuery({ name: 'customerGroupId', required: false })
+  @ApiQuery({ name: 'customerId', required: false })
+  @ApiQuery({ name: 'ownerType', required: false })
   async list(
     @Query('customerGroupId') customerGroupId?: string,
     @Query('customerId') customerId?: string,
@@ -90,6 +94,7 @@ export class DiscountMatrixController {
       'Retrieve the fully resolved discount rules for a specific customer.',
   })
   @ApiOkResponse({ type: [ResolveDiscountRuleDto] })
+  @ApiQuery({ name: 'customerGroupId', required: false })
   async resolve(
     @Query('customerId') customerId: string,
     @Query('customerGroupId') customerGroupId?: string,
@@ -104,7 +109,6 @@ export class DiscountMatrixController {
   }
 
   @Post()
-  @ApiBody({ type: Object })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Create Rule',
@@ -116,7 +120,6 @@ export class DiscountMatrixController {
   }
 
   @Patch(':id')
-  @ApiBody({ type: Object })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Update Rule',

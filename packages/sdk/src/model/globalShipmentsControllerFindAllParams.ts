@@ -7,9 +7,9 @@
  */
 
 export type GlobalShipmentsControllerFindAllParams = {
-days: string;
-salesOrderId: string;
-limit: string;
+days?: string;
+salesOrderId?: string;
+limit?: string;
 /**
  * Comma separated list of fields to include in the response (e.g. "id,name")
  */

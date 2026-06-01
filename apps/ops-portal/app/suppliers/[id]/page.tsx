@@ -23,6 +23,8 @@ import SupplierStatusBadges from '@/components/suppliers/SupplierStatusBadges';
 import SupplierExpiries from '@/components/suppliers/SupplierExpiries';
 import { useSettings } from '@/components/SettingsProvider';
 import { SUPPLIER_STATE } from '@modbm/shared';
+import LookupInput from '@/components/shared/LookupInput';
+import { getErrorMessage } from '@modbm/shared';
 
 interface Supplier {
   vendorId: string;
@@ -58,6 +60,9 @@ interface Supplier {
   stateCode: string;
   notes: string | null;
   blockNotes?: string | null;
+
+  businessNumber: string | null;
+  isTaxRegistered: boolean;
 
   bankAccountName?: string | null;
   bankBsb?: string | null;
@@ -107,6 +112,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const [editPaymentBlockReason, setEditPaymentBlockReason] = useState('');
   const [editBlockNotes, setEditBlockNotes] = useState('');
 
+  const [editBusinessNumber, setEditBusinessNumber] = useState('');
+  const [editIsTaxRegistered, setEditIsTaxRegistered] = useState(false);
+
   const [editBankAccountName, setEditBankAccountName] = useState('');
   const [editBankBsb, setEditBankBsb] = useState('');
   const [editBankAccountNumber, setEditBankAccountNumber] = useState('');
@@ -141,6 +149,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       setEditPaymentBlockReason(data.paymentBlockReason || '');
       setEditBlockNotes(data.blockNotes || '');
       
+      setEditBusinessNumber(data.businessNumber || '');
+      setEditIsTaxRegistered(data.isTaxRegistered || false);
+
       setEditBankAccountName(data.bankAccountName || '');
       setEditBankBsb(data.bankBsb || '');
       setEditBankAccountNumber(data.bankAccountNumber || '');
@@ -148,7 +159,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       setEditCurrency(data.currencyCode || baseCurrency);
       setEditSupplierGroupId(data.supplierGroupId || null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : tCommon('errors.failedToLoadOrder'));
+      setError(err instanceof Error ? getErrorMessage(err) : tCommon('errors.failedToLoadOrder'));
     } finally {
       if (showSpinner) setLoading(false);
     }
@@ -169,7 +180,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       await api.suppliersControllerUpdate(params.id, { [field]: payloadValue } as api.UpdateSupplierDto);
       await loadSupplier(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateOrder'));
+      setError(err instanceof Error ? getErrorMessage(err) : tCommon('errors.failedToUpdateOrder'));
     } finally {
       setSaving(false);
     }
@@ -185,7 +196,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       await api.suppliersControllerUpdate(params.id, { stateCode: newState } as api.UpdateSupplierDto);
       await loadSupplier(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
+      setError(err instanceof Error ? getErrorMessage(err) : tCommon('errors.failedToChangeState'));
     } finally {
       setSaving(false);
     }
@@ -198,8 +209,8 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       await api.suppliersControllerArchive(params.id, {});
       toast.success(tToast('orderArchived'), { icon: '📦' });
       await loadSupplier(false);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -211,8 +222,8 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       await api.suppliersControllerUnarchive(params.id, {});
       toast.success(tToast('orderUnarchived'), { icon: '📦' });
       await loadSupplier(false);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -432,6 +443,51 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   disabled={!isEditable || saving}
                   placeholder={t('placeholders.noGroup')}
                 />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Business Number (ABN)
+                </label>
+                <LookupInput
+                  value={editBusinessNumber}
+                  onChange={setEditBusinessNumber}
+                  provider="abr"
+                  onEnrich={(data) => {
+                    if (data.name) {
+                      setEditName(data.name);
+                      saveField('name', data.name, supplier.name);
+                    }
+                    if (data.isTaxRegistered !== undefined) {
+                      setEditIsTaxRegistered(data.isTaxRegistered);
+                      saveField('isTaxRegistered', data.isTaxRegistered, supplier.isTaxRegistered);
+                    }
+                    saveField('businessNumber', editBusinessNumber, supplier.businessNumber);
+                  }}
+                  disabled={!isEditable || saving}
+                  onBlur={() => saveField('businessNumber', editBusinessNumber, supplier.businessNumber)}
+                  placeholder="Enter ABN to lookup..."
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5 opacity-0" style={{ color: 'var(--text-muted)' }}>
+                  Registered for GST
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer mt-1">
+                  <div className="switch" title={editIsTaxRegistered ? 'Registered for GST' : 'Not Registered'}>
+                    <input
+                      type="checkbox"
+                      checked={editIsTaxRegistered}
+                      onChange={(e) => {
+                        setEditIsTaxRegistered(e.target.checked);
+                        saveField('isTaxRegistered', e.target.checked, supplier.isTaxRegistered);
+                      }}
+                      disabled={!isEditable || saving}
+                    />
+                  </div>
+                  <span className="text-sm font-medium">Registered for GST</span>
+                </label>
               </div>
             </div>
           </div>

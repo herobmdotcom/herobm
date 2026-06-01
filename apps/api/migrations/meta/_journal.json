@@ -36,6 +36,34 @@
       "when": 1779998631993,
       "tag": "0004_add_nacha_formats",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780054469354,
+      "tag": "0005_fresh_terror",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780087419352,
+      "tag": "0006_add_business_numbers",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1780089017313,
+      "tag": "0007_add-integrations-table",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1780089352504,
+      "tag": "0008_add_taxjar_fields",
+      "breakpoints": true
     }
   ]
 }

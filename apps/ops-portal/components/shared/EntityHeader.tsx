@@ -82,13 +82,17 @@ export default function EntityHeader({
             )}
           </div>
           <div className="min-w-0">
-            <div className="flex items-center flex-wrap gap-2">
-              <h1 className="text-2xl font-bold truncate">{title}</h1>
-              {badges}
-              {isSaving && (
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {t('saving')}
-                </span>
+            <div className="flex flex-row items-center gap-2 sm:gap-3 mb-1 flex-wrap">
+              <h1 className="text-2xl font-bold truncate break-all sm:break-normal">{title}</h1>
+              {(badges || isSaving) && (
+                <div className="flex items-center gap-2 shrink-0">
+                  {badges}
+                  {isSaving && (
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {t('saving')}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
             {subtitle && (
@@ -99,6 +103,13 @@ export default function EntityHeader({
           </div>
         </div>
       </div>
+      
+      {/* Mobile Navigation */}
+      {nav && (
+        <div className="mt-4 block lg:hidden pb-1 overflow-x-auto w-full hide-scrollbar">
+          {nav}
+        </div>
+      )}
     </div>
   );
 }

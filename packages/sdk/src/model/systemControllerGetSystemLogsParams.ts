@@ -7,6 +7,6 @@
  */
 
 export type SystemControllerGetSystemLogsParams = {
-service: string;
-lines: string;
+service?: string;
+lines?: string;
 };

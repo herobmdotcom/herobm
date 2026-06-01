@@ -27,14 +27,10 @@ export default function BinContentsView() {
   useEffect(() => {
     api.inventoryControllerFindAllLocations({} )
       .then((response) => {
-        const res = response.data;
-        const locs = Array.isArray(res) ? res : (res?.data || []);
+        const locs = response.data || [];
         setLocations(locs);
         
-        if (res?.defaultFulfillmentLocationId) {
-          const defaultLoc = locs.find((l: any) => l.locationId === res.defaultFulfillmentLocationId);
-          setSelectedLocationCode(defaultLoc?.code ?? locs[0]?.code ?? null);
-        } else if (locs.length > 0) {
+        if (locs.length > 0) {
           setSelectedLocationCode(locs[0].code);
         }
         setLocationsLoaded(true);

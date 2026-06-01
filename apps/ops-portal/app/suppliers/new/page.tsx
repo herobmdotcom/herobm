@@ -12,6 +12,8 @@ import { useTranslations } from 'next-intl';
 import { CURRENCIES } from '@/lib/currency';
 import GroupSelect from '@/components/shared/GroupSelect';
 import { useSettings } from '@/components/SettingsProvider';
+import LookupInput from '@/components/shared/LookupInput';
+import { getErrorMessage } from '@modbm/shared';
 
 export default function NewSupplierPage() {
   const { baseCurrency } = useSettings();
@@ -35,6 +37,8 @@ export default function NewSupplierPage() {
     bankAccountName: '',
     bankBsb: '',
     bankAccountNumber: '',
+    businessNumber: '',
+    isTaxRegistered: false,
   });
 
   const handleSubmit = async () => {
@@ -46,14 +50,14 @@ export default function NewSupplierPage() {
       const supplier = res.data;
       toast.success(tCommon('toast.supplierCreated'));
       router.push(`/suppliers/${supplier.id}`);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const updateField = (field: string, value: string) => {
+  const updateField = (field: string, value: any) => {
     setDto((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -113,6 +117,40 @@ export default function NewSupplierPage() {
                       placeholder={t('placeholders.name')}
                       disabled={submitting}
                     />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      Business Number (ABN)
+                    </label>
+                    <LookupInput
+                      value={dto.businessNumber}
+                      onChange={(val) => updateField('businessNumber', val)}
+                      provider="abr"
+                      onEnrich={(data) => {
+                        if (data.name) updateField('name', data.name);
+                        if (data.isTaxRegistered !== undefined) updateField('isTaxRegistered', data.isTaxRegistered);
+                      }}
+                      disabled={submitting}
+                      placeholder="Enter ABN to lookup..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5 opacity-0" style={{ color: 'var(--text-muted)' }}>
+                      Registered for GST
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer mt-1">
+                      <div className="switch" title={dto.isTaxRegistered ? 'Registered for GST' : 'Not Registered'}>
+                        <input
+                          type="checkbox"
+                          checked={dto.isTaxRegistered}
+                          onChange={(e) => updateField('isTaxRegistered', e.target.checked)}
+                          disabled={submitting}
+                        />
+                      </div>
+                      <span className="text-sm font-medium">Registered for GST</span>
+                    </label>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

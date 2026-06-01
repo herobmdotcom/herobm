@@ -11,6 +11,7 @@ import { ValidState } from '@/types/states';
 import { useTransferOrder } from './useTransferOrder';
 import { TRANSFER_ORDER_STATE } from '@modbm/shared';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
+import { MobileCardField } from '@/components/shared/DataTable';
 
 export default function TransferDetailsClient({ id }: { id: string }) {
   const router = useRouter();
@@ -175,7 +176,8 @@ export default function TransferDetailsClient({ id }: { id: string }) {
             )}
           </div>
 
-          <table className="table-lines">
+          <div className="hidden lg:block overflow-x-auto w-full">
+            <table className="table-lines">
             <thead>
               <tr>
                 <th>{tTransfers('columns.product')}</th>
@@ -246,6 +248,60 @@ export default function TransferDetailsClient({ id }: { id: string }) {
               )}
             </tbody>
           </table>
+          </div>
+          <div className="lg:hidden flex flex-col gap-3 w-full">
+            {order.lines?.map((line: any, idx: number) => (
+              <div key={line.transferOrderLineId} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                <div className="flex justify-between items-start gap-2 mb-2">
+                  <div className="font-semibold text-sm text-[var(--accent)]">
+                    {line.productNumber || '—'}
+                  </div>
+                  <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{idx + 1}</div>
+                </div>
+                <div className="text-sm text-slate-600 font-medium mb-3">
+                  {line.productDescription || '—'}
+                </div>
+                <div className="flex flex-col gap-1 border-t border-slate-100 pt-2">
+                  <MobileCardField label={tTransfers('columns.ordered')} value={
+                    isEditable ? (
+                      <input
+                        className="input"
+                        type="number"
+                        min="1"
+                        step="1"
+                        style={{ width: '100px', textAlign: 'right', padding: '4px 8px', height: '32px' }}
+                        defaultValue={line.quantity}
+                        onBlur={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (val > 0 && val !== parseFloat(line.quantity)) {
+                            updateLine(line.transferOrderLineId, val);
+                          }
+                        }}
+                      />
+                    ) : line.quantity
+                  } />
+                  <MobileCardField label={tTransfers('columns.shipped')} value={line.quantityShipped || 0} />
+                  <MobileCardField label={tTransfers('columns.received')} value={line.quantityReceived || 0} />
+                  {isEditable && (
+                    <div className="flex justify-end pt-2 mt-1 border-t border-slate-50">
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => removeLine(line.transferOrderLineId)}
+                        title={tTransfers('removeLine')}
+                      >
+                        <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} /> {tCommon('delete')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+            {(!order.lines || order.lines.length === 0) && (
+              <div className="text-center py-6 text-slate-400 text-sm">
+                {tTransfers('noLineItems')}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Activity Timeline */}

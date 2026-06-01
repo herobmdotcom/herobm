@@ -7,6 +7,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -67,6 +68,7 @@ export class GlobalPurchaseReturnsController {
     description: 'Retrieve a list of purchase returns based on state.',
   })
   @ApiOkResponse({ type: GlobalPurchaseReturnsListDto })
+  @ApiQuery({ name: 'stateCode', required: false })
   async getPurchaseReturns(@Query('stateCode') stateCodeStr?: string) {
     let query = this.db
       .select({

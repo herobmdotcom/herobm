@@ -59,8 +59,8 @@ export class ExchangeRatesService {
         })
         .returning();
       return rows[0];
-    } catch (err: any) {
-      if (err?.code === '23505') {
+    } catch (err: unknown) {
+      if ((err as any)?.code === '23505') {
         throw new BadRequestException(
           `Exchange rate for currency '${dto.currencyCode}' already exists`,
         );

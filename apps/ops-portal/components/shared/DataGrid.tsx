@@ -109,6 +109,8 @@ export interface DataGridProps<T> {
   pageTitle?: string | React.ReactNode;
   /** Built-in responsive header: Custom actions (e.g., Create Button) */
   headerActions?: React.ReactNode;
+  /** Secondary header row rendered below the primary header actions. */
+  secondaryHeader?: React.ReactNode;
   /** Built-in responsive header: Custom filters (e.g., date dropdown) */
   headerFilters?: React.ReactNode;
   /** If provided, customizes the entire top bar rendering (mutually exclusive with pageTitle) */
@@ -140,6 +142,8 @@ export interface DataGridProps<T> {
   domLayout?: 'normal' | 'autoHeight' | 'print';
   /** Optional prefix for URL query parameters to avoid collisions when multiple grids exist on the same page */
   urlPrefix?: string;
+  /** Default sort model to apply when no saved state exists */
+  defaultSortModel?: { colId: string; sort: 'asc' | 'desc' }[];
 }
 
 /** Format numbers: integers stay as integers, decimals get 2 places */
@@ -180,7 +184,21 @@ function getCellValue<T>(col: ColDef<T>, row: T) {
   return formattedValue ?? rawValue;
 }
 
-function GenericMobileCard<T>({ row, columns, onRowClicked }: { row: T; columns: ColDef<T>[]; onRowClicked?: (row: T) => void }) {
+function GenericMobileCard<T>({ 
+  row, 
+  columns, 
+  onRowClicked,
+  selectable,
+  selected,
+  onToggleSelect
+}: { 
+  row: T; 
+  columns: ColDef<T>[]; 
+  onRowClicked?: (row: T) => void;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const visibleCols = columns.filter(c => !c.hide);
   if (visibleCols.length === 0) return null;
@@ -192,7 +210,16 @@ function GenericMobileCard<T>({ row, columns, onRowClicked }: { row: T; columns:
   const secondaryVal = secondaryCol ? getCellValue(secondaryCol, row) : null;
 
   const restCols = visibleCols.slice(2);
-  const validRestCols = restCols.map(col => ({ col, val: getCellValue(col, row) })).filter(item => item.val != null && item.val !== '');
+  let validRestCols = restCols.map(col => ({ col, val: getCellValue(col, row) }));
+  
+  if (onRowClicked) {
+    validRestCols = validRestCols.filter(item => item.val != null && item.val !== '');
+  } else {
+    validRestCols = validRestCols.map(item => {
+      if (item.val == null || item.val === '') item.val = <span className="text-slate-300">—</span>;
+      return item;
+    });
+  }
 
   const displayLimit = 3;
   const isTruncated = validRestCols.length > displayLimit;
@@ -208,6 +235,22 @@ function GenericMobileCard<T>({ row, columns, onRowClicked }: { row: T; columns:
           <div className="text-[13px] text-slate-500 font-medium whitespace-nowrap mb-0.5">{primaryVal as React.ReactNode}</div>
           <div className="text-[11px] text-slate-400 max-w-[200px] truncate">{secondaryVal as React.ReactNode}</div>
         </div>
+        {selectable && (
+          <div 
+            className="flex items-center justify-center pt-1 shrink-0" 
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelect?.();
+            }}
+          >
+            <input 
+              type="checkbox" 
+              checked={selected || false} 
+              readOnly 
+              style={{ accentColor: "var(--accent)", width: 18, height: 18, cursor: onToggleSelect ? 'pointer' : 'not-allowed', opacity: onToggleSelect ? 1 : 0.5 }} 
+            />
+          </div>
+        )}
       </div>
       
       {displayedCols.length > 0 && (
@@ -261,6 +304,8 @@ export default function DataGrid<T>({
   onDataLoaded,
   domLayout,
   urlPrefix,
+  secondaryHeader,
+  defaultSortModel,
 }: DataGridProps<T>) {
   const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
@@ -272,22 +317,31 @@ export default function DataGrid<T>({
   const cursorParam = urlPrefix ? `${urlPrefix}_cursor` : 'cursor';
   const dirParam = urlPrefix ? `${urlPrefix}_dir` : 'dir';
   const archivedParam = urlPrefix ? `${urlPrefix}_archived` : 'archived';
+  const limitParam = urlPrefix ? `${urlPrefix}_limit` : 'limit';
 
   // Merge saved grid state (columns etc. from localStorage) + scroll (from sessionStorage)
   // into a single initialState — read once on mount
   const savedInitialState = useMemo<GridState | undefined>(() => {
-    if (!gridKey) return undefined;
-    const gridState = loadGridState(gridKey);
-    const scroll = loadScrollState(gridKey);
-    if (!gridState && !scroll) return undefined;
-    return {
+    const gridState = gridKey ? loadGridState(gridKey) : null;
+    const scroll = gridKey ? loadScrollState(gridKey) : null;
+    if (!gridState && !scroll && !defaultSortModel) return undefined;
+    
+    const state: GridState = {
       ...(gridState ?? {}),
       ...(scroll ? { scroll } : {}),
       partialColumnState: true, // we may not have all column properties
     };
-  }, [gridKey]);
+
+    if ((!gridState || !gridState.sort || gridState.sort.sortModel?.length === 0) && defaultSortModel) {
+      state.sort = { sortModel: defaultSortModel };
+    }
+
+    return state;
+  }, [gridKey, defaultSortModel]);
 
   const [data, setData] = useState<T[] | undefined>(undefined);
+  const [sortedData, setSortedData] = useState<T[]>([]);
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
   const [internalRefresh, setInternalRefresh] = useState(0);
 
   useEffect(() => {
@@ -299,11 +353,39 @@ export default function DataGrid<T>({
 
   const [displayedRowCount, setDisplayedRowCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
+  );
+
   // Initialize state from URL params if available, falling back to defaults
   const [search, setSearch] = useState(() => searchParams?.get(qParam) ?? initialSearch ?? "");
   const [includeArchived, setIncludeArchived] = useState(() => searchParams?.get(archivedParam) === 'true');
   const [cursor, setCursor] = useState<string | null>(() => searchParams?.get(cursorParam) ?? null);
   const [direction, setDirection] = useState<'next' | 'prev'>(() => (searchParams?.get(dirParam) as 'next' | 'prev') ?? 'next');
+  const [limit, setLimit] = useState<number>(() => {
+    const fromUrl = searchParams?.get(limitParam);
+    if (fromUrl) return Number(fromUrl);
+    
+    if (gridKey && typeof window !== 'undefined') {
+      try {
+        const savedLimit = localStorage.getItem(`${STORAGE_PREFIX}${gridKey}-limit`);
+        if (savedLimit) return Number(savedLimit);
+      } catch (e) {}
+    }
+
+    const initialIsMobile = typeof window !== 'undefined' ? window.innerWidth < 1024 : false;
+    if (fetchAll && !initialIsMobile) return 99999;
+    return initialIsMobile ? 25 : 200;
+  });
+
+  useEffect(() => {
+    if (gridKey && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`${STORAGE_PREFIX}${gridKey}-limit`, String(limit));
+      } catch (e) {}
+    }
+  }, [limit, gridKey]);
+
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [prevCursor, setPrevCursor] = useState<string | null>(null);
 
@@ -316,7 +398,25 @@ export default function DataGrid<T>({
     setIncludeArchived(searchParams?.get(archivedParam) === 'true');
     setCursor(searchParams?.get(cursorParam) ?? null);
     setDirection((searchParams?.get(dirParam) as 'next' | 'prev') ?? 'next');
-  }, [searchParams, qParam, archivedParam, cursorParam, dirParam, initialSearch]);
+    const fromUrl = searchParams?.get(limitParam);
+    if (fromUrl) {
+      setLimit(Number(fromUrl));
+    } else {
+      let savedLimit: number | null = null;
+      if (gridKey && typeof window !== 'undefined') {
+        try {
+          const val = localStorage.getItem(`${STORAGE_PREFIX}${gridKey}-limit`);
+          if (val) savedLimit = Number(val);
+        } catch(e) {}
+      }
+      if (savedLimit) {
+        setLimit(savedLimit);
+      } else {
+        const isMobile = typeof window !== 'undefined' ? window.innerWidth < 1024 : false;
+        setLimit(isMobile ? 25 : 200);
+      }
+    }
+  }, [searchParams, qParam, archivedParam, cursorParam, dirParam, initialSearch, limitParam]);
 
   // Sync local state TO URL (e.g., when user types or clicks next page)
   const firstRender = useRef(true);
@@ -334,8 +434,23 @@ export default function DataGrid<T>({
     const currentArchived = searchParams?.get(archivedParam) === 'true';
     const currentCursor = searchParams?.get(cursorParam) ?? null;
     const currentDir = searchParams?.get(dirParam) ?? 'next';
+    const currentLimit = searchParams?.get(limitParam);
     
-    if (search === currentQ && includeArchived === currentArchived && cursor === currentCursor && direction === currentDir) {
+    // Check if the current URL matches the local limit state.
+    // If the URL has no limit param, it's considered to match if the limit is the default limit.
+    const defaultLimit = isMobile ? 25 : 200;
+    const isDefaultLimit = limit === defaultLimit || (fetchAll && !isMobile && limit === 99999);
+    const urlLimitMatches = currentLimit 
+      ? Number(currentLimit) === limit 
+      : isDefaultLimit;
+
+    if (
+      search === currentQ && 
+      includeArchived === currentArchived && 
+      cursor === currentCursor && 
+      direction === currentDir &&
+      urlLimitMatches
+    ) {
       return;
     }
 
@@ -355,16 +470,21 @@ export default function DataGrid<T>({
       params.delete(dirParam);
     }
 
+    if (limit !== (isMobile ? 25 : 200) && !(fetchAll && !isMobile && limit === 99999)) {
+      params.set(limitParam, String(limit));
+    } else {
+      params.delete(limitParam);
+    }
+
     const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}${window.location.hash}`;
     router.replace(newUrl, { scroll: false });
-  }, [search, includeArchived, cursor, direction, qParam, archivedParam, cursorParam, dirParam, searchParams, router]);
+  }, [search, includeArchived, cursor, direction, limit, qParam, archivedParam, cursorParam, dirParam, limitParam, searchParams, router, isMobile, fetchAll]);
 
   /* ── Column picker dropdown state ────────────────────────────────── */
   const [colPickerOpen, setColPickerOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
-  );
+
+  const effectiveFetchAll = limit === 99999;
 
   useEffect(() => {
     setMounted(true);
@@ -372,9 +492,6 @@ export default function DataGrid<T>({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  const effectiveFetchAll = isMobile ? false : fetchAll;
-  const limit = effectiveFetchAll ? 99999 : 25;
   const [colRevision, setColRevision] = useState(0);
   const colPickerRef = useRef<HTMLDivElement>(null);
 
@@ -551,6 +668,7 @@ export default function DataGrid<T>({
       if (!gridKey || !loadGridState(gridKey)) {
         event.api.autoSizeAllColumns();
       }
+      setColRevision((r) => r + 1);
     },
     [gridKey],
   );
@@ -574,8 +692,9 @@ export default function DataGrid<T>({
   /** Reset columns to default layout */
   const handleResetColumns = useCallback(() => {
     if (gridKey) clearGridState(gridKey);
-    gridRef.current?.api?.resetColumnState();
-    gridRef.current?.api?.autoSizeAllColumns();
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
   }, [gridKey]);
 
   /** Row click handler — snapshot scroll state before navigating away */
@@ -845,6 +964,61 @@ export default function DataGrid<T>({
                   </label>
                 </>
               )}
+
+              {/* 4. Pagination Section */}
+              <div
+                style={{
+                  height: 1,
+                  background: "var(--border)",
+                  margin: "6px 0",
+                }}
+              />
+              <div
+                style={{
+                  padding: "2px 12px 4px",
+                  fontSize: 11,
+                  color: "var(--text-muted)",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                {tGrid('pageSize')}
+              </div>
+              {[10, 25, 50, 100, 200, 99999].map((size) => (
+                <label
+                  key={size}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    width: "100%",
+                    padding: "6px 12px",
+                    cursor: "pointer",
+                    fontSize: 13,
+                    color: limit === size ? "var(--text-primary)" : "var(--text-muted)",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "var(--bg-card-hover)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
+                >
+                  <input
+                    type="radio"
+                    name={`${gridKey}-pageSize`}
+                    checked={limit === size}
+                    onChange={() => {
+                      setLimit(size);
+                      setCursor(null); // Reset to first page
+                      setColPickerOpen(false); // Optionally close the menu, but keeping it open is fine too
+                    }}
+                    style={{ accentColor: "var(--accent)" }}
+                  />
+                  {size === 99999 ? tGrid('all') : size}
+                </label>
+              ))}
             </div>
           )}
         </div>
@@ -920,9 +1094,26 @@ export default function DataGrid<T>({
             onGridReady={onGridReady}
             onFirstDataRendered={onFirstDataRendered}
             onStateUpdated={onStateUpdated}
-            onModelUpdated={(e) => setDisplayedRowCount(e.api.getDisplayedRowCount())}
+            onModelUpdated={(e) => {
+              setDisplayedRowCount(e.api.getDisplayedRowCount());
+              const nodes: T[] = [];
+              e.api.forEachNodeAfterFilterAndSort(node => {
+                if (node.data) nodes.push(node.data);
+              });
+              setSortedData(nodes);
+            }}
             onRowClicked={onRowClicked ? handleRowClicked : undefined}
-            onSelectionChanged={onSelectionChanged ? (e: SelectionChangedEvent<T>) => onSelectionChanged!(e.api.getSelectedRows()) : undefined}
+            onSelectionChanged={onSelectionChanged ? (e: SelectionChangedEvent<T>) => {
+              if (rowIdField) {
+                const selectedNodes = e.api.getSelectedNodes();
+                const newIds = new Set<string>();
+                selectedNodes.forEach(node => {
+                  if (node.id) newIds.add(node.id);
+                });
+                setSelectedRowIds(newIds);
+              }
+              onSelectionChanged!(e.api.getSelectedRows());
+            } : undefined}
             tooltipShowDelay={300}
             {...(domLayout ? { domLayout } : {})}
             {...(effectiveFetchAll ? { quickFilterText: search } : {})}
@@ -933,12 +1124,37 @@ export default function DataGrid<T>({
       {/* Mobile Generic Card View */}
       <div className="lg:hidden flex-1 w-full flex flex-col gap-3 pb-24">
         {renderPaginationControls(true)}
-        {data?.map((row, idx) => {
-          const key = rowIdField ? String((row as Record<keyof T, unknown>)[rowIdField as keyof T]) : idx;
-          return <GenericMobileCard 
-            key={key} 
-            row={row} 
-            columns={enhancedColumns} 
+        {(() => {
+          const api = gridRef.current?.api;
+          const mobileVisibleCols = api
+            ? enhancedColumns.filter(col => {
+                const colId = (col.field || col.colId || col.headerName) as string;
+                if (!colId) return !col.hide;
+                const gridCol = api.getColumn(colId);
+                return gridCol ? gridCol.isVisible() : !col.hide;
+              })
+            : enhancedColumns.filter(c => !c.hide);
+
+          const dataToMap = sortedData.length > 0 ? sortedData : (data || []);
+
+          return dataToMap.map((row, idx) => {
+            const key = rowIdField ? String((row as Record<keyof T, unknown>)[rowIdField as keyof T]) : idx;
+            const isSelected = selectedRowIds.has(String(key));
+            const isSelectable = isRowSelectable ? isRowSelectable({ data: row } as any) : true;
+            return <GenericMobileCard 
+              key={key} 
+              row={row} 
+              columns={mobileVisibleCols} 
+            selectable={!!onSelectionChanged || rowSelection === 'multiple'}
+            selected={isSelected}
+            onToggleSelect={isSelectable ? () => {
+              if (rowIdField && gridRef.current?.api) {
+                const node = gridRef.current.api.getRowNode(String(key));
+                if (node) {
+                  node.setSelected(!node.isSelected());
+                }
+              }
+            } : undefined}
             onRowClicked={onRowClicked ? (r) => {
               const main = document.querySelector('main');
               if (main && gridKey) {
@@ -947,7 +1163,8 @@ export default function DataGrid<T>({
               onRowClicked(r);
             } : undefined} 
           />;
-        })}
+          });
+        })()}
         {data && data.length > 0 && renderPaginationControls(true)}
       </div>
     </div>
@@ -959,8 +1176,8 @@ export default function DataGrid<T>({
         <div className="relative lg:h-full flex flex-col">
           <div className="flex-1 lg:min-h-0 flex flex-col z-10 lg:bg-white lg:rounded-xl lg:shadow-[0_2px_8px_rgba(0,0,0,0.04)] lg:border lg:border-[rgba(196,198,205,0.4)] lg:overflow-hidden transition-all">
              <div className="flex flex-col lg:flex-row lg:items-center justify-between lg:px-6 py-4 gap-4">
-                <div className="flex items-center justify-between lg:justify-start gap-4 w-full lg:w-auto">
-                  <div className="flex items-center gap-4">
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between lg:justify-start gap-4 w-full lg:w-auto">
+                  <div className="flex items-center justify-between w-full lg:w-auto gap-4">
                     <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
                       {pageTitle}
                     </h2>
@@ -975,8 +1192,10 @@ export default function DataGrid<T>({
                     </div>
                   </div>
                   {headerActions && (
-                    <div className="lg:hidden shrink-0">
-                      {headerActions}
+                    <div className="lg:hidden shrink-0 w-full overflow-x-auto overflow-y-hidden pb-1 pt-1">
+                      <div className="flex items-center gap-2">
+                        {headerActions}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -996,6 +1215,11 @@ export default function DataGrid<T>({
                   </div>
                 </div>
               </div>
+              {secondaryHeader && (
+                <div className="hidden lg:flex px-6 pb-4 pt-0 justify-end border-t border-[rgba(196,198,205,0.2)] mt-2">
+                  {secondaryHeader}
+                </div>
+              )}
              {gridContent}
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
 import * as api from '@modbm/sdk';
+import { getErrorMessage } from '@modbm/shared';
 
 export default function InitiateReturnModal({
   isOpen,
@@ -55,8 +56,8 @@ export default function InitiateReturnModal({
 
       onSuccess();
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Failed to initiate return');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err) || 'Failed to initiate return');
     } finally {
       setSubmitting(false);
     }

@@ -332,11 +332,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             nav={<PageNav sections={visibleSections} />}
             actions={
               <>
-                {headerDirty && isHeaderEditable && (
-                  <button className="btn btn-primary btn-sm" onClick={saveHeader} disabled={saving}>
-                    {tPurchase('buttons.save')}
-                  </button>
-                )}
+
                 {visibleTransitions.map((t) => (
                   <button
                     key={t.state}
@@ -473,10 +469,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     </p>
                   )}
                 </div>
-                <div className="col-span-1">
+                <div className="hidden lg:block">
                    {/* notes pushed to full width if needed, or matched next column */}
                 </div>
-                <div className="col-span-2">
+                <div className="lg:col-span-2">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tCommon('notesCardHeading')}
                   </label>
@@ -494,9 +490,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         {/* Line items / Availability tabs */}
         <div id="lines-section" className="card">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex gap-0">
-              <button
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+            <div className="flex overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0">
+              <div className="flex gap-0 min-w-max">
+                <button
                 className="text-xs font-medium px-3 py-1.5 rounded-l-lg"
                 style={{
                   color: activeTab === 'lines' ? 'var(--accent)' : 'var(--text-muted)',
@@ -539,22 +536,25 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   {tPurchase('statusTab')}
                 </button>
               )}
+              </div>
             </div>
             {isLinesEditable && activeTab === 'lines' && (
-              <>
-                <ProductSearchInput
-                  onSelect={addLineFromProduct}
-                  placeholder="Add product… (search)"
-                  style={{ width: 240 }}
-                />
+              <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
+                <div className="flex-1 min-w-[200px] max-w-sm">
+                  <ProductSearchInput
+                    onSelect={addLineFromProduct}
+                    placeholder="Add product… (search)"
+                    style={{ width: '100%' }}
+                  />
+                </div>
                 <button
-                  className="btn btn-secondary btn-sm"
+                  className="btn btn-secondary btn-sm whitespace-nowrap"
                   onClick={addBlankLine}
                   disabled={saving}
                 >
                   + {tPurchase('buttons.customLine')}
                 </button>
-              </>
+              </div>
             )}
           </div>
 
@@ -563,6 +563,44 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               data={order.lines}
               keyExtractor={(line) => line.purchaseOrderLineId}
               columns={lineColumns}
+              mobileCard={(line: any) => {
+                const isAmountCol = (colHeader: any) => colHeader === tPurchase('columns.amount');
+                const actionCol = lineColumns.length > 9 ? lineColumns[9].render?.(line, 0) : null;
+                return (
+                  <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                      <div className="font-semibold text-sm text-[var(--accent)]">
+                        {lineColumns[1].render?.(line, 0)}
+                      </div>
+                      <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{line.lineNumber}</div>
+                    </div>
+                    <div className="text-sm text-slate-600 font-medium mb-3 [&_.input]:w-full [&_.input]:text-sm [&_.input]:h-8 [&_.input]:!py-1">
+                      {lineColumns[2].render?.(line, 0)}
+                    </div>
+                    <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                      {[3, 4, 5, 6, 7, 8].map(colIdx => {
+                        const col = lineColumns[colIdx];
+                        return (
+                          <MobileCardField
+                            key={colIdx}
+                            label={col.header}
+                            value={
+                              <div className={isAmountCol(col.header) ? 'font-bold text-[var(--accent)] text-base' : '[&_.input]:text-sm [&_.input]:h-8 [&_.input]:!py-1 [&_.input]:w-24 [&_select.input]:w-32'}>
+                                {col.render?.(line, 0)}
+                              </div>
+                            }
+                          />
+                        );
+                      })}
+                      {actionCol && (
+                        <div className="flex justify-end mt-2">
+                          {actionCol}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }}
               emptyMessage={tPurchase('noLineItems')}
               footer={
                 order.lines.length > 0 ? (() => {
@@ -741,7 +779,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     const canFulfil = totalAvail >= orderedQty;
 
                     return (
-                        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                             <div className="flex justify-between items-start gap-2 mb-2">
                                 <div className="font-semibold text-sm text-[var(--accent)]">
                                     {line.productNumber || line.productId?.substring(0, 8) || '—'}
@@ -842,7 +880,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       const remaining = Math.max(0, ordered - billed);
 
                       return (
-                          <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                          <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                               <div className="flex justify-between items-start gap-2 mb-2">
                                   <div className="font-semibold text-sm text-[var(--accent)]">
                                       {line.productNumber || line.productId?.substring(0, 8) || '—'}

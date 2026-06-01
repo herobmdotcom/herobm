@@ -74,7 +74,7 @@ describe('GlController', () => {
     });
 
     it('should return flat list for unknown format values', async () => {
-      await controller.getAccounts('whatever');
+      await controller.getAccounts('whatever' as any);
       expect(glService.getAccountsList).toHaveBeenCalled();
       expect(glService.getChartOfAccounts).not.toHaveBeenCalled();
     });
@@ -294,7 +294,7 @@ describe('GlController', () => {
 
   describe('POST /gl/seed', () => {
     it('should use default filename when not specified', async () => {
-      await controller.seedChartOfAccounts();
+      await controller.seedChartOfAccounts({} as any);
       expect(coaLoader.loadFromFile).toHaveBeenCalledWith('au_standard.json');
     });
 
@@ -309,7 +309,7 @@ describe('GlController', () => {
     });
 
     it('should return loader result', async () => {
-      const result = await controller.seedChartOfAccounts();
+      const result = await controller.seedChartOfAccounts({} as any);
       expect(result).toEqual({ created: 30, skipped: false });
     });
   });

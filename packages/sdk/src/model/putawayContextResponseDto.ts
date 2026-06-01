@@ -5,13 +5,13 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
-import type { PutawayContextResponseDtoBinsItem } from './putawayContextResponseDtoBinsItem';
+import type { AvailableBinDto } from './availableBinDto';
 
 export interface PutawayContextResponseDto {
-  productId: string;
-  productName: string;
-  locationId: string;
-  bins: PutawayContextResponseDtoBinsItem[];
   /** @nullable */
-  defaultBinId?: string | null;
+  primaryBinId?: string | null;
+  /** @nullable */
+  primaryBinNumber?: string | null;
+  currentQuantity: number;
+  availableBins: AvailableBinDto[];
 }

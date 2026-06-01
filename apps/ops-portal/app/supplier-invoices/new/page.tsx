@@ -72,7 +72,7 @@ export default function NewPurchaseInvoicePage() {
         }
         setCurrencyCode(order.currencyCode || baseCurrency || '');
 
-        const invoices = ((invoicesRes as any).data || []) as unknown as PurchaseInvoice[];
+        const invoices = ((invoicesRes as any).data || []) ;
         const linesToInvoice = calculatePurchaseInvoiceableQuantities(order.lines as any[], invoices);
         
         const prefilledLines: LineItem[] = linesToInvoice.map(lti => {
@@ -304,7 +304,8 @@ export default function NewPurchaseInvoicePage() {
               </div>
             </div>
 
-            <table className="table-lines">
+            {/* Desktop Table */}
+            <table className="table-lines hidden lg:table">
               <thead>
                 <tr>
                   <th style={{ width: 40 }}>#</th>
@@ -445,6 +446,131 @@ export default function NewPurchaseInvoicePage() {
                 </tr>
               </tbody>
             </table>
+
+            {/* Mobile Cards */}
+            <div className="lg:hidden flex flex-col gap-4 mt-2">
+              {lines.map((line, idx) => (
+                <div key={line.key} className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col gap-3 relative">
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                    <span className="font-bold text-slate-500 text-sm">Line {idx + 1}</span>
+                    {lines.length > 1 && (
+                      <button className="text-gray-400 hover:text-red-500" onClick={() => removeLine(idx)}>
+                        <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1 block">{t('columns.product')}</label>
+                    {line.productId ? (
+                      <div className="font-semibold" style={{ color: 'var(--accent)' }}>
+                        {line.productNumber || line.productId.substring(0, 8)}
+                      </div>
+                    ) : (
+                      <ProductSearchInput
+                        onSelect={(p) => {
+                          setLines((prev) =>
+                            prev.map((l, i) =>
+                              i === idx
+                                ? { ...l, productId: p.productId, productNumber: p.productNumber, productDescription: l.productDescription || p.name }
+                                : l,
+                            ),
+                          );
+                        }}
+                        placeholder="Search product…"
+                      />
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="text-xs text-slate-500 mb-1 block">{t('columns.description')}</label>
+                    <input
+                      className="input w-full text-sm"
+                      value={line.productDescription || ''}
+                      onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
+                      placeholder="Description..."
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block">{t('columns.qtyToBill', { defaultValue: 'Qty' })}</label>
+                      <input
+                        className="input w-full text-right tabular-nums"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={line.quantityInvoiced}
+                        onChange={(e) => updateLine(idx, 'quantityInvoiced', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-slate-500 mb-1 block">{t('columns.unitPrice')}</label>
+                      <input
+                        className="input w-full text-right tabular-nums"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={line.pricePerUnit}
+                        onChange={(e) => updateLine(idx, 'pricePerUnit', e.target.value)}
+                        onBlur={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val)) updateLine(idx, 'pricePerUnit', val.toFixed(2));
+                        }}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                    <span className="text-sm font-bold text-slate-500">{t('columns.amount')}</span>
+                    <span className="font-semibold text-[15px] text-[var(--accent)] tabular-nums">{formatAmount(computeAmount(line), currencyCode)}</span>
+                  </div>
+                </div>
+              ))}
+
+              {lines.length === 0 && (
+                <div className="text-center text-slate-400 py-6 text-sm">
+                  {t('supplierInvoice.noItems')}
+                </div>
+              )}
+
+              <div className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col gap-3 mt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-semibold text-slate-500">{tCommon('subtotal')}</span>
+                  <span className="font-semibold tabular-nums">{formatAmount(subtotal, currencyCode)}</span>
+                </div>
+                
+                <div className="flex justify-between items-center gap-4">
+                  <span className="text-sm font-semibold text-slate-500 whitespace-nowrap">{t('supplierInvoice.taxTotalAmount', { tax: tCommon('tax') })}</span>
+                  <input
+                    className="input text-right font-semibold py-1 px-2 w-24 tabular-nums"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={taxAmountInput}
+                    onFocus={(e) => {
+                      if (parseFloat(e.target.value) === 0) {
+                        setTaxAmountInput('');
+                      }
+                    }}
+                    onChange={(e) => setTaxAmountInput(e.target.value)}
+                    onBlur={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) {
+                        setTaxAmountInput(val.toFixed(2));
+                      } else {
+                        setTaxAmountInput('0.00');
+                      }
+                    }}
+                  />
+                </div>
+                
+                <div className="flex justify-between items-center pt-3 border-t border-slate-100 bg-[rgba(59,130,246,0.02)] -mx-4 px-4 pb-1">
+                  <span className="font-bold text-[13px] text-slate-700">{tCommon('total')}</span>
+                  <span className="font-extrabold text-lg text-[var(--accent)] tabular-nums">{formatAmount(grandTotal, currencyCode)}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </DetailsLayout>

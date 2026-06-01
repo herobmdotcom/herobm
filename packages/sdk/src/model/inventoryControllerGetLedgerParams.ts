@@ -7,5 +7,5 @@
  */
 
 export type InventoryControllerGetLedgerParams = {
-days: string;
+days?: string;
 };

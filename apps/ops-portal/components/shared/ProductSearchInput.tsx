@@ -65,7 +65,7 @@ export default function ProductSearchInput({
     if (!term || term.length < 2) { setResults([]); return; }
     try {
       const res = await api.productsControllerFindAll({ q: term, limit: 10 } as any);
-      setResults(((res.data as any)?.data || res.data || []) as unknown as Product[]);
+      setResults(((res.data as any)?.data || res.data || []) );
     } catch { setResults([]); }
   }, []);
 

@@ -731,6 +731,7 @@
       "last90Days": "Last 90 Days"
     },
     "grid": {
+      "all": "All",
       "columns": "Columns",
       "export": "Export",
       "exportCsv": "Export CSV",
@@ -739,6 +740,7 @@
       "next": "Next",
       "options": "Options",
       "page": "Page {page}",
+      "pageSize": "Page Size",
       "prev": "Prev",
       "resetColumns": "Reset Columns",
       "rowCountLabel": "Rows",
@@ -1215,7 +1217,6 @@
     "completed": {
       "backToList": "Back to Receiving",
       "newReception": "New Reception",
-      "subtitle": "The packing slip has been recorded. Items are held on dock pending invoice entry.",
       "title": "Goods Receipt Confirmed"
     },
     "flow": {
@@ -2023,7 +2024,7 @@
       "remove": "Remove",
       "returnFee": "Return Fee",
       "returnFeeDiscrepancy": "Fee: {amount}",
-      "returnsSummary": "Returns Draft Cart",
+      "returnsSummary": "Returns Summary",
       "scanProduct": "Scan Product to Return",
       "selectLinesMsg": "Select the lines to return and specify the quantities.",
       "selectPOLine": "Select received PO Line to return against",

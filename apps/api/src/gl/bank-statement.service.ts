@@ -1,0 +1,101 @@
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import {
+  bankStatementLines,
+  glJournalLines,
+  glJournalEntries,
+} from '../drizzle/modbm-core-schema';
+import { eq, and, desc } from 'drizzle-orm';
+
+@Injectable()
+export class BankStatementService {
+  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+
+  async getLines(glAccountId: string, isReconciled?: boolean) {
+    let conditions = eq(bankStatementLines.glAccountId, glAccountId);
+    if (isReconciled !== undefined) {
+      conditions = and(
+        conditions,
+        eq(bankStatementLines.isReconciled, isReconciled),
+      ) as any;
+    }
+
+    const lines = await this.db
+      .select({
+        lineId: bankStatementLines.lineId,
+        date: bankStatementLines.date,
+        description: bankStatementLines.description,
+        amount: bankStatementLines.amount,
+        reference: bankStatementLines.reference,
+        isReconciled: bankStatementLines.isReconciled,
+        matchedJournalLineId: bankStatementLines.matchedJournalLineId,
+        matchedJournalLine: {
+          debit: glJournalLines.debit,
+          credit: glJournalLines.credit,
+          memo: glJournalLines.memo,
+          entryDate: glJournalEntries.entryDate,
+          isReconciled: glJournalLines.isReconciled,
+        },
+      })
+      .from(bankStatementLines)
+      .leftJoin(
+        glJournalLines,
+        eq(
+          bankStatementLines.matchedJournalLineId,
+          glJournalLines.journalLineId,
+        ),
+      )
+      .leftJoin(
+        glJournalEntries,
+        eq(glJournalLines.journalEntryId, glJournalEntries.journalEntryId),
+      )
+      .where(conditions)
+      .orderBy(desc(bankStatementLines.date));
+
+    return lines;
+  }
+
+  async confirmMatch(lineId: string, _actor: string) {
+    return this.db.transaction(async (tx) => {
+      const bsLine = await tx
+        .select()
+        .from(bankStatementLines)
+        .where(eq(bankStatementLines.lineId, lineId));
+      if (!bsLine.length)
+        throw new NotFoundException('Bank statement line not found');
+
+      const line = bsLine[0];
+      if (line.isReconciled)
+        throw new BadRequestException('Line is already reconciled');
+      if (!line.matchedJournalLineId)
+        throw new BadRequestException('No matched journal line to confirm');
+
+      const jl = await tx
+        .select()
+        .from(glJournalLines)
+        .where(eq(glJournalLines.journalLineId, line.matchedJournalLineId));
+      if (!jl.length)
+        throw new NotFoundException('Matched journal line not found');
+
+      // Update journal line to cleared (isReconciled)
+      await tx
+        .update(glJournalLines)
+        .set({ isReconciled: true })
+        .where(eq(glJournalLines.journalLineId, line.matchedJournalLineId));
+
+      // Update bank statement line to reconciled
+      await tx
+        .update(bankStatementLines)
+        .set({ isReconciled: true })
+        .where(eq(bankStatementLines.lineId, lineId));
+
+      return { success: true };
+    });
+  }
+}

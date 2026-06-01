@@ -55,6 +55,7 @@ const ToggleCell = (p: any) => {
 };
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import GLAccountSelect from '@/components/shared/GLAccountSelect';
+import { getErrorMessage } from '@modbm/shared';
 
 interface Props {
   paymentId: string | null;
@@ -134,7 +135,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     if (!paymentId) return;
     setLoading(true);
     try {
-      const res = await api.paymentsControllerFindOne(paymentId) as unknown as PaymentData;
+      const res = (await api.paymentsControllerFindOne(paymentId)).data as unknown as PaymentData;
       setData(res);
 
       if (res.stateCode === PAYMENT_STATE.SUBMITTED) {
@@ -187,10 +188,10 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     try {
       const queryParams = { [data.partyType === 'customer' ? 'customerId' : 'vendorId']: data.partyId };
       const res = data.partyType === 'customer'
-        ? await api.invoiceDetailControllerGetSalesInvoicesGlobal({ ...(queryParams as unknown as Record<string, unknown>), balanceStatus: 'unpaid' } as unknown as Parameters<typeof api.invoiceDetailControllerGetSalesInvoicesGlobal>[0])
-        : await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ ...(queryParams as unknown as Record<string, unknown>), balanceStatus: 'unpaid' } as unknown as Parameters<typeof api.invoiceDetailControllerGetPurchaseInvoicesGlobal>[0]);
+        ? await api.invoiceDetailControllerGetSalesInvoicesGlobal({ ...(queryParams as any), balanceStatus: 'unpaid' } as any)
+        : await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ ...(queryParams as any), balanceStatus: 'unpaid' } as any);
       
-      const invoices = (res as unknown as { data: any[] }).data
+      const invoices = (res as any).data
         .filter((inv: any) => inv.stateCode !== SALES_INVOICE_STATE.PAID && inv.stateCode !== PURCHASE_INVOICE_STATE.PAID && parseFloat(inv.outstandingAmount) > 0)
         .map((inv: any) => ({
           id: inv.invoiceId,
@@ -277,8 +278,8 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       await api.paymentsControllerCreate(payload as unknown as Parameters<typeof api.paymentsControllerCreate>[0]);
       toast.success(t('manager.messages.paymentCreated'));
       onSaved();
-    } catch (err: any) {
-      toast.error(err.message || t('manager.messages.failedToCreate'));
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || t('manager.messages.failedToCreate'));
     } finally {
       setSubmitting(false);
     }
@@ -292,8 +293,8 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       toast.success(t('manager.messages.paymentSubmitted'));
       loadPayment();
       onSaved(false);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -315,8 +316,8 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       toast.success(t('manager.messages.paymentCancelled'));
       loadPayment();
       onSaved(); // Refresh grid
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -354,8 +355,8 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       toast.success(t('manager.messages.allocationsSaved'));
       loadPayment();
       onSaved(false);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }

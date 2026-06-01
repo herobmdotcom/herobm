@@ -184,7 +184,7 @@ export default function InvoicesSection({
                             }, 0);
 
                             return (
-                                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                                     <div className="flex justify-between items-start gap-2 mb-2">
                                         <div className="font-semibold text-sm text-[var(--accent)]">
                                             {origLine?.productNumber || origLine?.productId?.substring(0, 8) || '—'}
@@ -250,7 +250,7 @@ export default function InvoicesSection({
                                 onClick={async () => {
                                     try {
                                         const response = await api.reportsControllerRunHook('sales-invoice', {}, { id: inv.invoiceId, context: 'sales-invoice' });
-                                        const blob = response.data as unknown as Blob;
+                                        const blob = response.data ;
                                         const url = URL.createObjectURL(blob);
                                         window.open(url, '_blank');
                                     } catch (err) {
@@ -331,7 +331,7 @@ export default function InvoicesSection({
                                         </tr>
                                     )}
                                     mobileCard={({ il, orderLine, disc, taxRate, pricing }) => (
-                                        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                                        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                                             <div className="flex justify-between items-start gap-2 mb-2">
                                                 <div className="font-semibold text-sm text-[var(--accent)]">
                                                     {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}

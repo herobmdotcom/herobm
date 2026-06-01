@@ -6,6 +6,7 @@ import { useSettings } from '@/components/SettingsProvider';
 import { getCurrency } from '@/lib/currency';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import { getErrorMessage } from '@modbm/shared';
 
 interface QuickAdjustmentModalProps {
   isOpen: boolean;
@@ -63,9 +64,9 @@ export default function QuickAdjustmentModal({
       // Reset form
       setAmount('');
       setMemo('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       reportError(err, 'QuickAdjustmentModal_submit');
-      toast.error(err.message || t('quickAdjustmentForm.failedToCreateError'));
+      toast.error(getErrorMessage(err) || t('quickAdjustmentForm.failedToCreateError'));
     } finally {
       setLoading(false);
     }

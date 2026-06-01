@@ -1,3 +1,4 @@
+
 export {
   // Transition maps
   SALES_ORDER_TRANSITIONS,
@@ -144,3 +145,7 @@ export {
   GL_ACCOUNT_TYPE,
 } from './accounting';
 export type { GLAccountType } from './accounting';
+
+export {
+  getErrorMessage,
+} from './errors';

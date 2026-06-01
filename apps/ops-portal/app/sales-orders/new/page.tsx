@@ -129,12 +129,10 @@ export default function NewOrderPage() {
   useEffect(() => {
     api.inventoryControllerFindAllLocations({} )
       .then((res) => {
-        const payload = res.data?.data || [];
+        const payload = res.data || [];
         setLocations(payload);
-        if (res.data?.defaultFulfillmentLocationId) {
-          setFulfillmentLocationId(res.data.defaultFulfillmentLocationId);
-        } else if (payload[0]) {
-          setFulfillmentLocationId((payload[0] as unknown as { locationId: string }).locationId);
+        if (payload.length > 0) {
+          setFulfillmentLocationId((payload[0] ).locationId);
         }
       })
       .catch((err) => reportError(err, 'NewOrderPage_Locations'));
@@ -144,7 +142,7 @@ export default function NewOrderPage() {
   useEffect(() => {
     api.taxCategoriesControllerFindAll()
       .then((res) => {
-        settaxCategories(res.data.map(t => ({ ...t, taxCategoryId: (t as unknown as { id?: string }).id || t.taxCategoryId })) as unknown as TaxCategory[]);
+        settaxCategories((res.data as any[]).map(t => ({ ...t, taxCategoryId: t.id || t.taxCategoryId })) );
       })
       .catch((err) => reportError(err, 'NewOrderPage'));
   }, []);
@@ -473,7 +471,7 @@ export default function NewOrderPage() {
               </select>
             </div>
 
-            <div className="col-span-2 mt-2">
+            <div className="md:col-span-2 mt-2">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {tSales('common.notesCardHeading')}
               </label>
@@ -492,20 +490,22 @@ export default function NewOrderPage() {
 
         {/* Line items */}
         <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading !mb-0">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+            <h3 className="section-heading !mb-0 shrink-0">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">list</span>
               {tSales('salesOrders.lineItems')}
             </h3>
-            <div className="flex items-center gap-3">
-              <ProductSearchInput
-                onSelect={addLineFromProduct}
-                placeholder={tSales('salesOrders.placeholders.searchProduct')}
-                style={{ width: 240 }}
-                fulfillmentLocationId={fulfillmentLocationId}
-              />
-              <button className="btn btn-secondary btn-sm" onClick={addLine}>
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
+              <div className="flex-1 min-w-[200px] max-w-sm">
+                <ProductSearchInput
+                  onSelect={addLineFromProduct}
+                  placeholder={tSales('salesOrders.placeholders.searchProduct')}
+                  style={{ width: '100%' }}
+                  fulfillmentLocationId={fulfillmentLocationId}
+                />
+              </div>
+              <button className="btn btn-secondary btn-sm whitespace-nowrap" onClick={addLine}>
                 + {tSales('salesOrders.buttons.customLine')}
               </button>
             </div>
@@ -518,7 +518,7 @@ export default function NewOrderPage() {
               </div>
             ) : (
               lines.map((line, idx) => (
-                <div key={line.key} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                <div key={line.key} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                   <div className="flex justify-between items-start gap-2 mb-2">
                     <div className="font-semibold text-sm text-[var(--accent)]">
                       {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
@@ -650,7 +650,7 @@ export default function NewOrderPage() {
             {lines.length > 0 && (() => {
               const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
               return (
-                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm mt-2">
+                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col mt-2">
                   <div className="flex justify-between items-center py-1">
                     <span className="text-sm font-semibold text-slate-500">{tSales('common.subtotal')}</span>
                     <span className="text-sm font-semibold">{formatAmount(subtotal, currencyCode)}</span>

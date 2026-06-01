@@ -7,6 +7,7 @@ import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import { getErrorMessage } from '@modbm/shared';
 
 export default function ProductGroupsAdmin() {
   const t = useTranslations('admin.productGroups');
@@ -114,8 +115,8 @@ export default function ProductGroupsAdmin() {
       await api.productGroupsControllerRemove(id);
       toast.success(t('toasts.deleted'));
       loadData();
-    } catch(err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
       reportError(err, 'ProductGroupsAdmin_handleDelete');
     }
   };

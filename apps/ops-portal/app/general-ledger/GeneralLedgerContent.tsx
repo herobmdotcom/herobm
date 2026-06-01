@@ -94,8 +94,8 @@ export default function GeneralLedgerContent() {
     })
       .then((res) => {
         const payload = res.data;
-        setRows(payload.data as unknown as GlEntry[]);
-        setTotal(payload.total as unknown as number);
+        setRows((payload as any).data as unknown as GlEntry[]);
+        setTotal((payload as any).total || 0);
       })
       .catch((err) => reportError(err, 'GeneralLedgerContent'))
       .finally(() => setLoading(false));

@@ -1,3 +1,4 @@
+import { getErrorMessage } from '@modbm/shared';
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -144,8 +145,8 @@ export function useSupplierInvoice(id: string) {
         vendorId: newVendorId || editVendorId || invoice.vendorId,
       } as unknown as import('@modbm/sdk').UpdatePurchaseInvoiceDto);
       loadInvoice();
-    } catch (err: any) {
-      alert(err.message || 'Failed to update invoice');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to update invoice');
     } finally {
       setSaving(false);
     }
@@ -167,8 +168,8 @@ export function useSupplierInvoice(id: string) {
         discrepanciesAcknowledged: discrepancies.length > 0 ? isAcknowledged : undefined
       } as unknown as Parameters<typeof api.invoiceDetailControllerChangeInvoiceState>[1]);
       loadInvoice();
-    } catch (err: any) {
-      alert(err.message || 'Failed to change state');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to change state');
     }
   };
 
@@ -176,8 +177,8 @@ export function useSupplierInvoice(id: string) {
     try {
       await api.invoiceDetailControllerAutoMatchPurchaseOrder(id, { purchaseOrderId });
       loadInvoice();
-    } catch (err: any) {
-      alert(err.message || 'Failed to auto-match PO');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to auto-match PO');
     }
   };
 
@@ -189,8 +190,8 @@ export function useSupplierInvoice(id: string) {
         (l) => l.lineId !== invoiceLineId && l.matchStatus !== MATCH_STATUS.MATCHED
       );
       setSelectedInvoiceLineId(nextUnmatched?.lineId || null);
-    } catch (err: any) {
-      alert(err.message || 'Failed to match line');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to match line');
     }
   };
 
@@ -199,8 +200,8 @@ export function useSupplierInvoice(id: string) {
     try {
       await api.invoiceDetailControllerUpdateInvoiceLine(id, lineId, { [field]: value });
       loadInvoice();
-    } catch (err: any) {
-      alert(err.message || 'Failed to update line');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to update line');
     } finally {
       setSaving(false);
     }
@@ -212,8 +213,8 @@ export function useSupplierInvoice(id: string) {
     try {
       await api.invoiceDetailControllerRemoveInvoiceLine(id, lineId);
       loadInvoice();
-    } catch (err: any) {
-      alert(err.message || 'Failed to remove line');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to remove line');
     } finally {
       setSaving(false);
     }
@@ -224,8 +225,8 @@ export function useSupplierInvoice(id: string) {
     try {
       await api.invoiceDetailControllerAddInvoiceLine(id, { description: '', quantityInvoiced: 1, pricePerUnit: 0 });
       loadInvoice();
-    } catch (err: any) {
-      alert(err.message || 'Failed to add line');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to add line');
     } finally {
       setSaving(false);
     }
@@ -236,8 +237,8 @@ export function useSupplierInvoice(id: string) {
     try {
       await api.invoiceDetailControllerAddInvoiceLine(id, { description: 'Rounding Adjustment', quantityInvoiced: 1, pricePerUnit: 0 });
       loadInvoice();
-    } catch (err: any) {
-      alert(err.message || 'Failed to add rounding line');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to add rounding line');
     } finally {
       setSaving(false);
     }
@@ -251,8 +252,8 @@ export function useSupplierInvoice(id: string) {
         description: product.name,
       });
       loadInvoice();
-    } catch (err: any) {
-      alert(err.message || 'Failed to set product');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to set product');
     } finally {
       setSaving(false);
     }
@@ -263,8 +264,8 @@ export function useSupplierInvoice(id: string) {
     try {
       await api.invoiceDetailControllerUnresolveInvoiceLine(lineId, { method: 'POST' });
       setRefreshKey(k => k + 1);
-    } catch (err: any) {
-      alert(err.message || 'Failed to unresolve allocation');
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to unresolve allocation');
     }
   };
 

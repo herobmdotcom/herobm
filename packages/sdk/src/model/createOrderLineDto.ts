@@ -13,6 +13,7 @@ export interface CreateOrderLineDto {
   pricePerUnit: string;
   discountPercentage?: string;
   taxCategoryId?: string;
+  tax?: string;
   unitOfMeasure?: string;
   fulfillmentLocationId?: string;
 }

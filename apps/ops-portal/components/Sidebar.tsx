@@ -135,6 +135,7 @@ export default function Sidebar() {
           subItems: [
             { href: '/admin/settings/system', label: t('items.system') },
             { href: '/admin/settings/financial', label: t('items.financial') },
+            { href: '/admin/settings/integrations', label: 'Integrations' },
           ]
         },
         { 

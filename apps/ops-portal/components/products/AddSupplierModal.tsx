@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import { getErrorMessage } from '@modbm/shared';
 
 interface AddSupplierModalProps {
   productId: string;
@@ -68,7 +69,7 @@ export default function AddSupplierModal({
       const res = await api.suppliersControllerFindAll({ q, limit: 15 } as any);
       setSuppliers((res.data as any)?.data || res.data || []);
       setLastSearchQuery(q);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // quiet fail
     } finally {
       setLoading(false);
@@ -108,8 +109,8 @@ export default function AddSupplierModal({
       toast.success(t('messages.success'));
       onSuccess();
       onClose();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }

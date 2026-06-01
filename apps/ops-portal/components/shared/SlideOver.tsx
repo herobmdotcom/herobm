@@ -59,7 +59,7 @@ export default function SlideOver({
       />
       
       {/* Slide-over panel */}
-      <div className="absolute inset-y-0 right-0 flex max-w-full pl-10 pointer-events-none">
+      <div className="absolute inset-y-0 right-0 flex max-w-full sm:pl-10 pointer-events-none">
         <div 
           ref={panelRef}
           className={`pointer-events-auto w-screen ${width} transform transition ease-in-out duration-300 bg-white shadow-2xl flex flex-col`}
@@ -93,7 +93,7 @@ export default function SlideOver({
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto w-full p-6">
+          <div className="flex-1 overflow-y-auto w-full p-3 sm:p-6">
             {children}
           </div>
 

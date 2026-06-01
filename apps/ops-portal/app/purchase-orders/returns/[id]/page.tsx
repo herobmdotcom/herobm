@@ -9,6 +9,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import * as api from '@modbm/sdk';
 import { PURCHASE_RETURN_STATE } from '@modbm/shared';
+import { getErrorMessage } from '@modbm/shared';
 
 export default function PurchaseReturnDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -41,7 +42,7 @@ export default function PurchaseReturnDetailPage({ params }: { params: Promise<{
         }
       })
       .catch(err => {
-        if (active) setError(err.message);
+        if (active) setError(getErrorMessage(err));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -70,14 +71,14 @@ export default function PurchaseReturnDetailPage({ params }: { params: Promise<{
         notes,
       };
 
-      const res = await api.purchaseDebitNotesControllerCreateDebitNote(payload );
+      const res = await api.purchaseDebitNotesControllerCreateDebitNote(payload as any);
 
       // After creation, optionally post it directly:
-      await api.purchaseDebitNotesControllerPostDebitNote((res as unknown as Record<string, string>).debitNoteId || (res as unknown as Record<string, string>).id, {});
+      await api.purchaseDebitNotesControllerPostDebitNote((res as any).debitNoteId || (res as any).id, {});
 
       router.push(`/purchase-orders/${returnDetails.purchaseOrderId}`);
-    } catch (err: any) {
-      setError(err.message || 'Failed to create Debit Note');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err) || 'Failed to create Debit Note');
       setSubmitting(false);
     }
   };

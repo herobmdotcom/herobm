@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import SlideOver from '@/components/shared/SlideOver';
+import { getErrorMessage } from '@modbm/shared';
 
 export default function ReceiveReturnSlideOver({
     isOpen,
@@ -54,8 +55,8 @@ export default function ReceiveReturnSlideOver({
             onRefresh();
             toast.success('Return received successfully');
             onClose();
-        } catch (err: any) {
-            toast.error(err.message || 'Failed to receive return');
+        } catch (err: unknown) {
+            toast.error(getErrorMessage(err) || 'Failed to receive return');
         } finally {
             setSaving(false);
         }

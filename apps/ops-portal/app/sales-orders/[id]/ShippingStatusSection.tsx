@@ -186,7 +186,7 @@ export default function ShippingStatusSection({ orderId }: Props) {
                     const fullyShipped = shipped >= ordered;
 
                     return (
-                        <div className={`bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm ${fullyShipped ? 'opacity-60' : ''}`}>
+                        <div className={`bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col ${fullyShipped ? 'opacity-60' : ''}`}>
                             <div className="flex justify-between items-start mb-2 gap-2">
                                 <div className="flex-1 min-w-0">
                                     <div className="font-bold text-[var(--accent)] text-sm mb-1 truncate">

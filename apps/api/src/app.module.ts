@@ -34,6 +34,7 @@ import { PricingModule } from './pricing/pricing.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { ApiKeysModule } from './api-keys/api-keys.module';
 import { EventsModule } from './events/events.module';
+import { EnrichmentModule } from './enrichment/enrichment.module';
 
 import { RolesModule } from './roles/roles.module';
 
@@ -76,6 +77,7 @@ import { RolesModule } from './roles/roles.module';
     WebhooksModule,
     ApiKeysModule,
     EventsModule,
+    EnrichmentModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },

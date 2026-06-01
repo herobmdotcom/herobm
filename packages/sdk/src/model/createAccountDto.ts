@@ -30,4 +30,6 @@ export interface CreateAccountDto {
   bankAccountName?: string;
   bankBsb?: string;
   bankAccountNumber?: string;
+  businessNumber?: string;
+  isTaxRegistered?: boolean;
 }

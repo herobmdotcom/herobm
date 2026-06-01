@@ -7,6 +7,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -27,11 +28,35 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { outbox } from '../drizzle/modbm-core-schema';
 import { desc, isNull, isNotNull, sql, count, eq, and } from 'drizzle-orm';
 
-export class SyncStatusResponseDto {
+export class SyncSummaryDto {
   @ApiProperty() pending!: number;
   @ApiProperty() processed!: number;
   @ApiProperty() failed!: number;
-  @ApiProperty() recentEvents!: any[];
+}
+
+export class TypeBreakdownDto {
+  @ApiProperty() eventType!: string;
+  @ApiProperty() total!: number;
+  @ApiProperty() pending!: number;
+  @ApiProperty() processed!: number;
+  @ApiProperty() failed!: number;
+}
+
+export class OutboxEventDto {
+  @ApiProperty() outboxId!: string;
+  @ApiProperty() aggregateType!: string;
+  @ApiProperty() aggregateId!: string;
+  @ApiProperty() eventType!: string;
+  @ApiProperty() payload!: any;
+  @ApiProperty() createdOn!: Date;
+  @ApiProperty({ required: false }) processedAt!: Date;
+  @ApiProperty({ required: false }) lastError!: string;
+}
+
+export class SyncStatusResponseDto {
+  @ApiProperty({ type: SyncSummaryDto }) summary!: SyncSummaryDto;
+  @ApiProperty({ type: [TypeBreakdownDto] }) byType!: TypeBreakdownDto[];
+  @ApiProperty({ type: [OutboxEventDto] }) recentEvents!: OutboxEventDto[];
 }
 
 export class SyncEventsResponseDto {
@@ -61,6 +86,7 @@ export class ExternalSyncController {
       'Retrieve summary counts and recent events for the external sync dashboard.',
   })
   @ApiOkResponse({ type: SyncStatusResponseDto })
+  @ApiQuery({ name: 'limit', required: false })
   async getSyncStatus(@Query('limit') limitStr?: string) {
     const limit = Math.min(parseInt(limitStr || '50', 10), 200);
 
@@ -132,6 +158,8 @@ export class ExternalSyncController {
       'Retrieve pending or processed outbox events for a specific type.',
   })
   @ApiOkResponse({ type: SyncEventsResponseDto })
+  @ApiQuery({ name: 'status', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   async getEventsByType(
     @Query('type') eventType: string,
     @Query('status') status?: string,
@@ -180,6 +208,7 @@ export class ExternalSyncController {
     description: 'Delete all pending or failed outbox events of a given type.',
   })
   @ApiOkResponse({ type: DeleteEventsResponseDto })
+  @ApiQuery({ name: 'status', required: false })
   async clearEventsByType(
     @Query('type') eventType: string,
     @Query('status') status?: string,

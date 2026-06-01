@@ -9,6 +9,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import { useTranslations } from 'next-intl';
+import { getErrorMessage } from '@modbm/shared';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,8 +77,8 @@ export default function UsersPage() {
       setLoading(true);
       const res = await api.usersControllerFindAll();
       setUsers(res.data as unknown as User[]);
-    } catch (err: any) {
-      toast.error(t('toasts.loadFailed') + ': ' + err.message);
+    } catch (err: unknown) {
+      toast.error(t('toasts.loadFailed') + ': ' + getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -152,8 +153,8 @@ export default function UsersPage() {
       }
       cancel();
       loadUsers();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -162,8 +163,8 @@ export default function UsersPage() {
       await api.usersControllerToggleActive(user.userId, {});
       toast.success(t('toasts.toggled'));
       loadUsers();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -173,8 +174,8 @@ export default function UsersPage() {
       await api.usersControllerRemove(user.userId);
       toast.success(t('toasts.deleted'));
       loadUsers();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

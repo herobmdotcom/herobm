@@ -34,4 +34,6 @@ export interface UpdateSupplierDto {
   bankBsb?: string;
   bankAccountNumber?: string;
   stateCode?: string;
+  businessNumber?: string;
+  isTaxRegistered?: boolean;
 }

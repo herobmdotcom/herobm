@@ -11,6 +11,7 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
 import GroupSelect from '@/components/shared/GroupSelect';
 import { PRODUCT_STATE } from '@modbm/shared';
+import { getErrorMessage } from '@modbm/shared';
 
 const formatMoney = (val: string | number | undefined | null) => {
   if (!val) return '0.00';
@@ -62,8 +63,8 @@ export default function NewProductPage() {
       const product = res.data;
       toast.success(t('toast.productCreated'));
       router.push(`/products/${product.id}`);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }

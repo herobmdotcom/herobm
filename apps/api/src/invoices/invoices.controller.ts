@@ -17,6 +17,7 @@ import {
   ApiBody,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { SalesInvoiceService } from './sales-invoice.service';
 import { PurchaseInvoiceService } from './purchase-invoice.service';
@@ -137,6 +138,11 @@ export class InvoiceDetailController {
     description: 'Retrieve all sales invoices across orders',
   })
   @ApiOkResponse({ type: SalesInvoiceListResponseDto })
+  @ApiQuery({ name: 'days', required: false })
+  @ApiQuery({ name: 'customerId', required: false })
+  @ApiQuery({ name: 'invoiceId', required: false })
+  @ApiQuery({ name: 'balanceStatus', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   async getSalesInvoicesGlobal(
     @Query('days') days?: string,
     @Query('customerId') customerId?: string,
@@ -162,6 +168,11 @@ export class InvoiceDetailController {
     description: 'Retrieve all purchase invoices across orders',
   })
   @ApiOkResponse({ type: PurchaseInvoiceListResponseDto })
+  @ApiQuery({ name: 'days', required: false })
+  @ApiQuery({ name: 'vendorId', required: false })
+  @ApiQuery({ name: 'invoiceId', required: false })
+  @ApiQuery({ name: 'balanceStatus', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   async getPurchaseInvoicesGlobal(
     @Query('days') days?: string,
     @Query('vendorId') vendorId?: string,

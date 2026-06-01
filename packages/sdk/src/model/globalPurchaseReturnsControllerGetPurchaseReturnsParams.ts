@@ -7,5 +7,5 @@
  */
 
 export type GlobalPurchaseReturnsControllerGetPurchaseReturnsParams = {
-stateCode: string;
+stateCode?: string;
 };

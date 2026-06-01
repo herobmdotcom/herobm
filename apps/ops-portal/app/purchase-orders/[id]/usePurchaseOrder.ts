@@ -162,7 +162,7 @@ export function usePurchaseOrder(id: string) {
     setReturnsLoading(true);
     try {
       const { data } = await api.purchaseReturnsControllerFindReturns(id);
-      setReturns(data as unknown as OrderReturn[] || []);
+      setReturns((Array.isArray(data) ? data : (data as any)?.data || []) as OrderReturn[]);
     } catch {
       setReturns([]);
     } finally {
@@ -173,7 +173,7 @@ export function usePurchaseOrder(id: string) {
   const loadInvoices = async () => {
     try {
       const { data } = await api.purchaseInvoiceControllerGetPurchaseBills(id);
-      setInvoices((data as unknown as { data: PurchaseInvoice[] }).data || []);
+      setInvoices(((data as any)?.data || data || []) as unknown as PurchaseInvoice[]);
     } catch {
       setInvoices([]);
     }
@@ -183,7 +183,7 @@ export function usePurchaseOrder(id: string) {
     setAllocationsLoading(true);
     try {
       const { data } = await api.allocationsControllerGetAllocationsByPo(id);
-      setAllocations((data as unknown as { data: Allocation[] }).data || []);
+      setAllocations((Array.isArray(data) ? data : (data as any)?.data || []) as Allocation[]);
     } catch {
       setAllocations([]);
     } finally {
@@ -197,7 +197,7 @@ export function usePurchaseOrder(id: string) {
   useEffect(() => {
     loadOrder();
     api.taxCategoriesControllerFindAll()
-      .then(res => setTaxCategories(res.data.map(t => ({ ...t, taxCategoryId: (t as unknown as { id?: string }).id || t.taxCategoryId })) as unknown as TaxCategory[] || []))
+      .then(res => setTaxCategories((res.data as any[]).map(t => ({ ...t, taxCategoryId: t.id || t.taxCategoryId })) || []))
       .catch((err) => reportError(err, 'OrderDetailPage'));
   }, [id]);
 

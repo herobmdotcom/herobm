@@ -57,7 +57,7 @@ export class OrderShipmentsController {
   }
 
   @Get(':id/shipments')
-  @ApiOkResponse({ type: ShipmentResponseDto, isArray: true })
+  @ApiOkResponse({ type: [ShipmentResponseDto] })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Find Order Shipments',

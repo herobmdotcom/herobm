@@ -4,6 +4,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -37,7 +38,6 @@ export class MacrosController {
   constructor(private readonly macrosService: MacrosService) {}
 
   @Post()
-  @ApiBody({ type: Object })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Create Macro',
@@ -54,8 +54,9 @@ export class MacrosController {
     summary: 'List Macros',
     description: 'Retrieves all configured automation macros.',
   })
-  @ApiOkResponse({ type: MacroResponseDto, isArray: true })
+  @ApiOkResponse({ type: [MacroResponseDto] })
   @ApiFieldMask()
+  @ApiQuery({ name: 'macroType', required: false })
   findAll(@Query('macroType') macroType?: string) {
     return this.macrosService.findAll(macroType);
   }
@@ -73,7 +74,6 @@ export class MacrosController {
   }
 
   @Patch(':id')
-  @ApiBody({ type: Object })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Update Macro',

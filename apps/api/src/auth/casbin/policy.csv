@@ -15,6 +15,7 @@ p, viewer, tax-categories, read, allow
 p, viewer, settings, read, allow
 p, viewer, report, read, allow
 p, viewer, payments, read, allow
+p, viewer, external_api, read, allow
 
 # admin — full access to everything
 p, admin, report, write, allow
