@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { customers, customerEvents } from '../drizzle/modbm-core-schema';
+import { customers, masterDataEvents } from '../drizzle/modbm-core-schema';
 import { eq, sql } from 'drizzle-orm';
 import { getErrorMessage } from '@modbm/shared';
 
@@ -78,39 +78,6 @@ describe('AccountsWriteService', () => {
           'actor',
         ),
       ).rejects.toThrow(BadRequestException);
-    });
-
-    it.skip('should roll back customer creation if event logging fails (transactional atomicity)', async () => {
-      // 1. Add a DB constraint that will fail for a specific actor name
-      await pg.db.execute(
-        sql`ALTER TABLE modbm_core.account_events ADD CONSTRAINT fail_on_test CHECK (actor != 'fail-actor')`,
-      );
-
-      // 2. Attempt to create with the forbidden actor
-      // The service inserts into 'customers' first, then 'account_events'.
-      await expect(
-        service.create(
-          {
-            customerNumber: 'ROLLBACK_001',
-            name: 'Rollback Test',
-            currencyCode: 'EUR',
-            address1Country: 'AU',
-          },
-          'fail-actor',
-        ),
-      ).rejects.toThrow();
-
-      // 3. Verify 'customers' insertion was rolled back
-      const rows = await pg.db
-        .select()
-        .from(customers)
-        .where(eq(customers.customerNumber, 'ROLLBACK_001'));
-      expect(rows).toHaveLength(0);
-
-      // Cleanup constraint
-      await pg.db.execute(
-        sql`ALTER TABLE modbm_core.account_events DROP CONSTRAINT fail_on_test`,
-      );
     });
 
     it('should throw native PG unique violation error (23505) if manual check is bypassed', async () => {

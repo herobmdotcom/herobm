@@ -20,7 +20,7 @@ import {
   outbox,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import {
   REVENUE_ROUTING_PRECEDENCE,
   EXPENSE_ROUTING_PRECEDENCE,
@@ -265,8 +265,8 @@ export class GlService {
 
       // Write 'gl_posted' event for sync routing + audit trail
       await emitEvent(db, {
-        aggregateType: AggregateType.SYSTEM,
-        aggregateId: entry.journalEntryId,
+        entityType: EntityType.SYSTEM,
+        entityId: entry.journalEntryId,
         eventType: EventType.GL_POSTED,
         payload: {
           entryNumber,

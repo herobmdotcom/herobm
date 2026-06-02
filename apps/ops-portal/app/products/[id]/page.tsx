@@ -35,6 +35,11 @@ const formatInt = (val: string | number | undefined | null) => {
   return Math.round(num).toString();
 };
 
+export interface KitComponent extends api.ProductResponseDto {
+  childProductId: string;
+  parentQuantity: number;
+}
+
 export default function ProductDetailPage() {
   const t = useTranslations();
   const tCommon = useTranslations('common');
@@ -59,7 +64,7 @@ export default function ProductDetailPage() {
   const [editingBinData, setEditingBinData] = useState({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
   const [availableBins, setAvailableBins] = useState<any[]>([]);
   const [inventoryLevels, setInventoryLevels] = useState<any[]>([]);
-  const [kitComponents, setKitComponents] = useState<any[]>([]);
+  const [kitComponents, setKitComponents] = useState<KitComponent[]>([]);
 
   const buildableQuantity = useMemo(() => {
     if (product?.structureType !== 'kit' || !kitComponents.length || !inventoryLevels.length) return null;
@@ -123,10 +128,9 @@ export default function ProductDetailPage() {
       if (data.structureType === 'kit') {
         try {
           const componentsData = await api.productsControllerGetComponents(id as string);
-          if ((componentsData.data as any)?.data?.length) {
-            setKitComponents((componentsData.data as unknown as { data: any[] }).data);
-            // modbm-allow-record-any
-            productIdsToFetch = ((componentsData.data as any).data).map((c: Record<string, any>) => c.childProductId);
+          if (componentsData.data?.length) {
+            setKitComponents((componentsData.data || []) as unknown as KitComponent[]);
+            productIdsToFetch = componentsData.data.map((c: any) => c.id);
           }
         } catch (e) {
           reportError(e, 'ProductDetailPage');

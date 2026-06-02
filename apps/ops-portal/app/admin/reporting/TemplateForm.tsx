@@ -24,7 +24,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
     entityId: '',
   });
   
-  const [availableHooks, setAvailableHooks] = useState<any[]>([]);
+  const [availableHooks, setAvailableHooks] = useState<api.HookDto[]>([]);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState(false);
@@ -35,7 +35,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
 
   useEffect(() => {
     api.reportsControllerGetHooks().then(res => {
-      setAvailableHooks((res.data as unknown as { data: any[] }).data || res.data || []);
+      setAvailableHooks(res.data || []);
     }).catch(() => {});
   }, []);
 
@@ -178,22 +178,22 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
                         <div className="text-xs text-gray-400 italic p-3">{t('loadingContexts')}</div>
                       ) : (
                         availableHooks.map(h => (
-                          <label key={h.contextSlug} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#f8f9fa] transition-colors border-b border-gray-100 last:border-0">
+                          <label key={h.slug} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#f8f9fa] transition-colors border-b border-gray-100 last:border-0">
                             <input 
                               type="checkbox" 
                               className="checkbox checkbox-sm checkbox-primary border-gray-300 rounded"
-                              checked={formData.contexts.includes(h.contextSlug)}
+                              checked={formData.contexts.includes(h.slug)}
                               onChange={(e) => {
                                 const checked = e.target.checked;
                                 setFormData(d => ({
                                   ...d,
                                   contexts: checked 
-                                    ? [...d.contexts, h.contextSlug] 
-                                    : d.contexts.filter(c => c !== h.contextSlug)
+                                    ? [...d.contexts, h.slug] 
+                                    : d.contexts.filter(c => c !== h.slug)
                                 }));
                               }}
                             />
-                            <span className="text-[13px] font-semibold text-gray-700">{h.contextSlug}</span>
+                            <span className="text-[13px] font-semibold text-gray-700">{h.slug}</span>
                           </label>
                         ))
                       )}
@@ -248,7 +248,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
               <select className="select w-full bg-white" value={previewVars.hookSlug} onChange={e => handleHookChange(e.target.value)}>
                 <option value="">{t('none')}</option>
                 {availableHooks.map(h => (
-                  <option key={h.contextSlug} value={h.contextSlug}>{h.contextSlug}</option>
+                  <option key={h.slug} value={h.slug}>{h.slug}</option>
                 ))}
               </select>
             </div>

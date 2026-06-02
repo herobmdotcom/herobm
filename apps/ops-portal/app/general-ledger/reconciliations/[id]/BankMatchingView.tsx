@@ -8,6 +8,14 @@ import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import QuickAdjustmentForm from './QuickAdjustmentForm';
 
+interface UnreconciledLine {
+  journalLineId: string;
+  entryDate: string;
+  debit: number | string;
+  credit: number | string;
+  memo: string;
+}
+
 export default function BankMatchingView({ 
   reconciliation, 
   onUpdate 
@@ -15,12 +23,12 @@ export default function BankMatchingView({
   reconciliation: any, 
   onUpdate: () => void 
 }) {
-  const [bankLines, setBankLines] = useState<any[]>([]);
+  const [bankLines, setBankLines] = useState<api.BankStatementLineDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [activeTab, setActiveTab] = useState<'find' | 'create'>('find');
-  const [unreconciledLines, setUnreconciledLines] = useState<any[]>([]);
+  const [unreconciledLines, setUnreconciledLines] = useState<UnreconciledLine[]>([]);
   const [loadingLines, setLoadingLines] = useState(false);
   const [matchSelectedLineId, setMatchSelectedLineId] = useState<string | null>(null);
   const t = useTranslations('admin.reconciliations');
@@ -50,7 +58,7 @@ export default function BankMatchingView({
     try {
       setLoadingLines(true);
       const res = await api.reconciliationControllerGetLines(reconciliation.reconciliationId);
-      setUnreconciledLines((res.data as any) || []);
+      setUnreconciledLines((res.data || []) as unknown as UnreconciledLine[]);
     } catch (e) {
       reportError(e, 'UnreconciledLines');
     } finally {

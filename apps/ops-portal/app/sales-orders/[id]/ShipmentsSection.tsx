@@ -39,7 +39,7 @@ export default function ShipmentsSection({ orderId }: Props) {
     useEffect(() => {
         setLoading(true);
         api.orderShipmentsControllerFindShipments(orderId)
-            .then((res) => setShipments(((res.data as unknown as { data: any[] })?.data || res.data || []) as unknown as Shipment[]))
+            .then((res) => setShipments((res.data || []) as unknown as Shipment[]))
             .catch((err) => reportError(err, 'ShipmentsSection'))
             .finally(() => setLoading(false));
     }, [orderId]);

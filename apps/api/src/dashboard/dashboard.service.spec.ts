@@ -29,8 +29,8 @@ describe('DashboardService', () => {
       CREATE OR REPLACE VIEW modbm_core.dashboard_timeline AS
       SELECT 
         event_id,
-        aggregate_type,
-        aggregate_id,
+        entity_type,
+        entity_id,
         event_type,
         payload,
         actor,
@@ -213,17 +213,17 @@ describe('DashboardService', () => {
       });
 
       await pg.db.insert(systemEvents).values({
-        aggregateType: 'customer',
-        aggregateId: customerId,
+        entityType: 'customer',
+        entityId: customerId,
         eventType: 'created',
         actor: 'system',
         createdOn: new Date(),
       });
 
-      const result = await service.getTimeline(['customer_created']);
+      const result = await service.getTimeline(['customer.created']);
       expect(result.events.length).toBe(1);
       expect(result.events[0]).toMatchObject({
-        eventType: 'customer_created',
+        eventType: 'customer.created',
         entityDisplay: 'Timeline Customer',
         actor: 'system',
       });

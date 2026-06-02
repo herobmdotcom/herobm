@@ -20,17 +20,31 @@ interface Props {
 }
 
 const EVENT_ICONS: Record<string, { icon: string, color: string, bg: string, path: string }> = {
-  so_created: { icon: 'add_circle', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-orders' },
-  so_confirmed: { icon: 'check_circle', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-orders' },
-  so_shipped: { icon: 'local_shipping', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-orders' },
-  so_invoiced: { icon: 'receipt_long', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-orders' },
+  'sales_order.created': { icon: 'add_circle', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-orders' },
+  'sales_order.status_changed': { icon: 'check_circle', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-orders' },
+  'sales_invoice.created': { icon: 'receipt_long', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-invoices' },
+  'sales_invoice.status_changed': { icon: 'check_circle', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-invoices' },
   
-  po_created: { icon: 'add_shopping_cart', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
-  po_ordered: { icon: 'send', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
-  po_received: { icon: 'inventory_2', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
+  'purchase_order.created': { icon: 'add_shopping_cart', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
+  'purchase_order.status_changed': { icon: 'inventory_2', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
+  'purchase_invoice.created': { icon: 'receipt', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/supplier-invoices' },
   
-  account_created: { icon: 'person_add', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', path: '/customers' },
-  supplier_created: { icon: 'domain_add', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', path: '/suppliers' },
+  'customer.created': { icon: 'person_add', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', path: '/customers' },
+  'customer.updated': { icon: 'manage_accounts', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', path: '/customers' },
+  
+  'supplier.created': { icon: 'domain_add', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', path: '/suppliers' },
+  'supplier.updated': { icon: 'domain', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', path: '/suppliers' },
+  
+  'warehouse.receipt_created': { icon: 'inventory', color: '#f97316', bg: 'rgba(249, 115, 22, 0.1)', path: '/receiving' },
+  'warehouse.shipment_created': { icon: 'local_shipping', color: '#f97316', bg: 'rgba(249, 115, 22, 0.1)', path: '/shipments' },
+  'warehouse.shipment_dispatched': { icon: 'flight_takeoff', color: '#f97316', bg: 'rgba(249, 115, 22, 0.1)', path: '/shipments' },
+  
+  'inventory_ledger.adjustment_processed': { icon: 'exposure', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', path: '/inventory' },
+  'transfer_order.created': { icon: 'sync_alt', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.1)', path: '/inventory' },
+  
+  'payment.submitted': { icon: 'payments', color: '#14b8a6', bg: 'rgba(20, 184, 166, 0.1)', path: '/payments' },
+  'payment.allocated': { icon: 'account_balance', color: '#14b8a6', bg: 'rgba(20, 184, 166, 0.1)', path: '/payments' },
+  'general_ledger.entry_posted': { icon: 'menu_book', color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)', path: '/general-ledger' },
 };
 
 function getEventStyle(eventType: string) {

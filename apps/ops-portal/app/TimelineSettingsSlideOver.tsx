@@ -4,21 +4,14 @@ import React from 'react';
 import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
 
-export type EventType = 
-  | 'so_created' | 'so_confirmed' | 'so_shipped' | 'so_invoiced'
-  | 'so_dispatched' | 'so_credit_note' | 'so_backorders'
-  | 'po_created' | 'po_ordered' | 'po_received'
-  | 'po_invoiced' | 'po_over_received' | 'po_price_discrepancy'
-  | 'stock_received' | 'stock_adjusted' | 'transfer_created'
-  | 'payment_submitted' | 'payment_allocated' | 'payment_cancelled'
-  | 'account_created' | 'supplier_created';
+export type EventType = string;
 
 export const DEFAULT_ENABLED_EVENTS: EventType[] = [
-  'so_created', 'so_confirmed', 'so_shipped', 'so_invoiced', 'so_dispatched',
-  'po_created', 'po_ordered', 'po_received', 'po_invoiced',
-  'stock_received', 'stock_adjusted', 'transfer_created',
-  'payment_submitted',
-  'account_created', 'supplier_created'
+  'sales_order.created', 'sales_order.status_changed', 'sales_order.deleted',
+  'purchase_order.created', 'purchase_order.status_changed', 'purchase_order.deleted',
+  'warehouse.receipt_created', 'inventory_ledger.adjustment_processed', 'transfer_order.created',
+  'payment.submitted',
+  'customer.created', 'supplier.created'
 ];
 
 interface Props {
@@ -51,7 +44,7 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
           className="w-4 h-4 rounded text-accent focus:ring-accent"
         />
         <span className="text-[14px]" style={{ color: 'var(--text-primary)' }}>
-          {t(`types.${event}`)}
+          {t(`types.${event}` as any)}
         </span>
       </label>
     );
@@ -68,45 +61,54 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
           <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50" style={{ color: 'var(--text-primary)' }}>
             {tSidebar('sales')}
           </div>
-          <OptionRow event="account_created" />
-          <OptionRow event="so_created" />
-          <OptionRow event="so_confirmed" />
-          <OptionRow event="so_shipped" />
-          <OptionRow event="so_dispatched" />
-          <OptionRow event="so_invoiced" />
-          <OptionRow event="so_credit_note" />
-          <OptionRow event="so_backorders" />
+          <OptionRow event="customer.created" />
+          <OptionRow event="customer.updated" />
+          <OptionRow event="sales_order.created" />
+          <OptionRow event="sales_order.status_changed" />
+          <OptionRow event="sales_order.deleted" />
+          <OptionRow event="sales_invoice.created" />
+          <OptionRow event="sales_invoice.status_changed" />
+          <OptionRow event="sales_return.created" />
+          <OptionRow event="sales_return.status_changed" />
         </div>
 
         <div className="flex flex-col gap-1">
           <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50" style={{ color: 'var(--text-primary)' }}>
             {tSidebar('purchasing')}
           </div>
-          <OptionRow event="supplier_created" />
-          <OptionRow event="po_created" />
-          <OptionRow event="po_ordered" />
-          <OptionRow event="po_received" />
-          <OptionRow event="po_invoiced" />
-          <OptionRow event="po_over_received" />
-          <OptionRow event="po_price_discrepancy" />
+          <OptionRow event="supplier.created" />
+          <OptionRow event="supplier.updated" />
+          <OptionRow event="purchase_order.created" />
+          <OptionRow event="purchase_order.status_changed" />
+          <OptionRow event="purchase_order.deleted" />
+          <OptionRow event="purchase_invoice.created" />
+          <OptionRow event="purchase_invoice.status_changed" />
+          <OptionRow event="purchase_return.created" />
+          <OptionRow event="purchase_return.status_changed" />
         </div>
 
         <div className="flex flex-col gap-1">
           <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50" style={{ color: 'var(--text-primary)' }}>
             {tSidebar('inventory')}
           </div>
-          <OptionRow event="stock_received" />
-          <OptionRow event="stock_adjusted" />
-          <OptionRow event="transfer_created" />
+          <OptionRow event="warehouse.receipt_created" />
+          <OptionRow event="warehouse.receipt_status_changed" />
+          <OptionRow event="warehouse.shipment_created" />
+          <OptionRow event="warehouse.shipment_status_changed" />
+          <OptionRow event="warehouse.shipment_dispatched" />
+          <OptionRow event="inventory_ledger.adjustment_processed" />
+          <OptionRow event="transfer_order.created" />
+          <OptionRow event="transfer_order.status_changed" />
         </div>
 
         <div className="flex flex-col gap-1">
           <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50" style={{ color: 'var(--text-primary)' }}>
             {tSidebar('finance')}
           </div>
-          <OptionRow event="payment_submitted" />
-          <OptionRow event="payment_allocated" />
-          <OptionRow event="payment_cancelled" />
+          <OptionRow event="payment.submitted" />
+          <OptionRow event="payment.allocated" />
+          <OptionRow event="payment.cancelled" />
+          <OptionRow event="general_ledger.entry_posted" />
         </div>
 
       </div>

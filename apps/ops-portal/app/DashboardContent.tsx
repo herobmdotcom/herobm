@@ -18,7 +18,13 @@ export default function DashboardContent() {
     try {
       const stored = localStorage.getItem('modbm_timeline_preferences');
       if (stored) {
-        setEnabledEvents(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0 && !parsed[0].includes('.')) {
+          // Legacy format detected, fallback to default
+          setEnabledEvents(DEFAULT_ENABLED_EVENTS);
+        } else {
+          setEnabledEvents(parsed);
+        }
       }
     } catch (err) {
       console.warn('Failed to load timeline preferences', err);

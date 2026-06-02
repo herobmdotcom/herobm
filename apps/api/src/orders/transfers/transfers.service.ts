@@ -15,7 +15,7 @@ import {
   transferOrderShipmentLines,
   transferOrderReceipts,
   transferOrderReceiptLines,
-  transferOrderEvents,
+  warehouseEvents,
   locations,
   bins,
   zones,
@@ -39,7 +39,7 @@ import {
 } from './dto';
 import { InventoryService } from '../../inventory/inventory.service';
 import { emitEvent } from '../../common/emit-event';
-import { AggregateType, EventType } from '../../common/event-types';
+import { EntityType, EventType } from '../../common/event-types';
 import {
   BACKORDER_STATE,
   TRANSFER_ORDER_STATE,
@@ -164,8 +164,8 @@ export class TransferService {
       }
 
       await emitEvent(tx as any, {
-        aggregateType: AggregateType.TRANSFER_ORDER,
-        aggregateId: transferOrderId,
+        entityType: EntityType.TRANSFER_ORDER,
+        entityId: transferOrderId,
         eventType: EventType.CREATED,
         payload: {
           orderNumber,
@@ -376,11 +376,11 @@ export class TransferService {
       }
 
       await emitEvent(tx as any, {
-        aggregateType: 'transfer_order' as any,
-        aggregateId: transferOrderId,
-        eventType: EventType.LINE_ADDED,
+        entityType: EntityType.WAREHOUSE,
+        entityId: lineId,
+        eventType: EventType.PICK_CREATED,
         actor,
-        payload: { lineId, quantity, binId },
+        payload: { pickId: lineId, transferOrderId, quantity, binId },
       });
     });
 
@@ -417,8 +417,8 @@ export class TransferService {
       );
 
       await emitEvent(tx as any, {
-        aggregateType: 'transfer_order' as any,
-        aggregateId: transferOrderId,
+        entityType: 'transfer_order' as any,
+        entityId: transferOrderId,
         eventType: EventType.LINE_REMOVED,
         actor,
         payload: { pickId },
@@ -581,8 +581,8 @@ export class TransferService {
       );
 
       await emitEvent(tx as any, {
-        aggregateType: AggregateType.TRANSFER_ORDER,
-        aggregateId: transferOrderId,
+        entityType: EntityType.TRANSFER_ORDER,
+        entityId: transferOrderId,
         eventType: EventType.STOCK_DISPATCHED,
         payload: { shipmentNumber, itemCount: picks.length },
         actor,
@@ -715,8 +715,8 @@ export class TransferService {
 
       // Emit Event
       await emitEvent(tx as any, {
-        aggregateType: AggregateType.TRANSFER_ORDER,
-        aggregateId: transferOrderId,
+        entityType: EntityType.TRANSFER_ORDER,
+        entityId: transferOrderId,
         eventType: EventType.STATUS_CHANGED,
         actor,
         payload: {
@@ -903,10 +903,10 @@ export class TransferService {
       );
 
       await emitEvent(tx as any, {
-        aggregateType: AggregateType.TRANSFER_ORDER,
-        aggregateId: transferOrderId,
-        eventType: EventType.STOCK_RECEIVED,
-        payload: { receiptNumber, totalReceived },
+        entityType: EntityType.TRANSFER_ORDER,
+        entityId: transferOrderId,
+        eventType: EventType.UPDATED,
+        payload: { receiptNumber, totalReceived, action: 'stock_received' },
         actor,
       });
 
@@ -954,8 +954,8 @@ export class TransferService {
       .returning();
 
     await emitEvent(tx as any, {
-      aggregateType: AggregateType.TRANSFER_ORDER,
-      aggregateId: transferOrderId,
+      entityType: EntityType.TRANSFER_ORDER,
+      entityId: transferOrderId,
       eventType: EventType.STATUS_CHANGED,
       payload: {
         entity: 'transfer_order',
@@ -999,18 +999,18 @@ export class TransferService {
       .set({ stateCode: newState as any, modifiedOn: new Date() })
       .where(eq(transferOrderPicks.pickId, pickId));
 
-    await emitEvent(tx as any, {
-      aggregateType: AggregateType.TRANSFER_ORDER,
-      aggregateId: existing.transferOrderId,
-      eventType: EventType.STATUS_CHANGED,
-      payload: {
-        entity: 'pick',
+    if (newState === TRANSFER_ORDER_PICK_STATE.CANCELLED) {
+      await emitEvent(tx as any, {
+        entityType: EntityType.WAREHOUSE,
         entityId: pickId,
-        from: existing.stateCode,
-        to: newState,
-      },
-      actor,
-    });
+        eventType: EventType.PICK_CANCELLED,
+        payload: {
+          pickId,
+          transferOrderId: existing.transferOrderId,
+        },
+        actor,
+      });
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -1176,15 +1176,20 @@ export class TransferService {
 
     const events = await this.db
       .select({
-        eventId: transferOrderEvents.eventId,
-        eventType: transferOrderEvents.eventType,
-        payload: transferOrderEvents.payload,
-        actor: transferOrderEvents.actor,
-        createdOn: transferOrderEvents.createdOn,
+        eventId: warehouseEvents.eventId,
+        eventType: warehouseEvents.eventType,
+        payload: warehouseEvents.payload,
+        actor: warehouseEvents.actor,
+        createdOn: warehouseEvents.createdOn,
       })
-      .from(transferOrderEvents)
-      .where(eq(transferOrderEvents.transferOrderId, id))
-      .orderBy(desc(transferOrderEvents.createdOn));
+      .from(warehouseEvents)
+      .where(
+        and(
+          eq(warehouseEvents.entityType, EntityType.TRANSFER_ORDER),
+          eq(warehouseEvents.entityId, id),
+        ),
+      )
+      .orderBy(desc(warehouseEvents.createdOn));
 
     return { ...order, lines, events };
   }
@@ -1228,9 +1233,9 @@ export class TransferService {
       }
 
       await emitEvent(tx as any, {
-        aggregateType: AggregateType.TRANSFER_ORDER,
-        aggregateId: transferOrderId,
-        eventType: EventType.CREATED,
+        entityType: EntityType.TRANSFER_ORDER,
+        entityId: transferOrderId,
+        eventType: EventType.UPDATED,
         payload: { orderNumber },
         actor,
       });
@@ -1366,9 +1371,9 @@ export class TransferService {
         .where(eq(backorders.transferOrderId, id));
 
       await emitEvent(tx as any, {
-        aggregateType: AggregateType.TRANSFER_ORDER,
-        aggregateId: id,
-        eventType: EventType.STATUS_CHANGED,
+        entityType: EntityType.TRANSFER_ORDER,
+        entityId: id,
+        eventType: EventType.LINE_REMOVED,
         actor,
         payload: {
           entity: 'transfer_order',
@@ -1383,16 +1388,23 @@ export class TransferService {
   }
 
   async findEvents(transferOrderId: string) {
-    return this.db
+    const events = await this.db
       .select({
-        eventId: transferOrderEvents.eventId,
-        eventType: transferOrderEvents.eventType,
-        payload: transferOrderEvents.payload,
-        actor: transferOrderEvents.actor,
-        createdOn: transferOrderEvents.createdOn,
+        eventId: warehouseEvents.eventId,
+        eventType: warehouseEvents.eventType,
+        payload: warehouseEvents.payload,
+        actor: warehouseEvents.actor,
+        createdOn: warehouseEvents.createdOn,
       })
-      .from(transferOrderEvents)
-      .where(eq(transferOrderEvents.transferOrderId, transferOrderId))
-      .orderBy(desc(transferOrderEvents.createdOn));
+      .from(warehouseEvents)
+      .where(
+        and(
+          eq(warehouseEvents.entityType, EntityType.TRANSFER_ORDER),
+          eq(warehouseEvents.entityId, transferOrderId),
+        ),
+      )
+      .orderBy(desc(warehouseEvents.createdOn));
+
+    return events;
   }
 }

@@ -92,6 +92,27 @@
       "when": 1780383211421,
       "tag": "0012_kind_bastion",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1780418091721,
+      "tag": "0013_add_master_data_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1780418091722,
+      "tag": "0014_fix_dashboard_timeline",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1780430592813,
+      "tag": "0015_resolve_drift",
+      "breakpoints": true
     }
   ]
 }

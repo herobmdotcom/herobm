@@ -17,7 +17,14 @@ export async function pollOutbox(db: any, syncQueue: Queue) {
   try {
     const now = new Date();
     const pendingEvents = await db
-      .select({ id: outbox.outboxId, payload: outbox.payload, type: outbox.eventType })
+      .select({ 
+        id: outbox.outboxId, 
+        entityId: outbox.entityId,
+        entityType: outbox.entityType,
+        createdOn: outbox.createdOn,
+        payload: outbox.payload, 
+        type: outbox.eventType 
+      })
       .from(outbox)
       .where(
         and(
@@ -32,7 +39,14 @@ export async function pollOutbox(db: any, syncQueue: Queue) {
       // Add to BullMQ with ID dedup
       await syncQueue.add(
         'process-event',
-        { eventId: event.id, type: event.type, payload: event.payload },
+        { 
+          eventId: event.id, 
+          type: event.type, 
+          entityId: event.entityId,
+          entityType: event.entityType,
+          createdOn: event.createdOn,
+          payload: event.payload 
+        },
         { jobId: event.id, removeOnComplete: true }
       );
       
@@ -51,8 +65,8 @@ export async function pollOutbox(db: any, syncQueue: Queue) {
  * Maps outbox events to external payloads and posts them.
  */
 export async function processEvent(job: Job, db: any) {
-  const { eventId, type, payload } = job.data;
-  processingLogger.info({ eventId, eventType: type }, 'Processing event');
+  const { eventId, type, entityId, entityType, createdOn, payload } = job.data;
+  processingLogger.info({ eventId, eventType: type, entityId: entityId }, 'Processing event');
 
   // Removing early abort for HANDLED_EVENT_TYPES to allow webhooks to process everything
   // if (!HANDLED_EVENT_TYPES.includes(type)) { ... }
@@ -73,7 +87,14 @@ export async function processEvent(job: Job, db: any) {
 
     if (activeWebhooks.length > 0) {
       processedAny = true;
-      const payloadString = JSON.stringify({ eventId, type, payload });
+      const payloadString = JSON.stringify({ 
+        eventId, 
+        eventType: type, 
+        entityId: entityId,
+        entityType: entityType,
+        timestamp: createdOn,
+        payload 
+      });
       
       for (const wh of activeWebhooks) {
         try {

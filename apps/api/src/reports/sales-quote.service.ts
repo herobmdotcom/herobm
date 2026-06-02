@@ -3,6 +3,7 @@ import { OrdersService } from '../orders/orders.service';
 import { OrdersWriteService } from '../orders/orders-write.service';
 import { resolveOrderDetail, assembleOrderData } from './report-data.helper';
 import { emitEvent } from '../common/emit-event';
+import { EntityType } from '../common/event-types';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { AppConfigService } from '../settings/app-config.service';
@@ -67,9 +68,9 @@ export class SalesQuoteService {
       this.logger.log('Macro text received: ' + quoteIntroText);
       data.quoteIntroText = quoteIntroText;
       await this.db.transaction(async (tx) => {
-        await emitEvent(tx, {
-          aggregateType: 'sales_order',
-          aggregateId: orderId,
+        await emitEvent(tx as any, {
+          entityType: EntityType.SALES_ORDER,
+          entityId: orderId,
           eventType: 'quote_generated',
           payload: { quoteIntroText: quoteIntroText },
           actor: options?.user ? (options.user as any).userId : undefined,

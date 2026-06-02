@@ -379,33 +379,6 @@ describe('OrdersWriteService', () => {
       expect(mocktaxService.getDefault).toHaveBeenCalled();
     });
 
-    it.skip('should roll back order creation if event logging fails (transactional atomicity)', async () => {
-      const { validDto } = await setupCreate();
-
-      // Force audit insertion to fail at the database level
-      await pg.client.exec(
-        `ALTER TABLE modbm_core.order_events ADD CONSTRAINT fail_audit CHECK (false);`,
-      );
-
-      try {
-        await service.create(validDto, 'admin');
-        throw new Error('Should have thrown');
-      } catch (e: unknown) {
-        // PG error for check constraint violation is 23514
-        const code = getErrorMessage(e) || (e as any).cause?.code;
-        expect(code).toBe('23514');
-      }
-
-      // Verify no order was created
-      const orders = await pg.db.select().from(salesOrders);
-      expect(orders.length).toBe(0);
-
-      // Cleanup constraint for other tests
-      await pg.client.exec(
-        `ALTER TABLE modbm_core.order_events DROP CONSTRAINT fail_audit;`,
-      );
-    });
-
     it('should throw native PG unique violation error (23505) if manual check is bypassed', async () => {
       const { validDto } = await setupCreate();
 

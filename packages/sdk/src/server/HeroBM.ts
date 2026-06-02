@@ -1,17 +1,39 @@
-export class HeroBM {
-  private apiKey: string;
-  private baseUrl: string;
+import { WebhookReceiver, HeroEvent } from './WebhookReceiver';
 
-  constructor(config: { apiKey: string; baseUrl?: string }) {
+export interface HeroBMConfig {
+  apiKey?: string;
+  baseUrl?: string;
+  webhookSecret?: string;
+}
+
+export class HeroBM {
+  private apiKey?: string;
+  private baseUrl: string;
+  public webhooks: WebhookReceiver;
+
+  constructor(config: HeroBMConfig) {
     this.apiKey = config.apiKey;
-    this.baseUrl = config.baseUrl || 'http://localhost:3001'; // Default to local API for development
+    this.baseUrl = config.baseUrl || 'http://localhost:3001';
+    
+    // Initialize the webhook receiver internally
+    this.webhooks = new WebhookReceiver({ secret: config.webhookSecret || '' });
   }
 
   public events = {
     /**
+     * Listen to an incoming webhook event.
+     */
+    on: <T = any>(eventType: string, handler: (event: HeroEvent<T>) => Promise<void> | void) => {
+      this.webhooks.on(eventType, handler);
+    },
+
+    /**
      * Publishes an event to the backend message queue (via outbox).
      */
     publish: async (type: string, payload: any) => {
+      if (!this.apiKey) {
+        throw new Error('API Key is required to publish events.');
+      }
       const response = await fetch(`${this.baseUrl}/api/events/publish`, {
         method: 'POST',
         headers: {

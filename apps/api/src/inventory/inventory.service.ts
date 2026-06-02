@@ -43,7 +43,7 @@ import {
   goodsReceivedLines,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import {
   PaginationQuery,
   parsePagination,
@@ -1007,8 +1007,8 @@ export class InventoryService {
 
     // 4. Emit event for ERP sync (and system events audit)
     await emitEvent(tx, {
-      aggregateType: AggregateType.SYSTEM,
-      aggregateId: entry.entryId,
+      entityType: EntityType.SYSTEM,
+      entityId: entry.entryId,
       eventType: EventType.STOCK_ADJUSTED,
       payload: { header: params, lines: ledgerPayload },
     });
@@ -1287,6 +1287,20 @@ export class InventoryService {
             .set({ putawayStatus: PUTAWAY_STATUS.COMPLETED })
             .where(eq(salesOrderReturnLines.returnLineId, lineDto.lineId));
         }
+
+        await emitEvent(tx as any, {
+          entityType: EntityType.WAREHOUSE,
+          entityId: lineDto.lineId,
+          eventType: EventType.PUTAWAY_COMPLETED,
+          payload: {
+            lineId: lineDto.lineId,
+            sourceType: lineDto.sourceType,
+            productId,
+            quantityPutaway: lineDto.quantity,
+            destinationBinId: lineDto.destinationBinId,
+          },
+          actor: userId,
+        });
       }
 
       // Check if any returns should be transitioned to RECEIVED automatically
@@ -1337,9 +1351,9 @@ export class InventoryService {
                 );
 
                 await emitEvent(tx, {
-                  aggregateType: AggregateType.SALES_ORDER,
-                  aggregateId: ret.salesOrderId,
-                  eventType: EventType.AUTO_STATUS_CHANGED,
+                  entityType: EntityType.SALES_ORDER,
+                  entityId: ret.salesOrderId,
+                  eventType: EventType.STATUS_CHANGED,
                   payload: {
                     entity: 'return',
                     entityId: rl.returnId,

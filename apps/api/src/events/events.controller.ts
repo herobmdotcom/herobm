@@ -51,8 +51,8 @@ export class EventsController {
     const [inserted] = await this.db
       .insert(outbox)
       .values({
-        aggregateType: 'external_event',
-        aggregateId: crypto.randomUUID(),
+        entityType: 'external_event',
+        entityId: crypto.randomUUID(),
         eventType: type,
         payload: payload,
       })

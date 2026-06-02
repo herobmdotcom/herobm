@@ -147,8 +147,16 @@ export default function Sidebar() {
             { href: '/admin/users/roles', label: 'Roles & Permissions' },
           ]
         },
-        { href: '/admin/developers', label: 'Developers', icon: 'code' },
-        { href: '/admin/developers/api-reference', label: 'API Reference', icon: 'menu_book' },
+        { 
+          href: '/admin/developers', 
+          label: 'Developers', 
+          icon: 'code',
+          subItems: [
+            { href: '/admin/developers', label: 'Configuration' },
+            { href: '/admin/developers/api-reference', label: 'Docs: API' },
+            { href: '/admin/developers/webhooks-api', label: 'Docs: Webhooks' },
+          ]
+        },
         { 
           href: '/admin/import/csv', 
           label: 'Import', 

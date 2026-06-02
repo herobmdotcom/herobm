@@ -14,7 +14,6 @@ import {
   salesInvoiceLines,
   salesOrderLineItems,
   outbox,
-  orderEvents,
   customers,
   glAccounts,
   products as coreProducts,
@@ -22,7 +21,7 @@ import {
   productGroups,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { getCommittedPerLine } from '../orders/shipment-helpers';
@@ -441,8 +440,8 @@ export class SalesInvoiceService {
       };
 
       await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: salesOrderId,
+        entityType: EntityType.SALES_ORDER,
+        entityId: salesOrderId,
         eventType: EventType.SALES_INVOICED,
         payload: outboxPayload,
         actor,
@@ -906,8 +905,8 @@ export class SalesInvoiceService {
       .returning();
 
     await emitEvent(db as any, {
-      aggregateType: AggregateType.SALES_INVOICE,
-      aggregateId: invoiceId,
+      entityType: EntityType.SALES_INVOICE,
+      entityId: invoiceId,
       eventType: EventType.STATUS_CHANGED,
       payload: {
         entity: 'sales_invoice',

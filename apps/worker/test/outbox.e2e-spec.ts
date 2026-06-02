@@ -130,7 +130,7 @@ describe('Worker E2E - Outbox Integration', () => {
         'Content-Type': 'application/json',
         'x-modbm-signature': expect.any(String)
       }),
-      body: expect.stringContaining('"type":"sales_order.created"')
+      body: expect.stringContaining('"eventType":"sales_order.created"')
     }));
 
     // 4. Verify outbox processedAt

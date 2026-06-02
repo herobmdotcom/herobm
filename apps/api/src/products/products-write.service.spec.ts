@@ -5,12 +5,12 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   products,
-  productEvents,
+  masterDataEvents,
   uomDictionary,
 } from '../drizzle/modbm-core-schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and } from 'drizzle-orm';
 import { PRODUCT_STATE } from '@modbm/shared';
-import { EventType } from '../common/event-types';
+import { EventType, EntityType } from '../common/event-types';
 
 describe('ProductsWriteService', () => {
   const pg = setupPgliteSuite();
@@ -29,7 +29,7 @@ describe('ProductsWriteService', () => {
 
   beforeEach(async () => {
     await pg.db.execute(
-      sql`TRUNCATE modbm_core.product_events, modbm_core.products CASCADE`,
+      sql`TRUNCATE modbm_core.master_data_events, modbm_core.products CASCADE`,
     );
 
     const module: TestingModule = await Test.createTestingModule({
@@ -50,8 +50,13 @@ describe('ProductsWriteService', () => {
       expect(result).toBeDefined();
       const events = await pg.db
         .select()
-        .from(productEvents)
-        .where(eq(productEvents.productId, result.productId));
+        .from(masterDataEvents)
+        .where(
+          and(
+            eq(masterDataEvents.entityId, result.productId),
+            eq(masterDataEvents.entityType, EntityType.PRODUCT),
+          ),
+        );
       expect(events).toHaveLength(1);
       expect(events[0].eventType).toBe(EventType.CREATED);
     });
@@ -77,8 +82,13 @@ describe('ProductsWriteService', () => {
       await service.update(productId, { name: 'New Name' }, 'admin');
       const events = await pg.db
         .select()
-        .from(productEvents)
-        .where(eq(productEvents.productId, productId));
+        .from(masterDataEvents)
+        .where(
+          and(
+            eq(masterDataEvents.entityId, productId),
+            eq(masterDataEvents.entityType, EntityType.PRODUCT),
+          ),
+        );
       expect(events).toHaveLength(1);
       expect(events[0].eventType).toBe(EventType.UPDATED);
     });
@@ -91,8 +101,13 @@ describe('ProductsWriteService', () => {
       );
       const events = await pg.db
         .select()
-        .from(productEvents)
-        .where(eq(productEvents.productId, productId));
+        .from(masterDataEvents)
+        .where(
+          and(
+            eq(masterDataEvents.entityId, productId),
+            eq(masterDataEvents.entityType, EntityType.PRODUCT),
+          ),
+        );
       expect(events[0].eventType).toBe(EventType.STATUS_CHANGED);
     });
   });
@@ -118,8 +133,13 @@ describe('ProductsWriteService', () => {
       expect(result.stateCode).toBe(PRODUCT_STATE.ARCHIVED);
       const events = await pg.db
         .select()
-        .from(productEvents)
-        .where(eq(productEvents.productId, productId));
+        .from(masterDataEvents)
+        .where(
+          and(
+            eq(masterDataEvents.entityId, productId),
+            eq(masterDataEvents.entityType, EntityType.PRODUCT),
+          ),
+        );
       expect(events).toHaveLength(1);
       expect(events[0].eventType).toBe(EventType.ARCHIVED);
     });
@@ -142,8 +162,9 @@ describe('ProductsWriteService', () => {
     });
 
     it('should unarchive to previous state based on last event', async () => {
-      await pg.db.insert(productEvents).values({
-        productId,
+      await pg.db.insert(masterDataEvents).values({
+        entityId: productId,
+        entityType: EntityType.PRODUCT,
         eventType: EventType.ARCHIVED,
         payload: { from: PRODUCT_STATE.DRAFT, to: PRODUCT_STATE.ARCHIVED },
         actor: 'admin',

@@ -13,8 +13,8 @@ export default function RulesEnginePage() {
   const tCommon = useTranslations('common');
   useDocumentTitle('Reconciliation Rules');
 
-  const [rules, setRules] = useState<any[]>([]);
-  const [glAccounts, setGlAccounts] = useState<any[]>([]);
+  const [rules, setRules] = useState<api.ReconciliationRuleResponseDto[]>([]);
+  const [glAccounts, setGlAccounts] = useState<api.GlAccountResponseDto[]>([]);
   
   const [loading, setLoading] = useState(false);
 
@@ -26,9 +26,9 @@ export default function RulesEnginePage() {
     try {
       setLoading(true);
       const accs = await api.glControllerGetAccounts();
-      setGlAccounts((accs as unknown as { data: { items: any[] } }).data?.items || (accs.data as unknown as any[]) || []);
+      setGlAccounts(accs.data || []);
       const r = await api.bankFeedsControllerGetRules();
-      setRules((r as unknown as { data: any[] }).data || []);
+      setRules(r.data || []);
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -66,7 +66,7 @@ export default function RulesEnginePage() {
     }
   };
 
-  const bankAccs = glAccounts.filter(a => a.isBankAccount);
+  const bankAccs = glAccounts.filter(a => (a as api.GlAccountResponseDto & { isBankAccount?: boolean }).isBankAccount);
 
   const columns = useMemo(() => [
     {

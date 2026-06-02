@@ -10,15 +10,14 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   products as coreProducts,
-  productEvents,
-  productSuppliers,
-  productSupplierEvents,
+  masterDataEvents,
   productUoms,
   productDefaultBins,
   productComponents,
+  productSuppliers,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import {
   PRODUCT_TRANSITIONS,
   PRODUCT_STATE,
@@ -57,8 +56,9 @@ export class ProductsWriteService {
         })
         .returning();
 
-      await tx.insert(productEvents).values({
-        productId: product.productId,
+      await emitEvent(tx as any, {
+        entityType: EntityType.PRODUCT,
+        entityId: product.productId,
         eventType: EventType.CREATED,
         payload: dto,
         actor,
@@ -113,8 +113,9 @@ export class ProductsWriteService {
           audit.changes.stateCode !== undefined &&
           Object.keys(audit.changes).length === 1
         ) {
-          await tx.insert(productEvents).values({
-            productId: id,
+          await emitEvent(tx as any, {
+            entityType: EntityType.PRODUCT,
+            entityId: id,
             eventType: EventType.STATUS_CHANGED,
             payload: {
               from: existing[0].stateCode,
@@ -123,8 +124,9 @@ export class ProductsWriteService {
             actor,
           });
         } else {
-          await tx.insert(productEvents).values({
-            productId: id,
+          await emitEvent(tx as any, {
+            entityType: EntityType.PRODUCT,
+            entityId: id,
             eventType: EventType.UPDATED,
             payload: {
               changes: audit.changes,
@@ -169,11 +171,11 @@ export class ProductsWriteService {
 
     const lastEvent = await this.db
       .select()
-      .from(productEvents)
+      .from(masterDataEvents)
       .where(
-        sql`${productEvents.productId} = ${id} AND ${productEvents.eventType} = ${EventType.ARCHIVED}`,
+        sql`${masterDataEvents.entityId} = ${id} AND ${masterDataEvents.eventType} = ${EventType.ARCHIVED}`,
       )
-      .orderBy(sql`${productEvents.createdOn} DESC`)
+      .orderBy(sql`${masterDataEvents.createdOn} DESC`)
       .limit(1);
 
     const previousState =
@@ -229,8 +231,9 @@ export class ProductsWriteService {
       .returning();
 
     const targetTx = tx || this.db;
-    await targetTx.insert(productEvents).values({
-      productId,
+    await emitEvent(targetTx as any, {
+      entityType: EntityType.PRODUCT,
+      entityId: productId,
       eventType:
         newState === PRODUCT_STATE.ARCHIVED
           ? EventType.ARCHIVED
@@ -287,8 +290,9 @@ export class ProductsWriteService {
         })
         .returning();
 
-      await tx.insert(productSupplierEvents).values({
-        productSupplierId: mapping.productSupplierId,
+      await emitEvent(tx as any, {
+        entityType: EntityType.PRODUCT_SUPPLIER,
+        entityId: mapping.productSupplierId,
         eventType: EventType.LINKED,
         payload: dto,
         actor,
@@ -316,8 +320,9 @@ export class ProductsWriteService {
         throw new NotFoundException('Supplier mapping not found');
       }
 
-      await tx.insert(productSupplierEvents).values({
-        productSupplierId: mapping.productSupplierId,
+      await emitEvent(tx as any, {
+        entityType: EntityType.PRODUCT_SUPPLIER,
+        entityId: mapping.productSupplierId,
         eventType: EventType.UNLINKED,
         payload: { stateCode: PRODUCT_STATE.ARCHIVED },
         actor,
@@ -363,8 +368,9 @@ export class ProductsWriteService {
         })
         .returning();
 
-      await tx.insert(productEvents).values({
-        productId,
+      await emitEvent(tx as any, {
+        entityType: EntityType.PRODUCT,
+        entityId: productId,
         eventType: 'uom_added',
         payload: { uomCode: dto.uomCode, ratio: dto.ratio },
         actor,
@@ -398,8 +404,9 @@ export class ProductsWriteService {
         .delete(productUoms)
         .where(eq(productUoms.productUomId, productUomId));
 
-      await tx.insert(productEvents).values({
-        productId,
+      await emitEvent(tx as any, {
+        entityType: EntityType.PRODUCT,
+        entityId: productId,
         eventType: 'uom_removed',
         payload: { uomCode: existing[0].uomCode, ratio: existing[0].ratio },
         actor,
@@ -462,8 +469,9 @@ export class ProductsWriteService {
         })
         .returning();
 
-      await tx.insert(productEvents).values({
-        productId,
+      await emitEvent(tx as any, {
+        entityType: EntityType.PRODUCT,
+        entityId: productId,
         eventType: EventType.UPDATED,
         payload: {
           action: 'linked_default_bin',
@@ -496,8 +504,9 @@ export class ProductsWriteService {
         .delete(productDefaultBins)
         .where(eq(productDefaultBins.productDefaultBinId, productDefaultBinId));
 
-      await tx.insert(productEvents).values({
-        productId: existing[0].productId,
+      await emitEvent(tx as any, {
+        entityType: EntityType.PRODUCT,
+        entityId: existing[0].productId,
         eventType: EventType.UPDATED,
         payload: { action: 'unlinked_default_bin', binId: existing[0].binId },
         actor,
@@ -587,8 +596,9 @@ export class ProductsWriteService {
         })
         .returning();
 
-      await tx.insert(productEvents).values({
-        productId,
+      await emitEvent(tx as any, {
+        entityType: EntityType.PRODUCT,
+        entityId: productId,
         eventType: EventType.UPDATED,
         payload: {
           action: 'component_added',
@@ -647,8 +657,9 @@ export class ProductsWriteService {
         .where(eq(productComponents.componentId, componentId))
         .returning();
 
-      await tx.insert(productEvents).values({
-        productId,
+      await emitEvent(tx as any, {
+        entityType: EntityType.PRODUCT,
+        entityId: productId,
         eventType: EventType.UPDATED,
         payload: { action: 'component_updated', componentId },
         actor,
@@ -682,8 +693,9 @@ export class ProductsWriteService {
         .delete(productComponents)
         .where(eq(productComponents.componentId, componentId));
 
-      await tx.insert(productEvents).values({
-        productId,
+      await emitEvent(tx as any, {
+        entityType: EntityType.PRODUCT,
+        entityId: productId,
         eventType: EventType.UPDATED,
         payload: { action: 'component_removed', componentId },
         actor,

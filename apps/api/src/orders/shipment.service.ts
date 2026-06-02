@@ -22,7 +22,7 @@ import {
   backorders,
   purchaseOrders,
   systemEvents,
-  shipmentEvents,
+  warehouseEvents,
   salesOrderPicks,
 } from '../drizzle/modbm-core-schema';
 import { AppConfigService } from '../settings/app-config.service';
@@ -38,7 +38,7 @@ import {
   getCommittedPerLine,
 } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import { evaluateLifecycleRules } from './order-lifecycle-rules';
 import { InventoryService } from '../inventory/inventory.service';
 import { GlService } from '../gl/gl.service';
@@ -225,8 +225,8 @@ export class ShipmentService {
         );
 
         await emitEvent(innerTx, {
-          aggregateType: AggregateType.SHIPMENT,
-          aggregateId: shipment.shipmentId,
+          entityType: EntityType.SHIPMENT,
+          entityId: shipment.shipmentId,
           eventType: 'shipment_created',
           payload: {
             shipmentId: shipment.shipmentId,
@@ -276,8 +276,8 @@ export class ShipmentService {
           .returning();
 
         await emitEvent(innerTx, {
-          aggregateType: AggregateType.SHIPMENT,
-          aggregateId: shipmentId,
+          entityType: EntityType.SHIPMENT,
+          entityId: shipmentId,
           eventType: 'shipment_updated',
           payload: {
             shipmentId,
@@ -334,8 +334,8 @@ export class ShipmentService {
         const eventType = EventType.STATUS_CHANGED;
 
         await emitEvent(innerTx, {
-          aggregateType: AggregateType.SHIPMENT,
-          aggregateId: shipmentId,
+          entityType: EntityType.SHIPMENT,
+          entityId: shipmentId,
           eventType,
           payload: {
             entity: 'shipment',
@@ -647,8 +647,8 @@ export class ShipmentService {
 
           // Record reversal outbox event to mathematically restore COGS dynamically
           await emitEvent(innerTx, {
-            aggregateType: AggregateType.SHIPMENT,
-            aggregateId: shipmentId,
+            entityType: EntityType.SHIPMENT,
+            entityId: shipmentId,
             eventType: EventType.STOCK_DISPATCH_REVERTED,
             payload: {
               shipmentId,
@@ -721,8 +721,8 @@ export class ShipmentService {
           .where(eq(salesOrderShipments.shipmentId, shipmentId));
 
         await emitEvent(innerTx, {
-          aggregateType: AggregateType.SHIPMENT,
-          aggregateId: shipmentId,
+          entityType: EntityType.SHIPMENT,
+          entityId: shipmentId,
           eventType: 'shipment_line_added',
           payload: {
             shipmentId,
@@ -798,8 +798,8 @@ export class ShipmentService {
           .where(eq(salesOrderShipments.shipmentId, shipmentId));
 
         await emitEvent(innerTx, {
-          aggregateType: AggregateType.SHIPMENT,
-          aggregateId: shipmentId,
+          entityType: EntityType.SHIPMENT,
+          entityId: shipmentId,
           eventType: 'shipment_line_updated',
           payload: {
             shipmentId,
@@ -846,8 +846,8 @@ export class ShipmentService {
         .where(eq(salesOrderShipments.shipmentId, shipmentId));
 
       await emitEvent(innerTx, {
-        aggregateType: AggregateType.SHIPMENT,
-        aggregateId: shipmentId,
+        entityType: EntityType.SHIPMENT,
+        entityId: shipmentId,
         eventType: 'shipment_line_removed',
         payload: {
           shipmentId,
@@ -928,17 +928,22 @@ export class ShipmentService {
 
     const events = await this.db
       .select({
-        eventId: shipmentEvents.eventId,
-        aggregateType: sql<string>`'shipment'`,
-        aggregateId: shipmentEvents.shipmentId,
-        eventType: shipmentEvents.eventType,
-        payload: shipmentEvents.payload,
-        actor: shipmentEvents.actor,
-        createdOn: shipmentEvents.createdOn,
+        eventId: warehouseEvents.eventId,
+        entityType: warehouseEvents.entityType,
+        entityId: warehouseEvents.entityId,
+        eventType: warehouseEvents.eventType,
+        payload: warehouseEvents.payload,
+        actor: warehouseEvents.actor,
+        createdOn: warehouseEvents.createdOn,
       })
-      .from(shipmentEvents)
-      .where(eq(shipmentEvents.shipmentId, shipmentId))
-      .orderBy(desc(shipmentEvents.createdOn));
+      .from(warehouseEvents)
+      .where(
+        and(
+          eq(warehouseEvents.entityType, EntityType.SHIPMENT),
+          eq(warehouseEvents.entityId, shipmentId),
+        ),
+      )
+      .orderBy(desc(warehouseEvents.createdOn));
 
     return { ...shipment, lines, events };
   }
@@ -1286,8 +1291,8 @@ export class ShipmentService {
     }
 
     await emitEvent(innerTx, {
-      aggregateType: AggregateType.SHIPMENT,
-      aggregateId: shipment.shipmentId,
+      entityType: EntityType.SHIPMENT,
+      entityId: shipment.shipmentId,
       eventType: EventType.STOCK_DISPATCHED,
       payload: {
         shipmentId: shipment.shipmentId,
@@ -1328,17 +1333,17 @@ export class ShipmentService {
       .set({ stateCode: newState as any, modifiedOn: new Date() })
       .where(eq(salesOrderPicks.pickId, pickId));
 
-    await emitEvent(tx, {
-      aggregateType: AggregateType.SALES_ORDER,
-      aggregateId: existing.salesOrderId,
-      eventType: EventType.STATUS_CHANGED,
-      payload: {
-        entity: 'pick',
+    if (newState === SALES_ORDER_PICK_STATE.CANCELLED) {
+      await emitEvent(tx, {
+        entityType: EntityType.WAREHOUSE,
         entityId: pickId,
-        from: existing.stateCode,
-        to: newState,
-      },
-      actor,
-    });
+        eventType: EventType.PICK_CANCELLED,
+        payload: {
+          pickId,
+          salesOrderId: existing.salesOrderId,
+        },
+        actor,
+      });
+    }
   }
 }

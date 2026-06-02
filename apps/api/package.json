@@ -23,7 +23,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest",
     "test:e2e": "tsx test/utils/provision-e2e-db.ts && cross-env USE_PGLITE=false POSTGRES_DB=modbm_e2e_test jest --config ./test/jest-e2e.json --forceExit",
-    "test:unit:pglite": "cross-env USE_PGLITE=true tsx src/test-utils/generate-snapshot.ts && cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --max-workers=2",
+    "test:unit:pglite": "cross-env USE_PGLITE=true tsx src/test-utils/generate-snapshot.ts && cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest",
     "test:pglite": "npm run lint && npm run test:unit:pglite",
     "test:e2e:fast": "cross-env USE_PGLITE=true tsx src/test-utils/generate-snapshot.ts && cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=8192\" jest --config ./test/jest-e2e.json --forceExit",
     "seed:coa": "tsx src/scripts/seed-coa.ts",
@@ -105,7 +105,12 @@
     "testTimeout": 30000,
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)s$": [
+        "ts-jest",
+        {
+          "isolatedModules": true
+        }
+      ]
     },
     "collectCoverageFrom": [
       "**/*.service.ts",

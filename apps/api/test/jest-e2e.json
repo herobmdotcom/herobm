@@ -5,7 +5,12 @@
   "testRegex": ".e2e-spec.ts$",
   "maxWorkers": 1,
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "isolatedModules": true
+      }
+    ]
   },
   "transformIgnorePatterns": [
     "node_modules/(?!(uuid)/)"

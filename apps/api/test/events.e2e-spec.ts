@@ -61,7 +61,11 @@ describe('Events (e2e)', () => {
       receivedPayload = payload;
     });
 
-    expressApp.post('/webhook', express.json(), receiver.expressMiddleware());
+    expressApp.post(
+      '/webhook',
+      express.raw({ type: 'application/json' }),
+      receiver.expressMiddleware(),
+    );
     expressServer = expressApp.listen(4005);
   });
 
@@ -94,23 +98,24 @@ describe('Events (e2e)', () => {
       .where(eq(outbox.outboxId, res.body.outboxId));
     expect(events.length).toBe(1);
 
-    // 3. Simulate Worker Processing
     const mockJob = {
       data: {
         eventId: events[0].outboxId,
         type: events[0].eventType,
+        entityId: events[0].entityId,
+        entityType: events[0].entityType,
+        createdOn: events[0].createdOn,
         payload: events[0].payload,
       },
     };
-    const mockExtClient = {};
 
-    await processEvent(mockJob as any, mockExtClient, db);
+    await processEvent(mockJob as any, db);
 
     // Give the async fetch inside processEvent a tiny moment to complete and hit our Express server
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     // 4. Verify WebhookReceiver successfully handled it
     expect(receivedPayload).toBeDefined();
-    expect(receivedPayload.message).toBe('hello world');
+    expect(receivedPayload.payload.message).toBe('hello world');
   });
 });

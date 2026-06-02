@@ -64,11 +64,11 @@ beforeAll(async () => {
               DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r_so.sales_order_id;
               DELETE FROM modbm_core.sales_order_picks WHERE sales_order_id = r_so.sales_order_id;
               DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r_so.sales_order_id);
-              DELETE FROM modbm_core.shipment_events WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r_so.sales_order_id);
+              DELETE FROM modbm_core.warehouse_events WHERE entity_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r_so.sales_order_id);
               DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r_so.sales_order_id;
 
-              DELETE FROM modbm_core.outbox WHERE aggregate_id = r_so.sales_order_id;
-              DELETE FROM modbm_core.order_events WHERE sales_order_id = r_so.sales_order_id;
+              DELETE FROM modbm_core.outbox WHERE entity_id = r_so.sales_order_id;
+              DELETE FROM modbm_core.sales_events WHERE entity_id = r_so.sales_order_id;
               DELETE FROM modbm_core.backorders WHERE sales_order_id = r_so.sales_order_id;
               DELETE FROM modbm_core.sales_order_lines WHERE sales_order_id = r_so.sales_order_id;
               DELETE FROM modbm_core.sales_orders WHERE sales_order_id = r_so.sales_order_id;
@@ -93,8 +93,8 @@ beforeAll(async () => {
 
               DELETE FROM modbm_core.goods_received_lines WHERE goods_received_id IN (SELECT goods_received_id FROM modbm_core.goods_received WHERE vendor_id = r_po.vendor_id);
               DELETE FROM modbm_core.goods_received WHERE vendor_id = r_po.vendor_id;
-              DELETE FROM modbm_core.outbox WHERE aggregate_id = r_po.purchase_order_id;
-              DELETE FROM modbm_core.purchase_order_events WHERE purchase_order_id = r_po.purchase_order_id;
+              DELETE FROM modbm_core.outbox WHERE entity_id = r_po.purchase_order_id;
+              DELETE FROM modbm_core.procurement_events WHERE entity_id = r_po.purchase_order_id;
               DELETE FROM modbm_core.purchase_order_lines WHERE purchase_order_id = r_po.purchase_order_id;
               DELETE FROM modbm_core.purchase_orders WHERE purchase_order_id = r_po.purchase_order_id;
           END LOOP;

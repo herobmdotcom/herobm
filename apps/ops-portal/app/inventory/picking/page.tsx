@@ -113,7 +113,7 @@ export default function PickingPage() {
 
         api.orderPickingControllerGetPickingQueue(params)
             .then(data => {
-                setPendingOrders(((data as unknown as { data: any[] }).data || data) as unknown as UnifiedOrder[]);
+                setPendingOrders(data.data as unknown as UnifiedOrder[]);
             })
             .catch(err => reportError(err, 'Failed to load pending orders'))
             .finally(() => setLoadingOrders(false));

@@ -15,7 +15,7 @@ import {
   purchaseOrderReturnLines,
   purchaseOrderReturnShipments,
   purchaseOrderReturnShipmentLines,
-  purchaseOrderEvents,
+  procurementEvents,
   bins,
   zones,
   products as coreProducts,
@@ -23,7 +23,7 @@ import {
   supplierGroups,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import { InventoryService } from '../inventory/inventory.service';
 import { CreatePurchaseReturnDto } from './dto';
 import {
@@ -142,11 +142,12 @@ export class PurchaseReturnsService {
         await tx.insert(purchaseOrderReturnLines).values(lineValues);
       }
 
-      await tx.insert(purchaseOrderEvents).values({
-        purchaseOrderId,
+      await emitEvent(tx as any, {
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: purchaseOrderId,
         eventType: EventType.RETURN_CREATED,
-        actor,
         payload: { returnId: ret.returnId, returnNumber },
+        actor,
       });
 
       return ret;
@@ -220,8 +221,8 @@ export class PurchaseReturnsService {
       );
 
       await emitEvent(tx as any, {
-        aggregateType: AggregateType.PURCHASE_ORDER,
-        aggregateId: po.purchaseOrderId,
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: po.purchaseOrderId,
         eventType: EventType.STATUS_CHANGED,
         payload: {
           entity: 'return',
@@ -438,8 +439,8 @@ export class PurchaseReturnsService {
       );
 
       await emitEvent(tx as any, {
-        aggregateType: AggregateType.PURCHASE_ORDER,
-        aggregateId: po.purchaseOrderId,
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: po.purchaseOrderId,
         eventType: EventType.STATUS_CHANGED,
         payload: {
           entity: 'return',

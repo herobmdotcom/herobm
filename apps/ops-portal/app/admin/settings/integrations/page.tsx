@@ -271,19 +271,19 @@ export default function IntegrationsSettingsPage() {
       <div className="flex flex-col gap-6">
         {/* Routing Rules Section */}
         <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">route</span>
-              {tInt('routingRules')}
-            </h3>
-          </div>
           
           <div className="grid grid-cols-1 gap-8">
             {/* Tax Engine Rules */}
             <div>
               <InlineSettingsTable<TaxRule>
-                title="Tax Engines"
+                title={
+                  <h3 className="section-heading !mb-0 flex items-center gap-2">
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    <span className="material-symbols-outlined">account_balance</span>
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    <span>Tax Engines</span>
+                  </h3>
+                }
                 columns={[
                   { 
                     key: 'country', 
@@ -326,7 +326,14 @@ export default function IntegrationsSettingsPage() {
             {/* Enrichment Rules */}
             <div>
               <InlineSettingsTable<EnrichmentRule>
-                title="Data Enrichment"
+                title={
+                  <h3 className="section-heading !mb-0 flex items-center gap-2">
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    <span className="material-symbols-outlined">data_exploration</span>
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    <span>Data Enrichment</span>
+                  </h3>
+                }
                 columns={[
                   { 
                     key: 'field', 

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { debounce } from 'lodash';
 import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 
@@ -21,6 +20,14 @@ interface POSearchInputProps {
   disabled?: boolean;
 }
 
+function useDebounce<T extends unknown[]>(fn: (...args: T) => void, delay: number) {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  return useCallback((...args: T) => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => fn(...args), delay);
+  }, [fn, delay]);
+}
+
 export default function POSearchInput({
   vendorId,
   onSelect,
@@ -37,17 +44,23 @@ export default function POSearchInput({
   
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  const searchPOs = useCallback(async (term: string, vId?: string) => {
     setLoading(true);
-    api.purchaseOrdersControllerFindAll({ search: search || undefined, vendorId, limit: 20 } as any)
-      .then((res) => {
-        setResults(((res.data as any)?.data || res.data || []) );
-      })
-      .catch(() => {
-        setResults([]);
-      })
-      .finally(() => setLoading(false));
-  }, [vendorId, search]);
+    try {
+      const res = await api.purchaseOrdersControllerFindAll({ search: term || undefined, vendorId: vId, limit: 20 } as any);
+      setResults(((res.data as any)?.data || res.data || []));
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const debouncedSearch = useDebounce((term: string, vId?: string) => searchPOs(term, vId), 300);
+
+  useEffect(() => {
+    debouncedSearch(search, vendorId);
+  }, [search, vendorId, debouncedSearch]);
 
   const updateDropdownPosition = () => {
     if (inputRef.current) {

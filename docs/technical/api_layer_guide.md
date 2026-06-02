@@ -337,7 +337,7 @@ Run against the real Postgres database, proving data flows from dbt marts throug
 ```bash
 cd apps/api && npm test          # Unit tests
 cd apps/api && npm run test:e2e  # E2E (needs Postgres running with populated marts)
-make test-infra                  # Smoke tests (needs full Docker stack)
+make test-structural             # Infrastructure Structural tests
 ```
 
 ## How to run

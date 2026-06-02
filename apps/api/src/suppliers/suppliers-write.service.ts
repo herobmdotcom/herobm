@@ -10,11 +10,11 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   suppliers as coreSuppliers,
-  supplierEvents,
+  masterDataEvents,
   supplierExpiries,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import {
   SUPPLIER_TRANSITIONS,
   SUPPLIER_STATE,
@@ -53,8 +53,9 @@ export class SuppliersWriteService {
         })
         .returning();
 
-      await tx.insert(supplierEvents).values({
-        vendorId: supplier.vendorId,
+      await emitEvent(tx as any, {
+        entityType: EntityType.SUPPLIER,
+        entityId: supplier.vendorId,
         eventType: EventType.CREATED,
         payload: dto,
         actor,
@@ -100,8 +101,9 @@ export class SuppliersWriteService {
           audit.changes.stateCode !== undefined &&
           Object.keys(audit.changes).length === 1
         ) {
-          await tx.insert(supplierEvents).values({
-            vendorId: id,
+          await emitEvent(tx as any, {
+            entityType: EntityType.SUPPLIER,
+            entityId: id,
             eventType: EventType.STATUS_CHANGED,
             payload: {
               from: existing[0].stateCode,
@@ -110,8 +112,9 @@ export class SuppliersWriteService {
             actor,
           });
         } else {
-          await tx.insert(supplierEvents).values({
-            vendorId: id,
+          await emitEvent(tx as any, {
+            entityType: EntityType.SUPPLIER,
+            entityId: id,
             eventType: EventType.UPDATED,
             payload: {
               changes: audit.changes,
@@ -156,11 +159,11 @@ export class SuppliersWriteService {
 
     const lastEvent = await this.db
       .select()
-      .from(supplierEvents)
+      .from(masterDataEvents)
       .where(
-        sql`${supplierEvents.vendorId} = ${id} AND ${supplierEvents.eventType} = ${EventType.ARCHIVED}`,
+        sql`${masterDataEvents.entityId} = ${id} AND ${masterDataEvents.entityType} = ${EntityType.SUPPLIER} AND ${masterDataEvents.eventType} = ${EventType.ARCHIVED}`,
       )
-      .orderBy(sql`${supplierEvents.createdOn} DESC`)
+      .orderBy(sql`${masterDataEvents.createdOn} DESC`)
       .limit(1);
 
     const previousState =
@@ -216,8 +219,9 @@ export class SuppliersWriteService {
       .returning();
 
     const targetTx = tx || this.db;
-    await targetTx.insert(supplierEvents).values({
-      vendorId,
+    await emitEvent(targetTx as any, {
+      entityType: EntityType.SUPPLIER,
+      entityId: vendorId,
       eventType:
         newState === SUPPLIER_STATE.ARCHIVED
           ? EventType.ARCHIVED
@@ -257,8 +261,9 @@ export class SuppliersWriteService {
       })
       .returning();
 
-    await this.db.insert(supplierEvents).values({
-      vendorId,
+    await emitEvent(this.db as any, {
+      entityType: EntityType.SUPPLIER,
+      entityId: vendorId,
       eventType: EventType.ADDED_EXPIRY,
       payload: { expiryType: dto.expiryType },
       actor,
@@ -293,8 +298,9 @@ export class SuppliersWriteService {
       .where(eq(supplierExpiries.expiryId, expiryId))
       .returning();
 
-    await this.db.insert(supplierEvents).values({
-      vendorId,
+    await emitEvent(this.db as any, {
+      entityType: EntityType.SUPPLIER,
+      entityId: vendorId,
       eventType: EventType.UPDATED_EXPIRY,
       payload: { expiryId },
       actor,
@@ -318,8 +324,9 @@ export class SuppliersWriteService {
       .delete(supplierExpiries)
       .where(eq(supplierExpiries.expiryId, expiryId));
 
-    await this.db.insert(supplierEvents).values({
-      vendorId,
+    await emitEvent(this.db as any, {
+      entityType: EntityType.SUPPLIER,
+      entityId: vendorId,
       eventType: EventType.DELETED_EXPIRY,
       payload: { type },
       actor,

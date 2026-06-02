@@ -219,7 +219,7 @@ export async function apiMutate<T = unknown>(
 }
 
 /**
- * Report a client-side error to the PLG stack via the telemetry endpoint.
+ * Report a client-side error to the centralized telemetry endpoint.
  * Also logs to console for local dev visibility.
  * Fire-and-forget — never throws or blocks the caller.
  */

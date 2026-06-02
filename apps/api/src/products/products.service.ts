@@ -13,7 +13,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   products as coreProducts,
-  productEvents,
+  masterDataEvents,
   productGroups,
   productUoms,
   productDefaultBins,
@@ -153,9 +153,9 @@ export class ProductsService {
     if (rows.length > 0) {
       const events = await db
         .select()
-        .from(productEvents)
-        .where(eq(productEvents.productId, id))
-        .orderBy(productEvents.createdOn);
+        .from(masterDataEvents)
+        .where(eq(masterDataEvents.entityId, id))
+        .orderBy(masterDataEvents.createdOn);
 
       const uoms = await db
         .select()

@@ -22,7 +22,7 @@ import {
   customerGroups,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { OrganizationService } from '../settings/organization.service';
@@ -487,8 +487,8 @@ export class SalesCreditNoteService {
 
       // 9. Outbox event
       await emitEvent(innerTx as any, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: ret.salesOrderId,
+        entityType: EntityType.SALES_ORDER,
+        entityId: ret.salesOrderId,
         eventType: EventType.CREDIT_NOTE_POSTED,
         payload: {
           creditNoteId: creditNote.creditNoteId,

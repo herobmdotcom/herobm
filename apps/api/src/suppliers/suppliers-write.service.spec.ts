@@ -4,7 +4,7 @@ import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { suppliers, supplierEvents } from '../drizzle/modbm-core-schema';
+import { suppliers, masterDataEvents } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
 
 describe('SuppliersWriteService', () => {
@@ -26,7 +26,7 @@ describe('SuppliersWriteService', () => {
     service = module.get<SuppliersWriteService>(SuppliersWriteService);
 
     // Clean transactional data
-    await pg.db.delete(supplierEvents);
+    await pg.db.delete(masterDataEvents);
     await pg.db.delete(suppliers);
   });
 

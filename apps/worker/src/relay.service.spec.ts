@@ -57,7 +57,14 @@ describe('relay.service', () => {
 
     const createJob = (type: string, payload: any): Job => {
       return {
-        data: { eventId: 1, type, payload }
+        data: { 
+          eventId: 1, 
+          type, 
+          aggregateId: 'agg-1',
+          aggregateType: 'sales_order',
+          createdOn: new Date('2026-06-02T12:00:00Z'),
+          payload 
+        }
       } as unknown as Job;
     };
 

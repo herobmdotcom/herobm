@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { salesInvoices, purchaseInvoices } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import { SALES_INVOICE_STATE } from '@modbm/shared';
 
 export interface InvoiceLifecycleTrigger {
@@ -90,16 +90,14 @@ export const autoTransitionInvoiceBasedOnOutstandingAmount: InvoiceLifecycleRule
         .set({ stateCode: targetState, modifiedOn: new Date() })
         .where(eq(pkColumn, invoiceId));
 
-      const aggType =
+      const entityType =
         invoiceType === 'sales'
-          ? AggregateType.SALES_INVOICE
-          : AggregateType.PURCHASE_INVOICE;
-      // In ModBM, we don't have an INVOICE aggregate type yet, so we will use the system aggregate type for invoice status changes or omit it.
-      // Let's use SYSTEM for now as a fallback, or if we want to add an INVOICE aggregate type later.
+          ? EntityType.SALES_INVOICE
+          : EntityType.PURCHASE_INVOICE;
 
       await emitEvent(db as any, {
-        aggregateType: aggType,
-        aggregateId: invoiceId,
+        entityType,
+        entityId: invoiceId,
         eventType: EventType.STATUS_CHANGED,
         payload: {
           isAutomated: true,

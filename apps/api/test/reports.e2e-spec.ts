@@ -192,9 +192,9 @@ describe('Dynamic Reports Engine (e2e)', () => {
         });
 
       expect(res.status).toBe(201);
-      expect(res.body.data.id).toBeDefined();
-      expect(res.body.data.contexts).toContain('sales-order');
-      testReportId = res.body.data.id;
+      expect(res.body.id).toBeDefined();
+      expect(res.body.contexts).toContain('sales-order');
+      testReportId = res.body.id;
     });
 
     it('GET /api/reports — lists templates', async () => {
@@ -203,8 +203,8 @@ describe('Dynamic Reports Engine (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body.data)).toBe(true);
-      expect(res.body.data.some((r: any) => r.id === testReportId)).toBe(true);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.some((r: any) => r.id === testReportId)).toBe(true);
     });
 
     it('GET /api/reports/:id — retrieves a specific template', async () => {
@@ -213,7 +213,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.data.name).toBe('E2E Test Template');
+      expect(res.body.name).toBe('E2E Test Template');
     });
 
     it('PATCH /api/reports/:id — updates a template', async () => {
@@ -227,9 +227,9 @@ describe('Dynamic Reports Engine (e2e)', () => {
         });
 
       expect(res.status).toBe(200);
-      expect(res.body.data.name).toBe('E2E Test Template Updated');
-      expect(res.body.data.template).toContain('Updated E2E Test');
-      expect(res.body.data.contexts).toContain('purchase-order');
+      expect(res.body.name).toBe('E2E Test Template Updated');
+      expect(res.body.template).toContain('Updated E2E Test');
+      expect(res.body.contexts).toContain('purchase-order');
     });
 
     it('AuthZ: viewer cannot CREATE templates (403 Forbidden)', async () => {
@@ -268,7 +268,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.data.success).toBe(true);
+      expect(res.body.success).toBe(true);
 
       // Verify it's gone
       const check = await request(app.getHttpServer())
@@ -287,7 +287,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
           slug: testSlug,
           template: '= Hello',
         });
-      const rid = newReport.body.data.id;
+      const rid = newReport.body.id;
 
       // Update assignment
       await request(app.getHttpServer())
@@ -302,7 +302,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const invoiceAssign = res.body.data.find(
+      const invoiceAssign = res.body.find(
         (a: any) => a.hookSlug === 'sales-invoice',
       );
       expect(invoiceAssign.reportId).toBe(rid);
@@ -341,10 +341,10 @@ describe('Dynamic Reports Engine (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body.data)).toBe(true);
-      expect(
-        res.body.data.some((h: any) => h.contextSlug === 'sales-order'),
-      ).toBe(true);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.some((h: any) => h.contextSlug === 'sales-order')).toBe(
+        true,
+      );
     });
   });
 });

@@ -12,7 +12,7 @@ Drizzle handles data definition (DDL) using a strictly ordered ledger. When you 
    - **Do NOT manually rename it.**
    - **Correct Remediation:** Delete the generated `.sql` file, delete the corresponding snapshot `.json` file in `apps/api/migrations/meta/`, revert the entry in `meta/_journal.json`, and run the `generate` command again with the `--name` flag.
 3. **Never modify the generated DDL.** If Drizzle generates a `CREATE TABLE` statement, do not manually wrap it in a `DO $$` or add `IF NOT EXISTS`. Drizzle strictly assumes its generated code applies exactly once to any fresh database. If you manually tweak Drizzle's output to make it "idempotent," you mask deeper sequencing errors.
-4. **Never allow duplicate prefixes.** If a branch merge results in two files with the same prefix (e.g., `0007_feature_a.sql` and `0007_feature_b.sql`), the Drizzle snapshot ledger is instantly corrupted. You must consolidate these files manually or request a team squash. Our infrastructure suite (`make test-structural-local`) actively prevents duplicate prefixes from entering `main`.
+4. **Never allow duplicate prefixes.** If a branch merge results in two files with the same prefix (e.g., `0007_feature_a.sql` and `0007_feature_b.sql`), the Drizzle snapshot ledger is instantly corrupted. You must consolidate these files manually or request a team squash. Our infrastructure suite (`make test-structural`) actively prevents duplicate prefixes from entering `main`.
 
 ## 2. Handling Custom Logic (Views, Triggers, Functions)
 

@@ -10,11 +10,11 @@ import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  customerEvents,
+  masterDataEvents,
   customers as coreAccounts,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import {
   CUSTOMER_TRANSITIONS,
   CUSTOMER_STATE,
@@ -99,8 +99,9 @@ export class AccountsWriteService {
           })
           .returning();
 
-        await tx.insert(customerEvents).values({
-          customerId: customer.customerId,
+        await emitEvent(tx as any, {
+          entityType: EntityType.CUSTOMER,
+          entityId: customer.customerId,
           eventType: 'created',
           payload: dto,
           actor,
@@ -192,8 +193,9 @@ export class AccountsWriteService {
         const isStatusOnly =
           changedKeys.length === 1 && changedKeys[0] === 'stateCode';
 
-        await tx.insert(customerEvents).values({
-          customerId: id,
+        await emitEvent(tx as any, {
+          entityType: EntityType.CUSTOMER,
+          entityId: id,
           eventType: isStatusOnly ? 'status_changed' : 'updated',
           payload: isStatusOnly
             ? {
@@ -248,11 +250,11 @@ export class AccountsWriteService {
 
     const lastEvent = await this.db
       .select()
-      .from(customerEvents)
+      .from(masterDataEvents)
       .where(
-        sql`${customerEvents.customerId} = ${id} AND ${customerEvents.eventType} = ${EventType.ARCHIVED}`,
+        sql`${masterDataEvents.entityId} = ${id} AND ${masterDataEvents.eventType} = ${EventType.ARCHIVED}`,
       )
-      .orderBy(sql`${customerEvents.createdOn} DESC`)
+      .orderBy(sql`${masterDataEvents.createdOn} DESC`)
       .limit(1);
 
     const previousState =
@@ -312,8 +314,9 @@ export class AccountsWriteService {
       .returning();
 
     if (tx) {
-      await tx.insert(customerEvents).values({
-        customerId,
+      await emitEvent(tx, {
+        entityType: EntityType.CUSTOMER,
+        entityId: customerId,
         eventType:
           newState === CUSTOMER_STATE.ARCHIVED
             ? EventType.ARCHIVED
@@ -325,8 +328,9 @@ export class AccountsWriteService {
         actor,
       });
     } else {
-      await this.db.insert(customerEvents).values({
-        customerId,
+      await emitEvent(this.db as any, {
+        entityType: EntityType.CUSTOMER,
+        entityId: customerId,
         eventType:
           newState === CUSTOMER_STATE.ARCHIVED
             ? EventType.ARCHIVED

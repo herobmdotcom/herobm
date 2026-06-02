@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import { Queue, Worker, Job } from 'bullmq';
-import { MockExternalClient } from './mock-external.client';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { outbox, modbmCore } from './schema';
@@ -36,8 +35,7 @@ const PORT = 9091;
 const pgClient = postgres(`postgres://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${PG_DB}`);
 const db = drizzle(pgClient, { schema: { modbmCore, outbox } });
 
-// Setup Mock Client
-const extClient = new MockExternalClient();
+// Setup Mock Client (Removed)
 
 // Setup BullMQ
 const connection = {
@@ -79,7 +77,7 @@ export { eventsProcessedCounter, eventsFailedCounter, journalEntriesCounter };
 import { pollOutbox, processEvent } from './relay.service';
 
 // Start Worker
-const worker = new Worker('external-sync', (job) => processEvent(job, extClient, db), { connection, concurrency: 5 });
+const worker = new Worker('external-sync', (job) => processEvent(job, db), { connection, concurrency: 5 });
 
 worker.on('failed', (job, err) => {
   logger.error({ jobId: job?.id, err: err.message }, 'BullMQ job failed');

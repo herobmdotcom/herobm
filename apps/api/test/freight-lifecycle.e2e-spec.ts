@@ -275,13 +275,13 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    expect(invoicesRes.body.data.length).toBeGreaterThan(0);
-    const invoiceLineCount = invoicesRes.body.data[0].lines?.length || 0;
+    expect(invoicesRes.body.length).toBeGreaterThan(0);
+    const invoiceLineCount = invoicesRes.body[0].lines?.length || 0;
 
     if (invoiceLineCount !== 2) {
       console.log(
         'Invoice data:',
-        JSON.stringify(invoicesRes.body.data[0], null, 2),
+        JSON.stringify(invoicesRes.body[0], null, 2),
       );
     }
 

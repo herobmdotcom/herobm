@@ -8,7 +8,7 @@ import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType } from '../common/event-types';
+import { EntityType } from '../common/event-types';
 import {
   locations,
   salesOrderReturns,

@@ -161,7 +161,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    const backorder = openDemandsRes.body.data.find(
+    const backorder = openDemandsRes.body.find(
       (d: any) => d.salesOrderId === salesOrderId && d.productId === productId,
     );
     expect(backorder).toBeDefined();
@@ -230,7 +230,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    const finalBackorder = finalAllocRes.body.data.find(
+    const finalBackorder = finalAllocRes.body.find(
       (d: any) => d.id === backorderId,
     );
 
@@ -295,7 +295,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    const backorder = openDemandsRes.body.data.find(
+    const backorder = openDemandsRes.body.find(
       (d: any) => d.productId === pProductId,
     );
     const backorderId = backorder.id;
@@ -349,10 +349,10 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    const receivedPart = finalAllocRes.body.data.find(
+    const receivedPart = finalAllocRes.body.find(
       (d: any) => d.stateCode === 'received_reserved',
     );
-    const awaitingPart = finalAllocRes.body.data.find(
+    const awaitingPart = finalAllocRes.body.find(
       (d: any) => d.stateCode === 'awaiting_receipt',
     );
 

@@ -172,6 +172,63 @@
       }
     },
     "developers": {
+      "webhooksApi": {
+        "title": "Docs: Webhooks",
+        "header": {
+          "title": "Webhooks Reference",
+          "subtitle": "Documentation for webhook payloads and verification"
+        },
+        "configuration": {
+          "title": "Configuration",
+          "description": "To create a webhook, go to <a>Configuration</a>. Click <i>+ Add Webhook</i>, specify your Target URL, and select the events you wish to subscribe to."
+        },
+        "envelopeFormat": {
+          "title": "Webhook Envelope Format",
+          "description": "Every webhook dispatched by ModBM follows a standard envelope structure. This guarantees that consumers always receive the core identifying information (the entity ID and type) regardless of the event that occurred."
+        },
+        "eventTypes": {
+          "title": "Event Types",
+          "description": "The <code>eventType</code> is formed by combining the <code>entityType</code> and the action (e.g., <code>sales_order.created</code>).",
+          "lifecycle": {
+            "title": "Lifecycle Events",
+            "description": "Fired during basic CRUD and visibility operations."
+          },
+          "stateMachine": {
+            "title": "State Machine Events",
+            "description": "Fired when an entity progresses through its workflow (e.g., Draft to Confirmed)."
+          },
+          "business": {
+            "title": "Business Operations",
+            "description": "Fired during specific business actions like physical inventory movements, payment allocations, or ledger postings."
+          }
+        },
+        "entityTypes": {
+          "title": "Entity Types",
+          "description": "The <code>entityType</code> field in the payload envelope indicates the domain object that triggered the event. ModBM supports the following core entity types:",
+          "sales": "Sales",
+          "procurement": "Procurement",
+          "masterData": "Master Data",
+          "warehouse": "Warehouse",
+          "financials": "Financials"
+        },
+        "matrix": {
+          "title": "Supported Events Matrix",
+          "entityType": "Entity Type",
+          "supportedEvents": "Supported Event Actions"
+        },
+        "stateChangeReference": {
+          "title": "State Changes Reference",
+          "description": "When subscribing to <code>status_changed</code> events, the payload will contain the new status of the entity. The possible states for each entity type are:"
+        },
+        "securityVerification": {
+          "title": "Security Verification",
+          "description": "All requests contain the <code>x-modbm-signature</code> header. Calculate the HMAC-SHA256 signature using your Webhook Secret and the raw request body to verify authenticity."
+        },
+        "consumingSdk": {
+          "title": "Consuming Webhooks (ModBM SDK)",
+          "description": "The officially recommended way to consume webhooks and verify signatures is using our Node.js SDK. It automatically handles HMAC verification and parses the standard envelope for you."
+        }
+      },
       "allEvents": "* (All Events)",
       "addWebhook": "Add Webhook",
       "apiKeys": "API Keys",
@@ -1130,27 +1187,63 @@
       "settings": "Timeline Settings",
       "title": "Recent Events",
       "types": {
-        "account_created": "Customer created",
-        "payment_allocated": "Payment allocated",
-        "payment_cancelled": "Payment cancelled",
-        "payment_submitted": "Payment submitted",
-        "po_created": "Purchase Order created",
-        "po_invoiced": "Purchase Order invoiced",
-        "po_ordered": "Purchase Order ordered",
-        "po_over_received": "PO Over-received Warning",
-        "po_price_discrepancy": "PO Price Discrepancy Warning",
-        "po_received": "Purchase Order received",
-        "so_backorders": "SO Backorders allocated",
-        "so_confirmed": "Sales Order confirmed",
-        "so_created": "Sales Order created",
-        "so_credit_note": "SO Credit Note posted",
-        "so_dispatched": "Sales Order dispatched",
-        "so_invoiced": "Sales Order invoiced",
-        "so_shipped": "Sales Order shipped",
-        "stock_adjusted": "Stock adjusted",
-        "stock_received": "Stock received",
-        "supplier_created": "Supplier created",
-        "transfer_created": "Transfer Order created"
+        "sales_order": {
+          "created": "Sales Order created",
+          "status_changed": "Sales Order status changed",
+          "deleted": "Sales Order deleted"
+        },
+        "sales_invoice": {
+          "created": "Sales Invoice created",
+          "status_changed": "Sales Invoice status changed"
+        },
+        "sales_return": {
+          "created": "Sales Return created",
+          "status_changed": "Sales Return status changed"
+        },
+        "purchase_order": {
+          "created": "Purchase Order created",
+          "status_changed": "Purchase Order status changed",
+          "deleted": "Purchase Order deleted"
+        },
+        "purchase_invoice": {
+          "created": "Purchase Invoice created",
+          "status_changed": "Purchase Invoice status changed"
+        },
+        "purchase_return": {
+          "created": "Purchase Return created",
+          "status_changed": "Purchase Return status changed"
+        },
+        "customer": {
+          "created": "Customer created",
+          "updated": "Customer updated"
+        },
+        "supplier": {
+          "created": "Supplier created",
+          "updated": "Supplier updated"
+        },
+        "warehouse": {
+          "receipt_created": "Receipt created",
+          "receipt_status_changed": "Receipt status changed",
+          "goods_received": "Goods received",
+          "shipment_created": "Shipment created",
+          "shipment_status_changed": "Shipment status changed",
+          "shipment_dispatched": "Shipment dispatched"
+        },
+        "inventory_ledger": {
+          "adjustment_processed": "Stock adjusted"
+        },
+        "transfer_order": {
+          "created": "Transfer Order created",
+          "status_changed": "Transfer Order status changed"
+        },
+        "payment": {
+          "submitted": "Payment submitted",
+          "allocated": "Payment allocated",
+          "cancelled": "Payment cancelled"
+        },
+        "general_ledger": {
+          "entry_posted": "Journal entry posted"
+        }
       }
     },
     "title": "Dashboard"

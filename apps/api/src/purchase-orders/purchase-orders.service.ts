@@ -11,7 +11,7 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   purchaseOrders,
   purchaseOrderLineItems,
-  purchaseOrderEvents,
+  procurementEvents,
   outbox,
   suppliers as coreSuppliers,
   products,
@@ -32,7 +32,7 @@ import {
 } from '../common/pagination';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import {
   PURCHASE_ORDER_STATE,
   PURCHASE_ORDER_TRANSITIONS,
@@ -226,8 +226,8 @@ export class PurchaseOrdersService {
       }
 
       await emitEvent(tx, {
-        aggregateType: AggregateType.PURCHASE_ORDER,
-        aggregateId: order.purchaseOrderId,
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: order.purchaseOrderId,
         eventType: EventType.CREATED,
         payload: {
           orderNumber: order.orderNumber,
@@ -491,9 +491,9 @@ export class PurchaseOrdersService {
 
     const events = await tx
       .select()
-      .from(purchaseOrderEvents)
-      .where(eq(purchaseOrderEvents.purchaseOrderId, id))
-      .orderBy(purchaseOrderEvents.createdOn);
+      .from(procurementEvents)
+      .where(eq(procurementEvents.entityId, id))
+      .orderBy(procurementEvents.createdOn);
 
     // Alias PO-specific fields to sales-order field names so the shared
     // frontend components work without fork. The canonical PO fields are
@@ -731,8 +731,8 @@ export class PurchaseOrdersService {
       });
 
       await emitEvent(tx, {
-        aggregateType: AggregateType.PURCHASE_ORDER,
-        aggregateId: orderId,
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: orderId,
         eventType: EventType.LINE_ADDED,
         payload: {
           productId: lineDto.productId,
@@ -825,8 +825,8 @@ export class PurchaseOrdersService {
         .where(eq(purchaseOrderLineItems.purchaseOrderLineId, lineId));
 
       await emitEvent(tx, {
-        aggregateType: AggregateType.PURCHASE_ORDER,
-        aggregateId: orderId,
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: orderId,
         eventType: EventType.LINE_UPDATED,
         payload: {
           lineId,
@@ -864,8 +864,8 @@ export class PurchaseOrdersService {
         .where(eq(purchaseOrderLineItems.purchaseOrderLineId, lineId));
 
       await emitEvent(tx, {
-        aggregateType: AggregateType.PURCHASE_ORDER,
-        aggregateId: orderId,
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: orderId,
         eventType: EventType.LINE_REMOVED,
         payload: { lineId },
         actor,
@@ -943,9 +943,9 @@ export class PurchaseOrdersService {
 
         const audit = calculateAuditTrail(updateDto, existing, AuditMode.DIFF);
         if (audit.hasChanges) {
-          await emitEvent(tx, {
-            aggregateType: AggregateType.PURCHASE_ORDER,
-            aggregateId: id,
+          await emitEvent(tx as any, {
+            entityType: EntityType.PURCHASE_ORDER,
+            entityId: id,
             eventType: EventType.UPDATED,
             payload: {
               changes: audit.changes,
@@ -1155,8 +1155,8 @@ export class PurchaseOrdersService {
       .returning();
 
     await emitEvent(db as any, {
-      aggregateType: AggregateType.PURCHASE_ORDER,
-      aggregateId: purchaseOrderId,
+      entityType: EntityType.PURCHASE_ORDER,
+      entityId: purchaseOrderId,
       eventType: EventType.STATUS_CHANGED,
       payload: {
         entity: 'purchase_order',

@@ -248,34 +248,6 @@ export const salesOrderPicks = modbmCore.table(
 );
 
 // ---------------------------------------------------------------------------
-// order_events  (Audit log + event sourcing)
-// ---------------------------------------------------------------------------
-export const orderEvents = modbmCore.table('order_events', {
-  eventId: uuid('event_id').primaryKey().defaultRandom(),
-  salesOrderId: uuid('sales_order_id')
-    .notNull()
-    .references(() => salesOrders.salesOrderId),
-  eventType: text('event_type').notNull(),
-  payload: jsonb('payload'),
-  actor: text('actor'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-});
-
-// ---------------------------------------------------------------------------
-// shipment_events  (Audit log + event sourcing for shipments)
-// ---------------------------------------------------------------------------
-export const shipmentEvents = modbmCore.table('shipment_events', {
-  eventId: uuid('event_id').primaryKey().defaultRandom(),
-  shipmentId: uuid('shipment_id')
-    .notNull()
-    .references(() => salesOrderShipments.shipmentId),
-  eventType: text('event_type').notNull(),
-  payload: jsonb('payload'),
-  actor: text('actor'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-});
-
-// ---------------------------------------------------------------------------
 // sales_order_returns  (Return header against an invoiced order)
 // ---------------------------------------------------------------------------
 export const salesOrderReturns = modbmCore.table(
@@ -512,20 +484,6 @@ export const purchaseOrderLineItems = modbmCore.table(
     productIdx: index('idx_purchase_order_lines_product').on(t.productId),
   }),
 );
-// ---------------------------------------------------------------------------
-// purchase_order_events (Audit log + event sourcing)
-// ---------------------------------------------------------------------------
-export const purchaseOrderEvents = modbmCore.table('purchase_order_events', {
-  eventId: uuid('event_id').primaryKey().defaultRandom(),
-  purchaseOrderId: uuid('purchase_order_id')
-    .notNull()
-    .references(() => purchaseOrders.purchaseOrderId),
-  eventType: text('event_type').notNull(),
-  payload: jsonb('payload'),
-  actor: text('actor'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-});
-
 // ---------------------------------------------------------------------------
 // purchase_order_returns  (Return header against a PO)
 // ---------------------------------------------------------------------------
@@ -883,20 +841,6 @@ export const transferOrderReceiptLines = modbmCore.table(
 );
 
 // ---------------------------------------------------------------------------
-// transfer_order_events (Audit log + event sourcing)
-// ---------------------------------------------------------------------------
-export const transferOrderEvents = modbmCore.table('transfer_order_events', {
-  eventId: uuid('event_id').primaryKey().defaultRandom(),
-  transferOrderId: uuid('transfer_order_id')
-    .notNull()
-    .references(() => transferOrders.transferOrderId),
-  eventType: text('event_type').notNull(),
-  payload: jsonb('payload'),
-  actor: text('actor'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-});
-
-// ---------------------------------------------------------------------------
 // backorders (Order Allocations for Cross-Dock/Picked bridging)
 // ---------------------------------------------------------------------------
 export const backorders = modbmCore.table(
@@ -1129,8 +1073,8 @@ export const productDefaultBins = modbmCore.table(
 // ---------------------------------------------------------------------------
 export const outbox = modbmCore.table('outbox', {
   outboxId: uuid('outbox_id').primaryKey().defaultRandom(),
-  aggregateType: text('aggregate_type').notNull(),
-  aggregateId: uuid('aggregate_id').notNull(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id').notNull(),
   eventType: text('event_type').notNull(),
   payload: jsonb('payload'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -1441,20 +1385,6 @@ export const productUoms = modbmCore.table(
 );
 
 // ---------------------------------------------------------------------------
-// product_events  (Audit log + event sourcing)
-// ---------------------------------------------------------------------------
-export const productEvents = modbmCore.table('product_events', {
-  eventId: uuid('event_id').primaryKey().defaultRandom(),
-  productId: uuid('product_id')
-    .notNull()
-    .references(() => products.productId),
-  eventType: text('event_type').notNull(), // created, updated, price_changed, etc.
-  payload: jsonb('payload'),
-  actor: text('actor'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-});
-
-// ---------------------------------------------------------------------------
 // customers  (CDM: Account)
 // ---------------------------------------------------------------------------
 export const customers = modbmCore.table(
@@ -1507,20 +1437,6 @@ export const customers = modbmCore.table(
     currencyCheck: validCurrencyCheck('customers'),
   }),
 );
-
-// ---------------------------------------------------------------------------
-// account_events  (Audit log + event sourcing)
-// ---------------------------------------------------------------------------
-export const customerEvents = modbmCore.table('customer_events', {
-  eventId: uuid('event_id').primaryKey().defaultRandom(),
-  customerId: uuid('customer_id')
-    .notNull()
-    .references(() => customers.customerId),
-  eventType: text('event_type').notNull(),
-  payload: jsonb('payload'),
-  actor: text('actor'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-});
 
 // ---------------------------------------------------------------------------
 // suppliers  (CDM: Vendor)
@@ -1586,20 +1502,6 @@ export const suppliers = modbmCore.table(
 );
 
 // ---------------------------------------------------------------------------
-// supplier_events  (Audit log + event sourcing)
-// ---------------------------------------------------------------------------
-export const supplierEvents = modbmCore.table('supplier_events', {
-  eventId: uuid('event_id').primaryKey().defaultRandom(),
-  vendorId: uuid('vendor_id')
-    .notNull()
-    .references(() => suppliers.vendorId),
-  eventType: text('event_type').notNull(),
-  payload: jsonb('payload'),
-  actor: text('actor'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-});
-
-// ---------------------------------------------------------------------------
 // supplier_expiries  (Generic tracking for compliance dates like insurance, tax certs)
 // ---------------------------------------------------------------------------
 export const supplierExpiries = modbmCore.table('supplier_expiries', {
@@ -1652,23 +1554,6 @@ export const productSuppliers = modbmCore.table(
       t.productId,
     ),
   }),
-);
-
-// ---------------------------------------------------------------------------
-// product_supplier_events  (Audit log + event sourcing)
-// ---------------------------------------------------------------------------
-export const productSupplierEvents = modbmCore.table(
-  'product_supplier_events',
-  {
-    eventId: uuid('event_id').primaryKey().defaultRandom(),
-    productSupplierId: uuid('product_supplier_id')
-      .notNull()
-      .references(() => productSuppliers.productSupplierId),
-    eventType: text('event_type').notNull(),
-    payload: jsonb('payload'),
-    actor: text('actor'),
-    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-  },
 );
 
 // ---------------------------------------------------------------------------
@@ -1849,20 +1734,6 @@ export const paymentAllocations = modbmCore.table('payment_allocations', {
   referenceType: text('reference_type').notNull(), // 'sales_invoice' | 'purchase_invoice'
   referenceId: uuid('reference_id').notNull(),
   allocatedAmount: numeric('allocated_amount').notNull(),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-});
-
-// ---------------------------------------------------------------------------
-// payment_events  (Audit log + event sourcing)
-// ---------------------------------------------------------------------------
-export const paymentEvents = modbmCore.table('payment_events', {
-  eventId: uuid('event_id').primaryKey().defaultRandom(),
-  paymentId: uuid('payment_id')
-    .notNull()
-    .references(() => paymentEntries.paymentId),
-  eventType: text('event_type').notNull(),
-  payload: jsonb('payload'),
-  actor: text('actor'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 
@@ -2127,13 +1998,90 @@ export const reportHookAssignments = modbmCore.table(
 );
 
 // ---------------------------------------------------------------------------
-// system_events  (Cross-cutting audit log for GL, inventory, and other
-//                 domain events that don't belong to a specific entity table)
+// sales_events  (Sales domain audit log)
+// ---------------------------------------------------------------------------
+export const salesEvents = modbmCore.table('sales_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id').notNull(),
+  eventType: text('event_type').notNull(),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// procurement_events  (Procurement domain audit log)
+// ---------------------------------------------------------------------------
+export const procurementEvents = modbmCore.table('procurement_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id').notNull(),
+  eventType: text('event_type').notNull(),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// warehouse_events  (Warehouse domain audit log)
+// ---------------------------------------------------------------------------
+export const warehouseEvents = modbmCore.table('warehouse_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id').notNull(),
+  eventType: text('event_type').notNull(),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// master_data_events  (Master data domain audit log)
+// ---------------------------------------------------------------------------
+export const masterDataEvents = modbmCore.table('master_data_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id').notNull(),
+  eventType: text('event_type').notNull(),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// financial_events  (Financial domain audit log)
+// ---------------------------------------------------------------------------
+export const financialEvents = modbmCore.table('financial_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id').notNull(),
+  eventType: text('event_type').notNull(),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// inventory_events  (Inventory domain audit log)
+// ---------------------------------------------------------------------------
+export const inventoryEvents = modbmCore.table('inventory_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id').notNull(),
+  eventType: text('event_type').notNull(),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// system_events  (Cross-cutting audit log)
 // ---------------------------------------------------------------------------
 export const systemEvents = modbmCore.table('system_events', {
   eventId: uuid('event_id').primaryKey().defaultRandom(),
-  aggregateType: text('aggregate_type').notNull(),
-  aggregateId: uuid('aggregate_id').notNull(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id').notNull(),
   eventType: text('event_type').notNull(),
   payload: jsonb('payload'),
   actor: text('actor'),
@@ -2202,8 +2150,8 @@ export const goodsReceivedLines = modbmCore.table('goods_received_lines', {
 export const dashboardTimeline = modbmCore
   .view('dashboard_timeline', {
     eventId: uuid('event_id'),
-    aggregateType: text('aggregate_type'),
-    aggregateId: uuid('aggregate_id'),
+    entityType: text('entity_type'),
+    entityId: uuid('entity_id'),
     eventType: text('event_type'),
     payload: jsonb('payload'),
     actor: text('actor'),

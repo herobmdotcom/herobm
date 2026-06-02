@@ -566,11 +566,11 @@ export default function SystemSettingsPage() {
         <div id="uom-section" className="card">
           <InlineSettingsTable
             title={
-              <div className="flex items-center gap-2">
+              <h3 className="section-heading !mb-0 flex items-center gap-2">
                 {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">straighten</span>
                 {tSettings('sections.uom')}
-              </div>
+              </h3>
             }
             columns={uomColumns}
             data={uoms}
@@ -587,11 +587,11 @@ export default function SystemSettingsPage() {
         <div id="macros-section" className="card">
           <InlineSettingsTable
             title={
-              <div className="flex items-center gap-2">
+              <h3 className="section-heading !mb-0 flex items-center gap-2">
                 {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">text_snippet</span>
                 {tSettings('sections.macros')}
-              </div>
+              </h3>
             }
             columns={macroColumns}
             data={macros}

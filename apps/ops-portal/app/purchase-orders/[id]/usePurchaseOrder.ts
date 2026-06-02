@@ -173,7 +173,7 @@ export function usePurchaseOrder(id: string) {
   const loadInvoices = async () => {
     try {
       const { data } = await api.purchaseInvoiceControllerGetPurchaseBills(id);
-      setInvoices(((data as unknown as { data: any[] })?.data || data || []) as unknown as PurchaseInvoice[]);
+      setInvoices((data || []) as unknown as PurchaseInvoice[]);
     } catch {
       setInvoices([]);
     }

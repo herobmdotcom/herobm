@@ -3,10 +3,11 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   suppliers as coreSuppliers,
-  supplierEvents,
+  masterDataEvents,
   supplierGroups,
   supplierExpiries,
 } from '../drizzle/modbm-core-schema';
+import { EntityType } from '../common/event-types';
 import {
   eq,
   ilike,
@@ -142,9 +143,14 @@ export class SuppliersService {
     if (rows.length > 0) {
       const events = await this.db
         .select()
-        .from(supplierEvents)
-        .where(eq(supplierEvents.vendorId, id))
-        .orderBy(supplierEvents.createdOn);
+        .from(masterDataEvents)
+        .where(
+          and(
+            eq(masterDataEvents.entityId, id),
+            eq(masterDataEvents.entityType, EntityType.SUPPLIER),
+          ),
+        )
+        .orderBy(masterDataEvents.createdOn);
 
       const expiredDocs = await this.db
         .select({ id: supplierExpiries.expiryId })

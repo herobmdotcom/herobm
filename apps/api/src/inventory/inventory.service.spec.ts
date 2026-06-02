@@ -5,7 +5,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import { GlService } from '../gl/gl.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EventType } from '../common/event-types';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   products,

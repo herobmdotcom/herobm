@@ -15,7 +15,6 @@ import {
   purchaseInvoiceLines,
   purchaseOrderLineItems,
   outbox,
-  purchaseOrderEvents,
   suppliers,
   supplierGroups,
   products as coreProducts,
@@ -28,7 +27,7 @@ import {
   paymentEntries,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
 import { evaluatePOLifecycleRules } from '../purchase-orders/purchase-order-lifecycle-rules';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
@@ -326,8 +325,8 @@ export class PurchaseInvoiceService {
       }
 
       await emitEvent(tx as any, {
-        aggregateType: AggregateType.PURCHASE_INVOICE,
-        aggregateId: invoice.invoiceId,
+        entityType: EntityType.PURCHASE_INVOICE,
+        entityId: invoice.invoiceId,
         eventType: EventType.STATUS_CHANGED,
         payload: {
           entity: 'purchase_invoice',
@@ -883,8 +882,8 @@ export class PurchaseInvoiceService {
         // Log the approval of discrepancies
         await db.insert(systemEvents).values({
           eventType: 'invoice_discrepancy_approved',
-          aggregateType: 'purchase_invoice',
-          aggregateId: invoiceId,
+          entityType: 'purchase_invoice',
+          entityId: invoiceId,
           actor,
           payload: {
             discrepancies,
@@ -939,8 +938,8 @@ export class PurchaseInvoiceService {
         .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
 
       await emitEvent(tx, {
-        aggregateType: AggregateType.PURCHASE_ORDER,
-        aggregateId: poLine.purchaseOrderId,
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: poLine.purchaseOrderId,
         eventType: EventType.INVOICE_MATCHED,
         actor,
         payload: {
@@ -1035,8 +1034,8 @@ export class PurchaseInvoiceService {
 
       if (matchedCount > 0 || addedCount > 0) {
         await emitEvent(tx, {
-          aggregateType: AggregateType.PURCHASE_ORDER,
-          aggregateId: purchaseOrderId,
+          entityType: EntityType.PURCHASE_ORDER,
+          entityId: purchaseOrderId,
           eventType: EventType.INVOICE_MATCHED,
           actor,
           payload: {
@@ -1090,8 +1089,8 @@ export class PurchaseInvoiceService {
 
       if (poId) {
         await emitEvent(tx, {
-          aggregateType: AggregateType.PURCHASE_ORDER,
-          aggregateId: poId,
+          entityType: EntityType.PURCHASE_ORDER,
+          entityId: poId,
           eventType: EventType.INVOICE_UNMATCHED,
           actor,
           payload: {
@@ -1217,8 +1216,8 @@ export class PurchaseInvoiceService {
       .returning();
 
     await emitEvent(db as any, {
-      aggregateType: AggregateType.PURCHASE_INVOICE,
-      aggregateId: invoiceId,
+      entityType: EntityType.PURCHASE_INVOICE,
+      entityId: invoiceId,
       eventType: EventType.STATUS_CHANGED,
       payload: {
         entity: 'purchase_invoice',

@@ -10,10 +10,10 @@ import { Request, Response } from 'express';
 
 /**
  * Global exception filter that catches ALL unhandled exceptions and:
- * 1. Logs structured JSON to stdout (→ Promtail → Loki)
+ * 1. Logs structured JSON to stdout (for local logging / centralized observability)
  * 2. Returns a standard error response to the client
  *
- * This ensures 500-class errors are visible in the PLG stack,
+ * This ensures 500-class errors are structured for centralized observability,
  * not just in `docker logs`. See ADV-030.
  */
 @Catch()
@@ -56,7 +56,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const stack = exception instanceof Error ? exception.stack : undefined;
 
-    // Structured JSON log for Loki parsing
+    // Structured JSON log for local log parsing
     const logPayload = {
       event: 'unhandled_exception',
       method: request.method,

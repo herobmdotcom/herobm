@@ -22,7 +22,7 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   salesOrders,
   salesOrderLineItems,
-  orderEvents,
+  salesEvents,
   customers as coreAccounts,
   products as coreProducts,
   backorders,
@@ -40,7 +40,7 @@ import {
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { findOrderLine as sharedFindOrderLine } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { EnrichmentService } from '../enrichment/enrichment.service';
@@ -662,8 +662,8 @@ export class OrdersWriteService {
 
       // Audit + outbox
       await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: order.salesOrderId,
+        entityType: EntityType.SALES_ORDER,
+        entityId: order.salesOrderId,
         eventType: EventType.CREATED,
         payload: {
           orderNumber,
@@ -711,8 +711,8 @@ export class OrdersWriteService {
 
       if (audit.hasChanges) {
         await emitEvent(tx, {
-          aggregateType: AggregateType.SALES_ORDER,
-          aggregateId: id,
+          entityType: EntityType.SALES_ORDER,
+          entityId: id,
           eventType: EventType.UPDATED,
           payload: {
             changes: audit.changes,
@@ -859,8 +859,8 @@ export class OrdersWriteService {
         .returning();
 
       await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: id,
+        entityType: EntityType.SALES_ORDER,
+        entityId: id,
         eventType: EventType.STATUS_CHANGED,
         payload: {
           from: existing.stateCode,
@@ -922,11 +922,11 @@ export class OrdersWriteService {
 
     const lastEvent = await this.db
       .select()
-      .from(orderEvents)
+      .from(salesEvents)
       .where(
-        sql`${orderEvents.salesOrderId} = ${id} AND ${orderEvents.eventType} = ${EventType.ARCHIVED}`,
+        sql`${salesEvents.entityId} = ${id} AND ${salesEvents.eventType} = ${EventType.ARCHIVED}`,
       )
-      .orderBy(sql`${orderEvents.createdOn} DESC`)
+      .orderBy(sql`${salesEvents.createdOn} DESC`)
       .limit(1);
 
     const previousState =
@@ -1054,8 +1054,8 @@ export class OrdersWriteService {
         .where(eq(salesOrders.salesOrderId, id));
 
       await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: id,
+        entityType: EntityType.SALES_ORDER,
+        entityId: id,
         eventType: 'TAX_CALCULATED' as any,
         payload: { provider: taxProvider, totalTax: taxData.amount_to_collect },
         actor,
@@ -1254,8 +1254,8 @@ export class OrdersWriteService {
       await this.setTaxIsStale(orderId, isExternalTax, tx);
 
       await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: orderId,
+        entityType: EntityType.SALES_ORDER,
+        entityId: orderId,
         eventType: EventType.LINE_ADDED,
         payload: {
           lineId: parentLineId,
@@ -1466,8 +1466,8 @@ export class OrdersWriteService {
       await this.setTaxIsStale(orderId, isExternalTax, tx);
 
       await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: orderId,
+        entityType: EntityType.SALES_ORDER,
+        entityId: orderId,
         eventType: EventType.POST_CONFIRMATION_LINE_ADDED,
         payload: {
           lineId: parentLineId,
@@ -1617,8 +1617,8 @@ export class OrdersWriteService {
 
       if (audit.hasChanges) {
         await emitEvent(tx, {
-          aggregateType: AggregateType.SALES_ORDER,
-          aggregateId: orderId,
+          entityType: EntityType.SALES_ORDER,
+          entityId: orderId,
           eventType: EventType.LINE_UPDATED,
           payload: {
             lineId,
@@ -1708,8 +1708,8 @@ export class OrdersWriteService {
       await this.setTaxIsStale(orderId, isExternalTax, tx);
 
       await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: orderId,
+        entityType: EntityType.SALES_ORDER,
+        entityId: orderId,
         eventType: EventType.LINE_REMOVED,
         payload: {
           lineId,
@@ -1787,9 +1787,9 @@ export class OrdersWriteService {
 
     const events = await this.db
       .select()
-      .from(orderEvents)
-      .where(eq(orderEvents.salesOrderId, id))
-      .orderBy(orderEvents.createdOn);
+      .from(salesEvents)
+      .where(eq(salesEvents.entityId, id))
+      .orderBy(salesEvents.createdOn);
 
     const backorderList = await this.db
       .select({

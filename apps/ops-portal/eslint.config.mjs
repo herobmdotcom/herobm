@@ -62,12 +62,12 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'off',
       'react/jsx-key': 'error',
       
-      // ADV-029: PLG Stack Reporting - Ban direct console.error
+      // ADV-029: Centralized Observability Reporting - Ban direct console.error
       'no-restricted-syntax': [
         'error',
         {
           selector: "CallExpression[callee.object.name='console'][callee.property.name='error']",
-          message: "ADV-029: Use reportError() instead of console.error() to ensure observability in the PLG stack."
+          message: "ADV-029: Use reportError() instead of console.error() to ensure centralized observability reporting."
         },
         // ADV-034: No Hardcoded Currency near amounts
         {

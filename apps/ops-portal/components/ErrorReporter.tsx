@@ -5,7 +5,7 @@ import { reportError } from '@/lib/api';
 
 /**
  * Invisible client component that forwards all uncaught JS errors
- * and unhandled promise rejections to the PLG telemetry endpoint.
+ * and unhandled promise rejections to the centralized telemetry endpoint.
  *
  * Mount once in the root layout so every page is covered.
  */

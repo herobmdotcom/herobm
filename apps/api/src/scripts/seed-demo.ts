@@ -13,7 +13,6 @@ import {
   suppliers,
   purchaseOrders,
   purchaseOrderLineItems,
-  purchaseOrderEvents,
   salesOrders,
   salesOrderLineItems,
   salesOrderPicks,
@@ -63,7 +62,7 @@ async function wipeDatabase(db: any) {
     TRUNCATE TABLE 
       modbm_core.inventory_ledger, modbm_core.inventory_entries, modbm_core.bin_contents,
       modbm_core.sales_order_lines, modbm_core.sales_orders, modbm_core.sales_order_picks, modbm_core.sales_order_shipment_lines, modbm_core.sales_order_shipments,
-      modbm_core.purchase_order_lines, modbm_core.purchase_orders, modbm_core.purchase_order_events,
+      modbm_core.purchase_order_lines, modbm_core.purchase_orders, modbm_core.procurement_events, modbm_core.sales_events, modbm_core.warehouse_events, modbm_core.master_data_events, modbm_core.financial_events, modbm_core.inventory_events, modbm_core.system_events,
       modbm_core.products, modbm_core.customers, modbm_core.suppliers,
       modbm_core.bins, modbm_core.zones, modbm_core.locations,
       modbm_core.tax_categories, modbm_core.uom_dictionary,

@@ -26,7 +26,7 @@ import {
 
 import { InventoryService } from '../inventory/inventory.service';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import {
   eq,
   and,
@@ -479,9 +479,9 @@ export class GoodsReceivedService {
 
       // 7. Emit audit event
       await emitEvent(tx, {
-        aggregateType: AggregateType.SYSTEM,
-        aggregateId: receipt.goodsReceivedId,
-        eventType: EventType.STOCK_RECEIVED,
+        entityType: EntityType.WAREHOUSE,
+        entityId: receipt.goodsReceivedId,
+        eventType: EventType.RECEIPT_CREATED,
         payload: {
           goodsReceivedId: receipt.goodsReceivedId,
           receiptNumber: receipt.receiptNumber,
@@ -687,9 +687,9 @@ export class GoodsReceivedService {
         );
 
         await emitEvent(tx, {
-          aggregateType: AggregateType.PURCHASE_ORDER,
-          aggregateId: poId,
-          eventType: EventType.AUTO_STATUS_CHANGED,
+          entityType: EntityType.PURCHASE_ORDER,
+          entityId: poId,
+          eventType: EventType.STATUS_CHANGED,
           payload: {
             rule: 'cancel_receipt_revert',
             from: PURCHASE_ORDER_STATE.RECEIVED,
@@ -757,9 +757,9 @@ export class GoodsReceivedService {
       .returning();
 
     await emitEvent(tx as any, {
-      aggregateType: AggregateType.GOODS_RECEIPT,
-      aggregateId: receiptId,
-      eventType: EventType.STATUS_CHANGED,
+      entityType: EntityType.WAREHOUSE,
+      entityId: receiptId,
+      eventType: EventType.RECEIPT_STATUS_CHANGED,
       payload: {
         entity: 'goods_receipt',
         entityId: receiptId,
@@ -1442,8 +1442,8 @@ export class GoodsReceivedService {
 
       // Emit Event
       await emitEvent(tx, {
-        aggregateType: AggregateType.SYSTEM,
-        aggregateId: grLine.goodsReceivedId,
+        entityType: EntityType.SYSTEM,
+        entityId: grLine.goodsReceivedId,
         eventType: EventType.RECEIPT_MATCHED,
         payload: {
           goodsReceivedLineId,
@@ -1590,8 +1590,8 @@ export class GoodsReceivedService {
 
       // 4. Emit Event
       await emitEvent(tx, {
-        aggregateType: AggregateType.SYSTEM,
-        aggregateId: grLine.goodsReceivedId,
+        entityType: EntityType.SYSTEM,
+        entityId: grLine.goodsReceivedId,
         eventType: EventType.RECEIPT_UNMATCHED,
         payload: {
           goodsReceivedLineId,

@@ -13,7 +13,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   customers,
-  customerEvents,
+  masterDataEvents,
   customerGroups,
   taxCategories,
 } from '../drizzle/modbm-core-schema';
@@ -158,11 +158,13 @@ export class AccountsService {
     const customer = rows[0];
 
     // Load activity events
-    const events = await db
+    const eventsQuery = this.db
       .select()
-      .from(customerEvents)
-      .where(eq(customerEvents.customerId, customer.customerId))
-      .orderBy(customerEvents.createdOn);
+      .from(masterDataEvents)
+      .where(eq(masterDataEvents.entityId, customer.customerId))
+      .orderBy(masterDataEvents.createdOn);
+
+    const events = await eventsQuery;
 
     return { ...customer, events };
   }

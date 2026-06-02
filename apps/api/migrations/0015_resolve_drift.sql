@@ -1,0 +1,3 @@
+-- Empty migration file.
+-- This file was generated to resolve Drizzle JSON snapshot drift caused by manual SQL migrations in 0013 and 0014.
+-- The actual schema changes were already applied in 0013_add_master_data_events.sql.

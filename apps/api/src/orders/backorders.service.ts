@@ -16,15 +16,13 @@ import {
   purchaseOrders,
   purchaseOrderLineItems,
   productSuppliers,
-  purchaseOrderEvents,
   products as coreProducts,
-  orderEvents,
   suppliers as coreSuppliers,
   taxCategories,
   locations,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import { eq, sql, and, inArray } from 'drizzle-orm';
 import {
   BACKORDER_STATE,
@@ -145,8 +143,8 @@ export class BackordersService {
     }
 
     await emitEvent(tx, {
-      aggregateType: AggregateType.SALES_ORDER,
-      aggregateId: salesOrderId,
+      entityType: EntityType.SALES_ORDER,
+      entityId: salesOrderId,
       eventType: EventType.BACKORDERS_ALLOCATED,
       actor,
       payload: { reason: 'demand_generated' },
@@ -178,8 +176,8 @@ export class BackordersService {
       if (current && current.purchaseOrderId) {
         // Emit event on PO side using the old PO ID
         await emitEvent(tx, {
-          aggregateType: AggregateType.PURCHASE_ORDER,
-          aggregateId: current.purchaseOrderId,
+          entityType: EntityType.PURCHASE_ORDER,
+          entityId: current.purchaseOrderId,
           eventType: EventType.DEMAND_UNALLOCATED,
           actor,
           payload: { backorderId },
@@ -430,8 +428,8 @@ export class BackordersService {
           .returning();
 
         await emitEvent(tx, {
-          aggregateType: AggregateType.PURCHASE_ORDER,
-          aggregateId: po.purchaseOrderId,
+          entityType: EntityType.PURCHASE_ORDER,
+          entityId: po.purchaseOrderId,
           eventType: EventType.CREATED,
           actor,
           payload: { reason: 'manual_requisition' },
@@ -666,8 +664,8 @@ export class BackordersService {
 
       // Optional: Emit event
       await emitEvent(tx, {
-        aggregateType: AggregateType.PURCHASE_ORDER,
-        aggregateId: poLine.purchaseOrderId,
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: poLine.purchaseOrderId,
         eventType: EventType.DEMAND_ALLOCATED,
         actor,
         payload: { backorderId: demandId, quantity: quantityToLink },
@@ -725,8 +723,8 @@ export class BackordersService {
           );
 
           await emitEvent(tx, {
-            aggregateType: AggregateType.PURCHASE_ORDER,
-            aggregateId: ld.purchaseOrderId,
+            entityType: EntityType.PURCHASE_ORDER,
+            entityId: ld.purchaseOrderId,
             eventType: EventType.DEMAND_UNALLOCATED,
             actor,
             payload: { backorderId: ld.backorderId },
@@ -764,8 +762,8 @@ export class BackordersService {
 
       // 8. Emit an event indicating reallocation
       await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: demand.salesOrderId,
+        entityType: EntityType.SALES_ORDER,
+        entityId: demand.salesOrderId,
         eventType: EventType.DEMAND_REALLOCATED,
         actor,
         payload: {
@@ -817,8 +815,8 @@ export class BackordersService {
       .returning();
 
     await emitEvent(db, {
-      aggregateType: AggregateType.SALES_ORDER,
-      aggregateId: existing.salesOrderId,
+      entityType: EntityType.SALES_ORDER,
+      entityId: existing.salesOrderId,
       eventType: EventType.STATUS_CHANGED,
       actor,
       payload: {

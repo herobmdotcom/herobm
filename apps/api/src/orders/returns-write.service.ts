@@ -16,7 +16,7 @@ import {
   salesOrderReturns,
   salesOrderReturnLines,
   salesCreditNotes,
-  orderEvents,
+  salesEvents,
   outbox,
   bins,
   zones,
@@ -25,7 +25,7 @@ import {
   customerGroups,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { InventoryService } from '../inventory/inventory.service';
 import { GlService } from '../gl/gl.service';
@@ -218,8 +218,8 @@ export class ReturnsWriteService {
         }
 
         await emitEvent(innerTx, {
-          aggregateType: AggregateType.SALES_ORDER,
-          aggregateId: salesOrderId,
+          entityType: EntityType.SALES_ORDER,
+          entityId: salesOrderId,
           eventType: EventType.RETURN_CREATED,
           payload: {
             returnId: ret.returnId,
@@ -271,8 +271,8 @@ export class ReturnsWriteService {
 
         if (audit.hasChanges) {
           await emitEvent(innerTx, {
-            aggregateType: AggregateType.SALES_ORDER,
-            aggregateId: existing.salesOrderId,
+            entityType: EntityType.SALES_ORDER,
+            entityId: existing.salesOrderId,
             eventType: 'return_updated',
             payload: {
               returnId,
@@ -332,8 +332,8 @@ export class ReturnsWriteService {
         }
 
         await emitEvent(innerTx, {
-          aggregateType: AggregateType.SALES_ORDER,
-          aggregateId: existing.salesOrderId,
+          entityType: EntityType.SALES_ORDER,
+          entityId: existing.salesOrderId,
           eventType: EventType.STATUS_CHANGED,
           payload: {
             entity: 'return',
@@ -427,8 +427,8 @@ export class ReturnsWriteService {
           .where(eq(salesOrderReturns.returnId, returnId));
 
         await emitEvent(innerTx, {
-          aggregateType: AggregateType.SALES_ORDER,
-          aggregateId: ret.salesOrderId,
+          entityType: EntityType.SALES_ORDER,
+          entityId: ret.salesOrderId,
           eventType: 'return_line_added',
           payload: {
             returnId,
@@ -761,8 +761,8 @@ export class ReturnsWriteService {
 
         if (audit.hasChanges) {
           await emitEvent(innerTx, {
-            aggregateType: AggregateType.SALES_ORDER,
-            aggregateId: ret.salesOrderId,
+            entityType: EntityType.SALES_ORDER,
+            entityId: ret.salesOrderId,
             eventType: 'return_line_updated',
             payload: {
               returnId,
@@ -814,8 +814,8 @@ export class ReturnsWriteService {
         .where(eq(salesOrderReturns.returnId, returnId));
 
       await emitEvent(innerTx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: ret.salesOrderId,
+        entityType: EntityType.SALES_ORDER,
+        entityId: ret.salesOrderId,
         eventType: 'return_line_removed',
         payload: {
           returnId,

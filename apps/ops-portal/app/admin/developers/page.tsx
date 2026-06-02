@@ -179,14 +179,12 @@ export default function DevelopersPage() {
 
         {/* ── API Keys ───────────────────────────────────────────────────── */}
         <div id="api-keys" className="card relative">
+          <h3 className="section-heading mb-4">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            <span className="material-symbols-outlined">key</span>
+            {tDev('apiKeys')}
+          </h3>
           <InlineSettingsTable
-            title={
-              <div className="flex items-center gap-2">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined">key</span>
-                {tDev('apiKeys')}
-              </div>
-            }
             data={apiKeys || []}
             rowKey={(r: any) => r.apiKeyId}
             onSave={async (row: any, isNew: boolean) => {
@@ -283,14 +281,12 @@ export default function DevelopersPage() {
 
         {/* ── Webhooks ───────────────────────────────────────────────────── */}
         <div id="webhooks" className="card">
+          <h3 className="section-heading mb-4">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            <span className="material-symbols-outlined">webhook</span>
+            {tDev('webhooks')}
+          </h3>
           <InlineSettingsTable
-            title={
-              <div className="flex items-center gap-2">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined">webhook</span>
-                {tDev('webhooks')}
-              </div>
-            }
             data={webhooks || []}
             rowKey={(r: any) => r.webhookId}
             onSave={async (row: any, isNew: boolean) => {

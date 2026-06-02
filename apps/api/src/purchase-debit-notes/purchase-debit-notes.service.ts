@@ -14,12 +14,11 @@ import {
   purchaseOrderReturns,
   purchaseDebitNotes,
   purchaseDebitNoteLines,
-  purchaseOrderEvents,
   suppliers,
   supplierGroups,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import { CreateDebitNoteDto } from './dto';
 import {
   PURCHASE_RETURN_STATE,
@@ -128,15 +127,16 @@ export class PurchaseDebitNotesService {
         await tx.insert(purchaseDebitNoteLines).values(lineValues);
       }
 
-      await tx.insert(purchaseOrderEvents).values({
-        purchaseOrderId: ret.purchaseOrderId,
+      await emitEvent(tx as any, {
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: ret.purchaseOrderId,
         eventType: EventType.CREATED,
-        actor,
         payload: {
           debitNoteId: dn.debitNoteId,
           debitNoteNumber,
           returnId: dto.returnId,
         },
+        actor,
       });
 
       return dn;
@@ -288,8 +288,8 @@ export class PurchaseDebitNotesService {
       .returning();
 
     await emitEvent(db as any, {
-      aggregateType: AggregateType.PURCHASE_ORDER,
-      aggregateId: existing.purchaseOrderId,
+      entityType: EntityType.PURCHASE_ORDER,
+      entityId: existing.purchaseOrderId,
       eventType: EventType.STATUS_CHANGED,
       payload: {
         entity: 'debit_note',

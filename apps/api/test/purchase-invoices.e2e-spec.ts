@@ -227,15 +227,17 @@ describe('API E2E — Purchase Invoices', () => {
 
       // Verify outbox event
       const dbRes = await request(app.getHttpServer())
-        .get('/api/settings/external-sync/events?type=gl_posted')
+        .get(
+          '/api/settings/external-sync/events?type=general_ledger.entry_posted',
+        )
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       const eventsList = dbRes.body.events || [];
       const glEvent = eventsList.find(
         (evt: any) =>
-          evt.eventType === 'gl_posted' &&
-          evt.aggregateId === je.journalEntryId,
+          evt.eventType === 'general_ledger.entry_posted' &&
+          evt.entityId === je.journalEntryId,
       );
       expect(glEvent).toBeDefined();
     });

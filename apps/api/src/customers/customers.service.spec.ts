@@ -5,7 +5,7 @@ import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   customers,
-  customerEvents,
+  masterDataEvents,
   customerGroups,
   taxCategories,
 } from '../drizzle/modbm-core-schema';
@@ -24,7 +24,7 @@ describe('AccountsService', () => {
     service = module.get<AccountsService>(AccountsService);
 
     // Clean tables
-    await pg.db.delete(customerEvents);
+    await pg.db.delete(masterDataEvents);
     await pg.db.delete(customers);
     await pg.db.delete(customerGroups);
     await pg.db.delete(taxCategories);
@@ -149,10 +149,12 @@ describe('AccountsService', () => {
         })
         .returning();
 
-      await pg.db.insert(customerEvents).values({
-        customerId: acc.customerId,
+      await pg.db.insert(masterDataEvents).values({
+        entityType: 'customer',
+        entityId: acc.customerId,
         eventType: 'created',
-        actor: 'system',
+        payload: { created: true },
+        actor: 'user',
       });
 
       const result = await service.findOne(acc.customerId);

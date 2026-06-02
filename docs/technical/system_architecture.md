@@ -201,11 +201,13 @@ We will set up authorization using **Casbin**, which will serve as our centraliz
 ### 8.1. Containerization
 We will run all microservices, frontend applications, and background workers in **Docker containers**. This ensures environment parity across development, staging, and production, and simplifies local onboarding.
 
-### 8.2. Observability (The PLG Stack)
-To maintain the required "Always Output Observability" mandate, we will use the **PLG Stack**:
-- **Prometheus**: Scrapes and stores time-series metrics from our Node.js APIs, BullMQ queues, and Postgres databases.
-- **Promtail + Loki**: Promtail aggregates structured logs emitted by our Docker containers and forwards them to Loki for centralized, label-based log querying.
-- **Grafana**: Serves as our "single pane of glass" to visualize Prometheus metrics and explore Loki logs side-by-side, enabling rapid troubleshooting of distributed async workflows.
+### 8.2. Observability and Logging
+To maintain the required "Always Output Observability" mandate, we use a robust local logging strategy:
+- **Dual Output**: The core application services (Node.js APIs, BullMQ workers) emit strictly formatted JSON logs to both `stdout` (captured by the Docker native JSON-file driver) and to a persistent local `/logs` volume.
+- **Centralized Telemetry Hooks**:
+  - The frontend ships client-side unhandled exceptions and promise rejections to a backend `TelemetryController`, which emits them to `stdout` as rigidly formatted JSON payloads.
+  - The backend uses a global `AllExceptionsFilter` to intercept every unhandled server error and dumps it to `stdout` as structured JSON.
+- **Forward-Compatibility**: By strictly enforcing structured JSON output on `stdout`, the system remains "PLG-ready" or compatible with any external log forwarder (like Datadog or Splunk). A deployer can simply attach a log agent to the host's Docker socket without requiring any code modifications to the ModBM application itself.
 
 ## Areas for your review before V2:
 Pricing Complexity: ABM is known for having incredibly complex, customer-specific pricing matrices (PRICEDETAILS, PSUBMATRIX). Do you want to replicate this exact logic in the custom app, or use this replatforming as an opportunity to simplify your pricing model?

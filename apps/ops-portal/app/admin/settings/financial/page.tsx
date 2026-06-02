@@ -813,6 +813,8 @@ export default function FinancialSettingsPage() {
         <div id="gl-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              <span className="material-symbols-outlined">account_balance_wallet</span>
               {tSettings('sections.gl')}
             </h3>
           </div>
@@ -934,7 +936,11 @@ export default function FinancialSettingsPage() {
         {/* ── Chart of Accounts ────────────────────────────────────────── */}
         <div id="coa-section" className="card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading !mb-0">{tSettings('labels.chartOfAccounts')}</h3>
+            <h3 className="section-heading !mb-0">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              <span className="material-symbols-outlined">account_tree</span>
+              {tSettings('labels.chartOfAccounts')}
+            </h3>
             <div className="flex gap-2">
               <button className="btn btn-secondary btn-xs" onClick={() => setImportCoaModalOpen(true)}>{tSettings('importCoaModal.importAction')}</button>
               <button className="btn btn-secondary btn-xs" onClick={openSchemaEditor}>{tSettings('actions.configureMetadata')}</button>

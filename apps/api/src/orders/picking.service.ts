@@ -32,7 +32,7 @@ import {
   getCommittedPerLine,
 } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import { ShipmentService } from './shipment.service';
 import { calculatePickAllocations } from './picking-math.utils';
 import { evaluateLifecycleRules } from './order-lifecycle-rules';
@@ -338,20 +338,24 @@ export class PickingService {
         .where(eq(salesOrders.salesOrderId, orderId));
 
       await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: orderId,
-        eventType: EventType.STATUS_CHANGED,
+        entityType: EntityType.WAREHOUSE,
+        entityId: newPick.pickId,
+        eventType: EventType.PICK_CREATED,
         payload: {
-          entity: 'pick',
-          entityId: newPick.pickId,
-          from: null,
-          to: SALES_ORDER_PICK_STATE.PICKED,
-          lineId,
+          pickId: newPick.pickId,
+          salesOrderId: orderId,
           quantityPicked: quantity,
           binId,
         },
         actor,
       });
+
+      await evaluateLifecycleRules(
+        tx,
+        orderId,
+        { entity: 'picking', id: lineId, action: 'pick_created' },
+        actor,
+      );
 
       return newPick;
     });
@@ -773,22 +777,22 @@ export class PickingService {
       .where(eq(salesOrderPicks.pickId, pickId))
       .returning();
 
-    await emitEvent(tx as any, {
-      aggregateType: AggregateType.SALES_ORDER,
-      aggregateId: pick.salesOrderId,
-      eventType: EventType.STATUS_CHANGED,
-      payload: {
-        entity: 'pick',
+    if (newState === SALES_ORDER_PICK_STATE.CANCELLED) {
+      await emitEvent(tx as any, {
+        entityType: EntityType.WAREHOUSE,
         entityId: pickId,
-        salesOrderLineId: pick.salesOrderLineId,
-        productId: pick.productId,
-        quantity: pick.quantity,
-        binId: pick.binId,
-        from: pick.stateCode,
-        to: newState,
-      },
-      actor,
-    });
+        eventType: EventType.PICK_CANCELLED,
+        payload: {
+          pickId,
+          salesOrderId: pick.salesOrderId,
+          salesOrderLineId: pick.salesOrderLineId,
+          productId: pick.productId,
+          quantity: pick.quantity,
+          binId: pick.binId,
+        },
+        actor,
+      });
+    }
 
     return updated;
   }

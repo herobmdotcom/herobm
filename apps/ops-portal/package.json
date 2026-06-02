@@ -20,6 +20,7 @@
     "@modbm/shared": "*",
     "ag-grid-community": "^33.2.5",
     "ag-grid-react": "^33.2.5",
+    "i18n-iso-countries": "^7.14.0",
     "next": "^15.3.3",
     "next-intl": "^4.8.3",
     "react": "^19.1.0",

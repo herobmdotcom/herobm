@@ -7,7 +7,7 @@ import {
   purchaseInvoiceLines,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import { PURCHASE_ORDER_STATE } from '@modbm/shared';
 
 export interface POLifecycleTrigger {
@@ -91,8 +91,8 @@ export const autoReceiveWhenFullyReceived: POLifecycleRule = {
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
     await emitEvent(db as any, {
-      aggregateType: AggregateType.PURCHASE_ORDER,
-      aggregateId: poId,
+      entityType: EntityType.PURCHASE_ORDER,
+      entityId: poId,
       eventType: EventType.STATUS_CHANGED,
       payload: {
         rule: 'auto-receive-when-fully-received',
@@ -172,8 +172,8 @@ export const autoPartiallyReceiveWhenSomeReceived: POLifecycleRule = {
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
     await emitEvent(db as any, {
-      aggregateType: AggregateType.PURCHASE_ORDER,
-      aggregateId: poId,
+      entityType: EntityType.PURCHASE_ORDER,
+      entityId: poId,
       eventType: EventType.STATUS_CHANGED,
       payload: {
         rule: 'auto-partially-receive-when-some-received',
@@ -281,8 +281,8 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
     await emitEvent(db as any, {
-      aggregateType: AggregateType.PURCHASE_ORDER,
-      aggregateId: poId,
+      entityType: EntityType.PURCHASE_ORDER,
+      entityId: poId,
       eventType: EventType.STATUS_CHANGED,
       payload: {
         rule: 'auto-invoice-when-fully-invoiced-and-received',
@@ -376,8 +376,8 @@ export const autoRevertToPartiallyReceivedOnReturn: POLifecycleRule = {
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
     await emitEvent(db as any, {
-      aggregateType: AggregateType.PURCHASE_ORDER,
-      aggregateId: poId,
+      entityType: EntityType.PURCHASE_ORDER,
+      entityId: poId,
       eventType: EventType.STATUS_CHANGED,
       payload: {
         rule: 'auto-revert-to-partially-received-on-return',

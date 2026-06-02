@@ -16,7 +16,7 @@ import {
   uomDictionary,
   taxCategories,
   suppliers,
-  purchaseOrderEvents,
+  procurementEvents,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
 import { PURCHASE_ORDER_STATE, SUPPLIER_STATE } from '@modbm/shared';
@@ -71,7 +71,7 @@ describe('PurchaseOrdersService', () => {
 
   beforeEach(async () => {
     await pg.db.delete(purchaseOrderLineItems);
-    await pg.db.delete(purchaseOrderEvents);
+    await pg.db.delete(procurementEvents);
     await pg.db.delete(purchaseOrders);
 
     mockInventoryService = { recordInventoryMovement: jest.fn() };

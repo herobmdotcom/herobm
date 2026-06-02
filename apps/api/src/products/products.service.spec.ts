@@ -5,7 +5,7 @@ import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   products,
-  productEvents,
+  masterDataEvents,
   uomDictionary,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
@@ -14,14 +14,14 @@ import {
   SALES_ORDER_STATE,
   CUSTOMER_STATE,
 } from '@modbm/shared';
-import { EventType } from '../common/event-types';
+import { EventType, EntityType } from '../common/event-types';
 
 describe('ProductsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: ProductsService;
 
   beforeEach(async () => {
-    await pg.db.delete(productEvents);
+    await pg.db.delete(masterDataEvents);
     await pg.db.delete(products);
 
     // Seed required UOM
@@ -92,8 +92,9 @@ describe('ProductsService', () => {
         baseUom: 'EA',
       });
 
-      await pg.db.insert(productEvents).values({
-        productId: targetId,
+      await pg.db.insert(masterDataEvents).values({
+        entityId: targetId,
+        entityType: EntityType.PRODUCT,
         eventType: EventType.CREATED,
         payload: { name: 'M8 Hex Bolt' },
         actor: 'admin',

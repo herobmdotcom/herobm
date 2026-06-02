@@ -1,7 +1,15 @@
 import * as crypto from 'crypto';
-import { getErrorMessage } from '@modbm/shared';
 
-type Handler = (payload: any) => Promise<void> | void;
+export interface HeroEvent<T = any> {
+  eventId: string;
+  eventType: string;
+  entityId: string;
+  entityType: string;
+  timestamp: string;
+  payload: T;
+}
+
+type Handler<T = any> = (event: HeroEvent<T>) => Promise<void> | void;
 
 export class WebhookReceiver {
   private secret: string;
@@ -14,7 +22,7 @@ export class WebhookReceiver {
   /**
    * Register a handler for a specific event type.
    */
-  public on(eventType: string, handler: Handler) {
+  public on<T = any>(eventType: string, handler: Handler<T>) {
     if (!this.handlers.has(eventType)) {
       this.handlers.set(eventType, []);
     }
@@ -23,11 +31,12 @@ export class WebhookReceiver {
 
   /**
    * Verifies the HMAC signature of the incoming webhook payload.
+   * `payload` MUST be the raw unparsed string or Buffer from the HTTP request.
    */
-  public verifySignature(payloadString: string, signature: string): boolean {
+  public verifySignature(rawPayload: string | Buffer, signature: string): boolean {
     const expectedSignature = crypto
       .createHmac('sha256', this.secret)
-      .update(payloadString)
+      .update(rawPayload)
       .digest('hex');
     
     return signature === expectedSignature;
@@ -35,9 +44,9 @@ export class WebhookReceiver {
 
   /**
    * Express middleware that automatically verifies the signature and dispatches the event.
-   * Expects `express.json()` to have been used before this middleware if you want to rely on req.body,
-   * but to verify the raw payload we technically need the raw string.
-   * Assuming `req.body` is parsed and we stringify it.
+   * 
+   * CRITICAL: You must use `express.raw({ type: 'application/json' })` before this middleware
+   * so that `req.body` is a raw Buffer representing the exact HTTP payload.
    */
   public expressMiddleware() {
     return async (req: any, res: any) => {
@@ -47,33 +56,35 @@ export class WebhookReceiver {
           return res.status(401).json({ error: 'Missing or invalid signature header' });
         }
 
-        // Ideally, this should use raw body, but for simplicity we'll stringify req.body
-        const payloadString = JSON.stringify(req.body);
+        if (!Buffer.isBuffer(req.body)) {
+          console.warn('[HeroBM] Webhook error: req.body is not a Buffer. Make sure to use express.raw({ type: "application/json" })');
+          return res.status(500).json({ error: 'Server misconfiguration. Expected raw buffer body.' });
+        }
 
-        if (!this.verifySignature(payloadString, signature)) {
+        if (!this.verifySignature(req.body, signature)) {
           return res.status(401).json({ error: 'Signature verification failed' });
         }
 
-        const { eventId, type, payload } = req.body;
+        const bodyStr = req.body.toString('utf8');
+        const parsedEvent = JSON.parse(bodyStr) as HeroEvent;
 
-        if (!type) {
-           return res.status(400).json({ error: 'Missing event type' });
+        if (!parsedEvent.eventType) {
+           return res.status(400).json({ error: 'Missing eventType' });
         }
 
-        const registeredHandlers = this.handlers.get(type) || [];
-        // Support wildcard handlers
+        const registeredHandlers = this.handlers.get(parsedEvent.eventType) || [];
         const wildcardHandlers = this.handlers.get('*') || [];
-
         const allHandlers = [...registeredHandlers, ...wildcardHandlers];
 
         // Process handlers concurrently
-        await Promise.all(allHandlers.map(h => h(payload)));
+        await Promise.all(allHandlers.map(h => h(parsedEvent)));
 
         return res.status(200).json({ received: true });
-      } catch (err: unknown) {
-        console.error('Webhook processing error:', getErrorMessage(err));
+      } catch (err: any) {
+        console.error('Webhook processing error:', err.message || err);
         return res.status(500).json({ error: 'Internal Server Error' });
       }
     };
   }
 }
+

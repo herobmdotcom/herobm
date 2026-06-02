@@ -17,7 +17,7 @@ import {
   customers,
   taxCategories,
   uomDictionary,
-  orderEvents,
+  salesEvents,
   outbox,
 } from '../drizzle/modbm-core-schema';
 import { eq, and } from 'drizzle-orm';
@@ -46,7 +46,7 @@ describe('PickingService', () => {
 
   beforeEach(async () => {
     // Clean data
-    await pg.db.delete(orderEvents);
+    await pg.db.delete(salesEvents);
     await pg.db.delete(outbox);
     await pg.db.delete(salesOrderPicks);
     await pg.db.delete(salesOrderLineItems);

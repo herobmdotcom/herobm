@@ -4,8 +4,8 @@ export const modbmCore = pgSchema('modbm_core');
 
 export const outbox = modbmCore.table('outbox', {
   outboxId: uuid('outbox_id').primaryKey(),
-  aggregateType: text('aggregate_type').notNull(),
-  aggregateId: uuid('aggregate_id').notNull(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id').notNull(),
   eventType: text('event_type').notNull(),
   payload: jsonb('payload'),
   createdOn: timestamp('created_on', { withTimezone: true }),

@@ -30,8 +30,8 @@ import { ClientErrorDto, EmptyBodyDto } from './dto';
  * Telemetry ingestion endpoint for client-side errors.
  *
  * Frontend portals call this to ship errors that occur before an HTTP request
- * (e.g. missing auth token, JSON parse failures) into the PLG stack via
- * structured stdout logging → Promtail → Loki.
+ * (e.g. missing auth token, JSON parse failures) into the centralized observability
+ * stack via structured stdout logging.
  *
  * Security posture:
  * - @SkipCasbin() — telemetry must work even when the user's session has expired

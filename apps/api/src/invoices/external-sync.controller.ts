@@ -44,8 +44,8 @@ export class TypeBreakdownDto {
 
 export class OutboxEventDto {
   @ApiProperty() outboxId!: string;
-  @ApiProperty() aggregateType!: string;
-  @ApiProperty() aggregateId!: string;
+  @ApiProperty() entityType!: string;
+  @ApiProperty() entityId!: string;
   @ApiProperty() eventType!: string;
   @ApiProperty() payload!: any;
   @ApiProperty() createdOn!: Date;
@@ -123,8 +123,8 @@ export class ExternalSyncController {
     const recentEvents = await this.db
       .select({
         outboxId: outbox.outboxId,
-        aggregateType: outbox.aggregateType,
-        aggregateId: outbox.aggregateId,
+        entityType: outbox.entityType,
+        entityId: outbox.entityId,
         eventType: outbox.eventType,
         payload: outbox.payload,
         createdOn: outbox.createdOn,
@@ -181,8 +181,8 @@ export class ExternalSyncController {
     const events = await this.db
       .select({
         outboxId: outbox.outboxId,
-        aggregateType: outbox.aggregateType,
-        aggregateId: outbox.aggregateId,
+        entityType: outbox.entityType,
+        entityId: outbox.entityId,
         eventType: outbox.eventType,
         payload: outbox.payload,
         createdOn: outbox.createdOn,

@@ -20,7 +20,7 @@ import {
   glAccounts,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
 import { evaluateInvoiceLifecycleRules } from '../invoices/invoice-lifecycle-rules';
 import { CreatePaymentDto, AllocatePaymentDto } from './dto';
@@ -454,8 +454,8 @@ export class PaymentsService {
 
         // 6. Emit allocation event
         await emitEvent(tx as any, {
-          aggregateType: AggregateType.PAYMENT,
-          aggregateId: paymentId,
+          entityType: EntityType.PAYMENT,
+          entityId: paymentId,
           eventType: EventType.PAYMENT_ALLOCATED,
           payload: {
             allocationId: allocationRecord.allocationId,
@@ -905,8 +905,8 @@ export class PaymentsService {
       .returning();
 
     await emitEvent(tx as any, {
-      aggregateType: AggregateType.PAYMENT,
-      aggregateId: paymentId,
+      entityType: EntityType.PAYMENT,
+      entityId: paymentId,
       eventType: EventType.STATUS_CHANGED,
       payload: {
         entity: 'payment',

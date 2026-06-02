@@ -6,24 +6,23 @@
  * Aggregate types map to specific per-entity event tables.
  * 'system' routes to the system_events table for cross-cutting concerns.
  */
-export const AggregateType = {
+export const EntityType = {
   SALES_ORDER: 'sales_order',
-  SHIPMENT: 'shipment',
   PURCHASE_ORDER: 'purchase_order',
   PRODUCT: 'product',
   CUSTOMER: 'customer',
   SUPPLIER: 'supplier',
   PRODUCT_SUPPLIER: 'product_supplier',
+  SHIPMENT: 'shipment',
   PAYMENT: 'payment',
-  GOODS_RECEIPT: 'goods_receipt',
+  TRANSFER_ORDER: 'transfer_order',
   SALES_INVOICE: 'sales_invoice',
   PURCHASE_INVOICE: 'purchase_invoice',
-  TRANSFER_ORDER: 'transfer_order',
-  SYSTEM: 'system',
+  SYSTEM: 'system', // the entire system (for system-wide events or generic stuff)
+  WAREHOUSE: 'warehouse', // warehouse operations
 } as const;
 
-export type AggregateTypeValue =
-  (typeof AggregateType)[keyof typeof AggregateType];
+export type EntityTypeValue = (typeof EntityType)[keyof typeof EntityType];
 
 import {
   SALES_ORDER_STATE,
@@ -40,10 +39,8 @@ export const EventType = {
   CREATED: 'created',
   UPDATED: 'updated',
   STATUS_CHANGED: 'status_changed',
-  AUTO_STATUS_CHANGED: 'auto_status_changed',
   ARCHIVED: SALES_ORDER_STATE.ARCHIVED,
   UNARCHIVED: 'unarchived',
-  RELEASED: 'released',
   DELETED: 'deleted',
 
   // ── Line operations ─────────────────────────────────────────────────
@@ -61,7 +58,6 @@ export const EventType = {
 
   // ── Procurement domain ──────────────────────────────────────────────
   PURCHASE_INVOICED: 'purchase_invoiced',
-  STOCK_RECEIVED: 'stock_received',
   DEMAND_ALLOCATED: 'demand_allocated',
   DEMAND_UNALLOCATED: 'demand_unallocated',
   DEMAND_REALLOCATED: 'demand_reallocated',
@@ -74,6 +70,13 @@ export const EventType = {
   LOCATION_DISCREPANCY_WARNING: 'location_discrepancy_warning',
   OVER_RECEIVED_WARNING: 'over_received_warning',
   PRICE_DISCREPANCY_WARNING: 'price_discrepancy_warning',
+
+  // ── Warehouse domain ────────────────────────────────────────────────
+  PICK_CREATED: 'pick_created',
+  PICK_CANCELLED: 'pick_cancelled',
+  PUTAWAY_COMPLETED: 'putaway_completed',
+  RECEIPT_CREATED: 'receipt_created',
+  RECEIPT_STATUS_CHANGED: 'receipt_status_changed',
 
   // ── Product domain ──────────────────────────────────────────────────
   LINKED: 'linked',
@@ -106,7 +109,6 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   // Sales
   'sales_order.created',
   'sales_order.status_changed',
-  'sales_order.released',
   'sales_order.archived',
   'sales_order.unarchived',
   'sales_order.deleted',
@@ -120,7 +122,6 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   // Procurement
   'purchase_order.created',
   'purchase_order.status_changed',
-  'purchase_order.released',
   'purchase_order.archived',
   'purchase_order.unarchived',
   'purchase_order.deleted',
@@ -132,17 +133,18 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'purchase_return.processed',
 
   // Warehouse
-  'shipment.created',
-  'shipment.status_changed',
-  'shipment.dispatched',
-  'goods_receipt.created',
-  'goods_receipt.status_changed',
-  'goods_receipt.received',
+  'warehouse.shipment_created',
+  'warehouse.shipment_status_changed',
+  'warehouse.shipment_dispatched',
+  'warehouse.receipt_created',
+  'warehouse.receipt_status_changed',
+  'warehouse.pick_created',
+  'warehouse.pick_cancelled',
+  'warehouse.putaway_completed',
   'transfer_order.created',
   'transfer_order.status_changed',
-  'transfer_order.released',
   'transfer_order.deleted',
-  'stock_adjustment.processed',
+  'inventory_ledger.adjustment_processed',
 
   // Master Data
   'product.created',
@@ -163,5 +165,5 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'payment.submitted',
   'payment.allocated',
   'payment.cancelled',
-  'journal_entry.posted',
+  'general_ledger.entry_posted',
 ]);

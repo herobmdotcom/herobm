@@ -8,7 +8,7 @@ import {
 } from '../drizzle/modbm-core-schema';
 import { findOrder, getCommittedPerLine } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType, EventType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import {
   SALES_ORDER_STATE,
   SHIPMENT_STATE,
@@ -90,8 +90,8 @@ export const autoShipWhenFullyShipped: LifecycleRule = {
       .where(eq(salesOrders.salesOrderId, salesOrderId));
 
     await emitEvent(db as any, {
-      aggregateType: AggregateType.SALES_ORDER,
-      aggregateId: salesOrderId,
+      entityType: EntityType.SALES_ORDER,
+      entityId: salesOrderId,
       eventType: 'auto_status_changed',
       payload: {
         rule: 'auto-ship-when-fully-shipped',
@@ -120,7 +120,7 @@ export const revertToPickingOnShipmentCancel: LifecycleRule = {
   evaluate: async (db, salesOrderId, trigger, actor) => {
     // 1. Only applies if a shipment was cancelled or reverted to draft
     if (
-      trigger.entity !== AggregateType.SHIPMENT ||
+      trigger.entity !== EntityType.SHIPMENT ||
       ![SHIPMENT_STATE.CANCELLED, SHIPMENT_STATE.DRAFT].includes(
         trigger.action as any,
       )
@@ -161,8 +161,8 @@ export const revertToPickingOnShipmentCancel: LifecycleRule = {
       .where(eq(salesOrders.salesOrderId, salesOrderId));
 
     await emitEvent(db as any, {
-      aggregateType: AggregateType.SALES_ORDER,
-      aggregateId: salesOrderId,
+      entityType: EntityType.SALES_ORDER,
+      entityId: salesOrderId,
       eventType: 'auto_status_changed',
       payload: {
         rule: 'revert-to-picking-on-shipment-cancel',
@@ -243,8 +243,8 @@ export const autoInvoiceWhenFullyInvoiced: LifecycleRule = {
       .where(eq(salesOrders.salesOrderId, salesOrderId));
 
     await emitEvent(db as any, {
-      aggregateType: AggregateType.SALES_ORDER,
-      aggregateId: salesOrderId,
+      entityType: EntityType.SALES_ORDER,
+      entityId: salesOrderId,
       eventType: 'auto_status_changed',
       payload: {
         rule: 'auto-invoice-when-fully-invoiced',
@@ -265,10 +265,55 @@ export const autoInvoiceWhenFullyInvoiced: LifecycleRule = {
   },
 };
 
+export const startPickingOnFirstPick: LifecycleRule = {
+  name: 'start-picking-on-first-pick',
+  description:
+    'Transitions an order from confirmed to picking when the first line is picked',
+  enabled: true,
+  evaluate: async (db, salesOrderId, trigger, actor) => {
+    // 1. Only applies if triggered by picking activity
+    if (trigger.entity !== 'picking' || trigger.action !== 'pick_created') {
+      return null;
+    }
+
+    // 2. Order must be in 'confirmed'
+    const order = await findOrder(db, salesOrderId);
+    if (order.stateCode !== SALES_ORDER_STATE.CONFIRMED) return null;
+
+    // 3. Execute transition
+    await db
+      .update(salesOrders)
+      .set({ stateCode: SALES_ORDER_STATE.PICKING, modifiedOn: new Date() })
+      .where(eq(salesOrders.salesOrderId, salesOrderId));
+
+    await emitEvent(db as any, {
+      entityType: EntityType.SALES_ORDER,
+      entityId: salesOrderId,
+      eventType: 'auto_status_changed',
+      payload: {
+        rule: 'start-picking-on-first-pick',
+        trigger,
+        from: SALES_ORDER_STATE.CONFIRMED,
+        to: SALES_ORDER_STATE.PICKING,
+        reason: 'First pick recorded on confirmed order',
+      },
+      actor,
+    });
+
+    return {
+      ruleName: 'start-picking-on-first-pick',
+      from: SALES_ORDER_STATE.CONFIRMED,
+      to: SALES_ORDER_STATE.PICKING,
+      reason: 'First pick recorded on confirmed order',
+    };
+  },
+};
+
 const LIFECYCLE_RULES: LifecycleRule[] = [
   autoShipWhenFullyShipped,
   revertToPickingOnShipmentCancel,
   autoInvoiceWhenFullyInvoiced,
+  startPickingOnFirstPick,
 ];
 
 /**

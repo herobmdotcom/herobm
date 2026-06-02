@@ -158,132 +158,6 @@ services:
         max-size: "20m"
         max-file: "3"
 
-  postgres-exporter:
-    image: docker.io/prometheuscommunity/postgres-exporter:latest
-    container_name: postgres-exporter
-    restart: unless-stopped
-    profiles:
-      - plg
-    environment:
-      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-custom:5432/${POSTGRES_DB:-custom_app}?sslmode=disable"
-    ports:
-      - "127.0.0.1:9187:9187"
-    depends_on:
-      postgres-custom:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9187/metrics"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-    networks:
-      - monitoring-net
-      - app-net
-
-  redis-exporter:
-    image: docker.io/oliver006/redis_exporter:latest
-    container_name: redis-exporter
-    restart: unless-stopped
-    profiles:
-      - plg
-    environment:
-      REDIS_ADDR: "redis://:${REDIS_PASSWORD}@redis-broker:6379"
-    ports:
-      - "127.0.0.1:9121:9121"
-    depends_on:
-      redis-broker:
-        condition: service_healthy
-    networks:
-      - monitoring-net
-      - app-net
-
-  prometheus:
-    image: docker.io/prom/prometheus:latest
-    container_name: prometheus
-    restart: unless-stopped
-    profiles:
-      - plg
-    volumes:
-      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    ports:
-      - "127.0.0.1:9090:9090"
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-    networks:
-      - monitoring-net
-
-  loki:
-    image: docker.io/grafana/loki:latest
-    container_name: loki
-    restart: unless-stopped
-    profiles:
-      - plg
-    ports:
-      - "127.0.0.1:3100:3100"
-    volumes:
-      - ./configs/loki/local-config.yaml:/etc/loki/local-config.yaml:ro
-      - loki_data:/loki
-    command: -config.file=/etc/loki/local-config.yaml
-    # Note: Loki image is scratch-based (no sh/wget/curl), so Docker
-    # healthchecks are not possible. We rely on restart policy instead.
-    networks:
-      - monitoring-net
-
-  promtail:
-    image: docker.io/grafana/promtail:latest
-    container_name: promtail
-    restart: unless-stopped
-    profiles:
-      - plg
-    expose:
-      - "9080"
-    volumes:
-      - ./configs/promtail/promtail-config.yaml:/etc/promtail/config.yml:ro
-      - ./logs:/var/log/pipelines:ro
-    command: -config.file=/etc/promtail/config.yml
-    depends_on:
-      loki:
-        condition: service_started
-    networks:
-      - monitoring-net
-
-  grafana:
-    image: docker.io/grafana/grafana:latest
-    container_name: grafana
-    restart: unless-stopped
-    profiles:
-      - plg
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB:-custom_app}
-    ports:
-      - "127.0.0.1:3000:3000"
-    volumes:
-      - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
-      - grafana_data:/var/lib/grafana
-    depends_on:
-      prometheus:
-        condition: service_healthy
-      loki:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-    networks:
-      - app-net
-      - monitoring-net
-
 
 
   # --- ELT Pipeline (on-demand, not started by 'podman compose up') ---
@@ -318,9 +192,7 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  prometheus_data:
-  loki_data:
-  grafana_data:
+
 
 
 networks:

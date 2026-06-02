@@ -9,7 +9,7 @@
 #       poisoning Make targets.
 ifeq ($(OS),Windows_NT)
   ACTIVE_PROFILE := $(strip $(shell type .active_profile 2>nul))
-  COMPOSE_OVERRIDE = -f docker-compose.windows.yml
+  COMPOSE_OVERRIDE =
   DBT = $(CURDIR)/.venv/Scripts/dbt
   VENV_PYTHON = $(CURDIR)/.venv/Scripts/python
   INIT_ENV_CMD = python scripts/init_env.py
@@ -20,7 +20,7 @@ ifeq ($(OS),Windows_NT)
   BIND_IP ?= 127.0.0.1
 else
   ACTIVE_PROFILE := $(strip $(shell cat .active_profile 2>/dev/null))
-  COMPOSE_OVERRIDE = -f docker-compose.linux.yml
+  COMPOSE_OVERRIDE =
   DBT = $(CURDIR)/.venv/bin/dbt
   VENV_PYTHON = $(CURDIR)/.venv/bin/python
   INIT_ENV_CMD = python3 scripts/init_env.py
@@ -56,16 +56,7 @@ DBT_ODOO_DIR = pipelines/odoo_transform
 
 # --- Container Stack (Podman) ---
 
-# Ensure the podman_logs volume exists before starting containers.
-# Promtail needs this volume to scrape container logs on Windows.
-# The volume maps Podman's overlay-containers directory into the container.
-check-logs-volume:
-ifeq ($(OS),Windows_NT)
-	@podman volume inspect podman_logs >nul 2>&1 || ( \
-		echo [pre-flight] Creating podman_logs volume... && \
-		podman volume create --opt type=none --opt o=bind --opt device=/home/user/.local/share/containers/storage/overlay-containers podman_logs \
-	)
-endif
+
 
 # Ensure PostgreSQL log directory has correct permissions for rootless podman.
 # Map UID 70 (postgres inside) correctly on host.
@@ -81,7 +72,7 @@ endif
 # --------------------------------------------------------------------------
 
 # DB Backend Core (Local FE + API run path)
-up-db: check-logs-volume check-postgres-logs
+up-db: check-postgres-logs
 	$(COMPOSE_CMD) up -d $(ARGS) postgres-custom redis-broker
 
 down-db:
@@ -89,7 +80,7 @@ down-db:
 	-podman rm -f postgres-custom redis-broker
 
 # Portal + API Core (The standard full-container app stack)
-up-portal-api: check-logs-volume check-postgres-logs
+up-portal-api: check-postgres-logs
 	$(COMPOSE_CMD) up -d $(ARGS) custom-api ops-portal postgres-custom redis-broker
 
 down-portal-api:
@@ -102,7 +93,7 @@ down-portal-api:
 build-worker:
 	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
 
-up-queue: build-worker check-logs-volume check-postgres-logs
+up-queue: build-worker check-postgres-logs
 	$(COMPOSE_CMD) --profile queue up -d outbox-worker
 
 down-queue:
@@ -110,7 +101,7 @@ down-queue:
 	$(COMPOSE_CMD) rm -f outbox-worker
 
 # Run absolutely everything
-up-all: build-worker check-logs-volume check-postgres-logs
+up-all: build-worker check-postgres-logs
 	$(COMPOSE_CMD) --profile "*" up -d
 
 down-all:
@@ -285,7 +276,7 @@ endif
 # queries per request. Unit tests use PGlite for fast isolation.
 TEST_E2E_TARGET = test:e2e
 
-test-api:
+test-api-unit:
 	npm run $(TEST_API_TARGET) -w apps/api
 
 test-api-cov:
@@ -354,7 +345,16 @@ build-shared:
 
 # --- Quality Gates & Verification ---
 
-verify-portal-api: typecheck-portal test-api test-api-e2e
+check-types:
+	@npm run typecheck -w apps/api
+	@npm run typecheck -w apps/ops-portal
+
+check-lint:
+	@npm run lint -w apps/api
+	@npm run lint -w apps/ops-portal
+	@npm run lint:oas -w apps/api
+
+check-all: check-types check-lint
 
 test-deps:
 	python infra/tests/test_dependency_completeness.py
@@ -365,13 +365,13 @@ test-single:
 test-structural:
 	@powershell -ExecutionPolicy Bypass -Command "$$ErrorActionPreference = 'Stop'; Get-ChildItem -Path infra\tests\test_*.ps1 | ForEach-Object { Write-Host 'Running ' $$_.Name; & $$_.FullName; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE } }"
 
+test-db-setup:
+	@powershell -ExecutionPolicy Bypass -Command "$$ErrorActionPreference = 'Stop'; Get-ChildItem -Path infra\heavy_tests\test_*.ps1 | ForEach-Object { Write-Host 'Running ' $$_.Name; & $$_.FullName; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE } }"
+
 test-data:
 	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
 
-test-heavy:
-	@powershell -ExecutionPolicy Bypass -Command "$$ErrorActionPreference = 'Stop'; Get-ChildItem -Path infra\heavy_tests\test_*.ps1 | ForEach-Object { Write-Host 'Running ' $$_.Name; & $$_.FullName; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE } }"
-
-test-all: test-api test-deps test-structural typecheck-portal test-data
+test-all: test-api-unit test-api-e2e test-deps test-structural test-db-setup test-transform test-data
 
 build-all:
 	npm run build --workspaces --if-present
@@ -447,14 +447,6 @@ verify-db: migrate-status
 	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -t -A -c "SELECT 'Admin User: ' || count(*) FROM modbm_core.users WHERE username = 'admin';"
 	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -t -A -c "SELECT 'Organization: ' || count(*) FROM modbm_core.organization;"
 
-verify-all: build-api verify-portal-api verify-db test-structural test-deps test-transform test-data
+verify-all: build-all check-all verify-db test-all
 
-test-structural-local:
-	@npm run lint -w apps/api
-	@npm run lint -w apps/ops-portal
-	@npm run typecheck -w apps/api
-	@npm run typecheck -w apps/ops-portal
-	@npm run lint:oas -w apps/api
-	@powershell -ExecutionPolicy Bypass -Command "$$ErrorActionPreference = 'Stop'; Get-ChildItem -Path infra\tests\test_*.ps1 | ForEach-Object { Write-Host 'Running ' $$_.Name; if ($$_.Name -eq 'test_docker_log_shipping.ps1') { & $$_.FullName -SkipLive } else { & $$_.FullName }; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE } }"
-
-verify-local: build-api typecheck-portal test-api test-api-e2e test-structural-local test-deps test-transform
+verify-fast: check-all test-api-unit test-deps test-structural test-transform

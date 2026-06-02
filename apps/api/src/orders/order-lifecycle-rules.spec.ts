@@ -12,7 +12,7 @@ import {
   salesOrderShipmentLines,
   locations,
   taxCategories,
-  orderEvents,
+  salesEvents,
   outbox,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
@@ -36,7 +36,7 @@ describe('Order Lifecycle Rules', () => {
 
   beforeEach(async () => {
     // Clean data
-    await pg.db.delete(orderEvents);
+    await pg.db.delete(salesEvents);
     await pg.db.delete(outbox);
     await pg.db.delete(salesOrderShipmentLines);
     await pg.db.delete(salesOrderShipments);
