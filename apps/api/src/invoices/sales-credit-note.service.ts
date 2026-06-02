@@ -32,6 +32,8 @@ import { computeLinePrice, computeReturnCreditSummary } from '@modbm/shared';
 import {
   SALES_CREDIT_NOTE_STATE,
   SALES_CREDIT_NOTE_TRANSITIONS,
+  SALES_INVOICE_STATE,
+  getErrorMessage,
   getValidStates,
 } from '@modbm/shared';
 
@@ -213,6 +215,8 @@ export class SalesCreditNoteService {
         quantity: number;
         tax: number;
         productType?: string;
+        productNumber?: string;
+        productDescription?: string;
       }> = [];
       const creditLineInputs: Array<{
         quantity: number;
@@ -228,6 +232,7 @@ export class SalesCreditNoteService {
             ...getTableColumns(salesOrderLineItems),
             externalTaxCode: coreProducts.externalTaxCode,
             productType: coreProducts.productType,
+            productNumber: coreProducts.productNumber,
           })
           .from(salesOrderLineItems)
           .leftJoin(
@@ -275,6 +280,8 @@ export class SalesCreditNoteService {
           quantity: qty,
           tax: pricing.tax,
           productType: orderLine.productType,
+          productNumber: orderLine.productNumber,
+          productDescription: orderLine.productDescription,
         });
 
         creditLineInputs.push({
@@ -438,6 +445,8 @@ export class SalesCreditNoteService {
           line_items: taxableLines.map((l) => {
             const payloadLine: any = {
               id: l.salesOrderLineId,
+              product_identifier: l.productNumber,
+              description: l.productDescription,
               quantity: l.quantity,
               unit_price: parseFloat(l.pricePerUnit),
               discount:
@@ -465,13 +474,13 @@ export class SalesCreditNoteService {
           this.logger.log(
             `Refund recorded in ${orderTaxProvider} for credit note ${creditNoteNumber}`,
           );
-        } catch (e: any) {
+        } catch (e: unknown) {
           this.logger.error(
             `Failed to record refund in ${orderTaxProvider}`,
             e,
           );
           throw new BadRequestException(
-            `Failed to record refund in ${orderTaxProvider}: ${e.message}`,
+            `Failed to record refund in ${orderTaxProvider}: ${getErrorMessage(e)}`,
           );
         }
       }

@@ -81,14 +81,17 @@ export class CreateAccountDto {
   primaryContactPhone?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   customerGroupId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   parentCustomerId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   taxCategoryId?: string;
 

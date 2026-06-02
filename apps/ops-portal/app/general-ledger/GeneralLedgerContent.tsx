@@ -94,8 +94,8 @@ export default function GeneralLedgerContent() {
     })
       .then((res) => {
         const payload = res.data;
-        setRows((payload as any).data as unknown as GlEntry[]);
-        setTotal((payload as any).total || 0);
+        setRows((payload as unknown as { data: GlEntry[] }).data || []);
+        setTotal((payload as unknown as { total: number }).total || 0);
       })
       .catch((err) => reportError(err, 'GeneralLedgerContent'))
       .finally(() => setLoading(false));
@@ -119,7 +119,7 @@ export default function GeneralLedgerContent() {
     },
     {
       field: 'accountCode',
-      headerName: t('columns.customer'),
+      headerName: t('columns.glAccount'),
       width: 250,
       cellRenderer: (p: any) => {
         return (
@@ -177,12 +177,22 @@ export default function GeneralLedgerContent() {
         });
       }}
       pageTitle={t('title')}
-      headerFilters={
-        <>
+      headerActions={
+        <button
+          onClick={() => setIsCodesOpen(true)}
+          className="btn btn-secondary btn-sm whitespace-nowrap"
+        >
+          {/* eslint-disable-next-line i18next/no-literal-string */}
+          <span className="material-symbols-outlined text-sm">visibility</span>
+          {tCodes('button')}
+        </button>
+      }
+      secondaryHeader={
+        <div className="flex flex-wrap items-center justify-end gap-4 w-full">
           <select
             value={accountCode}
             onChange={(e) => setAccountCode(e.target.value)}
-            className="input text-xs h-9 border-gray-200 w-auto min-w-[200px] bg-white rounded-lg"
+            className="input text-xs h-9 border-gray-200 !w-auto min-w-[240px] bg-white rounded-lg"
           >
             <option value="">{t('allAccounts')}</option>
             {accounts.map((a) => (
@@ -191,7 +201,6 @@ export default function GeneralLedgerContent() {
               </option>
             ))}
           </select>
-
           <div className="flex items-center gap-3">
             <input
               type="date"
@@ -209,18 +218,7 @@ export default function GeneralLedgerContent() {
               title={t('toDate')}
             />
           </div>
-        </>
-      }
-      headerActions={
-        <button
-          onClick={() => setIsCodesOpen(true)}
-          className="btn btn-secondary btn-sm whitespace-nowrap"
-        >
-          {/* eslint-disable-next-line i18next/no-literal-string */}
-          <span className="material-symbols-outlined text-sm">visibility</span>
-          {/* eslint-enable i18next/no-literal-string */}
-          {tCodes('button')}
-        </button>
+        </div>
       }
     />
 

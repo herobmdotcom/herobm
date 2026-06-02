@@ -87,7 +87,7 @@ describe('SalesInvoiceService', () => {
     mockAppConfigService = {
       revenueRoutingPrecedence: jest.fn().mockReturnValue('product_first'),
       expenseRoutingPrecedence: jest.fn().mockReturnValue('product_first'),
-      nonStockBillingMode: jest.fn().mockReturnValue('per_shipment'),
+      inventoryAccountingMode: jest.fn().mockReturnValue('periodic'),
       homeCurrency: jest.fn().mockReturnValue('AUD'),
       taxProviderMappings: jest.fn().mockReturnValue({}),
     };

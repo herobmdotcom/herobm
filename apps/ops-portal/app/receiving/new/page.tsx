@@ -17,7 +17,7 @@ import LocationSelect from '@/components/shared/LocationSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import { useTranslations } from 'next-intl';
 import { formatAmount } from '@/lib/currency';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage, MATCH_STATUS } from '@modbm/shared';
 
 interface DraftLine {
   id: string;
@@ -35,6 +35,7 @@ interface CompletedLine {
   quantityReceived: string;
   matchStatus: string;
   orderNumber?: string;
+  purchaseOrderId?: string;
 }
 
 function ReceivingFlow() {
@@ -133,9 +134,11 @@ function ReceivingFlow() {
         goodsReceivedLineId: l.goodsReceivedLineId,
         productId: l.productId,
         productNumber: l.productNumber || l.productId.substring(0, 8),
-        productName: l.productDescription || '',
+        productName: l.productName || l.productDescription || '',
         quantityReceived: l.quantityReceived,
-        matchStatus: l.matchStatus || 'unmatched',
+        matchStatus: l.matchStatus || MATCH_STATUS.UNMATCHED,
+        orderNumber: l.orderNumber,
+        purchaseOrderId: l.purchaseOrderId,
       }));
 
       setCompletedLines(mapped);
@@ -252,7 +255,11 @@ function ReceivingFlow() {
                         <MatchStatusBadge status={line.matchStatus} />
                       </td>
                       <td>
-                        {line.orderNumber ? (
+                        {line.orderNumber && line.purchaseOrderId ? (
+                          <Link href={`/purchase-orders/${line.purchaseOrderId}`} style={{ fontWeight: 500, fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>
+                            {line.orderNumber}
+                          </Link>
+                        ) : line.orderNumber ? (
                           <span style={{ fontWeight: 500, fontSize: 13, color: 'var(--accent)' }}>
                             {line.orderNumber}
                           </span>
@@ -281,7 +288,9 @@ function ReceivingFlow() {
                   <div className="flex flex-col gap-1 border-t border-slate-100 pt-2">
                     <MobileCardField label={tCommon('columns.received')} value={line.quantityReceived} />
                     <MobileCardField label={t('columns.matchStatus')} value={<MatchStatusBadge status={line.matchStatus} />} />
-                    <MobileCardField label={tCommon('columns.purchaseOrder')} value={line.orderNumber ? (
+                    <MobileCardField label={tCommon('columns.purchaseOrder')} value={line.orderNumber && line.purchaseOrderId ? (
+                      <Link href={`/purchase-orders/${line.purchaseOrderId}`} style={{ fontWeight: 500, color: 'var(--accent)', textDecoration: 'none' }}>{line.orderNumber}</Link>
+                    ) : line.orderNumber ? (
                       <span style={{ fontWeight: 500, color: 'var(--accent)' }}>{line.orderNumber}</span>
                     ) : (
                       <span style={{ color: 'var(--text-muted)' }}>—</span>
@@ -381,7 +390,7 @@ function ReceivingFlow() {
             ) : (
               <div className="flex-1 flex flex-col w-full">
                 <label className="block mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                  {t('flow.selectedProduct', { fallback: 'Selected Product' })}
+                  {t('flow.selectedProduct')}
                 </label>
                 <div
                   className="text-sm px-3 flex items-center w-full border rounded outline-none"
@@ -480,8 +489,7 @@ function ReceivingFlow() {
                             onClick={() => removeDraftLine(line.id)}
                           >
                             {/* eslint-disable-next-line i18next/no-literal-string */}
-                            ✕
-                            {/* eslint-enable i18next/no-literal-string */}
+                            <span>✕</span>
                           </button>
                         </td>
                       </tr>
@@ -511,8 +519,7 @@ function ReceivingFlow() {
                           onClick={() => removeDraftLine(line.id)}
                         >
                           {/* eslint-disable-next-line i18next/no-literal-string */}
-                          ✕
-                          {/* eslint-enable i18next/no-literal-string */}
+                          <span>✕</span>
                         </button>
                       </div>
                     </div>

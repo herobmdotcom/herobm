@@ -216,7 +216,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
               ←
             </button>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">
-              {t('reconciliationLabel', { account: reconciliation.accountName })}
+              {t('reconciliationLabel', { glAccount: reconciliation.accountName })}
             </h1>
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
               isPosted 
@@ -234,13 +234,13 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
                 onClick={() => setViewMode('bank')} 
                 className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'bank' ? 'bg-white shadow-sm text-[var(--accent)]' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                Bank Statement Match
+                {t('bankStatementMatch')}
               </button>
               <button 
                 onClick={() => setViewMode('ledger')} 
                 className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'ledger' ? 'bg-white shadow-sm text-[var(--accent)]' : 'text-gray-500 hover:text-gray-700'}`}
               >
-                Ledger Lines
+                {t('ledgerLines')}
               </button>
             </div>
           </div>

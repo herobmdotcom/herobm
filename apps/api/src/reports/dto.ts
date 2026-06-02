@@ -21,14 +21,6 @@ export class ReportDto {
   @ApiProperty() isSystem!: boolean;
 }
 
-export class HooksResponseDto {
-  @ApiProperty({ type: [HookDto] }) data!: HookDto[];
-}
-
-export class ReportsResponseDto {
-  @ApiProperty({ type: [ReportDto] }) data!: ReportDto[];
-}
-
 export class ReportResponseDto {
   @ApiProperty({ type: ReportDto }) data!: ReportDto;
 }
@@ -39,11 +31,7 @@ export class HookAssignmentDto {
   @ApiProperty() contextSlug!: string;
 }
 
-export class HookAssignmentsResponseDto {
-  @ApiProperty({ type: [HookAssignmentDto] }) data!: HookAssignmentDto[];
-}
-
-class RandomIdData {
+export class RandomIdData {
   @ApiProperty() id!: string;
 }
 

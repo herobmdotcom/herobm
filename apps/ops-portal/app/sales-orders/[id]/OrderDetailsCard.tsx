@@ -54,7 +54,10 @@ export default function OrderDetailsCard({
         <div className="card">
             <div className="flex items-center justify-between gap-4 mb-4">
                 <h2 className="section-heading mb-0">
-                    <span className="material-symbols-outlined">receipt_long</span>
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    <span className="material-symbols-outlined">
+                        receipt_long
+                    </span>
                     {tSales('orderDetails')}
                 </h2>
                 <div className="relative">
@@ -62,7 +65,10 @@ export default function OrderDetailsCard({
                         className="btn btn-secondary btn-sm px-2"
                         onClick={() => setMenuOpen(!menuOpen)}
                     >
-                        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>more_vert</span>
+                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                            more_vert
+                        </span>
                     </button>
                     {menuOpen && (
                         <>

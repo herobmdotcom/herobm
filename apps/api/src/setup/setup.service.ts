@@ -33,6 +33,7 @@ export class SetupService {
   private readonly logger = new Logger(SetupService.name);
 
   // In-memory job tracking for the setup process
+  // modbm-allow-record-any
   private activeJobs: Record<string, any> = {};
 
   constructor(

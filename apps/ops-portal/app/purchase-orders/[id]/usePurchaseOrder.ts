@@ -162,7 +162,7 @@ export function usePurchaseOrder(id: string) {
     setReturnsLoading(true);
     try {
       const { data } = await api.purchaseReturnsControllerFindReturns(id);
-      setReturns((Array.isArray(data) ? data : (data as any)?.data || []) as OrderReturn[]);
+      setReturns((Array.isArray(data) ? data : (data as unknown as { data: OrderReturn[] })?.data || []) as OrderReturn[]);
     } catch {
       setReturns([]);
     } finally {
@@ -173,7 +173,7 @@ export function usePurchaseOrder(id: string) {
   const loadInvoices = async () => {
     try {
       const { data } = await api.purchaseInvoiceControllerGetPurchaseBills(id);
-      setInvoices(((data as any)?.data || data || []) as unknown as PurchaseInvoice[]);
+      setInvoices(((data as unknown as { data: any[] })?.data || data || []) as unknown as PurchaseInvoice[]);
     } catch {
       setInvoices([]);
     }
@@ -183,7 +183,7 @@ export function usePurchaseOrder(id: string) {
     setAllocationsLoading(true);
     try {
       const { data } = await api.allocationsControllerGetAllocationsByPo(id);
-      setAllocations((Array.isArray(data) ? data : (data as any)?.data || []) as Allocation[]);
+      setAllocations((Array.isArray(data) ? data : (data as unknown as { data: Allocation[] })?.data || []) as Allocation[]);
     } catch {
       setAllocations([]);
     } finally {
@@ -197,7 +197,7 @@ export function usePurchaseOrder(id: string) {
   useEffect(() => {
     loadOrder();
     api.taxCategoriesControllerFindAll()
-      .then(res => setTaxCategories((res.data || []).map((t: any) => ({ ...t, taxCategoryId: t.id || t.taxCategoryId })) || []))
+      .then(res => setTaxCategories((res.data || []).map((t: import('@modbm/sdk').TaxCategoryResponseDto) => ({ ...t, taxCategoryId: (t as unknown as { id?: string }).id || t.taxCategoryId } as unknown as TaxCategory))))
       .catch((err) => reportError(err, 'OrderDetailPage'));
   }, [id]);
 

@@ -27,11 +27,13 @@ type EnrichmentRule = { id: string; field: string; country: string; provider: st
 export default function IntegrationsSettingsPage() {
   const router = useRouter();
   const tCommon = useTranslations('common');
+  const tInt = useTranslations('admin.integrations');
 
   const [loading, setLoading] = useState(true);
   const [providers, setProviders] = useState<ProviderConfig[]>([]);
   
   const [expandedProvider, setExpandedProvider] = useState<string | null>(null);
+  // modbm-allow-record-any
   const [configData, setConfigData] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(false);
@@ -39,7 +41,7 @@ export default function IntegrationsSettingsPage() {
   // Test Connection State
   const [testPayload, setTestPayload] = useState<string>('');
   const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; data?: any; error?: string } | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; data?: unknown; error?: string } | null>(null);
 
   // Routing Rules State
   const [appConfig, setAppConfig] = useState<any>(null);
@@ -169,6 +171,7 @@ export default function IntegrationsSettingsPage() {
     try {
       setLoadingConfig(true);
       const res = await api.enrichmentControllerGetConfig({ provider: provider.name });
+      // modbm-allow-record-any
       const data = (res.data as Record<string, any>) || {};
       setConfigData(data);
       if (data.testPayload) {
@@ -221,16 +224,20 @@ export default function IntegrationsSettingsPage() {
       }
 
       if (isJson && typeof payload === 'object') {
-        const res = await api.enrichmentControllerTestLookupPost(payload, { provider: providerName });
-        setTestResult({ success: true, data: res.data });
+        const res = await api.enrichmentControllerTestLookupPost({ payload }, { provider: providerName });
+        // The API returns 200/201 but the payload might indicate a provider error via isValid
+        const isSuccess = res.data?.isValid !== false && !(res.data?.data as any)?.error;
+        setTestResult({ success: isSuccess, data: res.data });
       } else {
         const res = await api.enrichmentControllerTestLookup({ provider: providerName, query: testPayload });
-        setTestResult({ success: true, data: res.data });
+        const isSuccess = res.data?.isValid !== false && !(res.data?.data as any)?.error;
+        setTestResult({ success: isSuccess, data: res.data });
       }
       // Auto-save the test payload to the DB if we're testing
       if (testPayload.trim()) {
          try {
            const currentConfigRes = await api.enrichmentControllerGetConfig({ provider: providerName });
+           // modbm-allow-record-any
            const currentData = (currentConfigRes.data as Record<string, any>) || {};
            await api.enrichmentControllerUpdateConfig(
              { ...currentData, testPayload },
@@ -266,8 +273,9 @@ export default function IntegrationsSettingsPage() {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">route</span>
-              Routing Rules
+              {tInt('routingRules')}
             </h3>
           </div>
           
@@ -373,15 +381,16 @@ export default function IntegrationsSettingsPage() {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">extension</span>
-              Available Integrations
+              {tInt('availableIntegrations')}
             </h3>
           </div>
           
           {loading ? (
-            <div className="p-6 text-center text-muted">Loading integrations...</div>
+            <div className="p-6 text-center text-muted">{tInt('loadingIntegrations')}</div>
           ) : providers.length === 0 ? (
-            <div className="p-6 text-center text-muted">No integrations found.</div>
+            <div className="p-6 text-center text-muted">{tInt('noIntegrationsFound')}</div>
           ) : (
             <div className="flex flex-col gap-4">
               {providers.map(p => {
@@ -394,6 +403,7 @@ export default function IntegrationsSettingsPage() {
                       onClick={() => toggleProvider(p)}
                     >
                       <div className="flex items-center gap-4">
+                        {/* eslint-disable-next-line i18next/no-literal-string */}
                         <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 text-[var(--accent)] ${isExpanded ? 'rotate-90' : ''}`}>
                           chevron_right
                         </span>
@@ -402,13 +412,13 @@ export default function IntegrationsSettingsPage() {
                             {p.name.toUpperCase()}
                           </div>
                           <div className="text-xs text-[var(--text-secondary)] mt-0.5">
-                            External Data Provider
+                            {tInt('externalDataProvider')}
                           </div>
                         </div>
                       </div>
                       <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                         <button className="btn btn-secondary btn-sm" onClick={() => toggleProvider(p)}>
-                          {isExpanded ? 'Close' : 'Configure'}
+                          {isExpanded ? tCommon('close') : tCommon('configure')}
                         </button>
                       </div>
                     </div>
@@ -419,7 +429,7 @@ export default function IntegrationsSettingsPage() {
                         {/* Configuration Section */}
                         <div>
                           <h4 className="text-sm font-bold text-[#041627] mb-3" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                            Configuration
+                            {tInt('configuration')}
                           </h4>
                           {loadingConfig ? (
                             <div className="text-sm text-muted animate-pulse p-4 bg-white rounded border border-[var(--border)]">Loading configuration...</div>
@@ -447,7 +457,7 @@ export default function IntegrationsSettingsPage() {
                                   onClick={() => handleSaveConfig(p)}
                                   disabled={saving}
                                 >
-                                  {saving ? 'Saving...' : 'Save Configuration'}
+                                  {saving ? tCommon('saving') : tInt('saveConfiguration')}
                                 </button>
                               </div>
                             </div>
@@ -459,12 +469,12 @@ export default function IntegrationsSettingsPage() {
                         {/* Test Connection Section */}
                         <div>
                           <h4 className="text-sm font-bold text-[#041627] mb-3" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                            Test Connection
+                            {tInt('testConnection')}
                           </h4>
                           <div className="bg-white p-5 border border-[var(--border)] rounded-lg flex flex-col gap-4">
                             <div>
                               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                                Query or Payload (JSON)
+                                {tInt('queryOrPayload')}
                               </label>
                               <textarea
                                 className="input w-full font-mono text-sm"
@@ -480,7 +490,7 @@ export default function IntegrationsSettingsPage() {
                                 onClick={() => handleTestConnection(p.name)}
                                 disabled={testing || !testPayload.trim()}
                               >
-                                {testing ? 'Testing...' : 'Run Test'}
+                                {testing ? tInt('testing') : tInt('runTest')}
                               </button>
                             </div>
 
@@ -488,7 +498,7 @@ export default function IntegrationsSettingsPage() {
                             {testResult && (
                               <div className={`mt-2 p-4 rounded-lg border ${testResult.success ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
                                 <h5 className={`text-xs font-bold uppercase tracking-wider mb-2 ${testResult.success ? 'text-emerald-700' : 'text-red-700'}`}>
-                                  {testResult.success ? 'Test Successful' : 'Test Failed'}
+                                  {testResult.success ? tInt('testSuccessful') : tInt('testFailed')}
                                 </h5>
                                 {testResult.success ? (
                                   <pre className="text-xs bg-white/60 p-3 rounded border border-emerald-100 overflow-x-auto whitespace-pre-wrap font-mono text-emerald-900">

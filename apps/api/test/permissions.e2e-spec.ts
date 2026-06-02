@@ -57,7 +57,10 @@ describe('Permissions & RBAC (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/customers')
       .set('Authorization', `Bearer ${viewerToken}`)
-      .send({ name: 'Test Customer' })
+      .send({
+        address1Country: 'AU',
+        name: 'Test Customer',
+      })
       .expect(403);
   });
 
@@ -65,7 +68,11 @@ describe('Permissions & RBAC (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ customerNumber: 'CUST-ADMIN-TEST', name: 'Test Customer Admin' })
+      .send({
+        address1Country: 'AU',
+        customerNumber: 'CUST-ADMIN-TEST',
+        name: 'Test Customer Admin',
+      })
       .expect(201);
   });
 

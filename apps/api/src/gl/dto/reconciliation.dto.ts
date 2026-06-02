@@ -96,4 +96,5 @@ export class DiscardReconciliationResponseDto {
 export class CreateAdjustmentResponseDto {
   success!: boolean;
   journalEntryId!: string;
+  journalLineId?: string;
 }

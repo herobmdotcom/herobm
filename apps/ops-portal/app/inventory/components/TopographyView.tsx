@@ -137,7 +137,7 @@ export default function TopographyView() {
                 className="text-[11px] font-bold text-[#041627] tracking-wider uppercase"
                 style={{ fontFamily: 'Manrope, sans-serif' }}
               >
-                {tCommon('columns.location', { defaultValue: 'Location' })}
+                {tCommon('columns.location')}
               </span>
               <span className="text-[11px] font-bold text-[#006b5c]">
                 {loading ? tCommon('loadingEllipsis') : locations.length}

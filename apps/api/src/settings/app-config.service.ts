@@ -158,11 +158,6 @@ export class AppConfigService implements OnModuleInit {
     return this.getApp().inventoryAccountingMode;
   }
 
-  /** Non-stock billing mode: 'per_shipment' or 'final_invoice'. */
-  nonStockBillingMode(): string {
-    return this.getApp().nonStockBillingMode;
-  }
-
   /** Credit limit behavior: 'hard' or 'soft'. */
   creditLimitBehavior(): 'hard' | 'soft' {
     return this.getApp().creditLimitBehavior as 'hard' | 'soft';

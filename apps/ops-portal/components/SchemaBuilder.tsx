@@ -63,6 +63,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
   }, [value]);
 
   const updateSchema = (newFields: FieldDef[]) => {
+    // modbm-allow-record-any
     const properties: Record<string, any> = {};
     const required: string[] = [];
 

@@ -123,7 +123,7 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
           </button>
           <button type="button" className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm" onClick={handleSave} disabled={saving}>
             {saving ? (
-              <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving', { defaultValue: 'Saving...' })}</>
+              <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving')}</>
             ) : (
               tCommon('save')
             )}

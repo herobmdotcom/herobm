@@ -188,8 +188,8 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     try {
       const queryParams = { [data.partyType === 'customer' ? 'customerId' : 'vendorId']: data.partyId };
       const res = data.partyType === 'customer'
-        ? await api.invoiceDetailControllerGetSalesInvoicesGlobal({ ...(queryParams as any), balanceStatus: 'unpaid' } as any)
-        : await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ ...(queryParams as any), balanceStatus: 'unpaid' } as any);
+        ? await api.invoiceDetailControllerGetSalesInvoicesGlobal({ ...(queryParams as unknown as api.InvoiceDetailControllerGetSalesInvoicesGlobalParams), balanceStatus: 'unpaid' })
+        : await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ ...(queryParams as unknown as api.InvoiceDetailControllerGetPurchaseInvoicesGlobalParams), balanceStatus: 'unpaid' });
       
       const invoices = (res as any).data
         .filter((inv: any) => inv.stateCode !== SALES_INVOICE_STATE.PAID && inv.stateCode !== PURCHASE_INVOICE_STATE.PAID && parseFloat(inv.outstandingAmount) > 0)
@@ -454,7 +454,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
           </button>
           <button type="button" className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm" onClick={handleCreate} disabled={submitting}>
             {submitting ? (
-              <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving', { defaultValue: 'Saving...' })}</>
+              <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving')}</>
             ) : (
               t('createEntry')
             )}

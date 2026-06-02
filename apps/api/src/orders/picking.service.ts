@@ -353,13 +353,6 @@ export class PickingService {
         actor,
       });
 
-      await evaluateLifecycleRules(
-        tx,
-        orderId,
-        { entity: 'picking', id: lineId, action: 'line_picked' },
-        actor,
-      );
-
       return newPick;
     });
 

@@ -88,7 +88,6 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">close</span>
-            {/* eslint-enable i18next/no-literal-string */}
           </button>
         </div>
         
@@ -151,7 +150,6 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
                 <>
                   {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                  {/* eslint-enable i18next/no-literal-string */}
                 </>
               )}
               {t('buttons.generate')}

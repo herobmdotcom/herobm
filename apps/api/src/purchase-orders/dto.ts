@@ -177,7 +177,7 @@ export class PurchaseOrderResponseDto {
   stateCode!: string;
   currencyCode!: string;
   notes?: string | null;
-  customFields?: Record<string, any> | null;
+  customFields?: Record<string, unknown> | null;
   createdBy?: string | null;
   createdOn?: Date | null;
   modifiedOn?: Date | null;

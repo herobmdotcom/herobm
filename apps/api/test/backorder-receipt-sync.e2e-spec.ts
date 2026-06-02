@@ -58,6 +58,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        address1Country: 'AU',
         customerNumber: `CUST-ADV085-${Date.now()}`,
         name: 'ADV-085 Test Customer',
         currencyCode: 'AUD',
@@ -69,6 +70,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .post('/api/suppliers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        address1Country: 'AU',
         vendorNumber: `VEND-ADV085-${Date.now()}`,
         name: 'ADV-085 Test Vendor',
         currencyCode: 'AUD',

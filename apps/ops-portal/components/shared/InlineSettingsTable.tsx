@@ -4,11 +4,13 @@ import { useTranslations } from 'next-intl';
 export interface InlineTableColumn<T> {
   key: keyof T | string;
   title: string;
-  type?: 'text' | 'select' | 'boolean' | 'custom';
+  type?: 'text' | 'textarea' | 'select' | 'boolean' | 'custom' | 'number' | 'password' | 'date';
   options?: { value: string; label: string }[] | ((row: Partial<T>) => { value: string; label: string }[]);
-  render?: (row: T, isEditing: boolean) => React.ReactNode;
+  render?: (row: T, isEditing: boolean, onChange?: (val: any) => void) => React.ReactNode;
   width?: string | number;
   disabled?: boolean; // if true, input is disabled during edit
+  emptyLabel?: string; // override or hide the empty select option
+  validate?: (value: any, row: Partial<T>) => string | null;
 }
 
 export interface InlineSettingsTableProps<T> {
@@ -20,9 +22,14 @@ export interface InlineSettingsTableProps<T> {
   onAdd?: () => T; // returns a new empty row
   className?: string;
   title?: React.ReactNode;
+  headerActions?: React.ReactNode;
   addLabel?: string;
+  emptyLabel?: React.ReactNode;
+  canEdit?: (row: T) => boolean;
+  canDelete?: (row: T) => boolean;
 }
 
+// modbm-allow-record-any
 export function InlineSettingsTable<T extends Record<string, any>>({
   columns,
   data,
@@ -32,14 +39,20 @@ export function InlineSettingsTable<T extends Record<string, any>>({
   onAdd,
   className,
   title,
-  addLabel = 'Add Row'
+  headerActions,
+  addLabel = 'Add Row',
+  emptyLabel,
+  canEdit,
+  canDelete
 }: InlineSettingsTableProps<T>) {
   const tSettings = useTranslations('admin.settings');
+  const tCommon = useTranslations('admin.common');
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<T>>({});
   const [saving, setSaving] = useState(false);
   const [isNew, setIsNew] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   // Also track rows being processed
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -54,9 +67,23 @@ export function InlineSettingsTable<T extends Record<string, any>>({
     setEditingId(null);
     setEditForm({});
     setIsNew(false);
+    setErrors({});
   };
 
   const handleSave = async (rowId: string) => {
+    const newErrors: Record<string, string> = {};
+    for (const col of columns) {
+      if (col.validate) {
+        const error = col.validate(editForm[col.key as keyof T], editForm);
+        if (error) newErrors[String(col.key)] = error;
+      }
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({});
+    
     try {
       setSaving(true);
       setProcessingId(rowId);
@@ -107,15 +134,18 @@ export function InlineSettingsTable<T extends Record<string, any>>({
           {title ? (
             typeof title === 'string' ? <h4 className="font-bold text-sm !mb-0">{title}</h4> : title
           ) : <div />}
-          {onAdd && (
-            <button 
-              className="btn btn-primary btn-sm" 
-              onClick={handleAdd}
-              disabled={editingId !== null}
-            >
-              + {addLabel}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {headerActions}
+            {onAdd && (
+              <button 
+                className="btn btn-primary btn-sm" 
+                onClick={handleAdd}
+                disabled={editingId !== null}
+              >
+                + {addLabel}
+              </button>
+            )}
+          </div>
         </div>
       )}
       <table className="table-lines w-full text-sm">
@@ -131,7 +161,7 @@ export function InlineSettingsTable<T extends Record<string, any>>({
           {renderData.length === 0 ? (
             <tr>
               <td colSpan={columns.length + 1} className="text-center py-8 text-muted">
-                No records found.
+                {emptyLabel || tCommon('noRecordsFound')}
               </td>
             </tr>
           ) : (
@@ -144,7 +174,14 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                 <tr key={id} style={isEditing ? { background: 'var(--bg-secondary)' } : undefined}>
                   {columns.map(col => {
                     if (col.render) {
-                      return <td key={String(col.key)}>{col.render(isEditing ? editForm as T : row, isEditing)}</td>;
+                      return (
+                        <td key={String(col.key)}>
+                          {col.render(isEditing ? editForm as T : row, isEditing, (val: any) => {
+                            setEditForm({ ...editForm, [col.key as keyof T]: val });
+                            if (errors[String(col.key)]) setErrors(prev => ({ ...prev, [String(col.key)]: '' }));
+                          })}
+                        </td>
+                      );
                     }
                     
                     const value = isEditing ? editForm[col.key as keyof T] : row[col.key as keyof T];
@@ -153,17 +190,23 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                       <td key={String(col.key)}>
                         {isEditing ? (
                           col.type === 'select' ? (
-                            <select 
-                              className="input" 
-                              value={(value as string) || ''} 
-                              onChange={e => setEditForm({ ...editForm, [col.key as keyof T]: e.target.value as any })}
-                              disabled={col.disabled || saving}
-                            >
-                              <option value="">-</option>
-                              {(typeof col.options === 'function' ? col.options(editForm) : col.options)?.map(o => (
-                                <option key={o.value} value={o.value}>{o.label}</option>
-                              ))}
-                            </select>
+                            <div className="flex flex-col gap-1">
+                              <select 
+                                className={`input ${errors[String(col.key)] ? 'border-red-500' : ''}`} 
+                                value={(value as string) || ''} 
+                                onChange={e => {
+                                  setEditForm({ ...editForm, [col.key as keyof T]: e.target.value as any });
+                                  if (errors[String(col.key)]) setErrors(prev => ({ ...prev, [String(col.key)]: '' }));
+                                }}
+                                disabled={col.disabled || saving}
+                              >
+                                {col.emptyLabel !== null && <option value="">{col.emptyLabel || '-'}</option>}
+                                {(typeof col.options === 'function' ? col.options(editForm) : col.options)?.map(o => (
+                                  <option key={o.value} value={o.value}>{o.label}</option>
+                                ))}
+                              </select>
+                              {errors[String(col.key)] && <span className="text-xs text-red-500">{errors[String(col.key)]}</span>}
+                            </div>
                           ) : col.type === 'boolean' ? (
                             <label className="switch">
                               <input 
@@ -175,19 +218,26 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                               <span className="switch-slider"></span>
                             </label>
                           ) : (
-                            <input 
-                              className="input w-full" 
-                              value={(value as string) || ''} 
-                              onChange={e => setEditForm({ ...editForm, [col.key as keyof T]: e.target.value as any })}
-                              disabled={col.disabled || saving}
-                            />
+                            <div className="flex flex-col gap-1">
+                              <input 
+                                type={col.type === 'number' || col.type === 'password' || col.type === 'date' ? col.type : 'text'}
+                                className={`input w-full ${errors[String(col.key)] ? 'border-red-500' : ''}`} 
+                                value={(value as string) || ''} 
+                                onChange={e => {
+                                  setEditForm({ ...editForm, [col.key as keyof T]: e.target.value as any });
+                                  if (errors[String(col.key)]) setErrors(prev => ({ ...prev, [String(col.key)]: '' }));
+                                }}
+                                disabled={col.disabled || saving}
+                              />
+                              {errors[String(col.key)] && <span className="text-xs text-red-500">{errors[String(col.key)]}</span>}
+                            </div>
                           )
                         ) : (
                           col.type === 'select' ? (
                             <span>{(typeof col.options === 'function' ? col.options(row) : col.options)?.find(o => o.value === value)?.label || value}</span>
                           ) : col.type === 'boolean' ? (
                             <span style={{ color: value ? 'var(--success, #22c55e)' : 'var(--danger, #ef4444)', fontWeight: 'bold', fontSize: '0.75rem' }}>
-                              {value ? (tSettings('labels.active') || 'Active').toUpperCase() : (tSettings('labels.inactive') || 'Inactive').toUpperCase()}
+                              {value ? tSettings('labels.active').toUpperCase() : tSettings('labels.inactive').toUpperCase()}
                             </span>
                           ) : (
                             <span>{value as React.ReactNode}</span>
@@ -196,33 +246,35 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                       </td>
                     );
                   })}
-                  <td className="text-right whitespace-nowrap">
+                  <td className="text-right whitespace-nowrap align-top pt-3">
                     {isEditing ? (
                       <div className="flex justify-end gap-2">
                         <button className="btn btn-secondary btn-xs" onClick={handleCancel} disabled={saving}>
-                          {tSettings('actions.cancel') || 'Cancel'}
+                          {tSettings('actions.cancel')}
                         </button>
                         <button className="btn btn-primary btn-xs" onClick={() => handleSave(id)} disabled={saving}>
-                          {saving ? '...' : (tSettings('actions.save') || 'Save')}
+                          {saving ? '...' : tSettings('actions.save')}
                         </button>
                       </div>
                     ) : (
                       <div className="flex justify-end gap-2">
-                        <button 
-                          className="btn btn-secondary btn-xs" 
-                          onClick={() => handleEdit(row)}
-                          disabled={isProcessing || editingId !== null}
-                        >
-                          {tSettings('actions.edit') || 'Edit'}
-                        </button>
-                        {onDelete && (
+                        {(!canEdit || canEdit(row)) && (
+                          <button 
+                            className="btn btn-secondary btn-xs" 
+                            onClick={() => handleEdit(row)}
+                            disabled={isProcessing || editingId !== null}
+                          >
+                            {tSettings('actions.edit')}
+                          </button>
+                        )}
+                        {onDelete && (!canDelete || canDelete(row)) && (
                           <button 
                             className="btn btn-secondary btn-xs" 
                             style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
                             onClick={() => handleDelete(row)}
                             disabled={isProcessing || editingId !== null}
                           >
-                            {tSettings('actions.delete') || 'Delete'}
+                            {tSettings('actions.delete')}
                           </button>
                         )}
                       </div>

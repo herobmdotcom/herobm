@@ -14,7 +14,7 @@ import AllocationSlideOver from './AllocationSlideOver';
 import { GOODS_RECEIVED_STATE, PUTAWAY_STATUS, MATCH_STATUS } from '@modbm/shared';
 import { getErrorMessage } from '@modbm/shared';
 
-function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, days, setDays, t, tCommon, defaultLocId }: any) {
+function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, days, setDays, t, tCommon, defaultLocId }: { locations: unknown[], selectedLocationId: string, setSelectedLocationId: (v: string) => void, days: string, setDays: (v: string) => void, t: ReturnType<typeof useTranslations>, tCommon: ReturnType<typeof useTranslations>, defaultLocId: string }) {
     const [open, setOpen] = useState(false);
     const ref = React.useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -36,6 +36,7 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                 className={`flex items-center justify-center h-10 w-10 rounded-lg transition-all ${isActive ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-white lg:bg-transparent border border-[var(--border)] lg:border-none text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'}`}
                 title="Filters"
             >
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined text-[20px]">filter_list</span>
             </button>
             {open && (
@@ -189,7 +190,7 @@ export default function GoodsReceivedListPage() {
         },
         { field: 'createdOn', headerName: tCommon('columns.date'), width: 110, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value).toLocaleDateString() : '' },
         { field: 'vendorName', headerName: t('columns.supplier'), width: 160 },
-        { field: 'locationName', headerName: tCommon('columns.location', { defaultValue: 'Location' }), width: 140 },
+        { field: 'locationName', headerName: tCommon('columns.location'), width: 140 },
         { 
             field: 'productNumber', 
             headerName: tCommon('columns.product'), 
@@ -285,7 +286,7 @@ export default function GoodsReceivedListPage() {
                     </div>
                 }
                 secondaryHeader={
-                    <div className="flex flex-wrap items-center justify-end gap-3 w-full pt-3">
+                    <div className="flex flex-wrap items-center justify-end gap-3 w-full">
                         <Link href="/receiving/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
                             {t('buttons.newReception')}
                         </Link>

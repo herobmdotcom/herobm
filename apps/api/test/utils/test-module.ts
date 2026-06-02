@@ -10,7 +10,6 @@ export class MockAppConfigService {
     valuationMethod: 'standard',
     revenueRoutingPrecedence: 'product_first',
     expenseRoutingPrecedence: 'product_first',
-    nonStockBillingMode: 'per_shipment',
   };
 
   inventoryAccountingMode = jest
@@ -25,9 +24,6 @@ export class MockAppConfigService {
   expenseRoutingPrecedence = jest
     .fn()
     .mockImplementation(() => this.config.expenseRoutingPrecedence);
-  nonStockBillingMode = jest
-    .fn()
-    .mockImplementation(() => this.config.nonStockBillingMode);
 
   defaultInventoryAccountId = jest
     .fn()

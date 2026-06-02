@@ -604,13 +604,15 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   value={editBusinessNumber}
                   isSaving={saving}
                   onEnrich={(data) => {
-                    if (data.name) {
+                    if (data.name && data.name !== editName) {
                       setEditName(data.name);
                       saveField('name', data.name, supplier.name);
+                      toast.success(tCommon('enrichment.nameUpdated'));
                     }
-                    if (data.isTaxRegistered !== undefined) {
+                    if (data.isTaxRegistered !== undefined && data.isTaxRegistered !== editIsTaxRegistered) {
                       setEditIsTaxRegistered(data.isTaxRegistered);
                       saveField('isTaxRegistered', data.isTaxRegistered, supplier.isTaxRegistered);
+                      toast.success(tCommon('enrichment.taxUpdated'));
                     }
                   }}
                 />
@@ -626,23 +628,47 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5 opacity-0" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {t('fields.taxRegistered')}
               </label>
-              <label className="flex items-center gap-2 cursor-pointer mt-1">
-                <div className="switch" title={editIsTaxRegistered ? t('fields.taxRegistered') : tCommon('na')}>
-                  <input
-                    type="checkbox"
-                    checked={editIsTaxRegistered}
-                    onChange={(e) => {
-                      setEditIsTaxRegistered(e.target.checked);
-                      saveField('isTaxRegistered', e.target.checked, supplier.isTaxRegistered);
+              <div
+                className="flex items-center gap-3"
+                style={{ paddingTop: 6, cursor: !isEditable || saving ? 'not-allowed' : 'pointer' }}
+                onClick={() => {
+                  if (!isEditable || saving) return;
+                  const newValue = !editIsTaxRegistered;
+                  setEditIsTaxRegistered(newValue);
+                  saveField('isTaxRegistered', newValue, supplier.isTaxRegistered);
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 22,
+                    borderRadius: 11,
+                    background: editIsTaxRegistered ? 'var(--accent)' : 'var(--border)',
+                    position: 'relative',
+                    transition: 'background 0.2s ease',
+                    opacity: !isEditable || saving ? 0.5 : 1,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      background: '#fff',
+                      position: 'absolute',
+                      top: 3,
+                      left: editIsTaxRegistered ? 21 : 3,
+                      transition: 'left 0.2s ease',
                     }}
-                    disabled={!isEditable || saving}
                   />
                 </div>
-                <span className="text-sm font-medium">{t('fields.taxRegistered')}</span>
-              </label>
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  {editIsTaxRegistered ? tCommon('yes') : tCommon('no')}
+                </span>
+              </div>
             </div>
           </div>
         </div>

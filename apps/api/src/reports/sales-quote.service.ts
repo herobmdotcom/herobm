@@ -52,7 +52,7 @@ export class SalesQuoteService {
   async assembleData(
     orderId: string,
     source?: string,
-    options?: Record<string, any>,
+    options?: Record<string, unknown>,
   ): Promise<SalesQuoteData> {
     const orderDetail = await resolveOrderDetail(
       this.ordersWriteService,
@@ -62,16 +62,17 @@ export class SalesQuoteService {
     );
     const data = assembleOrderData(orderDetail, this.appConfig.homeCurrency());
 
-    if (options?.quoteIntroText) {
-      this.logger.log('Macro text received: ' + options.quoteIntroText);
-      data.quoteIntroText = options.quoteIntroText;
+    const quoteIntroText = options?.quoteIntroText as string | undefined;
+    if (quoteIntroText) {
+      this.logger.log('Macro text received: ' + quoteIntroText);
+      data.quoteIntroText = quoteIntroText;
       await this.db.transaction(async (tx) => {
         await emitEvent(tx, {
           aggregateType: 'sales_order',
           aggregateId: orderId,
           eventType: 'quote_generated',
-          payload: { quoteIntroText: options.quoteIntroText },
-          actor: options.user?.userId,
+          payload: { quoteIntroText: quoteIntroText },
+          actor: options?.user ? (options.user as any).userId : undefined,
         });
       });
     }

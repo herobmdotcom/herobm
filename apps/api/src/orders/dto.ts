@@ -296,7 +296,7 @@ export class OrderResponseDto {
   stateCode!: string;
   currencyCode!: string;
   notes?: string | null;
-  customFields?: Record<string, any> | null;
+  customFields?: Record<string, unknown> | null;
   discrepanciesAcknowledged!: boolean;
   taxProvider?: string | null;
   sourceId?: string | null;

@@ -53,7 +53,7 @@ export default function NewSupplierPage() {
       const res = await api.suppliersControllerCreate(dto as api.CreateSupplierDto);
       const supplier = res.data;
       toast.success(tCommon('toast.supplierCreated'));
-      router.push(`/suppliers/${supplier.id}`);
+      router.push(`/suppliers/${(supplier as any).vendorId || supplier.id}`);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -224,8 +224,14 @@ export default function NewSupplierPage() {
                   value={dto.businessNumber}
                   isSaving={submitting}
                   onEnrich={(data) => {
-                    if (data.name) updateField('name', data.name);
-                    if (data.isTaxRegistered !== undefined) updateField('isTaxRegistered', data.isTaxRegistered);
+                    if (data.name && data.name !== dto.name) {
+                      updateField('name', data.name);
+                      toast.success(tCommon('enrichment.nameUpdated'));
+                    }
+                    if (data.isTaxRegistered !== undefined && data.isTaxRegistered !== dto.isTaxRegistered) {
+                      updateField('isTaxRegistered', data.isTaxRegistered);
+                      toast.success(tCommon('enrichment.taxUpdated'));
+                    }
                   }}
                 />
               </label>
@@ -239,20 +245,45 @@ export default function NewSupplierPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1.5 opacity-0" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {t('fields.taxRegistered')}
               </label>
-              <label className="flex items-center gap-2 cursor-pointer mt-1">
-                <div className="switch" title={dto.isTaxRegistered ? t('fields.taxRegistered') : tCommon('na')}>
-                  <input
-                    type="checkbox"
-                    checked={dto.isTaxRegistered}
-                    onChange={(e) => updateField('isTaxRegistered', e.target.checked)}
-                    disabled={submitting}
+              <div
+                className="flex items-center gap-3"
+                style={{ paddingTop: 6, cursor: submitting ? 'not-allowed' : 'pointer' }}
+                onClick={() => {
+                  if (submitting) return;
+                  updateField('isTaxRegistered', !dto.isTaxRegistered);
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 22,
+                    borderRadius: 11,
+                    background: dto.isTaxRegistered ? 'var(--accent)' : 'var(--border)',
+                    position: 'relative',
+                    transition: 'background 0.2s ease',
+                    opacity: submitting ? 0.5 : 1,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      background: '#fff',
+                      position: 'absolute',
+                      top: 3,
+                      left: dto.isTaxRegistered ? 21 : 3,
+                      transition: 'left 0.2s ease',
+                    }}
                   />
                 </div>
-                <span className="text-sm font-medium">{t('fields.taxRegistered')}</span>
-              </label>
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  {dto.isTaxRegistered ? tCommon('yes') : tCommon('no')}
+                </span>
+              </div>
             </div>
           </div>
         </div>

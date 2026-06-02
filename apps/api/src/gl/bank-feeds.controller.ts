@@ -4,6 +4,7 @@ import {
   Get,
   Body,
   Param,
+  Delete,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
@@ -125,5 +126,16 @@ export class BankFeedsController {
   @ApiCreatedResponse({ type: ReconciliationRuleResponseDto })
   async createRule(@Body() dto: CreateReconciliationRuleDto) {
     return this.bankFeedsService.createReconciliationRule(dto);
+  }
+
+  @Delete('rules/:ruleId')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Delete Rule',
+    description: 'Deletes a reconciliation rule.',
+  })
+  @ApiOkResponse({ type: ReconciliationRuleResponseDto })
+  async deleteRule(@Param('ruleId') ruleId: string) {
+    return this.bankFeedsService.deleteReconciliationRule(ruleId);
   }
 }

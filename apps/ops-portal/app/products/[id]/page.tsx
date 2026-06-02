@@ -14,6 +14,7 @@ import { ValidState } from '@/types/states';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import DataGrid from '@/components/DataGrid';
+import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
 import AddSupplierModal from '@/components/products/AddSupplierModal';
 import GroupSelect from '@/components/shared/GroupSelect';
 import { formatLocationDisplay } from '@/lib/formatters';
@@ -49,8 +50,6 @@ export default function ProductDetailPage() {
   const [taxCategories, setTaxCategories] = useState<any[]>([]);
   const [uomDictionary, setUomDictionary] = useState<{ uomCode: string; description: string }[]>([]);
   const [addingUom, setAddingUom] = useState(false);
-  const [newUomCode, setNewUomCode] = useState('');
-  const [newUomRatio, setNewUomRatio] = useState('1');
 
   // Storage Strategy State
   const [locations, setLocations] = useState<any[]>([]);
@@ -125,7 +124,8 @@ export default function ProductDetailPage() {
         try {
           const componentsData = await api.productsControllerGetComponents(id as string);
           if ((componentsData.data as any)?.data?.length) {
-            setKitComponents((componentsData.data as any).data);
+            setKitComponents((componentsData.data as unknown as { data: any[] }).data);
+            // modbm-allow-record-any
             productIdsToFetch = ((componentsData.data as any).data).map((c: Record<string, any>) => c.childProductId);
           }
         } catch (e) {
@@ -385,7 +385,7 @@ export default function ProductDetailPage() {
     },
     ...(product.structureType === 'kit' ? [{
       id: 'tab-kit',
-      label: t('products.tabs.kitComponents', { defaultValue: 'Kit Components' }),
+      label: t('products.tabs.kitComponents'),
       isSubPage: true,
       isActive: activeTab === 'kit',
       onClick: () => setActiveTab('kit'),
@@ -693,7 +693,7 @@ export default function ProductDetailPage() {
                                     onClick={async () => {
                                       try {
                                         await api.productsControllerLinkDefaultBin(id as string, editingBinData);
-                                        toast.success(t('products.storage.toastLinkUpdated', { defaultValue: 'Bin configuration updated' }));
+                                        toast.success(t('products.storage.toastLinkUpdated'));
                                         setEditingBinId(null);
                                         await fetchProduct(false);
                                       } catch (err: unknown) {
@@ -781,159 +781,151 @@ export default function ProductDetailPage() {
 
       {activeTab === 'details' && (
         <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {/* Left Column */}
-          <div className="flex flex-col gap-3">
-            {/* Identity Card */}
-            <div id="info-section" className="card">
-              <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined">badge</span>
-                {t('products.cards.identity', { defaultValue: 'Identity' })}
-              </h3>
-              <div className="grid grid-cols-1 gap-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-1">
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('common.columns.number')}
-                    </label>
-                    <input
-                      className="input"
-                      required
-                      disabled={!isEditable || saving}
-                      value={dto.productNumber}
-                      onChange={(e) => setDto({ ...dto, productNumber: e.target.value })}
-                      onBlur={(e) => handleBlur('productNumber', e.target.value)}
-                      placeholder={t('common.placeholders.number')}
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('products.productName')}
-                    </label>
-                    <input
-                      className="input w-full"
-                      required
-                      disabled={!isEditable || saving}
-                      value={dto.name}
-                      onChange={(e) => setDto({ ...dto, name: e.target.value })}
-                      onBlur={(e) => handleBlur('name', e.target.value)}
-                      placeholder={t('products.placeholders.productDisplayName')}
-                    />
-                  </div>
+          {/* Identity Card */}
+          <div id="info-section" className="card">
+            <h3 className="section-heading">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              <span className="material-symbols-outlined">badge</span>
+              {t('products.cards.identity')}
+            </h3>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('common.columns.number')}
+                  </label>
+                  <input
+                    className="input"
+                    required
+                    disabled={!isEditable || saving}
+                    value={dto.productNumber}
+                    onChange={(e) => setDto({ ...dto, productNumber: e.target.value })}
+                    onBlur={(e) => handleBlur('productNumber', e.target.value)}
+                    placeholder={t('common.placeholders.number')}
+                  />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('products.columns.barcode')}
-                    </label>
-                    <input
-                      className="input"
-                      disabled={!isEditable || saving}
-                      value={dto.barcode}
-                      onChange={(e) => setDto({ ...dto, barcode: e.target.value })}
-                      onBlur={(e) => handleBlur('barcode', e.target.value)}
-                      placeholder={t('products.placeholders.barcode')}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('products.columns.alternateProductNumber')}
-                    </label>
-                    <input
-                      className="input"
-                      disabled={!isEditable || saving}
-                      value={dto.alternateProductNumber}
-                      onChange={(e) => setDto({ ...dto, alternateProductNumber: e.target.value })}
-                      onBlur={(e) => handleBlur('alternateProductNumber', e.target.value)}
-                      placeholder={t('products.columns.alternateProductNumber')}
-                    />
-                  </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.productName')}
+                  </label>
+                  <input
+                    className="input w-full"
+                    required
+                    disabled={!isEditable || saving}
+                    value={dto.name}
+                    onChange={(e) => setDto({ ...dto, name: e.target.value })}
+                    onBlur={(e) => handleBlur('name', e.target.value)}
+                    placeholder={t('products.placeholders.productDisplayName')}
+                  />
                 </div>
               </div>
-            </div>
-
-            {/* Classification Card */}
-            <div className="card">
-              <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined">category</span>
-                {t('products.cards.classification', { defaultValue: 'Classification' })}
-              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.type')}
+                    {t('products.columns.barcode')}
                   </label>
-                  <select
-                    className="input w-full"
-                    value={product.productType || 'inventory'}
-                    onChange={(e) => handleSelectChange('productType', e.target.value)}
-                    disabled={!isEditable}
-                  >
-                    <option value="inventory">{t('products.types.inventory')}</option>
-                    <option value="non-stock">{t('products.types.nonStock')}</option>
-                    <option value="service">{t('products.types.service')}</option>
-                    <option value="freight">Freight</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.structureType', { defaultValue: 'Structure' })}
-                  </label>
-                  <select
-                    className="input w-full"
-                    value={product.structureType || 'standard'}
-                    onChange={(e) => handleSelectChange('structureType', e.target.value)}
-                    disabled={!isEditable}
-                  >
-                    <option value="standard">{t('products.structures.standard', { defaultValue: 'Standard' })}</option>
-                    <option value="kit">{t('products.structures.kit', { defaultValue: 'Kit' })}</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.status')}
-                  </label>
-                  <select
+                  <input
                     className="input"
                     disabled={!isEditable || saving}
-                    value={dto.stateCode}
-                    onChange={(e) => handleSelectChange('stateCode', e.target.value)}
-                  >
-                    <option value={PRODUCT_STATE.ACTIVE}>{t('common.states.active')}</option>
-                    <option value={PRODUCT_STATE.INACTIVE}>{t('common.states.inactive')}</option>
-                    <option value={PRODUCT_STATE.DISCONTINUED}>{t('common.states.discontinued')}</option>
-                  </select>
+                    value={dto.barcode}
+                    onChange={(e) => setDto({ ...dto, barcode: e.target.value })}
+                    onBlur={(e) => handleBlur('barcode', e.target.value)}
+                    placeholder={t('products.placeholders.barcode')}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.productGroup')}
+                    {t('products.columns.alternateProductNumber')}
                   </label>
-                  <GroupSelect
-                    type="product"
-                    value={dto.productGroupId}
-                    onChange={(val) => handleSelectChange('productGroupId', val)}
+                  <input
+                    className="input"
                     disabled={!isEditable || saving}
-                    placeholder={t('products.placeholders.noProductGroup')}
+                    value={dto.alternateProductNumber}
+                    onChange={(e) => setDto({ ...dto, alternateProductNumber: e.target.value })}
+                    onBlur={(e) => handleBlur('alternateProductNumber', e.target.value)}
+                    placeholder={t('products.columns.alternateProductNumber')}
                   />
                 </div>
               </div>
             </div>
-
-
           </div>
 
-          {/* Right Column */}
-          <div className="flex flex-col gap-3">
-            {/* Pricing & Financials Card */}
-            <div id="pricing-section" className="card">
-              <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined">payments</span>
-                {t('products.pricing')}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Classification Card */}
+          <div className="card">
+            <h3 className="section-heading">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              <span className="material-symbols-outlined">category</span>
+              {t('products.cards.classification')}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('common.columns.type')}
+                </label>
+                <select
+                  className="input w-full"
+                  value={product.productType || 'inventory'}
+                  onChange={(e) => handleSelectChange('productType', e.target.value)}
+                  disabled={!isEditable}
+                >
+                  <option value="inventory">{t('products.types.inventory')}</option>
+                  <option value="non-stock">{t('products.types.nonStock')}</option>
+                  <option value="service">{t('products.types.service')}</option>
+                  <option value="freight">{t('products.types.freight')}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.structureType')}
+                </label>
+                <select
+                  className="input w-full"
+                  value={product.structureType || 'standard'}
+                  onChange={(e) => handleSelectChange('structureType', e.target.value)}
+                  disabled={!isEditable}
+                >
+                  <option value="standard">{t('products.structures.standard')}</option>
+                  <option value="kit">{t('products.structures.kit')}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('common.columns.status')}
+                </label>
+                <select
+                  className="input"
+                  disabled={!isEditable || saving}
+                  value={dto.stateCode}
+                  onChange={(e) => handleSelectChange('stateCode', e.target.value)}
+                >
+                  <option value={PRODUCT_STATE.ACTIVE}>{t('common.states.active')}</option>
+                  <option value={PRODUCT_STATE.INACTIVE}>{t('common.states.inactive')}</option>
+                  <option value={PRODUCT_STATE.DISCONTINUED}>{t('common.states.discontinued')}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.productGroup')}
+                </label>
+                <GroupSelect
+                  type="product"
+                  value={dto.productGroupId}
+                  onChange={(val) => handleSelectChange('productGroupId', val)}
+                  disabled={!isEditable || saving}
+                  placeholder={t('products.placeholders.noProductGroup')}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Pricing & Financials Card */}
+          <div id="pricing-section" className="card">
+            <h3 className="section-heading">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              <span className="material-symbols-outlined">payments</span>
+              {t('products.pricing')}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                   {t('products.columns.listPrice')}
@@ -942,7 +934,6 @@ export default function ProductDetailPage() {
                   type="number"
                   step="0.01"
                   className="input"
-
                   disabled={!isEditable || saving}
                   value={dto.listPrice}
                   onChange={(e) => setDto({ ...dto, listPrice: e.target.value })}
@@ -961,7 +952,6 @@ export default function ProductDetailPage() {
                   type="number"
                   step="0.01"
                   className="input"
-
                   disabled={!isEditable || saving}
                   value={dto.tradePrice}
                   onChange={(e) => setDto({ ...dto, tradePrice: e.target.value })}
@@ -980,7 +970,6 @@ export default function ProductDetailPage() {
                   type="number"
                   step="0.01"
                   className="input"
-
                   disabled={!isEditable || saving}
                   value={dto.priceLevel3}
                   onChange={(e) => setDto({ ...dto, priceLevel3: e.target.value })}
@@ -999,7 +988,6 @@ export default function ProductDetailPage() {
                   type="number"
                   step="0.01"
                   className="input"
-
                   disabled={!isEditable || saving}
                   value={dto.priceLevel4}
                   onChange={(e) => setDto({ ...dto, priceLevel4: e.target.value })}
@@ -1018,7 +1006,6 @@ export default function ProductDetailPage() {
                   type="number"
                   step="0.01"
                   className="input"
-
                   disabled={!isEditable || saving}
                   value={dto.standardCost}
                   onChange={(e) => setDto({ ...dto, standardCost: e.target.value })}
@@ -1029,79 +1016,76 @@ export default function ProductDetailPage() {
                   }}
                 />
               </div>
-              </div>
             </div>
+          </div>
 
-            {/* Taxation Card */}
-            <div className="card">
-              <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined">account_balance</span>
-                {t('products.cards.taxation', { defaultValue: 'Taxation' })}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.purchaseTaxCategory')}
-                  </label>
-                  <select
-                    className="input"
-                    disabled={!isEditable || saving}
-                    value={dto.purchaseTaxCategoryId || ''}
-                    onChange={(e) => handleSelectChange('purchaseTaxCategoryId', e.target.value)}
-                  >
-                    <option value="">{t('common.none')}</option>
-                    {taxCategories.map((cat) => (
-                      <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
-                        {cat.title} ({cat.code})
-                      </option>
-                    ))}
-                    {/* Fallback for legacy values not in current categories */}
-                    {dto.purchaseTaxCategoryId && !taxCategories.find(c => c.taxCategoryId === dto.purchaseTaxCategoryId) && (
-                      <option value={dto.purchaseTaxCategoryId}>{t('products.unknownCategory', { id: dto.purchaseTaxCategoryId })}</option>
-                    )}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.salesTaxCategory')}
-                  </label>
-                  <select
-                    className="input"
-                    disabled={!isEditable || saving}
-                    value={dto.salesTaxCategoryId || ''}
-                    onChange={(e) => handleSelectChange('salesTaxCategoryId', e.target.value)}
-                  >
-                    <option value="">{t('common.none')}</option>
-                    {taxCategories.map((cat) => (
-                      <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
-                        {cat.title} ({cat.code})
-                      </option>
-                    ))}
-                    {/* Fallback for legacy values not in current categories */}
-                    {dto.salesTaxCategoryId && !taxCategories.find(c => c.taxCategoryId === dto.salesTaxCategoryId) && (
-                      <option value={dto.salesTaxCategoryId}>{t('products.unknownCategory', { id: dto.salesTaxCategoryId })}</option>
-                    )}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.externalTaxCode', { defaultValue: 'External Tax Code' })}
-                  </label>
-                  <input
-                    className="input w-full"
-                    disabled={!isEditable || saving}
-                    value={dto.externalTaxCode}
-                    onChange={(e) => setDto({ ...dto, externalTaxCode: e.target.value })}
-                    onBlur={(e) => handleBlur('externalTaxCode', e.target.value)}
-                    placeholder="e.g. 20010"
-                  />
-                </div>
+          {/* Taxation Card */}
+          <div className="card">
+            <h3 className="section-heading">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              <span className="material-symbols-outlined">account_balance</span>
+              {t('products.cards.taxation')}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.purchaseTaxCategory')}
+                </label>
+                <select
+                  className="input"
+                  disabled={!isEditable || saving}
+                  value={dto.purchaseTaxCategoryId || ''}
+                  onChange={(e) => handleSelectChange('purchaseTaxCategoryId', e.target.value)}
+                >
+                  <option value="">{t('common.none')}</option>
+                  {taxCategories.map((cat) => (
+                    <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
+                      {cat.title} ({cat.code})
+                    </option>
+                  ))}
+                  {/* Fallback for legacy values not in current categories */}
+                  {dto.purchaseTaxCategoryId && !taxCategories.find(c => c.taxCategoryId === dto.purchaseTaxCategoryId) && (
+                    <option value={dto.purchaseTaxCategoryId}>{t('products.unknownCategory', { id: dto.purchaseTaxCategoryId })}</option>
+                  )}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.salesTaxCategory')}
+                </label>
+                <select
+                  className="input"
+                  disabled={!isEditable || saving}
+                  value={dto.salesTaxCategoryId || ''}
+                  onChange={(e) => handleSelectChange('salesTaxCategoryId', e.target.value)}
+                >
+                  <option value="">{t('common.none')}</option>
+                  {taxCategories.map((cat) => (
+                    <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
+                      {cat.title} ({cat.code})
+                    </option>
+                  ))}
+                  {/* Fallback for legacy values not in current categories */}
+                  {dto.salesTaxCategoryId && !taxCategories.find(c => c.taxCategoryId === dto.salesTaxCategoryId) && (
+                    <option value={dto.salesTaxCategoryId}>{t('products.unknownCategory', { id: dto.salesTaxCategoryId })}</option>
+                  )}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.externalTaxCode')}
+                </label>
+                <input
+                  className="input w-full"
+                  disabled={!isEditable || saving}
+                  value={dto.externalTaxCode}
+                  onChange={(e) => setDto({ ...dto, externalTaxCode: e.target.value })}
+                  onBlur={(e) => handleBlur('externalTaxCode', e.target.value)}
+                  placeholder="e.g. 20010"
+                />
               </div>
             </div>
           </div>
-        </div>
-
         {/* Units & Dimensions Card */}
         <div id="uom-section" className="card">
           <h3 className="section-heading">
@@ -1172,131 +1156,61 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Conversions table */}
-          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('products.packagingConversions')}</span>
-              {isEditable && (
-                <button
-                  className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm flex items-center gap-1.5"
-                  style={{ fontSize: 12 }}
-                  onClick={() => setAddingUom(true)}
-                  disabled={saving}
-                >
-                  { }
-                  + {t('products.addConversion')}
-                </button>
-              )}
-            </div>
-
-            {/* Add row */}
-            {addingUom && (
-              <div className="flex items-end gap-3 mb-3 p-3 rounded-lg" style={{ background: 'rgba(0,107,92,0.04)', border: '1px solid rgba(0,107,92,0.15)' }}>
-                <div className="flex-1">
-                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{t('products.columns.uomCode')}</label>
-                  <select
-                    className="input"
-                    value={newUomCode}
-                    onChange={(e) => setNewUomCode(e.target.value)}
-                  >
-                    <option value="">{t('common.selectEllipsis')}</option>
-                    {uomDictionary
-                      .filter(u => u.uomCode !== (product.baseUom || 'EA'))
-                      .filter(u => !(product.productUoms || []).some((pu: any) => pu.uomCode === u.uomCode))
-                      .map((u) => (
-                        <option key={u.uomCode} value={u.uomCode}>
-                          {u.uomCode}{u.description ? ` — ${u.description}` : ''}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-                <div style={{ width: 120 }}>
-                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{t('products.columns.ratio')}</label>
-                  <input
-                    className="input"
-                    type="number"
-                    min="0.000001"
-                    step="any"
-                    value={newUomRatio}
-                    onChange={(e) => setNewUomRatio(e.target.value)}
-                    style={{ textAlign: 'right' }}
-                  />
-                </div>
-                <button
-                  className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white"
-                  disabled={!newUomCode || !newUomRatio || saving}
-                  onClick={async () => {
-                    try {
-                      await api.productsControllerAddUom(id as string, {
-                        uomCode: newUomCode,
-                        ratio: String(newUomRatio),
-                      });
-                      toast.success(t('products.toast.conversionAdded'));
-                      setAddingUom(false);
-                      setNewUomCode('');
-                      setNewUomRatio('1');
-                      await fetchProduct(false);
-                    } catch (err: unknown) {
-                      toast.error(getErrorMessage(err));
-                    }
-                  }}
-                >
-                  {tCommon('buttons.save')}
-                </button>
-                <button
-                  className="btn btn-sm btn-ghost"
-                  onClick={() => { setAddingUom(false); setNewUomCode(''); setNewUomRatio('1'); }}
-                >
-                  {tCommon('buttons.cancel')}
-                </button>
-              </div>
-            )}
-
-            {(product.productUoms || []).length === 0 && !addingUom ? (
-              <div className="text-sm py-4 text-center" style={{ color: 'var(--text-muted)' }}>
-                {t('products.noConversions')}
-              </div>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('products.columns.uomCode')}</th>
-                    <th style={{ textAlign: 'right', padding: '8px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('products.columns.ratioBase')}</th>
-                    <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('products.columns.barcode')}</th>
-                    <th style={{ width: 50 }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(product.productUoms || []).map((u: any) => (
-                    <tr key={u.productUomId} style={{ borderBottom: '1px solid var(--border)' }}>
-                      <td style={{ padding: '10px 12px', fontWeight: 500 }}>{u.uomCode}</td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{u.ratio}</td>
-                      <td style={{ padding: '10px 12px', color: u.barcode ? 'inherit' : 'var(--text-muted)' }}>{u.barcode || '—'}</td>
-                      <td style={{ padding: '10px 4px', textAlign: 'center' }}>
-                        {isEditable && (
-                          <button
-                            onClick={async () => {
-                              if (!window.confirm(t('products.confirmRemoveConversion', { uomCode: u.uomCode }))) return;
-                              try {
-                                await api.productsControllerRemoveUom(id as string, u.productUomId);
-                                toast.success(t('products.toast.conversionRemoved'));
-                                await fetchProduct(false);
-                              } catch (err: unknown) {
-                                toast.error(getErrorMessage(err));
-                              }
-                            }}
-                            className="btn btn-xs btn-ghost text-red-500 hover:bg-red-50 px-2 h-7 min-h-7"
-                            title="Remove conversion"
-                          >
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
-                            <span className="material-symbols-outlined text-[16px]">delete</span>
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+          <div className="pt-4 mt-4 border-t border-[var(--border)]">
+            <InlineSettingsTable
+              title={<span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{t('products.packagingConversions')}</span>}
+              data={product.productUoms || []}
+              rowKey={(row: any) => row.productUomId}
+              columns={[
+                {
+                  key: 'uomCode',
+                  title: t('products.columns.uomCode'),
+                  type: 'select',
+                  options: uomDictionary
+                    .filter(u => u.uomCode !== (product.baseUom || 'EA'))
+                    .map(u => ({
+                      value: u.uomCode,
+                      label: u.uomCode + (u.description ? ` — ${u.description}` : '')
+                    })),
+                  disabled: true, // Only editable when adding a new row
+                  validate: (v) => v ? null : tCommon('errors.typeAndDateRequired')
+                },
+                {
+                  key: 'ratio',
+                  title: t('products.columns.ratioBase'),
+                  type: 'number',
+                  validate: (v) => Number(v) > 0 ? null : tCommon('errors.typeAndDateRequired')
+                },
+                {
+                  key: 'barcode',
+                  title: t('products.columns.barcode'),
+                  type: 'text',
+                  disabled: true
+                }
+              ]}
+              onSave={async (row: any, isNew: boolean) => {
+                if (isNew) {
+                  await api.productsControllerAddUom(id as string, {
+                    uomCode: row.uomCode,
+                    ratio: String(row.ratio),
+                  });
+                  toast.success(t('products.toast.conversionAdded'));
+                  await fetchProduct(false);
+                } else {
+                  // Not supported by API
+                }
+              }}
+              onDelete={async (row: any) => {
+                await api.productsControllerRemoveUom(id as string, row.productUomId);
+                toast.success(t('products.toast.conversionRemoved'));
+                await fetchProduct(false);
+              }}
+              onAdd={() => ({ uomCode: '', ratio: 1, barcode: '' } as any)}
+              canEdit={() => false}
+              canDelete={() => isEditable}
+              addLabel={t('products.addConversion')}
+              emptyLabel={t('products.noConversions')}
+            />
           </div>
         </div>
 

@@ -103,12 +103,12 @@ export class OrdersModule implements OnModuleInit {
       resolveData: async (
         id: string,
         user: any,
-        options?: Record<string, any>,
+        options?: Record<string, unknown>,
       ) => {
         return (await this.salesQuoteService.assembleData(id, 'app', {
           ...options,
           user,
-        })) as unknown as Record<string, any>;
+        })) as unknown as Record<string, unknown>;
       },
       getRandomId: async () => {
         const rows = await this.db
@@ -124,7 +124,7 @@ export class OrdersModule implements OnModuleInit {
       resolveData: async (id: string, user: any) => {
         return (await this.pickingSlipService.assembleData(
           id,
-        )) as unknown as Record<string, any>;
+        )) as unknown as Record<string, unknown>;
       },
       getRandomId: async () => {
         // Prefer sales orders, but fallback to transfer orders if none found
@@ -157,7 +157,7 @@ export class OrdersModule implements OnModuleInit {
           inv.orderId,
           'app',
           id,
-        )) as unknown as Record<string, any>;
+        )) as unknown as Record<string, unknown>;
       },
       getRandomId: async () => {
         const rows = await this.db
@@ -174,7 +174,7 @@ export class OrdersModule implements OnModuleInit {
         return (await this.reportSalesReturnCreditService.assembleData(
           id,
           'app',
-        )) as unknown as Record<string, any>;
+        )) as unknown as Record<string, unknown>;
       },
       getRandomId: async () => {
         return undefined; // Usually we don't need random resolving for returns
@@ -185,7 +185,7 @@ export class OrdersModule implements OnModuleInit {
       resolveData: async (id: string, user: any) => {
         return (await this.shippingDocketService.assembleData(
           id,
-        )) as unknown as Record<string, any>;
+        )) as unknown as Record<string, unknown>;
       },
       getRandomId: async () => {
         const rows = await this.db

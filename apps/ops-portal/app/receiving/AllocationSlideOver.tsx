@@ -219,8 +219,8 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                   <th>{t('columns.receiptNo')}</th>
                   <th>{t('columns.product')}</th>
                   <th>{t('columns.supplier')}</th>
-                  <th style={{ textAlign: 'right' }}>{t('columns.receivedQty', { fallback: 'Received Qty' })}</th>
-                  <th style={{ width: 90, textAlign: 'center' }}>{t('columns.status', { fallback: 'Status' })}</th>
+                  <th style={{ textAlign: 'right' }}>{t('columns.receivedQty')}</th>
+                  <th style={{ width: 90, textAlign: 'center' }}>{t('columns.status')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -278,10 +278,10 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                   </div>
                   <div className="flex flex-col gap-1 border-t border-[var(--border)] pt-2 cursor-pointer" onClick={() => setActiveLineId(line.goodsReceivedLineId)}>
                     <MobileCardField label={t('columns.supplier')} value={line.vendorName} />
-                    <MobileCardField label={t('columns.receivedQty', { fallback: 'Received Qty' })} value={
+                    <MobileCardField label={t('columns.receivedQty')} value={
                       <span className="font-bold tabular-nums">{parseFloat(line.quantityReceived || '0')}</span>
                     } />
-                    <MobileCardField label={t('columns.status', { fallback: 'Status' })} value={
+                    <MobileCardField label={t('columns.status')} value={
                       state?.allocated ? (
                         <span className="badge badge-success">{t('status.allocated')}</span>
                       ) : (
@@ -291,7 +291,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                   </div>
                   {isActive && state && !state.allocated && (
                     <div className="mt-4 pt-4 border-t border-[rgba(196,198,205,0.4)]">
-                      <h4 className="text-xs font-bold mb-3 uppercase tracking-wider text-[var(--text-secondary)]">Eligible POs</h4>
+                      <h4 className="text-xs font-bold mb-3 uppercase tracking-wider text-[var(--text-secondary)]">{t('allocation.eligiblePOs')}</h4>
                       <POCandidatesList grLine={line} state={state} toggleExpand={toggleExpand} handleAllocate={handleAllocate} />
                     </div>
                   )}
@@ -424,10 +424,10 @@ function POCandidatesList({
                   <table className="table-lines w-full">
                     <thead>
                       <tr>
-                        <th>{t('columns.ordered', { fallback: 'Ordered' })}</th>
-                        <th>{t('columns.received', { fallback: 'Received' })}</th>
-                        <th>{t('columns.remaining', { fallback: 'Remaining' })}</th>
-                        <th style={{ width: 160, textAlign: 'center' }}>{t('columns.allocate', { fallback: 'Allocate' })}</th>
+                        <th>{t('columns.ordered')}</th>
+                        <th>{t('columns.received')}</th>
+                        <th>{t('columns.remaining')}</th>
+                        <th style={{ width: 160, textAlign: 'center' }}>{t('columns.allocate')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -519,12 +519,12 @@ function POLineMobileCard({ line, originalQuantity, onAllocate }: { line: any; o
   return (
     <div className="flex flex-col gap-2 p-4 bg-[var(--bg-secondary)]">
       <div className="flex items-center justify-between gap-4">
-        <MobileCardField className="flex-1 border-0 py-0" label={t('columns.ordered', { fallback: 'Ordered' })} value={ordered} />
-        <MobileCardField className="flex-1 border-0 py-0" label={t('columns.received', { fallback: 'Received' })} value={received} />
+        <MobileCardField className="flex-1 border-0 py-0" label={t('columns.ordered')} value={ordered} />
+        <MobileCardField className="flex-1 border-0 py-0" label={t('columns.received')} value={received} />
       </div>
       <div className="flex flex-col gap-2 border-t border-[var(--border)] pt-3 mt-1">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-500">{t('columns.remaining', { fallback: 'Remaining' })}</span>
+          <span className="text-xs font-medium text-slate-500">{t('columns.remaining')}</span>
           <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">{remaining}</span>
         </div>
         <div className="flex items-center justify-end gap-2 mt-2">

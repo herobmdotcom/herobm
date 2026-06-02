@@ -1,0 +1,169 @@
+﻿
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\general-ledger\GeneralLedgerContent.tsx
+  221:12  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\general-ledger\journal-entries\JournalEntrySlideOver.tsx
+  111:18  warning  Unused eslint-disable directive (no problems were reported from 'i18next/no-literal-string')
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\general-ledger\reconciliations\[id]\SplitEntryModal.tsx
+  77:14  warning  Unused eslint-disable directive (no problems were reported from 'i18next/no-literal-string')
+  77:71  warning  disallow literal string: <button 
+            onClick={onClose}
+            className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1"
+          >
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            Γ£ò
+            {/* eslint-enable i18next/no-literal-string */}
+          </button>  i18next/no-literal-string
+  79:14  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\general-ledger\reconciliations\[id]\page.tsx
+  236:16  warning  disallow literal string: <button 
+                onClick={() => setViewMode('bank')} 
+                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'bank' ? 'bg-white shadow-sm text-[var(--accent)]' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Bank Statement Match
+              </button>  i18next/no-literal-string
+  242:16  warning  disallow literal string: <button 
+                onClick={() => setViewMode('ledger')} 
+                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'ledger' ? 'bg-white shadow-sm text-[var(--accent)]' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Ledger Lines
+              </button>      i18next/no-literal-string
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\general-ledger\reconciliations\components\BankImportModal.tsx
+   84:25   warning  ADV-041: Do not use raw fetch(). Use apiFetch(), apiMutate(), or apiFetchBlob() from @/lib/api to ensure consistent authentication and error handling                                                       no-restricted-syntax
+   95:7    warning  ADV-029: Use reportError() instead of console.error() to ensure observability in the PLG stack                                                                                                              no-restricted-syntax
+  124:25   warning  ADV-041: Do not use raw fetch(). Use apiFetch(), apiMutate(), or apiFetchBlob() from @/lib/api to ensure consistent authentication and error handling                                                       no-restricted-syntax
+  136:7    warning  ADV-029: Use reportError() instead of console.error() to ensure observability in the PLG stack                                                                                                              no-restricted-syntax
+  146:72   warning  disallow literal string: <h2 className="text-xl font-bold text-[var(--text-primary)]">Import Bank Statement</h2>                                                                                            i18next/no-literal-string
+  147:125  warning  disallow literal string: <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">Γ£ò</button>                                                       i18next/no-literal-string
+  154:92   warning  disallow literal string: <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Bank Account</label>                                                                                    i18next/no-literal-string
+  161:92   warning  disallow literal string: <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">CSV File</label>                                                                                        i18next/no-literal-string
+  163:134  warning  disallow literal string: <button type="button" className="btn btn-secondary" onClick={() => document.getElementById('csv-upload')?.click()}>
+                    Choose File
+                  </button>  i18next/no-literal-string
+  166:90   warning  ADV-071: Do not use hardcoded string literals inside JSX conditionals. Use useTranslations() instead                                                                                                        no-restricted-syntax
+  177:94   warning  disallow literal string: <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Saved Profile</label>                                                                                   i18next/no-literal-string
+  188:96   warning  disallow literal string: <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Profile Name</label>                                                                                    i18next/no-literal-string
+  192:96   warning  disallow literal string: <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Date Column</label>                                                                                     i18next/no-literal-string
+  199:96   warning  disallow literal string: <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Amount Column</label>                                                                                   i18next/no-literal-string
+  206:96   warning  disallow literal string: <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Description Column</label>                                                                              i18next/no-literal-string
+  213:96   warning  disallow literal string: <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Reference Column (Optional)</label>                                                                     i18next/no-literal-string
+  215:40   warning  disallow literal string: <option value="">None</option>                                                                                                                                                     i18next/no-literal-string
+  227:95   warning  disallow literal string: <span className="material-symbols-outlined text-[24px] text-[var(--success)]">check_circle</span>                                                                                  i18next/no-literal-string
+  228:78   warning  disallow literal string: <h3 className="text-lg font-bold text-[var(--text-primary)]">Import complete</h3>                                                                                                  i18next/no-literal-string
+  231:46   warning  disallow literal string: <p>{results.autoMatchedCount} lines were auto-reconciled by rules.</p>                                                                                                             i18next/no-literal-string
+  232:44   warning  disallow literal string: <p>{results.unmatchedCount} lines were queued for manual reconciliation.</p>                                                                                                       i18next/no-literal-string
+  240:69   warning  disallow literal string: <button onClick={onClose} className="btn btn-secondary">
+              Cancel
+            </button>                                                                              i18next/no-literal-string
+  247:26   warning  ADV-071: Do not use hardcoded string literals inside JSX conditionals. Use useTranslations() instead                                                                                                        no-restricted-syntax
+  247:41   warning  ADV-071: Do not use hardcoded string literals inside JSX conditionals. Use useTranslations() instead                                                                                                        no-restricted-syntax
+  253:26   warning  ADV-071: Do not use hardcoded string literals inside JSX conditionals. Use useTranslations() instead                                                                                                        no-restricted-syntax
+  253:43   warning  ADV-071: Do not use hardcoded string literals inside JSX conditionals. Use useTranslations() instead                                                                                                        no-restricted-syntax
+  258:93   warning  disallow literal string: <button onClick={() => { onClose(); onSuccess(); }} className="btn btn-primary">
+              Done
+            </button>                                                        i18next/no-literal-string
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\general-ledger\reconciliations\page.tsx
+  80:20  warning  disallow literal string: <button
+                    onClick={() => setIsImportModalOpen(true)}
+                    className="btn btn-secondary"
+                  >
+                    Import Statement
+                  </button>  i18next/no-literal-string
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\general-ledger\rules\page.tsx
+   34:7   warning  ADV-029: Use reportError() instead of console.error() to ensure observability in the PLG stack                                                                                                                                                                                                                                                  no-restricted-syntax
+   53:7   warning  ADV-029: Use reportError() instead of console.error() to ensure observability in the PLG stack                                                                                                                                                                                                                                                  no-restricted-syntax
+   65:73  warning  disallow literal string: <h1 className="text-2xl font-bold text-[var(--text-primary)]">Reconciliation Rules</h1>                                                                                                                                                                                                                                i18next/no-literal-string
+   69:77  warning  disallow literal string: <h2 className="text-lg font-bold text-[var(--text-primary)] mb-4">Create New Rule</h2>                                                                                                                                                                                                                                 i18next/no-literal-string
+   73:90  warning  disallow literal string: <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Bank Account (Optional)</label>                                                                                                                                                                                                             i18next/no-literal-string
+   79:34  warning  disallow literal string: <option value="">All Bank Accounts</option>                                                                                                                                                                                                                                                                            i18next/no-literal-string
+   85:90  warning  disallow literal string: <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Target GL Account (Tag to)</label>                                                                                                                                                                                                          i18next/no-literal-string
+   97:90  warning  disallow literal string: <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Condition Type</label>                                                                                                                                                                                                                      i18next/no-literal-string
+  103:42  warning  disallow literal string: <option value="contains">Description Contains</option>                                                                                                                                                                                                                                                                 i18next/no-literal-string
+  104:45  warning  disallow literal string: <option value="starts_with">Description Starts With</option>                                                                                                                                                                                                                                                           i18next/no-literal-string
+  105:45  warning  disallow literal string: <option value="exact_match">Description Exact Match</option>                                                                                                                                                                                                                                                           i18next/no-literal-string
+  110:90  warning  disallow literal string: <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Condition Value</label>                                                                                                                                                                                                                     i18next/no-literal-string
+  126:14  warning  disallow literal string: <button 
+              onClick={handleCreate}
+              disabled={loading || !conditionValue || !targetGlAccountId}
+              className="px-4 py-2 bg-[var(--accent)] text-white font-bold rounded hover:brightness-110 disabled:opacity-50"
+            >
+              Add Rule
+            </button>  i18next/no-literal-string
+  136:55  warning  disallow literal string: <th className="px-4 py-3 font-medium">Bank Account</th>                                                                                                                                                                                                                                                                i18next/no-literal-string
+  137:55  warning  disallow literal string: <th className="px-4 py-3 font-medium">Condition</th>                                                                                                                                                                                                                                                                   i18next/no-literal-string
+  138:55  warning  disallow literal string: <th className="px-4 py-3 font-medium">Target GL</th>                                                                                                                                                                                                                                                                   i18next/no-literal-string
+  147:67  warning  ADV-071: Do not use hardcoded string literals inside JSX conditionals. Use useTranslations() instead                                                                                                                                                                                                                                            no-restricted-syntax
+  162:94  warning  disallow literal string: <td colSpan={3} className="px-4 py-8 text-center text-[var(--text-muted)]">
+                    No rules defined yet.
+                  </td>                                                                                                                                                                        i18next/no-literal-string
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\inventory\components\LedgerEntrySlideOver.tsx
+  64:12  warning  Unused eslint-disable directive (no problems were reported from 'i18next/no-literal-string')
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\inventory\picking\page.tsx
+  381:107  warning  disallow literal string: <span className="sm:hidden material-symbols-outlined text-[16px]">print</span>  i18next/no-literal-string
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\inventory\putaway\page.tsx
+  181:30  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+  271:38  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+  306:38  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+  313:38  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+  365:34  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\inventory\shipping\page.tsx
+  220:22  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+  253:38  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+  448:58  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+  561:50  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\inventory\transfers\CreateTransferSlideOver.tsx
+  205:20  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\inventory\transfers\[id]\TransferDetailsClient.tsx
+   96:20  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+  167:16  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\products\[id]\ProductKitComponentsTab.tsx
+   43:14  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+   48:14  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+  110:12  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\receiving\AllocationSlideOver.tsx
+  294:116  warning  disallow literal string: <h4 className="text-xs font-bold mb-3 uppercase tracking-wider text-[var(--text-secondary)]">Eligible POs</h4>  i18next/no-literal-string
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\receiving\new\page.tsx
+  139:39  warning  ADV-051: Do not use raw string literals for state machine statuses. Import and use the appropriate constant from @modbm/shared                                                                                                                                                                                                                                                                                                                                                                                                                no-restricted-syntax
+  491:30  warning  Unused eslint-disable directive (no problems were reported from 'i18next/no-literal-string')
+  491:87  warning  disallow literal string: <button
+                            className="btn btn-secondary btn-sm"
+                            style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                            onClick={() => removeDraftLine(line.id)}
+                          >
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            Γ£ò
+                            {/* eslint-enable i18next/no-literal-string */}
+                          </button>  i18next/no-literal-string
+  493:30  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+  522:28  warning  Unused eslint-disable directive (no problems were reported from 'i18next/no-literal-string')
+  522:85  warning  disallow literal string: <button
+                          className="btn btn-secondary btn-sm"
+                          style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                          onClick={() => removeDraftLine(line.id)}
+                        >
+                          {/* eslint-disable-next-line i18next/no-literal-string */}
+                          Γ£ò
+                          {/* eslint-enable i18next/no-literal-string */}
+                        </button>                  i18next/no-literal-string
+  524:28  warning  Unused eslint-enable directive (no matching eslint-disable directives were found for 'i18next/no-literal-string')
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\receiving\page.tsx
+  39:73  warning  disallow literal string: <span className="material-symbols-outlined text-[20px]">filter_list</span>  i18next/no-literal-string
+
+Γ£û 79 problems (0 errors, 79 warnings)
+  0 errors and 24 warnings potentially fixable with the `--fix` option.
+

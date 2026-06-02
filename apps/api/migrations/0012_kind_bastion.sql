@@ -1,0 +1,1 @@
+ALTER TABLE "modbm_core"."app_settings" DROP COLUMN "non_stock_billing_mode";

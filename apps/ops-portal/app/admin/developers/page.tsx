@@ -8,8 +8,10 @@ import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
+import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@modbm/shared';
+import { reportError } from '@/lib/api';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,6 +35,7 @@ interface Webhook {
 export default function DevelopersPage() {
   useDocumentTitle('Developers');
   const tCommon = useTranslations('admin.common');
+  const tDev = useTranslations('admin.developers');
   const router = useRouter();
 
   // ── Rate Limits State ───────────────────────────────────────────────────────
@@ -42,16 +45,13 @@ export default function DevelopersPage() {
   // ── API Keys State ──────────────────────────────────────────────────────────
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [keysLoading, setKeysLoading] = useState(true);
-  const [keyCreating, setKeyCreating] = useState(false);
-  const [keyForm, setKeyForm] = useState({ name: '', role: 'agent' });
   const [newSecret, setNewSecret] = useState<string | null>(null);
   const [availableRoles, setAvailableRoles] = useState<any[]>([]);
 
   // ── Webhooks State ──────────────────────────────────────────────────────────
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [webhooksLoading, setWebhooksLoading] = useState(true);
-  const [webhookCreating, setWebhookCreating] = useState(false);
-  const [webhookForm, setWebhookForm] = useState({ targetUrl: '', eventTypes: '' });
+  const [availableEvents, setAvailableEvents] = useState<string[]>([]);
 
   // ── Data Loading ────────────────────────────────────────────────────────────
 
@@ -106,7 +106,17 @@ export default function DevelopersPage() {
       const res = await api.rolesControllerFindAll();
       setAvailableRoles((res.data ) || []);
     } catch (err: unknown) {
-      console.error('Failed to load roles', err);
+      reportError(err, 'DevelopersPage_loadRoles');
+      toast.error('Failed to load roles: ' + getErrorMessage(err));
+    }
+  };
+
+  const loadEvents = async () => {
+    try {
+      const res = await api.webhooksControllerListEvents();
+      setAvailableEvents(res.data as string[] || []);
+    } catch (err: unknown) {
+      reportError(err, 'DevelopersPage_loadEvents');
     }
   };
 
@@ -115,67 +125,12 @@ export default function DevelopersPage() {
     loadKeys();
     loadWebhooks();
     loadRoles();
+    loadEvents();
   }, []);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
-  const handleCreateKey = async () => {
-    if (!keyForm.name) {
-      toast.error('Please provide a name');
-      return;
-    }
-    try {
-      const res = await api.apiKeysControllerCreate(keyForm);
-      toast.success('API Key created');
-      setNewSecret(res.data.secretKey);
-      setKeyCreating(false);
-      setKeyForm({ name: '', role: 'agent' });
-      loadKeys();
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err));
-    }
-  };
 
-  const handleDeleteKey = async (id: string) => {
-    if (!confirm('Are you sure you want to revoke this API key?')) return;
-    try {
-      await api.apiKeysControllerRevoke(id);
-      toast.success('API Key revoked');
-      loadKeys();
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err));
-    }
-  };
-
-  const handleCreateWebhook = async () => {
-    if (!webhookForm.targetUrl || !webhookForm.eventTypes) {
-      toast.error('Please provide a URL and at least one event type');
-      return;
-    }
-    try {
-      await api.webhooksControllerCreate({
-        targetUrl: webhookForm.targetUrl,
-        eventTypes: webhookForm.eventTypes.split(',').map(s => s.trim()).filter(Boolean),
-      });
-      toast.success('Webhook created');
-      setWebhookCreating(false);
-      setWebhookForm({ targetUrl: '', eventTypes: '' });
-      loadWebhooks();
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err));
-    }
-  };
-
-  const handleDeleteWebhook = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this webhook?')) return;
-    try {
-      await api.webhooksControllerRemove(id);
-      toast.success('Webhook deleted');
-      loadWebhooks();
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err));
-    }
-  };
 
   const navSections = useMemo(() => [
     { id: 'rate-limits', label: 'Rate Limits', show: true },
@@ -201,12 +156,13 @@ export default function DevelopersPage() {
         {/* ── Rate Limits ────────────────────────────────────────────────── */}
         <div id="rate-limits" className="card">
           <h3 className="section-heading mb-4">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">speed</span>
-            API Rate Limits
+            {tDev('apiRateLimits')}
           </h3>
           <div className="flex flex-col gap-1 max-w-sm">
             <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-              Max Requests per Minute
+              {tDev('maxRequestsPerMinute')}
             </label>
             <input
               type="number"
@@ -217,177 +173,211 @@ export default function DevelopersPage() {
               placeholder="1000"
               disabled={appLoading}
             />
-            <p className="text-xs text-muted mt-1">Applies only to requests authenticated via API Key.</p>
+
           </div>
         </div>
 
         {/* ── API Keys ───────────────────────────────────────────────────── */}
-        <div id="api-keys" className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading !mb-0">
-              <span className="material-symbols-outlined">key</span>
-              API Keys
-            </h3>
-            <button className="btn btn-primary btn-sm" onClick={() => setKeyCreating(true)}>+ Create Key</button>
-          </div>
-
-          {newSecret && (
-            <div className="mb-4 p-4 rounded-md border border-[var(--warning)] bg-amber-500/10 text-[var(--warning)]">
-              <p className="font-medium mb-2">Please copy your API Key now. You will not be able to see it again!</p>
+        <div id="api-keys" className="card relative">
+          <InlineSettingsTable
+            title={
               <div className="flex items-center gap-2">
-                <code className="p-2 rounded bg-black/20 text-white font-mono flex-1">{newSecret}</code>
-                <button 
-                  className="btn btn-secondary btn-sm" 
-                  onClick={() => {
-                    navigator.clipboard.writeText(newSecret);
-                    toast.success('Copied to clipboard');
-                  }}
-                >
-                  Copy
-                </button>
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined">key</span>
+                {tDev('apiKeys')}
+              </div>
+            }
+            data={apiKeys || []}
+            rowKey={(r: any) => r.apiKeyId}
+            onSave={async (row: any, isNew: boolean) => {
+              if (isNew) {
+                const res = await api.apiKeysControllerCreate({ name: row.name, role: row.role });
+                setNewSecret(res.data.secretKey);
+                toast.success('API Key created');
+                await loadKeys();
+              }
+            }}
+            onDelete={async (row: any) => {
+              if (!confirm('Are you sure you want to revoke this API key?')) return;
+              await api.apiKeysControllerRevoke(row.apiKeyId);
+              toast.success('API Key revoked');
+              await loadKeys();
+            }}
+            onAdd={() => ({ name: '', role: 'agent', prefix: 'Will be generated...', createdOn: new Date().toISOString() } as any)}
+            canEdit={() => false}
+            canDelete={() => true}
+            addLabel={tDev('createKey')}
+            emptyLabel={tDev('noApiKeysFound')}
+            columns={[
+              {
+                key: 'name',
+                title: tCommon('name'),
+                type: 'text',
+                validate: (v) => v ? null : 'Required'
+              },
+              {
+                key: 'role',
+                title: 'Role',
+                type: 'select',
+                options: [
+                  { value: 'agent', label: tDev('roleAgent') },
+                  { value: 'webhook', label: tDev('roleWebhook') },
+                  { value: 'viewer', label: tDev('roleViewer') },
+                  { value: 'admin', label: tDev('roleAdmin') },
+                  ...availableRoles
+                    .filter(r => !['agent', 'webhook', 'viewer', 'admin'].includes(r.role))
+                    .map(r => ({ value: r.role, label: `${r.role} ${tDev('customRoleSuffix')}` }))
+                ]
+              },
+              {
+                key: 'prefix',
+                title: tCommon('prefix'),
+                type: 'text',
+                disabled: true
+              },
+              {
+                key: 'createdOn',
+                title: tCommon('created'),
+                type: 'custom',
+                render: (row: any) => <span>{new Date(row.createdOn).toLocaleDateString()}</span>
+              }
+            ]}
+          />
+
+          {/* New API Key Secret Modal */}
+          {newSecret && (
+            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+              <div className="bg-[var(--bg-card)] rounded-lg shadow-2xl max-w-lg w-full p-6 border border-[var(--border)] relative">
+                <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-[var(--warning)]">
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  <span className="material-symbols-outlined text-[24px]">warning</span>
+                  {tDev('copyApiKeyWarning')}
+                </h3>
+                <p className="text-sm text-muted mb-6">
+                  {tDev('onlyTimeSecretShown')}
+                </p>
+                <div className="flex items-center gap-2 mb-8">
+                  <code className="p-4 rounded bg-black/5 text-[var(--text-primary)] font-mono flex-1 text-center border border-[var(--border)] text-lg tracking-wider select-all break-all">{newSecret}</code>
+                </div>
+                <div className="flex justify-end gap-3 border-t border-[var(--border)] pt-4">
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={() => setNewSecret(null)}
+                  >
+                    {tCommon('close')}
+                  </button>
+                  <button 
+                    className="btn btn-primary bg-[var(--warning)] hover:brightness-110 border-none text-black" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(newSecret);
+                      toast.success(tCommon('copiedToClipboard'));
+                    }}
+                  >
+                    {tCommon('copy')}
+                  </button>
+                </div>
               </div>
             </div>
           )}
-
-          <table className="table-lines w-full">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Prefix</th>
-                <th>Created</th>
-                <th style={{ width: 120, textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {keyCreating && (
-                <tr style={{ background: 'var(--bg-secondary)' }}>
-                  <td>
-                    <div className="flex flex-col gap-2">
-                      <input
-                        className="input"
-                        autoFocus
-                        placeholder="e.g. Integration Script"
-                        value={keyForm.name}
-                        onChange={e => setKeyForm({ ...keyForm, name: e.target.value })}
-                      />
-                      <select
-                        className="input text-xs"
-                        value={keyForm.role}
-                        onChange={e => setKeyForm({ ...keyForm, role: e.target.value })}
-                        style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
-                      >
-                        <option value="agent">Agent (Read/Write)</option>
-                        <option value="webhook">Webhook (Receiver)</option>
-                        <option value="viewer">Viewer (Read-only)</option>
-                        <option value="admin">Admin (Full Access)</option>
-                        <option disabled>──────────</option>
-                        {availableRoles
-                          .filter(r => !['agent', 'webhook', 'viewer', 'admin'].includes(r.role))
-                          .map((r) => (
-                          <option key={r.role} value={r.role}>
-                            {r.role} (Custom Role)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </td>
-                  <td colSpan={2} className="text-muted text-sm">Will be generated...</td>
-                  <td>
-                    <div className="flex justify-end gap-2">
-                      <button className="btn btn-secondary btn-xs" onClick={() => setKeyCreating(false)}>Cancel</button>
-                      <button className="btn btn-primary btn-xs" onClick={handleCreateKey}>Save</button>
-                    </div>
-                  </td>
-                </tr>
-              )}
-              {!keysLoading && (apiKeys?.length || 0) === 0 && !keyCreating && (
-                <tr><td colSpan={4} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>No API keys found.</td></tr>
-              )}
-              {(apiKeys || []).map(k => (
-                <tr key={k.apiKeyId}>
-                  <td className="font-medium">
-                    <div>{k.name}</div>
-                    <div className="text-xs text-muted font-normal mt-0.5" style={{ color: 'var(--text-muted)' }}>Role: {k.role}</div>
-                  </td>
-                  <td className="font-mono text-sm">{k.prefix}••••••••</td>
-                  <td className="text-sm text-muted">{new Date(k.createdOn).toLocaleDateString()}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleDeleteKey(k.apiKeyId)}>Revoke</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
 
         {/* ── Webhooks ───────────────────────────────────────────────────── */}
         <div id="webhooks" className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading !mb-0">
-              <span className="material-symbols-outlined">webhook</span>
-              Webhooks
-            </h3>
-            <button className="btn btn-primary btn-sm" onClick={() => setWebhookCreating(true)}>+ Add Webhook</button>
-          </div>
-
-          <table className="table-lines w-full">
-            <thead>
-              <tr>
-                <th>Target URL</th>
-                <th>Events</th>
-                <th>Secret Key</th>
-                <th style={{ width: 120, textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {webhookCreating && (
-                <tr style={{ background: 'var(--bg-secondary)' }}>
-                  <td>
-                    <input
-                      className="input"
-                      placeholder="https://..."
-                      value={webhookForm.targetUrl}
-                      onChange={e => setWebhookForm({ ...webhookForm, targetUrl: e.target.value })}
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="input"
-                      placeholder="invoice.created, order.created"
-                      value={webhookForm.eventTypes}
-                      onChange={e => setWebhookForm({ ...webhookForm, eventTypes: e.target.value })}
-                    />
-                  </td>
-                  <td className="text-muted text-sm">Auto-generated</td>
-                  <td>
-                    <div className="flex justify-end gap-2">
-                      <button className="btn btn-secondary btn-xs" onClick={() => setWebhookCreating(false)}>Cancel</button>
-                      <button className="btn btn-primary btn-xs" onClick={handleCreateWebhook}>Save</button>
+          <InlineSettingsTable
+            title={
+              <div className="flex items-center gap-2">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined">webhook</span>
+                {tDev('webhooks')}
+              </div>
+            }
+            data={webhooks || []}
+            rowKey={(r: any) => r.webhookId}
+            onSave={async (row: any, isNew: boolean) => {
+              if (isNew) {
+                await api.webhooksControllerCreate({
+                  targetUrl: row.targetUrl,
+                  eventTypes: (row.eventTypes || '').split(',').map((s: string) => s.trim()).filter(Boolean),
+                });
+                toast.success('Webhook created');
+                await loadWebhooks();
+              }
+            }}
+            onDelete={async (row: any) => {
+              if (!confirm('Are you sure you want to delete this webhook?')) return;
+              await api.webhooksControllerRemove(row.webhookId);
+              toast.success('Webhook deleted');
+              await loadWebhooks();
+            }}
+            onAdd={() => ({ targetUrl: '', eventTypes: '', secretKey: tDev('autoGenerated') } as any)}
+            canEdit={() => false}
+            canDelete={() => true}
+            addLabel={tDev('addWebhook')}
+            emptyLabel={tDev('noWebhooksFound')}
+            columns={[
+              {
+                key: 'targetUrl',
+                title: tDev('targetUrl'),
+                type: 'text',
+                validate: (v) => v ? null : 'Required'
+              },
+              {
+                key: 'eventTypes',
+                title: tDev('events'),
+                type: 'text',
+                render: (row: any, isEditing: boolean, onChange?: (val: any) => void) => {
+                  const currentEvents = Array.isArray(row.eventTypes) ? row.eventTypes : (row.eventTypes || '').split(',').map((e:string) => e.trim()).filter(Boolean);
+                  if (isEditing) {
+                    return (
+                      <div className="flex flex-col gap-1 max-h-32 overflow-y-auto border border-[var(--border)] p-2 rounded text-xs bg-black/5">
+                        <label className="flex items-center gap-2 cursor-pointer hover:text-[var(--text-primary)]">
+                          <input 
+                            type="checkbox" 
+                            checked={currentEvents.includes('*')}
+                            onChange={(e) => {
+                              if (e.target.checked) onChange?.('*');
+                              else onChange?.('');
+                            }}
+                          />
+                          {tDev('allEvents')}
+                        </label>
+                        {availableEvents.map(e => (
+                          <label key={e} className="flex items-center gap-2 cursor-pointer hover:text-[var(--text-primary)]">
+                            <input 
+                              type="checkbox" 
+                              checked={currentEvents.includes(e)} 
+                              onChange={(ev) => {
+                                const newEvents = ev.target.checked 
+                                  ? [...currentEvents.filter((c:string) => c !== '*'), e] 
+                                  : currentEvents.filter((c:string) => c !== e && c !== '*');
+                                onChange?.(newEvents.join(', '));
+                              }} 
+                            />
+                            {e}
+                          </label>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="flex flex-wrap gap-1">
+                      {currentEvents.map((e: string) => (
+                        <span key={e} className="inline-block bg-black/20 px-2 py-0.5 rounded text-xs">{e.trim()}</span>
+                      ))}
                     </div>
-                  </td>
-                </tr>
-              )}
-              {!webhooksLoading && (webhooks?.length || 0) === 0 && !webhookCreating && (
-                <tr><td colSpan={4} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>No webhooks found.</td></tr>
-              )}
-              {(webhooks || []).map(w => (
-                <tr key={w.webhookId}>
-                  <td className="font-medium text-sm">{w.targetUrl}</td>
-                  <td className="text-sm">
-                    {w.eventTypes.map(e => (
-                      <span key={e} className="inline-block bg-black/20 px-2 py-0.5 rounded text-xs mr-1">{e}</span>
-                    ))}
-                  </td>
-                  <td className="font-mono text-xs">{w.secretKey}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleDeleteWebhook(w.webhookId)}>Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  );
+                }
+              },
+              {
+                key: 'secretKey',
+                title: tDev('secretKey'),
+                type: 'text',
+                disabled: true,
+                render: (row: any) => <span className="font-mono text-xs">{row.secretKey}</span>
+              }
+            ]}
+          />
         </div>
-
       </div>
     </DetailsLayout>
   );

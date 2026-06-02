@@ -412,7 +412,7 @@ export default function NewPurchaseOrderPage() {
               <div className="flex-1 min-w-[200px] max-w-sm">
                 <ProductSearchInput
                   onSelect={addLineFromProduct}
-                  placeholder={t('purchaseOrders.placeholders.searchProduct', { defaultValue: 'Search Product' })}
+                  placeholder={t('purchaseOrders.placeholders.searchProduct')}
                   style={{ width: '100%' }}
                 />
               </div>

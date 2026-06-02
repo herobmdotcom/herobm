@@ -38,7 +38,7 @@ export class ReportsService {
     recordId: string,
     contextSlug: string,
     user: any,
-    options?: Record<string, any>,
+    options?: Record<string, unknown>,
   ): Promise<{ pdfBuffer: Buffer; fileName: string }> {
     const hookStart = Date.now();
 

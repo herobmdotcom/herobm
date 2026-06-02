@@ -1,0 +1,107 @@
+{/* ── Tax Categories ─────────────────────────────────────────────── */}
+        <div id="tax-section" className="card relative">
+          <InlineSettingsTable
+            title={
+              <div className="flex items-center gap-2">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined">payments</span>
+                {tSettings('sections.tax')}
+              </div>
+            }
+            headerActions={
+              <button className="btn btn-secondary btn-sm" onClick={() => setImportTaxModalOpen(true)}>
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined text-base">upload_file</span>
+                {tSettings('actions.importSettings')}
+              </button>
+            }
+            data={categories || []}
+            rowKey={(r: any) => r.taxCategoryId}
+            onSave={async (row: any, isNew: boolean) => {
+              if (!row.code || !row.title || !row.type || row.rate === undefined || row.rate === '') {
+                throw new Error(tCommon('errors.typeAndDateRequired'));
+              }
+              const payload = {
+                code: row.code.toUpperCase(),
+                title: row.title,
+                type: row.type,
+                rate: row.rate,
+                isDefault: row.isDefault,
+                exemptionReason: row.exemptionReason
+              };
+              if (isNew) {
+                await api.taxCategoriesControllerCreate(payload);
+                toast.success(tSettings('toasts.taxCreated') || 'Tax created');
+              } else {
+                await api.taxCategoriesControllerUpdate(row.taxCategoryId, payload);
+                toast.success(tSettings('toasts.taxUpdated') || 'Tax updated');
+              }
+              loadTax();
+            }}
+            onDelete={async (row: any) => {
+              if (!confirm(tSettings('confirmations.deleteTax', { title: row.title }) || 'Are you sure you want to delete this tax?')) return;
+              await api.taxCategoriesControllerRemove(row.taxCategoryId);
+              toast.success(tSettings('toasts.taxDeleted') || 'Tax deleted');
+              loadTax();
+            }}
+            onAdd={() => ({ code: '', title: '', type: 'percentage', rate: 0, isDefault: false } as any)}
+            canEdit={() => true}
+            canDelete={() => true}
+            addLabel={tSettings('actions.create')}
+            emptyLabel={tSettings('tax.empty')}
+            columns={[
+              {
+                key: 'code',
+                title: tSettings('labels.code'),
+                type: 'text',
+                width: 120,
+                validate: (v) => v ? null : 'Required'
+              },
+              {
+                key: 'title',
+                title: tSettings('labels.title'),
+                type: 'text',
+                validate: (v) => v ? null : 'Required'
+              },
+              {
+                key: 'type',
+                title: tSettings('labels.type'),
+                type: 'select',
+                width: 140,
+                options: [
+                  { value: 'percentage', label: tSettings('tax.percentage') || 'Percentage' },
+                  { value: 'fixed', label: tSettings('tax.fixed') || 'Fixed' },
+                  { value: 'exempt', label: tSettings('tax.exempt') || 'Exempt' }
+                ],
+                render: (row: any, isEditing: boolean) => {
+                  if (isEditing) return null; // handled by component
+                  return <span className="bg-[var(--bg-secondary)] border border-[var(--border)] px-2 py-0.5 rounded text-xs">{row.type}</span>;
+                }
+              },
+              {
+                key: 'rate',
+                title: tSettings('labels.rate'),
+                type: 'text',
+                width: 100,
+                validate: (v) => (v !== '' && v !== null && v !== undefined) ? null : 'Required'
+              },
+              {
+                key: 'isDefault',
+                title: tSettings('labels.isDefault'),
+                type: 'custom',
+                width: 100,
+                render: (row: any, isEditing: boolean, handleChange: any) => (
+                  <div className="flex items-center justify-center">
+                    <input 
+                      type="checkbox" 
+                      checked={!!row.isDefault} 
+                      disabled={!isEditing}
+                      onChange={(e) => handleChange(e.target.checked)}
+                      className={isEditing ? '' : 'opacity-70'}
+                    />
+                  </div>
+                )
+              }
+            ]}
+          />
+        </div>

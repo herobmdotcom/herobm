@@ -50,6 +50,7 @@ export class FieldMaskInterceptor implements NestInterceptor {
         };
       }
 
+      // modbm-allow-record-any
       const filtered: Record<string, any> = {};
       for (const [key, value] of Object.entries(data)) {
         if (fields.has(key)) {

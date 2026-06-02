@@ -370,7 +370,9 @@ export default function DataGrid<T>({
       try {
         const savedLimit = localStorage.getItem(`${STORAGE_PREFIX}${gridKey}-limit`);
         if (savedLimit) return Number(savedLimit);
-      } catch (e) {}
+      } catch (e) {
+        /* ignore */
+      }
     }
 
     const initialIsMobile = typeof window !== 'undefined' ? window.innerWidth < 1024 : false;
@@ -382,7 +384,9 @@ export default function DataGrid<T>({
     if (gridKey && typeof window !== 'undefined') {
       try {
         localStorage.setItem(`${STORAGE_PREFIX}${gridKey}-limit`, String(limit));
-      } catch (e) {}
+      } catch (e) {
+        /* ignore */
+      }
     }
   }, [limit, gridKey]);
 
@@ -407,7 +411,9 @@ export default function DataGrid<T>({
         try {
           const val = localStorage.getItem(`${STORAGE_PREFIX}${gridKey}-limit`);
           if (val) savedLimit = Number(val);
-        } catch(e) {}
+        } catch (e) {
+          /* ignore */
+        }
       }
       if (savedLimit) {
         setLimit(savedLimit);
@@ -1216,7 +1222,7 @@ export default function DataGrid<T>({
                 </div>
               </div>
               {secondaryHeader && (
-                <div className="hidden lg:flex px-6 pb-4 pt-0 justify-end border-t border-[rgba(196,198,205,0.2)] mt-2">
+                <div className="hidden lg:flex px-6 py-4 justify-end border-t border-[rgba(196,198,205,0.2)]">
                   {secondaryHeader}
                 </div>
               )}

@@ -269,7 +269,7 @@ export default function OrderDetailReadView({
                     value: line.quantity
                   },
                   {
-                    label: tCols('uom', { fallback: 'UOM' }),
+                    label: tCols('uom'),
                     value: line.unitOfMeasure || 'EA'
                   },
                   {

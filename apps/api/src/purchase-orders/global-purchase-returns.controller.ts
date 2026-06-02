@@ -67,7 +67,7 @@ export class GlobalPurchaseReturnsController {
     summary: 'List Purchase Returns',
     description: 'Retrieve a list of purchase returns based on state.',
   })
-  @ApiOkResponse({ type: GlobalPurchaseReturnsListDto })
+  @ApiOkResponse({ type: [GlobalPurchaseReturnDto] })
   @ApiQuery({ name: 'stateCode', required: false })
   async getPurchaseReturns(@Query('stateCode') stateCodeStr?: string) {
     let query = this.db
@@ -103,7 +103,7 @@ export class GlobalPurchaseReturnsController {
     const data = await query;
 
     // Optional: Fetch line counts if needed, but for the grid this is enough for now.
-    return { data };
+    return data;
   }
 
   @Get(':id')

@@ -4,8 +4,8 @@ export interface ReportContextResolver {
   resolveData(
     id: string,
     user: any,
-    options?: Record<string, any>,
-  ): Promise<Record<string, any>>;
+    options?: Record<string, unknown>,
+  ): Promise<Record<string, unknown>>;
   getRandomId?(): Promise<string | undefined>;
 }
 

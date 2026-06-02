@@ -31,16 +31,17 @@ import {
 
 import {
   EmptyBodyDto,
-  HooksResponseDto,
-  HookAssignmentsResponseDto,
   RandomIdResponseDto,
-  ReportsResponseDto,
   ReportResponseDto,
   CreateReportDto,
   UpdateReportDto,
   PreviewReportDto,
   UpdateHookAssignmentDto,
   RunHookBodyDto,
+  HookDto,
+  HookAssignmentDto,
+  ReportDto,
+  RandomIdData,
 } from './dto';
 
 @ApiTags('Reports')
@@ -98,10 +99,9 @@ export class ReportsController {
     summary: 'Get Hooks',
     description: 'Retrieve a list of available reporting hooks.',
   })
-  @ApiOkResponse({ type: HooksResponseDto })
+  @ApiOkResponse({ type: [HookDto] })
   async getHooks() {
-    const data = await this.reportsService.getHooksList();
-    return { data };
+    return this.reportsService.getHooksList();
   }
 
   @Get('hook-assignments')
@@ -110,10 +110,9 @@ export class ReportsController {
     summary: 'Get Hook Assignments',
     description: 'Retrieve current template assignments for reporting hooks.',
   })
-  @ApiOkResponse({ type: HookAssignmentsResponseDto })
+  @ApiOkResponse({ type: [HookAssignmentDto] })
   async getAssignments() {
-    const data = await this.reportsService.getAssignments();
-    return { data };
+    return this.reportsService.getAssignments();
   }
 
   @Patch('hook-assignments/:hook')
@@ -124,7 +123,7 @@ export class ReportsController {
     description:
       'Update the assigned template and context for a reporting hook.',
   })
-  @ApiOkResponse({ type: HookAssignmentsResponseDto })
+  @ApiOkResponse({ type: HookAssignmentDto })
   async updateAssignment(
     @Param('hook') hook: string,
     @Body() body: UpdateHookAssignmentDto,
@@ -134,12 +133,12 @@ export class ReportsController {
       body.reportId || '',
       body.contextSlug || '',
     );
-    return { data };
+    return data;
   }
 
   @Get('hooks/:slug/random-id')
   @CasbinAction('read')
-  @ApiOkResponse({ type: RandomIdResponseDto })
+  @ApiOkResponse({ type: RandomIdData })
   @ApiOperation({
     summary: 'Get Random ID',
     description:
@@ -147,7 +146,7 @@ export class ReportsController {
   })
   async getRandomId(@Param('slug') slug: string) {
     const id = await this.reportsService.getRandomIdForContext(slug);
-    return { data: { id } };
+    return { id };
   }
 
   @Get()
@@ -156,10 +155,9 @@ export class ReportsController {
     summary: 'Get All Reports',
     description: 'Retrieve a list of all configured report templates.',
   })
-  @ApiOkResponse({ type: ReportsResponseDto })
+  @ApiOkResponse({ type: [ReportDto] })
   async getAllReports() {
-    const data = await this.reportsService.getReports();
-    return { data };
+    return this.reportsService.getReports();
   }
 
   @Get(':id')
@@ -169,10 +167,10 @@ export class ReportsController {
     description:
       'Retrieve the details and template content of a specific report.',
   })
-  @ApiOkResponse({ type: ReportResponseDto })
+  @ApiOkResponse({ type: ReportDto })
   async getReport(@Param('id') id: string) {
     const data = await this.reportsService.getReportById(id);
-    return { data };
+    return data;
   }
 
   @Post()
@@ -182,13 +180,13 @@ export class ReportsController {
     summary: 'Create Report',
     description: 'Create a new custom report template.',
   })
-  @ApiCreatedResponse({ type: ReportResponseDto })
+  @ApiCreatedResponse({ type: ReportDto })
   async createReport(
     @Body()
     body: CreateReportDto,
   ) {
     const data = await this.reportsService.createReport(body);
-    return { data };
+    return data;
   }
 
   @Patch(':id')
@@ -199,14 +197,14 @@ export class ReportsController {
     description:
       'Modify the configuration or content of an existing report template.',
   })
-  @ApiOkResponse({ type: ReportResponseDto })
+  @ApiOkResponse({ type: ReportDto })
   async updateReport(
     @Param('id') id: string,
     @Body()
     body: UpdateReportDto,
   ) {
     const data = await this.reportsService.updateReport(id, body);
-    return { data };
+    return data;
   }
 
   @Delete(':id')
@@ -215,10 +213,10 @@ export class ReportsController {
     summary: 'Delete Report',
     description: 'Remove a report template from the system.',
   })
-  @ApiOkResponse({ type: ReportResponseDto })
+  @ApiOkResponse({ type: ReportDto })
   async deleteReport(@Param('id') id: string) {
     const data = await this.reportsService.deleteReport(id);
-    return { data };
+    return data;
   }
 
   @Post('preview')

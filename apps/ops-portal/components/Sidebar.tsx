@@ -27,14 +27,14 @@ export default function Sidebar() {
           subItems: [
             { href: '/inventory/bins', label: tInventory('tabs.binContents') },
             { href: '/inventory/movements', label: t('items.movements') },
-            { href: '/inventory/ledger', label: tInventory('tabs.ledger', { fallback: 'Ledger' }) },
-            { href: '/inventory/locations', label: tInventory('tabs.locations', { defaultValue: 'Locations' }) },
-            { href: '/inventory/transfers', label: t('items.transfers', { defaultValue: 'Transfers' }) }
+            { href: '/inventory/ledger', label: tInventory('tabs.ledger') },
+            { href: '/inventory/locations', label: tInventory('tabs.locations') },
+            { href: '/inventory/transfers', label: t('items.transfers') }
           ]
         },
         { 
           href: '/receiving', 
-          label: t('items.receiving', { defaultValue: 'Receiving' }), 
+          label: t('items.receiving'), 
           icon: 'move_to_inbox',
           subItems: [
             { href: '/receiving', label: 'Supplier Receipts' },
@@ -42,10 +42,10 @@ export default function Sidebar() {
           ]
         },
         { href: '/inventory/putaway', label: 'Putaway', icon: 'pallet' },
-        { href: '/inventory/picking', label: t('items.picking', { defaultValue: 'Picking' }), icon: 'inventory' },
+        { href: '/inventory/picking', label: t('items.picking'), icon: 'inventory' },
         { 
           href: '/inventory/shipping', 
-          label: t('items.shipping', { defaultValue: 'Shipping' }), 
+          label: t('items.shipping'), 
           icon: 'local_shipping',
           subItems: [
             { href: '/inventory/shipping', label: 'Customer Shipments' },
@@ -59,7 +59,7 @@ export default function Sidebar() {
       items: [
         { href: '/customers', label: t('items.customers'), icon: 'storefront' },
         { href: '/sales-orders', label: t('items.salesOrders'), icon: 'receipt_long' },
-        { href: '/shipments', label: t('items.shipments', { defaultValue: 'Shipments' }), icon: 'local_post_office' },
+        { href: '/shipments', label: t('items.shipments'), icon: 'local_post_office' },
         { href: '/sales-invoices', label: t('items.salesInvoices'), icon: 'request_quote' },
       ],
     },
@@ -69,7 +69,7 @@ export default function Sidebar() {
         { href: '/suppliers', label: t('items.suppliers'), icon: 'factory' },
         { href: '/purchase-orders/demands', label: t('items.demand'), icon: 'list_alt' },
         { href: '/purchase-orders', label: t('items.purchaseOrders'), icon: 'local_shipping' },
-        { href: '/supplier-invoices', label: t('items.supplierInvoices', { defaultValue: 'Supplier Invoices' }), icon: 'request_quote' },
+        { href: '/supplier-invoices', label: t('items.supplierInvoices'), icon: 'request_quote' },
       ],
     },
   ];

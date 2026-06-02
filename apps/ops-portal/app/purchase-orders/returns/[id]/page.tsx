@@ -71,10 +71,10 @@ export default function PurchaseReturnDetailPage({ params }: { params: Promise<{
         notes,
       };
 
-      const res = await api.purchaseDebitNotesControllerCreateDebitNote(payload as any);
+      const res = await api.purchaseDebitNotesControllerCreateDebitNote(payload as unknown as Parameters<typeof api.purchaseDebitNotesControllerCreateDebitNote>[0]);
 
       // After creation, optionally post it directly:
-      await api.purchaseDebitNotesControllerPostDebitNote((res as any).debitNoteId || (res as any).id, {});
+      await api.purchaseDebitNotesControllerPostDebitNote((res.data as unknown as { debitNoteId?: string, id?: string }).debitNoteId || (res.data as unknown as { debitNoteId?: string, id?: string }).id || '', {});
 
       router.push(`/purchase-orders/${returnDetails.purchaseOrderId}`);
     } catch (err: unknown) {

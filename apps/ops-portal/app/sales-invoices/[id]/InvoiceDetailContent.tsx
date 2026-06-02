@@ -42,7 +42,6 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           <h3 className="section-heading flex items-center gap-2 mb-4">
             {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined shrink-0">receipt_long</span>
-            {/* eslint-enable i18next/no-literal-string */}
             <span>{t('invoiceDetails')}</span>
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -110,7 +109,6 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
             <h3 className="section-heading flex items-center gap-2">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined shrink-0">list</span>
-              {/* eslint-enable i18next/no-literal-string */}
               <span>{t('lineItems')}</span>
             </h3>
           </div>
@@ -243,7 +241,6 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
             <h3 className="section-heading flex items-center gap-2">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined shrink-0">payments</span>
-              {/* eslint-enable i18next/no-literal-string */}
               <span>{t('paymentAllocations')}</span>
             </h3>
           </div>

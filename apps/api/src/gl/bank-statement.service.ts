@@ -61,7 +61,11 @@ export class BankStatementService {
     return lines;
   }
 
-  async confirmMatch(lineId: string, _actor: string) {
+  async confirmMatch(
+    lineId: string,
+    _actor: string,
+    reconciliationId?: string,
+  ) {
     return this.db.transaction(async (tx) => {
       const bsLine = await tx
         .select()
@@ -83,16 +87,69 @@ export class BankStatementService {
       if (!jl.length)
         throw new NotFoundException('Matched journal line not found');
 
-      // Update journal line to cleared (isReconciled)
-      await tx
-        .update(glJournalLines)
-        .set({ isReconciled: true })
-        .where(eq(glJournalLines.journalLineId, line.matchedJournalLineId));
+      // Update journal line to cleared (isReconciled or linked to draft)
+      if (reconciliationId) {
+        await tx
+          .update(glJournalLines)
+          .set({ reconciliationId })
+          .where(eq(glJournalLines.journalLineId, line.matchedJournalLineId));
+      } else {
+        await tx
+          .update(glJournalLines)
+          .set({ isReconciled: true })
+          .where(eq(glJournalLines.journalLineId, line.matchedJournalLineId));
+      }
 
       // Update bank statement line to reconciled
       await tx
         .update(bankStatementLines)
         .set({ isReconciled: true })
+        .where(eq(bankStatementLines.lineId, lineId));
+
+      return { success: true };
+    });
+  }
+
+  async manualMatch(
+    lineId: string,
+    journalLineId: string,
+    _actor: string,
+    reconciliationId?: string,
+  ) {
+    return this.db.transaction(async (tx) => {
+      const bsLine = await tx
+        .select()
+        .from(bankStatementLines)
+        .where(eq(bankStatementLines.lineId, lineId));
+      if (!bsLine.length)
+        throw new NotFoundException('Bank statement line not found');
+
+      if (bsLine[0].isReconciled)
+        throw new BadRequestException('Line is already reconciled');
+
+      const jl = await tx
+        .select()
+        .from(glJournalLines)
+        .where(eq(glJournalLines.journalLineId, journalLineId));
+      if (!jl.length) throw new NotFoundException('Journal line not found');
+
+      // Update journal line
+      if (reconciliationId) {
+        await tx
+          .update(glJournalLines)
+          .set({ reconciliationId })
+          .where(eq(glJournalLines.journalLineId, journalLineId));
+      } else {
+        await tx
+          .update(glJournalLines)
+          .set({ isReconciled: true })
+          .where(eq(glJournalLines.journalLineId, journalLineId));
+      }
+
+      // Link and reconcile bank statement line
+      await tx
+        .update(bankStatementLines)
+        .set({ matchedJournalLineId: journalLineId, isReconciled: true })
         .where(eq(bankStatementLines.lineId, lineId));
 
       return { success: true };

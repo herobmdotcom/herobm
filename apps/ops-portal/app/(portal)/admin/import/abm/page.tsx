@@ -87,9 +87,9 @@ export default function AdminImportPage() {
       const result = res.data;
       
       if (result.success === false) {
-        toast.error(result.message || tExt('toasts.connectionFailed', { fallback: 'Connection Failed' }));
+        toast.error(result.message || tExt('toasts.connectionFailed'));
       } else {
-        toast.success(result.message || tExt('toasts.connectionVerified', { fallback: 'Connection Verified' }));
+        toast.success(result.message || tExt('toasts.connectionVerified'));
         const preview = result.preview as Record<string, unknown> | undefined;
         const locs = (preview?.locations || []) as { code: string; name: string }[];
         setAbmLocations(locs);
@@ -116,7 +116,7 @@ export default function AdminImportPage() {
         setStep('preview');
       }
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err) || tExt('toasts.apiError', { fallback: 'API Error' }));
+      toast.error(getErrorMessage(err) || tExt('toasts.apiError'));
     } finally {
       setLoading(false);
     }
@@ -194,18 +194,18 @@ export default function AdminImportPage() {
         <h1 className="text-3xl font-bold text-slate-900 mb-2">
           {step === 'config' ? t('connectSourceSystem') : 
            step === 'finalisation' ? t('titleFinalisation') :
-           status === 'pending' ? t('titlePending', { fallback: 'Configure Import' }) :
-           status === 'failed' ? t('titleFailed', { fallback: 'Import Failed' }) : 
-           status === 'completed' ? t('titleCompleted', { fallback: 'Import Completed' }) : 
-           t('titleRunning', { fallback: 'Import Running' })}
+           status === 'pending' ? t('titlePending') :
+           status === 'failed' ? t('titleFailed') : 
+           status === 'completed' ? t('titleCompleted') : 
+           t('titleRunning')}
         </h1>
         <p className="text-slate-500">
           {step === 'config' ? t('connectSourceSystemDesc') :
            step === 'finalisation' ? t('descFinalisation') :
-           status === 'pending' ? t('descPending', { fallback: 'Review settings' }) :
-           status === 'failed' ? t('descFailed', { fallback: 'Check the logs' }) : 
-           status === 'completed' ? t('descCompleted', { fallback: 'Done' }) : 
-           t('descRunning', { fallback: 'Please wait...' })}
+           status === 'pending' ? t('descPending') :
+           status === 'failed' ? t('descFailed') : 
+           status === 'completed' ? t('descCompleted') : 
+           t('descRunning')}
         </p>
       </div>
 
@@ -213,7 +213,7 @@ export default function AdminImportPage() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in">
           <div className="grid grid-cols-2 gap-6 mb-6">
             <div>
-              <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.host', { fallback: 'Host' })}</label>
+              <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.host')}</label>
               <input
                 type="text"
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
@@ -224,7 +224,7 @@ export default function AdminImportPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.port', { fallback: 'Port' })}</label>
+              <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.port')}</label>
               <input
                 type="text"
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
@@ -237,7 +237,7 @@ export default function AdminImportPage() {
           </div>
 
           <div className="mb-6">
-            <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.database', { fallback: 'Database' })}</label>
+            <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.database')}</label>
             <input
               type="text"
               className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
@@ -250,7 +250,7 @@ export default function AdminImportPage() {
 
           <div className="grid grid-cols-2 gap-6 mb-8">
             <div>
-              <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.username', { fallback: 'Username' })}</label>
+              <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.username')}</label>
               <input
                 type="text"
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
@@ -261,7 +261,7 @@ export default function AdminImportPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.password', { fallback: 'Password' })}</label>
+              <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.password')}</label>
               <input
                 type="password"
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
@@ -282,7 +282,7 @@ export default function AdminImportPage() {
                   : 'bg-[#006b5c] hover:bg-[#005246] text-white cursor-pointer'
               }`}
             >
-              {loading ? tExt('testing', { fallback: 'Testing...' }) : tExt('testConnection', { fallback: 'Test Connection & Continue' })}
+              {loading ? tExt('testing') : tExt('testConnection')}
             </button>
           </div>
         </div>
@@ -322,22 +322,22 @@ export default function AdminImportPage() {
             
             {abmTaxCategories.length > 0 && (
               <div className="col-span-2 mt-2">
-                <h2 className="text-xl font-bold text-slate-800 mb-4">{t('defaultTaxCategory', { fallback: 'Default Tax Category' })}</h2>
-                <p className="text-sm text-slate-500 mb-4">{t('defaultTaxCategoryDesc', { fallback: 'Select the default tax category to use when a category is missing or omitted.' })}</p>
+                <h2 className="text-xl font-bold text-slate-800 mb-4">{t('defaultTaxCategory')}</h2>
+                <p className="text-sm text-slate-500 mb-4">{t('defaultTaxCategoryDesc')}</p>
                 <select
                   className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
                   value={config.defaultTaxCategoryCode}
                   onChange={(e) => setConfig({ ...config, defaultTaxCategoryCode: e.target.value })}
                 >
                   {abmTaxCategories.map(tax => (
-                    <option key={tax.code} value={tax.code}>{tax.name} ({tax.rate}%) - {tax.code}</option>
+                    <option key={tax.code} value={tax.code}>{t('taxFormat', { name: tax.name, rate: tax.rate, code: tax.code })}</option>
                   ))}
                 </select>
               </div>
             )}
           </div>
 
-          <h2 className="text-xl font-bold text-slate-800 mb-4">{t('sections.executionOptions', { fallback: 'Execution Options' })}</h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-4">{t('sections.executionOptions')}</h2>
           
           <div className="flex flex-col gap-4 mb-8">
             <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={config.extractionMode === 'resume'}>
@@ -350,18 +350,18 @@ export default function AdminImportPage() {
               />
               <div>
                 <div className="font-bold text-slate-800 flex items-center gap-2">
-                  {t('options.resumeModeTitle', { fallback: 'Resume from Checkpoint' })}
+                  {t('options.resumeModeTitle')}
                   {completedTables !== null && (
                     <span className="bg-[#006b5c]/10 text-[#006b5c] text-xs font-bold px-2 py-0.5 rounded-full">
-                      {t('options.tablesCached', { count: completedTables.length, fallback: `${completedTables.length} tables cached` })}
+                      {t('options.tablesCached', { count: completedTables.length })}
                     </span>
                   )}
                 </div>
-                <div className="text-sm text-slate-500">{t('options.resumeModeDesc', { fallback: 'Skip already imported tables.' })}</div>
+                <div className="text-sm text-slate-500">{t('options.resumeModeDesc')}</div>
                 
                 {completedTables !== null && completedTables.length > 0 && (
                   <div className="mt-3 text-xs font-mono text-slate-400 bg-slate-50 border border-slate-100 rounded p-2 max-h-24 overflow-y-auto">
-                    <strong>{t('options.alreadyStaged', { fallback: 'Already staged: ' })}</strong> 
+                    <strong>{t('options.alreadyStaged')}</strong> 
                     {completedTables.join(', ')}
                   </div>
                 )}
@@ -377,8 +377,8 @@ export default function AdminImportPage() {
                 className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
               />
               <div>
-                <div className="font-bold text-slate-800">{tExt('skip', { fallback: 'Skip extraction (Empty Base)' })}</div>
-                <div className="text-sm text-slate-500">{tExt('skipDesc', { fallback: 'Proceed directly to transformation. No new data will be extracted.' })}</div>
+                <div className="font-bold text-slate-800">{tExt('skip')}</div>
+                <div className="text-sm text-slate-500">{tExt('skipDesc')}</div>
               </div>
             </label>
 
@@ -391,8 +391,8 @@ export default function AdminImportPage() {
                 className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
               />
               <div>
-                <div className="font-bold text-slate-800">{t('options.fullExtractionTitle', { fallback: 'Full Extraction' })}</div>
-                <div className="text-sm text-slate-500">{t('options.fullExtractionDesc', { fallback: 'Extract everything from scratch.' })}</div>
+                <div className="font-bold text-slate-800">{t('options.fullExtractionTitle')}</div>
+                <div className="text-sm text-slate-500">{t('options.fullExtractionDesc')}</div>
               </div>
             </label>
           </div>
@@ -408,7 +408,7 @@ export default function AdminImportPage() {
               onClick={handleStartElt}
               className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
             >
-              {t('buttons.startExecution', { fallback: 'Start Import' })}
+              {t('buttons.startExecution')}
             </button>
           </div>
         </div>
@@ -420,7 +420,7 @@ export default function AdminImportPage() {
           <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
           <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
           <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
-          <div className="ml-4 text-slate-400 text-xs font-medium">{t('sections.terminal', { fallback: 'Terminal Output' })}</div>
+          <div className="ml-4 text-slate-400 text-xs font-medium">{t('sections.terminal')}</div>
         </div>
         <div 
           ref={scrollContainerRef} 
@@ -442,7 +442,7 @@ export default function AdminImportPage() {
           {status === 'failed' && errorMsg && (
             <div className="flex gap-4 mb-3 text-red-400">
               <span className="text-[#0ea5e9] select-none">{'>'}</span>
-              <span>{t('errors.criticalError', { message: errorMsg, fallback: `Critical Error: ${errorMsg}` })}</span>
+              <span>{t('errors.criticalError', { message: errorMsg })}</span>
             </div>
           )}
           <div ref={bottomRef} />
@@ -479,7 +479,7 @@ export default function AdminImportPage() {
             onClick={() => router.push('/')}
             className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm w-full"
           >
-            {t('buttons.goToDashboard', { fallback: 'Go to Dashboard' })}
+            {t('buttons.goToDashboard')}
           </button>
         </div>
       )}
@@ -498,7 +498,7 @@ export default function AdminImportPage() {
             }}
             className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
            >
-             {t('buttons.continueToSummary', { fallback: 'Continue to Summary' })}
+             {t('buttons.continueToSummary')}
            </button>
         </div>
       )}
@@ -509,7 +509,7 @@ export default function AdminImportPage() {
             onClick={() => { setStep('config'); setStatus('pending'); }}
             className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
            >
-             {t('buttons.retryImport', { fallback: 'Retry Import' })}
+             {t('buttons.retryImport')}
            </button>
         </div>
       )}

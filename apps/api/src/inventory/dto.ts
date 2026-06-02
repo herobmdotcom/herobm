@@ -153,6 +153,8 @@ export class PendingPutawayResponseDto {
   @ApiProperty()
   productName!: string;
   @ApiProperty()
+  productNumber!: string;
+  @ApiProperty()
   quantity!: string;
   @ApiProperty()
   putawayStatus!: string;

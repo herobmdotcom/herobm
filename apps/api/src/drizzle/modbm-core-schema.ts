@@ -1913,6 +1913,7 @@ export const glAccounts = modbmCore.table(
     isSystem: boolean('is_system').notNull().default(false), // prevents deletion
     isBankAccount: boolean('is_bank_account').notNull().default(false), // determines if it appears in payment/recon modules
     currencyCode: text('currency_code').notNull(), // GL customers can have different currencies
+    // modbm-allow-record-any
     metadata: jsonb('metadata').$type<Record<string, any>>().default({}), // stores bank numbers, BSBs, routing, SWIFT, etc.
     isActive: boolean('is_active').notNull().default(true),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -2070,9 +2071,6 @@ export const appSettings = modbmCore.table('app_settings', {
   inventoryAccountingMode: text('inventory_accounting_mode')
     .notNull()
     .default('periodic'), // 'periodic' | 'perpetual'
-  nonStockBillingMode: text('non_stock_billing_mode')
-    .notNull()
-    .default('per_shipment'), // 'per_shipment' | 'final_invoice'
   creditLimitBehavior: text('credit_limit_behavior').notNull().default('soft'), // 'hard' (block creation) | 'soft' (allow draft, block dispatch)
   apiRateLimit: numeric('api_rate_limit').notNull().default('1000'),
   setupCompletedAt: timestamp('setup_completed_at', { withTimezone: true }),
@@ -2093,6 +2091,7 @@ export const reports = modbmCore.table('reports', {
   slug: text('slug').unique().notNull(),
   name: text('name').notNull(),
   template: text('template').notNull(),
+  // modbm-allow-record-any
   mockData: jsonb('mock_data').$type<Record<string, any>>(),
   outputNamePattern: text('output_name_pattern').default('Report.pdf'),
   createdAt: timestamp('created_at', { withTimezone: true })

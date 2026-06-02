@@ -127,18 +127,18 @@ export default function JournalEntriesPage() {
         endpoint={endpoint}
         columns={columns}
         gridKey="gl-journal-entries"
-        searchPlaceholder={t('searchPlaceholder', { defaultValue: 'Search entry number…' })}
+        searchPlaceholder={t('searchPlaceholder')}
         exportFileName="journal-entries"
         fetchAll={true}
         initialSearch={entryParam}
         onRowClicked={(row) => setSelectedEntry(row)}
         pageTitle={t('title')}
-        headerFilters={
-          <>
+        secondaryHeader={
+          <div className="flex flex-wrap items-center justify-end gap-4 w-full">
             <select
               value={sourceType}
               onChange={(e) => setSourceType(e.target.value)}
-              className="input text-xs h-9 border-gray-200 w-auto min-w-[180px] bg-white rounded-lg"
+              className="input text-xs h-9 border-gray-200 !w-auto min-w-[240px] bg-white rounded-lg"
             >
               <option value="">{t('allSources')}</option>
               <option value="sales_invoice">{t('sourceSalesInvoice')}</option>
@@ -164,14 +164,14 @@ export default function JournalEntriesPage() {
                 title={t('toDate')}
               />
             </div>
-          </>
+          </div>
         }
         headerActions={
           <button
             onClick={() => router.push('/general-ledger/journal-entries/new')}
             className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 shadow-sm whitespace-nowrap"
           >
-            + {t('newEntry', { defaultValue: 'New Entry' })}
+            + {t('newEntry')}
           </button>
         }
       />

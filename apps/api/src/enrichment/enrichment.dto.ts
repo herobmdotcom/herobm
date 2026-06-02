@@ -8,5 +8,6 @@ export class EnrichmentPayloadDto {
   })
   @IsOptional()
   @IsObject()
+  // modbm-allow-record-any
   payload?: Record<string, any>;
 }

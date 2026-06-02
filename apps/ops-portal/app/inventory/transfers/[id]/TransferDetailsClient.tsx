@@ -93,7 +93,6 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                 >
                   {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
-                  {/* eslint-enable i18next/no-literal-string */}
                   {tCommon('cancel')}
                 </button>
               )}
@@ -164,7 +163,6 @@ export default function TransferDetailsClient({ id }: { id: string }) {
             <h3 className="section-heading">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">inventory_2</span>
-              {/* eslint-enable i18next/no-literal-string */}
               {tTransfers('lineItems')}
             </h3>
             {isEditable && (

@@ -93,6 +93,7 @@ describe('Accounts (e2e)', () => {
       .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        address1Country: 'AU',
         customerNumber,
         name: 'E2E Test Customer',
         emailAddress1: 'e2e@example.com',
@@ -108,6 +109,7 @@ describe('Accounts (e2e)', () => {
       .post('/api/customers')
       .set('Authorization', `Bearer ${viewerToken}`)
       .send({
+        address1Country: 'AU',
         customerNumber: 'FAIL-CUST-001',
         name: 'Unauthorized Customer',
       });
@@ -121,6 +123,7 @@ describe('Accounts (e2e)', () => {
       .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        address1Country: 'AU',
         customerNumber: `PATCH-CUST-${Date.now()}`,
         name: 'Before Patch',
       });

@@ -71,7 +71,7 @@ export default function EventQueueDashboard() {
     setDrawerExpandedId(null);
     try {
       const { data: page } = await api.externalSyncControllerGetEventsByType({ type: eventType, status: 'failed', limit: '50' });
-      setDrawerEvents(((page as any).data || page || []) as unknown as OutboxEvent[]);
+      setDrawerEvents((page as unknown as OutboxEvent[]) || []);
     } catch (err: unknown) {
       setDrawerEvents([]);
       reportError(err, 'EventQueueDashboard_handleViewEvents');

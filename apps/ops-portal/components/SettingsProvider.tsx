@@ -15,7 +15,7 @@ interface GlSettings {
 interface AppSettings {
   defaultFulfillmentLocationId: string | null;
   inventoryValuationMethod: string;
-  nonStockBillingMode: string;
+  inventoryAccountingMode: string;
   creditLimitBehavior: string;
 }
 
@@ -52,8 +52,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         ]);
         setGl(glRes.data as unknown as GlSettings);
         setOrganization(orgRes.data);
-      } catch (err: any) {
-        if (err.message !== 'Not authenticated' && err.status !== 401 && err.status !== 403) {
+      } catch (err: unknown) {
+        const anyErr = err as any;
+        if (anyErr.message !== 'Not authenticated' && anyErr.status !== 401 && anyErr.status !== 403) {
           reportError(err, 'SettingsProvider');
         }
       } finally {

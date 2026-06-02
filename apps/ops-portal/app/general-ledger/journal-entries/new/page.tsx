@@ -9,6 +9,8 @@ import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
+import EntityHeader from '@/components/shared/EntityHeader';
+import DetailsLayout from '@/components/shared/DetailsLayout';
 
 interface GlAccount {
   accountCode: string;
@@ -79,11 +81,11 @@ export default function NewJournalEntryPage() {
       // Reset partyId if type changes
       if (field === 'partyType' && value === 'none') updated.partyId = '';
       if (field === 'partyType' && value !== l.partyType) updated.partyId = '';
-      
+
       // Auto-clear opposite amount
       if (field === 'debit' && value) updated.credit = '';
       if (field === 'credit' && value) updated.debit = '';
-      
+
       return updated;
     }));
   };
@@ -124,219 +126,212 @@ export default function NewJournalEntryPage() {
   };
 
   return (
-    <>
-      <div className="h-full flex flex-col p-4 lg:p-6 overflow-auto">
-        <div className="max-w-5xl mx-auto w-full">
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-6">
-            <button
-              onClick={() => router.back()}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-white border shadow-sm hover:bg-gray-50 transition-colors"
-            >
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-            </button>
-            <h2 className="text-[1.3rem] font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Manrope, sans-serif' }}>
-              {t('newManualEntry')}
-            </h2>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div>
-                <label className="block text-sm font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  {t('columns.date')}
-                </label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full text-sm px-3 py-2 rounded border focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  {t('columns.memo')}
-                </label>
-                <input
-                  type="text"
-                  value={memo}
-                  onChange={(e) => setMemo(e.target.value)}
-                  placeholder={t('placeholders.memo')}
-                  className="w-full text-sm px-3 py-2 rounded border focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
-                />
-              </div>
+    <DetailsLayout
+      header={
+        <EntityHeader
+          title={t('newManualEntry')}
+          onBack={() => router.push('/general-ledger/journal-entries')}
+          actions={
+            <>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => router.push('/general-ledger/journal-entries')}
+                disabled={submitting}
+              >
+                {tCommon('cancel')}
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={handleSubmit}
+                disabled={!canSubmit || submitting}
+              >
+                {submitting ? tCommon('saving') : t('postEntry')}
+              </button>
+            </>
+          }
+          showPrint={false}
+        />
+      }
+    >
+      <div className="flex flex-col gap-3">
+        <div className="card">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('columns.date')} *
+              </label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="input w-full"
+              />
             </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('columns.memo')}
+              </label>
+              <input
+                type="text"
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                placeholder={t('placeholders.memo')}
+                className="input w-full"
+              />
+            </div>
+          </div>
+        </div>
 
-            {/* Lines Table */}
-            <h3 className="text-sm font-bold mb-3 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+        <div className="card">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
+            <h3 className="section-heading !mb-0 shrink-0">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              <span className="material-symbols-outlined">list</span>
               {t('lines')}
             </h3>
-            
-            <div className="overflow-x-auto rounded border" style={{ borderColor: 'var(--border)' }}>
-              <table className="w-full text-sm">
-                <thead style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
-                  <tr>
-                    <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.customer')}</th>
-                    <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.partyType')}</th>
-                    <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.party')}</th>
-                    <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.memo')}</th>
-                    <th className="text-right px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.debit')}</th>
-                    <th className="text-right px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.credit')}</th>
-                    <th className="w-10 px-2"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lines.map((line, index) => (
-                    <tr key={line.id} style={{ borderBottom: index < lines.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                      <td className="p-2 align-top w-64">
-                        <select
-                          value={line.accountCode}
-                          onChange={(e) => updateLine(line.id, 'accountCode', e.target.value)}
-                          className="w-full text-sm px-2 py-1.5 rounded border focus:outline-none"
-                          style={{ borderColor: 'var(--border)' }}
-                        >
-                          <option value="">{t('placeholders.selectAccount')}</option>
-                          {accounts.map(a => (
-                            <option key={a.accountCode} value={a.accountCode}>
-                              {a.accountCode} - {a.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="p-2 align-top w-32">
-                        <select
-                          value={line.partyType}
-                          onChange={(e) => updateLine(line.id, 'partyType', e.target.value)}
-                          className="w-full text-sm px-2 py-1.5 rounded border focus:outline-none"
-                          style={{ borderColor: 'var(--border)' }}
-                        >
-                          <option value="none">{t('partyTypes.none')}</option>
-                          <option value="customer">{t('partyTypes.customer')}</option>
-                          <option value="supplier">{t('partyTypes.supplier')}</option>
-                        </select>
-                      </td>
-                      <td className="p-2 align-top w-48">
-                        {line.partyType === 'none' && (
-                          <div className="w-full text-sm px-2 py-1.5 rounded border bg-gray-100 text-gray-400" style={{ borderColor: 'var(--border)' }}>
-                            —
-                          </div>
-                        )}
-                        {line.partyType === 'customer' && (
-                          <CustomerSelect
-                            value={line.partyId}
-                            onChange={(acc) => updateLine(line.id, 'partyId', acc ? acc.customerId : '')}
-                            placeholder={t('placeholders.selectParty')}
-                          />
-                        )}
-                        {line.partyType === 'supplier' && (
-                          <SupplierSelect
-                            value={line.partyId}
-                            onChange={(sup) => updateLine(line.id, 'partyId', sup ? sup.vendorId : '')}
-                            placeholder={t('placeholders.selectParty')}
-                          />
-                        )}
-                      </td>
-                      <td className="p-2 align-top">
-                        <input
-                          type="text"
-                          value={line.memo}
-                          onChange={(e) => updateLine(line.id, 'memo', e.target.value)}
-                          placeholder={t('placeholders.lineMemo')}
-                          className="w-full text-sm px-2 py-1.5 rounded border focus:outline-none"
-                          style={{ borderColor: 'var(--border)' }}
-                        />
-                      </td>
-                      <td className="p-2 align-top w-28">
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={line.debit}
-                          onChange={(e) => updateLine(line.id, 'debit', e.target.value)}
-                          className="w-full text-sm px-2 py-1.5 rounded border text-right font-mono focus:outline-none"
-                          style={{ borderColor: 'var(--border)' }}
-                        />
-                      </td>
-                      <td className="p-2 align-top w-28">
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={line.credit}
-                          onChange={(e) => updateLine(line.id, 'credit', e.target.value)}
-                          className="w-full text-sm px-2 py-1.5 rounded border text-right font-mono focus:outline-none"
-                          style={{ borderColor: 'var(--border)' }}
-                        />
-                      </td>
-                      <td className="p-2 align-top text-center">
-                        <button
-                          onClick={() => removeLine(line.id)}
-                          disabled={lines.length <= 2}
-                          className="p-1.5 text-red-500 hover:bg-red-50 rounded disabled:opacity-30 disabled:hover:bg-transparent"
-                        >
-                          {/* eslint-disable-next-line i18next/no-literal-string */}
-                          <span className="material-symbols-outlined text-[16px]">delete</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="p-3 border-t bg-gray-50 flex justify-between items-center" style={{ borderColor: 'var(--border)' }}>
-                <button
-                  onClick={addLine}
-                  className="px-3 py-1 text-xs font-semibold rounded border bg-white hover:bg-gray-100 transition-colors flex items-center gap-1"
-                >
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
-                  <span className="material-symbols-outlined text-[16px]">add</span> {t('addLine')}
-                </button>
-
-                <div className="flex items-center gap-6 pr-12">
-                  <div className="text-sm font-semibold text-gray-500">
-                    {t('totals')}
-                  </div>
-                  <div className="text-right w-24">
-                    <span className="font-mono font-bold text-[#041627]">{totalDebit.toFixed(2)}</span>
-                  </div>
-                  <div className="text-right w-24">
-                    <span className="font-mono font-bold text-[#041627]">{totalCredit.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
+              <button className="btn btn-secondary btn-sm whitespace-nowrap" onClick={addLine}>
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined text-[16px]">add</span> {t('addLine')}
+              </button>
             </div>
-
-            {/* Balancer Warning */}
-            <div className="mt-4 flex justify-end">
-              {!isBalanced && totalDebit > 0 && (
-                <div className="text-xs font-semibold text-red-600 bg-red-50 px-3 py-1.5 rounded-md border border-red-200">
-                  {t('unbalancedWarning', { amount: Math.abs(totalDebit - totalCredit).toFixed(2) })}
-                </div>
-              )}
-            </div>
-
           </div>
 
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={() => router.back()}
-              className="px-5 py-2 rounded-lg font-bold text-sm bg-white border shadow-sm hover:bg-gray-50"
-            >
-              {tCommon('cancel')}
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-              className="px-5 py-2 rounded-lg font-bold text-sm text-white shadow-sm transition-all disabled:opacity-50"
-              style={{ background: canSubmit ? 'var(--accent)' : 'var(--text-muted)' }}
-            >
-              {t('postEntry')}
-            </button>
+          <div className="overflow-x-auto w-full">
+            <table className="table-lines w-full">
+              <thead>
+                <tr>
+                  <th>{t('columns.glAccount')}</th>
+                  <th>{t('columns.partyType')}</th>
+                  <th>{t('columns.party')}</th>
+                  <th>{t('columns.memo')}</th>
+                  <th style={{ width: 120, textAlign: 'right' }}>{t('columns.debit')}</th>
+                  <th style={{ width: 120, textAlign: 'right' }}>{t('columns.credit')}</th>
+                  <th style={{ width: 50 }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {lines.map((line) => (
+                  <tr key={line.id}>
+                    <td>
+                      <select
+                        value={line.accountCode}
+                        onChange={(e) => updateLine(line.id, 'accountCode', e.target.value)}
+                        className="input"
+                        style={{ width: '100%', fontSize: 13 }}
+                      >
+                        <option value="">{t('placeholders.selectAccount')}</option>
+                        {accounts.map(a => (
+                          <option key={a.accountCode} value={a.accountCode}>
+                            {a.accountCode} - {a.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <select
+                        value={line.partyType}
+                        onChange={(e) => updateLine(line.id, 'partyType', e.target.value)}
+                        className="input"
+                        style={{ width: '100%', fontSize: 13 }}
+                      >
+                        <option value="none">{t('partyTypes.none')}</option>
+                        <option value="customer">{t('partyTypes.customer')}</option>
+                        <option value="supplier">{t('partyTypes.supplier')}</option>
+                      </select>
+                    </td>
+                    <td>
+                      {line.partyType === 'none' && (
+                        <div className="input text-gray-400 bg-gray-50 flex items-center" style={{ width: '100%', height: '32px', fontSize: 13 }}>
+                          —
+                        </div>
+                      )}
+                      {line.partyType === 'customer' && (
+                        <CustomerSelect
+                          value={line.partyId}
+                          onChange={(acc) => updateLine(line.id, 'partyId', acc ? acc.customerId : '')}
+                          placeholder={t('placeholders.selectParty')}
+                        />
+                      )}
+                      {line.partyType === 'supplier' && (
+                        <SupplierSelect
+                          value={line.partyId}
+                          onChange={(sup) => updateLine(line.id, 'partyId', sup ? sup.vendorId : '')}
+                          placeholder={t('placeholders.selectParty')}
+                        />
+                      )}
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={line.memo}
+                        onChange={(e) => updateLine(line.id, 'memo', e.target.value)}
+                        placeholder={t('placeholders.lineMemo')}
+                        className="input"
+                        style={{ width: '100%', fontSize: 13 }}
+                      />
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={line.debit}
+                        onChange={(e) => updateLine(line.id, 'debit', e.target.value)}
+                        className="input"
+                        style={{ width: '100%', textAlign: 'right', fontSize: 13 }}
+                      />
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={line.credit}
+                        onChange={(e) => updateLine(line.id, 'credit', e.target.value)}
+                        className="input"
+                        style={{ width: '100%', textAlign: 'right', fontSize: 13 }}
+                      />
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <button
+                        onClick={() => removeLine(line.id)}
+                        disabled={lines.length <= 2}
+                        className="p-1.5 text-red-500 hover:bg-red-50 rounded disabled:opacity-30 disabled:hover:bg-transparent"
+                      >
+                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            <div className="flex justify-end mt-4">
+              <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col w-full md:w-80">
+                <div className="flex justify-between items-center py-1 border-b border-slate-100 pb-2 mb-2">
+                  <span className="text-sm font-semibold text-slate-500">{t('totals')}</span>
+                </div>
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-sm font-medium text-slate-500">{t('columns.debit')}</span>
+                  <span className="text-sm font-semibold">{totalDebit.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-sm font-medium text-slate-500">{t('columns.credit')}</span>
+                  <span className="text-sm font-semibold">{totalCredit.toFixed(2)}</span>
+                </div>
+                {!isBalanced && totalDebit > 0 && (
+                  <div className="mt-2 text-xs font-semibold text-red-600 bg-red-50 px-3 py-1.5 rounded-md border border-red-200">
+                    {t('unbalancedWarning', { amount: Math.abs(totalDebit - totalCredit).toFixed(2) })}
+                  </div>
+                )}
+              </div>
+            </div>
+            
           </div>
         </div>
       </div>
-    </>
+    </DetailsLayout>
   );
 }

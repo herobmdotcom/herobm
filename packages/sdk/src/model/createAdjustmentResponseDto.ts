@@ -9,4 +9,5 @@
 export interface CreateAdjustmentResponseDto {
   success: boolean;
   journalEntryId: string;
+  journalLineId?: string;
 }

@@ -95,7 +95,6 @@ export default function FulfillmentSection({ orderId, pickingSummary }: Props) {
                 <h3 className="section-heading">
                     {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">local_shipping</span>
-            {/* eslint-enable i18next/no-literal-string */}
                     {t('title')}
                 </h3>
             </div>

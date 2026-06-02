@@ -15,7 +15,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
     slug: initialData?.slug || '',
     description: initialData?.description || '',
     template: initialData?.template || t('defaults.template'),
-    outputNamePattern: initialData?.outputNamePattern || t('defaults.outputPattern'),
+    outputNamePattern: initialData?.outputNamePattern || t('defaults.outputPattern', { context: '{context}', id: '{id}' }),
     contexts: (initialData?.contexts as string[]) || [],
   });
   
@@ -35,7 +35,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
 
   useEffect(() => {
     api.reportsControllerGetHooks().then(res => {
-      setAvailableHooks((res.data as any).data || (res.data as any) || []);
+      setAvailableHooks((res.data as unknown as { data: any[] }).data || res.data || []);
     }).catch(() => {});
   }, []);
 
@@ -95,7 +95,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
     try {
       const res = await api.reportsControllerGetRandomId(previewVars.hookSlug);
       if ((res as any).data?.id || (res as any).id) {
-        setPreviewVars(p => ({ ...p, entityId: ((res as any).data?.id || (res as any).id) as string }));
+        setPreviewVars(p => ({ ...p, entityId: (res.data as unknown as { id: string }).id as string }));
       }
     } catch (err) {
       reportError(err, 'TemplateForm.randomizeId');
@@ -257,7 +257,6 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
               <div className="flex gap-2">
                  <input className="input w-full bg-white font-mono text-sm" value={previewVars.entityId} onChange={e => setPreviewVars(p => ({ ...p, entityId: e.target.value }))} placeholder={t('placeholders.uuid')} />
                  <button className="btn btn-secondary px-3 bg-white" title={t('buttons.getRandomId')} onClick={handleRandomizeId} disabled={!previewVars.hookSlug}>
-                   {/* eslint-disable-next-line i18next/no-literal-string */}
                    🎲
                  </button>
               </div>

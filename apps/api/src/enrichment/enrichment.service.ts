@@ -40,6 +40,7 @@ export class EnrichmentService {
     }));
   }
 
+  // modbm-allow-record-any
   async getConfig(providerName: string): Promise<Record<string, any>> {
     const [integration] = await this.db
       .select()
@@ -52,10 +53,12 @@ export class EnrichmentService {
     }
 
     return this.encryptionService.decryptConfig(
+      // modbm-allow-record-any
       integration.config as Record<string, any>,
     );
   }
 
+  // modbm-allow-record-any
   async updateConfig(providerName: string, config: Record<string, any>) {
     if (!this.providers.has(providerName)) {
       throw new NotFoundException(`Provider '${providerName}' not found`);
@@ -88,6 +91,7 @@ export class EnrichmentService {
   async lookupByField(
     field: string,
     country: string,
+    // modbm-allow-record-any
     payload: string | Record<string, any>,
   ): Promise<EnrichmentResult> {
     const mappings = this.appConfig.enrichmentProviderMappings() || {};
@@ -102,6 +106,7 @@ export class EnrichmentService {
 
   async lookup(
     providerName: string,
+    // modbm-allow-record-any
     payload: string | Record<string, any>,
   ): Promise<EnrichmentResult> {
     const provider = this.providers.get(providerName);
@@ -117,6 +122,7 @@ export class EnrichmentService {
 
   async recordTransaction(
     providerName: string,
+    // modbm-allow-record-any
     payload: Record<string, any>,
   ): Promise<EnrichmentResult> {
     const provider = this.providers.get(providerName);
@@ -137,6 +143,7 @@ export class EnrichmentService {
 
   async recordRefund(
     providerName: string,
+    // modbm-allow-record-any
     payload: Record<string, any>,
   ): Promise<EnrichmentResult> {
     const provider = this.providers.get(providerName);

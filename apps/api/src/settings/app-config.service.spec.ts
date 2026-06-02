@@ -51,7 +51,7 @@ describe('AppConfigService', () => {
       await pg.db.insert(appSettings).values({
         defaultFulfillmentLocationId: testLocationId,
         inventoryValuationMethod: 'weighted_average',
-        nonStockBillingMode: 'per_shipment',
+        inventoryAccountingMode: 'periodic',
         setupCompletedAt: new Date(),
       });
 
@@ -106,7 +106,7 @@ describe('AppConfigService', () => {
       await pg.db.insert(appSettings).values({
         defaultFulfillmentLocationId: testLocationId,
         inventoryValuationMethod: 'fifo',
-        nonStockBillingMode: 'final_invoice',
+        inventoryAccountingMode: 'perpetual',
         setupCompletedAt: new Date(),
       });
 

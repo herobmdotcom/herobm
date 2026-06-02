@@ -31,13 +31,14 @@ import type {
   ApiKeyFullResponseDto,
   ApiKeyResponseDto,
   AppConfigResponseDto,
-  ArrayResponseDto,
   AutoMatchPurchaseOrderDto,
-  AvailablePoLinesListResponseDto,
+  AvailablePoLineDto,
+  BankStatementConfirmMatchDto,
   BankStatementControllerConfirmMatch201,
-  BankStatementControllerConfirmMatchBody,
-  BankStatementControllerGetLines200,
   BankStatementControllerGetLinesParams,
+  BankStatementControllerManualMatch201,
+  BankStatementLineDto,
+  BankStatementManualMatchDto,
   BatchPaymentActionDto,
   BinResponseDto,
   BulkImportResultDto,
@@ -47,6 +48,7 @@ import type {
   ChangeReturnStateDto,
   ChangeShipmentStateDto,
   ChangeStateDto,
+  ChartFileDto,
   ClientErrorDto,
   ConfirmRejectResponseDto,
   CostCenterResponseDto,
@@ -115,17 +117,16 @@ import type {
   EnrichmentControllerLookupParams,
   EnrichmentControllerLookupPost200,
   EnrichmentControllerLookupPost201,
-  EnrichmentControllerLookupPostBody,
   EnrichmentControllerLookupPostParams,
   EnrichmentControllerTestLookup200,
   EnrichmentControllerTestLookupParams,
   EnrichmentControllerTestLookupPost200,
   EnrichmentControllerTestLookupPost201,
-  EnrichmentControllerTestLookupPostBody,
   EnrichmentControllerTestLookupPostParams,
   EnrichmentControllerUpdateConfig200,
   EnrichmentControllerUpdateConfigBody,
   EnrichmentControllerUpdateConfigParams,
+  EnrichmentPayloadDto,
   EventsControllerPublish201,
   ExchangeRateResponseDto,
   ExchangeRatesControllerFindAllParams,
@@ -148,10 +149,8 @@ import type {
   GlControllerUpdateSettingsBody,
   GlobalPurchaseReturnDto,
   GlobalPurchaseReturnsControllerGetPurchaseReturnsParams,
-  GlobalPurchaseReturnsListDto,
   GlobalReturnListResponseDto,
   GlobalReturnsControllerFindGlobalReturnsParams,
-  GlobalShipmentListResponseDto,
   GlobalShipmentsControllerFindAllParams,
   GlobalShipmentsControllerFindOneParams,
   GoodsReceivedControllerCancelReception200,
@@ -160,8 +159,8 @@ import type {
   GoodsReceivedControllerFindOneParams,
   GoodsReceivedLineResponseDto,
   GoodsReceivedResponseDto,
-  HookAssignmentsResponseDto,
-  HooksResponseDto,
+  HookAssignmentDto,
+  HookDto,
   ImportCsvDto,
   ImportCsvResponseDto,
   ImportSummaryDto,
@@ -196,7 +195,7 @@ import type {
   MacrosControllerFindOneParams,
   MappingProfileResponseDto,
   MeResponseDto,
-  OpenDemandsListResponseDto,
+  OpenDemandDto,
   OrderPickingControllerGetPickingQueueParams,
   OrderPickingControllerGetShippingQueueParams,
   OrderResponseDto,
@@ -218,7 +217,7 @@ import type {
   PickingQueueOrderDto,
   PickingSummaryDto,
   PickingSummaryPickDto,
-  PoAllocationsListResponseDto,
+  PoAllocationDto,
   PostReconciliationResponseDto,
   PreviewReportDto,
   ProductGroupResponseDto,
@@ -232,7 +231,6 @@ import type {
   ProductsControllerGetComponents200,
   PublishEventDto,
   PurchaseDebitNoteResponseDto,
-  PurchaseInvoiceListResponseDto,
   PurchaseInvoiceResponseDto,
   PurchaseOrderLineResponseDto,
   PurchaseOrderResponseDto,
@@ -244,16 +242,16 @@ import type {
   PurchaseReturnResponseDto,
   PutawayBulkDto,
   PutawayContextResponseDto,
-  RandomIdResponseDto,
+  RandomIdData,
   ReallocateDemandDto,
   ReceiveReturnDto,
   ReceiveTransferDto,
+  ReconciliationControllerGetLines200Item,
+  ReconciliationControllerGetReconciliations200Item,
   ReconciliationDetailResponseDto,
-  ReconciliationListResponseDto,
   ReconciliationRuleResponseDto,
-  ReportResponseDto,
+  ReportDto,
   ReportsControllerRunHookParams,
-  ReportsResponseDto,
   ResolveAllocationDto,
   ResolveAllocationResponseDto,
   ResolveDiscountRuleDto,
@@ -262,11 +260,11 @@ import type {
   ReturnResponseDto,
   RoleDetailsDto,
   RunHookBodyDto,
-  SalesInvoiceListResponseDto,
   SalesInvoiceResponseDto,
   SeedRequestDto,
   SeedTaxRequestDto,
   SetRolePermissionsDto,
+  SettingsFileDto,
   SettingsResponseDto,
   SetupControllerExecuteCsv201,
   SetupControllerExecuteCsvBody,
@@ -308,7 +306,6 @@ import type {
   TransfersControllerFindAllParams,
   TransfersControllerFindOneParams,
   TrialBalanceResponseDto,
-  UnreconciledLinesResponseDto,
   UomDictionaryControllerFindAllParams,
   UomDictionaryControllerFindOneParams,
   UomResponseDto,
@@ -2936,7 +2933,7 @@ export const glControllerReloadSettings = async (emptyBodyDto: EmptyBodyDto, opt
  * @summary List Charts
  */
 export type glControllerListChartsResponse200 = {
-  data: ArrayResponseDto
+  data: ChartFileDto[]
   status: 200
 }
     
@@ -3011,7 +3008,7 @@ export const glControllerSeedChartOfAccounts = async (seedRequestDto: SeedReques
  * @summary List Tax Settings
  */
 export type glControllerListTaxSettingsFilesResponse200 = {
-  data: ArrayResponseDto
+  data: SettingsFileDto[]
   status: 200
 }
     
@@ -3086,7 +3083,7 @@ export const glControllerSeedTaxSettings = async (seedTaxRequestDto: SeedTaxRequ
  * @summary Get Reconciliations
  */
 export type reconciliationControllerGetReconciliationsResponse200 = {
-  data: ReconciliationListResponseDto
+  data: ReconciliationControllerGetReconciliations200Item[]
   status: 200
 }
     
@@ -3235,7 +3232,7 @@ export const reconciliationControllerDiscardReconciliation = async (id: string, 
  * @summary Get Unreconciled Lines
  */
 export type reconciliationControllerGetLinesResponse200 = {
-  data: UnreconciledLinesResponseDto
+  data: ReconciliationControllerGetLines200Item[]
   status: 200
 }
     
@@ -3619,11 +3616,48 @@ export const bankFeedsControllerCreateRule = async (createReconciliationRuleDto:
 
 
 /**
+ * Deletes a reconciliation rule.
+ * @summary Delete Rule
+ */
+export type bankFeedsControllerDeleteRuleResponse200 = {
+  data: ReconciliationRuleResponseDto
+  status: 200
+}
+    
+export type bankFeedsControllerDeleteRuleResponseSuccess = (bankFeedsControllerDeleteRuleResponse200) & {
+  headers: Headers;
+};
+;
+
+export type bankFeedsControllerDeleteRuleResponse = (bankFeedsControllerDeleteRuleResponseSuccess)
+
+export const getBankFeedsControllerDeleteRuleUrl = (ruleId: string,) => {
+
+
+  
+
+  return `/gl/bank-feeds/rules/${ruleId}`
+}
+
+export const bankFeedsControllerDeleteRule = async (ruleId: string, options?: RequestInit): Promise<bankFeedsControllerDeleteRuleResponse> => {
+  
+  return customFetch<bankFeedsControllerDeleteRuleResponse>(getBankFeedsControllerDeleteRuleUrl(ruleId),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
  * Fetch imported bank statement lines.
  * @summary Get bank statement lines
  */
 export type bankStatementControllerGetLinesResponse200 = {
-  data: BankStatementControllerGetLines200
+  data: BankStatementLineDto[]
   status: 200
 }
     
@@ -3687,7 +3721,7 @@ export const getBankStatementControllerConfirmMatchUrl = (id: string,) => {
 }
 
 export const bankStatementControllerConfirmMatch = async (id: string,
-    bankStatementControllerConfirmMatchBody: BankStatementControllerConfirmMatchBody, options?: RequestInit): Promise<bankStatementControllerConfirmMatchResponse> => {
+    bankStatementConfirmMatchDto: BankStatementConfirmMatchDto, options?: RequestInit): Promise<bankStatementControllerConfirmMatchResponse> => {
   
   return customFetch<bankStatementControllerConfirmMatchResponse>(getBankStatementControllerConfirmMatchUrl(id),
   {      
@@ -3695,7 +3729,46 @@ export const bankStatementControllerConfirmMatch = async (id: string,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      bankStatementControllerConfirmMatchBody,)
+      bankStatementConfirmMatchDto,)
+  }
+);}
+
+
+
+/**
+ * Manually links a bank line to a specific journal line.
+ * @summary Manually match a line
+ */
+export type bankStatementControllerManualMatchResponse201 = {
+  data: BankStatementControllerManualMatch201
+  status: 201
+}
+    
+export type bankStatementControllerManualMatchResponseSuccess = (bankStatementControllerManualMatchResponse201) & {
+  headers: Headers;
+};
+;
+
+export type bankStatementControllerManualMatchResponse = (bankStatementControllerManualMatchResponseSuccess)
+
+export const getBankStatementControllerManualMatchUrl = (id: string,) => {
+
+
+  
+
+  return `/gl/bank-statement/lines/${id}/manual-match`
+}
+
+export const bankStatementControllerManualMatch = async (id: string,
+    bankStatementManualMatchDto: BankStatementManualMatchDto, options?: RequestInit): Promise<bankStatementControllerManualMatchResponse> => {
+  
+  return customFetch<bankStatementControllerManualMatchResponse>(getBankStatementControllerManualMatchUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      bankStatementManualMatchDto,)
   }
 );}
 
@@ -6149,7 +6222,7 @@ export const orderShipmentsControllerRemoveShipmentLine = async (id: string,
  * @summary Find All Shipments
  */
 export type globalShipmentsControllerFindAllResponse200 = {
-  data: GlobalShipmentListResponseDto
+  data: ShipmentResponseDto[]
   status: 200
 }
     
@@ -6283,7 +6356,7 @@ export const globalReturnsControllerFindGlobalReturns = async (params?: GlobalRe
  * @summary Get Open Demands
  */
 export type allocationsControllerGetOpenDemandsResponse200 = {
-  data: OpenDemandsListResponseDto
+  data: OpenDemandDto[]
   status: 200
 }
     
@@ -6320,7 +6393,7 @@ export const allocationsControllerGetOpenDemands = async ( options?: RequestInit
  * @summary Get PO Allocations
  */
 export type allocationsControllerGetAllocationsByPoResponse200 = {
-  data: PoAllocationsListResponseDto
+  data: PoAllocationDto[]
   status: 200
 }
     
@@ -6357,7 +6430,7 @@ export const allocationsControllerGetAllocationsByPo = async (poId: string, opti
  * @summary Get Available PO Lines
  */
 export type allocationsControllerGetAvailablePoLinesResponse200 = {
-  data: AvailablePoLinesListResponseDto
+  data: AvailablePoLineDto[]
   status: 200
 }
     
@@ -7478,7 +7551,7 @@ export const reportsControllerRunHook = async (hookSlug: string,
  * @summary Get Hooks
  */
 export type reportsControllerGetHooksResponse200 = {
-  data: HooksResponseDto
+  data: HookDto[]
   status: 200
 }
     
@@ -7515,7 +7588,7 @@ export const reportsControllerGetHooks = async ( options?: RequestInit): Promise
  * @summary Get Hook Assignments
  */
 export type reportsControllerGetAssignmentsResponse200 = {
-  data: HookAssignmentsResponseDto
+  data: HookAssignmentDto[]
   status: 200
 }
     
@@ -7552,7 +7625,7 @@ export const reportsControllerGetAssignments = async ( options?: RequestInit): P
  * @summary Update Hook Assignment
  */
 export type reportsControllerUpdateAssignmentResponse200 = {
-  data: HookAssignmentsResponseDto
+  data: HookAssignmentDto
   status: 200
 }
     
@@ -7591,7 +7664,7 @@ export const reportsControllerUpdateAssignment = async (hook: string,
  * @summary Get Random ID
  */
 export type reportsControllerGetRandomIdResponse200 = {
-  data: RandomIdResponseDto
+  data: RandomIdData
   status: 200
 }
     
@@ -7628,7 +7701,7 @@ export const reportsControllerGetRandomId = async (slug: string, options?: Reque
  * @summary Get All Reports
  */
 export type reportsControllerGetAllReportsResponse200 = {
-  data: ReportsResponseDto
+  data: ReportDto[]
   status: 200
 }
     
@@ -7665,7 +7738,7 @@ export const reportsControllerGetAllReports = async ( options?: RequestInit): Pr
  * @summary Create Report
  */
 export type reportsControllerCreateReportResponse201 = {
-  data: ReportResponseDto
+  data: ReportDto
   status: 201
 }
     
@@ -7703,7 +7776,7 @@ export const reportsControllerCreateReport = async (createReportDto: CreateRepor
  * @summary Get Report
  */
 export type reportsControllerGetReportResponse200 = {
-  data: ReportResponseDto
+  data: ReportDto
   status: 200
 }
     
@@ -7740,7 +7813,7 @@ export const reportsControllerGetReport = async (id: string, options?: RequestIn
  * @summary Update Report
  */
 export type reportsControllerUpdateReportResponse200 = {
-  data: ReportResponseDto
+  data: ReportDto
   status: 200
 }
     
@@ -7779,7 +7852,7 @@ export const reportsControllerUpdateReport = async (id: string,
  * @summary Delete Report
  */
 export type reportsControllerDeleteReportResponse200 = {
-  data: ReportResponseDto
+  data: ReportDto
   status: 200
 }
     
@@ -7893,7 +7966,7 @@ export const salesInvoiceControllerCreateSalesInvoice = async (id: string,
  * @summary Get Sales Invoices
  */
 export type salesInvoiceControllerGetSalesInvoicesResponse200 = {
-  data: SalesInvoiceResponseDto
+  data: SalesInvoiceResponseDto[]
   status: 200
 }
     
@@ -7930,7 +8003,7 @@ export const salesInvoiceControllerGetSalesInvoices = async (id: string, options
  * @summary Get Purchase Bills
  */
 export type purchaseInvoiceControllerGetPurchaseBillsResponse200 = {
-  data: PurchaseInvoiceResponseDto
+  data: PurchaseInvoiceResponseDto[]
   status: 200
 }
     
@@ -8004,7 +8077,7 @@ export const invoiceDetailControllerGetSalesInvoiceDetails = async (id: string, 
  * @summary Get All Sales Invoices
  */
 export type invoiceDetailControllerGetSalesInvoicesGlobalResponse200 = {
-  data: SalesInvoiceListResponseDto
+  data: SalesInvoiceResponseDto[]
   status: 200
 }
     
@@ -8048,7 +8121,7 @@ export const invoiceDetailControllerGetSalesInvoicesGlobal = async (params?: Inv
  * @summary Get All Purchase Invoices
  */
 export type invoiceDetailControllerGetPurchaseInvoicesGlobalResponse200 = {
-  data: PurchaseInvoiceListResponseDto
+  data: PurchaseInvoiceResponseDto[]
   status: 200
 }
     
@@ -8727,7 +8800,7 @@ export const getEnrichmentControllerLookupPostUrl = (params: EnrichmentControlle
   return stringifiedParams.length > 0 ? `/enrichment/lookup?${stringifiedParams}` : `/enrichment/lookup`
 }
 
-export const enrichmentControllerLookupPost = async (enrichmentControllerLookupPostBody: EnrichmentControllerLookupPostBody,
+export const enrichmentControllerLookupPost = async (enrichmentPayloadDto: EnrichmentPayloadDto,
     params: EnrichmentControllerLookupPostParams, options?: RequestInit): Promise<enrichmentControllerLookupPostResponse> => {
   
   return customFetch<enrichmentControllerLookupPostResponse>(getEnrichmentControllerLookupPostUrl(params),
@@ -8736,7 +8809,7 @@ export const enrichmentControllerLookupPost = async (enrichmentControllerLookupP
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      enrichmentControllerLookupPostBody,)
+      enrichmentPayloadDto,)
   }
 );}
 
@@ -8822,7 +8895,7 @@ export const getEnrichmentControllerTestLookupPostUrl = (params: EnrichmentContr
   return stringifiedParams.length > 0 ? `/enrichment/test?${stringifiedParams}` : `/enrichment/test`
 }
 
-export const enrichmentControllerTestLookupPost = async (enrichmentControllerTestLookupPostBody: EnrichmentControllerTestLookupPostBody,
+export const enrichmentControllerTestLookupPost = async (enrichmentPayloadDto: EnrichmentPayloadDto,
     params: EnrichmentControllerTestLookupPostParams, options?: RequestInit): Promise<enrichmentControllerTestLookupPostResponse> => {
   
   return customFetch<enrichmentControllerTestLookupPostResponse>(getEnrichmentControllerTestLookupPostUrl(params),
@@ -8831,7 +8904,7 @@ export const enrichmentControllerTestLookupPost = async (enrichmentControllerTes
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      enrichmentControllerTestLookupPostBody,)
+      enrichmentPayloadDto,)
   }
 );}
 
@@ -10901,7 +10974,7 @@ export const purchaseReturnsControllerShipReturn = async (id: string,
  * @summary List Purchase Returns
  */
 export type globalPurchaseReturnsControllerGetPurchaseReturnsResponse200 = {
-  data: GlobalPurchaseReturnsListDto
+  data: GlobalPurchaseReturnDto[]
   status: 200
 }
     
@@ -12765,6 +12838,43 @@ export const webhooksControllerCreate = async (createWebhookDto: CreateWebhookDt
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createWebhookDto,)
+  }
+);}
+
+
+
+/**
+ * Retrieves all possible event types that webhooks can subscribe to.
+ * @summary List Available Events
+ */
+export type webhooksControllerListEventsResponse200 = {
+  data: string[]
+  status: 200
+}
+    
+export type webhooksControllerListEventsResponseSuccess = (webhooksControllerListEventsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type webhooksControllerListEventsResponse = (webhooksControllerListEventsResponseSuccess)
+
+export const getWebhooksControllerListEventsUrl = () => {
+
+
+  
+
+  return `/webhooks/events`
+}
+
+export const webhooksControllerListEvents = async ( options?: RequestInit): Promise<webhooksControllerListEventsResponse> => {
+  
+  return customFetch<webhooksControllerListEventsResponse>(getWebhooksControllerListEventsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 

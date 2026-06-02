@@ -1,0 +1,15 @@
+﻿
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\general-ledger\reconciliations\components\BankImportModal.tsx
+   84:25  warning  ADV-041: Do not use raw fetch(). Use apiFetch(), apiMutate(), or apiFetchBlob() from @/lib/api to ensure consistent authentication and error handling                                                     no-restricted-syntax
+   95:7   warning  ADV-029: Use reportError() instead of console.error() to ensure observability in the PLG stack                                                                                                            no-restricted-syntax
+  124:25  warning  ADV-041: Do not use raw fetch(). Use apiFetch(), apiMutate(), or apiFetchBlob() from @/lib/api to ensure consistent authentication and error handling                                                     no-restricted-syntax
+  136:7   warning  ADV-029: Use reportError() instead of console.error() to ensure observability in the PLG stack                                                                                                            no-restricted-syntax
+  245:16  warning  Unused eslint-disable directive (no problems were reported from 'i18next/no-literal-string')
+  245:73  warning  disallow literal string: <button onClick={onClose} className="btn btn-secondary">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              Cancel
+            </button>  i18next/no-literal-string
+
+Γ£û 6 problems (0 errors, 6 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

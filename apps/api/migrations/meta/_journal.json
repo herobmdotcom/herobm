@@ -78,6 +78,20 @@
       "when": 1780342287865,
       "tag": "0010_broad_zodiak",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1780382228275,
+      "tag": "0011_cute_epoch",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1780383211421,
+      "tag": "0012_kind_bastion",
+      "breakpoints": true
     }
   ]
 }

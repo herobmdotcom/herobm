@@ -36,6 +36,9 @@ import {
   ReallocateDemandDto,
   GeneratePOsDto,
   GenerateTransfersDto,
+  OpenDemandDto,
+  AvailablePoLineDto,
+  PoAllocationDto,
 } from './dto';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -63,7 +66,7 @@ export class AllocationsController {
   ) {}
 
   @Get('open')
-  @ApiOkResponse({ type: OpenDemandsListResponseDto })
+  @ApiOkResponse({ type: [OpenDemandDto] })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Open Demands',
@@ -206,11 +209,11 @@ export class AllocationsController {
       return { ...d, availableElsewhere };
     });
 
-    return { data: enriched };
+    return enriched;
   }
 
   @Get('by-po/:poId')
-  @ApiOkResponse({ type: PoAllocationsListResponseDto })
+  @ApiOkResponse({ type: [PoAllocationDto] })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get PO Allocations',
@@ -237,11 +240,11 @@ export class AllocationsController {
       )
       .leftJoin(products, eq(backorders.productId, products.productId))
       .where(eq(backorders.purchaseOrderId, poId));
-    return { data: allocations };
+    return allocations;
   }
 
   @Get('available-po-lines')
-  @ApiOkResponse({ type: AvailablePoLinesListResponseDto })
+  @ApiOkResponse({ type: [AvailablePoLineDto] })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Available PO Lines',
@@ -250,7 +253,7 @@ export class AllocationsController {
   })
   async getAvailablePoLines(@Query('productId') productId: string) {
     const lines = await this.backordersService.getAvailablePoLines(productId);
-    return { data: lines };
+    return lines;
   }
 
   @Post('link-po')

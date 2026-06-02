@@ -127,15 +127,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             ) : <span className="text-sm tabular-nums">{line.quantity}</span>
         ),
         mobileCard: (line: any, defaultRender: any) => <MobileCardField label={tPurchase('columns.qty')} value={
-            isLinesEditable ? defaultRender : <span className="text-sm">{line.quantity} {line.unitOfMeasure || line.baseUom || 'EA'}</span>
+            isLinesEditable ? defaultRender : <span className="text-sm">{line.quantity} {line.unitOfMeasure || line.baseUom || tCommon('ea')}</span>
         } />
     },
     {
         header: tPurchase('columns.uom'), width: 80, align: 'right',
         render: (line: any) => {
-            if (!isLinesEditable) return <span className="text-sm tabular-nums">{line.unitOfMeasure || line.baseUom || 'EA'}</span>;
+            if (!isLinesEditable) return <span className="text-sm tabular-nums">{line.unitOfMeasure || line.baseUom || tCommon('ea')}</span>;
             const uoms: ProductUom[] = line.productUoms || [];
-            const defaultUom = line.baseUom || 'EA';
+            const defaultUom = line.baseUom || tCommon('ea');
             const selectOptions = uoms.length > 0 ? uoms : [{ uomCode: defaultUom, ratio: 1 }];
             return (
                 <select
@@ -237,13 +237,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         if (c) {
                             const pct = parseFloat(c.rate || '0');
                             const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
-                            return <span title={getTaxLabel(c)} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>{formattedPct}%</span>;
+                            return <span title={`Tax Category: ${c.title}`} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>{formattedPct}%</span>;
                         }
                         const amt = parseFloat(line.amount || '0');
                         const tax = parseFloat(line.tax || '0');
                         if (amt > 0 && tax > 0) {
                             const pct = (tax / amt) * 100;
-                            return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
+                            return <span title="Tax Category: Custom" style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>{`${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`}</span>;
                         }
                         if (amt > 0 && tax === 0) return <span title={tCommon('taxLabels.exempt')} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>0%</span>;
                         return '—';
@@ -343,7 +343,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       <>
                         {/* eslint-disable-next-line i18next/no-literal-string */}
                         <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
-                        {/* eslint-enable i18next/no-literal-string */}
                       </>
                     ) : (
                       t.icon
@@ -807,11 +806,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 <div key={inv.inventoryLevelId} className="bg-slate-50 rounded p-2 text-xs flex flex-col gap-1 border border-slate-100">
                                                     <div className="flex justify-between font-medium">
                                                         <span>{inv.locationName || inv.locationNo}</span>
-                                                        <span className={avail > 0 ? 'text-emerald-600' : 'text-rose-600'}>{avail} avail</span>
+                                                        <span className={avail > 0 ? 'text-emerald-600' : 'text-rose-600'}>{avail} {tPurchase('availabilityTab.avail')}</span>
                                                     </div>
                                                     <div className="flex justify-between text-slate-500">
-                                                        <span>{parseFloat(inv.quantityOnHand || '0')} on hand</span>
-                                                        <span>{parseFloat(inv.quantityCommitted || '0')} cmt / {parseFloat(inv.quantityOnOrder || '0')} in</span>
+                                                        <span>{parseFloat(inv.quantityOnHand || '0')} {tPurchase('availabilityTab.onHand')}</span>
+                                                        <span>{parseFloat(inv.quantityCommitted || '0')} {tPurchase('availabilityTab.cmt')} / {parseFloat(inv.quantityOnOrder || '0')} {tPurchase('availabilityTab.in')}</span>
                                                     </div>
                                                 </div>
                                             );

@@ -9,6 +9,7 @@ import {
   IsDateString,
   IsIn,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 export class CreateSupplierDto {
   @IsString()
   @IsNotEmpty()
@@ -51,10 +52,12 @@ export class CreateSupplierDto {
   fax?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsEmail()
   emailAddress1?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   tradingTermsId?: string;
 
@@ -102,6 +105,7 @@ export class CreateSupplierDto {
   blockNotes?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   supplierGroupId?: string;
 
@@ -172,10 +176,12 @@ export class UpdateSupplierDto {
   fax?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsEmail()
   emailAddress1?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   tradingTermsId?: string;
 
@@ -223,6 +229,7 @@ export class UpdateSupplierDto {
   blockNotes?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   supplierGroupId?: string;
 

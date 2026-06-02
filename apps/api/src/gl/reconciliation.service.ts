@@ -539,9 +539,16 @@ export class ReconciliationService {
           .where(eq(glJournalLines.journalLineId, newLines[0].journalLineId));
       }
 
-      return newJournalId;
+      return {
+        journalEntryId: newJournalId.journalEntryId,
+        journalLineId: newLines.length ? newLines[0].journalLineId : undefined,
+      };
     });
 
-    return { success: true, journalEntryId: result.journalEntryId };
+    return {
+      success: true,
+      journalEntryId: result.journalEntryId,
+      journalLineId: result.journalLineId,
+    };
   }
 }

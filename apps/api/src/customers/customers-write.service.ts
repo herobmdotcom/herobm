@@ -108,8 +108,8 @@ export class AccountsWriteService {
 
         return customer;
       });
-    } catch (e: any) {
-      const pgCode = e.code || e.cause?.code;
+    } catch (e: unknown) {
+      const pgCode = (e as any).code || (e as any).cause?.code;
       if (pgCode === '23505') {
         throw new ConflictException(
           `Customer number '${dto.customerNumber}' already exists`,

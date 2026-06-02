@@ -76,6 +76,7 @@ describe('Account Groups (e2e)', () => {
       .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        address1Country: 'AU',
         customerNumber: `GRP-MEMBER-${Date.now()}`,
         name: 'Group Member',
         customerGroupId: groupId,

@@ -19,6 +19,7 @@ interface PutawayLine {
     referenceNumber: string;
     productId: string;
     productName: string;
+    productNumber: string;
     quantity: string;
     createdOn: string;
 }
@@ -162,7 +163,11 @@ export default function PutawayPage() {
                     <div className="mb-6 pb-4 border-b border-[var(--border)] flex justify-between items-start">
                         <div>
                             <h3 className="text-lg font-bold text-[var(--accent)]">{selectedLine.productName}</h3>
-                            <p className="text-sm text-[var(--text-secondary)] mt-1">{t('putaway.ref', { ref: selectedLine.referenceNumber })}</p>
+                            <div className="flex flex-wrap items-center gap-1.5 mt-1 text-sm text-[var(--text-secondary)]">
+                                <span className="uppercase tracking-wider">{selectedLine.productNumber}</span>
+                                <span className="text-[var(--text-muted)]">•</span>
+                                <span>{t('putaway.ref', { ref: selectedLine.referenceNumber })}</span>
+                            </div>
                         </div>
                         <div className="text-2xl font-bold text-[var(--text-primary)] mt-1">
                             {parseFloat(selectedLine.quantity).toLocaleString()}
@@ -173,7 +178,6 @@ export default function PutawayPage() {
                         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md flex items-center gap-2">
                             {/* eslint-disable-next-line i18next/no-literal-string */}
                             <span className="material-symbols-outlined text-sm">error</span>
-                            {/* eslint-enable i18next/no-literal-string */}
                             {error}
                         </div>
                     )}
@@ -263,7 +267,6 @@ export default function PutawayPage() {
                                 <p className="mt-2 text-[11px] text-[var(--warning)] flex items-center gap-1">
                                     {/* eslint-disable-next-line i18next/no-literal-string */}
                                     <span className="material-symbols-outlined text-[14px]">warning</span>
-                                    {/* eslint-enable i18next/no-literal-string */}
                                     {t('putaway.warningNotPrimary', { bin: context.primaryBinNumber || '' })}
                                 </p>
                             )}
@@ -298,14 +301,12 @@ export default function PutawayPage() {
                                 <>
                                     {/* eslint-disable-next-line i18next/no-literal-string */}
                                     <span className="material-symbols-outlined animate-spin text-[18px]">sync</span>
-                                    {/* eslint-enable i18next/no-literal-string */}
                                     {t('putaway.processing')}
                                 </>
                             ) : (
                                 <>
                                     {/* eslint-disable-next-line i18next/no-literal-string */}
                                     <span className="material-symbols-outlined text-[18px]">done_all</span>
-                                    {/* eslint-enable i18next/no-literal-string */}
                                     {t('putaway.confirmPutaway')}
                                 </>
                             )}
@@ -357,7 +358,6 @@ export default function PutawayPage() {
                             <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
                                 {/* eslint-disable-next-line i18next/no-literal-string */}
                                 <span className="material-symbols-outlined text-4xl mb-2 opacity-50">inventory_2</span>
-                                {/* eslint-enable i18next/no-literal-string */}
                                 {t('putaway.noItemsPending')}
                             </div>
                         ) : (
@@ -372,15 +372,16 @@ export default function PutawayPage() {
                                             <div className="font-bold text-[var(--text-primary)] text-sm">{line.productName}</div>
                                             <div className="font-bold text-[var(--text-primary)] text-sm">{parseFloat(line.quantity).toLocaleString()}</div>
                                         </div>
-                                        <div className="flex items-center justify-between text-[11px] text-[var(--text-secondary)]">
-                                            <span>
-                                                {line.sourceType === 'sales_return' ? (
-                                                    <span className="font-bold mr-2 text-[var(--warning)]">{t('putaway.return')}</span>
-                                                ) : (
-                                                    <span className="font-bold mr-2 text-[var(--success)]">{t('putaway.receipt')}</span>
-                                                )}
-                                                {t('putaway.ref', { ref: line.referenceNumber })}
-                                            </span>
+                                        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--text-secondary)]">
+                                            {line.sourceType === 'sales_return' ? (
+                                                <span className="font-bold text-[var(--warning)] uppercase">{t('putaway.return')}</span>
+                                            ) : (
+                                                <span className="font-bold text-[var(--success)] uppercase">{t('putaway.receipt')}</span>
+                                            )}
+                                            <span className="text-[var(--text-muted)]">•</span>
+                                            <span className="uppercase tracking-wider">{line.productNumber}</span>
+                                            <span className="text-[var(--text-muted)]">•</span>
+                                            <span>{t('putaway.ref', { ref: line.referenceNumber })}</span>
                                         </div>
                                     </div>
                                 ))}

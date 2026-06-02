@@ -13,7 +13,7 @@ export default function GlobalPurchaseInvoicesPage() {
     const t = useTranslations('purchaseOrders');
     const tCommon = useTranslations('common');
     const tStates = useTranslations('common.states');
-    useDocumentTitle(t('supplierInvoicesCardHeading', { defaultValue: 'Supplier Invoices' }));
+    useDocumentTitle(t('supplierInvoicesCardHeading'));
     const searchParams = useSearchParams();
     const router = useRouter();
     const invoiceFilter = searchParams.get('invoiceId') || '';
@@ -32,13 +32,13 @@ export default function GlobalPurchaseInvoicesPage() {
 
     const gridColumns: any[] = [
         { field: 'invoiceId', headerName: 'ID', hide: true },
-        { field: 'invoiceNumber', headerName: t('columns.invoiceNumber', { defaultValue: 'System Bill No.' }), width: 180 },
-        { field: 'supplierInvoiceNumber', headerName: t('columns.supplierInvoiceNumber', { defaultValue: 'Supplier Invoice No.' }), width: 220 },
-        { field: 'vendorName', headerName: t('columns.vendor', { defaultValue: 'Supplier' }), width: 250 },
-        { field: 'createdOn', headerName: t('columns.date', { defaultValue: 'Date' }), width: 200, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+        { field: 'invoiceNumber', headerName: t('columns.invoiceNumber'), width: 180 },
+        { field: 'supplierInvoiceNumber', headerName: t('columns.supplierInvoiceNumber'), width: 220 },
+        { field: 'vendorName', headerName: t('columns.vendor'), width: 250 },
+        { field: 'createdOn', headerName: t('columns.date'), width: 200, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
         { 
             field: 'totalAmount', 
-            headerName: t('columns.amount', { defaultValue: 'Amount' }), 
+            headerName: t('columns.amount'), 
             type: 'numericColumn', 
             width: 150,
             valueGetter: (params: any) => {
@@ -52,7 +52,7 @@ export default function GlobalPurchaseInvoicesPage() {
         },
         { 
             field: 'stateCode', 
-            headerName: t('columns.state', { defaultValue: 'State' }), 
+            headerName: t('columns.state'), 
             width: 140,
             valueFormatter: (params: any) => {
                 if (!params.value) return '';
@@ -70,7 +70,7 @@ export default function GlobalPurchaseInvoicesPage() {
             fetchAll
             rowIdField="invoiceId"
             onRowClicked={handleRowClicked}
-            pageTitle={t('supplierInvoicesCardHeading', { defaultValue: 'Supplier Invoices' })}
+            pageTitle={t('supplierInvoicesCardHeading')}
             headerFilters={
                 <select
                     value={days}
@@ -78,10 +78,10 @@ export default function GlobalPurchaseInvoicesPage() {
                     className="input text-sm"
                     style={{ minWidth: 150 }}
                 >
-                    <option value="30">{tCommon('filters.last30Days', { defaultValue: 'Last 30 Days' })}</option>
-                    <option value="90">{tCommon('filters.last90Days', { defaultValue: 'Last 90 Days' })}</option>
-                    <option value="365">{tCommon('filters.last1Year', { defaultValue: 'Last 1 Year' })}</option>
-                    <option value="0">{tCommon('filters.allTime', { defaultValue: 'All Time' })}</option>
+                    <option value="30">{tCommon('filters.last30Days')}</option>
+                    <option value="90">{tCommon('filters.last90Days')}</option>
+                    <option value="365">{tCommon('filters.last1Year')}</option>
+                    <option value="0">{tCommon('filters.allTime')}</option>
                 </select>
             }
             headerActions={
@@ -89,7 +89,7 @@ export default function GlobalPurchaseInvoicesPage() {
                     className="btn btn-primary whitespace-nowrap ml-2 lg:ml-0"
                     onClick={() => router.push('/supplier-invoices/new')}
                 >
-                    {t('buttons.enterSupplierBill', { defaultValue: 'Enter Supplier Bill' })}
+                    {t('buttons.enterSupplierBill')}
                 </button>
             }
         />

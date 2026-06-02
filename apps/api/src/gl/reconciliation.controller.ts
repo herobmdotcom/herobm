@@ -38,7 +38,7 @@ export class ReconciliationController {
   constructor(private readonly service: ReconciliationService) {}
 
   @Get()
-  @ApiOkResponse({ type: ReconciliationListResponseDto })
+  @ApiOkResponse({ type: [Object] })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Reconciliations',
@@ -46,7 +46,7 @@ export class ReconciliationController {
   })
   async getReconciliations() {
     const data = await this.service.getReconciliations();
-    return { data };
+    return data;
   }
 
   @Post()
@@ -73,7 +73,7 @@ export class ReconciliationController {
   }
 
   @Get(':id/unreconciled')
-  @ApiOkResponse({ type: UnreconciledLinesResponseDto })
+  @ApiOkResponse({ type: [Object] })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Unreconciled Lines',
@@ -81,7 +81,7 @@ export class ReconciliationController {
   })
   async getLines(@Param('id') id: string) {
     const data = await this.service.getLines(id);
-    return { data };
+    return data;
   }
 
   @Post(':id/lines/:lineId/toggle')

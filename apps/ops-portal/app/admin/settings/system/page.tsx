@@ -10,6 +10,7 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage, COUNTRIES } from '@modbm/shared';
+import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,16 +40,10 @@ export default function SystemSettingsPage() {
   // ── UOM state ──────────────────────────────────────────────────────────────
   const [uoms, setUoms] = useState<UomEntry[]>([]);
   const [uomLoading, setUomLoading] = useState(true);
-  const [uomEditingCode, setUomEditingCode] = useState<string | null>(null);
-  const [uomForm, setUomForm] = useState<any>({});
-  const [uomCreating, setUomCreating] = useState(false);
 
   // ── Macros state ───────────────────────────────────────────────────────────
   const [macros, setMacros] = useState<Macro[]>([]);
   const [macroLoading, setMacroLoading] = useState(true);
-  const [macroEditingId, setMacroEditingId] = useState<string | null>(null);
-  const [macroForm, setMacroForm] = useState<any>({});
-  const [macroCreating, setMacroCreating] = useState(false);
 
   // ── App Settings state ─────────────────────────────────────────────────────
   const [appForm, setAppForm] = useState<any>({});
@@ -79,7 +74,7 @@ export default function SystemSettingsPage() {
 
   const updateOrgField = (field: string, value: any) => {
     setOrgForm((prev: unknown) => {
-      const p = (prev as Record<string, any>) || {};
+      const p = (prev as Record<string, unknown>) || {};
       if (p[field] === value) return p;
       setIsOrgDirty(true);
       return { ...p, [field]: value };
@@ -116,7 +111,7 @@ export default function SystemSettingsPage() {
         api.inventoryControllerFindAllLocations()
       ]);
       setAppForm(appDataRes.data);
-      setLocations((locsRes.data as unknown as any[]) || []);
+      setLocations(locsRes.data || []);
     } catch (err: unknown) {
       toast.error(tSettings('toasts.loadFailed', { area: 'App Config' }) + ': ' + getErrorMessage(err));
     } finally {
@@ -148,28 +143,30 @@ export default function SystemSettingsPage() {
     }
   };
 
-  const uomEdit = (u: UomEntry) => { setUomEditingCode(u.uomCode); setUomForm({ ...u }); setUomCreating(false); };
-  const uomCreate = () => { setUomCreating(true); setUomEditingCode(null); setUomForm({ uomCode: '', description: '' }); };
-  const uomCancel = () => { setUomEditingCode(null); setUomCreating(false); };
+  const uomColumns: InlineTableColumn<UomEntry>[] = useMemo(() => [
+    { key: 'uomCode', title: tSettings('labels.code'), type: 'text', width: 120, placeholder: tSettings('placeholders.uomCode') },
+    { key: 'description', title: tSettings('labels.description'), type: 'text', placeholder: tSettings('placeholders.uomDescription') }
+  ], [tSettings]);
 
-  const uomSave = async () => {
-    if (!uomForm.uomCode || !uomForm.description) { toast.error(tCommon('errors.typeAndDateRequired')); return; }
-    try {
-      if (uomEditingCode) {
-        await api.uomDictionaryControllerUpdate(uomEditingCode, { description: uomForm.description });
-        toast.success(tSettings('toasts.uomUpdated'));
-      } else {
-        await api.uomDictionaryControllerCreate({ uomCode: uomForm.uomCode, description: uomForm.description });
-        toast.success(tSettings('toasts.uomCreated'));
-      }
-      uomCancel(); loadUom();
-    } catch (err: unknown) { toast.error(getErrorMessage(err)); }
+  const handleUomSave = async (payload: Partial<UomEntry>, isNew: boolean) => {
+    if (!payload.uomCode || !payload.description) { throw new Error(tCommon('errors.typeAndDateRequired')); }
+    const codeToSave = payload.uomCode.toUpperCase();
+    if (isNew) {
+      await api.uomDictionaryControllerCreate({ uomCode: codeToSave, description: payload.description });
+      toast.success(tSettings('toasts.uomCreated'));
+    } else {
+      await api.uomDictionaryControllerUpdate(codeToSave, { description: payload.description });
+      toast.success(tSettings('toasts.uomUpdated'));
+    }
+    loadUom();
   };
 
-  const uomDelete = async (code: string) => {
-    if (!confirm(tSettings('confirmations.deleteUom', { code }))) return;
-    try { await api.uomDictionaryControllerRemove(code); toast.success(tSettings('toasts.uomDeleted')); loadUom(); }
-    catch (err: unknown) { toast.error(getErrorMessage(err)); }
+  const handleUomDelete = async (payload: Partial<UomEntry>) => {
+    if (!payload.uomCode) return;
+    if (!confirm(tSettings('confirmations.deleteUom', { code: payload.uomCode }))) return;
+    await api.uomDictionaryControllerRemove(payload.uomCode);
+    toast.success(tSettings('toasts.uomDeleted'));
+    loadUom();
   };
 
   // ── Macros data ────────────────────────────────────────────────────────────
@@ -186,35 +183,41 @@ export default function SystemSettingsPage() {
     }
   };
 
-  const macroEdit = (m: Macro) => { setMacroEditingId(m.macroId); setMacroForm({ ...m }); setMacroCreating(false); };
-  const macroCreate = () => { setMacroCreating(true); setMacroEditingId(null); setMacroForm({ name: '', macroType: 'text_template', content: '' }); };
-  const macroCancel = () => { setMacroEditingId(null); setMacroCreating(false); };
-
-  const macroSave = async () => {
-    if (!macroForm.name || !macroForm.content) {
-      toast.error(tCommon('errors.typeAndDateRequired')); return;
+  const macroColumns: InlineTableColumn<Macro>[] = useMemo(() => [
+    { key: 'name', title: tSettings('labels.name'), type: 'text', width: 200, placeholder: tSettings('labels.name') },
+    { 
+      key: 'content', 
+      title: tSettings('labels.content'), 
+      type: 'textarea', 
+      placeholder: tSettings('labels.content'),
+      render: (row) => <span className="text-sm whitespace-pre-wrap">{row.content}</span>
     }
-    try {
-      const payload = {
-        name: macroForm.name,
-        macroType: macroForm.macroType || 'text_template',
-        content: macroForm.content,
-      };
-      if (macroEditingId) {
-        await api.macrosControllerUpdate(macroEditingId, payload);
-        toast.success(tSettings('toasts.macroUpdated'));
-      } else {
-        await api.macrosControllerCreate(payload);
-        toast.success(tSettings('toasts.macroCreated'));
-      }
-      macroCancel(); loadMacros();
-    } catch (err: unknown) { toast.error(getErrorMessage(err)); }
+  ], [tSettings]);
+
+  const handleMacroSave = async (payload: Partial<Macro>, isNew: boolean) => {
+    if (!payload.name || !payload.content) { throw new Error(tCommon('errors.typeAndDateRequired')); }
+    const apiPayload = {
+      name: payload.name,
+      macroType: payload.macroType || 'text_template',
+      content: payload.content,
+    };
+    if (isNew) {
+      await api.macrosControllerCreate(apiPayload);
+      toast.success(tSettings('toasts.macroCreated'));
+    } else {
+      if (!payload.macroId) return;
+      await api.macrosControllerUpdate(payload.macroId, apiPayload);
+      toast.success(tSettings('toasts.macroUpdated'));
+    }
+    loadMacros();
   };
 
-  const macroDelete = async (id: string) => {
+  const handleMacroDelete = async (payload: Partial<Macro>) => {
+    if (!payload.macroId) return;
     if (!confirm(tSettings('confirmations.deleteMacro'))) return;
-    try { await api.macrosControllerRemove(id); toast.success(tSettings('toasts.macroDeleted')); loadMacros(); }
-    catch (err: unknown) { toast.error(getErrorMessage(err)); }
+    await api.macrosControllerRemove(payload.macroId);
+    toast.success(tSettings('toasts.macroDeleted'));
+    loadMacros();
   };
 
   // ── Init ───────────────────────────────────────────────────────────────────
@@ -226,63 +229,7 @@ export default function SystemSettingsPage() {
     loadMacros();
   }, []);
 
-  // ── Row Renderers ─────────────────────────────────────────────────────────
 
-  const renderUomRow = (isEdit: boolean, data: any, key: string) => (
-    <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
-      <td>
-        {isEdit && uomCreating
-          ? <input className="input" value={uomForm.uomCode} onChange={e => setUomForm({ ...uomForm, uomCode: e.target.value.toUpperCase() })} placeholder={tSettings('placeholders.uomCode')} style={{ width: 100 }} />
-          : <span className="font-mono text-xs">{data.uomCode}</span>}
-      </td>
-      <td>
-        {isEdit
-          ? <input className="input" value={uomForm.description} onChange={e => setUomForm({ ...uomForm, description: e.target.value })} placeholder={tSettings('placeholders.uomDescription')} />
-          : <span className="font-medium">{data.description}</span>}
-      </td>
-      <td style={{ textAlign: 'right' }}>
-        {isEdit ? (
-          <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={uomCancel}>{tSettings('actions.cancel')}</button>
-            <button className="btn btn-primary btn-xs" onClick={uomSave}>{tSettings('actions.save')}</button>
-          </div>
-        ) : (
-          <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={() => uomEdit(data)}>{tSettings('actions.edit')}</button>
-            <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => uomDelete(data.uomCode)}>{tSettings('actions.delete')}</button>
-          </div>
-        )}
-      </td>
-    </tr>
-  );
-
-  const renderMacroRow = (isEdit: boolean, data: any, key: string) => (
-    <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
-      <td>
-        {isEdit
-          ? <input className="input" value={macroForm.name} onChange={e => setMacroForm({ ...macroForm, name: e.target.value })} placeholder={tSettings('labels.name')} style={{ width: 150 }} />
-          : <span className="font-medium">{data.name}</span>}
-      </td>
-      <td>
-        {isEdit
-          ? <textarea className="input" rows={3} value={macroForm.content} onChange={e => setMacroForm({ ...macroForm, content: e.target.value })} placeholder={tSettings('labels.content')} style={{ width: '100%', resize: 'vertical' }} />
-          : <span className="text-sm whitespace-pre-wrap">{data.content}</span>}
-      </td>
-      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-        {isEdit ? (
-          <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={macroCancel}>{tSettings('actions.cancel')}</button>
-            <button className="btn btn-primary btn-xs" onClick={macroSave}>{tSettings('actions.save')}</button>
-          </div>
-        ) : (
-          <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={() => macroEdit(data)}>{tSettings('actions.edit')}</button>
-            <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => macroDelete(data.macroId)}>{tSettings('actions.delete')}</button>
-          </div>
-        )}
-      </td>
-    </tr>
-  );
 
   const navSections = useMemo(() => [
     { id: 'org-section', label: tSettings('sections.company'), show: true },
@@ -617,67 +564,44 @@ export default function SystemSettingsPage() {
 
         {/* ── UOM Dictionary ─────────────────────────────────────────────── */}
         <div id="uom-section" className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">straighten</span>
-              {tSettings('sections.uom')}
-            </h3>
-            <button className="btn btn-primary btn-sm" onClick={uomCreate}>+ {tSettings('actions.create')}</button>
-          </div>
-          <table className="table-lines w-full">
-            <thead>
-              <tr>
-                <th style={{ width: 120 }}>{tSettings('labels.code')}</th>
-                <th>{tSettings('labels.description')}</th>
-                <th style={{ width: 150, textAlign: 'right' }}>{tSettings('actions.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {uomCreating && renderUomRow(true, uomForm, 'new-uom')}
-              {!uomLoading && uoms.length === 0 && !uomCreating && (
-                <tr><td colSpan={3} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{tSettings('uom.empty')}</td></tr>
-              )}
-              {uoms.map(u =>
-                uomEditingCode === u.uomCode
-                  ? renderUomRow(true, u, u.uomCode)
-                  : renderUomRow(false, u, u.uomCode)
-              )}
-            </tbody>
-          </table>
+          <InlineSettingsTable
+            title={
+              <div className="flex items-center gap-2">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined">straighten</span>
+                {tSettings('sections.uom')}
+              </div>
+            }
+            columns={uomColumns}
+            data={uoms}
+            rowKey={(row: any) => row.uomCode}
+            onSave={handleUomSave}
+            onDelete={handleUomDelete}
+            onAdd={() => ({ uomCode: '', description: '' })}
+            addLabel={tSettings('actions.create')}
+            emptyLabel={uomLoading ? null : tSettings('uom.empty')}
+          />
         </div>
 
         {/* ── Macros ────────────────────────────────────────────────────────────── */}
         <div id="macros-section" className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">text_snippet</span>
-              {tSettings('sections.macros')}
-            </h3>
-            <button className="btn btn-primary btn-sm" onClick={macroCreate}>+ {tSettings('actions.create')}</button>
-          </div>
-
-          <table className="table-lines w-full">
-            <thead>
-              <tr>
-                <th style={{ width: 200 }}>{tSettings('labels.name')}</th>
-                <th>{tSettings('labels.content')}</th>
-                <th style={{ width: 120, textAlign: 'right' }}>{tSettings('actions.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {macroCreating && renderMacroRow(true, macroForm, 'new-macro')}
-              {!macroLoading && macros.length === 0 && !macroCreating && (
-                <tr><td colSpan={3} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{t('common.selectNone')}</td></tr>
-              )}
-              {macros.map(m =>
-                macroEditingId === m.macroId
-                  ? renderMacroRow(true, m, m.macroId)
-                  : renderMacroRow(false, m, m.macroId)
-              )}
-            </tbody>
-          </table>
+          <InlineSettingsTable
+            title={
+              <div className="flex items-center gap-2">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined">text_snippet</span>
+                {tSettings('sections.macros')}
+              </div>
+            }
+            columns={macroColumns}
+            data={macros}
+            rowKey={(row: any) => row.macroId}
+            onSave={handleMacroSave}
+            onDelete={handleMacroDelete}
+            onAdd={() => ({ name: '', macroType: 'text_template', content: '' } as Macro)}
+            addLabel={tSettings('actions.create')}
+            emptyLabel={macroLoading ? null : t('common.selectNone')}
+          />
         </div>
 
         <div className="flex justify-end mt-8">

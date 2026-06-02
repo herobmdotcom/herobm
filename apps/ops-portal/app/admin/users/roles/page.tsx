@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { getErrorMessage } from '@modbm/shared';
+import { useTranslations } from 'next-intl';
 
 const RESOURCES = [
   'customers', 'products', 'inventory', 'sales-orders', 'sales-returns',
@@ -63,7 +64,9 @@ interface RoleWithDetails {
 }
 
 export default function RolesPage() {
-  useDocumentTitle('Roles & Permissions');
+  const t = useTranslations('admin.roles');
+  const tCommon = useTranslations('common');
+  useDocumentTitle(t('title'));
   const router = useRouter();
 
   const [roles, setRoles] = useState<RoleWithDetails[]>([]);
@@ -212,7 +215,7 @@ export default function RolesPage() {
         <table className="table-lines w-full table-fixed text-sm">
           <thead>
             <tr>
-              <th className="w-[150px] text-left" style={{ textAlign: 'left' }}>Resource</th>
+              <th className="w-[150px] text-left" style={{ textAlign: 'left' }}>{tCommon('resource')}</th>
               {ACTIONS.map(a => <th key={a} className="text-center uppercase text-[var(--text-secondary)] text-xs tracking-wider" style={{ textAlign: 'center' }}>{a}</th>)}
             </tr>
           </thead>
@@ -227,7 +230,7 @@ export default function RolesPage() {
                     return (
                       <td key={act} className="text-center p-1">
                         <div className="flex items-center justify-center h-8">
-                          <span className="text-[10px] text-muted font-bold uppercase tracking-widest opacity-40">N/A</span>
+                          <span className="text-[10px] text-muted font-bold uppercase tracking-widest opacity-40">{t('notApplicable')}</span>
                         </div>
                       </td>
                     );
@@ -236,6 +239,8 @@ export default function RolesPage() {
                   if (isReadOnly && currentRoleItem) {
                     const local = currentRoleItem.localPermissions?.find(p => p.resource === res && p.action === act);
                     const inherited = getImplicitPerm(res, act);
+                    const localIcon = local?.effect === 'allow' ? 'check_circle' : 'cancel';
+                    const inheritedIcon = inherited?.effect === 'allow' ? 'check_circle' : 'cancel';
                     return (
                       <td key={act} className="text-center">
                         <div className="flex flex-col items-center justify-center h-full min-h-[40px]">
@@ -244,14 +249,14 @@ export default function RolesPage() {
                               className={`material-symbols-outlined text-[20px] ${local.effect === 'allow' ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}
                               title={`Explicitly ${local.effect}`}
                             >
-                              {local.effect === 'allow' ? 'check_circle' : 'cancel'}
+                              {localIcon}
                             </span>
                           ) : inherited ? (
                             <span 
                               className={`material-symbols-outlined text-[20px] opacity-40 hover:opacity-100 transition-opacity cursor-help ${inherited.effect === 'allow' ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}
                               title={`Inherited ${inherited.effect} from ${inherited.sourceRole}`}
                             >
-                              {inherited.effect === 'allow' ? 'check_circle' : 'cancel'}
+                              {inheritedIcon}
                             </span>
                           ) : (
                             <span className="text-muted text-xs">-</span>
@@ -264,6 +269,7 @@ export default function RolesPage() {
                   // Editing state
                   const localVal = formPermissions[res]?.[act] || '';
                   const inheritedVal = getImplicitPerm(res, act);
+                  const editingInheritedIcon = inheritedVal?.effect === 'allow' ? 'check_circle' : 'cancel';
                   
                   return (
                     <td key={act} className="text-center">
@@ -273,16 +279,16 @@ export default function RolesPage() {
                           value={localVal}
                           onChange={(e) => handlePermissionChange(res, act, e.target.value as any)}
                         >
-                          <option value="">Unset</option>
-                          <option value="allow">Allow</option>
-                          <option value="deny">Deny</option>
+                          <option value="">{t('unset')}</option>
+                          <option value="allow">{t('allow')}</option>
+                          <option value="deny">{t('deny')}</option>
                         </select>
                         {inheritedVal && !localVal && (
                           <span 
                             className={`material-symbols-outlined text-[16px] opacity-40 ${inheritedVal.effect === 'allow' ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}
                             title={`Inherited ${inheritedVal.effect} from ${inheritedVal.sourceRole}`}
                           >
-                            {inheritedVal.effect === 'allow' ? 'check_circle' : 'cancel'}
+                            {editingInheritedIcon}
                           </span>
                         )}
                       </div>
@@ -312,10 +318,11 @@ export default function RolesPage() {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">security</span>
-              Roles
+              {t('roles')}
             </h3>
-            <button className="btn btn-primary btn-sm" onClick={startCreate}>+ Create Role</button>
+            <button className="btn btn-primary btn-sm" onClick={startCreate}>{t('createRole')}</button>
           </div>
 
           {loading ? (
@@ -326,6 +333,7 @@ export default function RolesPage() {
                 <div className="border border-[var(--border)] rounded p-4 bg-[var(--bg-secondary)]">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-4">
+                      {/* eslint-disable-next-line i18next/no-literal-string */}
                       <span className="material-symbols-outlined text-muted">badge</span>
                       <input 
                         type="text" 
@@ -337,13 +345,13 @@ export default function RolesPage() {
                       />
                     </div>
                     <div className="flex gap-2">
-                      <button className="btn btn-secondary btn-sm" onClick={cancel}>Cancel</button>
-                      <button className="btn btn-primary btn-sm" onClick={save}>Save Role</button>
+                      <button className="btn btn-secondary btn-sm" onClick={cancel}>{tCommon('cancel')}</button>
+                      <button className="btn btn-primary btn-sm" onClick={save}>{t('saveRole')}</button>
                     </div>
                   </div>
                   
                   <div className="mb-4">
-                    <label className="label">Inherits From:</label>
+                    <label className="label">{t('inheritsFrom')}</label>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {getRoleNames().map(r => (
                         <label key={r} className="flex items-center gap-1 bg-[var(--bg-card)] px-2 py-1 rounded border border-[var(--border)] cursor-pointer hover:border-[var(--accent)]">
@@ -369,27 +377,28 @@ export default function RolesPage() {
                     onClick={() => toggleRole(roleItem.role)}
                   >
                     <div className="flex items-center gap-4">
+                      {/* eslint-disable-next-line i18next/no-literal-string */}
                       <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 text-[var(--accent)] ${expandedRoles[roleItem.role] || editingRole === roleItem.role ? 'rotate-90' : ''}`}>
                         chevron_right
                       </span>
                       <div className="font-bold text-sm text-[#041627] capitalize" style={{ fontFamily: 'Manrope, sans-serif' }}>{roleItem.role}</div>
                       {roleItem.inherits && roleItem.inherits.length > 0 && (
                         <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
-                          Inherits: <span className="font-medium">{roleItem.inherits.join(', ')}</span>
+                          {t('inheritsLabel')} <span className="font-medium">{roleItem.inherits.join(', ')}</span>
                         </div>
                       )}
                     </div>
                     <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                       {editingRole === roleItem.role ? (
                         <>
-                          <button className="btn btn-secondary btn-sm" onClick={cancel}>Cancel</button>
-                          <button className="btn btn-primary btn-sm" onClick={save}>Save Changes</button>
+                          <button className="btn btn-secondary btn-sm" onClick={cancel}>{tCommon('cancel')}</button>
+                          <button className="btn btn-primary btn-sm" onClick={save}>{tCommon('saveChanges')}</button>
                         </>
                       ) : (
                         <>
-                          <button className="btn btn-secondary btn-sm" onClick={() => startEdit(roleItem)}>Edit</button>
+                          <button className="btn btn-secondary btn-sm" onClick={() => startEdit(roleItem)}>{tCommon('edit')}</button>
                           {roleItem.role !== 'admin' && roleItem.role !== 'viewer' && roleItem.role !== 'webhook' && roleItem.role !== 'agent' && (
-                            <button className="btn btn-secondary btn-sm text-danger" onClick={() => deleteRole(roleItem.role)}>Delete</button>
+                            <button className="btn btn-secondary btn-sm text-danger" onClick={() => deleteRole(roleItem.role)}>{tCommon('delete')}</button>
                           )}
                         </>
                       )}
@@ -401,7 +410,7 @@ export default function RolesPage() {
                       {editingRole === roleItem.role ? (
                         <div className="flex flex-col gap-4">
                           <div>
-                            <label className="label">Inherits From:</label>
+                            <label className="label">{t('inheritsFrom')}</label>
                             <div className="flex flex-wrap gap-2 mt-1">
                               {getRoleNames().filter(r => r !== roleItem.role).map(r => (
                                 <label key={r} className="flex items-center gap-1 bg-[var(--bg-card)] px-2 py-1 rounded border border-[var(--border)] cursor-pointer hover:border-[var(--accent)]">

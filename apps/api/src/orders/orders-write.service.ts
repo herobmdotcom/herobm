@@ -1,6 +1,11 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { BackordersService } from './backorders.service';
-import { InventoryGap, SALES_ORDER_STATE, CUSTOMER_STATE } from '@modbm/shared';
+import {
+  InventoryGap,
+  SALES_ORDER_STATE,
+  CUSTOMER_STATE,
+  getErrorMessage,
+} from '@modbm/shared';
 import {
   Injectable,
   Inject,
@@ -765,9 +770,9 @@ export class OrdersWriteService {
       ) {
         try {
           await this.triggerTaxCalculation(id, actor);
-        } catch (e: any) {
+        } catch (e: unknown) {
           throw new BadRequestException(
-            `Cannot transition to '${newState}': Tax calculation failed: ${e.message}`,
+            `Cannot transition to '${newState}': Tax calculation failed: ${getErrorMessage(e)}`,
           );
         }
       }
@@ -955,6 +960,7 @@ export class OrdersWriteService {
         ...getTableColumns(salesOrderLineItems),
         externalTaxCode: coreProducts.externalTaxCode,
         productType: coreProducts.productType,
+        productNumber: coreProducts.productNumber,
       })
       .from(salesOrderLineItems)
       .leftJoin(
@@ -997,6 +1003,8 @@ export class OrdersWriteService {
         const discountAmt = unitPrice * (discountPct / 100) * qty;
         const payloadLine: any = {
           id: l.salesOrderLineId,
+          product_identifier: l.productNumber,
+          description: l.productDescription,
           quantity: qty,
           unit_price: unitPrice,
           discount: discountAmt,

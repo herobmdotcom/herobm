@@ -45,13 +45,13 @@ export default tseslint.config(
       react: reactPlugin,
     },
     rules: {
-      'i18next/no-literal-string': ['warn', {
+      'i18next/no-literal-string': ['error', {
         markupOnly: true,
         ignoreAttribute: ['aria-hidden'],
         // Ignore strings that consist entirely of emoji / variation selectors
         ignore: ['^[\\p{Emoji}\\p{Emoji_Component}\\uFE0E\\uFE0F\\u200D\\s]+$'],
       }],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
       'no-restricted-imports': ['error', {
         paths: [{
           name: '@/lib/api',
@@ -64,7 +64,7 @@ export default tseslint.config(
       
       // ADV-029: PLG Stack Reporting - Ban direct console.error
       'no-restricted-syntax': [
-        'warn',
+        'error',
         {
           selector: "CallExpression[callee.object.name='console'][callee.property.name='error']",
           message: "ADV-029: Use reportError() instead of console.error() to ensure observability in the PLG stack."
@@ -94,6 +94,14 @@ export default tseslint.config(
           // ADV-051: No Raw State Strings
           selector: "Literal[value=/^(active|inactive|archived|discontinued|draft|pending_putaway|awaiting_matching|quarantined|matched|unmatched|ambiguous)$/]:not(ImportDeclaration > Literal):not(TSLiteralType > Literal):not(CallExpression[callee.name=/^(describe|it|test|t|tCommon)$/] > Literal):not(JSXAttribute > Literal)",
           message: "ADV-051: Do not use raw string literals for state machine statuses. Import and use the appropriate constant from @modbm/shared."
+        },
+        {
+          selector: "CallExpression[callee.name=/^t[A-Z]*/] ObjectExpression Property[key.name='fallback']",
+          message: "ADV-072: Do not use 'fallback' in translation calls. Systematically add all strings to en.json."
+        },
+        {
+          selector: "CallExpression[callee.name=/^t[A-Z]*/] ObjectExpression Property[key.name='defaultValue']",
+          message: "ADV-072: Do not use 'defaultValue' in translation calls. Systematically add all strings to en.json."
         }
       ]
     },

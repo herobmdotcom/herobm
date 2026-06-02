@@ -79,6 +79,7 @@ describe('Supplier Groups (e2e)', () => {
       .post('/api/suppliers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        address1Country: 'AU',
         vendorNumber: `GRP-MEMBER-${Date.now()}`,
         name: 'Group Member Supplier',
         supplierGroupId: groupId,

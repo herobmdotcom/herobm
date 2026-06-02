@@ -10,7 +10,7 @@ import {
 
 export class CreateWebhookDto {
   @ApiProperty()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   @IsNotEmpty()
   targetUrl!: string;
 
@@ -23,7 +23,7 @@ export class CreateWebhookDto {
 export class UpdateWebhookDto {
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   targetUrl?: string;
 
   @ApiProperty({ type: [String], required: false })

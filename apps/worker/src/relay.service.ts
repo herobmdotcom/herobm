@@ -1,6 +1,5 @@
 import { Job, Queue } from 'bullmq';
-import { MockExternalClient } from './mock-external.client';
-import { outbox, accounts, suppliers, webhooks } from './schema';
+import { outbox, webhooks } from './schema';
 import { eq, isNull, inArray, and, or, lt, sql } from 'drizzle-orm';
 import * as crypto from 'crypto';
 import { relayLogger, processingLogger } from './logger';
@@ -51,7 +50,7 @@ export async function pollOutbox(db: any, syncQueue: Queue) {
 /**
  * Maps outbox events to external payloads and posts them.
  */
-export async function processEvent(job: Job, extClient: any, db: any) {
+export async function processEvent(job: Job, db: any) {
   const { eventId, type, payload } = job.data;
   processingLogger.info({ eventId, eventType: type }, 'Processing event');
 
@@ -61,51 +60,7 @@ export async function processEvent(job: Job, extClient: any, db: any) {
   try {
     let processedAny = false;
 
-    // 1. Hardcoded integrations
-    if (type === 'sales_invoiced') {
-       processedAny = true;
-       let extId = payload.externalId;
-       if (!extId && payload.customerId) {
-           try {
-               processingLogger.info({ eventId, customerName: payload.customerName }, 'JIT Syncing Customer to External System');
-               const res = await (extClient as any).syncInvoice({
-                   customer_name: payload.customerName,
-                   customer_type: 'Company',
-                   customer_group: 'Commercial',
-                   territory: 'All Territories'
-               });
-               extId = res.externalId;
-               await db.update(accounts)
-                 .set({ externalId: extId })
-                 .where(eq(accounts.accountId, payload.customerId));
-           } catch (err: any) {
-               processingLogger.error({ eventId, customerName: payload.customerName, err: err.message }, 'Failed JIT Sync Customer');
-               throw err;
-           }
-       }
-    } else if (type === 'purchase_invoiced') {
-       processedAny = true;
-       let extId = payload.externalId;
-       if (!extId && payload.supplierId) {
-           try {
-               processingLogger.info({ eventId, supplierName: payload.supplierName }, 'JIT Syncing Supplier to External System');
-               const res = await (extClient as any).syncInvoice({
-                   supplier_name: payload.supplierName,
-                   supplier_type: 'Distributor',
-                   supplier_group: 'Local'
-               });
-               extId = res.externalId;
-               await db.update(suppliers)
-                 .set({ externalId: extId })
-                 .where(eq(suppliers.vendorId, payload.supplierId));
-           } catch (err: any) {
-                processingLogger.error({ eventId, supplierName: payload.supplierName, err: err.message }, 'Failed JIT Sync Supplier');
-                throw err;
-           }
-       }
-    }
-
-    // 2. Webhooks
+    // 1. Webhooks
     const activeWebhooks = await db
       .select()
       .from(webhooks)
@@ -137,6 +92,10 @@ export async function processEvent(job: Job, extClient: any, db: any) {
             processingLogger.warn({ webhookId: wh.webhookId, status: res.status }, 'Webhook returned non-200 status');
           }
         } catch (whErr: any) {
+          // BEST EFFORT DELIVERY (FIRE-AND-FORGET):
+          // We intentionally swallow webhook HTTP failures (like connection errors or timeouts) 
+          // to prevent a single failing webhook from blocking the outbox queue or causing 
+          // duplicate events to be sent to other successful webhooks upon retry.
           processingLogger.error({ webhookId: wh.webhookId, err: whErr.message }, 'Failed to dispatch webhook');
         }
       }

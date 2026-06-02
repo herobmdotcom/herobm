@@ -19,6 +19,7 @@ import { useSettings } from '@/components/SettingsProvider';
 export default function NewAccountPage() {
   useDocumentTitle('New Customer');
   const t = useTranslations();
+  const tCommon = useTranslations('admin.common');
   const router = useRouter();
   const { baseCurrency, organization } = useSettings();
   
@@ -217,9 +218,9 @@ export default function NewAccountPage() {
             <div className="card">
               <h3 className="section-heading">
                 {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined">payments</span>
-                Pricing & Tax
-              </h3>
+              <span className="material-symbols-outlined">payments</span>
+              FINANCIALS
+            </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -282,8 +283,14 @@ export default function NewAccountPage() {
                       value={dto.businessNumber}
                       isSaving={submitting}
                       onEnrich={(data) => {
-                        if (data.name) updateField('name', data.name);
-                        if (data.isTaxRegistered !== undefined) updateField('isTaxRegistered', data.isTaxRegistered);
+                        if (data.name && data.name !== dto.name) {
+                          updateField('name', data.name);
+                          toast.success(t('enrichment.nameUpdated'));
+                        }
+                        if (data.isTaxRegistered !== undefined && data.isTaxRegistered !== dto.isTaxRegistered) {
+                          updateField('isTaxRegistered', data.isTaxRegistered);
+                          toast.success(t('enrichment.taxUpdated'));
+                        }
                       }}
                     />
                   </label>
@@ -297,20 +304,45 @@ export default function NewAccountPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1.5 opacity-0" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {t('customers.fields.taxRegistered')}
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer mt-1">
-                    <div className="switch" title={dto.isTaxRegistered ? t('customers.fields.taxRegistered') : t('common.na')}>
-                      <input
-                        type="checkbox"
-                        checked={dto.isTaxRegistered}
-                        onChange={(e) => updateField('isTaxRegistered', e.target.checked)}
-                        disabled={submitting}
+                  <div
+                    className="flex items-center gap-3"
+                    style={{ paddingTop: 6, cursor: submitting ? 'not-allowed' : 'pointer' }}
+                    onClick={() => {
+                      if (submitting) return;
+                      updateField('isTaxRegistered', !dto.isTaxRegistered);
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 40,
+                        height: 22,
+                        borderRadius: 11,
+                        background: dto.isTaxRegistered ? 'var(--accent)' : 'var(--border)',
+                        position: 'relative',
+                        transition: 'background 0.2s ease',
+                        opacity: submitting ? 0.5 : 1,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: '50%',
+                          background: '#fff',
+                          position: 'absolute',
+                          top: 3,
+                          left: dto.isTaxRegistered ? 21 : 3,
+                          transition: 'left 0.2s ease',
+                        }}
                       />
                     </div>
-                    <span className="text-sm font-medium">{t('customers.fields.taxRegistered')}</span>
-                  </label>
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      {dto.isTaxRegistered ? tCommon('yes') : tCommon('no')}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

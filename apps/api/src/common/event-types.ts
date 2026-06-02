@@ -50,7 +50,6 @@ export const EventType = {
   LINE_ADDED: 'line_added',
   LINE_UPDATED: 'line_updated',
   LINE_REMOVED: 'line_removed',
-  LINE_PICKED: 'line_picked',
   POST_CONFIRMATION_LINE_ADDED: 'post_confirmation_line_added',
 
   // ── Sales domain ────────────────────────────────────────────────────
@@ -104,14 +103,65 @@ export type EventTypeValue = (typeof EventType)[keyof typeof EventType];
  * Only events in this set produce an outbox row in addition to the audit row.
  */
 export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
-  EventType.STOCK_RECEIVED,
-  EventType.STOCK_DISPATCHED,
-  EventType.SALES_INVOICED,
-  EventType.PURCHASE_INVOICED,
-  EventType.GL_POSTED,
-  EventType.STOCK_ADJUSTED,
-  EventType.CREDIT_NOTE_POSTED,
-  EventType.PAYMENT_SUBMITTED,
-  EventType.PAYMENT_ALLOCATED,
-  EventType.PAYMENT_CANCELLED,
+  // Sales
+  'sales_order.created',
+  'sales_order.status_changed',
+  'sales_order.released',
+  'sales_order.archived',
+  'sales_order.unarchived',
+  'sales_order.deleted',
+  'sales_invoice.created',
+  'sales_invoice.status_changed',
+  'sales_invoice.deleted',
+  'sales_return.created',
+  'sales_return.status_changed',
+  'sales_return.processed',
+
+  // Procurement
+  'purchase_order.created',
+  'purchase_order.status_changed',
+  'purchase_order.released',
+  'purchase_order.archived',
+  'purchase_order.unarchived',
+  'purchase_order.deleted',
+  'purchase_invoice.created',
+  'purchase_invoice.status_changed',
+  'purchase_invoice.deleted',
+  'purchase_return.created',
+  'purchase_return.status_changed',
+  'purchase_return.processed',
+
+  // Warehouse
+  'shipment.created',
+  'shipment.status_changed',
+  'shipment.dispatched',
+  'goods_receipt.created',
+  'goods_receipt.status_changed',
+  'goods_receipt.received',
+  'transfer_order.created',
+  'transfer_order.status_changed',
+  'transfer_order.released',
+  'transfer_order.deleted',
+  'stock_adjustment.processed',
+
+  // Master Data
+  'product.created',
+  'product.updated',
+  'product.deleted',
+  'product.archived',
+  'product.unarchived',
+  'customer.created',
+  'customer.updated',
+  'customer.archived',
+  'customer.unarchived',
+  'supplier.created',
+  'supplier.updated',
+  'supplier.archived',
+  'supplier.unarchived',
+
+  // Financials
+  'payment.submitted',
+  'payment.allocated',
+  'payment.cancelled',
+  'journal_entry.posted',
 ]);

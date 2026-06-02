@@ -46,7 +46,7 @@ export default function MovementsView() {
     },
     {
       field: 'onHand',
-      headerName: tInventory('columns.onHand', { fallback: 'On Hand' }),
+      headerName: tInventory('columns.onHand'),
       width: 140,
       type: 'numericColumn',
       valueFormatter: (p: any) => p.value ? parseFloat(p.value).toLocaleString() : '0',

@@ -70,6 +70,7 @@ describe('Suppliers (e2e)', () => {
       vendorNumber,
       name: 'E2E Vendor',
       emailAddress1: 'e2e@example.com',
+      address1Country: 'AU',
     };
 
     const res = await request(app.getHttpServer())
@@ -102,6 +103,7 @@ describe('Suppliers (e2e)', () => {
       .post('/api/suppliers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        address1Country: 'AU',
         vendorNumber: `E2E-PATCH-${Date.now()}`,
         name: 'Before Patch',
       });
@@ -124,6 +126,7 @@ describe('Suppliers (e2e)', () => {
       .post('/api/suppliers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        address1Country: 'AU',
         vendorNumber,
         name: 'Detail Test',
       });

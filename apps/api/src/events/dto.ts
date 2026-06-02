@@ -11,5 +11,5 @@ export class PublishEventDto {
 
   @ApiProperty({ description: 'The payload of the event' })
   @IsObject()
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
 }

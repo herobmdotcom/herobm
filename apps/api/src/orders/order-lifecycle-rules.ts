@@ -265,62 +265,10 @@ export const autoInvoiceWhenFullyInvoiced: LifecycleRule = {
   },
 };
 
-export const startPickingOnFirstPick: LifecycleRule = {
-  name: 'start-picking-on-first-pick',
-  description:
-    'Transitions an order from confirmed to picking when the first line is picked',
-  enabled: true,
-  evaluate: async (db, salesOrderId, trigger, actor) => {
-    // 1. Only applies if triggered by picking activity
-    if (
-      trigger.entity !== 'picking' ||
-      trigger.action !== EventType.LINE_PICKED
-    ) {
-      return null;
-    }
-
-    // 2. Order must be in 'confirmed'
-    const order = await findOrder(db, salesOrderId);
-    if (order.stateCode !== SALES_ORDER_STATE.CONFIRMED) return null;
-
-    // 3. Execute transition
-    await db
-      .update(salesOrders)
-      .set({ stateCode: SALES_ORDER_STATE.PICKING, modifiedOn: new Date() })
-      .where(eq(salesOrders.salesOrderId, salesOrderId));
-
-    await emitEvent(db as any, {
-      aggregateType: AggregateType.SALES_ORDER,
-      aggregateId: salesOrderId,
-      eventType: 'auto_status_changed',
-      payload: {
-        rule: 'start-picking-on-first-pick',
-        trigger,
-        from: SALES_ORDER_STATE.CONFIRMED,
-        to: SALES_ORDER_STATE.PICKING,
-        reason: 'First pick recorded on confirmed order',
-      },
-      actor,
-    });
-
-    return {
-      ruleName: 'start-picking-on-first-pick',
-      from: SALES_ORDER_STATE.CONFIRMED,
-      to: SALES_ORDER_STATE.PICKING,
-      reason: 'First pick recorded on confirmed order',
-    };
-  },
-};
-
-// ============================================================================
-// Registry & Engine
-// ============================================================================
-
 const LIFECYCLE_RULES: LifecycleRule[] = [
   autoShipWhenFullyShipped,
   revertToPickingOnShipmentCancel,
   autoInvoiceWhenFullyInvoiced,
-  startPickingOnFirstPick,
 ];
 
 /**

@@ -2499,7 +2499,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ArrayResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChartFileDto"
+                  }
                 }
               }
             }
@@ -2555,7 +2558,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ArrayResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SettingsFileDto"
+                  }
                 }
               }
             }
@@ -2611,7 +2617,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReconciliationListResponseDto"
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
                 }
               }
             }
@@ -2736,7 +2745,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnreconciledLinesResponseDto"
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
                 }
               }
             }
@@ -3073,6 +3085,38 @@
         ]
       }
     },
+    "/gl/bank-feeds/rules/{ruleId}": {
+      "delete": {
+        "description": "Deletes a reconciliation rule.",
+        "operationId": "BankFeedsController_deleteRule",
+        "parameters": [
+          {
+            "name": "ruleId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconciliationRuleResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete Rule",
+        "tags": [
+          "GL"
+        ]
+      }
+    },
     "/gl/bank-statement/lines": {
       "get": {
         "description": "Fetch imported bank statement lines.",
@@ -3101,7 +3145,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BankStatementLineDto"
+                  }
                 }
               }
             }
@@ -3137,7 +3184,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "$ref": "#/components/schemas/BankStatementConfirmMatchDto"
               }
             }
           }
@@ -3160,6 +3207,53 @@
           }
         ],
         "summary": "Confirm a smart match",
+        "tags": [
+          "BankFeeds"
+        ]
+      }
+    },
+    "/gl/bank-statement/lines/{id}/manual-match": {
+      "post": {
+        "description": "Manually links a bank line to a specific journal line.",
+        "operationId": "BankStatementController_manualMatch",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BankStatementManualMatchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Match confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Manually match a line",
         "tags": [
           "BankFeeds"
         ]
@@ -5614,7 +5708,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GlobalShipmentListResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShipmentResponseDto"
+                  }
                 }
               }
             }
@@ -5710,7 +5807,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpenDemandsListResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OpenDemandDto"
+                  }
                 }
               }
             }
@@ -5742,7 +5842,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PoAllocationsListResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PoAllocationDto"
+                  }
                 }
               }
             }
@@ -5774,7 +5877,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AvailablePoLinesListResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AvailablePoLineDto"
+                  }
                 }
               }
             }
@@ -6858,7 +6964,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HooksResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HookDto"
+                  }
                 }
               }
             }
@@ -6881,7 +6990,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HookAssignmentsResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HookAssignmentDto"
+                  }
                 }
               }
             }
@@ -6923,7 +7035,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HookAssignmentsResponseDto"
+                  "$ref": "#/components/schemas/HookAssignmentDto"
                 }
               }
             }
@@ -6955,7 +7067,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RandomIdResponseDto"
+                  "$ref": "#/components/schemas/RandomIdData"
                 }
               }
             }
@@ -6978,7 +7090,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReportsResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReportDto"
+                  }
                 }
               }
             }
@@ -7009,7 +7124,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReportResponseDto"
+                  "$ref": "#/components/schemas/ReportDto"
                 }
               }
             }
@@ -7041,7 +7156,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReportResponseDto"
+                  "$ref": "#/components/schemas/ReportDto"
                 }
               }
             }
@@ -7081,7 +7196,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReportResponseDto"
+                  "$ref": "#/components/schemas/ReportDto"
                 }
               }
             }
@@ -7111,7 +7226,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ReportResponseDto"
+                  "$ref": "#/components/schemas/ReportDto"
                 }
               }
             }
@@ -7219,7 +7334,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SalesInvoiceResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SalesInvoiceResponseDto"
+                  }
                 }
               }
             }
@@ -7251,7 +7369,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
+                  }
                 }
               }
             }
@@ -7347,7 +7468,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SalesInvoiceListResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SalesInvoiceResponseDto"
+                  }
                 }
               }
             }
@@ -7411,7 +7535,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PurchaseInvoiceListResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
+                  }
                 }
               }
             }
@@ -8057,7 +8184,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "$ref": "#/components/schemas/EnrichmentPayloadDto"
               }
             }
           }
@@ -8147,7 +8274,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "$ref": "#/components/schemas/EnrichmentPayloadDto"
               }
             }
           }
@@ -10223,7 +10350,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GlobalPurchaseReturnsListDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GlobalPurchaseReturnDto"
+                  }
                 }
               }
             }
@@ -11953,6 +12083,37 @@
         ]
       }
     },
+    "/webhooks/events": {
+      "get": {
+        "description": "Retrieves all possible event types that webhooks can subscribe to.",
+        "operationId": "WebhooksController_listEvents",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List Available Events",
+        "tags": [
+          "Webhooks"
+        ]
+      }
+    },
     "/webhooks/{id}": {
       "put": {
         "description": "Modifies an existing webhook configuration.",
@@ -12607,6 +12768,7 @@
           "customerId",
           "customerNumber",
           "name",
+          "address1Country",
           "currencyCode",
           "stateCode",
           "source"
@@ -12698,7 +12860,8 @@
         },
         "required": [
           "customerNumber",
-          "name"
+          "name",
+          "address1Country"
         ]
       },
       "UpdateAccountDto": {
@@ -13643,6 +13806,9 @@
           "productName": {
             "type": "string"
           },
+          "productNumber": {
+            "type": "string"
+          },
           "quantity": {
             "type": "string"
           },
@@ -13666,6 +13832,7 @@
           "referenceNumber",
           "productId",
           "productName",
+          "productNumber",
           "quantity",
           "putawayStatus",
           "locationId",
@@ -13748,7 +13915,7 @@
       "GlAccountResponseDto": {
         "type": "object",
         "properties": {
-          "accountId": {
+          "glAccountId": {
             "type": "string"
           },
           "accountCode": {
@@ -13765,10 +13932,17 @@
           },
           "isActive": {
             "type": "boolean"
+          },
+          "parentAccountId": {
+            "type": "string",
+            "nullable": true
+          },
+          "isSystem": {
+            "type": "boolean"
           }
         },
         "required": [
-          "accountId",
+          "glAccountId",
           "accountCode",
           "name",
           "accountType",
@@ -13986,18 +14160,22 @@
           "success"
         ]
       },
-      "ArrayResponseDto": {
+      "ChartFileDto": {
         "type": "object",
         "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
+          "filename": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "countryCode": {
+            "type": "string"
           }
         },
         "required": [
-          "items"
+          "filename",
+          "name"
         ]
       },
       "SeedRequestDto": {
@@ -14008,6 +14186,24 @@
           }
         }
       },
+      "SettingsFileDto": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "countryCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "filename",
+          "name"
+        ]
+      },
       "SeedTaxRequestDto": {
         "type": "object",
         "properties": {
@@ -14017,20 +14213,6 @@
         },
         "required": [
           "filename"
-        ]
-      },
-      "ReconciliationListResponseDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
-          }
-        },
-        "required": [
-          "data"
         ]
       },
       "CreateReconciliationDto": {
@@ -14107,20 +14289,6 @@
           "openingBalance",
           "clearedBalance",
           "variance"
-        ]
-      },
-      "UnreconciledLinesResponseDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
-          }
-        },
-        "required": [
-          "data"
         ]
       },
       "ToggleLineDto": {
@@ -14204,6 +14372,9 @@
             "type": "boolean"
           },
           "journalEntryId": {
+            "type": "string"
+          },
+          "journalLineId": {
             "type": "string"
           }
         },
@@ -14421,6 +14592,103 @@
           "conditionType",
           "conditionValue",
           "targetGlAccountId"
+        ]
+      },
+      "MatchedJournalLineDto": {
+        "type": "object",
+        "properties": {
+          "debit": {
+            "type": "number"
+          },
+          "credit": {
+            "type": "number"
+          },
+          "memo": {
+            "type": "string",
+            "nullable": true
+          },
+          "entryDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "isReconciled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "debit",
+          "credit",
+          "entryDate",
+          "isReconciled"
+        ]
+      },
+      "BankStatementLineDto": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "reference": {
+            "type": "string",
+            "nullable": true
+          },
+          "isReconciled": {
+            "type": "boolean"
+          },
+          "matchedJournalLineId": {
+            "type": "string",
+            "nullable": true
+          },
+          "matchedJournalLine": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MatchedJournalLineDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "lineId",
+          "date",
+          "description",
+          "amount",
+          "isReconciled"
+        ]
+      },
+      "BankStatementConfirmMatchDto": {
+        "type": "object",
+        "properties": {
+          "reconciliationId": {
+            "type": "string",
+            "description": "Optional reconciliation ID to link the matched ledger line to"
+          }
+        }
+      },
+      "BankStatementManualMatchDto": {
+        "type": "object",
+        "properties": {
+          "journalLineId": {
+            "type": "string",
+            "description": "The journal line ID to link against"
+          },
+          "reconciliationId": {
+            "type": "string",
+            "description": "Optional reconciliation ID to link the matched ledger line to"
+          }
+        },
+        "required": [
+          "journalLineId"
         ]
       },
       "UomResponseDto": {
@@ -15698,20 +15966,6 @@
           }
         }
       },
-      "GlobalShipmentListResponseDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ShipmentResponseDto"
-            }
-          }
-        },
-        "required": [
-          "data"
-        ]
-      },
       "GlobalReturnListResponseDto": {
         "type": "object",
         "properties": {
@@ -15836,20 +16090,6 @@
           "availableElsewhere"
         ]
       },
-      "OpenDemandsListResponseDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OpenDemandDto"
-            }
-          }
-        },
-        "required": [
-          "data"
-        ]
-      },
       "PoAllocationDto": {
         "type": "object",
         "properties": {
@@ -15891,20 +16131,6 @@
           "quantity",
           "createdOn",
           "stateCode"
-        ]
-      },
-      "PoAllocationsListResponseDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PoAllocationDto"
-            }
-          }
-        },
-        "required": [
-          "data"
         ]
       },
       "AvailablePoLineDto": {
@@ -15952,20 +16178,6 @@
           "deliveryLocationId",
           "locationName",
           "availableQty"
-        ]
-      },
-      "AvailablePoLinesListResponseDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AvailablePoLineDto"
-            }
-          }
-        },
-        "required": [
-          "data"
         ]
       },
       "LinkDemandToPoDto": {
@@ -16465,20 +16677,6 @@
           "contexts"
         ]
       },
-      "HooksResponseDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/HookDto"
-            }
-          }
-        },
-        "required": [
-          "data"
-        ]
-      },
       "HookAssignmentDto": {
         "type": "object",
         "properties": {
@@ -16496,20 +16694,6 @@
           "hookSlug",
           "reportId",
           "contextSlug"
-        ]
-      },
-      "HookAssignmentsResponseDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/HookAssignmentDto"
-            }
-          }
-        },
-        "required": [
-          "data"
         ]
       },
       "UpdateHookAssignmentDto": {
@@ -16532,17 +16716,6 @@
         },
         "required": [
           "id"
-        ]
-      },
-      "RandomIdResponseDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/RandomIdData"
-          }
-        },
-        "required": [
-          "data"
         ]
       },
       "ReportDto": {
@@ -16582,31 +16755,6 @@
           "name",
           "template",
           "isSystem"
-        ]
-      },
-      "ReportsResponseDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ReportDto"
-            }
-          }
-        },
-        "required": [
-          "data"
-        ]
-      },
-      "ReportResponseDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/ReportDto"
-          }
-        },
-        "required": [
-          "data"
         ]
       },
       "CreateReportDto": {
@@ -16914,34 +17062,6 @@
           "lines"
         ]
       },
-      "SalesInvoiceListResponseDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SalesInvoiceResponseDto"
-            }
-          }
-        },
-        "required": [
-          "data"
-        ]
-      },
-      "PurchaseInvoiceListResponseDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
-            }
-          }
-        },
-        "required": [
-          "data"
-        ]
-      },
       "CreateStandaloneInvoiceLineDto": {
         "type": "object",
         "properties": {
@@ -17215,6 +17335,15 @@
           "eventType"
         ]
       },
+      "EnrichmentPayloadDto": {
+        "type": "object",
+        "properties": {
+          "payload": {
+            "type": "object",
+            "description": "Dynamic payload for the enrichment provider"
+          }
+        }
+      },
       "PaymentResponseDto": {
         "type": "object",
         "properties": {
@@ -17465,8 +17594,7 @@
             "nullable": true
           },
           "address1Country": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
           "telephone1": {
             "type": "string",
@@ -17695,7 +17823,8 @@
         },
         "required": [
           "vendorNumber",
-          "name"
+          "name",
+          "address1Country"
         ]
       },
       "UpdateSupplierDto": {
@@ -18507,20 +18636,6 @@
           "returnNumber",
           "purchaseOrderId",
           "stateCode"
-        ]
-      },
-      "GlobalPurchaseReturnsListDto": {
-        "type": "object",
-        "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/GlobalPurchaseReturnDto"
-            }
-          }
-        },
-        "required": [
-          "data"
         ]
       },
       "CreateDebitNoteLineDto": {

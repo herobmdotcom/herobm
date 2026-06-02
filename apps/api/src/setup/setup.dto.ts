@@ -144,10 +144,6 @@ export class ExecuteSetupDto {
   @IsIn(['periodic', 'perpetual'])
   inventoryAccountingMode: string;
 
-  /** Non-stock billing mode */
-  @IsIn(['per_shipment', 'final_invoice'])
-  nonStockBillingMode: string;
-
   /** Revenue routing precedence */
   @IsIn(['product_first', 'customer_first'])
   revenueRoutingPrecedence: string;
@@ -302,7 +298,7 @@ export class SetupValidationDto {
 
   @ApiProperty({ type: Object, required: false })
   @IsObject()
-  metrics: Record<string, any>;
+  metrics: Record<string, unknown>;
 
   @ApiProperty({ type: Object, required: false })
   @IsObject()

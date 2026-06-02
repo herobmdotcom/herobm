@@ -100,10 +100,10 @@ export default function PurchaseOrdersContent() {
             className="input text-sm"
             style={{ minWidth: 150 }}
         >
-            <option value="30">{tCommon('filters.last30Days', { defaultValue: 'Last 30 Days' })}</option>
-            <option value="90">{tCommon('filters.last90Days', { defaultValue: 'Last 90 Days' })}</option>
-            <option value="365">{tCommon('filters.last1Year', { defaultValue: 'Last 1 Year' })}</option>
-            <option value="0">{tCommon('filters.allTime', { defaultValue: 'All Time' })}</option>
+            <option value="30">{tCommon('filters.last30Days')}</option>
+            <option value="90">{tCommon('filters.last90Days')}</option>
+            <option value="365">{tCommon('filters.last1Year')}</option>
+            <option value="0">{tCommon('filters.allTime')}</option>
         </select>
       }
       headerActions={

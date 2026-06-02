@@ -3,11 +3,12 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useTranslations } from 'next-intl';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver';
 import { getErrorMessage } from '@modbm/shared';
+import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
 
 export default function AccountGroupsAdmin() {
   useDocumentTitle('Customer Groups');
@@ -20,24 +21,8 @@ export default function AccountGroupsAdmin() {
   const [activities, setActivities] = useState<any[]>([]);
   const [matrixRules, setMatrixRules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<any>({});
-  const [isCreating, setIsCreating] = useState(false);
 
   const [discountGroup, setDiscountGroup] = useState<any | null>(null);
-
-  const renderGlAccountLabel = (id: string | null | undefined) => {
-    if (!id) return <span className="text-muted text-xs italic">{t('notConfigured')}</span>;
-    const acct = glAccounts.find((a: any) => a.glAccountId === id);
-    return acct ? <span className="font-mono text-xs">{acct.accountCode} - {acct.name}</span> : <span className="text-muted text-xs font-mono">{id}</span>;
-  };
-
-  const renderDimensionLabel = (id: string | null | undefined, list: any[], codeField: string) => {
-    if (!id) return <span className="text-muted text-xs italic">{tCommon('notConfigured')}</span>;
-    const dim = list.find((d: any) => d.id === id || d.costCenterId === id || d.activityId === id);
-    return dim ? <span className="font-mono text-xs">{dim[codeField]} - {dim.name}</span> : <span className="text-muted text-xs font-mono">{id}</span>;
-  };
 
   const loadData = async () => {
     try {
@@ -66,54 +51,72 @@ export default function AccountGroupsAdmin() {
 
   useEffect(() => { loadData(); }, []);
 
-  const handleEdit = (group: any) => {
-    setEditingId(group.customerGroupId);
-    setEditForm({ ...group });
-    setIsCreating(false);
-  };
+  const glAccountOptions = useMemo(() => glAccounts.map((a: any) => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` })), [glAccounts]);
+  const costCenterOptions = useMemo(() => costCenters.map((c: any) => ({ value: c.costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
+  const activityOptions = useMemo(() => activities.map((a: any) => ({ value: a.activityId, label: `${a.code} - ${a.name}` })), [activities]);
 
-  const handleCreate = () => {
-    setIsCreating(true);
-    setEditingId(null);
-    setEditForm({
-      groupCode: '',
-      name: '',
-      defaultArAccountId: '',
-      defaultRevenueAccountId: '',
-      defaultCostCenterId: '',
-      defaultActivityId: '',
-    });
-  };
+  const columns: InlineTableColumn<any>[] = useMemo(() => [
+    { key: 'groupCode', title: tCommon('code'), type: 'text', placeholder: t('placeholders.code'), width: 100 },
+    { key: 'name', title: tCommon('name'), type: 'text', placeholder: t('placeholders.name') },
+    { 
+      key: 'customerGroupId', 
+      title: t('discountRules'), 
+      width: 140,
+      render: (row, isEditing) => {
+        if (isEditing) {
+          return <span className="text-xs text-muted italic">{t('saveToManage')}</span>;
+        }
+        return (
+          <button 
+            className="btn btn-secondary btn-xs relative"
+            onClick={() => setDiscountGroup(row)}
+          >
+            {t('manage')}
+            {matrixRules.some((r: any) => r.customerGroupId === row.customerGroupId) && (
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 ml-2"></span>
+            )}
+          </button>
+        );
+      }
+    },
+    { key: 'defaultArAccountId', title: tCommon('defArAccount'), type: 'select', options: glAccountOptions, emptyLabel: `-- ${tGlobalCommon('selectNone')} --`, width: 140 },
+    { key: 'defaultRevenueAccountId', title: tCommon('defRevAccount'), type: 'select', options: glAccountOptions, emptyLabel: `-- ${tGlobalCommon('selectNone')} --`, width: 140 },
+    { key: 'defaultCostCenterId', title: tCommon('defCostCenter'), type: 'select', options: costCenterOptions, emptyLabel: `-- ${tGlobalCommon('selectNone')} --`, width: 140 },
+    { key: 'defaultActivityId', title: tCommon('defActivity'), type: 'select', options: activityOptions, emptyLabel: `-- ${tGlobalCommon('selectNone')} --`, width: 140 }
+  ], [tCommon, t, tGlobalCommon, glAccountOptions, costCenterOptions, activityOptions, matrixRules]);
 
-  const handleCancel = () => {
-    setEditingId(null);
-    setIsCreating(false);
-  };
-
-  const handleSave = async () => {
-    if (!editForm.groupCode || !editForm.name) {
+  const handleSave = async (payload: any, isNew: boolean) => {
+    if (!payload.groupCode || !payload.name) {
       toast.error('Code and Name are required');
-      return;
+      throw new Error('Code and Name are required');
     }
     try {
-      if (editingId) {
-        await api.accountGroupsControllerUpdate(editingId, editForm);
+      const formattedPayload = {
+        ...payload,
+        defaultArAccountId: payload.defaultArAccountId || null,
+        defaultRevenueAccountId: payload.defaultRevenueAccountId || null,
+        defaultCostCenterId: payload.defaultCostCenterId || null,
+        defaultActivityId: payload.defaultActivityId || null,
+      };
+
+      if (!isNew) {
+        await api.accountGroupsControllerUpdate(payload.customerGroupId, formattedPayload);
         toast.success('Group updated');
       } else {
-        await api.accountGroupsControllerCreate(editForm);
+        await api.accountGroupsControllerCreate(formattedPayload);
         toast.success('Group created');
       }
-      handleCancel();
       loadData();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
+      throw err;
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (payload: any) => {
     if(!confirm(tGlobalCommon('confirmDelete'))) return;
     try {
-      await api.accountGroupsControllerRemove(id);
+      await api.accountGroupsControllerRemove(payload.customerGroupId);
       toast.success(t('toasts.deleted'));
       loadData();
     } catch (err: unknown) {
@@ -130,173 +133,27 @@ export default function AccountGroupsAdmin() {
             {t('subtitle')}
           </p>
         </div>
-        <button className="btn btn-primary btn-sm" onClick={handleCreate}>
-          {t('newGroup')}
-        </button>
       </div>
 
       <div className="card mb-6">
-        <h3
-          className="text-sm font-semibold mb-4"
-          style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-        >
-          {t('definedGroups')}
-        </h3>
-        <table className="table-lines w-full">
-          <thead>
-            <tr>
-              <th style={{ width: 100 }}>{tCommon('code')}</th>
-              <th>{tCommon('name')}</th>
-              <th style={{ width: 140 }}>{t('discountRules')}</th>
-              <th style={{ width: 140 }}>{tCommon('defArAccount')}</th>
-              <th style={{ width: 140 }}>{tCommon('defRevAccount')}</th>
-              <th style={{ width: 140 }}>{tCommon('defCostCenter')}</th>
-              <th style={{ width: 140 }}>{tCommon('defActivity')}</th>
-              <th style={{ width: 120, textAlign: 'right' }}>{tCommon('actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isCreating && (
-              <tr style={{ background: 'var(--bg-secondary)' }}>
-                <td>
-                  <input className="input" value={editForm.groupCode} onChange={e => setEditForm({...editForm, groupCode: e.target.value})} placeholder={t('placeholders.code')} />
-                </td>
-                <td>
-                  <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder={t('placeholders.name')} />
-                </td>
-                <td>
-                  <span className="text-xs text-muted italic">{t('saveToManage')}</span>
-                </td>
-                <td>
-                  <select className="input font-mono text-xs" value={editForm.defaultArAccountId || ''} onChange={e => setEditForm({...editForm, defaultArAccountId: e.target.value || null})}>
-                    <option value="">-- {tGlobalCommon('selectNone')} --</option>
-                    {glAccounts.map((a: any) => (
-                      <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <select className="input font-mono text-xs" value={editForm.defaultRevenueAccountId || ''} onChange={e => setEditForm({...editForm, defaultRevenueAccountId: e.target.value || null})}>
-                    <option value="">-- {tGlobalCommon('selectNone')} --</option>
-                    {glAccounts.map((a: any) => (
-                      <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <select className="input font-mono text-xs" value={editForm.defaultCostCenterId || ''} onChange={e => setEditForm({...editForm, defaultCostCenterId: e.target.value || null})}>
-                    <option value="">-- {tGlobalCommon('selectNone')} --</option>
-                    {costCenters.map((c: any) => (
-                      <option key={c.costCenterId} value={c.costCenterId}>{c.code} - {c.name}</option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <select className="input font-mono text-xs" value={editForm.defaultActivityId || ''} onChange={e => setEditForm({...editForm, defaultActivityId: e.target.value || null})}>
-                    <option value="">-- {tGlobalCommon('selectNone')} --</option>
-                    {activities.map((a: any) => (
-                      <option key={a.activityId} value={a.activityId}>{a.code} - {a.name}</option>
-                    ))}
-                  </select>
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  <div className="flex justify-end gap-2">
-                    <button className="btn btn-secondary btn-xs" onClick={handleCancel}>{tGlobalCommon('cancel')}</button>
-                    <button className="btn btn-primary btn-xs" onClick={handleSave}>{tGlobalCommon('save')}</button>
-                  </div>
-                </td>
-              </tr>
-            )}
-            
-            {!loading && groups.length === 0 && !isCreating && (
-              <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
-                  {t('noGroups')}
-                </td>
-              </tr>
-            )}
-
-            {groups.map(g => (
-              editingId === g.customerGroupId ? (
-                <tr key={g.customerGroupId} style={{ background: 'var(--bg-secondary)' }}>
-                  <td>
-                    <input className="input" value={editForm.groupCode} onChange={e => setEditForm({...editForm, groupCode: e.target.value})} />
-                  </td>
-                  <td>
-                    <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
-                  </td>
-                  <td>
-                    <span className="text-xs text-muted italic">{t('saveToManage')}</span>
-                  </td>
-                  <td>
-                    <select className="input font-mono text-xs" value={editForm.defaultArAccountId || ''} onChange={e => setEditForm({...editForm, defaultArAccountId: e.target.value || null})}>
-                      <option value="">-- {tGlobalCommon('selectNone')} --</option>
-                      {glAccounts.map((a: any) => (
-                        <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <select className="input font-mono text-xs" value={editForm.defaultRevenueAccountId || ''} onChange={e => setEditForm({...editForm, defaultRevenueAccountId: e.target.value || null})}>
-                      <option value="">-- {tGlobalCommon('selectNone')} --</option>
-                      {glAccounts.map((a: any) => (
-                        <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <select className="input font-mono text-xs" value={editForm.defaultCostCenterId || ''} onChange={e => setEditForm({...editForm, defaultCostCenterId: e.target.value || null})}>
-                      <option value="">-- {tGlobalCommon('selectNone')} --</option>
-                      {costCenters.map((c: any) => (
-                        <option key={c.costCenterId} value={c.costCenterId}>{c.code} - {c.name}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <select className="input font-mono text-xs" value={editForm.defaultActivityId || ''} onChange={e => setEditForm({...editForm, defaultActivityId: e.target.value || null})}>
-                      <option value="">-- {tGlobalCommon('selectNone')} --</option>
-                      {activities.map((a: any) => (
-                        <option key={a.activityId} value={a.activityId}>{a.code} - {a.name}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div className="flex justify-end gap-2">
-                      <button className="btn btn-secondary btn-xs" onClick={handleCancel}>{tGlobalCommon('cancel')}</button>
-                      <button className="btn btn-primary btn-xs" onClick={handleSave}>{tGlobalCommon('save')}</button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                <tr key={g.customerGroupId}>
-                  <td className="font-mono text-xs">{g.groupCode}</td>
-                  <td className="font-medium">{g.name}</td>
-                  <td>
-                    <button 
-                      className="btn btn-secondary btn-xs relative"
-                      onClick={() => setDiscountGroup(g)}
-                    >
-                      {t('manage')}
-                      {matrixRules.some((r: any) => r.customerGroupId === g.customerGroupId) && (
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 ml-2"></span>
-                      )}
-                    </button>
-                  </td>
-                  <td>{renderGlAccountLabel(g.defaultArAccountId)}</td>
-                  <td>{renderGlAccountLabel(g.defaultRevenueAccountId)}</td>
-                  <td>{renderDimensionLabel(g.defaultCostCenterId, costCenters, 'code')}</td>
-                  <td>{renderDimensionLabel(g.defaultActivityId, activities, 'code')}</td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div className="flex justify-end gap-2">
-                      <button className="btn btn-secondary btn-xs" onClick={() => handleEdit(g)}>{tGlobalCommon('edit')}</button>
-                      <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleDelete(g.customerGroupId)}>{tGlobalCommon('delete')}</button>
-                    </div>
-                  </td>
-                </tr>
-              )
-            ))}
-          </tbody>
-        </table>
+        <InlineSettingsTable
+          title={<span style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>{t('definedGroups')}</span>}
+          columns={columns}
+          data={groups}
+          rowKey={row => row.customerGroupId}
+          onSave={handleSave}
+          onDelete={handleDelete}
+          onAdd={() => ({
+            groupCode: '',
+            name: '',
+            defaultArAccountId: '',
+            defaultRevenueAccountId: '',
+            defaultCostCenterId: '',
+            defaultActivityId: '',
+          })}
+          addLabel={t('newGroup')}
+          emptyLabel={loading ? null : t('noGroups')}
+        />
       </div>
 
       <DiscountMatrixSlideOver

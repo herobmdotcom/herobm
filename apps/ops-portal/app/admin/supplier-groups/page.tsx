@@ -1,13 +1,13 @@
 'use client';
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@modbm/shared';
+import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
 
 export default function SupplierGroupsAdmin() {
   const t = useTranslations('admin.supplierGroups');
@@ -16,28 +16,12 @@ export default function SupplierGroupsAdmin() {
 
   useDocumentTitle(t('title'));
   
-  const [groups, setGroups] = useState<any[]>([]);
+  const [rawGroups, setRawGroups] = useState<any[]>([]);
   const [glAccounts, setGlAccounts] = useState<any[]>([]);
   const [costCenters, setCostCenters] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<any>({});
-  const [isCreating, setIsCreating] = useState(false);
-
-  const renderGlAccountLabel = (id: string | null | undefined) => {
-    if (!id) return <span className="text-muted text-xs italic">{tc('notConfigured')}</span>;
-    const acct = glAccounts.find((a: any) => a.glAccountId === id);
-    return acct ? <span className="font-mono text-xs">{acct.accountCode} - {acct.name}</span> : <span className="text-muted text-xs font-mono">{id}</span>;
-  };
-
-  const renderDimensionLabel = (id: string | null | undefined, list: any[], codeField: string) => {
-    if (!id) return <span className="text-muted text-xs italic">{tc('notConfigured')}</span>;
-    const dim = list.find((d: any) => d.id === id || d.costCenterId === id || d.activityId === id);
-    return dim ? <span className="font-mono text-xs">{dim[codeField]} - {dim.name}</span> : <span className="text-muted text-xs font-mono">{id}</span>;
-  };
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -50,7 +34,7 @@ export default function SupplierGroupsAdmin() {
       const sorted = [...data].sort((a: any, b: any) => 
         a.name.localeCompare(b.name, undefined, { numeric: true })
       );
-      setGroups(sorted);
+      setRawGroups(sorted);
       setGlAccounts(customers);
       setCostCenters(cc);
       setActivities(act);
@@ -64,55 +48,65 @@ export default function SupplierGroupsAdmin() {
 
   useEffect(() => { loadData(); }, []);
 
-  const handleEdit = (group: any) => {
-    setEditingId(group.supplierGroupId);
-    setEditForm({ ...group });
-    setIsCreating(false);
-  };
+  const groups = useMemo(() => {
+    return rawGroups.map(g => ({
+      ...g,
+      isActivePurchasing: !g.isPurchasingBlocked,
+      isActivePayment: !g.isPaymentBlocked,
+    }));
+  }, [rawGroups]);
 
-  const handleCreate = () => {
-    setIsCreating(true);
-    setEditingId(null);
-    setEditForm({
-      groupCode: '',
-      name: '',
-      defaultApAccountId: '',
-      defaultExpenseAccountId: '',
-      defaultCostCenterId: '',
-      defaultActivityId: '',
-      isPurchasingBlocked: false,
-      isPaymentBlocked: false,
-    });
-  };
+  const glAccountOptions = useMemo(() => glAccounts.map((a: any) => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` })), [glAccounts]);
+  const costCenterOptions = useMemo(() => costCenters.map((c: any) => ({ value: c.costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
+  const activityOptions = useMemo(() => activities.map((a: any) => ({ value: a.activityId, label: `${a.code} - ${a.name}` })), [activities]);
 
-  const handleCancel = () => {
-    setEditingId(null);
-    setIsCreating(false);
-  };
+  const columns: InlineTableColumn<any>[] = useMemo(() => [
+    { key: 'groupCode', title: tc('code'), type: 'text', placeholder: t('placeholders.code'), width: 100 },
+    { key: 'name', title: tc('name'), type: 'text', placeholder: t('placeholders.name') },
+    { key: 'defaultApAccountId', title: tc('defApAccount'), type: 'select', options: glAccountOptions, emptyLabel: t_gen('selectNone'), width: 140 },
+    { key: 'defaultExpenseAccountId', title: tc('defExpenseAccount'), type: 'select', options: glAccountOptions, emptyLabel: t_gen('selectNone'), width: 140 },
+    { key: 'defaultCostCenterId', title: tc('defCostCenter'), type: 'select', options: costCenterOptions, emptyLabel: t_gen('selectNone'), width: 140 },
+    { key: 'defaultActivityId', title: tc('defActivity'), type: 'select', options: activityOptions, emptyLabel: t_gen('selectNone'), width: 140 },
+    { key: 'isActivePurchasing', title: t('purchasing'), type: 'boolean', width: 80 },
+    { key: 'isActivePayment', title: t('payment'), type: 'boolean', width: 80 }
+  ], [tc, t, t_gen, glAccountOptions, costCenterOptions, activityOptions]);
 
-  const handleSave = async () => {
-    if (!editForm.groupCode || !editForm.name) {
+  const handleSave = async (payload: any, isNew: boolean) => {
+    if (!payload.groupCode || !payload.name) {
       toast.error(t('toasts.requiredFields'));
-      return;
+      throw new Error(t('toasts.requiredFields'));
     }
     try {
-      if (editingId) {
-        await api.supplierGroupsControllerUpdate(editingId, editForm);
+      const formattedPayload = {
+        ...payload,
+        defaultApAccountId: payload.defaultApAccountId || null,
+        defaultExpenseAccountId: payload.defaultExpenseAccountId || null,
+        defaultCostCenterId: payload.defaultCostCenterId || null,
+        defaultActivityId: payload.defaultActivityId || null,
+        isPurchasingBlocked: !payload.isActivePurchasing,
+        isPaymentBlocked: !payload.isActivePayment,
+      };
+      
+      delete formattedPayload.isActivePurchasing;
+      delete formattedPayload.isActivePayment;
+
+      if (!isNew) {
+        await api.supplierGroupsControllerUpdate(payload.supplierGroupId, formattedPayload);
       } else {
-        await api.supplierGroupsControllerCreate(editForm);
+        await api.supplierGroupsControllerCreate(formattedPayload);
       }
-      handleCancel();
       loadData();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
       reportError(err, 'SupplierGroupsAdmin_handleSave');
+      throw err;
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (payload: any) => {
     if(!confirm(t('confirmDelete'))) return;
     try {
-      await api.supplierGroupsControllerRemove(id);
+      await api.supplierGroupsControllerRemove(payload.supplierGroupId);
       toast.success(t('toasts.deleted'));
       loadData();
     } catch (err: unknown) {
@@ -130,191 +124,29 @@ export default function SupplierGroupsAdmin() {
             {t('subtitle')}
           </p>
         </div>
-        <button className="btn btn-primary btn-sm" onClick={handleCreate}>
-          {t('newGroup')}
-        </button>
       </div>
 
       <div className="card mb-6">
-        <h3
-          className="text-sm font-semibold mb-4"
-          style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-        >
-          {t('definedGroups')}
-        </h3>
-        <table className="table-lines w-full">
-          <thead>
-            <tr>
-              <th style={{ width: 100 }}>{tc('code')}</th>
-              <th>{tc('name')}</th>
-              <th style={{ width: 140 }}>{tc('defApAccount')}</th>
-              <th style={{ width: 140 }}>{tc('defExpenseAccount')}</th>
-              <th style={{ width: 140 }}>{tc('defCostCenter')}</th>
-              <th style={{ width: 140 }}>{tc('defActivity')}</th>
-              <th style={{ width: 80, textAlign: 'center' }}>{t('purchasing')}</th>
-              <th style={{ width: 80, textAlign: 'center' }}>{t('payment')}</th>
-              <th style={{ width: 120, textAlign: 'right' }}>{tc('actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isCreating && (
-              <tr style={{ background: 'var(--bg-secondary)' }}>
-                <td>
-                  <input className="input" value={editForm.groupCode} onChange={e => setEditForm({...editForm, groupCode: e.target.value})} placeholder={t('placeholders.code')} />
-                </td>
-                <td>
-                  <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder={t('placeholders.name')} />
-                </td>
-                <td>
-                  <select className="input font-mono text-xs" value={editForm.defaultApAccountId || ''} onChange={e => setEditForm({...editForm, defaultApAccountId: e.target.value || null})}>
-                    <option value="">{t_gen('selectNone')}</option>
-                    {glAccounts.map((a: any) => (
-                      <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <select className="input font-mono text-xs" value={editForm.defaultExpenseAccountId || ''} onChange={e => setEditForm({...editForm, defaultExpenseAccountId: e.target.value || null})}>
-                    <option value="">{t_gen('selectNone')}</option>
-                    {glAccounts.map((a: any) => (
-                      <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <select className="input font-mono text-xs" value={editForm.defaultCostCenterId || ''} onChange={e => setEditForm({...editForm, defaultCostCenterId: e.target.value || null})}>
-                    <option value="">{t_gen('selectNone')}</option>
-                    {costCenters.map((c: any) => (
-                      <option key={c.costCenterId} value={c.costCenterId}>{c.code} - {c.name}</option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <select className="input font-mono text-xs" value={editForm.defaultActivityId || ''} onChange={e => setEditForm({...editForm, defaultActivityId: e.target.value || null})}>
-                    <option value="">{t_gen('selectNone')}</option>
-                    {activities.map((a: any) => (
-                      <option key={a.activityId} value={a.activityId}>{a.code} - {a.name}</option>
-                    ))}
-                  </select>
-                </td>
-                <td style={{ textAlign: 'center' }}>
-                  <label className="switch" title={editForm.isPurchasingBlocked ? t('currentlyBlocked') : t('currentlyActive')}>
-                    <input type="checkbox" checked={!editForm.isPurchasingBlocked} onChange={e => setEditForm({...editForm, isPurchasingBlocked: !e.target.checked})} />
-                    <span className="switch-slider"></span>
-                  </label>
-                </td>
-                <td style={{ textAlign: 'center' }}>
-                  <label className="switch" title={editForm.isPaymentBlocked ? t('currentlyBlocked') : t('currentlyActive')}>
-                    <input type="checkbox" checked={!editForm.isPaymentBlocked} onChange={e => setEditForm({...editForm, isPaymentBlocked: !e.target.checked})} />
-                    <span className="switch-slider"></span>
-                  </label>
-                </td>
-                <td style={{ textAlign: 'right' }}>
-                  <div className="flex justify-end gap-2">
-                    <button className="btn btn-secondary btn-xs" onClick={handleCancel}>{t_gen('cancel')}</button>
-                    <button className="btn btn-primary btn-xs" onClick={handleSave}>{t_gen('save')}</button>
-                  </div>
-                </td>
-              </tr>
-            )}
-            
-            {!loading && groups.length === 0 && !isCreating && (
-              <tr>
-                <td colSpan={9} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
-                  {t('noGroups')}
-                </td>
-              </tr>
-            )}
-
-            {groups.map(g => (
-              editingId === g.supplierGroupId ? (
-                <tr key={g.supplierGroupId} style={{ background: 'var(--bg-secondary)' }}>
-                  <td>
-                    <input className="input" value={editForm.groupCode} onChange={e => setEditForm({...editForm, groupCode: e.target.value})} />
-                  </td>
-                  <td>
-                    <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
-                  </td>
-                  <td>
-                    <select className="input font-mono text-xs" value={editForm.defaultApAccountId || ''} onChange={e => setEditForm({...editForm, defaultApAccountId: e.target.value || null})}>
-                      <option value="">{t_gen('selectNone')}</option>
-                      {glAccounts.map((a: any) => (
-                        <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <select className="input font-mono text-xs" value={editForm.defaultExpenseAccountId || ''} onChange={e => setEditForm({...editForm, defaultExpenseAccountId: e.target.value || null})}>
-                      <option value="">{t_gen('selectNone')}</option>
-                      {glAccounts.map((a: any) => (
-                        <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <select className="input font-mono text-xs" value={editForm.defaultCostCenterId || ''} onChange={e => setEditForm({...editForm, defaultCostCenterId: e.target.value || null})}>
-                      <option value="">{t_gen('selectNone')}</option>
-                      {costCenters.map((c: any) => (
-                        <option key={c.costCenterId} value={c.costCenterId}>{c.code} - {c.name}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <select className="input font-mono text-xs" value={editForm.defaultActivityId || ''} onChange={e => setEditForm({...editForm, defaultActivityId: e.target.value || null})}>
-                      <option value="">{t_gen('selectNone')}</option>
-                      {activities.map((a: any) => (
-                        <option key={a.activityId} value={a.activityId}>{a.code} - {a.name}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <label className="switch" title={editForm.isPurchasingBlocked ? t('currentlyBlocked') : t('currentlyActive')}>
-                      <input type="checkbox" checked={!editForm.isPurchasingBlocked} onChange={e => setEditForm({...editForm, isPurchasingBlocked: !e.target.checked})} />
-                      <span className="switch-slider"></span>
-                    </label>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <label className="switch" title={editForm.isPaymentBlocked ? t('currentlyBlocked') : t('currentlyActive')}>
-                      <input type="checkbox" checked={!editForm.isPaymentBlocked} onChange={e => setEditForm({...editForm, isPaymentBlocked: !e.target.checked})} />
-                      <span className="switch-slider"></span>
-                    </label>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div className="flex justify-end gap-2">
-                      <button className="btn btn-secondary btn-xs" onClick={handleCancel}>{t_gen('cancel')}</button>
-                      <button className="btn btn-primary btn-xs" onClick={handleSave}>{t_gen('save')}</button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                <tr key={g.supplierGroupId}>
-                  <td className="font-mono text-xs">{g.groupCode}</td>
-                  <td className="font-medium">{g.name}</td>
-                  <td>{renderGlAccountLabel(g.defaultApAccountId)}</td>
-                  <td>{renderGlAccountLabel(g.defaultExpenseAccountId)}</td>
-                  <td>{renderDimensionLabel(g.defaultCostCenterId, costCenters, 'code')}</td>
-                  <td>{renderDimensionLabel(g.defaultActivityId, activities, 'code')}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <span style={{ color: g.isPurchasingBlocked ? 'var(--danger, #ef4444)' : 'var(--success, #22c55e)', fontWeight: 'bold', fontSize: '0.75rem' }}>
-                      {g.isPurchasingBlocked ? t('blocked') : t('active')}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <span style={{ color: g.isPaymentBlocked ? 'var(--danger, #ef4444)' : 'var(--success, #22c55e)', fontWeight: 'bold', fontSize: '0.75rem' }}>
-                      {g.isPaymentBlocked ? t('blocked') : t('active')}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div className="flex justify-end gap-2">
-                      <button className="btn btn-secondary btn-xs" onClick={() => handleEdit(g)}>{t_gen('edit')}</button>
-                      <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleDelete(g.supplierGroupId)}>{t_gen('delete')}</button>
-                    </div>
-                  </td>
-                </tr>
-              )
-            ))}
-          </tbody>
-        </table>
+        <InlineSettingsTable
+          title={<span style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>{t('definedGroups')}</span>}
+          columns={columns}
+          data={groups}
+          rowKey={row => row.supplierGroupId}
+          onSave={handleSave}
+          onDelete={handleDelete}
+          onAdd={() => ({
+            groupCode: '',
+            name: '',
+            defaultApAccountId: '',
+            defaultExpenseAccountId: '',
+            defaultCostCenterId: '',
+            defaultActivityId: '',
+            isActivePurchasing: true,
+            isActivePayment: true,
+          })}
+          addLabel={t('newGroup')}
+          emptyLabel={loading ? null : t('noGroups')}
+        />
       </div>
     </div>
   );

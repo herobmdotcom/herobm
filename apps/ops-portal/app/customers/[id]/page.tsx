@@ -21,6 +21,8 @@ import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver
 
 import { useSettings } from '@/components/SettingsProvider';
 import { getErrorMessage, CURRENCIES, COUNTRIES, CUSTOMER_STATE, getCurrencyForCountry } from '@modbm/shared';
+import { toast } from 'react-hot-toast';
+
 import { useAccount } from './useCustomer';
 
 export default function AccountDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
@@ -87,16 +89,16 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
 
   const invoiceColumns = useMemo(() => [
       { field: 'invoiceId', headerName: 'ID', hide: true },
-      { field: 'invoiceNumber', headerName: tSales('columns.invoiceNumber', { defaultValue: 'Invoice No.' }), width: 180 },
-      { field: 'orderNumber', headerName: tSales('columns.orderNumber', { defaultValue: 'Order No.' }), width: 160 },
-      { field: 'createdOn', headerName: tSales('columns.date', { defaultValue: 'Date' }), width: 200, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
-      { field: 'totalAmount', headerName: tSales('columns.amount', { defaultValue: 'Amount' }), type: 'numericColumn', width: 150,
+      { field: 'invoiceNumber', headerName: tSales('columns.invoiceNumber'), width: 180 },
+      { field: 'orderNumber', headerName: tSales('columns.orderNumber'), width: 160 },
+      { field: 'createdOn', headerName: tSales('columns.date'), width: 200, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+      { field: 'totalAmount', headerName: tSales('columns.amount'), type: 'numericColumn', width: 150,
           valueGetter: (p: any) => p.data?.totalAmount ? parseFloat(p.data.totalAmount) : null,
           valueFormatter: (p: any) => (!p.value || p.value === 0) ? '—' : formatAmount(p.value, p.data?.currencyCode || 'EUR'),
       },
       { 
           field: 'stateCode', 
-          headerName: tSales('columns.state', { defaultValue: 'State' }), 
+          headerName: tSales('columns.state'), 
           width: 140,
           valueFormatter: (p: any) => {
             if (!p.value) return '';
@@ -113,13 +115,13 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
   const visibleSections = [
     {
       id: 'tab-details',
-      label: t('customers.overview', { defaultValue: 'Overview' }),
+      label: t('customers.overview'),
       isSubPage: true,
       isActive: activeTab === 'details',
       onClick: () => setActiveTab('details'),
       subtargets: [
         { id: 'info-section', label: 'Info', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('info-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
-        { id: 'pricing-section', label: 'Pricing', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'pricing-section', label: 'Financials', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'address-section', label: 'Company', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('address-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'contact-section', label: 'Contact', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'bank-section', label: 'Bank', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('bank-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
@@ -129,14 +131,14 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
     },
     {
       id: 'tab-sales',
-      label: t('customers.orders', { defaultValue: 'Orders' }),
+      label: t('customers.orders'),
       isSubPage: true,
       isActive: activeTab === 'salesOrders',
       onClick: () => setActiveTab('salesOrders'),
     },
     {
       id: 'tab-invoices',
-      label: t('customers.invoices', { defaultValue: 'Invoices' }),
+      label: t('customers.invoices'),
       isSubPage: true,
       isActive: activeTab === 'invoices',
       onClick: () => setActiveTab('invoices'),
@@ -240,7 +242,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                   <div className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-4 flex-1">
                       <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        {tSales('invoicesCardHeading', { defaultValue: 'Sales Invoices' })}
+                        {tSales('invoicesCardHeading')}
                       </h2>
                       <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
                       <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
@@ -381,7 +383,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
             <h3 className="section-heading">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">payments</span>
-              Pricing & Tax
+              FINANCIALS
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
@@ -488,13 +490,15 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                       value={dto.businessNumber || ''}
                       isSaving={saving}
                       onEnrich={(data) => {
-                        if (data.name) {
+                        if (data.name && data.name !== dto.name) {
                           updateField('name', data.name);
                           saveField('name', data.name);
+                          toast.success(tCommon('enrichment.nameUpdated'));
                         }
-                        if (data.isTaxRegistered !== undefined) {
+                        if (data.isTaxRegistered !== undefined && data.isTaxRegistered !== dto.isTaxRegistered) {
                           updateField('isTaxRegistered', data.isTaxRegistered);
                           saveField('isTaxRegistered', data.isTaxRegistered);
+                          toast.success(tCommon('enrichment.taxUpdated'));
                         }
                       }}
                     />
@@ -510,23 +514,47 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1.5 opacity-0" style={{ color: 'var(--text-muted)' }}>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {t('customers.fields.taxRegistered')}
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer mt-1">
-                    <div className="switch" title={dto.isTaxRegistered ? t('customers.fields.taxRegistered') : t('common.na')}>
-                      <input
-                        type="checkbox"
-                        checked={dto.isTaxRegistered || false}
-                        onChange={(e) => {
-                          updateField('isTaxRegistered', e.target.checked);
-                          saveField('isTaxRegistered', e.target.checked);
+                  <div
+                    className="flex items-center gap-3"
+                    style={{ paddingTop: 6, cursor: !isEditable || saving ? 'not-allowed' : 'pointer' }}
+                    onClick={() => {
+                      if (!isEditable || saving) return;
+                      const newValue = !dto.isTaxRegistered;
+                      updateField('isTaxRegistered', newValue);
+                      saveField('isTaxRegistered', newValue);
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 40,
+                        height: 22,
+                        borderRadius: 11,
+                        background: dto.isTaxRegistered ? 'var(--accent)' : 'var(--border)',
+                        position: 'relative',
+                        transition: 'background 0.2s ease',
+                        opacity: !isEditable || saving ? 0.5 : 1,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: '50%',
+                          background: '#fff',
+                          position: 'absolute',
+                          top: 3,
+                          left: dto.isTaxRegistered ? 21 : 3,
+                          transition: 'left 0.2s ease',
                         }}
-                        disabled={!isEditable || saving}
                       />
                     </div>
-                    <span className="text-sm font-medium">{t('customers.fields.taxRegistered')}</span>
-                  </label>
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      {dto.isTaxRegistered ? tCommon('yes') : tCommon('no')}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

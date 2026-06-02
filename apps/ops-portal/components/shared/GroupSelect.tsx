@@ -34,7 +34,8 @@ export default function GroupSelect({
     let active = true;
     setLoading(true);
     
-    const fetchMap: Record<string, any> = {
+    // modbm-allow-record-any
+  const fetchMap: Record<string, any> = {
       customer: api.accountGroupsControllerFindAll,
       product: api.productGroupsControllerFindAll,
       supplier: api.supplierGroupsControllerFindAll,

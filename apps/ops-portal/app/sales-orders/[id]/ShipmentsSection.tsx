@@ -39,7 +39,7 @@ export default function ShipmentsSection({ orderId }: Props) {
     useEffect(() => {
         setLoading(true);
         api.orderShipmentsControllerFindShipments(orderId)
-            .then((res) => setShipments(((res.data as any)?.data || res.data || []) as unknown as Shipment[]))
+            .then((res) => setShipments(((res.data as unknown as { data: any[] })?.data || res.data || []) as unknown as Shipment[]))
             .catch((err) => reportError(err, 'ShipmentsSection'))
             .finally(() => setLoading(false));
     }, [orderId]);
@@ -50,7 +50,6 @@ export default function ShipmentsSection({ orderId }: Props) {
                 <h3 className="section-heading">
                     {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="material-symbols-outlined">inventory_2</span>
-                    {/* eslint-enable i18next/no-literal-string */}
                     {tShipping('shipmentsTitle')}
                 </h3>
             </div>
@@ -74,7 +73,6 @@ export default function ShipmentsSection({ orderId }: Props) {
                             <div className="flex items-center gap-3">
                                 {/* eslint-disable-next-line i18next/no-literal-string */}
                                 <span className="material-symbols-outlined text-[var(--text-muted)] text-lg">inventory_2</span>
-                                {/* eslint-enable i18next/no-literal-string */}
                                 <div>
                                     <div className="font-bold text-sm text-[var(--text-primary)]">{shipment.shipmentNumber}</div>
                                     <div className="text-xs text-[var(--text-muted)]">

@@ -89,22 +89,22 @@ describe('ReportsController', () => {
   describe('CRUD Endpoints', () => {
     it('should return all reports', async () => {
       const res = await controller.getAllReports();
-      expect(res.data).toHaveLength(1);
+      expect(res).toHaveLength(1);
     });
 
     it('should return all hooks', async () => {
       const res = await controller.getHooks();
-      expect(res.data).toHaveLength(1);
+      expect(res).toHaveLength(1);
     });
 
     it('should return a random context id', async () => {
       const res = await controller.getRandomId('sales');
-      expect(res.data.id).toBe('random-id');
+      expect(res.id).toBe('random-id');
     });
 
     it('should return a specific report', async () => {
       const res = await controller.getReport('1');
-      expect(res.data.id).toBe('1');
+      expect(res.id).toBe('1');
     });
 
     it('should create a report', async () => {
@@ -113,12 +113,12 @@ describe('ReportsController', () => {
         slug: 't',
         template: '',
       });
-      expect(res.data.id).toBe('new-id');
+      expect(res.id).toBe('new-id');
     });
 
     it('should update a report', async () => {
       const res = await controller.updateReport('1', { name: 'U' });
-      expect(res.data.name).toBe('Updated');
+      expect(res.name).toBe('Updated');
     });
   });
 

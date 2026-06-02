@@ -135,8 +135,8 @@ export class UsersService {
       await this.assertNotLastAdmin(id);
     }
 
-    const updatePayload: Record<string, any> = {};
-    const auditChanges: Record<string, any> = {};
+    const updatePayload: Record<string, unknown> = {};
+    const auditChanges: Record<string, unknown> = {};
 
     if (dto.role !== undefined && dto.role !== target.role) {
       updatePayload.role = dto.role;

@@ -663,7 +663,7 @@ async function seedAppSettings(db: any, dryRun: boolean) {
     .insert(appSettings)
     .values({
       inventoryValuationMethod: 'weighted_average',
-      nonStockBillingMode: 'per_shipment',
+      inventoryAccountingMode: 'periodic',
       creditLimitBehavior: 'soft',
       setupCompletedAt: new Date(),
     })
@@ -947,8 +947,7 @@ async function seedReports(db: any, dryRun: boolean) {
       filename,
     );
     if (!fs.existsSync(p)) {
-      console.log(`  [WARN] Template file not found: ${p}`);
-      return null;
+      throw new Error(`Template file not found: ${p}`);
     }
     return fs.readFileSync(p, 'utf-8');
   }

@@ -75,9 +75,9 @@ export class SalesInvoiceController {
     summary: 'Get Sales Invoices',
     description: 'Retrieve invoices for a sales order',
   })
-  @ApiOkResponse({ type: SalesInvoiceResponseDto })
+  @ApiOkResponse({ type: [SalesInvoiceResponseDto] })
   async getSalesInvoices(@Param('id') id: string) {
-    return { data: await this.salesInvoiceService.findByOrder(id) };
+    return await this.salesInvoiceService.findByOrder(id);
   }
 }
 
@@ -100,9 +100,9 @@ export class PurchaseInvoiceController {
     summary: 'Get Purchase Bills',
     description: 'Retrieve purchase bills for a purchase order',
   })
-  @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
+  @ApiOkResponse({ type: [PurchaseInvoiceResponseDto] })
   async getPurchaseBills(@Param('id') id: string) {
-    return { data: await this.purchaseInvoiceService.findByOrder(id) };
+    return await this.purchaseInvoiceService.findByOrder(id);
   }
 }
 
@@ -137,7 +137,7 @@ export class InvoiceDetailController {
     summary: 'Get All Sales Invoices',
     description: 'Retrieve all sales invoices across orders',
   })
-  @ApiOkResponse({ type: SalesInvoiceListResponseDto })
+  @ApiOkResponse({ type: [SalesInvoiceResponseDto] })
   @ApiQuery({ name: 'days', required: false })
   @ApiQuery({ name: 'customerId', required: false })
   @ApiQuery({ name: 'invoiceId', required: false })
@@ -157,7 +157,7 @@ export class InvoiceDetailController {
       balanceStatus,
       limit: limit ? parseInt(limit, 10) : undefined,
     });
-    return { data };
+    return data;
   }
 
   @Get('purchase-invoices')
@@ -167,7 +167,7 @@ export class InvoiceDetailController {
     summary: 'Get All Purchase Invoices',
     description: 'Retrieve all purchase invoices across orders',
   })
-  @ApiOkResponse({ type: PurchaseInvoiceListResponseDto })
+  @ApiOkResponse({ type: [PurchaseInvoiceResponseDto] })
   @ApiQuery({ name: 'days', required: false })
   @ApiQuery({ name: 'vendorId', required: false })
   @ApiQuery({ name: 'invoiceId', required: false })
@@ -187,7 +187,7 @@ export class InvoiceDetailController {
       balanceStatus,
       limit: limit ? parseInt(limit, 10) : undefined,
     });
-    return { data };
+    return data;
   }
 
   @Get('purchase-invoices/:id')

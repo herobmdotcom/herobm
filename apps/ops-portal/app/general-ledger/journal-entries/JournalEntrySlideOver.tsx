@@ -108,14 +108,13 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
           <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
             {loading ? (
               <div className="flex justify-center items-center py-12">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="loading loading-spinner text-gray-400"></span>
               </div>
             ) : (
               <table className="w-full text-sm text-left">
                 <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
                   <tr>
-                    <th className="px-5 py-3">{t('columns.customer')}</th>
+                    <th className="px-5 py-3">{t('columns.glAccount')}</th>
                     <th className="px-5 py-3">{t('columns.party')}</th>
                     <th className="px-5 py-3 text-right">{t('columns.debit')}</th>
                     <th className="px-5 py-3 text-right">{t('columns.credit')}</th>

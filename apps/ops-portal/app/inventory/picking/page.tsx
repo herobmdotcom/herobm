@@ -113,7 +113,7 @@ export default function PickingPage() {
 
         api.orderPickingControllerGetPickingQueue(params)
             .then(data => {
-                setPendingOrders(((data as any).data || data) as unknown as UnifiedOrder[]);
+                setPendingOrders(((data as unknown as { data: any[] }).data || data) as unknown as UnifiedOrder[]);
             })
             .catch(err => reportError(err, 'Failed to load pending orders'))
             .finally(() => setLoadingOrders(false));
@@ -378,6 +378,7 @@ export default function PickingPage() {
                                             <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>
                                         )}
                                         <span className="hidden sm:inline">{t('pickingSlipPdf')}</span>
+                                        {/* eslint-disable-next-line i18next/no-literal-string */}
                                         <span className="sm:hidden material-symbols-outlined text-[16px]">print</span>
                                     </button>
                                     <span className="bg-[var(--accent)] text-white text-xs font-bold px-2 py-0.5 rounded-full">

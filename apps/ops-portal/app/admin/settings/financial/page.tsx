@@ -12,6 +12,7 @@ import CsvImportButton from '@/components/shared/CsvImportButton';
 import SlideOver from '@/components/shared/SlideOver';
 import { SchemaBuilder } from '@/components/SchemaBuilder';
 import { DynamicForm } from '@/components/DynamicForm';
+import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
 import ImportCoaModal from './ImportCoaModal';
 import ImportTaxModal from './ImportTaxModal';
 
@@ -105,6 +106,20 @@ export default function FinancialSettingsPage() {
 
   // ── GL Settings state ────────────────────────────────────────────────────────
   const [glSettings, setGlSettings] = useState<any>(null);
+
+  const ratesWithBase = useMemo(() => {
+    if (!glSettings?.baseCurrency) return rates;
+    const baseRow = {
+      isSystemBase: true,
+      currencyCode: glSettings.baseCurrency,
+      currencyName: getCurrency(glSettings.baseCurrency).name || glSettings.baseCurrency,
+      effectiveDate: new Date().toISOString(),
+      buyRate: 1.0,
+      sellRate: 1.0
+    };
+    return [baseRow, ...rates];
+  }, [glSettings, rates]);
+
   const [glAccounts, setGlAccounts] = useState<any[]>([]);
   const [glLoading, setGlLoading] = useState(true);
   const [schemaObj, setSchemaObj] = useState<any>({ type: 'object', properties: {} });
@@ -157,7 +172,7 @@ export default function FinancialSettingsPage() {
       ]);
       setGlSettings(settingsRes.data);
       setGlAccounts(accountsRes.data);
-      setSchemaObj((settingsRes.data as any).accountMetadataSchema || { type: 'object', properties: {} });
+      setSchemaObj((settingsRes.data as unknown as { accountMetadataSchema?: Record<string, unknown> }).accountMetadataSchema || { type: 'object', properties: {} });
     } catch (err: unknown) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.gl }) + ': ' + getErrorMessage(err));
     } finally {
@@ -194,7 +209,7 @@ export default function FinancialSettingsPage() {
   };
 
   const coaEdit = (acct: unknown) => { setCoaEditingId((acct as { glAccountId: string }).glAccountId); setCoaForm({ ...(acct as object) }); setCoaCreating(false); };
-  const coaCreate = (parentId?: string, parentAccountType?: string) => { setCoaCreating(true); setCoaEditingId(null); setCoaForm({ accountCode: '', name: '', accountType: parentAccountType || GL_ACCOUNT_TYPE.EXPENSE, parentAccountId: parentId || null, isGroup: false, isBankAccount: false, currencyCode: 'AUD', isActive: true }); };
+  const coaCreate = (parentId?: string, parentAccountType?: string, isGroupDefault: boolean = false) => { setCoaCreating(true); setCoaEditingId(null); setCoaForm({ accountCode: '', name: '', accountType: parentAccountType || GL_ACCOUNT_TYPE.EXPENSE, parentAccountId: parentId || null, isGroup: isGroupDefault, isBankAccount: false, currencyCode: 'AUD', isActive: true }); };
   const coaCancel = () => { setCoaEditingId(null); setCoaCreating(false); };
 
   const coaSave = async () => {
@@ -480,13 +495,13 @@ export default function FinancialSettingsPage() {
                   <>
                     {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="material-symbols-outlined text-[16px]">folder</span>
-                    {/* eslint-enable i18next/no-literal-string */}
+                    { }
                   </>
                 ) : (
                   <>
                     {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="material-symbols-outlined text-[16px] text-muted">receipt_long</span>
-                    {/* eslint-enable i18next/no-literal-string */}
+                    { }
                   </>
                 )}
                 {data.name}
@@ -506,7 +521,7 @@ export default function FinancialSettingsPage() {
             <>
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>check</span>
-              {/* eslint-enable i18next/no-literal-string */}
+              { }
             </>
           ) : null}
         </td>
@@ -517,7 +532,7 @@ export default function FinancialSettingsPage() {
             <>
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>check</span>
-              {/* eslint-enable i18next/no-literal-string */}
+              { }
             </>
           ) : null}
         </td>
@@ -612,7 +627,7 @@ export default function FinancialSettingsPage() {
           <>
             {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--primary)' }}>check_circle</span>
-            {/* eslint-enable i18next/no-literal-string */}
+            { }
           </>
         ) : null}
       </td>
@@ -921,9 +936,9 @@ export default function FinancialSettingsPage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">{tSettings('labels.chartOfAccounts')}</h3>
             <div className="flex gap-2">
-              <button className="btn btn-secondary btn-xs" onClick={() => setImportCoaModalOpen(true)}>Import CoA...</button>
+              <button className="btn btn-secondary btn-xs" onClick={() => setImportCoaModalOpen(true)}>{tSettings('importCoaModal.importAction')}</button>
               <button className="btn btn-secondary btn-xs" onClick={openSchemaEditor}>{tSettings('actions.configureMetadata')}</button>
-              <button className="btn btn-primary btn-sm" onClick={() => coaCreate()}>{tSettings('actions.addRootGroup')}</button>
+              <button className="btn btn-primary btn-sm" onClick={() => coaCreate(undefined, undefined, true)}>{tSettings('actions.addRootGroup')}</button>
             </div>
           </div>
 
@@ -956,97 +971,194 @@ export default function FinancialSettingsPage() {
         </div>
 
         {/* ── Tax Categories ─────────────────────────────────────────────── */}
-        <div id="tax-section" className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">payments</span>
-              {tSettings('sections.tax')}
-            </h3>
-            <div className="flex gap-2">
-              <button className="btn btn-secondary btn-sm" onClick={() => setImportTaxModalOpen(true)}>
+        <div id="tax-section" className="card relative">
+          <InlineSettingsTable
+            title={
+              <h3 className="section-heading !mb-0 flex items-center gap-2">
                 {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined text-base">upload_file</span>
-                {/* eslint-enable i18next/no-literal-string */}
+                <span className="material-symbols-outlined">payments</span>
+                {tSettings('sections.tax')}
+              </h3>
+            }
+            headerActions={
+              <button className="btn btn-secondary btn-sm" onClick={() => setImportTaxModalOpen(true)}>
                 {tSettings('actions.importSettings')}
               </button>
-              <button className="btn btn-primary btn-sm" onClick={taxCreate}>+ {tSettings('actions.create')}</button>
-            </div>
-          </div>
-          <table className="table-lines w-full">
-            <thead>
-              <tr>
-                <th style={{ width: 100 }}>{tSettings('labels.code')}</th>
-                <th>{tSettings('labels.title')}</th>
-                <th style={{ width: 140 }}>{tSettings('labels.type')}</th>
-                <th style={{ width: 80 }}>{tSettings('labels.rate')}</th>
-                <th style={{ width: 80, textAlign: 'center' }}>{tSettings('labels.isDefault')}</th>
-                <th style={{ width: 150, textAlign: 'right' }}>{tSettings('actions.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {taxCreating && renderTaxRow(true, taxForm, 'new-tax')}
-              {!taxLoading && categories.length === 0 && !taxCreating && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{tSettings('tax.empty')}</td></tr>
-              )}
-              {categories.map(cat =>
-                taxEditingId === cat.taxCategoryId
-                  ? renderTaxRow(true, cat, cat.taxCategoryId)
-                  : renderTaxRow(false, cat, cat.taxCategoryId)
-              )}
-            </tbody>
-          </table>
+            }
+            data={categories || []}
+            rowKey={(r: any) => r.taxCategoryId}
+            onSave={async (row: any, isNew: boolean) => {
+              if (!row.code || !row.title || !row.type || row.rate === undefined || row.rate === '') {
+                throw new Error(tCommon('errors.typeAndDateRequired'));
+              }
+              const payload = {
+                code: row.code.toUpperCase(),
+                title: row.title,
+                type: row.type,
+                rate: row.rate,
+                isDefault: row.isDefault,
+                exemptionReason: row.exemptionReason
+              };
+              if (isNew) {
+                await api.taxCategoriesControllerCreate(payload);
+                toast.success(tSettings('toasts.taxCreated') || 'Tax created');
+              } else {
+                await api.taxCategoriesControllerUpdate(row.taxCategoryId, payload);
+                toast.success(tSettings('toasts.taxUpdated') || 'Tax updated');
+              }
+              loadTax();
+            }}
+            onDelete={async (row: any) => {
+              if (!confirm(tSettings('confirmations.deleteTax', { title: row.title }) || 'Are you sure you want to delete this tax?')) return;
+              await api.taxCategoriesControllerRemove(row.taxCategoryId);
+              toast.success(tSettings('toasts.taxDeleted') || 'Tax deleted');
+              loadTax();
+            }}
+            onAdd={() => ({ code: '', title: '', type: 'percentage', rate: 0, isDefault: false } as unknown as TaxCategory)}
+            canEdit={() => true}
+            canDelete={() => true}
+            addLabel={tSettings('actions.create')}
+            emptyLabel={tSettings('tax.empty')}
+            columns={[
+              {
+                key: 'code',
+                title: tSettings('labels.code'),
+                type: 'text',
+                width: 120,
+                validate: (v: any) => v ? null : 'Required'
+              },
+              {
+                key: 'title',
+                title: tSettings('labels.title'),
+                type: 'text',
+                validate: (v: any) => v ? null : 'Required'
+              },
+              {
+                key: 'type',
+                title: tSettings('labels.type'),
+                type: 'select',
+                width: 140,
+                options: [
+                  { value: 'percentage', label: tSettings('tax.percentage') || 'Percentage' },
+                  { value: 'fixed', label: tSettings('tax.fixed') || 'Fixed' },
+                  { value: 'exempt', label: tSettings('tax.exempt') || 'Exempt' }
+                ],
+                render: (row: any, isEditing: boolean) => {
+                  if (isEditing) return null; // handled by component
+                  return <span className="bg-[var(--bg-secondary)] border border-[var(--border)] px-2 py-0.5 rounded text-xs">{row.type}</span>;
+                }
+              },
+              {
+                key: 'rate',
+                title: tSettings('labels.rate'),
+                type: 'text',
+                width: 100,
+                validate: (v: any) => (v !== '' && v !== null && v !== undefined) ? null : 'Required'
+              },
+              {
+                key: 'isDefault',
+                title: tSettings('labels.isDefault'),
+                type: 'boolean' as const,
+                width: 100
+              }
+            ]}
+          />
         </div>
 
         {/* ── Exchange Rates ─────────────────────────────────────────────── */}
-        <div id="rates-section" className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">currency_exchange</span>
-              {tSettings('sections.rates')}
-            </h3>
-            <button className="btn btn-primary btn-sm" onClick={rateCreate}>+ {tSettings('actions.create')}</button>
-          </div>
-          <table className="table-lines w-full">
-            <thead>
-              <tr>
-                <th style={{ width: 100 }}>{tSettings('labels.currencyCode')}</th>
-                <th>{tSettings('labels.currencyName')}</th>
-                <th style={{ width: 110 }}>{tSettings('labels.buyRate')}</th>
-                <th style={{ width: 110 }}>{tSettings('labels.sellRate')}</th>
-                <th style={{ width: 130 }}>{tSettings('labels.effectiveDate')}</th>
-                <th style={{ width: 150, textAlign: 'right' }}>{tSettings('actions.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* --- Anchor Row: Base System Currency --- */}
-              <tr style={{ backgroundColor: 'rgba(var(--primary-rgb), 0.03)', fontWeight: 500 }}>
-                <td>
-                  <div className="flex items-center gap-2">
-                    {glSettings?.baseCurrency ?? '—'}
-                  </div>
-                </td>
-                <td>{glSettings?.baseCurrency ? getCurrency(glSettings.baseCurrency).name : '—'}</td>
-                <td>1.0000</td>
-                <td>1.0000</td>
-                <td><span className="text-xs italic text-muted">{tSettings('labels.systemBase')}</span></td>
-                <td style={{ textAlign: 'right' }}>
-                  <span className="text-xs text-muted italic">{tSettings('labels.fixed')}</span>
-                </td>
-              </tr>
-
-              {rateCreating && renderRateRow(true, rateForm, 'new-rate')}
-              {!rateLoading && rates.length === 0 && !rateCreating && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{tSettings('rates.empty')}</td></tr>
-              )}
-              {rates.map(r =>
-                rateEditingId === r.exchangeRateId
-                  ? renderRateRow(true, r, r.exchangeRateId)
-                  : renderRateRow(false, r, r.exchangeRateId)
-              )}
-            </tbody>
-          </table>
+        <div id="rates-section" className="card relative">
+          <InlineSettingsTable
+            title={
+              <h3 className="section-heading !mb-0 flex items-center gap-2">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined">currency_exchange</span>
+                {tSettings('sections.rates')}
+              </h3>
+            }
+            data={ratesWithBase}
+            rowKey={(r: any) => r.exchangeRateId || r.currencyCode}
+            onSave={async (row: any, isNew: boolean) => {
+              if (!row.currencyCode || !row.effectiveDate || !row.buyRate || !row.sellRate) {
+                throw new Error(tCommon('errors.typeAndDateRequired'));
+              }
+              const payload = {
+                currencyCode: row.currencyCode.toUpperCase(),
+                currencyName: row.currencyName || row.currencyCode.toUpperCase(),
+                effectiveDate: row.effectiveDate,
+                buyRate: row.buyRate,
+                sellRate: row.sellRate
+              };
+              if (isNew) {
+                await api.exchangeRatesControllerCreate(payload);
+                toast.success(tSettings('toasts.rateCreated') || 'Rate created');
+              } else {
+                await api.exchangeRatesControllerUpdate(row.exchangeRateId, payload);
+                toast.success(tSettings('toasts.rateUpdated') || 'Rate updated');
+              }
+              loadRates();
+            }}
+            onDelete={async (row: any) => {
+              if (!confirm(tSettings('confirmations.deleteRate') || 'Are you sure you want to delete this rate?')) return;
+              await api.exchangeRatesControllerRemove(row.exchangeRateId);
+              toast.success(tSettings('toasts.rateDeleted') || 'Rate deleted');
+              loadRates();
+            }}
+            onAdd={() => ({ currencyCode: '', currencyName: '', effectiveDate: new Date().toISOString().split('T')[0], buyRate: 1.0, sellRate: 1.0 } as unknown as ExchangeRate)}
+            canEdit={(row: any) => !row.isSystemBase}
+            canDelete={(row: any) => !row.isSystemBase}
+            addLabel={tSettings('actions.create')}
+            emptyLabel={tSettings('rates.empty')}
+            columns={[
+              {
+                key: 'currencyCode',
+                title: tSettings('labels.currencyCode'),
+                type: 'text',
+                width: 100,
+                validate: (v: any) => v ? null : 'Required',
+                render: (row: any, isEditing: boolean) => {
+                  if (isEditing) return null;
+                  return (
+                    <div className="flex flex-col gap-0.5">
+                      <span className={row.isSystemBase ? 'font-medium' : ''}>{row.currencyCode}</span>
+                      {row.isSystemBase && <span className="text-[10px] uppercase tracking-wider text-muted font-bold opacity-60">BASE</span>}
+                    </div>
+                  );
+                }
+              },
+              {
+                key: 'currencyName',
+                title: tSettings('labels.currencyName'),
+                type: 'text',
+                validate: (v: any) => v ? null : 'Required'
+              },
+              {
+                key: 'effectiveDate',
+                title: tSettings('labels.effectiveDate'),
+                type: 'text',
+                width: 150,
+                validate: (v: any) => v ? null : 'Required',
+                render: (row: any, isEditing: boolean) => {
+                  if (isEditing) return null;
+                  if (row.isSystemBase) return <span className="text-xs italic text-muted">{tSettings('labels.systemBase')}</span>;
+                  return <span>{new Date(row.effectiveDate).toLocaleDateString()}</span>;
+                }
+              },
+              {
+                key: 'buyRate',
+                title: tSettings('labels.buyRate'),
+                type: 'text',
+                width: 110,
+                validate: (v: any) => (v !== '' && v !== null && v !== undefined) ? null : 'Required'
+              },
+              {
+                key: 'sellRate',
+                title: tSettings('labels.sellRate'),
+                type: 'text',
+                width: 110,
+                validate: (v: any) => (v !== '' && v !== null && v !== undefined) ? null : 'Required'
+              }
+            ]}
+          />
         </div>
 
         {/* ── Cost Centers ─────────────────────────────────────────────────── */}

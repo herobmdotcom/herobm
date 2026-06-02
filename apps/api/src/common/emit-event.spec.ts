@@ -181,9 +181,9 @@ describe('emitEvent', () => {
       await emitEvent(tx, {
         aggregateType: AggregateType.SALES_ORDER,
         aggregateId: 'so-001',
-        eventType: EventType.STOCK_DISPATCHED,
-        payload: { shipmentId: 'sh-001' },
-        actor: 'warehouse',
+        eventType: EventType.CREATED,
+        payload: { orderNumber: 'ORD-001' },
+        actor: 'admin',
       });
 
       // Two inserts: audit + outbox
@@ -193,8 +193,8 @@ describe('emitEvent', () => {
       expect(calls[1].values).toEqual({
         aggregateType: 'sales_order',
         aggregateId: 'so-001',
-        eventType: 'stock_dispatched',
-        payload: { shipmentId: 'sh-001' },
+        eventType: 'sales_order.created',
+        payload: { orderNumber: 'ORD-001' },
       });
     });
 
@@ -203,7 +203,7 @@ describe('emitEvent', () => {
       await emitEvent(tx, {
         aggregateType: AggregateType.SALES_ORDER,
         aggregateId: 'so-001',
-        eventType: EventType.CREATED,
+        eventType: EventType.LINE_ADDED,
         payload: {},
         actor: 'admin',
       });
@@ -214,11 +214,9 @@ describe('emitEvent', () => {
     });
 
     it('should have consistent gating for all declared integration event types', () => {
-      // Sanity check: all OUTBOX_EVENT_TYPES should map to valid EventType values
-      const allEventTypeValues = new Set(Object.values(EventType) as string[]);
-
+      // Sanity check: all OUTBOX_EVENT_TYPES should be fully qualified entity.action strings
       for (const outboxType of OUTBOX_EVENT_TYPES) {
-        expect(allEventTypeValues.has(outboxType)).toBe(true);
+        expect(outboxType).toMatch(/^[a-z_]+\.[a-z_]+$/);
       }
     });
   });
@@ -247,7 +245,7 @@ describe('emitEvent', () => {
         emitEvent(tx, {
           aggregateType: AggregateType.SALES_ORDER,
           aggregateId: 'so-001',
-          eventType: EventType.STOCK_DISPATCHED, // in OUTBOX_EVENT_TYPES
+          eventType: EventType.CREATED, // in OUTBOX_EVENT_TYPES
           payload: {},
           actor: 'admin',
         }),

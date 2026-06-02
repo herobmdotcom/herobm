@@ -363,35 +363,13 @@ test-single:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/$(TEST).ps1
 
 test-structural:
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_schema_sync.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_adhoc_schema_scripts.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_docker_socket.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_docker_log_shipping.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_port_binding.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_weak_defaults.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_hardcoded_secrets.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_wildcard_cors.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_print_in_pipelines.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_imports_pinned.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_fe_no_api_any_casting.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_fe_no_defensive_unpacking.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_fe_no_ts_expect_error.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_pipeline_observability.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_business_event_logging.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_controller_authz.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_typed_injection.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_global_exception_filter.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_seeding_internal.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_hooks_frontend.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_singleton_settings_integrity.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_config_drift.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_hardcoded_currency.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_lint_performance.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_sales_order_lines.ps1
+	@powershell -ExecutionPolicy Bypass -Command "$$ErrorActionPreference = 'Stop'; Get-ChildItem -Path infra\tests\test_*.ps1 | ForEach-Object { Write-Host 'Running ' $$_.Name; & $$_.FullName; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE } }"
 
 test-data:
 	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
+
+test-heavy:
+	@powershell -ExecutionPolicy Bypass -Command "$$ErrorActionPreference = 'Stop'; Get-ChildItem -Path infra\heavy_tests\test_*.ps1 | ForEach-Object { Write-Host 'Running ' $$_.Name; & $$_.FullName; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE } }"
 
 test-all: test-api test-deps test-structural typecheck-portal test-data
 
@@ -472,6 +450,10 @@ verify-db: migrate-status
 verify-all: build-api verify-portal-api verify-db test-structural test-deps test-transform test-data
 
 test-structural-local:
+	@npm run lint -w apps/api
+	@npm run lint -w apps/ops-portal
+	@npm run typecheck -w apps/api
+	@npm run typecheck -w apps/ops-portal
 	@npm run lint:oas -w apps/api
 	@powershell -ExecutionPolicy Bypass -Command "$$ErrorActionPreference = 'Stop'; Get-ChildItem -Path infra\tests\test_*.ps1 | ForEach-Object { Write-Host 'Running ' $$_.Name; if ($$_.Name -eq 'test_docker_log_shipping.ps1') { & $$_.FullName -SkipLive } else { & $$_.FullName }; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE } }"
 

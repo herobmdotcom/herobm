@@ -3,6 +3,7 @@ import {
   IEnrichmentProvider,
   EnrichmentResult,
 } from './enrichment-provider.interface';
+import { getErrorMessage } from '@modbm/shared';
 
 import { IntegrationLoggerService } from '../../common/integration-logger.service';
 
@@ -24,7 +25,7 @@ export class TaxJarProvider implements IEnrichmentProvider {
     return 'global';
   }
 
-  getConfigSchema(): Record<string, any> {
+  getConfigSchema(): Record<string, unknown> {
     return {
       type: 'object',
       properties: {
@@ -71,8 +72,8 @@ export class TaxJarProvider implements IEnrichmentProvider {
   }
 
   async lookup(
-    payload: string | Record<string, any>,
-    config?: Record<string, any>,
+    payload: string | Record<string, unknown>,
+    config?: Record<string, unknown>,
   ): Promise<EnrichmentResult> {
     if (typeof payload === 'string') {
       return {
@@ -81,7 +82,7 @@ export class TaxJarProvider implements IEnrichmentProvider {
       };
     }
 
-    const apiKey = config?.apiKey || process.env.TAXJAR_API_KEY;
+    const apiKey = (config?.apiKey as string) || process.env.TAXJAR_API_KEY;
     if (!apiKey) {
       this.logger.error(
         'TaxJar API key is missing from config and environment',
@@ -134,8 +135,8 @@ export class TaxJarProvider implements IEnrichmentProvider {
         isValid: true,
         data: data.tax, // Return the tax object directly
       };
-    } catch (error: any) {
-      this.logger.error(`Failed to reach TaxJar: ${error.message}`);
+    } catch (error: unknown) {
+      this.logger.error(`Failed to reach TaxJar: ${getErrorMessage(error)}`);
       return {
         isValid: false,
         data: { error: 'Network error communicating with TaxJar' },
@@ -144,8 +145,8 @@ export class TaxJarProvider implements IEnrichmentProvider {
   }
 
   async recordTransaction(
-    payload: Record<string, any>,
-    config?: Record<string, any>,
+    payload: Record<string, unknown>,
+    config?: Record<string, unknown>,
   ): Promise<EnrichmentResult> {
     const apiKey = config?.apiKey as string;
     if (!apiKey) return { isValid: false, data: { error: 'Missing API key' } };
@@ -188,15 +189,17 @@ export class TaxJarProvider implements IEnrichmentProvider {
         data.order,
       );
       return { isValid: true, data: data.order };
-    } catch (error: any) {
-      this.logger.error(`Failed to record transaction: ${error.message}`);
+    } catch (error: unknown) {
+      this.logger.error(
+        `Failed to record transaction: ${getErrorMessage(error)}`,
+      );
       return { isValid: false, data: { error: 'Network error' } };
     }
   }
 
   async recordRefund(
-    payload: Record<string, any>,
-    config?: Record<string, any>,
+    payload: Record<string, unknown>,
+    config?: Record<string, unknown>,
   ): Promise<EnrichmentResult> {
     const apiKey = config?.apiKey as string;
     if (!apiKey) return { isValid: false, data: { error: 'Missing API key' } };
@@ -236,8 +239,8 @@ export class TaxJarProvider implements IEnrichmentProvider {
       const data = await response.json();
       this.logger.log(`Refund recorded successfully in TaxJar`, data.refund);
       return { isValid: true, data: data.refund };
-    } catch (error: any) {
-      this.logger.error(`Failed to record refund: ${error.message}`);
+    } catch (error: unknown) {
+      this.logger.error(`Failed to record refund: ${getErrorMessage(error)}`);
       return { isValid: false, data: { error: 'Network error' } };
     }
   }

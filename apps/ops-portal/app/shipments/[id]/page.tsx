@@ -123,8 +123,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
                 ) : (
                   <>
                     {/* eslint-disable-next-line i18next/no-literal-string */}
-            <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
-            {/* eslint-enable i18next/no-literal-string */}
+                    <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
                     {tCommon('cancel')}
                   </>
                 )}
@@ -141,7 +140,6 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
             <h3 className="section-heading flex items-center gap-2 truncate">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined shrink-0">local_shipping</span>
-              {/* eslint-enable i18next/no-literal-string */}
               <span className="truncate">{t('shipmentDetails')}</span>
             </h3>
             <button
@@ -208,7 +206,6 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
             <h3 className="section-heading flex items-center gap-2">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined shrink-0">list_alt</span>
-              {/* eslint-enable i18next/no-literal-string */}
               <span>{t('lineItems')}</span>
             </h3>
           </div>

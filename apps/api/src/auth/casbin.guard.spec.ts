@@ -39,6 +39,7 @@ function resolveCasbinAsset(filename: string): string {
  * Helper to build a mock ExecutionContext with configurable metadata and request.
  */
 function createMockContext(opts: {
+  // modbm-allow-record-any
   metadata?: Record<string, any>;
   user?: { userId: string; username: string; role: string } | null;
 }): ExecutionContext {
@@ -58,6 +59,7 @@ function createMockContext(opts: {
     __handler: handler,
     __classRef: classRef,
   } as unknown as ExecutionContext & {
+    // modbm-allow-record-any
     __metadata: Record<string, any>;
     __handler: any;
     __classRef: any;

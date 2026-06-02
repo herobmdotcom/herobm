@@ -60,6 +60,7 @@ describe('API E2E — Purchase Invoices', () => {
       .post('/api/suppliers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        address1Country: 'AU',
         vendorNumber: `E2E-VEND-${Date.now()}`,
         name: 'E2E Test Vendor for Invoices',
         defaultApAccountId: apAccount.glAccountId,

@@ -392,7 +392,7 @@ describe('OrdersWriteService', () => {
         throw new Error('Should have thrown');
       } catch (e: unknown) {
         // PG error for check constraint violation is 23514
-        const code = getErrorMessage(e) || e.cause?.code;
+        const code = getErrorMessage(e) || (e as any).cause?.code;
         expect(code).toBe('23514');
       }
 
@@ -428,7 +428,8 @@ describe('OrdersWriteService', () => {
         await service.create(validDto, 'admin');
         throw new Error('Should have thrown');
       } catch (e: unknown) {
-        const msg = getErrorMessage(e) + ' ' + (e.cause?.message || '');
+        const msg =
+          getErrorMessage(e) + ' ' + ((e as any).cause?.message || '');
         expect(msg.toLowerCase()).toContain('duplicate');
       }
     });

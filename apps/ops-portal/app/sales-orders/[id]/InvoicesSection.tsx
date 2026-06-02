@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import * as api from '@modbm/sdk';
 import { formatAmount } from '@/lib/currency';
@@ -243,7 +244,9 @@ export default function InvoicesSection({
                     <div key={inv.invoiceId} style={{ marginBottom: 12, padding: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card, #fff)' }}>
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                                <strong style={{ fontSize: 13 }}>{inv.invoiceNumber}</strong>
+                                <Link href={`/sales-invoices/${inv.invoiceId}`} className="text-[var(--accent)] hover:underline">
+                                    <strong style={{ fontSize: 13 }}>{inv.invoiceNumber}</strong>
+                                </Link>
                             </div>
                             <button
                                 className="btn btn-secondary btn-sm"

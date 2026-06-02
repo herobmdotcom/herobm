@@ -10,7 +10,7 @@ import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { pollOutbox, processEvent } from '../src/relay.service';
 
-import { outbox, modbmCore, accounts } from '../src/schema';
+import { outbox, modbmCore, accounts, webhooks } from '../src/schema';
 
 describe('Worker E2E - Outbox Integration', () => {
   let pgClient: postgres.Sql;
@@ -18,10 +18,6 @@ describe('Worker E2E - Outbox Integration', () => {
   let queue: Queue;
   let worker: Worker;
   
-  // Mock the External client
-  const mockExtClient = {
-    syncInvoice: vi.fn().mockResolvedValue({ externalId: 'EXT-CUST-123' })
-  };
 
   beforeAll(async () => {
     const pgUser = process.env.POSTGRES_USER;
@@ -31,7 +27,7 @@ describe('Worker E2E - Outbox Integration', () => {
     const pgDb = process.env.POSTGRES_DB || 'custom_app';
 
     pgClient = postgres(`postgres://${pgUser}:${pgPass}@${pgHost}:${pgPort}/${pgDb}`);
-    db = drizzle(pgClient, { schema: { modbmCore, outbox, accounts } });
+    db = drizzle(pgClient, { schema: { modbmCore, outbox, accounts, webhooks } });
 
     const redisHost = process.env.REDIS_HOST || 'localhost';
     const redisPassword = process.env.REDIS_PASSWORD;
@@ -41,7 +37,7 @@ describe('Worker E2E - Outbox Integration', () => {
     
     // Explicitly pass db to processEvent! (Solves ADV-062)
     worker = new Worker('external-sync-test-2', async (job) => {
-      await processEvent(job, mockExtClient, db);
+      await processEvent(job, db);
     }, { connection });
     
     await worker.waitUntilReady();
@@ -53,55 +49,6 @@ describe('Worker E2E - Outbox Integration', () => {
     await pgClient.end();
   });
 
-  it('should process sales_invoiced event and JIT sync customer', async () => {
-    const testEventId = randomUUID();
-    const testCustomerId = randomUUID();
-
-    // Setup an account record to be JIT-synced
-    await db.insert(accounts).values({
-      accountId: testCustomerId,
-      accountNumber: `E2E-${randomUUID().substring(0,8)}`,
-      name: 'E2E Corp',
-      currencyCode: 'AUD',
-      externalId: null,
-    });
-    
-    await db.insert(outbox).values({
-      outboxId: testEventId,
-      aggregateType: 'sales_order',
-      aggregateId: randomUUID(),
-      eventType: 'sales_invoiced',
-      payload: {
-        customerId: testCustomerId,
-        customerName: 'E2E Corp'
-      }
-    });
-
-    const jobCompletionPromise = new Promise<{ jobId: string }>((resolve) => {
-      worker.on('completed', (job) => {
-        if (job.id === testEventId) resolve({ jobId: job.id });
-      });
-    });
-
-    await pollOutbox(db, queue);
-    const { jobId } = await jobCompletionPromise;
-
-    expect(jobId).toBe(testEventId); 
-
-    expect(mockExtClient.syncInvoice).toHaveBeenCalledWith({
-       customer_name: 'E2E Corp',
-       customer_type: 'Company',
-       customer_group: 'Commercial',
-       territory: 'All Territories'
-    });
-
-    // Check that DB was actually updated!
-    const accountCheck = await db.select().from(accounts).where(eq(accounts.accountId, testCustomerId));
-    expect(accountCheck[0].externalId).toBe('EXT-CUST-123');
-
-    const dbCheck = await db.select().from(outbox).where(eq(outbox.outboxId, testEventId));
-    expect(dbCheck[0].processedAt).not.toBeNull();
-  });
 
   it('should leave processedAt null if BullMQ crashes or sync fails (ADV-064)', async () => {
     const pEventId = randomUUID();
@@ -110,7 +57,7 @@ describe('Worker E2E - Outbox Integration', () => {
       outboxId: pEventId,
       aggregateType: 'sales_order',
       aggregateId: randomUUID(),
-      eventType: 'sales_invoiced',
+      eventType: 'sales_order.created',
       payload: {
         customerId: randomUUID(),
         customerName: 'Fail Corp'
@@ -131,5 +78,67 @@ describe('Worker E2E - Outbox Integration', () => {
     expect(dbCheck[0].lockedUntil).toBeNull();
 
     spy.mockRestore();
+  });
+
+  it('should process event and dispatch to matching webhook', async () => {
+    const testEventId = randomUUID();
+    const testWebhookId = randomUUID();
+
+    // 1. Insert a webhook
+    await db.insert(webhooks).values({
+      webhookId: testWebhookId,
+      targetUrl: 'https://e2e-webhook.test/endpoint',
+      secretKey: 'e2e-secret',
+      eventTypes: ['sales_order.created'],
+      isActive: true,
+      description: 'E2E Test Webhook',
+      createdOn: new Date(),
+      modifiedOn: new Date()
+    });
+
+    // 2. Insert outbox event
+    await db.insert(outbox).values({
+      outboxId: testEventId,
+      aggregateType: 'sales_order',
+      aggregateId: randomUUID(),
+      eventType: 'sales_order.created',
+      payload: {
+        orderNumber: 'SO-E2E'
+      }
+    });
+
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      status: 200,
+    } as Response);
+
+    const jobCompletionPromise = new Promise<{ jobId: string }>((resolve) => {
+      worker.on('completed', (job) => {
+        if (job.id === testEventId) resolve({ jobId: job.id });
+      });
+    });
+
+    await pollOutbox(db, queue);
+    const { jobId } = await jobCompletionPromise;
+
+    expect(jobId).toBe(testEventId);
+
+    // 3. Verify fetch was called
+    expect(fetchSpy).toHaveBeenCalledWith('https://e2e-webhook.test/endpoint', expect.objectContaining({
+      method: 'POST',
+      headers: expect.objectContaining({
+        'Content-Type': 'application/json',
+        'x-modbm-signature': expect.any(String)
+      }),
+      body: expect.stringContaining('"type":"sales_order.created"')
+    }));
+
+    // 4. Verify outbox processedAt
+    const dbCheck = await db.select().from(outbox).where(eq(outbox.outboxId, testEventId));
+    expect(dbCheck[0].processedAt).not.toBeNull();
+    
+    // Cleanup
+    await db.delete(webhooks).where(eq(webhooks.webhookId, testWebhookId));
+    fetchSpy.mockRestore();
   });
 });

@@ -7,10 +7,13 @@
  */
 
 export interface GlAccountResponseDto {
-  accountId: string;
+  glAccountId: string;
   accountCode: string;
   name: string;
   accountType: string;
   isGroup: boolean;
   isActive: boolean;
+  /** @nullable */
+  parentAccountId?: string | null;
+  isSystem?: boolean;
 }

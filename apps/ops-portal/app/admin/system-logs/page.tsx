@@ -102,7 +102,7 @@ export default function SystemLogsPage() {
                 <option value="api">{t('filters.services.api')}</option>
                 <option value="worker">{t('filters.services.worker')}</option>
                 <option value="postgres">{t('filters.services.postgres')}</option>
-                <option value="integration">Integration Engine</option>
+                <option value="integration">{t('filters.services.integration')}</option>
               </select>
             </div>
             <div className="flex items-center gap-2 text-xs">

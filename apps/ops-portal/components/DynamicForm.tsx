@@ -3,7 +3,9 @@ import { FormField } from './shared/FormField';
 
 export interface DynamicFormProps {
   schema: any;
+  // modbm-allow-record-any
   data: Record<string, any>;
+  // modbm-allow-record-any
   onChange: (data: Record<string, any>) => void;
   readOnly?: boolean;
 }

@@ -32,6 +32,7 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 import { CreateWebhookDto, UpdateWebhookDto, WebhookResponseDto } from './dto';
+import { OUTBOX_EVENT_TYPES } from '../common/event-types';
 
 @ApiTags('Webhooks')
 @ApiBearerAuth()
@@ -50,6 +51,18 @@ export class WebhooksController {
   @ApiOkResponse({ type: [WebhookResponseDto] })
   async list() {
     return this.db.select().from(webhooks);
+  }
+
+  @Get('events')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'List Available Events',
+    description:
+      'Retrieves all possible event types that webhooks can subscribe to.',
+  })
+  @ApiOkResponse({ type: [String] })
+  async listEvents() {
+    return Array.from(OUTBOX_EVENT_TYPES).sort();
   }
 
   @Post()

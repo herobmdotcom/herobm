@@ -12,6 +12,7 @@ export interface PendingPutawayResponseDto {
   referenceNumber: string;
   productId: string;
   productName: string;
+  productNumber: string;
   quantity: string;
   putawayStatus: string;
   locationId: string;

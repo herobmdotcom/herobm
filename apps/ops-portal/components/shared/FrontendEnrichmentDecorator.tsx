@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import * as api from '@modbm/sdk';
 import { getErrorMessage } from '@modbm/shared';
+import { useTranslations } from 'next-intl';
 import { useSettings } from '../SettingsProvider'; // We'll just fetch appConfig directly since SettingsContext doesn't have it
 
 interface FrontendEnrichmentDecoratorProps {
@@ -26,10 +27,18 @@ export function FrontendEnrichmentDecorator({
   
   const lastEnrichedValue = useRef<string>(value);
   const [loadingConfig, setLoadingConfig] = useState(true);
+  const mountedRef = useRef(true);
+  const tEnrichment = useTranslations('common.enrichment');
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Load config on mount to see if this field+country has a provider
   useEffect(() => {
-    let mounted = true;
     async function loadConfig() {
       try {
         setLoadingConfig(true);
@@ -38,13 +47,13 @@ export function FrontendEnrichmentDecorator({
         const mappings = config.enrichmentProviderMappings || {};
         const mappedProvider = mappings[field]?.[country];
         
-        if (mounted) {
+        if (mountedRef.current) {
           setProvider(mappedProvider || null);
         }
       } catch (err) {
         // silently ignore config load errors
       } finally {
-        if (mounted) setLoadingConfig(false);
+        if (mountedRef.current) setLoadingConfig(false);
       }
     }
     
@@ -55,7 +64,7 @@ export function FrontendEnrichmentDecorator({
       setLoadingConfig(false);
     }
     
-    return () => { mounted = false; };
+    // No cleanup needed here since we use mountedRef globally for the component
   }, [field, country]);
 
   // Watch for value changes
@@ -75,22 +84,23 @@ export function FrontendEnrichmentDecorator({
 
   // Trigger lookup when saving
   useEffect(() => {
-    let mounted = true;
-    
     async function performLookup() {
       setStatus('loading');
       setErrorMsg('');
       
       try {
-        const res = (await api.enrichmentControllerLookup({
-          field,
-          country,
-          query: value,
-        })) as any;
+        const [res] = await Promise.all([
+          api.enrichmentControllerLookup({
+            field,
+            country,
+            query: value,
+          }) as any,
+          new Promise((resolve) => setTimeout(resolve, 300)) // Ensure spinner is visible for at least 300ms
+        ]);
 
         const responseData = res.data ?? res;
 
-        if (mounted) {
+        if (mountedRef.current) {
           if (responseData && responseData.isValid) {
             setStatus('success');
             lastEnrichedValue.current = value;
@@ -102,7 +112,7 @@ export function FrontendEnrichmentDecorator({
           }
         }
       } catch (err) {
-        if (mounted) {
+        if (mountedRef.current) {
           setStatus('error');
           setErrorMsg(getErrorMessage(err) || 'Lookup failed');
           lastEnrichedValue.current = value;
@@ -113,8 +123,6 @@ export function FrontendEnrichmentDecorator({
     if (provider && isSaving && status === 'pending' && value.trim() !== '') {
       performLookup();
     }
-    
-    return () => { mounted = false; };
   }, [isSaving, status, value, provider, field, country, onEnrich]);
 
   // Render logic
@@ -125,28 +133,32 @@ export function FrontendEnrichmentDecorator({
   return (
     <span 
       className="inline-flex items-center ml-2 relative group" 
-      title={provider ? `Enrichment provided by ${provider}` : ''}
+      title={provider ? tEnrichment('providedBy', { provider }) : ''}
     >
       {status === 'pending' && (
-        <span className="material-symbols-outlined text-[14px] text-amber-500 cursor-help" title="Will verify on save">
+        /* eslint-disable-next-line i18next/no-literal-string */
+        <span className="material-symbols-outlined text-[14px] text-amber-500 cursor-help" title={tEnrichment('willVerifyOnSave')}>
           pending
         </span>
       )}
       
       {status === 'loading' && (
+        /* eslint-disable-next-line i18next/no-literal-string */
         <span className="material-symbols-outlined text-[14px] text-blue-500 animate-spin">
           sync
         </span>
       )}
       
       {status === 'success' && (
-        <span className="material-symbols-outlined text-[14px] text-emerald-500 cursor-help" title="Verified">
+        /* eslint-disable-next-line i18next/no-literal-string */
+        <span className="material-symbols-outlined text-[14px] text-emerald-500 cursor-help" title={tEnrichment('verified')}>
           check_circle
         </span>
       )}
       
       {status === 'error' && (
-        <span className="material-symbols-outlined text-[14px] text-red-500 cursor-help" title={`Verification failed: ${errorMsg}`}>
+        /* eslint-disable-next-line i18next/no-literal-string */
+        <span className="material-symbols-outlined text-[14px] text-red-500 cursor-help" title={tEnrichment('verificationFailed', { errorMsg })}>
           error
         </span>
       )}

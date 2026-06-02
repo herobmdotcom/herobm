@@ -69,7 +69,7 @@ const SEEDS = [
     contexts: ['sales-return'],
     description:
       'System default template for generating Credit Notes for returned customer goods.',
-    templatePath: '../../../../tools/seeds/reports/sales-return-credit.typ',
+    templatePath: '../../../../tools/seeds/reports/sales-credit.typ',
     outputPattern: 'Credit-{{returnNumber}}.pdf',
   },
   {
@@ -142,8 +142,9 @@ async function seed() {
         try {
           typstContent = readFileSync(absolutePath, 'utf8');
         } catch (e) {
-          console.warn('Missing template', absolutePath);
-          typstContent = '';
+          throw new Error(
+            `Failed to read template for ${seedData.slug} at ${absolutePath}`,
+          );
         }
       }
 

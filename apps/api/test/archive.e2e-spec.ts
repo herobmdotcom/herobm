@@ -147,6 +147,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .post('/api/customers')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          address1Country: 'AU',
           customerNumber: `E2E-ARCH-ACCT-${Date.now()}`,
           name: 'E2E Archive Test Account',
         })
@@ -517,6 +518,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .post('/api/suppliers')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          address1Country: 'AU',
           vendorNumber: `E2E-ARCH-SUP-${Date.now()}`,
           name: 'E2E Archive Test Supplier',
         })

@@ -93,6 +93,7 @@ describe('Audit Events (e2e)', () => {
         .post('/api/customers')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          address1Country: 'AU',
           customerNumber: `AUDIT-CUST-${Date.now()}`,
           name: 'Original Name',
         });

@@ -34,7 +34,8 @@ import {
   GeneralLedgerResponseDto,
   SettingsResponseDto,
   SuccessMessageResponseDto,
-  ArrayResponseDto,
+  ChartFileDto,
+  SettingsFileDto,
   CreateAccountRequestDto,
   UpdateAccountRequestDto,
   SeedRequestDto,
@@ -285,7 +286,7 @@ export class GlController {
   })
   @ApiBody({ schema: { type: 'object', additionalProperties: true } })
   @ApiOkResponse({ type: SettingsResponseDto })
-  async updateSettings(@Body() body: Record<string, any>) {
+  async updateSettings(@Body() body: Record<string, unknown>) {
     const updated = await this.glService.updateSettings(body);
     // Automatically reload app config cache since settings changed
     await this.appConfig.reload();
@@ -311,7 +312,7 @@ export class GlController {
     summary: 'List Charts',
     description: 'Get available predefined chart of accounts templates.',
   })
-  @ApiOkResponse({ type: ArrayResponseDto })
+  @ApiOkResponse({ type: [ChartFileDto] })
   async listCharts() {
     return this.coaLoader.listAvailableCharts();
   }
@@ -336,7 +337,7 @@ export class GlController {
     summary: 'List Tax Settings',
     description: 'Get available predefined tax configuration templates.',
   })
-  @ApiOkResponse({ type: ArrayResponseDto })
+  @ApiOkResponse({ type: [SettingsFileDto] })
   async listTaxSettingsFiles() {
     return this.coaLoader.listAvailableTaxSettings();
   }

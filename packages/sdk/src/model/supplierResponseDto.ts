@@ -20,8 +20,7 @@ export interface SupplierResponseDto {
   address1StateOrProvince: string | null;
   /** @nullable */
   address1PostalCode: string | null;
-  /** @nullable */
-  address1Country: string | null;
+  address1Country: string;
   /** @nullable */
   telephone1: string | null;
   /** @nullable */

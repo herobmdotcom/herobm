@@ -785,7 +785,7 @@ export class BackordersService {
     newState: string,
     actor: string,
     tx?: DrizzleDB,
-    additionalFields: Record<string, any> = {},
+    additionalFields: Record<string, unknown> = {},
   ) {
     const db = tx || this.db;
 

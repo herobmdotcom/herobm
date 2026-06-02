@@ -37,6 +37,7 @@ import {
   SALES_INVOICE_TRANSITIONS,
   SALES_ORDER_STATE,
   getValidStates,
+  getErrorMessage,
 } from '@modbm/shared';
 
 const VALID_INVOICE_STATES = getValidStates(SALES_INVOICE_TRANSITIONS);
@@ -183,6 +184,7 @@ export class SalesInvoiceService {
         productCostCenterId: productGroups.defaultCostCenterId,
         productActivityId: productGroups.defaultActivityId,
         externalTaxCode: coreProducts.externalTaxCode,
+        productNumber: coreProducts.productNumber,
       })
       .from(salesOrderLineItems)
       .leftJoin(
@@ -261,18 +263,8 @@ export class SalesInvoiceService {
       let shippedQty = shippedQtyMap.get(line.salesOrderLineId) || 0;
 
       if (!isPhysical) {
-        const billingMode = this.appConfig.nonStockBillingMode();
-        if (billingMode === 'final_invoice') {
-          // Bill only on the final closing invoice
-          if (order.stateCode === SALES_ORDER_STATE.SHIPPED) {
-            shippedQty = orderedQty;
-          } else {
-            shippedQty = 0;
-          }
-        } else {
-          // Bill fully on the very first shipment
-          shippedQty = orderedQty;
-        }
+        // Non-physical products can be invoiced at any time, up to their ordered quantity
+        shippedQty = orderedQty;
       }
 
       // Determine how much to invoice dynamically
@@ -578,7 +570,9 @@ export class SalesInvoiceService {
       }
 
       // F. Record Transaction in External Engine if applicable
-      const orderTaxProvider = (order as any).taxProvider;
+      const mappings = this.appConfig.taxProviderMappings();
+      const orderTaxProvider = mappings[address1Country || 'US'] || 'internal';
+
       if (
         orderTaxProvider &&
         orderTaxProvider !== 'internal' &&
@@ -618,6 +612,8 @@ export class SalesInvoiceService {
           line_items: taxableLines.map((l) => {
             const payloadLine: any = {
               id: l.salesOrderLineId,
+              product_identifier: l.productNumber,
+              description: l.productDescription,
               quantity: l.quantity,
               unit_price: l.pricePerUnit,
               discount:
@@ -643,13 +639,13 @@ export class SalesInvoiceService {
           this.logger.log(
             `Transaction recorded in ${orderTaxProvider} for invoice ${invoiceNumber}`,
           );
-        } catch (e: any) {
+        } catch (e: unknown) {
           this.logger.error(
             `Failed to record transaction in ${orderTaxProvider}`,
             e,
           );
           throw new BadRequestException(
-            `Failed to record transaction in ${orderTaxProvider}: ${e.message}`,
+            `Failed to record transaction in ${orderTaxProvider}: ${getErrorMessage(e)}`,
           );
         }
       }

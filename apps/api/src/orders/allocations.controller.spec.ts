@@ -133,7 +133,7 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
       { binId: BIN_OTHER2, productId: PROD_ID, actualQuantity: '12' },
     ]);
 
-    const { data } = await controller.getOpenDemands();
+    const data = await controller.getOpenDemands();
     expect(data).toHaveLength(1);
     const row = data[0];
     expect(row.availableElsewhere).toBeDefined();
@@ -162,7 +162,7 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
       { binId: BIN_OTHER2, productId: PROD_ID, actualQuantity: '0' },
     ]);
 
-    const { data } = await controller.getOpenDemands();
+    const data = await controller.getOpenDemands();
     const elsewhere = data[0].availableElsewhere;
     expect(elsewhere).toHaveLength(1);
     expect(elsewhere[0].locationId).toBe(LOC_OTHER1);
@@ -190,7 +190,7 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
       { binId: BIN_OTHER1, productId: PROD_ID, actualQuantity: '5' },
     ]);
 
-    const { data } = await controller.getOpenDemands();
+    const data = await controller.getOpenDemands();
     const ids = data[0].availableElsewhere.map((e: any) => e.locationId);
     expect(ids).not.toContain(LOC_MAIN);
     expect(ids).toContain(LOC_OTHER1);
@@ -198,7 +198,7 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
 
   it('returns an empty availableElsewhere array when no other location has stock', async () => {
     // No bin_contents inserted at all
-    const { data } = await controller.getOpenDemands();
+    const data = await controller.getOpenDemands();
     expect(data[0].availableElsewhere).toEqual([]);
   });
 });

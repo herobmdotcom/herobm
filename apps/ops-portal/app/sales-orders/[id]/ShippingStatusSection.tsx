@@ -92,7 +92,6 @@ export default function ShippingStatusSection({ orderId }: Props) {
                 <h3 className="section-heading">
                     {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="material-symbols-outlined">local_shipping</span>
-                    {/* eslint-enable i18next/no-literal-string */}
                     {tShipping('title')}
                 </h3>
                 <div className="flex items-center gap-2">
@@ -103,7 +102,6 @@ export default function ShippingStatusSection({ orderId }: Props) {
                         <span className="text-xs font-bold text-[var(--success)]">
                             {/* eslint-disable-next-line i18next/no-literal-string */}
                             <span className="material-symbols-outlined text-sm align-middle mr-0.5">check_circle</span>
-                            {/* eslint-enable i18next/no-literal-string */}
                             {tShipping('fullyShipped')}
                         </span>
                     )}
@@ -160,19 +158,16 @@ export default function ShippingStatusSection({ orderId }: Props) {
                                     <>
                                         {/* eslint-disable-next-line i18next/no-literal-string */}
                                         <span className="material-symbols-outlined text-[var(--success)] text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                                        {/* eslint-enable i18next/no-literal-string */}
                                     </>
                                 ) : available > 0 ? (
                                     <>
                                         {/* eslint-disable-next-line i18next/no-literal-string */}
                                         <span className="material-symbols-outlined text-[var(--warning)] text-base">pending</span>
-                                        {/* eslint-enable i18next/no-literal-string */}
                                     </>
                                 ) : (
                                     <>
                                         {/* eslint-disable-next-line i18next/no-literal-string */}
                                         <span className="material-symbols-outlined text-[var(--text-muted)] text-base">hourglass_empty</span>
-                                        {/* eslint-enable i18next/no-literal-string */}
                                     </>
                                 )}
                             </td>
@@ -202,11 +197,20 @@ export default function ShippingStatusSection({ orderId }: Props) {
                                 </div>
                                 <div className="shrink-0 flex items-center">
                                     {fullyShipped ? (
-                                        <span className="material-symbols-outlined text-[var(--success)] text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                                        /* eslint-disable-next-line i18next/no-literal-string */
+                                        <span className="material-symbols-outlined text-[var(--success)] text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                                            check_circle
+                                        </span>
                                     ) : available > 0 ? (
-                                        <span className="material-symbols-outlined text-[var(--warning)] text-[20px]">pending</span>
+                                        /* eslint-disable-next-line i18next/no-literal-string */
+                                        <span className="material-symbols-outlined text-[var(--warning)] text-[20px]">
+                                            pending
+                                        </span>
                                     ) : (
-                                        <span className="material-symbols-outlined text-[var(--text-muted)] text-[20px]">hourglass_empty</span>
+                                        /* eslint-disable-next-line i18next/no-literal-string */
+                                        <span className="material-symbols-outlined text-[var(--text-muted)] text-[20px]">
+                                            hourglass_empty
+                                        </span>
                                     )}
                                 </div>
                             </div>
@@ -243,7 +247,6 @@ export default function ShippingStatusSection({ orderId }: Props) {
                                 <div className="flex items-center gap-3">
                                     {/* eslint-disable-next-line i18next/no-literal-string */}
                                     <span className="material-symbols-outlined text-[var(--text-muted)] text-lg">inventory_2</span>
-                                    {/* eslint-enable i18next/no-literal-string */}
                                     <div>
                                         <div className="font-bold text-sm text-[var(--text-primary)]">{shipment.shipmentNumber}</div>
                                         <div className="text-xs text-[var(--text-muted)]">

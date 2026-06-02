@@ -1,6 +1,26 @@
 {
   "admin": {
     "common": {
+      "ea": "ea",
+      "confirming": "Confirming...",
+      "availability": {
+        "avail": "Avail",
+        "onHand": "On Hand",
+        "cmt": "Cmt",
+        "in": "In"
+      },
+      "enrichment": {
+        "nameUpdated": "Customer name automatically updated from provider",
+        "taxUpdated": "Tax registration automatically updated from provider"
+      },
+      "about": "About",
+      "close": "Close",
+      "configure": "Configure",
+      "cancel": "Cancel",
+      "save": "Save",
+      "delete": "Delete",
+      "prefix": "Prefix",
+      "created": "Created",
       "actions": "Actions",
       "code": "Code",
       "defActivity": "Def. Activity",
@@ -15,114 +35,47 @@
       },
       "financial": "Financial",
       "name": "Name",
+      "no": "No",
+      "noRecordsFound": "No records found",
       "notConfigured": "Not configured",
-      "system": "System"
-    },
-    "customerGroups": {
-      "definedGroups": "Defined Groups",
-      "discountRules": "Discount Rules",
-      "manage": "Manage",
-      "newGroup": "+ New Group",
-      "noGroups": "No customer groups defined.",
-      "notConfigured": "Not configured",
-      "placeholders": {
-        "code": "e.g. WHL",
-        "name": "e.g. Wholesale"
-      },
-      "saveToManage": "Save to manage",
-      "subtitle": "Manage group classifications for customer customers",
-      "title": "Customer Groups",
-      "toasts": {
-        "created": "Group created",
-        "deleted": "Group deleted",
-        "loadFailed": "Failed to load groups",
-        "requiredFields": "Code and Name are required",
-        "updated": "Group updated"
-      }
-    },
-    "discountMatrix": {
-      "baseDiscount": "Base Default Discount",
-      "baseDiscountHint": "Applies to all product groups unless overridden below",
-      "discountPercent": "Discount %",
-      "noProductGroupRules": "No product-group-specific overrides defined.",
-      "productGroup": "Product Group",
-      "productGroupRules": "Product Group Overrides",
-      "selectProductGroup": "\u2014 Select product group \u2014",
-      "title": "Discount Rules",
-      "toasts": {
-        "deleted": "Discount rule deleted",
-        "saved": "Discount rule saved"
-      }
-    },
-    "eventQueue": {
-      "actions": {
-        "clear": "Clear",
-        "hide": "Hide",
-        "view": "View"
-      },
-      "autoRefresh": "Auto-refresh (5s)",
-      "columns": {
-        "actions": "Actions",
-        "aggregate": "Aggregate",
-        "eventType": "Event Type",
-        "failed": "Failed",
-        "payload": "Payload",
-        "pending": "Pending",
-        "processed": "Processed",
-        "processedAt": "Processed At",
-        "status": "Status",
-        "timestamp": "Timestamp",
-        "total": "Total"
-      },
-      "confirmClear": "Clear all pending \"{type}\" events from the outbox?",
-      "drawer": {
-        "errorLabel": "Error:",
-        "loading": "Loading events...",
-        "noEvents": "No events of this type found."
-      },
-      "errors": {
-        "clearFailed": "Failed to clear events",
-        "loadFailed": "Failed to load sync data"
-      },
-      "eventTypes": "Event Types",
-      "loading": "Loading event queue...",
-      "noEvents": "No outbox events found. Generate invoices to see sync activity.",
-      "recentEvents": "Recent Events ({count})",
-      "refresh": "Refresh",
-      "status": {
-        "allSynced": "All synced",
-        "errors": "{count} Error(s)",
-        "pending": "{count} pending"
-      },
-      "subtitle": "Visibility into external system synchronization events",
-      "summary": {
-        "failed": "Failed",
-        "pending": "Pending",
-        "processed": "Processed",
-        "total": "Total Events"
-      },
-      "title": "Event Queue"
-    },
-    "productGroups": {
-      "confirmDelete": "Are you sure you want to delete this group?",
-      "definedGroups": "Defined Groups",
-      "newGroup": "+ New Group",
-      "noGroups": "No product groups defined.",
-      "placeholders": {
-        "code": "Code",
-        "name": "Name"
-      },
-      "subtitle": "Manage group classifications for products and inventory",
-      "title": "Product Groups",
-      "toasts": {
-        "created": "Group created",
-        "deleted": "Group deleted",
-        "loadFailed": "Failed to load groups",
-        "requiredFields": "Code and Name are required",
-        "updated": "Group updated"
-      }
+      "system": "System",
+      "yes": "Yes",
+      "copiedToClipboard": "Copied to clipboard",
+      "copy": "Copy"
     },
     "reporting": {
+      "hooks": {
+        "toast": {
+          "success": "Updated successfully"
+        },
+        "actions": {
+          "editTemplate": "Edit Template"
+        },
+        "errors": {
+          "updateFailed": "Failed to update assignment: "
+        },
+        "importCoaModal": {
+          "importAction": "Import CoA",
+          "importing": "Importing...",
+          "loadingCharts": "Loading available charts...",
+          "noCharts": "No charts available.",
+          "selectPreset": "Select Preset"
+        },
+        "moduleTitle": "Reporting Hooks",
+        "subtitle": "Map standard actions (like printing an invoice) to specific templates.",
+        "table": {
+          "columns": {
+            "actions": "Actions",
+            "assignedTemplate": "Assigned Template",
+            "contextResolver": "Context Resolver",
+            "hookSlug": "Hook Slug"
+          },
+          "empty": "No system hooks registered in the database.",
+          "selectTemplate": "Select a template...",
+          "title": "Hook Mappings"
+        },
+        "title": "Hook Assignments"
+      },
       "errors": {
         "loading": "Loading template data...",
         "notFound": "Error: Template not found or unauthorized access logging in."
@@ -191,44 +144,202 @@
         "searchPlaceholder": "Search Typst templates...",
         "totalCount": "Total Templates"
       },
-      "hooks": {
-        "actions": {
-          "editTemplate": "Edit Template"
-        },
-        "errors": {
-          "updateFailed": "Failed to update assignment: "
-        },
-        "importCoaModal": {
-          "importAction": "Import CoA",
-          "importing": "Importing...",
-          "loadingCharts": "Loading available charts...",
-          "noCharts": "No charts available.",
-          "selectPreset": "Select Preset"
-        },
-        "moduleTitle": "Reporting Hooks",
-        "subtitle": "Map standard actions (like printing an invoice) to specific templates.",
-        "table": {
-          "columns": {
-            "actions": "Actions",
-            "assignedTemplate": "Assigned Template",
-            "contextResolver": "Context Resolver",
-            "hookSlug": "Hook Slug"
-          },
-          "empty": "No system hooks registered in the database.",
-          "selectTemplate": "Select a template...",
-          "title": "Hook Mappings"
-        },
-        "title": "Hook Assignments"
+      "title": "Reporting Templates",
+      "toast": {
+        "success": "Success"
+      }
+    },
+    "customerGroups": {
+      "definedGroups": "Defined Groups",
+      "discountRules": "Discount Rules",
+      "manage": "Manage",
+      "newGroup": "New Group",
+      "noGroups": "No customer groups defined.",
+      "notConfigured": "Not configured",
+      "placeholders": {
+        "code": "e.g. WHL",
+        "name": "e.g. Wholesale"
       },
-      "title": "Reporting Templates"
+      "saveToManage": "Save to manage",
+      "subtitle": "Manage group classifications for customer customers",
+      "title": "Customer Groups",
+      "toasts": {
+        "created": "Group created",
+        "deleted": "Group deleted",
+        "loadFailed": "Failed to load groups",
+        "requiredFields": "Code and Name are required",
+        "updated": "Group updated"
+      }
+    },
+    "developers": {
+      "allEvents": "* (All Events)",
+      "addWebhook": "Add Webhook",
+      "apiKeys": "API Keys",
+      "apiRateLimits": "API Rate Limits",
+      "appliesOnlyToApiKey": "Applies only to requests authenticated via API Key.",
+      "autoGenerated": "Auto-generated",
+      "copyApiKeyWarning": "API Key Created",
+      "createKey": "Create Key",
+      "customRoleSuffix": "(Custom Role)",
+      "events": "Events",
+      "maxRequestsPerMinute": "Max Requests per Minute",
+      "noApiKeysFound": "No API keys found.",
+      "noWebhooksFound": "No webhooks found.",
+      "revokeKey": "Revoke",
+      "roleAdmin": "Admin (Full Access)",
+      "roleAgent": "Agent (Read/Write)",
+      "roleLabel": "Role: {role}",
+      "roleViewer": "Viewer (Read-only)",
+      "roleWebhook": "Webhook (Receiver)",
+      "secretKey": "Secret Key",
+      "targetUrl": "Target URL",
+      "webhooks": "Webhooks",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "onlyTimeSecretShown": "This is the only time the secret will be shown. Please copy it now and store it securely."
+    },
+    "discountMatrix": {
+      "baseDiscount": "Base Default Discount",
+      "baseDiscountHint": "Applies to all product groups unless overridden below",
+      "discountPercent": "Discount %",
+      "noProductGroupRules": "No product-group-specific overrides defined.",
+      "productGroup": "Product Group",
+      "productGroupRules": "Product Group Overrides",
+      "selectProductGroup": "— Select product group —",
+      "title": "Discount Rules",
+      "toasts": {
+        "deleted": "Discount rule deleted",
+        "saved": "Discount rule saved"
+      }
+    },
+    "eventQueue": {
+      "actions": {
+        "clear": "Clear",
+        "hide": "Hide",
+        "view": "View"
+      },
+      "autoRefresh": "Auto-refresh (5s)",
+      "columns": {
+        "actions": "Actions",
+        "aggregate": "Aggregate",
+        "eventType": "Event Type",
+        "failed": "Failed",
+        "payload": "Payload",
+        "pending": "Pending",
+        "processed": "Processed",
+        "processedAt": "Processed At",
+        "status": "Status",
+        "timestamp": "Timestamp",
+        "total": "Total"
+      },
+      "confirmClear": "Clear all pending \"{type}\" events from the outbox?",
+      "drawer": {
+        "errorLabel": "Error:",
+        "loading": "Loading events...",
+        "noEvents": "No events of this type found."
+      },
+      "errors": {
+        "clearFailed": "Failed to clear events",
+        "loadFailed": "Failed to load sync data"
+      },
+      "eventTypes": "Event Types",
+      "loading": "Loading event queue...",
+      "noEvents": "No outbox events found. Generate invoices to see sync activity.",
+      "recentEvents": "Recent Events ({count})",
+      "refresh": "Refresh",
+      "status": {
+        "allSynced": "All synced",
+        "errors": "{count} Error(s)",
+        "pending": "{count} pending"
+      },
+      "subtitle": "Visibility into external system synchronization events",
+      "summary": {
+        "failed": "Failed",
+        "pending": "Pending",
+        "processed": "Processed",
+        "total": "Total Events"
+      },
+      "title": "Event Queue"
+    },
+    "integrations": {
+      "availableIntegrations": "Available Integrations",
+      "configuration": "Configuration",
+      "externalDataProvider": "External Data Provider",
+      "loadingIntegrations": "Loading integrations...",
+      "noIntegrationsFound": "No integrations found.",
+      "queryOrPayload": "Query or Payload (JSON)",
+      "routingRules": "Routing Rules",
+      "runTest": "Run Test",
+      "saveConfiguration": "Save Configuration",
+      "testConnection": "Test Connection",
+      "testFailed": "Test Failed",
+      "testSuccessful": "Test Successful",
+      "testing": "Testing...",
+      "close": "Close",
+      "configure": "Configure"
+    },
+    "productGroups": {
+      "confirmDelete": "Are you sure you want to delete this group?",
+      "definedGroups": "Defined Groups",
+      "newGroup": "New Group",
+      "noGroups": "No product groups defined.",
+      "placeholders": {
+        "code": "Code",
+        "name": "Name"
+      },
+      "subtitle": "Manage group classifications for products and inventory",
+      "title": "Product Groups",
+      "toasts": {
+        "created": "Group created",
+        "deleted": "Group deleted",
+        "loadFailed": "Failed to load groups",
+        "requiredFields": "Code and Name are required",
+        "updated": "Group updated"
+      }
+    },
+    "reconciliations": {
+      "allLinesMatched": "All bank statement lines are matched!",
+      "bankStatementLine": "Bank Statement Line",
+      "confirmMatch": "Confirm Match",
+      "confirming": "Confirming...",
+      "createEntry": "Create Entry",
+      "deposit": "Deposit",
+      "findMatch": "Find Match",
+      "journalEntry": "Journal Entry",
+      "ledgerAmount": "Ledger Amount",
+      "matchConfirmError": "Failed to confirm match",
+      "noAutoMatchDescription": "Search for an existing transaction in your ledger, or create a new journal entry to reconcile this bank line.",
+      "noAutoMatchFound": "No Automatic Match Found",
+      "noUnmatchedLines": "No unmatched ledger lines available.",
+      "noMemoProvided": "No memo provided",
+      "reconciliationActions": "Reconciliation Actions",
+      "searchLedger": "Search Ledger",
+      "selectBankLine": "Select a bank line from the list to view details or apply a match.",
+      "suggestedMatch": "Suggested Match",
+      "systemMatchFound": "System Match Found",
+      "unmatched": "Unmatched",
+      "withdrawal": "Withdrawal"
+    },
+    "roles": {
+      "allow": "Allow",
+      "createRole": "Create Role",
+      "deny": "Deny",
+      "inheritsFrom": "Inherits From:",
+      "inheritsLabel": "Inherits:",
+      "notApplicable": "N/A",
+      "roles": "Roles",
+      "saveRole": "Save Role",
+      "unset": "Unset",
+      "title": "Roles & Permissions",
+      "resource": "Resource",
+      "saveChanges": "Save Changes"
     },
     "settings": {
-      "fulfillmentHeading": "Default Fulfillment Location",
-      "none": "None",
       "actions": {
         "actions": "Actions",
         "addChild": "+ Child",
-        "addRootGroup": "+ Add Root Group",
+        "addRootGroup": "+ Root Group",
         "cancel": "Cancel",
         "configureMetadata": "Configure Metadata",
         "create": "Create",
@@ -242,6 +353,7 @@
       "activities": {
         "empty": "No activities defined. Create one to get started."
       },
+      "configuration": "Configuration",
       "confirmations": {
         "deleteActivity": "Are you sure you want to delete this activity?",
         "deleteCc": "Are you sure you want to delete this cost center?",
@@ -253,6 +365,7 @@
       "costCenters": {
         "empty": "No cost centers defined. Create one to get started."
       },
+      "fulfillmentHeading": "Default Fulfillment Location",
       "gl": {
         "customerFirst": "Customer first",
         "loading": "Loading GL customers...",
@@ -282,7 +395,7 @@
         "bankName": "Bank Name",
         "baseCurrency": "Base Currency",
         "buyRate": "Buy Rate",
-        "chartOfAccounts": "Chart of Customers",
+        "chartOfAccounts": "Chart of Accounts",
         "city": "City",
         "code": "Code",
         "companyName": "Company Name",
@@ -315,6 +428,7 @@
         "isDefault": "Default",
         "logoUrl": "Logo URL",
         "name": "Name",
+        "noRecordsFound": "No records found.",
         "phone": "Phone",
         "postCode": "Post Code",
         "rate": "Rate (%)",
@@ -329,6 +443,7 @@
         "type": "Type",
         "website": "Website"
       },
+      "none": "None",
       "placeholders": {
         "accountName": "Customer name",
         "activityCode": "e.g. DIR",
@@ -354,9 +469,12 @@
         "uomDescription": "e.g. Each",
         "website": "https://..."
       },
+      "queryOrPayload": "Query / Payload",
       "rates": {
         "empty": "No exchange rates defined. Create one to get started."
       },
+      "runTest": "Run Test",
+      "saveConfiguration": "Save Configuration",
       "sections": {
         "activities": "Activities",
         "bank": "Bank Details",
@@ -370,7 +488,10 @@
       },
       "subtitle": "Manage company details, GL defaults, tax codes, currencies and units of measure",
       "tax": {
-        "empty": "No tax codes defined. Create one to get started."
+        "empty": "No tax codes defined. Create one to get started.",
+        "percentage": "Percentage",
+        "fixed": "Fixed",
+        "exempt": "Exempt"
       },
       "taxTypes": {
         "exempt": "Exempt",
@@ -378,6 +499,8 @@
         "tax_applies": "Tax Applies",
         "zero_rated": "Zero Rated"
       },
+      "testFailed": "Test Failed",
+      "testSuccessful": "Test Successful",
       "title": "System Settings",
       "toasts": {
         "activityCreated": "Activity created",
@@ -431,6 +554,13 @@
         "updated": "Group updated"
       }
     },
+    "supplierInvoices": {
+      "customItem": "Custom Item",
+      "lineItemPrefix": "Line Item",
+      "matching": {
+        "unmatched": "Unmatched"
+      }
+    },
     "systemLogs": {
       "actions": {
         "copied": "Logs copied to clipboard!",
@@ -447,13 +577,14 @@
         "limit": "Limit:",
         "limits": {
           "100": "100 lines",
-          "1000": "1000 lines",
           "500": "500 lines",
+          "1000": "1000 lines",
           "5000": "5000 lines"
         },
         "service": "Service:",
         "services": {
           "api": "API",
+          "integration": "Integration Engine",
           "postgres": "PostgreSQL",
           "worker": "Outbox Worker"
         }
@@ -554,6 +685,8 @@
     "title": "Bin Contents"
   },
   "common": {
+    "copiedToClipboard": "Copied to clipboard",
+    "copy": "Copy",
     "actions": "Actions",
     "activityTimeline": "Activity Timeline",
     "add": "Add",
@@ -645,11 +778,20 @@
     "copying": "Copying...",
     "create": "Create",
     "created": "Created",
+    "custom": "custom",
     "default": "(Default)",
     "delete": "Delete",
     "deleted": "Deleted",
     "dismiss": "dismiss",
     "edit": "Edit",
+    "enrichment": {
+      "nameUpdated": "Supplier name automatically updated from provider",
+      "providedBy": "Enrichment provided by {provider}",
+      "taxUpdated": "Tax registration automatically updated from provider",
+      "verificationFailed": "Verification failed: {errorMsg}",
+      "verified": "Verified",
+      "willVerifyOnSave": "Will verify on save"
+    },
     "errorBoundary": {
       "contactSupport": "If the problem persists, please contact support.",
       "page": "Page: {path}",
@@ -672,7 +814,7 @@
       "failedToGenerateQuote": "Failed to generate quote",
       "failedToGenerateReport": "Failed to generate report",
       "failedToLoadExpiries": "Failed to load expiries",
-      "failedToLoadOrder": "Failed to load order",
+      "failedToLoadOrder": "Invoice not found.",
       "failedToPickAll": "Failed to pick all",
       "failedToRemoveLine": "Failed to remove line",
       "failedToRemoveReturnLine": "Failed to remove return line",
@@ -730,6 +872,7 @@
       "last30Days": "Last 30 Days",
       "last90Days": "Last 90 Days"
     },
+    "goBackHome": "Go Back Home",
     "grid": {
       "all": "All",
       "columns": "Columns",
@@ -752,10 +895,16 @@
     "loadingEllipsis": "Loading...",
     "location": "Location",
     "na": "N/A",
+    "no": "No",
     "noEvents": "No events recorded",
     "noMatchingResults": "No matching results",
     "none": "(None)",
     "notConfigured": "Not configured",
+    "notFound": {
+      "backHome": "Back to Home",
+      "description": "The page you are looking for could not be found.",
+      "title": "404 - Not Found"
+    },
     "notesCardHeading": "Notes",
     "notesCardPlaceholder": "Internal notes",
     "options": {
@@ -777,6 +926,9 @@
       "total": "Total",
       "untitledOrder": "Untitled order"
     },
+    "pageNotFound": "Page Not Found",
+    "pageNotFoundDescription": "The page you are looking for does not exist.",
+    "pending": "Pending",
     "placeholders": {
       "number": "e.g., P-1000",
       "quantity": "0"
@@ -847,7 +999,45 @@
     "total": "Total",
     "unknown": "Unknown",
     "unknownProduct": "Unknown Product",
-    "updated": "Updated"
+    "updated": "Updated",
+    "yes": "Yes",
+    "resource": "Resource",
+    "saveChanges": "Save Changes",
+    "close": "Close",
+    "configure": "Configure",
+    "ea": "EA",
+    "products": {
+      "tabs": {
+        "kitComponents": "Kit Components"
+      },
+      "storage": {
+        "toastLinkUpdated": "Bin configuration updated"
+      },
+      "cards": {
+        "identity": "Identity",
+        "classification": "Classification",
+        "taxation": "Taxation"
+      },
+      "types": {
+        "freight": "Freight"
+      },
+      "structureType": "Structure",
+      "structures": {
+        "standard": "Standard",
+        "kit": "Kit"
+      },
+      "columns": {
+        "externalTaxCode": "External Tax Code"
+      }
+    },
+    "purchaseOrders": {
+      "placeholders": {
+        "searchProduct": "Search Product"
+      }
+    },
+    "saving') : t('buttons": {
+      "submitBill": "Submit Bill"
+    }
   },
   "confirm": {
     "archiveOrder": "Are you sure you want to archive this order?",
@@ -893,7 +1083,11 @@
     "pricingCurrency": "Pricing & Currency",
     "subtitle": "Manage customer customers",
     "title": "Customers",
-    "totalAccounts": "TOTAL ACCOUNTS"
+    "totalAccounts": "TOTAL ACCOUNTS",
+    "enrichment": {
+      "nameUpdated": "Name updated",
+      "taxUpdated": "Tax updated"
+    }
   },
   "dashboard": {
     "quickActions": {
@@ -985,6 +1179,140 @@
     "title": "Picking & Shipping"
   },
   "gl": {
+    "reconciliations": {
+      "confirming": "Confirming...",
+      "addRule": "Add Rule",
+      "ruleCreated": "Rule Created",
+      "ruleDeleted": "Rule Deleted",
+      "allAccounts": "All Accounts",
+      "allBankAccounts": "All Bank Accounts",
+      "amountColumn": "Amount Column",
+      "autoMatchedLines": "{count} lines were auto-reconciled by rules.",
+      "bankAccount": "Bank Account",
+      "bankAccountOptional": "Bank Account (Optional)",
+      "bankStatementMatch": "Bank Statement Match",
+      "chooseFile": "Choose File",
+      "clearedBalance": "Cleared Balance",
+      "columns": {
+        "cleared": "Cleared?",
+        "credit": "Credit",
+        "glAccount": "Account",
+        "date": "Date",
+        "debit": "Debit",
+        "entryNo": "Entry No.",
+        "memo": "Memo",
+        "party": "Party",
+        "statementBalance": "Statement Balance",
+        "statementDate": "Statement Date",
+        "status": "Status"
+      },
+      "condition": "Condition",
+      "conditionType": "Condition Type",
+      "conditionValue": "Condition Value",
+      "confirmDiscard": "Are you sure you want to discard this draft reconciliation? This will un-clear all related lines and delete the draft.",
+      "confirmPost": "Are you sure you want to post this reconciliation? This cannot be undone.",
+      "create": "Start Reconciling",
+      "createError": "Failed to create reconciliation",
+      "createNewProfile": "Create new profile...",
+      "createNewRule": "Create New Rule",
+      "createdBy": "Created By",
+      "creating": "Creating...",
+      "csvFile": "CSV File",
+      "glAccount": "Account",
+      "dateColumn": "Date Column",
+      "descriptionColumn": "Description Column",
+      "descriptionContains": "Description Contains",
+      "descriptionExactMatch": "Description Exact Match",
+      "descriptionStartsWith": "Description Starts With",
+      "detailsTitle": "Reconciliation Details",
+      "discard": "Discard",
+      "discardError": "Failed to discard reconciliation",
+      "discardSuccess": "Reconciliation discarded successfully",
+      "done": "Done",
+      "egStripePayout": "e.g. STRIPE PAYOUT",
+      "import": "Import",
+      "importBankStatement": "Import Bank Statement",
+      "importComplete": "Import complete",
+      "importStatement": "Import Statement",
+      "importing": "Importing...",
+      "ledgerLines": "Ledger Lines",
+      "linesAutoReconciled": "{count} lines were auto-reconciled by rules.",
+      "linesQueued": "{count} lines were queued for manual reconciliation.",
+      "loading": "Loading...",
+      "newReconciliation": "New Bank Reconciliation",
+      "next": "Next",
+      "noFileSelected": "No file selected",
+      "noRulesDefinedYet": "No rules defined yet.",
+      "none": "None",
+      "notFound": "Reconciliation not found",
+      "openingBalance": "Opening Balance",
+      "parsing": "Parsing...",
+      "postError": "Failed to post reconciliation",
+      "postReconciliation": "Post Reconciliation",
+      "postSuccess": "Reconciliation posted successfully",
+      "posting": "Posting...",
+      "profileName": "Profile Name",
+      "quickAdjustment": "Quick Adjustment",
+      "quickAdjustmentForm": {
+        "amount": "Amount",
+        "createAndReconcile": "Create & Reconcile",
+        "creating": "Creating...",
+        "date": "Date",
+        "failedToCreateError": "Failed to create adjustment",
+        "memo": "Memo",
+        "memoPlaceholder": "e.g., Monthly Account Keeping Fee",
+        "moneyIn": "Money In (e.g. Interest)",
+        "moneyOut": "Money Out (e.g. Bank Fee)",
+        "offsetAccount": "Offset Account",
+        "requiredFieldsError": "Please fill out all required fields",
+        "selectAccount": "Select an account...",
+        "title": "Quick Adjustment",
+        "type": "Type"
+      },
+      "reconciliationLabel": "Reconciliation: {glAccount}",
+      "reconciliationRules": "Reconciliation Rules",
+      "referenceColumn": "Reference Column (Optional)",
+      "rows": "Rows",
+      "savedProfile": "Saved Profile",
+      "select": "Select...",
+      "selectAccount": "Select an account...",
+      "selectAccountPlaceholder": "Select Account...",
+      "selectAnAccount": "Select an account...",
+      "splitEntry": "Split Entry",
+      "splitEntryForm": {
+        "amountToClear": "Amount to Clear Now",
+        "confirmSplit": "Confirm Split",
+        "credit": "Credit",
+        "date": "Date",
+        "debit": "Debit",
+        "failedToSplitError": "Failed to split entry",
+        "invalidAmountError": "Split amount must be greater than 0 and less than the total line amount.",
+        "memo": "Memo",
+        "party": "Party",
+        "splitSuccess": "Entry successfully split and cleared!",
+        "splitting": "Splitting...",
+        "title": "Split Entry",
+        "total": "Total"
+      },
+      "statementBalance": "Statement Balance",
+      "statementDate": "Statement Date",
+      "statementDateLabel": "Statement Date: {date}",
+      "status": "Status",
+      "targetGl": "Target GL",
+      "targetGlAccountTag": "Target GL Account (Tag to)",
+      "title": "Bank Reconciliations",
+      "toggleError": "Failed to toggle line",
+      "tooltips": {
+        "back": "Back",
+        "clickToClear": "Click to clear",
+        "clickToUnclear": "Click to unclear",
+        "selectRowToSplit": "Select a row to split",
+        "splitRowDisabled": "Cannot split an already cleared row"
+      },
+      "unmatchedLines": "{count} lines were queued for manual reconciliation.",
+      "variance": "Variance",
+      "varianceMustBeZero": "Variance must be zero to post"
+    },
     "codes": {
       "accountingCodes": "Accounting Codes",
       "button": "Codes",
@@ -1000,11 +1328,11 @@
       "title": "Accounting Codes Cheat Sheet"
     },
     "generalLedger": {
-      "allAccounts": "All Customers",
+      "allAccounts": "All Accounts",
       "columns": {
         "balance": "Balance",
         "credit": "Credit",
-        "customer": "Customer",
+        "glAccount": "Account",
         "date": "Date",
         "debit": "Debit",
         "entryNumber": "Entry #",
@@ -1021,7 +1349,7 @@
       "columns": {
         "createdBy": "Created By",
         "credit": "Credit",
-        "customer": "Customer",
+        "glAccount": "Account",
         "date": "Date",
         "debit": "Debit",
         "entryNumber": "Entry #",
@@ -1051,7 +1379,7 @@
         "selectParty": "Select Party..."
       },
       "postEntry": "Post Journal Entry",
-      "searchPlaceholder": "Search entry number...",
+      "searchPlaceholder": "Search entry number…",
       "sourceDocument": "Source Document",
       "sourceManual": "Manual",
       "sourcePurchaseInvoice": "Purchase Invoice",
@@ -1064,92 +1392,6 @@
       "unbalancedWarning": "Entry is unbalanced by {amount}"
     },
     "loading": "Loading...",
-    "reconciliations": {
-      "clearedBalance": "Cleared Balance",
-      "columns": {
-        "cleared": "Cleared?",
-        "credit": "Credit",
-        "customer": "Customer",
-        "date": "Date",
-        "debit": "Debit",
-        "entryNo": "Entry No.",
-        "memo": "Memo",
-        "party": "Party",
-        "statementBalance": "Statement Balance",
-        "statementDate": "Statement Date",
-        "status": "Status"
-      },
-      "confirmDiscard": "Are you sure you want to discard this draft reconciliation? This will un-clear all related lines and delete the draft.",
-      "confirmPost": "Are you sure you want to post this reconciliation? This cannot be undone.",
-      "create": "Start Reconciling",
-      "createError": "Failed to create reconciliation",
-      "createdBy": "Created By",
-      "creating": "Creating...",
-      "customer": "Customer",
-      "detailsTitle": "Reconciliation Details",
-      "discard": "Discard",
-      "discardError": "Failed to discard reconciliation",
-      "discardSuccess": "Reconciliation discarded successfully",
-      "loading": "Loading...",
-      "newReconciliation": "New Bank Reconciliation",
-      "notFound": "Reconciliation not found",
-      "openingBalance": "Opening Balance",
-      "postError": "Failed to post reconciliation",
-      "postReconciliation": "Post Reconciliation",
-      "postSuccess": "Reconciliation posted successfully",
-      "posting": "Posting...",
-      "quickAdjustment": "Quick Adjustment",
-      "quickAdjustmentForm": {
-        "amount": "Amount",
-        "createAndReconcile": "Create & Reconcile",
-        "creating": "Creating...",
-        "date": "Date",
-        "failedToCreateError": "Failed to create adjustment",
-        "memo": "Memo",
-        "memoPlaceholder": "e.g., Monthly Customer Keeping Fee",
-        "moneyIn": "Money In (e.g. Interest)",
-        "moneyOut": "Money Out (e.g. Bank Fee)",
-        "offsetAccount": "Offset Customer",
-        "requiredFieldsError": "Please fill out all required fields",
-        "selectAccount": "Select an customer...",
-        "title": "Quick Adjustment",
-        "type": "Type"
-      },
-      "reconciliationLabel": "Reconciliation: {customer}",
-      "rows": "Rows",
-      "selectAccount": "Select Customer...",
-      "splitEntry": "Split Entry",
-      "splitEntryForm": {
-        "amountToClear": "Amount to Clear Now",
-        "confirmSplit": "Confirm Split",
-        "credit": "Credit",
-        "date": "Date",
-        "debit": "Debit",
-        "failedToSplitError": "Failed to split entry",
-        "invalidAmountError": "Split amount must be greater than 0 and less than the total line amount.",
-        "memo": "Memo",
-        "party": "Party",
-        "splitSuccess": "Entry successfully split and cleared!",
-        "splitting": "Splitting...",
-        "title": "Split Entry",
-        "total": "Total"
-      },
-      "statementBalance": "Statement Balance",
-      "statementDate": "Statement Date",
-      "statementDateLabel": "Statement Date: {date}",
-      "status": "Status",
-      "title": "Bank Reconciliations",
-      "toggleError": "Failed to toggle line",
-      "tooltips": {
-        "back": "Back",
-        "clickToClear": "Click to clear",
-        "clickToUnclear": "Click to unclear",
-        "selectRowToSplit": "Select a row to split",
-        "splitRowDisabled": "Cannot split an already cleared row"
-      },
-      "variance": "Variance",
-      "varianceMustBeZero": "Variance must be zero to post"
-    },
     "trialBalance": {
       "accountTypes": {
         "asset": "Asset",
@@ -1176,6 +1418,7 @@
     "allocation": {
       "allocating": "...",
       "destination": "Destination:",
+      "eligiblePOs": "Eligible POs",
       "loadingEligible": "Loading eligible POs...",
       "locationMismatch": "Location Mismatch",
       "match": "Match",
@@ -1295,7 +1538,7 @@
   },
   "inventory": {
     "columns": {
-      "actor": "User",
+      "actor": "Actor",
       "alternateProductNumber": "Alternate Product Number",
       "available": "Available",
       "committed": "Committed",
@@ -1559,7 +1802,7 @@
     "createdOnBy": "Created {date} by {user}",
     "errors": {
       "atLeastOneLineRequired": "At least one line with a quantity is required",
-      "cannotReducePicked": "Cannot reduce picked to {qty} \u2014 {shipped} already shipped",
+      "cannotReducePicked": "Cannot reduce picked to {qty} — {shipped} already shipped",
       "failedToCreateShipment": "Failed to create shipment",
       "failedToGeneratePickingSlip": "Failed to generate picking slip",
       "failedToPickAll": "Failed to pick all",
@@ -1630,6 +1873,7 @@
       "alternateProductNumber": "Alternate Product Number",
       "barcode": "Barcode",
       "baseUom": "Base UoM",
+      "externalTaxCode": "External Tax Code",
       "listPrice": "List Price",
       "name": "Name",
       "notes": "Notes",
@@ -1640,8 +1884,6 @@
       "productNumber": "Product # (SKU)",
       "purchaseTaxCategory": "Purchase Tax Category",
       "quantity": "Component Quantity",
-      "salesTaxCategory": "Sales Tax Category",
-      "externalTaxCode": "External Tax Code",
       "quantityOnHand": "Qty On Hand",
       "ratio": "Ratio",
       "ratioBase": "Ratio (x Base)",
@@ -1741,6 +1983,7 @@
       "conversionRemoved": "Conversion removed"
     },
     "types": {
+      "freight": "Freight",
       "inventory": "Inventory (Tracked)",
       "nonStock": "Non-Stock",
       "service": "Service"
@@ -1769,7 +2012,13 @@
       "unallocateTitle": "Unallocate demand from this PO"
     },
     "availability": "Availability",
-    "backToOrders": "\u2190 Back to Orders",
+    "availabilityTab": {
+      "avail": "avail",
+      "cmt": "cmt",
+      "in": "in",
+      "onHand": "on hand"
+    },
+    "backToOrders": "← Back to Orders",
     "billSummary": "Bill Summary",
     "buttons": {
       "approveInvoice": "Approve Invoice",
@@ -1778,23 +2027,14 @@
       "createPO": "+ Create PO",
       "createReturn": "Create Return",
       "customLine": "Custom Line",
-      "enterSupplierBill": "Enter Invoice",
+      "enterSupplierBill": "Enter Supplier Bill",
       "resolveDemands": "Resolve Demands",
       "resolving": "Resolving...",
-      "save": "\ud83d\udcbe Save",
+      "save": "💾 Save",
       "submitBill": "Submit Invoice"
     },
     "columns": {
       "allocate": "Allocate",
-      "receivedQty": "Received Qty",
-      "return": {
-        "order": "Order",
-        "product": "Product",
-        "description": "Description",
-        "expectedQty": "Expected Qty",
-        "received": "Received",
-        "receiveNow": "Receive Now"
-      },
       "allocatedAmount": "Allocated Amount",
       "allocation": "Allocation",
       "amount": "Amount",
@@ -1806,7 +2046,7 @@
       "details": "Details",
       "discountPct": "Disc %",
       "fee": "Fee",
-      "invoiceNumber": "Bill #",
+      "invoiceNumber": "System Bill No.",
       "issueType": "Issue Type",
       "line": "Line",
       "lineNumber": "#",
@@ -1818,12 +2058,21 @@
       "qty": "Qty",
       "qtyReceived": "Received",
       "qtyReturned": "Qty Returned",
-      "qtyToBill": "Qty to Bill",
+      "qtyToBill": "Qty",
       "reason": "Reason",
       "received": "Received",
+      "receivedQty": "Received Qty",
       "referenceNumber": "Ref #",
       "remaining": "Remaining",
       "reserved": "Reserved",
+      "return": {
+        "description": "Description",
+        "expectedQty": "Expected Qty",
+        "order": "Order",
+        "product": "Product",
+        "receiveNow": "Receive Now",
+        "received": "Received"
+      },
       "state": "State",
       "status": "Status",
       "supplierInvoiceNumber": "Supplier Invoice No.",
@@ -1835,17 +2084,18 @@
       "vendor": "Supplier"
     },
     "createTitle": "Create Purchase Order",
+    "customItem": "Custom Item",
     "defaultExpense": "Default Expense",
     "demandTitle": "Open Demand",
     "demands": {
-      "cancel": "Cancel",
-      "createDraftPos": "Create Draft POs",
       "allAssignedError": "All line items must be assigned to a supplier before generating POs.",
       "allocate": "Allocate",
       "allocating": "...",
       "allocationError": "Failed to allocate demand",
       "availableCap": "Available Cap.",
+      "cancel": "Cancel",
       "confirmReallocation": "Confirm Reallocation",
+      "createDraftPos": "Create Draft POs",
       "createTransfer": "Create Transfer",
       "createTransferDesc": "Create a Transfer Order to fulfill {count} demands from another location.",
       "createTransferTitle": "Create Internal Transfer",
@@ -1892,6 +2142,7 @@
       "ordered": "Ordered",
       "pendingSupply": "Pending Supply"
     },
+    "ea": "EA",
     "file": "File:",
     "inventoryAsset": "Inventory Asset",
     "invoiceDiscrepancies": "Invoice Discrepancies",
@@ -1904,6 +2155,7 @@
       "referenceNumber": "Reference #",
       "supplier": "Supplier"
     },
+    "lineItemPrefix": "Line",
     "lineItems": "Line items",
     "loadingInventory": "Loading inventory data...",
     "loadingReturns": "Loading returns...",
@@ -1916,18 +2168,19 @@
       "linesCount": "{count, plural, =1 {# line} other {# lines}}",
       "matchButton": "Match",
       "matchableCount": "{count} matchable",
-      "matched": "matched",
+      "matched": "✓ Matched",
       "noPendingPOs": "No matchable PO lines found for this vendor.",
       "panelTitle": "Match to PO Lines",
       "remaining": "Remaining",
-      "selectInvoiceLine": "Select an invoice line to match"
+      "selectInvoiceLine": "Select an invoice line to match",
+      "unmatched": "Unmatched"
     },
     "newOrderTitle": "New Purchase Order",
     "newReturn": "New Return",
     "noBillsGeneratedYet": "No invoices entered yet.",
     "noInventoryData": "No inventory data",
     "noItems": "No items",
-    "noLineItems": "No line items \u2014 use the search above to add products",
+    "noLineItems": "No line items — use the search above to add products",
     "noLineItemsShort": "No line items",
     "noPaymentsAllocated": "No payments have been allocated to this invoice yet.",
     "noPendingPos": "No pending POs found.",
@@ -1976,42 +2229,43 @@
     },
     "ref": "Ref:",
     "returns": {
-      "confirmDebitNote": "Confirm Debit Note",
-      "creditPricePerUnit": "Credit Unit Price",
-      "debitNoteEntry": "Debit Note Entry",
-      "debitNoteWarning": "Are you sure you want to confirm this debit note?",
-      "lineHash": "#",
-      "lineItems": "Line Items",
-      "lineTotal": "Line Total",
-      "noPhysicalLines": "No physical lines",
-      "notFound": "Purchase order not found",
-      "notes": "Notes",
-      "recording": "Recording...",
-      "restockingFee": "Restocking Fee",
-      "supplierReturnRef": "Supplier Return Ref",
-      "totalTaxAmount": "Total Tax Amount",
       "cancel": "Cancel",
       "clear": "Clear",
       "confirm": "Confirm",
+      "confirmDebitNote": "Confirm Debit Note",
       "confirmReturns": "Complete Returns",
       "createReturn": "Create Return",
       "creating": "Creating...",
+      "creditPricePerUnit": "Credit Unit Price",
+      "debitNoteEntry": "Debit Note Entry",
+      "debitNoteWarning": "Are you sure you want to confirm this debit note?",
       "enterDebitNote": "Enter Debit Note",
       "exceptionQuarantine": "Exception Quarantine",
       "exceptionQuarantineTag": "QUARANTINE",
       "initiateReturn": "Initiate Return",
-      "maxReturn": "Max Return",
-      "noReturnableLines": "No returnable lines found",
+      "lineHash": "#",
+      "lineItems": "Line Items",
+      "lineTotal": "Line Total",
       "loadingLines": "Loading...",
       "markQuarantine": "Mark Quarantine",
+      "maxReturn": "Max Return",
       "moveToQuarantine": "Move to Quarantine",
       "noActivePOs": "No returnable PO lines found for this product.",
       "noItemsScanned": "No items staged for return.",
       "noPartNumber": "No Part Number",
+      "noPhysicalLines": "No physical lines",
+      "noReturnableLines": "No returnable lines found",
+      "notFound": "Purchase order not found",
+      "notes": "Notes",
       "ordered": "Ordered",
       "placeholder": "Scan or search product...",
       "poPrice": "PO Price",
+      "qtyReturned": "Quantity to Return",
+      "qtyReturnedSummary": "Return Qty",
+      "qtyToQuarantine": "Qty to Quarantine",
       "qtyToReturn": "Quantity to Return",
+      "quarantineBtnSub": "Add to quarantine without a PO",
+      "quarantineBtnTitle": "Exceptional Quarantine",
       "reason": "Reason",
       "reasons": {
         "defective": "Defective",
@@ -2019,14 +2273,11 @@
         "other": "Other",
         "overShipment": "Over Shipment"
       },
-      "qtyReturned": "Quantity to Return",
-      "qtyReturnedSummary": "Return Qty",
-      "qtyToQuarantine": "Qty to Quarantine",
-      "quarantineBtnSub": "Add to quarantine without a PO",
-      "quarantineBtnTitle": "Exceptional Quarantine",
       "received": "Received",
+      "recording": "Recording...",
       "remaining": "received: {rem}",
       "remove": "Remove",
+      "restockingFee": "Restocking Fee",
       "returnFee": "Return Fee",
       "returnFeeDiscrepancy": "Fee: {amount}",
       "returnsSummary": "Returns Summary",
@@ -2034,7 +2285,9 @@
       "selectLinesMsg": "Select the lines to return and specify the quantities.",
       "selectPOLine": "Select received PO Line to return against",
       "subtitle": "Return items back to suppliers",
+      "supplierReturnRef": "Supplier Return Ref",
       "title": "Purchase Returns",
+      "totalTaxAmount": "Total Tax Amount",
       "unknownProduct": "Unknown Product"
     },
     "returnsHeading": "Returns",
@@ -2087,7 +2340,7 @@
       "others": "In Stock (Other)",
       "shortage": "Stock Shortage"
     },
-    "backToOrders": "\u2190 Back to Orders",
+    "backToOrders": "← Back to Orders",
     "backordersTab": "Backorders",
     "buttons": {
       "addPostConfirmationLine": "Add Line",
@@ -2132,7 +2385,6 @@
       "lineNumber": "#",
       "location": "Location",
       "name": "Name",
-      "onHand": "On Hand",
       "orderNumber": "Order No.",
       "ordered": "Ordered",
       "picked": "Picked",
@@ -2151,7 +2403,8 @@
       "tax": "Tax",
       "type": "Type",
       "unitPrice": "Unit Price",
-      "uom": "UOM"
+      "uom": "UOM",
+      "onHand": "On Hand"
     },
     "createTitle": "Create Sales Order",
     "demandedQty": "{qty} demanded",
@@ -2196,7 +2449,7 @@
     "noInventoryData": "No inventory data",
     "noInventoryFound": "No inventory records found for this product.",
     "noInvoicesGeneratedYet": "No invoices generated yet.",
-    "noLineItems": "No line items \u2014 use the search above to add products",
+    "noLineItems": "No line items — use the search above to add products",
     "noLineItemsShort": "No products ordered yet.",
     "noProductsShippedYet": "No products have shipped yet.",
     "noReturnLines": "No return lines",
@@ -2242,6 +2495,7 @@
       "title": "Stock Shortage Detected"
     },
     "subtitle": "Manage customer orders and quotes",
+    "taxNeedsToBeCalculated": "Tax needs to be calculated by {provider}",
     "timeline": {
       "by": "by {actor}"
     },
@@ -2253,7 +2507,19 @@
     },
     "unnamedCustomer": "Unnamed customer",
     "untitledOrder": "Untitled order",
-    "virtualFulfillmentBypass": "N/A"
+    "virtualFulfillmentBypass": "N/A",
+    "ea": "EA",
+    "availabilityTable": {
+      "avail": "Avail",
+      "onHand": "On Hand",
+      "cmt": "Cmt",
+      "in": "In"
+    },
+    "customers": {
+      "overview": "Overview",
+      "orders": "Orders",
+      "invoices": "Invoices"
+    }
   },
   "schemaBuilder": {
     "addField": "+ Add Field",
@@ -2280,13 +2546,15 @@
   },
   "setup": {
     "dataImport": {
+      "taxFormat": "Tax Format",
+      "abm": "Back",
       "back": "Back",
       "buttons": {
         "continueToSummary": "Continue to Summary",
         "goToDashboard": "Go to Dashboard",
         "retryImport": "Retry Import",
         "returnToDashboard": "Return to Dashboard",
-        "startExecution": "Start Execution"
+        "startExecution": "Start Import"
       },
       "chooseFile": "Choose File",
       "connectSourceSystem": "Connect Source System",
@@ -2300,6 +2568,8 @@
       "defaultLocation": "Default Fulfillment Location",
       "defaultLocationDesc": "Select the primary location from ABM that will act as the default fulfillment warehouse going forward.",
       "defaultLocationDescOdoo": "Select the primary location from Odoo that will act as the default fulfillment warehouse going forward.",
+      "defaultTaxCategory": "Default Tax Category",
+      "defaultTaxCategoryDesc": "Select the default tax category to use when a category is missing or omitted.",
       "descCompleted": "Done",
       "descConfig": "Choose the modbm table to import data into.",
       "descFailed": "Check the logs",
@@ -2322,11 +2592,11 @@
       "mergeStrategy": "Merge Strategy",
       "noFileChosen": "No file chosen",
       "options": {
-        "alreadyStaged": "Already Staged: ",
-        "fullExtractionDesc": "Wipe the staging area and pull every single table firmly from scratch. Required if upstream schema changed.",
+        "alreadyStaged": "Already staged: ",
+        "fullExtractionDesc": "Extract everything from scratch.",
         "fullExtractionTitle": "Full Extraction",
-        "resumeModeDesc": "Skip tables that have already been fully extracted successfully and only pull missing tables. This is much faster.",
-        "resumeModeTitle": "Resume Mode (Recommended)",
+        "resumeModeDesc": "Skip already imported tables.",
+        "resumeModeTitle": "Resume from Checkpoint",
         "tablesCached": "{count} Tables Cached"
       },
       "orders": "Orders",
@@ -2336,7 +2606,7 @@
       "sections": {
         "confirmedSettings": "Confirmed Settings",
         "executionOptions": "Execution Options",
-        "terminal": "etl-worker terminal"
+        "terminal": "Terminal Output"
       },
       "startImport": "Start Import",
       "subtitle": {
@@ -2363,9 +2633,7 @@
       "titlePreview": "Upload Data",
       "titleRunning": "Import Running",
       "upsertMerge": "Upsert / Merge",
-      "upsertMergeDesc": "Updates existing records if unique keys match, inserts otherwise.",
-      "defaultTaxCategory": "Default Tax Category",
-      "defaultTaxCategoryDesc": "Select the default tax category to use when a category is missing or omitted."
+      "upsertMergeDesc": "Updates existing records if unique keys match, inserts otherwise."
     },
     "execution": {
       "aborted": "Execution aborted. Please review error logs.",
@@ -2380,7 +2648,7 @@
     "extraction": {
       "description": "Connect to an Advanced Business Manager MSSQL database to migrate historical accounting, inventory, and sales data.",
       "fields": {
-        "database": "Database Name (ABM)",
+        "database": "Database",
         "host": "Host",
         "password": "Password",
         "port": "Port",
@@ -2388,13 +2656,13 @@
       },
       "resume": "Resume interrupted extraction",
       "resumeNote": "(Skips fully loaded tables)",
-      "skip": "Load from previous extraction",
-      "skipDesc": "Proceed to transformation. No new data will be extracted.",
-      "testConnection": "Test Connection",
+      "skip": "Skip extraction (Empty Base)",
+      "skipDesc": "Proceed directly to transformation. No new data will be extracted.",
+      "testConnection": "Test Connection & Continue",
       "testing": "Testing...",
       "title": "Source Pipeline Sync",
       "toasts": {
-        "apiError": "Failed to communicate with API",
+        "apiError": "API Error",
         "connectionFailed": "Connection Failed",
         "connectionVerified": "Connection Verified"
       }
@@ -2445,7 +2713,7 @@
       "description": "Set your core accounting and operational defaults.",
       "fields": {
         "baseCurrency": "Base Currency",
-        "coaPreset": "Chart of Customers Preset",
+        "coaPreset": "Chart of Accounts Preset",
         "companyName": "Company Registered Name",
         "expenseRouting": "Expense Routing Precedence",
         "fiscalYearStart": "Fiscal Year Start Month",
@@ -2508,7 +2776,7 @@
     }
   },
   "shipments": {
-    "backToShipments": "\u2190 Back to Shipments",
+    "backToShipments": "← Back to Shipments",
     "cancelFailed": "Failed to cancel shipment",
     "cancelShipment": "Cancel Shipment",
     "columns": {
@@ -2605,7 +2873,7 @@
     }
   },
   "sidebar": {
-    "footer": "Phase 3 \u2022 modbm",
+    "footer": "Phase 3 • modbm",
     "groups": {
       "admin": "Admin",
       "finance": "Finance",
@@ -2795,7 +3063,7 @@
       "addLines": "Add Lines",
       "createTransfer": "+ Create Transfer",
       "customLine": "Custom Line",
-      "save": "\ud83d\udcbe Save"
+      "save": "💾 Save"
     },
     "cancelConfirm": "Are you sure you want to cancel this transfer order?",
     "columns": {
@@ -2839,5 +3107,32 @@
     "subtitleFlow": "From {source} to {destination}",
     "title": "Transfer Orders",
     "transferTitle": "Transfer {number}"
+  },
+  "generalLedger": {
+    "reconciliations": {
+      "confirming": "Confirming..."
+    }
+  },
+  "ea": "ea",
+  "allocation": {
+    "eligiblePOs": "Eligible POs"
+  },
+  "taxNeedsToBeCalculated": "Tax needs to be calculated",
+  "pending": "Pending",
+  "custom": "Custom",
+  "availability": {
+    "avail": "Avail",
+    "onHand": "On Hand",
+    "cmt": "Cmt",
+    "in": "In"
+  },
+  "customItem": "Custom Item",
+  "matching": {
+    "unmatched": "Unmatched"
+  },
+  "lineItemPrefix": "Line Item Prefix",
+  "enrichment": {
+    "nameUpdated": "Name updated",
+    "taxUpdated": "Tax info updated"
   }
 }

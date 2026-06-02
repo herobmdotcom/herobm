@@ -253,7 +253,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
 
                                 {[...allowedTransitions]
-                                    .filter(state => state !== SALES_ORDER_STATE.PICKING)
+                                    .filter(state => state !== SALES_ORDER_STATE.PICKING && state !== SALES_ORDER_STATE.SHIPPED)
                                     .sort((a, b) => {
                                         const aBack = isBackTransition(order.stateCode, a);
                                         const bBack = isBackTransition(order.stateCode, b);
@@ -481,7 +481,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     const hasGap = gapMap.has(line.salesOrderLineId);
                                     const warningIcon = hasGap ? (
                                         <>
-                                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                                            {/* eslint-disable i18next/no-literal-string */}
                                             <span 
                                                 className="material-symbols-outlined" 
                                                 style={{ fontSize: 14, color: 'var(--danger)', position: isEditable ? 'absolute' : 'relative', left: isEditable ? -16 : undefined, top: isEditable ? '50%' : undefined, transform: isEditable ? 'translateY(-50%)' : undefined, verticalAlign: !isEditable ? 'middle' : undefined, marginRight: !isEditable ? 4 : 0, zIndex: 1 }}
@@ -560,6 +560,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                             </select>
                                         );
                                     }
+                                    // eslint-disable-next-line no-restricted-syntax
                                     return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{line.unitOfMeasure || line.baseUom || 'EA'}</span>;
                                 }
                             },
@@ -634,8 +635,9 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 onClick={calculateTaxes}
                                                 disabled={saving}
                                                 style={{ background: 'none', border: 'none', padding: 0, cursor: saving ? 'default' : 'pointer', color: 'var(--accent)', display: 'flex' }}
-                                                title={tSales('buttons.calculateTaxes', { defaultValue: 'Calculate Taxes' })}
+                                                title={tSales('buttons.calculateTaxes')}
                                             >
+                                                {/* eslint-disable-next-line i18next/no-literal-string */}
                                                 <span className={`material-symbols-outlined ${saving ? 'animate-spin' : ''}`} style={{ fontSize: '16px' }}>sync</span>
                                             </button>
                                         )}
@@ -650,7 +652,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     if (isExternalTax) {
                                         const isStale = (order as any)?.customFields?.taxIsStale === true || (order as any)?.customFields?.taxIsStale === 'true';
                                         if (isStale) {
-                                            return <span className="badge badge-warning" title={`Tax needs to be calculated by ${(order as any).taxProvider}`}>Pending</span>;
+                                            return <span className="badge badge-warning" title={tSales('taxNeedsToBeCalculated', { provider: (order as any).taxProvider })}>{tCommon('pending')}</span>;
                                         }
                                         return <span title={`Calculated by ${(order as any).taxProvider}`} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>
                                             {formatAmount(parseFloat(line.tax || '0'), order.currencyCode || 'EUR')}
@@ -682,13 +684,13 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 if (c) {
                                                     const pct = parseFloat(c.rate || '0');
                                                     const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
-                                                    return <span title={getTaxLabel(c)} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>{formattedPct}%</span>;
+                                                    return <span title={`Tax Category: ${c.title}`} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>{formattedPct}%</span>;
                                                 }
                                                 const amt = parseFloat(line.amount || '0');
                                                 const tax = parseFloat(line.tax || '0');
                                                 if (amt > 0 && tax > 0) {
                                                     const pct = (tax / amt) * 100;
-                                                    return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
+                                                    return <span title="Tax Category: Custom" style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>{`${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`}</span>;
                                                 }
                                                 if (amt > 0 && tax === 0) return <span title={tCommon('taxLabels.exempt')} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>0%</span>;
                                                 return '—';
@@ -796,7 +798,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     {tCommon('tax')}{taxPct > 0 && !isStale ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                                                    {isStale ? <span className="badge badge-warning text-xs font-normal" style={{ marginLeft: 'auto' }}>Pending</span> : formatAmount(totalTax, order.currencyCode || 'EUR')}
+                                                    {isStale ? <span className="badge badge-warning text-xs font-normal" style={{ marginLeft: 'auto' }}>{tCommon('pending')}</span> : formatAmount(totalTax, order.currencyCode || 'EUR')}
                                                 </td>
                                                 {(isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
                                             </tr>
@@ -805,7 +807,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     {tCommon('total')}
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
-                                                    {isStale ? <span className="badge badge-warning text-xs font-normal" style={{ marginLeft: 'auto' }}>Pending</span> : formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}
+                                                    {isStale ? <span className="badge badge-warning text-xs font-normal" style={{ marginLeft: 'auto' }}>{tCommon('pending')}</span> : formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}
                                                 </td>
                                                 {(isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
                                             </tr>
@@ -817,11 +819,11 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                             </tr>
                                             <tr className="lg:hidden">
                                                 <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tCommon('tax')}</td>
-                                                <td className="py-1 text-sm font-semibold text-right tabular-nums">{isStale ? <span className="badge badge-warning text-[10px] font-normal" style={{ display: 'inline-block' }}>Pending</span> : formatAmount(totalTax, order.currencyCode || 'EUR')}</td>
+                                                <td className="py-1 text-sm font-semibold text-right tabular-nums">{isStale ? <span className="badge badge-warning text-[10px] font-normal" style={{ display: 'inline-block' }}>{tCommon('pending')}</span> : formatAmount(totalTax, order.currencyCode || 'EUR')}</td>
                                             </tr>
                                             <tr className="lg:hidden">
                                                 <td className="py-2 text-sm font-bold text-[var(--accent)] text-right pr-4">{tCommon('total')}</td>
-                                                <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums">{isStale ? <span className="badge badge-warning text-[10px] font-normal" style={{ display: 'inline-block' }}>Pending</span> : formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}</td>
+                                                <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums">{isStale ? <span className="badge badge-warning text-[10px] font-normal" style={{ display: 'inline-block' }}>{tCommon('pending')}</span> : formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}</td>
                                             </tr>
                                             {/* button moved to header */}
                                         </>
@@ -972,7 +974,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{line.lineNumber}</div>
                                             </div>
                                             <div className="text-sm text-slate-600 font-medium mb-3">
-                                                {line.productDescription} {isCustom && <span className="badge badge-sm badge-draft ml-2">{line.productType || 'custom'}</span>}
+                                                {line.productDescription} {isCustom && <span className="badge badge-sm badge-draft ml-2">{line.productType || tCommon('custom')}</span>}
                                             </div>
                                             
                                             {isCustom || line.productType === 'non-stock' || line.productType === 'service' || line.productType === 'freight' ? (
@@ -1000,11 +1002,11 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                             <div key={inv.locationId} className="bg-slate-50 rounded p-2 text-xs flex flex-col gap-1 border border-slate-100">
                                                                 <div className="flex justify-between font-medium">
                                                                     <span className={inv.locationId === order.fulfillmentLocationId ? 'text-[var(--accent)]' : ''}>{inv.locationName}</span>
-                                                                    <span className={parseFloat(inv.quantityAvailable) >= line.quantity ? 'text-emerald-600' : 'text-rose-600'}>{parseFloat(inv.quantityAvailable)} avail</span>
+                                                                    <span className={parseFloat(inv.quantityAvailable) >= line.quantity ? 'text-emerald-600' : 'text-rose-600'}>{parseFloat(inv.quantityAvailable)} {tSales('availabilityTable.avail')}</span>
                                                                 </div>
                                                                 <div className="flex justify-between text-slate-500">
-                                                                    <span>{parseFloat(inv.quantityOnHand)} on hand</span>
-                                                                    <span>{parseFloat(inv.quantityCommitted)} cmt / {parseFloat(inv.quantityOnOrder)} in</span>
+                                                                    <span>{parseFloat(inv.quantityOnHand)} {tSales('availabilityTable.onHand')}</span>
+                                                                    <span>{parseFloat(inv.quantityCommitted)} {tSales('availabilityTable.cmt')} / {parseFloat(inv.quantityOnOrder)} {tSales('availabilityTable.in')}</span>
                                                                 </div>
                                                             </div>
                                                         ))}

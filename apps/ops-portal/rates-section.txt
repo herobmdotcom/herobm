@@ -1,0 +1,88 @@
+{/* ── Exchange Rates ─────────────────────────────────────────────── */}
+        <div id="rates-section" className="card relative">
+          <InlineSettingsTable
+            title={
+              <div className="flex items-center gap-2">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined">currency_exchange</span>
+                {tSettings('sections.rates')}
+              </div>
+            }
+            data={ratesWithBase}
+            rowKey={(r: any) => r.exchangeRateId || r.currencyCode}
+            onSave={async (row: any, isNew: boolean) => {
+              if (!row.currencyCode || !row.effectiveDate || !row.buyRate || !row.sellRate) {
+                throw new Error(tCommon('errors.typeAndDateRequired'));
+              }
+              const payload = {
+                currencyCode: row.currencyCode.toUpperCase(),
+                effectiveDate: row.effectiveDate,
+                buyRate: row.buyRate,
+                sellRate: row.sellRate
+              };
+              if (isNew) {
+                await api.exchangeRatesControllerCreate(payload);
+                toast.success(tSettings('toasts.rateCreated') || 'Rate created');
+              } else {
+                await api.exchangeRatesControllerUpdate(row.exchangeRateId, payload);
+                toast.success(tSettings('toasts.rateUpdated') || 'Rate updated');
+              }
+              loadRates();
+            }}
+            onDelete={async (row: any) => {
+              if (!confirm(tSettings('confirmations.deleteRate') || 'Are you sure you want to delete this rate?')) return;
+              await api.exchangeRatesControllerRemove(row.exchangeRateId);
+              toast.success(tSettings('toasts.rateDeleted') || 'Rate deleted');
+              loadRates();
+            }}
+            onAdd={() => ({ currencyCode: '', effectiveDate: new Date().toISOString().split('T')[0], buyRate: 1.0, sellRate: 1.0 } as any)}
+            canEdit={(row: any) => !row.isSystemBase}
+            canDelete={(row: any) => !row.isSystemBase}
+            addLabel={tSettings('actions.create')}
+            emptyLabel={tSettings('rates.empty')}
+            columns={[
+              {
+                key: 'currencyCode',
+                title: tSettings('labels.currencyCode'),
+                type: 'text',
+                width: 100,
+                validate: (v) => v ? null : 'Required',
+                render: (row: any, isEditing: boolean) => {
+                  if (isEditing) return null;
+                  return (
+                    <div className="flex flex-col gap-0.5">
+                      <span className={row.isSystemBase ? 'font-medium' : ''}>{row.currencyCode}</span>
+                      {row.isSystemBase && <span className="text-[10px] uppercase tracking-wider text-muted font-bold opacity-60">BASE</span>}
+                    </div>
+                  );
+                }
+              },
+              {
+                key: 'effectiveDate',
+                title: tSettings('labels.effectiveDate'),
+                type: 'text',
+                width: 150,
+                validate: (v) => v ? null : 'Required',
+                render: (row: any, isEditing: boolean) => {
+                  if (isEditing) return null;
+                  if (row.isSystemBase) return <span className="text-xs italic text-muted">{tSettings('labels.systemBase')}</span>;
+                  return <span>{new Date(row.effectiveDate).toLocaleDateString()}</span>;
+                }
+              },
+              {
+                key: 'buyRate',
+                title: tSettings('labels.buyRate'),
+                type: 'text',
+                width: 110,
+                validate: (v) => (v !== '' && v !== null && v !== undefined) ? null : 'Required'
+              },
+              {
+                key: 'sellRate',
+                title: tSettings('labels.sellRate'),
+                type: 'text',
+                width: 110,
+                validate: (v) => (v !== '' && v !== null && v !== undefined) ? null : 'Required'
+              }
+            ]}
+          />
+        </div>

@@ -26,7 +26,7 @@ export class GlobalShipmentsController {
   constructor(private readonly shipmentService: ShipmentService) {}
 
   @Get()
-  @ApiOkResponse({ type: GlobalShipmentListResponseDto })
+  @ApiOkResponse({ type: [ShipmentResponseDto] })
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Find All Shipments',
@@ -46,7 +46,7 @@ export class GlobalShipmentsController {
       salesOrderId,
       limit: limit ? parseInt(limit, 10) : undefined,
     });
-    return { data };
+    return data;
   }
 
   @Get(':id')

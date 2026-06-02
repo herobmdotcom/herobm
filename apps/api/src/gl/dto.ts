@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
@@ -78,12 +78,14 @@ export class CreateJournalEntryDto {
 }
 
 export class GlAccountResponseDto {
-  accountId: string;
+  glAccountId: string;
   accountCode: string;
   name: string;
   accountType: string;
   isGroup: boolean;
   isActive: boolean;
+  parentAccountId?: string | null;
+  isSystem?: boolean;
 }
 export class JournalEntryResponseDto {
   journalEntryId: string;
@@ -100,14 +102,22 @@ export class GeneralLedgerResponseDto {
 }
 export class SettingsResponseDto {
   id: string;
-  accountMetadataSchema?: Record<string, any>;
+  accountMetadataSchema?: Record<string, unknown>;
 }
 export class SuccessMessageResponseDto {
   success: boolean;
   message?: string;
 }
-export class ArrayResponseDto {
-  items: any[];
+export class ChartFileDto {
+  @ApiProperty() filename!: string;
+  @ApiProperty() name!: string;
+  @ApiProperty({ required: false }) countryCode?: string;
+}
+
+export class SettingsFileDto {
+  @ApiProperty() filename!: string;
+  @ApiProperty() name!: string;
+  @ApiProperty({ required: false }) countryCode?: string;
 }
 
 export class CreateAccountRequestDto {
@@ -141,7 +151,7 @@ export class CreateAccountRequestDto {
 
   @IsObject()
   @IsOptional()
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 export class UpdateAccountRequestDto {
   @IsString()
@@ -158,7 +168,7 @@ export class UpdateAccountRequestDto {
 
   @IsObject()
   @IsOptional()
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 export class SeedTaxRequestDto {
   @IsString()

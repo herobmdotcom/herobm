@@ -60,7 +60,7 @@ export default function NewReconciliationPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-              {t('customer')}
+              {t('glAccount')}
             </label>
             <select
               value={glAccountId}

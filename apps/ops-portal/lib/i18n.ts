@@ -23,7 +23,9 @@ export function tDynamic(
   values?: Record<string, string>,
 ): string {
   if (t.has(key)) {
-    return values ? (t as Function)(key, values) : (t as Function)(key);
+    return values
+      ? (t as (k: string, v: Record<string, string>) => string)(key, values)
+      : (t as (k: string) => string)(key);
   }
   if (fallback !== undefined) return fallback;
   // Auto-fallback: take last segment, replace underscores, capitalise first letter

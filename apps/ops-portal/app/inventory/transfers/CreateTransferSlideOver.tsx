@@ -202,7 +202,6 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
                 >
                   {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined">delete</span>
-                  {/* eslint-enable i18next/no-literal-string */}
                 </button>
               </div>
             ))}

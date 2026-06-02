@@ -130,8 +130,8 @@ describe('AccountsWriteService', () => {
           address1Country: 'AU',
         });
         fail('Should have thrown unique violation');
-      } catch (e: any) {
-        const code = e.code || e.cause?.code;
+      } catch (e: unknown) {
+        const code = (e as any).code || (e as any).cause?.code;
         expect(code).toBe('23505');
       }
     });

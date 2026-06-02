@@ -14,7 +14,7 @@ export interface CreateAccountDto {
   address1City?: string;
   address1StateOrProvince?: string;
   address1PostalCode?: string;
-  address1Country?: string;
+  address1Country: string;
   telephone1?: string;
   fax?: string;
   emailAddress1?: string;

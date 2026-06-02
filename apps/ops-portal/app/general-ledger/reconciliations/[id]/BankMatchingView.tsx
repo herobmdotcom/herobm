@@ -5,6 +5,8 @@ import MasterDetailLayout from '@/components/shared/MasterDetailLayout';
 import * as api from '@modbm/sdk';
 import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
+import QuickAdjustmentForm from './QuickAdjustmentForm';
 
 export default function BankMatchingView({ 
   reconciliation, 
@@ -17,19 +19,26 @@ export default function BankMatchingView({
   const [loading, setLoading] = useState(true);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [activeTab, setActiveTab] = useState<'find' | 'create'>('find');
+  const [unreconciledLines, setUnreconciledLines] = useState<any[]>([]);
+  const [loadingLines, setLoadingLines] = useState(false);
+  const [matchSelectedLineId, setMatchSelectedLineId] = useState<string | null>(null);
+  const t = useTranslations('admin.reconciliations');
+  const tCommon = useTranslations('common');
 
   useEffect(() => {
     fetchBankLines();
-  }, [reconciliation.accountId]);
+    fetchUnreconciledLines();
+  }, [reconciliation.glAccountId]);
 
   const fetchBankLines = async () => {
     try {
       setLoading(true);
       const res = await api.bankStatementControllerGetLines({
-        glAccountId: reconciliation.accountId,
+        glAccountId: reconciliation.glAccountId,
         isReconciled: false,
       });
-      setBankLines((res as any).data);
+      setBankLines(res.data || []);
     } catch (e) {
       reportError(e, 'BankLines');
     } finally {
@@ -37,17 +46,53 @@ export default function BankMatchingView({
     }
   };
 
+  const fetchUnreconciledLines = async () => {
+    try {
+      setLoadingLines(true);
+      const res = await api.reconciliationControllerGetLines(reconciliation.reconciliationId);
+      setUnreconciledLines((res.data as any) || []);
+    } catch (e) {
+      reportError(e, 'UnreconciledLines');
+    } finally {
+      setLoadingLines(false);
+    }
+  };
+
   const confirmMatch = async (lineId: string) => {
     try {
       setConfirming(true);
-      await api.bankStatementControllerConfirmMatch(lineId, {});
+      await api.bankStatementControllerConfirmMatch(lineId, {
+        reconciliationId: reconciliation.reconciliationId,
+      });
       toast.success('Match confirmed');
       await fetchBankLines();
+      await fetchUnreconciledLines();
       onUpdate();
       if (selectedLineId === lineId) setSelectedLineId(null);
     } catch (e) {
       reportError(e, 'ConfirmMatch');
-      toast.error('Failed to confirm match');
+      toast.error(t('matchConfirmError'));
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  const manualMatch = async (bankLineId: string, journalLineId: string) => {
+    try {
+      setConfirming(true);
+      await api.bankStatementControllerManualMatch(bankLineId, {
+        journalLineId,
+        reconciliationId: reconciliation.reconciliationId,
+      });
+      toast.success('Match confirmed');
+      await fetchBankLines();
+      await fetchUnreconciledLines();
+      onUpdate();
+      if (selectedLineId === bankLineId) setSelectedLineId(null);
+      setMatchSelectedLineId(null);
+    } catch (e) {
+      reportError(e, 'ManualMatch');
+      toast.error(t('matchConfirmError'));
     } finally {
       setConfirming(false);
     }
@@ -59,12 +104,12 @@ export default function BankMatchingView({
   const masterPane = (
     <div className="flex flex-col h-full overflow-y-auto bg-[var(--bg-primary)]">
       {loading ? (
-        <div className="p-8 text-center text-[var(--text-secondary)]">Loading bank lines...</div>
+        <div className="p-8 text-center text-[var(--text-secondary)]">{tCommon('loading')}</div>
       ) : bankLines.length === 0 ? (
         <div className="p-8 text-center flex flex-col items-center justify-center h-full">
           {/* eslint-disable-next-line i18next/no-literal-string */}
           <span className="material-symbols-outlined text-4xl text-[var(--text-muted)] mb-3">check_circle</span>
-          <p className="text-[var(--text-secondary)] font-medium">All bank statement lines are matched!</p>
+          <p className="text-[var(--text-secondary)] font-medium">{t('allLinesMatched')}</p>
         </div>
       ) : (
         <div className="flex flex-col divide-y divide-[var(--border)]">
@@ -97,11 +142,11 @@ export default function BankMatchingView({
                   <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 text-[var(--success)] border border-emerald-200">
                     {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Suggested Match</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider">{t('suggestedMatch')}</span>
                   </div>
                 ) : (
                   <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-gray-100 text-[var(--text-muted)] border border-gray-200">
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Unmatched</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider">{t('unmatched')}</span>
                   </div>
                 )}
               </div>
@@ -118,13 +163,13 @@ export default function BankMatchingView({
         <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] p-8">
           {/* eslint-disable-next-line i18next/no-literal-string */}
           <span className="material-symbols-outlined text-5xl mb-4 opacity-50">account_balance</span>
-          <p className="text-sm font-medium text-center">Select a bank line from the list to view details or apply a match.</p>
+          <p className="text-sm font-medium text-center">{t('selectBankLine')}</p>
         </div>
       ) : (
         <div className="flex flex-col h-full">
           {/* Top Half: Bank Statement Line Details */}
           <div className="p-6 bg-[var(--bg-card)] border-b border-[var(--border)] shadow-sm z-10">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4">Bank Statement Line</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4">{t('bankStatementLine')}</h3>
             <div className="flex justify-between items-start">
               <div className="flex flex-col gap-1">
                 <span className="text-2xl font-bold text-[var(--text-primary)]" style={{ fontFamily: 'Manrope, sans-serif' }}>
@@ -133,9 +178,9 @@ export default function BankMatchingView({
                 <span className="text-sm text-[var(--text-secondary)]">{selectedLine.date}</span>
               </div>
               {Number(selectedLine.amount) > 0 ? (
-                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-[var(--success)] text-xs font-bold">Deposit</span>
+                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-[var(--success)] text-xs font-bold">{t('deposit')}</span>
               ) : (
-                <span className="px-2.5 py-1 rounded-full bg-gray-100 text-[var(--text-secondary)] text-xs font-bold">Withdrawal</span>
+                <span className="px-2.5 py-1 rounded-full bg-gray-100 text-[var(--text-secondary)] text-xs font-bold">{t('withdrawal')}</span>
               )}
             </div>
             <div className="mt-4 p-3 bg-[#f8fbfd] rounded-lg border border-blue-100/50">
@@ -150,23 +195,23 @@ export default function BankMatchingView({
                 <div className="flex items-center gap-2 mb-4">
                   {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined text-[var(--success)]">check_circle</span>
-                  <h3 className="text-sm font-bold text-[var(--text-primary)]">System Match Found</h3>
+                  <h3 className="text-sm font-bold text-[var(--text-primary)]">{t('systemMatchFound')}</h3>
                 </div>
                 
                 <div className="bg-white border-2 border-emerald-200 rounded-xl p-5 shadow-sm relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-bl-full -mr-4 -mt-4 opacity-50 pointer-events-none" />
                   
                   <div className="flex justify-between items-center mb-4 relative z-10">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Journal Entry</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{t('journalEntry')}</span>
                     <span className="text-sm text-[var(--text-secondary)]">{selectedLine.matchedJournalLine.entryDate}</span>
                   </div>
                   
                   <p className="text-base font-medium text-[var(--text-primary)] mb-6 relative z-10">
-                    {selectedLine.matchedJournalLine.memo || 'No memo provided'}
+                    {selectedLine.matchedJournalLine.memo || t('noMemoProvided')}
                   </p>
                   
                   <div className="flex justify-between items-end relative z-10 mb-6 pb-6 border-b border-gray-100">
-                    <span className="text-sm text-[var(--text-muted)] font-medium">Ledger Amount</span>
+                    <span className="text-sm text-[var(--text-muted)] font-medium">{t('ledgerAmount')}</span>
                     <span className="text-xl font-bold text-[var(--text-primary)]">
                       {formatCurrency(Number(selectedLine.matchedJournalLine.debit) || -Number(selectedLine.matchedJournalLine.credit))}
                     </span>
@@ -179,36 +224,94 @@ export default function BankMatchingView({
                   >
                     {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="material-symbols-outlined text-[18px]">done_all</span>
-                    {confirming ? 'Confirming...' : 'Confirm Match'}
+                    {confirming ? t('confirming') : t('confirmMatch')}
                   </button>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-4 duration-300">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4">Reconciliation Actions</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-4">{t('reconciliationActions')}</h3>
                 
                 <div className="flex-1 bg-white border border-[var(--border)] rounded-xl shadow-sm overflow-hidden flex flex-col">
                   <div className="flex border-b border-[var(--border)] bg-gray-50/50">
-                    <button className="flex-1 py-3 text-sm font-bold border-b-2 border-[var(--brand-blue)] text-[var(--brand-blue)] transition-colors">
-                      Find Match
+                    <button 
+                      onClick={() => setActiveTab('find')}
+                      className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${
+                        activeTab === 'find' 
+                          ? 'border-[var(--brand-blue)] text-[var(--brand-blue)]' 
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] border-transparent hover:bg-gray-50'
+                      }`}
+                    >
+                      {t('findMatch')}
                     </button>
-                    <button className="flex-1 py-3 text-sm font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors border-b-2 border-transparent hover:bg-gray-50">
-                      Create Entry
+                    <button 
+                      onClick={() => setActiveTab('create')}
+                      className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${
+                        activeTab === 'create' 
+                          ? 'border-[var(--brand-blue)] text-[var(--brand-blue)]' 
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] border-transparent hover:bg-gray-50'
+                      }`}
+                    >
+                      {t('createEntry')}
                     </button>
                   </div>
                   
-                  <div className="flex-1 p-8 flex flex-col items-center justify-center text-center">
-                    <div className="w-16 h-16 bg-[#f8fbfd] rounded-full flex items-center justify-center mb-4">
-                      {/* eslint-disable-next-line i18next/no-literal-string */}
-                      <span className="material-symbols-outlined text-3xl text-[var(--brand-blue)]">search</span>
-                    </div>
-                    <h4 className="text-base font-bold text-[var(--text-primary)] mb-2">No Automatic Match Found</h4>
-                    <p className="text-sm text-[var(--text-secondary)] max-w-xs leading-relaxed">
-                      Search for an existing transaction in your ledger, or create a new journal entry to reconcile this bank line.
-                    </p>
-                    <button className="mt-6 px-5 py-2 bg-white border border-[var(--border)] text-[var(--brand-blue)] font-bold rounded-lg hover:bg-gray-50 transition-colors shadow-sm text-sm">
-                      Search Ledger
-                    </button>
+                  <div className="flex-1 flex flex-col min-h-0">
+                    {activeTab === 'find' ? (
+                      <div className="flex-1 overflow-y-auto p-4">
+                        {loadingLines ? (
+                          <div className="p-8 text-center text-[var(--text-secondary)]">{tCommon('loading')}</div>
+                        ) : unreconciledLines.length === 0 ? (
+                          <div className="p-8 text-center text-[var(--text-secondary)]">{t('noUnmatchedLines')}</div>
+                        ) : (
+                          <div className="flex flex-col gap-3">
+                            {unreconciledLines.map(line => (
+                              <div 
+                                key={line.journalLineId} 
+                                onClick={() => setMatchSelectedLineId(line.journalLineId)}
+                                className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                                  matchSelectedLineId === line.journalLineId
+                                    ? 'border-[var(--brand-blue)] bg-[#f8fbfd] shadow-sm'
+                                    : 'border-[var(--border)] bg-white hover:border-[var(--text-muted)]'
+                                }`}
+                              >
+                                <div className="flex justify-between mb-2">
+                                  <span className="text-xs font-bold text-[var(--text-muted)]">{line.entryDate}</span>
+                                  <span className="text-sm font-bold text-[var(--text-primary)]">
+                                    {formatCurrency(Number(line.debit) || -Number(line.credit))}
+                                  </span>
+                                </div>
+                                <div className="text-sm font-medium text-[var(--text-primary)] mb-3">
+                                  {line.memo || t('noMemoProvided')}
+                                </div>
+                                {matchSelectedLineId === line.journalLineId && (
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); manualMatch(selectedLine.lineId, line.journalLineId); }}
+                                    disabled={confirming}
+                                    className="w-full py-2 bg-[var(--brand-blue)] text-white text-xs font-bold rounded hover:brightness-110 disabled:opacity-50"
+                                  >
+                                    {confirming ? t('confirming') : t('confirmMatch')}
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex-1 p-4 overflow-y-auto">
+                        <QuickAdjustmentForm 
+                          bankLine={selectedLine} 
+                          reconciliationId={reconciliation.reconciliationId}
+                          onSuccess={() => {
+                            fetchBankLines();
+                            fetchUnreconciledLines();
+                            onUpdate();
+                            setSelectedLineId(null);
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

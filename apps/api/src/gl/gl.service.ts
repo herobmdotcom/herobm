@@ -346,6 +346,8 @@ export class GlService {
         isBankAccount: glAccounts.isBankAccount,
         currencyCode: glAccounts.currencyCode,
         isActive: glAccounts.isActive,
+        parentAccountId: glAccounts.parentAccountId,
+        isSystem: glAccounts.isSystem,
       })
       .from(glAccounts)
       .where(whereClause)
@@ -360,7 +362,7 @@ export class GlService {
     isGroup?: boolean;
     isBankAccount?: boolean;
     currencyCode?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
   }) {
     // Validate account type
     const validTypes = Object.values(GL_ACCOUNT_TYPE) as string[];
@@ -416,7 +418,7 @@ export class GlService {
       name?: string;
       isActive?: boolean;
       isBankAccount?: boolean;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
     },
   ) {
     // Don't allow deactivating system accounts

@@ -194,7 +194,7 @@ export default function NewPurchaseInvoicePage() {
                   onClick={handleSubmit}
                   disabled={submitting}
                 >
-                  {submitting ? tCommon('saving') : t('buttons.submitBill', { defaultValue: 'Submit Bill' })}
+                  {submitting ? tCommon('saving') : t('buttons.submitBill')}
                 </button>
               </>
             }
@@ -311,7 +311,7 @@ export default function NewPurchaseInvoicePage() {
                   <th style={{ width: 40 }}>#</th>
                   <th style={{ width: 160 }}>{t('columns.product')}</th>
                   <th>{t('columns.description')}</th>
-                  <th style={{ width: 110, textAlign: 'right' }}>{t('columns.qtyToBill', { defaultValue: 'Qty' })}</th>
+                  <th style={{ width: 110, textAlign: 'right' }}>{t('columns.qtyToBill')}</th>
                   <th style={{ width: 130, textAlign: 'right' }}>{t('columns.unitPrice')}</th>
                   <th style={{ width: 130, textAlign: 'right' }}>{t('columns.amount')}</th>
                   <th style={{ width: 50 }}></th>
@@ -452,7 +452,7 @@ export default function NewPurchaseInvoicePage() {
               {lines.map((line, idx) => (
                 <div key={line.key} className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col gap-3 relative">
                   <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-                    <span className="font-bold text-slate-500 text-sm">Line {idx + 1}</span>
+                    <span className="font-bold text-slate-500 text-sm">{t('lineItemPrefix')} {idx + 1}</span>
                     {lines.length > 1 && (
                       <button className="text-gray-400 hover:text-red-500" onClick={() => removeLine(idx)}>
                         <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
@@ -494,7 +494,7 @@ export default function NewPurchaseInvoicePage() {
                   
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-slate-500 mb-1 block">{t('columns.qtyToBill', { defaultValue: 'Qty' })}</label>
+                      <label className="text-xs text-slate-500 mb-1 block">{t('columns.qtyToBill')}</label>
                       <input
                         className="input w-full text-right tabular-nums"
                         type="number"

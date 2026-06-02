@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable i18next/no-literal-string */
+
 import { useEffect } from 'react';
 
 /**
@@ -69,9 +71,7 @@ export default function GlobalError({
           }}
         >
           <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
-            {/* eslint-disable-next-line i18next/no-literal-string */}
             Something went wrong
-            {/* eslint-enable i18next/no-literal-string */}
           </h2>
           <p style={{ fontSize: 14, color: '#94a3b8', marginBottom: 24 }}>
             {/* eslint-disable-next-line no-restricted-syntax */}
@@ -91,9 +91,7 @@ export default function GlobalError({
               marginBottom: 24,
             }}
           >
-            {/* eslint-disable-next-line i18next/no-literal-string */}
             Try Again
-            {/* eslint-enable i18next/no-literal-string */}
           </button>
         </div>
       </body>

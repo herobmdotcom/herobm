@@ -85,7 +85,7 @@ describe('Invoices Controllers', () => {
 
     it('should get sales invoices by order ID', async () => {
       const result = await salesController.getSalesInvoices('order-1');
-      expect(result).toEqual({ data: [{ id: 'si-1' }] });
+      expect(result).toEqual([{ id: 'si-1' }]);
       expect(mockSalesService.findByOrder).toHaveBeenCalledWith('order-1');
     });
   });
@@ -93,7 +93,7 @@ describe('Invoices Controllers', () => {
   describe('PurchaseInvoiceController', () => {
     it('should get purchase bills by order ID', async () => {
       const result = await purchaseController.getPurchaseBills('p-order-1');
-      expect(result).toEqual({ data: [{ id: 'pi-1' }] });
+      expect(result).toEqual([{ id: 'pi-1' }]);
       expect(mockPurchaseService.findByOrder).toHaveBeenCalledWith('p-order-1');
     });
   });
@@ -114,7 +114,7 @@ describe('Invoices Controllers', () => {
         '50',
       );
 
-      expect(result).toEqual({ data: [{ id: 'si-1' }] });
+      expect(result).toEqual([{ id: 'si-1' }]);
       expect(mockSalesService.findActiveInvoices).toHaveBeenCalledWith({
         days: 30,
         customerId: 'acc-1',
@@ -126,7 +126,7 @@ describe('Invoices Controllers', () => {
     it('should get global active sales invoices without queries', async () => {
       const result = await detailController.getSalesInvoicesGlobal();
 
-      expect(result).toEqual({ data: [{ id: 'si-1' }] });
+      expect(result).toEqual([{ id: 'si-1' }]);
       expect(mockSalesService.findActiveInvoices).toHaveBeenCalledWith({
         days: undefined,
         customerId: undefined,

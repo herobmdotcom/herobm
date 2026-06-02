@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
 import { useTranslations } from 'next-intl';
 import * as api from '@modbm/sdk';
+import { getErrorMessage } from '@modbm/shared';
 import { toast } from 'react-hot-toast';
 
 interface SettingsFile {
@@ -35,13 +36,13 @@ export default function ImportTaxModal({ isOpen, onClose, onImportComplete }: Pr
     try {
       setIsLoading(true);
       const res = await api.glControllerListTaxSettingsFiles();
-      const data = res.data.items as unknown as SettingsFile[];
+      const data = res.data as unknown as SettingsFile[];
       setFiles(data);
       if (data?.length > 0) {
         setSelectedFile(data[0].filename);
       }
-    } catch (err: any) {
-      toast.error('Failed to load available tax settings: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Failed to load available tax settings: ' + getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -56,8 +57,8 @@ export default function ImportTaxModal({ isOpen, onClose, onImportComplete }: Pr
       toast.success(`Successfully imported ${(data as unknown as { created?: number })?.created || 0} tax categories.`);
       onImportComplete();
       onClose();
-    } catch (err: any) {
-      toast.error('Failed to import tax settings: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('Failed to import tax settings: ' + getErrorMessage(err));
     } finally {
       setIsImporting(false);
     }

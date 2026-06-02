@@ -1,5 +1,6 @@
 export interface EnrichmentResult {
   isValid: boolean;
+  // modbm-allow-record-any
   data: Record<string, any>;
 }
 
@@ -26,7 +27,9 @@ export interface IEnrichmentProvider {
    * @returns EnrichmentResult
    */
   lookup(
+    // modbm-allow-record-any
     payload: string | Record<string, any>,
+    // modbm-allow-record-any
     config?: Record<string, any>,
   ): Promise<EnrichmentResult>;
 
@@ -39,7 +42,9 @@ export interface IEnrichmentProvider {
    * Optional: Record a formal transaction to the provider (for stateful API engines like tax providers)
    */
   recordTransaction?(
+    // modbm-allow-record-any
     payload: Record<string, any>,
+    // modbm-allow-record-any
     config?: Record<string, any>,
   ): Promise<EnrichmentResult>;
 
@@ -47,7 +52,9 @@ export interface IEnrichmentProvider {
    * Optional: Reverse a previously recorded formal transaction
    */
   recordRefund?(
+    // modbm-allow-record-any
     payload: Record<string, any>,
+    // modbm-allow-record-any
     config?: Record<string, any>,
   ): Promise<EnrichmentResult>;
 }

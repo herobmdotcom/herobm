@@ -23,25 +23,40 @@ export class AbrProvider implements IEnrichmentProvider {
     return ['AU'];
   }
 
-  getConfigSchema(): any {
+  getConfigSchema(): Record<string, unknown> {
     return {
       type: 'object',
       properties: {
         apiKey: { type: 'string', title: 'ABR API GUID', format: 'password' },
+        testPayload: {
+          type: 'object',
+          title: 'Test Payload',
+          description: 'A sample payload to test the integration.',
+          default: JSON.stringify(
+            {
+              abn: '51824753556',
+            },
+            null,
+            2,
+          ),
+        },
       },
-      required: ['apiKey'],
     };
   }
 
+  // modbm-allow-record-any
   async lookup(
+    // modbm-allow-record-any
     payload: string | Record<string, any>,
+    // modbm-allow-record-any
     config?: Record<string, any>,
   ): Promise<EnrichmentResult> {
-    const query = typeof payload === 'string' ? payload : '';
-    // Basic cleanup of the ABN string (remove spaces)
-    const cleanAbn = query.replace(/\s/g, '');
+    const cleanAbn =
+      typeof payload === 'string'
+        ? payload.replace(/\s+/g, '')
+        : String((payload as any)?.abn || '').replace(/\s+/g, '');
 
-    if (!config?.apiKey) {
+    if (!config?.apiKey && !process.env.ABR_GUID) {
       throw new Error(
         'ABR API key not configured. Please configure it in Settings > Integrations.',
       );
@@ -85,7 +100,7 @@ export class AbrProvider implements IEnrichmentProvider {
     }
 
     // Default mock response for any 11-digit number
-    if (cleanAbn.length === 11 && /^\\d+$/.test(cleanAbn)) {
+    if (cleanAbn.length === 11 && /^\d+$/.test(cleanAbn)) {
       const data = {
         name: 'MOCK COMPANY PTY LTD',
         isTaxRegistered: true,

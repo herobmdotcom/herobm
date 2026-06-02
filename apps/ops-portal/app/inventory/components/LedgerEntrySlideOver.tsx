@@ -61,7 +61,6 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
     >
       {loading ? (
         <div className="flex justify-center items-center py-12">
-          {/* eslint-disable-next-line i18next/no-literal-string */}
           <span className="loading loading-spinner text-gray-400"></span>
         </div>
       ) : details ? (

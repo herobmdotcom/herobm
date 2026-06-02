@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Query,
+  UseGuards,
+  Body,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -18,10 +26,16 @@ import { BankStatementService } from './bank-statement.service';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
+import {
+  BankStatementLineDto,
+  BankStatementConfirmMatchDto,
+  BankStatementManualMatchDto,
+} from './dto/bank-statement.dto';
+
 @ApiTags('BankFeeds')
 @ApiBearerAuth()
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('gl-accounts')
+@CasbinResource('gl')
 @Controller('gl/bank-statement')
 export class BankStatementController {
   constructor(private readonly bankStatementService: BankStatementService) {}
@@ -34,7 +48,7 @@ export class BankStatementController {
   })
   @ApiOkResponse({
     description: 'Returns bank statement lines',
-    schema: { type: 'object' },
+    type: [BankStatementLineDto],
   })
   @ApiQuery({ name: 'isReconciled', required: false, type: Boolean })
   async getLines(
@@ -45,9 +59,7 @@ export class BankStatementController {
     if (isReconciledStr === 'true') isReconciled = true;
     if (isReconciledStr === 'false') isReconciled = false;
 
-    return {
-      data: await this.bankStatementService.getLines(glAccountId, isReconciled),
-    };
+    return await this.bankStatementService.getLines(glAccountId, isReconciled);
   }
 
   @Post('lines/:id/confirm-match')
@@ -61,9 +73,42 @@ export class BankStatementController {
     description: 'Match confirmed',
     schema: { type: 'object' },
   })
-  @ApiBody({ schema: { type: 'object' } })
-  async confirmMatch(@Param('id') id: string, @AuthUser() user: JwtUser) {
+  @ApiBody({ type: BankStatementConfirmMatchDto })
+  async confirmMatch(
+    @Param('id') id: string,
+    @Body() dto: BankStatementConfirmMatchDto,
+    @AuthUser() user: JwtUser,
+  ) {
     const actor = user?.username || 'system';
-    return this.bankStatementService.confirmMatch(id, actor);
+    return this.bankStatementService.confirmMatch(
+      id,
+      actor,
+      dto.reconciliationId,
+    );
+  }
+
+  @Post('lines/:id/manual-match')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Manually match a line',
+    description: 'Manually links a bank line to a specific journal line.',
+  })
+  @ApiCreatedResponse({
+    description: 'Match confirmed',
+    schema: { type: 'object' },
+  })
+  @ApiBody({ type: BankStatementManualMatchDto })
+  async manualMatch(
+    @Param('id') id: string,
+    @Body() dto: BankStatementManualMatchDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    const actor = user?.username || 'system';
+    return this.bankStatementService.manualMatch(
+      id,
+      dto.journalLineId,
+      actor,
+      dto.reconciliationId,
+    );
   }
 }

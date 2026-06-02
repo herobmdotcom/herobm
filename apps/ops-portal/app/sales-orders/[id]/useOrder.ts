@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { reportError, ApiError, apiMutate } from '@/lib/api';
+import { reportError, ApiError } from '@/lib/api';
 import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { 
@@ -229,12 +229,12 @@ export function useOrder(id: string) {
             });
             toast(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as Parameters<typeof tCommon>[0]) }), { icon: '🔄' });
             await loadOrder(undefined, false);
-        } catch (err: any) {
-            const isApiError = err && (err.status === 409 || err.name === 'ApiError');
-            if (isApiError && err.data?.message === 'INVENTORY_GAP') {
-                return err.data.gaps;
+        } catch (err: unknown) {
+            const anyErr = err as any;
+            const isApiError = anyErr && (anyErr.status === 409 || anyErr.name === 'ApiError');
+            if (isApiError && anyErr.data?.message === 'INVENTORY_GAP') {
+                return anyErr.data.gaps;
             }
-
             setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
             throw err;
         }
@@ -243,7 +243,7 @@ export function useOrder(id: string) {
     const calculateTaxes = async () => {
         setSaving(true);
         try {
-            await apiMutate(`/api/sales-orders/${encodeURIComponent(id)}/tax`, 'POST');
+            await api.ordersControllerTriggerTaxCalculation(encodeURIComponent(id), {});
             await loadOrder(undefined, false);
             toast.success('Taxes calculated successfully', { icon: '✅' });
         } catch (err) {
@@ -323,6 +323,7 @@ export function useOrder(id: string) {
         }
     };
 
+    // modbm-allow-record-any
     const updateLineFields = async (lineId: string, payload: Record<string, any>) => {
         setSaving(true);
         try {
@@ -349,6 +350,7 @@ export function useOrder(id: string) {
         }
     };
 
+    // modbm-allow-record-any
     const addLineFromProduct = async (p: Record<string, any>) => {
         if (!order) return;
         const exists = order.lines.some((l) => l.productId === p.productId);

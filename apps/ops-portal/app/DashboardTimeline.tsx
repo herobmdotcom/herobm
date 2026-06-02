@@ -130,7 +130,6 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
               className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
               style={{ background: style.bg, color: style.color }}
             >
-              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-[18px]">{style.icon}</span>
             </div>
             

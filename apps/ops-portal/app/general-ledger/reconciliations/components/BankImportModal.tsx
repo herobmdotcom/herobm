@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { getToken, apiFetch, apiMutate } from '@/lib/api';
+// eslint-disable-next-line no-restricted-imports
+import { getToken, apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 
 function getExcelColumnName(colIndex: string): string {
   const num = parseInt(colIndex, 10);
@@ -25,6 +27,7 @@ interface BankImportModalProps {
 
 export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImportModalProps) {
   const t = useTranslations('gl.reconciliations');
+  const tCommon = useTranslations('common');
   const [step, setStep] = useState(1);
   const [file, setFile] = useState<File | null>(null);
   const [glAccountId, setGlAccountId] = useState('');
@@ -47,8 +50,8 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
   useEffect(() => {
     if (isOpen) {
       // fetch bank accounts
-      apiFetch<any>('/api/gl/accounts?isBankAccount=true')
-        .then(res => setBankAccounts(Array.isArray(res) ? res : res.items || []))
+      api.glControllerGetAccounts({ isBankAccount: 'true' })
+        .then(res => setBankAccounts(Array.isArray(res.data) ? res.data : (res.data as unknown as { items: unknown[] }).items || []))
         .catch(console.error);
     } else {
       // reset state when closed
@@ -61,7 +64,7 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
 
   useEffect(() => {
     if (glAccountId) {
-      apiFetch<any[]>(`/api/gl/bank-feeds/profiles/${glAccountId}`).then(res => setProfiles(res)).catch(console.error);
+      api.bankFeedsControllerGetProfiles(glAccountId).then(res => setProfiles(res.data)).catch(console.error);
     }
   }, [glAccountId]);
 
@@ -80,18 +83,15 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
       const formData = new FormData();
       formData.append('file', file);
       
-      const res = await fetch('/api/gl/bank-feeds/parse', {
+      const res = await apiFetch<any>('/api/gl/bank-feeds/parse', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}` },
         body: formData,
       });
       
-      if (!res.ok) throw new Error('Failed to parse CSV');
-      const data = await res.json();
-      setHeaders(Object.keys(data.headers));
+      setHeaders(Object.keys(res.headers));
       setStep(2);
     } catch (err) {
-      console.error(err);
+      reportError(err);
     } finally {
       setLoading(false);
     }
@@ -103,7 +103,7 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
       let finalProfileId = selectedProfileId;
       if (!selectedProfileId) {
         // create new profile
-        const profileRes = await apiMutate<any>('/api/gl/bank-feeds/profiles', 'POST', {
+        const profileRes = await api.bankFeedsControllerCreateProfile({
           glAccountId,
           name: name || 'New Profile',
           dateColumn,
@@ -112,7 +112,7 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
           referenceColumn: referenceColumn || undefined,
           headerRows
         });
-        finalProfileId = profileRes.profileId;
+        finalProfileId = profileRes.data.profileId;
       }
 
       const formData = new FormData();
@@ -120,19 +120,15 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
       formData.append('glAccountId', glAccountId);
       formData.append('profileId', finalProfileId);
       
-      const res = await fetch('/api/gl/bank-feeds/import', {
+      const res = await apiFetch<any>('/api/gl/bank-feeds/import', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}` },
         body: formData,
       });
 
-      if (!res.ok) throw new Error('Failed to import CSV');
-      const data = await res.json();
-
-      setResults(data);
+      setResults(res);
       setStep(3);
     } catch (err) {
-      console.error(err);
+      reportError(err);
     } finally {
       setLoading(false);
     }
@@ -142,27 +138,30 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-[var(--bg-card)] rounded-lg shadow-xl w-full max-w-2xl border border-[var(--border)] overflow-hidden flex flex-col max-h-[90vh]">
         <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex justify-between items-center shrink-0">
-          <h2 className="text-xl font-bold text-[var(--text-primary)]">Import Bank Statement</h2>
-          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+          <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('importBankStatement')}</h2>
+          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            <span>✕</span>
+          </button>
         </div>
         
         <div className="p-6 overflow-y-auto flex-1 text-[var(--text-primary)]">
           {step === 1 && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Bank Account</label>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('bankAccount')}</label>
                 <select className="input w-full" value={glAccountId} onChange={e => setGlAccountId(e.target.value)}>
-                  <option value="">Select an account...</option>
+                  <option value="">{t('selectAccount')}</option>
                   {bankAccounts.map(a => <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">CSV File</label>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('csvFile')}</label>
                 <div className="flex items-center gap-4">
                   <button type="button" className="btn btn-secondary" onClick={() => document.getElementById('csv-upload')?.click()}>
-                    Choose File
+                    {t('chooseFile')}
                   </button>
-                  <span className="text-sm text-[var(--text-muted)]">{file ? file.name : 'No file selected'}</span>
+                  <span className="text-sm text-[var(--text-muted)]">{file ? file.name : t('noFileSelected')}</span>
                   <input id="csv-upload" type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
                 </div>
               </div>
@@ -173,9 +172,9 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
             <div className="space-y-4">
               {profiles.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Saved Profile</label>
+                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('savedProfile')}</label>
                   <select className="input w-full" value={selectedProfileId} onChange={e => setSelectedProfileId(e.target.value)}>
-                    <option value="">Create new profile...</option>
+                    <option value="">{t('createNewProfile')}</option>
                     {profiles.map(p => <option key={p.profileId} value={p.profileId}>{p.name}</option>)}
                   </select>
                 </div>
@@ -184,34 +183,34 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
               {!selectedProfileId && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
-                    <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Profile Name</label>
+                    <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('profileName')}</label>
                     <input type="text" value={name} onChange={e => setName(e.target.value)} className="input w-full" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Date Column</label>
+                    <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('dateColumn')}</label>
                     <select className="input w-full" value={dateColumn} onChange={e => setDateColumn(e.target.value)}>
                       <option value="">Select...</option>
                       {headers.map(h => <option key={h} value={h}>{getExcelColumnName(h)}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Amount Column</label>
+                    <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('amountColumn')}</label>
                     <select className="input w-full" value={amountColumn} onChange={e => setAmountColumn(e.target.value)}>
                       <option value="">Select...</option>
                       {headers.map(h => <option key={h} value={h}>{getExcelColumnName(h)}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Description Column</label>
+                    <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('descriptionColumn')}</label>
                     <select className="input w-full" value={descriptionColumn} onChange={e => setDescriptionColumn(e.target.value)}>
                       <option value="">Select...</option>
                       {headers.map(h => <option key={h} value={h}>{getExcelColumnName(h)}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Reference Column (Optional)</label>
+                    <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('referenceColumn')}</label>
                     <select className="input w-full" value={referenceColumn} onChange={e => setReferenceColumn(e.target.value)}>
-                      <option value="">None</option>
+                      <option value="">{t('none')}</option>
                       {headers.map(h => <option key={h} value={h}>{getExcelColumnName(h)}</option>)}
                     </select>
                   </div>
@@ -223,12 +222,13 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
           {step === 3 && results && (
             <div className="space-y-4 text-center py-6">
               <div className="flex justify-center items-center gap-2 mb-2">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined text-[24px] text-[var(--success)]">check_circle</span>
-                <h3 className="text-lg font-bold text-[var(--text-primary)]">Import complete</h3>
+                <h3 className="text-lg font-bold text-[var(--text-primary)]">{t('importComplete')}</h3>
               </div>
               <div className="text-[var(--text-muted)]">
-                <p>{results.autoMatchedCount} lines were auto-reconciled by rules.</p>
-                <p>{results.unmatchedCount} lines were queued for manual reconciliation.</p>
+                <p>{t('linesAutoReconciled', { count: results.autoMatchedCount })}</p>
+                <p>{t('linesQueued', { count: results.unmatchedCount })}</p>
               </div>
             </div>
           )}
@@ -237,25 +237,25 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
         <div className="px-6 py-4 border-t border-[var(--border)] bg-[var(--bg-secondary)] flex justify-end gap-3 shrink-0">
           {step < 3 && (
             <button onClick={onClose} className="btn btn-secondary">
-              Cancel
+              {tCommon('cancel')}
             </button>
           )}
           
           {step === 1 && (
             <button onClick={handleParse} disabled={!file || !glAccountId || loading} className="btn btn-primary">
-              {loading ? 'Parsing...' : 'Next'}
+              {loading ? t('parsing') : t('next')}
             </button>
           )}
 
           {step === 2 && (
             <button onClick={handleImport} disabled={loading} className="btn btn-primary">
-              {loading ? 'Importing...' : 'Import'}
+              {loading ? t('importing') : t('import')}
             </button>
           )}
 
           {step === 3 && (
             <button onClick={() => { onClose(); onSuccess(); }} className="btn btn-primary">
-              Done
+              {t('done')}
             </button>
           )}
         </div>

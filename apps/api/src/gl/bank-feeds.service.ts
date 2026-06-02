@@ -86,6 +86,17 @@ export class BankFeedsService {
     return result[0];
   }
 
+  async deleteReconciliationRule(ruleId: string) {
+    const result = await this.db
+      .delete(reconciliationRules)
+      .where(eq(reconciliationRules.ruleId, ruleId))
+      .returning();
+    if (!result.length) {
+      throw new NotFoundException('Rule not found');
+    }
+    return result[0];
+  }
+
   async importCsv(fileBuffer: Buffer, glAccountId: string, profileId: string) {
     // 1. Get mapping profile
     const profiles = await this.db

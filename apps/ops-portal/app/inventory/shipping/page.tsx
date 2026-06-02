@@ -217,7 +217,6 @@ export default function ShippingPage() {
                 <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
                     {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="material-symbols-outlined text-4xl mb-2 opacity-50">local_shipping</span>
-                    {/* eslint-enable i18next/no-literal-string */}
                     {t('selectOrder')}
                 </div>
             ) : loadingContext ? (
@@ -250,7 +249,6 @@ export default function ShippingPage() {
                                 <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md flex items-center gap-2">
                                     {/* eslint-disable-next-line i18next/no-literal-string */}
                                     <span className="material-symbols-outlined text-sm">error</span>
-                                    {/* eslint-enable i18next/no-literal-string */}
                                     {error}
                                 </div>
                             )}
@@ -445,7 +443,6 @@ export default function ShippingPage() {
                                                     <div className="flex items-start sm:items-center gap-3">
                                                         {/* eslint-disable-next-line i18next/no-literal-string */}
                                                         <span className="material-symbols-outlined text-[var(--text-muted)] text-xl mt-0.5 sm:mt-0 shrink-0">inventory_2</span>
-                                                        {/* eslint-enable i18next/no-literal-string */}
                                                         <div className="min-w-0">
                                                             <Link href={`/shipments/${shipment.shipmentId}`} className="font-bold text-base text-[var(--text-primary)] hover:text-[var(--accent)] hover:underline break-all sm:break-normal">
                                                                 {shipment.shipmentNumber}
@@ -558,7 +555,6 @@ export default function ShippingPage() {
                                             <div className="flex items-center gap-2">
                                                 {/* eslint-disable-next-line i18next/no-literal-string */}
                                                 <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.shippabilityStatus === 'ready' ? 'text-[var(--success)]' : 'text-[var(--warning)]'}`} style={{ fontVariationSettings: "'FILL' 1" }}>fiber_manual_record</span>
-                                                {/* eslint-enable i18next/no-literal-string */}
                                                 <div className="font-bold text-[var(--text-primary)] text-sm">{order.orderNumber}</div>
                                             </div>
                                             <StateBadge state={order.stateCode as ValidState} />

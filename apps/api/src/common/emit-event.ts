@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import type { AggregateTypeValue } from './event-types';
-import { OUTBOX_EVENT_TYPES } from './event-types';
+import { OUTBOX_EVENT_TYPES, AggregateType, EventType } from './event-types';
 import {
   orderEvents,
   purchaseOrderEvents,
@@ -102,11 +102,40 @@ export async function emitEvent(
   }
 
   // 2. Conditionally enqueue for integration relay
-  if (OUTBOX_EVENT_TYPES.has(params.eventType)) {
+  const qualifiedEvent = `${params.aggregateType}.${params.eventType}`;
+
+  // Backwards compatibility for testing or legacy events directly in OUTBOX_EVENT_TYPES
+  // Wait, if we rename system.gl_posted to journal_entry.posted, we must map it.
+  let finalEventForOutbox = qualifiedEvent;
+
+  // Map internal GL_POSTED to journal_entry.posted since system.gl_posted isn't in OUTBOX_EVENT_TYPES anymore
+  if (
+    params.aggregateType === AggregateType.SYSTEM &&
+    params.eventType === EventType.GL_POSTED
+  ) {
+    finalEventForOutbox = 'journal_entry.posted';
+  } else if (
+    params.aggregateType === AggregateType.SYSTEM &&
+    params.eventType === EventType.STOCK_ADJUSTED
+  ) {
+    finalEventForOutbox = 'stock_adjustment.processed';
+  } else if (
+    params.aggregateType === AggregateType.GOODS_RECEIPT &&
+    params.eventType === EventType.STOCK_RECEIVED
+  ) {
+    finalEventForOutbox = 'goods_receipt.received';
+  } else if (
+    params.aggregateType === AggregateType.SHIPMENT &&
+    params.eventType === EventType.STOCK_DISPATCHED
+  ) {
+    finalEventForOutbox = 'shipment.dispatched';
+  }
+
+  if (OUTBOX_EVENT_TYPES.has(finalEventForOutbox)) {
     await tx.insert(outbox).values({
       aggregateType: params.aggregateType,
       aggregateId: params.aggregateId,
-      eventType: params.eventType,
+      eventType: finalEventForOutbox,
       payload: params.payload,
     });
   }

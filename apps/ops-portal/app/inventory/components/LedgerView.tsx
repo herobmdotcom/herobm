@@ -23,13 +23,13 @@ export default function LedgerView() {
     },
     { 
       field: 'document', 
-      headerName: tInventory('columns.document', { fallback: 'Document' }), 
+      headerName: tInventory('columns.document'), 
       width: 180,
       cellStyle: { fontWeight: '600', color: 'var(--accent)' }
     },
     { 
       field: 'sourceType', 
-      headerName: tInventory('columns.sourceType', { fallback: 'Type' }), 
+      headerName: tInventory('columns.sourceType'), 
       width: 140 
     },
     { 
@@ -45,7 +45,7 @@ export default function LedgerView() {
     },
     { 
       field: 'change', 
-      headerName: tInventory('columns.qtyChange', { fallback: 'Qty Change' }), 
+      headerName: tInventory('columns.qtyChange'), 
       width: 140, 
       type: 'numericColumn',
       cellStyle: (params) => {
@@ -61,7 +61,7 @@ export default function LedgerView() {
     },
     {
       field: 'onHand',
-      headerName: tInventory('columns.onHand', { fallback: 'On Hand' }),
+      headerName: tInventory('columns.onHand'),
       width: 140,
       type: 'numericColumn',
       valueFormatter: (p: any) => p.value ? parseFloat(p.value).toLocaleString() : '0',
@@ -69,7 +69,7 @@ export default function LedgerView() {
     },
     { 
       field: 'actor', 
-      headerName: tInventory('columns.actor', { fallback: 'Actor' }), 
+      headerName: tInventory('columns.actor'), 
       width: 150 
     },
   ], [tCommon, tInventory]);
@@ -80,10 +80,10 @@ export default function LedgerView() {
         endpoint={`/api/inventory/ledger?days=${days}`}
         columns={columns}
         gridKey="ops-inventory-ledger"
-        searchPlaceholder={tInventory('placeholders.searchLedger', { fallback: 'Search transactions...' })}
+        searchPlaceholder={tInventory('placeholders.searchLedger')}
         exportFileName="inventory-ledger"
         fetchAll
-        pageTitle={tInventory('tabs.ledger', { fallback: 'Ledger' })}
+        pageTitle={tInventory('tabs.ledger')}
         headerFilters={
           <select
             value={days}
@@ -91,7 +91,7 @@ export default function LedgerView() {
             className="input text-sm"
             style={{ minWidth: 150 }}
           >
-            <option value={1}>{tInventory('filters.last24Hours', { fallback: 'Last 24 Hours' })}</option>
+            <option value={1}>{tInventory('filters.last24Hours')}</option>
             <option value={7}>{tInventory('filters.last7Days')}</option>
             <option value={30}>{tInventory('filters.last30Days')}</option>
             <option value={90}>{tInventory('filters.last90Days')}</option>

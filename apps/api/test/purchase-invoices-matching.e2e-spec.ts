@@ -54,6 +54,7 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
       .post('/api/suppliers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        address1Country: 'AU',
         vendorNumber: `E2E-MATCH-VEND-${Date.now()}`,
         name: 'E2E 3-Way Matching Vendor',
       });

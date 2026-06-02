@@ -71,7 +71,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
   }
 
   if (!invoice) {
-    return <div className="flex items-center justify-center p-12 text-gray-500 text-sm">{tCommon('errors.failedToLoadOrder', { defaultValue: 'Invoice not found.' })}</div>;
+    return <div className="flex items-center justify-center p-12 text-gray-500 text-sm">{tCommon('errors.failedToLoadOrder')}</div>;
   }
 
   const isEditable = invoice.stateCode === PURCHASE_INVOICE_STATE.DRAFT;
@@ -320,7 +320,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                   <th style={{ width: 150 }}>{t('columns.product')}</th>
                   <th>{t('columns.description')}</th>
                   {!isMatchingMode && <th style={{ width: 280 }}>{t('columns.allocation')}</th>}
-                  <th style={{ width: 90, textAlign: 'right' }}>{t('columns.qtyToBill', { defaultValue: 'Qty' })}</th>
+                  <th style={{ width: 90, textAlign: 'right' }}>{t('columns.qtyToBill')}</th>
                   <th style={{ width: 110, textAlign: 'right' }}>{t('columns.unitPrice')}</th>
                   <th style={{ width: 110, textAlign: 'right' }}>{t('columns.amount')}</th>
                   {!isMatchingMode && isEditable && <th style={{ width: 50 }}></th>}
@@ -545,7 +545,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                               {line.productNumber || line.productId.substring(0, 8)}
                             </span>
                           ) : (
-                            <span className="font-medium text-slate-500">Custom Item</span>
+                            <span className="font-medium text-slate-500">{t('customItem')}</span>
                           )}
                           {canEditLines && (
                             <button className="text-gray-400 hover:text-red-500 ml-auto" onClick={(e) => { e.stopPropagation(); removeLine(line.lineId); }}>
@@ -575,13 +575,13 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                         ...(isMatchingMode ? [{
                           label: 'Status',
                           value: line.matchStatus === MATCH_STATUS.MATCHED ? (
-                            <span style={{ fontWeight: 600, color: 'var(--badge-shipped)' }}>{'✓ Matched'}</span>
+                            <span style={{ fontWeight: 600, color: 'var(--badge-shipped)' }}>{t('matching.matched')}</span>
                           ) : (
-                            <span className="text-[var(--text-muted)]">Unmatched</span>
+                            <span className="text-[var(--text-muted)]">{t('matching.unmatched')}</span>
                           )
                         }] : []),
                         {
-                          label: t('columns.qtyToBill', { defaultValue: 'Qty' }),
+                          label: t('columns.qtyToBill'),
                           value: canEditLines ? (
                             <input
                               className="input"

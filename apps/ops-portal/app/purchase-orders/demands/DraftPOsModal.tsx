@@ -225,7 +225,7 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
             onClick={onClose}
             className="btn btn-secondary"
           >
-            {t('demands.cancel', { fallback: 'Cancel' })}
+            {t('demands.cancel')}
           </button>
           <button 
             onClick={handleGenerate}
@@ -236,7 +236,7 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
               /* eslint-disable-next-line i18next/no-literal-string */
               <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
             )}
-            {t('demands.createDraftPos', { fallback: 'Create Draft POs' })}
+            {t('demands.createDraftPos')}
           </button>
         </div>
       </div>

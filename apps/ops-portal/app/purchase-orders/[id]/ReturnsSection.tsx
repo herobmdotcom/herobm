@@ -86,7 +86,7 @@ function ReturnCard({
             href={`/purchase-orders/returns/${r.returnId}`}
             className="btn btn-primary btn-sm"
           >
-            {tPurchase('returns.enterDebitNote', { fallback: 'Enter Debit Note' })}
+            {tPurchase('returns.enterDebitNote')}
           </a>
         )}
       </div>
@@ -355,7 +355,7 @@ export default function ReturnsSection({
         </h3>
         {canInitiateReturn && (
           <button className="btn btn-secondary btn-sm" onClick={() => setIsInitiateModalOpen(true)}>
-            {tPurchase('returns.initiateReturn', { fallback: 'Initiate Return' })}
+            {tPurchase('returns.initiateReturn')}
           </button>
         )}
       </div>
