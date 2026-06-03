@@ -83,7 +83,7 @@ export default function GoodsReceivedListPage() {
     const [days, setDays] = useState('90');
     const [refreshKey, setRefreshKey] = useState(0);
 
-    const [locations, setLocations] = useState<any[]>([]);
+    const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
     const [selectedLocationId, setSelectedLocationId] = useState<string>('');
 
     useEffect(() => {
@@ -99,7 +99,7 @@ export default function GoodsReceivedListPage() {
     }, [app?.defaultFulfillmentLocationId]);
 
     const [slideOverOpen, setSlideOverOpen] = useState(false);
-    const [selectedRows, setSelectedRows] = useState<any[]>([]);
+    const [selectedRows, setSelectedRows] = useState<Record<string, unknown>[]>([]);
 
     const handleAllocate = useCallback(() => {
         if (selectedRows.length === 0) return;
@@ -124,7 +124,12 @@ export default function GoodsReceivedListPage() {
             for (const row of eligible) {
                 try {
                     if (reason) {
-                        await api.inventoryControllerToggleQuarantine(row.goodsReceivedLineId, { reason } as unknown as import('@modbm/sdk').ToggleQuarantineDto);
+                        await api.inventoryControllerQuarantineMove({
+                            lineId: row.goodsReceivedLineId as string,
+                            sourceType: 'goods_receipt',
+                            quantity: (row.quantityReceived || '0') as string,
+                            reason
+                        });
                         toast.success('Line quarantined successfully');
                     }
                 } catch (err: unknown) {
@@ -155,7 +160,7 @@ export default function GoodsReceivedListPage() {
         }
 
         try {
-            await api.goodsReceivedControllerCancelReception(receiptId, {});
+            await api.goodsReceivedControllerCancelReception(receiptId as string, {});
             triggerRefresh();
             setSelectedRows([]);
         } catch (err: unknown) {

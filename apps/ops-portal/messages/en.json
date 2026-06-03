@@ -43,6 +43,44 @@
       "copiedToClipboard": "Copied to clipboard",
       "copy": "Copy"
     },
+    "businessReports": {
+      "form": {
+        "buttons": {
+          "save": "Save Report",
+          "saving": "Saving...",
+          "delete": "Delete Report",
+          "returnToList": "Return to List"
+        },
+        "labels": {
+          "displayName": "Name",
+          "uniqueSlug": "System Token (Slug)",
+          "dataSourceHook": "Data Source Hook",
+          "description": "Description",
+          "uiConfig": "UI Configuration (JSON)"
+        },
+        "placeholders": {
+          "selectDataSource": "Select a Data Source...",
+          "displayName": "e.g. Sales by Customer",
+          "uniqueSlug": "e.g. sales-by-customer"
+        },
+        "titles": {
+          "edit": "Edit Configuration",
+          "new": "New Report"
+        },
+        "toasts": {
+          "created": "Report created",
+          "updated": "Report updated",
+          "deleted": "Report deleted",
+          "saveFailed": "Failed to save report",
+          "deleteFailed": "Failed to delete report",
+          "validationFailed": "Name, Slug, and Data Source Hook are required",
+          "invalidJson": "Invalid JSON in UI Configuration",
+          "systemDeleteError": "System reports cannot be deleted",
+          "deleteConfirm": "Are you sure you want to delete this report?"
+        },
+        "systemReportWarning": "This is a system report. It cannot be deleted."
+      }
+    },
     "reporting": {
       "hooks": {
         "toast": {
@@ -98,6 +136,10 @@
         "descriptions": {
           "contextHelp": "Only templates assigned to a context will appear in the action menus for those records."
         },
+        "jsonBrowser": {
+          "sampleData": "Sample Data Structure",
+          "sampleDataDesc": "The database returned no matching records for this data source. This is a generated sample to show you the expected JSON structure."
+        },
         "labels": {
           "contextResolver": "Context Resolver",
           "description": "Description",
@@ -144,7 +186,7 @@
         "searchPlaceholder": "Search Typst templates...",
         "totalCount": "Total Templates"
       },
-      "title": "Reporting Templates",
+      "title": "PDF Templates",
       "toast": {
         "success": "Success"
       }
@@ -745,6 +787,8 @@
     "copiedToClipboard": "Copied to clipboard",
     "copy": "Copy",
     "actions": "Actions",
+    "noData": "No data available.",
+    "chartTooLarge": "This chart contains too much data to render optimally ({count} points). Please apply filters to narrow down your results.",
     "activityTimeline": "Activity Timeline",
     "add": "Add",
     "address": {
@@ -3159,6 +3203,8 @@
       "save": "💾 Save"
     },
     "cancelConfirm": "Are you sure you want to cancel this transfer order?",
+    "cancelShipment": "Cancel Shipment",
+    "cancelShipmentConfirm": "Are you sure you want to cancel this shipment? The items will be returned to the picking area.",
     "columns": {
       "createdBy": "Created By",
       "createdOn": "Created On",

@@ -40,7 +40,7 @@ export const useSettings = () => useContext(SettingsContext);
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [gl, setGl] = useState<GlSettings | null>(null);
   const [app, setApp] = useState<AppSettings | null>(null);
-  const [organization, setOrganization] = useState<any | null>(null);
+  const [organization, setOrganization] = useState<api.OrganizationResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

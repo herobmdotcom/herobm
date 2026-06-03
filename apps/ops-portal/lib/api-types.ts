@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/auth/login": {
+    "/auth/login": {
         parameters: {
             query?: never;
             header?: never;
@@ -13,6 +13,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Login User
+         * @description Authenticates a user and returns a JWT token.
+         */
         post: operations["AuthController_login"];
         delete?: never;
         options?: never;
@@ -20,13 +24,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/me": {
+    "/auth/me": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Current User
+         * @description Returns the identity and role of the currently authenticated user.
+         */
         get: operations["AuthController_me"];
         put?: never;
         post?: never;
@@ -36,15 +44,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/customers": {
+    "/roles": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Find all roles
+         * @description Returns a list of all roles.
+         */
+        get: operations["RolesController_findAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/roles/{role}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get role details
+         * @description Returns details for a specific role.
+         */
+        get: operations["RolesController_findOne"];
+        put?: never;
+        /**
+         * Set role permissions
+         * @description Sets the permissions for a specific role.
+         */
+        post: operations["RolesController_setPermissions"];
+        /**
+         * Delete role
+         * @description Deletes a specific role.
+         */
+        delete: operations["RolesController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Customers
+         * @description Retrieve a paginated list of customers.
+         */
         get: operations["AccountsController_findAll"];
         put?: never;
+        /**
+         * Create Customer
+         * @description Create a new customer.
+         */
         post: operations["AccountsController_create"];
         delete?: never;
         options?: never;
@@ -52,23 +116,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/customers/{id}": {
+    "/customers/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Customer
+         * @description Retrieve a single customer by ID.
+         */
         get: operations["AccountsController_findOne"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
+        /**
+         * Update Customer
+         * @description Update an existing customer.
+         */
         patch: operations["AccountsController_update"];
         trace?: never;
     };
-    "/api/customers/{id}/archive": {
+    "/customers/{id}/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -77,6 +149,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Archive Customer
+         * @description Archive a customer.
+         */
         post: operations["AccountsController_archive"];
         delete?: never;
         options?: never;
@@ -84,7 +160,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/customers/{id}/unarchive": {
+    "/customers/{id}/unarchive": {
         parameters: {
             query?: never;
             header?: never;
@@ -93,6 +169,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Unarchive Customer
+         * @description Unarchive a customer.
+         */
         post: operations["AccountsController_unarchive"];
         delete?: never;
         options?: never;
@@ -100,15 +180,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/customer-groups": {
+    "/customer-groups": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * List Customer Groups
+         * @description Retrieve a list of all customer groups.
+         */
         get: operations["AccountGroupsController_findAll"];
         put?: never;
+        /**
+         * Create Customer Group
+         * @description Add a new customer group to the system.
+         */
         post: operations["AccountGroupsController_create"];
         delete?: never;
         options?: never;
@@ -116,31 +204,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/customer-groups/{id}": {
+    "/customer-groups/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Customer Group
+         * @description Retrieve detailed information about a specific customer group.
+         */
         get: operations["AccountGroupsController_findOne"];
         put?: never;
         post?: never;
+        /**
+         * Delete Customer Group
+         * @description Remove a customer group from the system.
+         */
         delete: operations["AccountGroupsController_remove"];
         options?: never;
         head?: never;
+        /**
+         * Update Customer Group
+         * @description Modify the details of an existing customer group.
+         */
         patch: operations["AccountGroupsController_update"];
         trace?: never;
     };
-    "/api/products": {
+    "/products": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * List Products
+         * @description Retrieve a paginated list of all products in the catalog.
+         */
         get: operations["ProductsController_findAll"];
         put?: never;
+        /**
+         * Create Product
+         * @description Register a new product in the catalog with its initial details.
+         */
         post: operations["ProductsController_create"];
         delete?: never;
         options?: never;
@@ -148,23 +256,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/products/{id}": {
+    "/products/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Product
+         * @description Retrieve detailed information for a specific product by its unique identifier.
+         */
         get: operations["ProductsController_findOne"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
+        /**
+         * Update Product
+         * @description Modify the details of an existing product.
+         */
         patch: operations["ProductsController_update"];
         trace?: never;
     };
-    "/api/products/{id}/archive": {
+    "/products/{id}/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -173,6 +289,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Archive Product
+         * @description Mark a product as archived to prevent it from being used in new transactions.
+         */
         post: operations["ProductsController_archive"];
         delete?: never;
         options?: never;
@@ -180,7 +300,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/products/{id}/unarchive": {
+    "/products/{id}/unarchive": {
         parameters: {
             query?: never;
             header?: never;
@@ -189,6 +309,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Unarchive Product
+         * @description Restore an archived product to active status.
+         */
         post: operations["ProductsController_unarchive"];
         delete?: never;
         options?: never;
@@ -196,7 +320,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/products/{id}/suppliers": {
+    "/products/{id}/suppliers": {
         parameters: {
             query?: never;
             header?: never;
@@ -205,6 +329,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Add Product Supplier
+         * @description Link a supplier to a product for purchasing purposes.
+         */
         post: operations["ProductsController_addSupplier"];
         delete?: never;
         options?: never;
@@ -212,7 +340,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/products/{id}/suppliers/{vendorId}": {
+    "/products/{id}/suppliers/{vendorId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -222,13 +350,17 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
+        /**
+         * Remove Product Supplier
+         * @description Unlink a supplier from a product.
+         */
         delete: operations["ProductsController_removeSupplier"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/products/{id}/uoms": {
+    "/products/{id}/uoms": {
         parameters: {
             query?: never;
             header?: never;
@@ -237,6 +369,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Add Product UOM
+         * @description Define a new Unit of Measure for the product.
+         */
         post: operations["ProductsController_addUom"];
         delete?: never;
         options?: never;
@@ -244,7 +380,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/products/{id}/uoms/{uomId}": {
+    "/products/{id}/uoms/{uomId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -254,21 +390,121 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
+        /**
+         * Remove Product UOM
+         * @description Delete a previously assigned Unit of Measure from a product.
+         */
         delete: operations["ProductsController_removeUom"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/product-groups": {
+    "/products/{id}/default-bins": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
+        /**
+         * Link Default Bin
+         * @description Assign a default storage bin to a product for inventory management.
+         */
+        post: operations["ProductsController_linkDefaultBin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{id}/default-bins/{binLinkId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Default Bin
+         * @description Remove the default storage bin assignment from a product.
+         */
+        delete: operations["ProductsController_removeDefaultBin"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{id}/components": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Components
+         * @description Retrieve the list of sub-components or ingredients that make up a product.
+         */
+        get: operations["ProductsController_getComponents"];
+        put?: never;
+        /**
+         * Add Component
+         * @description Add a new sub-component to the product bill of materials.
+         */
+        post: operations["ProductsController_addComponent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{id}/components/{componentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Component
+         * @description Remove a sub-component from the product bill of materials.
+         */
+        delete: operations["ProductsController_removeComponent"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Component
+         * @description Modify the details (like quantity) of an existing product component.
+         */
+        patch: operations["ProductsController_updateComponent"];
+        trace?: never;
+    };
+    "/product-groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Product Groups
+         * @description Retrieve all product groups configured in the system.
+         */
         get: operations["ProductGroupsController_findAll"];
         put?: never;
+        /**
+         * Create Product Group
+         * @description Create a new product group for categorizing items.
+         */
         post: operations["ProductGroupsController_create"];
         delete?: never;
         options?: never;
@@ -276,29 +512,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/product-groups/{id}": {
+    "/product-groups/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Product Group
+         * @description Retrieve details of a specific product group.
+         */
         get: operations["ProductGroupsController_findOne"];
         put?: never;
         post?: never;
+        /**
+         * Delete Product Group
+         * @description Remove a product group from the system.
+         */
         delete: operations["ProductGroupsController_remove"];
         options?: never;
         head?: never;
+        /**
+         * Update Product Group
+         * @description Modify an existing product group.
+         */
         patch: operations["ProductGroupsController_update"];
         trace?: never;
     };
-    "/api/inventory": {
+    "/inventory": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * List Inventory
+         * @description Retrieve a paginated list of inventory levels.
+         */
         get: operations["InventoryController_findAll"];
         put?: never;
         post?: never;
@@ -308,13 +560,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inventory/by-products": {
+    "/inventory/by-products": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get By Products
+         * @description Retrieve inventory items for specific product IDs.
+         */
         get: operations["InventoryController_findByProductIds"];
         put?: never;
         post?: never;
@@ -324,15 +580,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inventory/bins": {
+    "/inventory/by-products-bulk": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk Get By Products
+         * @description Retrieve inventory items for multiple product IDs in bulk.
+         */
+        post: operations["InventoryController_findByProductIdsBulk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/bins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Inventory Bins
+         * @description Retrieve a paginated list of inventory bins.
+         */
         get: operations["InventoryController_findBins"];
         put?: never;
+        /**
+         * Create Bin
+         * @description Create a new storage bin.
+         */
         post: operations["LocationsController_createBin"];
         delete?: never;
         options?: never;
@@ -340,15 +624,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inventory/locations": {
+    "/inventory/putaway-context": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Putaway Context
+         * @description Retrieve context for putting away inventory.
+         */
+        get: operations["InventoryController_getPutawayContext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Locations
+         * @description Retrieve all inventory locations.
+         */
         get: operations["InventoryController_findAllLocations"];
         put?: never;
+        /**
+         * Create Location
+         * @description Create a new warehouse location.
+         */
         post: operations["LocationsController_createLocation"];
         delete?: never;
         options?: never;
@@ -356,13 +668,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inventory/movements": {
+    "/inventory/movements": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * List Movements
+         * @description Retrieve inventory movements.
+         */
         get: operations["InventoryController_getMovements"];
         put?: never;
         post?: never;
@@ -372,13 +688,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inventory/ledger": {
+    "/inventory/ledger": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * List Ledger Entries
+         * @description Retrieve inventory ledger entries.
+         */
         get: operations["InventoryController_getLedger"];
         put?: never;
         post?: never;
@@ -388,13 +708,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inventory/entries/{id}": {
+    "/inventory/entries/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Entry Details
+         * @description Retrieve details for a specific inventory entry.
+         */
         get: operations["InventoryController_getEntryDetails"];
         put?: never;
         post?: never;
@@ -404,222 +728,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/sales-orders": {
+    "/inventory/pending-putaway": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["OrdersController_findAll"];
-        put?: never;
-        post: operations["OrdersController_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sales-orders/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["OrdersController_findOne"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["OrdersController_update"];
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/state": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["OrdersController_changeState"];
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["OrdersController_archive"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/unarchive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["OrdersController_unarchive"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/lines": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["OrdersController_addLine"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/lines/{lineId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["OrdersController_removeLine"];
-        options?: never;
-        head?: never;
-        patch: operations["OrdersController_updateLine"];
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/post-confirmation-lines": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["OrdersController_addPostConfirmationLine"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/returns": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["OrderReturnsController_findReturns"];
-        put?: never;
-        post: operations["OrderReturnsController_createReturn"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/returns/{returnId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["OrderReturnsController_findReturn"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["OrderReturnsController_updateReturn"];
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/returns/{returnId}/state": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["OrderReturnsController_changePurchasePurchasePurchasePurchaseReturnState"];
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/returns/{returnId}/lines": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["OrderReturnsController_addReturnLine"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/returns/{returnId}/lines/{lineId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["OrderReturnsController_removeReturnLine"];
-        options?: never;
-        head?: never;
-        patch: operations["OrderReturnsController_updateReturnLine"];
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/picking": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["OrderPickingController_getPickingSummary"];
+        /**
+         * List Pending Putaways
+         * @description Retrieve pending putaway lines.
+         */
+        get: operations["InventoryController_getPendingPutaway"];
         put?: never;
         post?: never;
         delete?: never;
@@ -628,7 +748,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/sales-orders/{id}/picking/lines/{lineId}": {
+    "/inventory/putaway": {
         parameters: {
             query?: never;
             header?: never;
@@ -637,46 +757,18 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["OrderPickingController_pickLine"];
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/picking/lines/{lineId}/location": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["OrderPickingController_updateLineLocation"];
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/picking/lines/{lineId}/pick-all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["OrderPickingController_pickAllForLine"];
+        /**
+         * Process Putaways
+         * @description Process inventory putaway.
+         */
+        post: operations["InventoryController_putaway"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/sales-orders/{id}/picking/pick-all": {
+    "/inventory/quarantine/{lineId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -685,134 +777,34 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["OrderPickingController_pickAllOrder"];
+        /**
+         * Toggle Quarantine
+         * @description Toggle quarantine state for an inventory item.
+         */
+        post: operations["InventoryController_toggleQuarantine"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/sales-orders/{id}/shipments": {
+    "/gl/accounts": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["OrderShipmentsController_findShipments"];
-        put?: never;
-        post: operations["OrderShipmentsController_createShipment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/shipments/{shipmentId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["OrderShipmentsController_findShipment"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["OrderShipmentsController_updateShipment"];
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/shipments/{shipmentId}/state": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["OrderShipmentsController_changeShipmentState"];
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/shipments/{shipmentId}/lines": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["OrderShipmentsController_addShipmentLine"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/sales-orders/{id}/shipments/{shipmentId}/lines/{lineId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["OrderShipmentsController_removeShipmentLine"];
-        options?: never;
-        head?: never;
-        patch: operations["OrderShipmentsController_updateShipmentLine"];
-        trace?: never;
-    };
-    "/api/tax-categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["taxCategoriesController_findAll"];
-        put?: never;
-        post: operations["taxCategoriesController_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/tax-categories/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["taxCategoriesController_findOne"];
-        put?: never;
-        post?: never;
-        delete: operations["taxCategoriesController_remove"];
-        options?: never;
-        head?: never;
-        patch: operations["taxCategoriesController_update"];
-        trace?: never;
-    };
-    "/api/gl/accounts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
+        /**
+         * Get Accounts
+         * @description Retrieve the chart of accounts or a flat list of accounts.
+         */
         get: operations["GlController_getAccounts"];
         put?: never;
+        /**
+         * Create Account
+         * @description Create a new general ledger account.
+         */
         post: operations["GlController_createAccount"];
         delete?: never;
         options?: never;
@@ -820,7 +812,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/gl/accounts/{id}": {
+    "/gl/accounts/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -833,18 +825,30 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /**
+         * Update Account
+         * @description Modify an existing general ledger account.
+         */
         patch: operations["GlController_updateAccount"];
         trace?: never;
     };
-    "/api/gl/journal-entries": {
+    "/gl/journal-entries": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Journal Entries
+         * @description Retrieve a paginated list of journal entries.
+         */
         get: operations["GlController_getJournalEntries"];
         put?: never;
+        /**
+         * Create Manual Entry
+         * @description Post a new manual journal entry to the ledger.
+         */
         post: operations["GlController_createManualJournalEntry"];
         delete?: never;
         options?: never;
@@ -852,13 +856,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/gl/journal-entries/{id}": {
+    "/gl/journal-entries/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Journal Entry
+         * @description Retrieve a specific journal entry by ID.
+         */
         get: operations["GlController_getJournalEntry"];
         put?: never;
         post?: never;
@@ -868,13 +876,37 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/gl/trial-balance": {
+    "/gl/journal-entries/source/{type}/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Source Entry
+         * @description Find a journal entry by its source transaction type and ID.
+         */
+        get: operations["GlController_getJournalEntryBySource"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/trial-balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Trial Balance
+         * @description Calculate and retrieve the trial balance as of a specific date.
+         */
         get: operations["GlController_getTrialBalance"];
         put?: never;
         post?: never;
@@ -884,13 +916,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/gl/general-ledger": {
+    "/gl/general-ledger": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get General Ledger
+         * @description Retrieve the general ledger line items for specific accounts and date ranges.
+         */
         get: operations["GlController_getGeneralLedger"];
         put?: never;
         post?: never;
@@ -900,14 +936,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/gl/settings": {
+    "/gl/settings": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Settings
+         * @description Retrieve the current general ledger settings.
+         */
         get: operations["GlController_getSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Settings
+         * @description Update the general ledger configuration settings.
+         */
+        patch: operations["GlController_updateSettings"];
+        trace?: never;
+    };
+    "/gl/settings/reload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reload Settings
+         * @description Force a reload of the application configuration cache.
+         */
+        post: operations["GlController_reloadSettings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/charts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Charts
+         * @description Get available predefined chart of accounts templates.
+         */
+        get: operations["GlController_listCharts"];
         put?: never;
         post?: never;
         delete?: never;
@@ -916,7 +1000,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/gl/seed": {
+    "/gl/seed": {
         parameters: {
             query?: never;
             header?: never;
@@ -925,6 +1009,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Seed Chart of Accounts
+         * @description Initialize the chart of accounts from a predefined template file.
+         */
         post: operations["GlController_seedChartOfAccounts"];
         delete?: never;
         options?: never;
@@ -932,7 +1020,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/reports/hooks/{hookSlug}/run": {
+    "/gl/tax-settings-files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Tax Settings
+         * @description Get available predefined tax configuration templates.
+         */
+        get: operations["GlController_listTaxSettingsFiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/seed-tax": {
         parameters: {
             query?: never;
             header?: never;
@@ -941,6 +1049,1790 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Seed Tax Settings
+         * @description Initialize tax rates and rules from a predefined template file.
+         */
+        post: operations["GlController_seedTaxSettings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/reconciliations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Reconciliations
+         * @description Retrieve a list of all bank reconciliations.
+         */
+        get: operations["ReconciliationController_getReconciliations"];
+        put?: never;
+        /**
+         * Create Reconciliation
+         * @description Start a new bank reconciliation process.
+         */
+        post: operations["ReconciliationController_createReconciliation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/reconciliations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Reconciliation
+         * @description Retrieve details of a specific bank reconciliation.
+         */
+        get: operations["ReconciliationController_getReconciliation"];
+        put?: never;
+        post?: never;
+        /**
+         * Discard Reconciliation
+         * @description Cancel and delete an in-progress bank reconciliation.
+         */
+        delete: operations["ReconciliationController_discardReconciliation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/reconciliations/{id}/unreconciled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Unreconciled Lines
+         * @description Retrieve unreconciled ledger lines for the bank account.
+         */
+        get: operations["ReconciliationController_getLines"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/reconciliations/{id}/lines/{lineId}/toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Toggle Line Status
+         * @description Mark a specific ledger line as cleared or uncleared.
+         */
+        post: operations["ReconciliationController_toggleLine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/reconciliations/{id}/post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Reconciliation
+         * @description Finalize and post the completed bank reconciliation.
+         */
+        post: operations["ReconciliationController_postReconciliation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/reconciliations/{id}/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Adjustment
+         * @description Create a journal entry adjustment for bank fees or interest.
+         */
+        post: operations["ReconciliationController_createAdjustment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-feeds/parse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parse CSV
+         * @description Parses a CSV file and returns the headers and sample rows.
+         */
+        post: operations["BankFeedsController_parseCsv"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-feeds/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import CSV
+         * @description Imports a CSV file and creates journal entries based on rules.
+         */
+        post: operations["BankFeedsController_importCsv"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-feeds/profiles/{glAccountId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Mapping Profiles
+         * @description Retrieves all mapping profiles for a specific GL account.
+         */
+        get: operations["BankFeedsController_getProfiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-feeds/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Mapping Profile
+         * @description Creates a new CSV mapping profile.
+         */
+        post: operations["BankFeedsController_createProfile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-feeds/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Rules
+         * @description Retrieves all reconciliation rules.
+         */
+        get: operations["BankFeedsController_getRules"];
+        put?: never;
+        /**
+         * Create Rule
+         * @description Creates a new reconciliation rule.
+         */
+        post: operations["BankFeedsController_createRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-feeds/rules/{ruleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Rule
+         * @description Deletes a reconciliation rule.
+         */
+        delete: operations["BankFeedsController_deleteRule"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-statement/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get bank statement lines
+         * @description Fetch imported bank statement lines.
+         */
+        get: operations["BankStatementController_getLines"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-statement/lines/{id}/confirm-match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a smart match
+         * @description Confirms a suggested match between a bank line and a journal line.
+         */
+        post: operations["BankStatementController_confirmMatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-statement/lines/{id}/manual-match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manually match a line
+         * @description Manually links a bank line to a specific journal line.
+         */
+        post: operations["BankStatementController_manualMatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings/uom-dictionary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * findAll
+         * @description findAll operation
+         */
+        get: operations["UomDictionaryController_findAll"];
+        put?: never;
+        /**
+         * create
+         * @description create operation
+         */
+        post: operations["UomDictionaryController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings/uom-dictionary/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * findOne
+         * @description findOne operation
+         */
+        get: operations["UomDictionaryController_findOne"];
+        put?: never;
+        post?: never;
+        /**
+         * remove
+         * @description remove operation
+         */
+        delete: operations["UomDictionaryController_remove"];
+        options?: never;
+        head?: never;
+        /**
+         * update
+         * @description update operation
+         */
+        patch: operations["UomDictionaryController_update"];
+        trace?: never;
+    };
+    "/settings/exchange-rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * findAll
+         * @description findAll operation
+         */
+        get: operations["ExchangeRatesController_findAll"];
+        put?: never;
+        /**
+         * create
+         * @description create operation
+         */
+        post: operations["ExchangeRatesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings/exchange-rates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * findOne
+         * @description findOne operation
+         */
+        get: operations["ExchangeRatesController_findOne"];
+        put?: never;
+        post?: never;
+        /**
+         * remove
+         * @description remove operation
+         */
+        delete: operations["ExchangeRatesController_remove"];
+        options?: never;
+        head?: never;
+        /**
+         * update
+         * @description update operation
+         */
+        patch: operations["ExchangeRatesController_update"];
+        trace?: never;
+    };
+    "/settings/organization": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get
+         * @description get operation
+         */
+        get: operations["OrganizationController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * update
+         * @description update operation
+         */
+        patch: operations["OrganizationController_update"];
+        trace?: never;
+    };
+    "/settings/app": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get
+         * @description get operation
+         */
+        get: operations["AppConfigController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * update
+         * @description update operation
+         */
+        patch: operations["AppConfigController_update"];
+        trace?: never;
+    };
+    "/settings/trading-terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List trading terms
+         * @description List all trading terms
+         */
+        get: operations["TradingTermsController_findAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings/cost-centers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all cost centers
+         * @description List all cost centers
+         */
+        get: operations["CostCentersController_findAll"];
+        put?: never;
+        /**
+         * Create a new cost center
+         * @description Create a new cost center
+         */
+        post: operations["CostCentersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings/cost-centers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a cost center
+         * @description Delete a cost center
+         */
+        delete: operations["CostCentersController_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update a cost center
+         * @description Update a cost center
+         */
+        patch: operations["CostCentersController_update"];
+        trace?: never;
+    };
+    "/settings/cost-centers/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk import cost centers
+         * @description Bulk import cost centers
+         */
+        post: operations["CostCentersController_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all activities
+         * @description List all activities
+         */
+        get: operations["ActivitiesController_findAll"];
+        put?: never;
+        /**
+         * Create a new activity
+         * @description Create a new activity
+         */
+        post: operations["ActivitiesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings/activities/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete an activity
+         * @description Delete an activity
+         */
+        delete: operations["ActivitiesController_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update an activity
+         * @description Update an activity
+         */
+        patch: operations["ActivitiesController_update"];
+        trace?: never;
+    };
+    "/settings/activities/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk import activities
+         * @description Bulk import activities
+         */
+        post: operations["ActivitiesController_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/picking-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Picking Queue
+         * @description Retrieve the queue of orders ready to be picked at a specific location.
+         */
+        get: operations["OrderPickingController_getPickingQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/picking": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Picking Summary
+         * @description Retrieve the picking summary for a specific sales order.
+         */
+        get: operations["OrderPickingController_getPickingSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/picking/lines/{lineId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pick Order Line
+         * @description Record a picked quantity for a specific sales order line item.
+         */
+        post: operations["OrderPickingController_pickLine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/picking/picks/{pickId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Cancel Pick
+         * @description Cancel and revert a recorded pick for a sales order.
+         */
+        delete: operations["OrderPickingController_cancelPick"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/shipping-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Shipping Queue
+         * @description Retrieve the queue of orders ready to be shipped from a location.
+         */
+        get: operations["OrderPickingController_getShippingQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/shipping-context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Shipping Context
+         * @description Retrieve shipment details and context for a sales order.
+         */
+        get: operations["OrderPickingController_getShippingContext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find All Orders
+         * @description Retrieve a paginated list of sales orders globally.
+         */
+        get: operations["OrdersController_findAll"];
+        put?: never;
+        /**
+         * Create Order
+         * @description Create a new sales order with or without line items.
+         */
+        post: operations["OrdersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find Order
+         * @description Retrieve detailed information for a specific sales order.
+         */
+        get: operations["OrdersController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Order
+         * @description Modify the details or metadata of an existing sales order.
+         */
+        patch: operations["OrdersController_update"];
+        trace?: never;
+    };
+    "/sales-orders/{id}/tax": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Calculate Taxes
+         * @description Manually trigger an external tax calculation for the order.
+         */
+        post: operations["OrdersController_triggerTaxCalculation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change Order State
+         * @description Update the processing state of a sales order.
+         */
+        patch: operations["OrdersController_changeState"];
+        trace?: never;
+    };
+    "/sales-orders/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive Order
+         * @description Mark a sales order as archived.
+         */
+        post: operations["OrdersController_archive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/unarchive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unarchive Order
+         * @description Restore an archived sales order.
+         */
+        post: operations["OrdersController_unarchive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Order Line
+         * @description Add a new line item to a draft sales order.
+         */
+        post: operations["OrdersController_addLine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/lines/{lineId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Order Line
+         * @description Delete a line item from a sales order.
+         */
+        delete: operations["OrdersController_removeLine"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Order Line
+         * @description Modify an existing line item on a sales order.
+         */
+        patch: operations["OrdersController_updateLine"];
+        trace?: never;
+    };
+    "/sales-orders/{id}/post-confirmation-lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Post-Confirmation Line
+         * @description Add a new line item to a confirmed sales order.
+         */
+        post: operations["OrdersController_addPostConfirmationLine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find Order Returns
+         * @description Retrieve all returns associated with a specific sales order.
+         */
+        get: operations["OrderReturnsController_findReturns"];
+        put?: never;
+        /**
+         * Create Return
+         * @description Create a new customer return (RMA) against a sales order.
+         */
+        post: operations["OrderReturnsController_createReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/returns/{returnId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find Return
+         * @description Retrieve detailed information for a specific return.
+         */
+        get: operations["OrderReturnsController_findReturn"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Return
+         * @description Modify the details or metadata of an existing return.
+         */
+        patch: operations["OrderReturnsController_updateReturn"];
+        trace?: never;
+    };
+    "/sales-orders/{id}/returns/{returnId}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change Return State
+         * @description Update the processing state of a sales return.
+         */
+        patch: operations["OrderReturnsController_changeReturnState"];
+        trace?: never;
+    };
+    "/sales-orders/{id}/returns/{returnId}/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Return Line
+         * @description Add a new line item to a sales return.
+         */
+        post: operations["OrderReturnsController_addReturnLine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/returns/{returnId}/lines/{lineId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Return Line
+         * @description Delete a line item from a sales return.
+         */
+        delete: operations["OrderReturnsController_removeReturnLine"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Return Line
+         * @description Modify an existing line item on a sales return.
+         */
+        patch: operations["OrderReturnsController_updateReturnLine"];
+        trace?: never;
+    };
+    "/sales-orders/{id}/returns/{returnId}/receive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Receive Return
+         * @description Process the receipt of returned goods into inventory.
+         */
+        post: operations["OrderReturnsController_receiveReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/shipments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find Order Shipments
+         * @description Retrieve all shipments associated with a specific sales order.
+         */
+        get: operations["OrderShipmentsController_findShipments"];
+        put?: never;
+        /**
+         * Create Shipment
+         * @description Create a new shipment for a sales order.
+         */
+        post: operations["OrderShipmentsController_createShipment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/shipments/{shipmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find Shipment
+         * @description Retrieve detailed information for a specific shipment.
+         */
+        get: operations["OrderShipmentsController_findShipment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Shipment
+         * @description Modify the details of an existing shipment.
+         */
+        patch: operations["OrderShipmentsController_updateShipment"];
+        trace?: never;
+    };
+    "/sales-orders/{id}/shipments/{shipmentId}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change Shipment State
+         * @description Update the processing state of a shipment.
+         */
+        patch: operations["OrderShipmentsController_changeShipmentState"];
+        trace?: never;
+    };
+    "/sales-orders/{id}/shipments/{shipmentId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Shipment
+         * @description Cancel an open shipment and revert picked inventory.
+         */
+        post: operations["OrderShipmentsController_cancelShipment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/shipments/{shipmentId}/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Shipment Line
+         * @description Add a new line item to a shipment.
+         */
+        post: operations["OrderShipmentsController_addShipmentLine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-orders/{id}/shipments/{shipmentId}/lines/{lineId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Shipment Line
+         * @description Delete a line item from a shipment.
+         */
+        delete: operations["OrderShipmentsController_removeShipmentLine"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Shipment Line
+         * @description Modify an existing line item on a shipment.
+         */
+        patch: operations["OrderShipmentsController_updateShipmentLine"];
+        trace?: never;
+    };
+    "/shipments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find All Shipments
+         * @description Retrieve a list of shipments globally.
+         */
+        get: operations["GlobalShipmentsController_findAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/shipments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find Shipment
+         * @description Retrieve detailed information for a specific shipment.
+         */
+        get: operations["GlobalShipmentsController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find Global Returns
+         * @description Retrieve all sales returns across all orders, optionally filtered by state.
+         */
+        get: operations["GlobalReturnsController_findGlobalReturns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/allocations/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Open Demands
+         * @description Retrieve pending or awaiting-receipt backorders across all sales orders.
+         */
+        get: operations["AllocationsController_getOpenDemands"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/allocations/by-po/{poId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get PO Allocations
+         * @description Retrieve all backorder allocations linked to a specific purchase order.
+         */
+        get: operations["AllocationsController_getAllocationsByPo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/allocations/available-po-lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Available PO Lines
+         * @description Find open purchase order lines for a specific product to allocate against.
+         */
+        get: operations["AllocationsController_getAvailablePoLines"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/allocations/link-po": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Demand To PO
+         * @description Manually allocate a backorder demand to an open purchase order line.
+         */
+        post: operations["AllocationsController_linkDemandToPo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/allocations/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Open Demands
+         * @description Run the MRP engine to automatically resolve backorder demands.
+         */
+        post: operations["AllocationsController_resolveOpenDemands"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/allocations/{id}/unlink": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unlink Demand
+         * @description Remove the link between a backorder demand and its allocated purchase order.
+         */
+        post: operations["AllocationsController_unlinkDemand"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/allocations/{id}/reallocate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reallocate Demand
+         * @description Change the fulfillment location for an open backorder demand.
+         */
+        post: operations["AllocationsController_reallocateDemand"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/allocations/generate-pos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate POs
+         * @description Bulk create purchase orders from open backorder demands.
+         */
+        post: operations["AllocationsController_generatePOs"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/allocations/generate-transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Transfers
+         * @description Bulk create inventory transfers from open backorder demands.
+         */
+        post: operations["AllocationsController_generateTransfers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/from-demands": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create From Demands
+         * @description Create a new transfer order from open backorder demands.
+         */
+        post: operations["TransfersController_createTransferFromDemands"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/{id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find Events
+         * @description Retrieve the event history for a specific transfer order.
+         */
+        get: operations["TransfersController_findEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/{id}/picking": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Picking Summary
+         * @description Retrieve the picking summary for a transfer order.
+         */
+        get: operations["TransfersController_getPickingSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/{id}/picking/lines/{lineId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pick Transfer Line
+         * @description Record a picked quantity for a transfer order line item.
+         */
+        post: operations["TransfersController_pickLine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/{id}/picking/picks/{pickId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Cancel Transfer Pick
+         * @description Cancel and revert a recorded pick for a transfer order.
+         */
+        delete: operations["TransfersController_cancelPick"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/{id}/ship": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ship Transfer Order
+         * @description Mark a transfer order as shipped and dispatch inventory.
+         */
+        post: operations["TransfersController_shipTransferOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/{id}/receive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Receive Transfer Order
+         * @description Process the receipt of a transferred inventory.
+         */
+        post: operations["TransfersController_receiveTransferOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Transfer Order
+         * @description Cancel an open transfer order and revert any picks.
+         */
+        post: operations["TransfersController_cancelTransferOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/{id}/cancel-shipment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Transfer Order Shipment
+         * @description Cancel the active dispatched shipment of a transfer order.
+         */
+        post: operations["TransfersController_cancelTransferOrderShipment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find All Transfers
+         * @description Retrieve a paginated list of transfer orders.
+         */
+        get: operations["TransfersController_findAll"];
+        put?: never;
+        /**
+         * Create Transfer Order
+         * @description Create a new transfer order.
+         */
+        post: operations["TransfersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find Transfer
+         * @description Retrieve detailed information for a specific transfer order.
+         */
+        get: operations["TransfersController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Transfer Order
+         * @description Modify the details of a draft transfer order.
+         */
+        patch: operations["TransfersController_update"];
+        trace?: never;
+    };
+    "/transfers/{id}/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Transfer Line
+         * @description Add a new line item to a transfer order.
+         */
+        post: operations["TransfersController_addLine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transfers/{id}/lines/{lineId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Transfer Line
+         * @description Delete a line item from a transfer order.
+         */
+        delete: operations["TransfersController_removeLine"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Transfer Line
+         * @description Modify an existing line item on a transfer order.
+         */
+        patch: operations["TransfersController_updateLine"];
+        trace?: never;
+    };
+    "/tax-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Tax Categories
+         * @description Retrieve a list of all tax categories.
+         */
+        get: operations["TaxCategoriesController_findAll"];
+        put?: never;
+        /**
+         * Create Tax Category
+         * @description Add a new tax category to the system.
+         */
+        post: operations["TaxCategoriesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tax-categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Tax Category
+         * @description Retrieve detailed information about a specific tax category.
+         */
+        get: operations["TaxCategoriesController_findOne"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Tax Category
+         * @description Remove a tax category from the system.
+         */
+        delete: operations["TaxCategoriesController_remove"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Tax Category
+         * @description Modify the details of an existing tax category.
+         */
+        patch: operations["TaxCategoriesController_update"];
+        trace?: never;
+    };
+    "/reports/hooks/{hookSlug}/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Hook
+         * @description Execute a specific reporting hook and generate a PDF document.
+         */
         post: operations["ReportsController_runHook"];
         delete?: never;
         options?: never;
@@ -948,29 +2840,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/reports": {
+    "/reports/hooks": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["ReportsController_getAllReports"];
-        put?: never;
-        post: operations["ReportsController_createReport"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/reports/hooks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
+        /**
+         * Get Hooks
+         * @description Retrieve a list of available reporting hooks.
+         */
         get: operations["ReportsController_getHooks"];
         put?: never;
         post?: never;
@@ -980,13 +2860,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/reports/hooks/{slug}/random-id": {
+    "/reports/hook-assignments": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Hook Assignments
+         * @description Retrieve current template assignments for reporting hooks.
+         */
+        get: operations["ReportsController_getAssignments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/hook-assignments/{hook}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Hook Assignment
+         * @description Update the assigned template and context for a reporting hook.
+         */
+        patch: operations["ReportsController_updateAssignment"];
+        trace?: never;
+    };
+    "/reports/hooks/{slug}/random-id": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Random ID
+         * @description Fetch a random valid entity ID for a given reporting context (used for previewing).
+         */
         get: operations["ReportsController_getRandomId"];
         put?: never;
         post?: never;
@@ -996,23 +2920,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/reports/{id}": {
+    "/reports": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["ReportsController_getReport"];
+        /**
+         * Get All Reports
+         * @description Retrieve a list of all configured report templates.
+         */
+        get: operations["ReportsController_getAllReports"];
         put?: never;
-        post?: never;
+        /**
+         * Create Report
+         * @description Create a new custom report template.
+         */
+        post: operations["ReportsController_createReport"];
         delete?: never;
         options?: never;
         head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Report
+         * @description Retrieve the details and template content of a specific report.
+         */
+        get: operations["ReportsController_getReport"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Report
+         * @description Remove a report template from the system.
+         */
+        delete: operations["ReportsController_deleteReport"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Report
+         * @description Modify the configuration or content of an existing report template.
+         */
         patch: operations["ReportsController_updateReport"];
         trace?: never;
     };
-    "/api/reports/preview": {
+    "/reports/preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -1021,6 +2981,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Preview Report
+         * @description Generate a preview PDF of a report template using mock or real entity data.
+         */
         post: operations["ReportsController_preview"];
         delete?: never;
         options?: never;
@@ -1028,7 +2992,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/sales-orders/{id}/invoice": {
+    "/sales-orders/{id}/invoice": {
         parameters: {
             query?: never;
             header?: never;
@@ -1037,6 +3001,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Create Sales Invoice
+         * @description Create an invoice for a sales order
+         */
         post: operations["SalesInvoiceController_createSalesInvoice"];
         delete?: never;
         options?: never;
@@ -1044,13 +3012,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/sales-orders/{id}/invoices": {
+    "/sales-orders/{id}/invoices": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Sales Invoices
+         * @description Retrieve invoices for a sales order
+         */
         get: operations["SalesInvoiceController_getSalesInvoices"];
         put?: never;
         post?: never;
@@ -1060,29 +3032,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/purchase-orders/{id}/invoice": {
+    "/purchase-orders/{id}/invoices": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        post: operations["PurchaseInvoiceController_createPurchaseBill"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/purchase-orders/{id}/invoices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
+        /**
+         * Get Purchase Bills
+         * @description Retrieve purchase bills for a purchase order
+         */
         get: operations["PurchaseInvoiceController_getPurchaseBills"];
         put?: never;
         post?: never;
@@ -1092,13 +3052,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/sales-invoices/{id}": {
+    "/sales-invoices/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Sales Invoice Details
+         * @description Retrieve details for a specific sales invoice
+         */
         get: operations["InvoiceDetailController_getSalesInvoiceDetails"];
         put?: never;
         post?: never;
@@ -1108,13 +3072,37 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/sales-invoices": {
+    "/sales-invoices/{id}/state": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change Sales Invoice State
+         * @description Change the state of a sales invoice (e.g. to cancel it)
+         */
+        patch: operations["InvoiceDetailController_changeSalesInvoiceState"];
+        trace?: never;
+    };
+    "/sales-invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get All Sales Invoices
+         * @description Retrieve all sales invoices across orders
+         */
         get: operations["InvoiceDetailController_getSalesInvoicesGlobal"];
         put?: never;
         post?: never;
@@ -1124,30 +3112,210 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/purchase-invoices/{id}": {
+    "/purchase-invoices": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get All Purchase Invoices
+         * @description Retrieve all purchase invoices across orders
+         */
+        get: operations["InvoiceDetailController_getPurchaseInvoicesGlobal"];
+        put?: never;
+        /**
+         * Create Draft Invoice
+         * @description Create a standalone draft purchase invoice
+         */
+        post: operations["InvoiceDetailController_createDraftInvoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/purchase-invoices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Purchase Invoice Details
+         * @description Retrieve details for a specific purchase invoice
+         */
         get: operations["InvoiceDetailController_getPurchaseBillDetails"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update Invoice
+         * @description Update a purchase invoice
+         */
+        patch: operations["InvoiceDetailController_updateInvoice"];
         trace?: never;
     };
-    "/api/settings/external-sync": {
+    "/purchase-invoices/{id}/post": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["OutboxSyncController_getSyncStatus"];
+        get?: never;
+        put?: never;
+        /**
+         * Post Invoice
+         * @description Post a purchase invoice
+         */
+        post: operations["InvoiceDetailController_postInvoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/purchase-invoices/{id}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change Invoice State
+         * @description Change the state of a purchase invoice
+         */
+        patch: operations["InvoiceDetailController_changeInvoiceState"];
+        trace?: never;
+    };
+    "/purchase-invoices/{id}/lines/{lineId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Invoice Line
+         * @description Remove a line item from a purchase invoice
+         */
+        delete: operations["InvoiceDetailController_removeInvoiceLine"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Invoice Line
+         * @description Update a specific line item on a purchase invoice
+         */
+        patch: operations["InvoiceDetailController_updateInvoiceLine"];
+        trace?: never;
+    };
+    "/purchase-invoices/{id}/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Invoice Line
+         * @description Add a new line item to a purchase invoice
+         */
+        post: operations["InvoiceDetailController_addInvoiceLine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/purchase-invoices/lines/{lineId}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Invoice Line
+         * @description Resolve a discrepancy on an invoice line
+         */
+        post: operations["InvoiceDetailController_resolveInvoiceLine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/purchase-invoices/lines/{lineId}/unresolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unresolve Invoice Line
+         * @description Undo resolution of an invoice line discrepancy
+         */
+        post: operations["InvoiceDetailController_unresolveInvoiceLine"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/purchase-invoices/{id}/auto-match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Auto-Match Purchase Order
+         * @description Automatically match a purchase order
+         */
+        post: operations["InvoiceDetailController_autoMatchPurchaseOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings/external-sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Sync Status
+         * @description Retrieve summary counts and recent events for the external sync dashboard.
+         */
+        get: operations["ExternalSyncController_getSyncStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1156,29 +3324,317 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/settings/external-sync/events": {
+    "/settings/external-sync/events": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["OutboxSyncController_getEventsByType"];
+        /**
+         * Get Events By Type
+         * @description Retrieve pending or processed outbox events for a specific type.
+         */
+        get: operations["ExternalSyncController_getEventsByType"];
         put?: never;
         post?: never;
-        delete: operations["OutboxSyncController_clearEventsByType"];
+        /**
+         * Clear Events By Type
+         * @description Delete all pending or failed outbox events of a given type.
+         */
+        delete: operations["ExternalSyncController_clearEventsByType"];
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/dashboard/summary": {
+    "/enrichment/lookup": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Lookup data
+         * @description Lookup data by field
+         */
+        get: operations["EnrichmentController_lookup"];
+        put?: never;
+        /**
+         * Lookup data (POST)
+         * @description Lookup data by field using POST
+         */
+        post: operations["EnrichmentController_lookupPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrichment/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Test provider
+         * @description Test provider lookup
+         */
+        get: operations["EnrichmentController_testLookup"];
+        put?: never;
+        /**
+         * Test provider (POST)
+         * @description Test provider lookup using POST
+         */
+        post: operations["EnrichmentController_testLookupPost"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrichment/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get providers
+         * @description List of available enrichment providers
+         */
+        get: operations["EnrichmentController_getProviders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/enrichment/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get config
+         * @description Get config for provider
+         */
+        get: operations["EnrichmentController_getConfig"];
+        /**
+         * Update config
+         * @description Update config for provider
+         */
+        put: operations["EnrichmentController_updateConfig"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find All Payments
+         * @description Retrieve a list of payments with optional filters for days and allocation status.
+         */
+        get: operations["PaymentsController_findAll"];
+        put?: never;
+        /**
+         * Create Payment
+         * @description Create a new payment entry.
+         */
+        post: operations["PaymentsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find Payment
+         * @description Retrieve detailed information for a specific payment.
+         */
+        get: operations["PaymentsController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payments/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Submit Payment
+         * @description Submit a draft payment for processing.
+         */
+        patch: operations["PaymentsController_submit"];
+        trace?: never;
+    };
+    "/payments/{id}/allocate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Allocate Payment
+         * @description Allocate a payment to an invoice or bill.
+         */
+        patch: operations["PaymentsController_allocate"];
+        trace?: never;
+    };
+    "/payments/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Cancel Payment
+         * @description Cancel an open payment.
+         */
+        patch: operations["PaymentsController_cancel"];
+        trace?: never;
+    };
+    "/payments/export-aba": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export ABA
+         * @description Export selected payments into an ABA file format.
+         */
+        post: operations["PaymentsController_exportAba"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payments/export-nacha": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export NACHA
+         * @description Export selected payments into a NACHA ACH file format.
+         */
+        post: operations["PaymentsController_exportNacha"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payments/confirm-exported": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Exported Payments
+         * @description Mark a batch of exported payments as confirmed.
+         */
+        post: operations["PaymentsController_confirmExported"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payments/reject-exported": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject Exported Payments
+         * @description Mark a batch of exported payments as rejected.
+         */
+        post: operations["PaymentsController_rejectExported"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Summary
+         * @description Retrieves key metrics and statistics for the dashboard.
+         */
         get: operations["DashboardController_getSummary"];
         put?: never;
         post?: never;
@@ -1188,13 +3644,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/dashboard/search": {
+    "/dashboard/search": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Universal Search
+         * @description Performs a global search across multiple entity types.
+         */
         get: operations["DashboardController_search"];
         put?: never;
         post?: never;
@@ -1204,7 +3664,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/telemetry/client-errors": {
+    "/dashboard/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Timeline
+         * @description Retrieves a chronological list of recent system events.
+         */
+        get: operations["DashboardController_getTimeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/telemetry/client-errors": {
         parameters: {
             query?: never;
             header?: never;
@@ -1213,6 +3693,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Report Client Error
+         * @description Ingests frontend application errors for monitoring.
+         */
         post: operations["TelemetryController_reportClientError"];
         delete?: never;
         options?: never;
@@ -1220,15 +3704,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/suppliers": {
+    "/suppliers": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * List Suppliers
+         * @description Retrieve a paginated list of all suppliers.
+         */
         get: operations["SuppliersController_findAll"];
         put?: never;
+        /**
+         * Create Supplier
+         * @description Register a new supplier.
+         */
         post: operations["SuppliersController_create"];
         delete?: never;
         options?: never;
@@ -1236,13 +3728,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/suppliers/by-product/{productId}": {
+    "/suppliers/by-product/{productId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * List Product Suppliers
+         * @description Retrieve suppliers that supply a specific product.
+         */
         get: operations["SuppliersController_findByProduct"];
         put?: never;
         post?: never;
@@ -1252,29 +3748,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/suppliers/{id}": {
+    "/suppliers/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Supplier
+         * @description Retrieve detailed information for a specific supplier.
+         */
         get: operations["SuppliersController_findOne"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
+        /**
+         * Update Supplier
+         * @description Modify the details of an existing supplier.
+         */
         patch: operations["SuppliersController_update"];
         trace?: never;
     };
-    "/api/suppliers/{id}/products": {
+    "/suppliers/{id}/products": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * List Supplier Products
+         * @description Retrieve a list of products provided by a specific supplier.
+         */
         get: operations["SuppliersController_findSupplierProducts"];
         put?: never;
         post?: never;
@@ -1284,7 +3792,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/suppliers/{id}/archive": {
+    "/suppliers/{id}/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -1293,6 +3801,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Archive Supplier
+         * @description Mark a supplier as archived.
+         */
         post: operations["SuppliersController_archive"];
         delete?: never;
         options?: never;
@@ -1300,7 +3812,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/suppliers/{id}/unarchive": {
+    "/suppliers/{id}/unarchive": {
         parameters: {
             query?: never;
             header?: never;
@@ -1309,6 +3821,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Unarchive Supplier
+         * @description Restore an archived supplier to active status.
+         */
         post: operations["SuppliersController_unarchive"];
         delete?: never;
         options?: never;
@@ -1316,15 +3832,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/supplier-groups": {
+    "/suppliers/{id}/expiries": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * List Expiries
+         * @description Retrieve expiry records for a specific supplier.
+         */
+        get: operations["SuppliersController_findSupplierExpiries"];
+        put?: never;
+        /**
+         * Create Expiry
+         * @description Add an expiry record for a specific supplier.
+         */
+        post: operations["SuppliersController_createExpiry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/suppliers/{id}/expiries/{expiryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Expiry
+         * @description Remove an expiry record from a supplier.
+         */
+        delete: operations["SuppliersController_deleteExpiry"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Expiry
+         * @description Modify an existing expiry record for a supplier.
+         */
+        patch: operations["SuppliersController_updateExpiry"];
+        trace?: never;
+    };
+    "/supplier-groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Supplier Groups
+         * @description Retrieve a list of all supplier groups.
+         */
         get: operations["SupplierGroupsController_findAll"];
         put?: never;
+        /**
+         * Create Supplier Group
+         * @description Create a new supplier group.
+         */
         post: operations["SupplierGroupsController_create"];
         delete?: never;
         options?: never;
@@ -1332,31 +3904,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/supplier-groups/{id}": {
+    "/supplier-groups/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * Get Supplier Group
+         * @description Retrieve detailed information for a specific supplier group.
+         */
         get: operations["SupplierGroupsController_findOne"];
         put?: never;
         post?: never;
+        /**
+         * Delete Supplier Group
+         * @description Remove a supplier group from the system.
+         */
         delete: operations["SupplierGroupsController_remove"];
         options?: never;
         head?: never;
+        /**
+         * Update Supplier Group
+         * @description Modify the details of an existing supplier group.
+         */
         patch: operations["SupplierGroupsController_update"];
         trace?: never;
     };
-    "/api/purchase-orders": {
+    "/purchase-orders": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * List Purchase Orders
+         * @description Retrieve a paginated list of purchase orders.
+         */
         get: operations["PurchaseOrdersController_findAll"];
         put?: never;
+        /**
+         * Create Purchase Order
+         * @description Create a new purchase order.
+         */
         post: operations["PurchaseOrdersController_create"];
         delete?: never;
         options?: never;
@@ -1364,23 +3956,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/purchase-orders/{id}": {
+    "/purchase-orders/pending-lines": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        /**
+         * List Pending Lines
+         * @description Find purchase order lines pending receipt.
+         */
+        get: operations["PurchaseOrdersController_findPendingLines"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/purchase-orders/returnable-lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Returnable Lines
+         * @description Find purchase order lines eligible for return.
+         */
+        get: operations["PurchaseOrdersController_findReturnableLines"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/purchase-orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Purchase Order
+         * @description Retrieve a specific purchase order.
+         */
         get: operations["PurchaseOrdersController_findOne"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
+        /**
+         * Update Purchase Order
+         * @description Update an existing purchase order.
+         */
         patch: operations["PurchaseOrdersController_update"];
         trace?: never;
     };
-    "/api/purchase-orders/{id}/state": {
+    "/purchase-orders/{id}/state": {
         parameters: {
             query?: never;
             header?: never;
@@ -1393,10 +4033,14 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /**
+         * Change Order State
+         * @description Update the state of a purchase order.
+         */
         patch: operations["PurchaseOrdersController_changeState"];
         trace?: never;
     };
-    "/api/purchase-orders/{id}/archive": {
+    "/purchase-orders/{id}/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -1405,6 +4049,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Archive Purchase Order
+         * @description Archive a purchase order.
+         */
         post: operations["PurchaseOrdersController_archive"];
         delete?: never;
         options?: never;
@@ -1412,7 +4060,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/purchase-orders/{id}/unarchive": {
+    "/purchase-orders/{id}/unarchive": {
         parameters: {
             query?: never;
             header?: never;
@@ -1421,6 +4069,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Unarchive Purchase Order
+         * @description Restore an archived purchase order.
+         */
         post: operations["PurchaseOrdersController_unarchive"];
         delete?: never;
         options?: never;
@@ -1428,7 +4080,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/purchase-orders/{id}/lines": {
+    "/purchase-orders/{id}/lines": {
         parameters: {
             query?: never;
             header?: never;
@@ -1437,6 +4089,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Add Order Line
+         * @description Add a new line item to a purchase order.
+         */
         post: operations["PurchaseOrdersController_addLine"];
         delete?: never;
         options?: never;
@@ -1444,7 +4100,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/purchase-orders/{id}/lines/{lineId}": {
+    "/purchase-orders/{id}/lines/{lineId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1454,36 +4110,56 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
+        /**
+         * Remove Order Line
+         * @description Delete a line item from a purchase order.
+         */
         delete: operations["PurchaseOrdersController_removeLine"];
         options?: never;
         head?: never;
+        /**
+         * Update Order Line
+         * @description Modify a specific line item on a purchase order.
+         */
         patch: operations["PurchaseOrdersController_updateLine"];
         trace?: never;
     };
-    "/api/purchase-orders/{orderId}/receptions": {
+    "/purchase-orders/{id}/returns": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["ReceptionsController_findAll"];
+        /**
+         * List Purchase Returns
+         * @description Retrieve all returns for a specific purchase order.
+         */
+        get: operations["PurchaseReturnsController_findReturns"];
         put?: never;
-        post: operations["ReceptionsController_create"];
+        /**
+         * Create Purchase Return
+         * @description Create a return for a specific purchase order.
+         */
+        post: operations["PurchaseReturnsController_createReturn"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/purchase-orders/{orderId}/receptions/{id}": {
+    "/purchase-orders/{id}/returns/{returnId}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["ReceptionsController_findOne"];
+        /**
+         * Get Purchase Return
+         * @description Retrieve details for a specific return on an order.
+         */
+        get: operations["PurchaseReturnsController_findReturn"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1492,13 +4168,137 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/system-logs": {
+    "/purchase-orders/{id}/returns/{returnId}/stage": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
+        /**
+         * Stage Purchase Return
+         * @description Mark a purchase return as staged for shipping.
+         */
+        post: operations["PurchaseReturnsController_stageReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/purchase-orders/{id}/returns/{returnId}/ship": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ship Purchase Return
+         * @description Mark a staged purchase return as shipped.
+         */
+        post: operations["PurchaseReturnsController_shipReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/purchase-returns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Purchase Returns
+         * @description Retrieve a list of purchase returns based on state.
+         */
+        get: operations["GlobalPurchaseReturnsController_getPurchaseReturns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/purchase-returns/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Purchase Return
+         * @description Retrieve details for a specific purchase return.
+         */
+        get: operations["GlobalPurchaseReturnsController_getPurchaseReturnById"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/purchase-debit-notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Debit Note
+         * @description Create a new purchase debit note.
+         */
+        post: operations["PurchaseDebitNotesController_createDebitNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/purchase-debit-notes/{id}/post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Debit Note
+         * @description Post an existing debit note.
+         */
+        post: operations["PurchaseDebitNotesController_postDebitNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/system-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get System Logs
+         * @description Retrieves tail of raw system logs for administrative monitoring.
+         */
         get: operations["SystemController_getSystemLogs"];
         put?: never;
         post?: never;
@@ -1508,87 +4308,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/settings/uom-dictionary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["UomDictionaryController_findAll"];
-        put?: never;
-        post: operations["UomDictionaryController_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/settings/uom-dictionary/{code}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["UomDictionaryController_findOne"];
-        put?: never;
-        post?: never;
-        delete: operations["UomDictionaryController_remove"];
-        options?: never;
-        head?: never;
-        patch: operations["UomDictionaryController_update"];
-        trace?: never;
-    };
-    "/api/settings/exchange-rates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ExchangeRatesController_findAll"];
-        put?: never;
-        post: operations["ExchangeRatesController_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/settings/exchange-rates/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["ExchangeRatesController_findOne"];
-        put?: never;
-        post?: never;
-        delete: operations["ExchangeRatesController_remove"];
-        options?: never;
-        head?: never;
-        patch: operations["ExchangeRatesController_update"];
-        trace?: never;
-    };
-    "/api/settings/organization": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["OrganizationController_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch: operations["OrganizationController_update"];
-        trace?: never;
-    };
-    "/api/inventory/locations/{id}": {
+    "/inventory/locations/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1598,13 +4318,21 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
+        /**
+         * Delete Location
+         * @description Remove a warehouse location.
+         */
         delete: operations["LocationsController_deleteLocation"];
         options?: never;
         head?: never;
+        /**
+         * Update Location
+         * @description Modify the details of an existing warehouse location.
+         */
         patch: operations["LocationsController_updateLocation"];
         trace?: never;
     };
-    "/api/inventory/zones": {
+    "/inventory/zones": {
         parameters: {
             query?: never;
             header?: never;
@@ -1613,6 +4341,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Create Zone
+         * @description Create a new storage zone.
+         */
         post: operations["LocationsController_createZone"];
         delete?: never;
         options?: never;
@@ -1620,7 +4352,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/inventory/zones/{id}": {
+    "/inventory/zones/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1630,13 +4362,21 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
+        /**
+         * Delete Zone
+         * @description Remove a storage zone.
+         */
         delete: operations["LocationsController_deleteZone"];
         options?: never;
         head?: never;
+        /**
+         * Update Zone
+         * @description Modify the details of an existing storage zone.
+         */
         patch: operations["LocationsController_updateZone"];
         trace?: never;
     };
-    "/api/inventory/bins/{id}": {
+    "/inventory/bins/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1646,10 +4386,666 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
+        /**
+         * Delete Bin
+         * @description Remove a storage bin.
+         */
         delete: operations["LocationsController_deleteBin"];
         options?: never;
         head?: never;
+        /**
+         * Update Bin
+         * @description Modify the details of an existing storage bin.
+         */
         patch: operations["LocationsController_updateBin"];
+        trace?: never;
+    };
+    "/setup/test-abm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test ABM Connection
+         * @description Tests connectivity to the legacy ABM database.
+         */
+        post: operations["SetupController_testAbm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/setup/test-odoo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Odoo Connection
+         * @description Tests connectivity to the legacy Odoo database.
+         */
+        post: operations["SetupController_testOdoo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/setup/resume-state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Resume State
+         * @description Retrieves the resume state for ABM data migrations.
+         */
+        get: operations["SetupController_getResumeState"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/setup/resume-state-odoo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Odoo Resume State
+         * @description Retrieves the resume state for Odoo data migrations.
+         */
+        get: operations["SetupController_getResumeStateOdoo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/setup/execute-elt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Execute ELT Job
+         * @description Triggers a data extraction and load pipeline job.
+         */
+        post: operations["SetupController_executeElt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/setup/progress/{jobId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Job Progress
+         * @description Retrieves real-time progress for a background job.
+         */
+        get: operations["SetupController_getProgress"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/setup/validation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Validation State
+         * @description Retrieves validation summary for migrated data.
+         */
+        get: operations["SetupController_getValidation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/setup/import-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Import Summary
+         * @description Retrieves statistical summary of all imported data.
+         */
+        get: operations["SetupController_getImportSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/setup/csv-metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get CSV Metadata
+         * @description Retrieves metadata for configured CSV imports.
+         */
+        get: operations["SetupController_getCsvMetadata"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/setup/execute-csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Execute CSV Import
+         * @description Uploads and processes a CSV file for data import.
+         */
+        post: operations["SetupController_executeCsv"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goods-received": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Goods Receipts
+         * @description Retrieve a paginated list of goods receipts.
+         */
+        get: operations["GoodsReceivedController_findAll"];
+        put?: never;
+        /**
+         * Create Goods Receipt
+         * @description Create a new goods receipt note.
+         */
+        post: operations["GoodsReceivedController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goods-received/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Received Lines
+         * @description Retrieve a paginated list of received goods lines.
+         */
+        get: operations["GoodsReceivedController_findAllLines"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goods-received/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Goods Receipt
+         * @description Retrieve details for a specific goods receipt note.
+         */
+        get: operations["GoodsReceivedController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goods-received/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Goods Receipt
+         * @description Cancel an existing goods receipt note.
+         */
+        post: operations["GoodsReceivedController_cancelReception"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goods-received/lines/{lineId}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Allocation
+         * @description Resolve allocation for a received goods line.
+         */
+        post: operations["GoodsReceivedController_resolveAllocation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goods-received/lines/{lineId}/unresolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unresolve Allocation
+         * @description Unresolve allocation for a received goods line.
+         */
+        post: operations["GoodsReceivedController_unresolveAllocation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/macros": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Macros
+         * @description Retrieves all configured automation macros.
+         */
+        get: operations["MacrosController_findAll"];
+        put?: never;
+        /**
+         * Create Macro
+         * @description Registers a new automated macro rule.
+         */
+        post: operations["MacrosController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/macros/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Macro
+         * @description Retrieves a single macro configuration by ID.
+         */
+        get: operations["MacrosController_findOne"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Macro
+         * @description Permanently removes a macro configuration.
+         */
+        delete: operations["MacrosController_remove"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Macro
+         * @description Modifies an existing macro definition.
+         */
+        patch: operations["MacrosController_update"];
+        trace?: never;
+    };
+    "/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Users
+         * @description Retrieves a paginated list of all system users.
+         */
+        get: operations["UsersController_findAll"];
+        put?: never;
+        /**
+         * Create User
+         * @description Provisions a new user account in the system.
+         */
+        post: operations["UsersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get User
+         * @description Retrieves a single user by their unique identifier.
+         */
+        get: operations["UsersController_findOne"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete User
+         * @description Permanently removes a user from the system.
+         */
+        delete: operations["UsersController_remove"];
+        options?: never;
+        head?: never;
+        /**
+         * Update User
+         * @description Modifies an existing user profile or permissions.
+         */
+        patch: operations["UsersController_update"];
+        trace?: never;
+    };
+    "/users/{id}/toggle-active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Toggle User Status
+         * @description Activates or deactivates a user account.
+         */
+        patch: operations["UsersController_toggleActive"];
+        trace?: never;
+    };
+    "/discount-matrix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Rules
+         * @description Retrieve discount rules based on query filters.
+         */
+        get: operations["DiscountMatrixController_list"];
+        put?: never;
+        /**
+         * Create Rule
+         * @description Add a new discount rule to the matrix.
+         */
+        post: operations["DiscountMatrixController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/discount-matrix/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolve Rules
+         * @description Retrieve the fully resolved discount rules for a specific customer.
+         */
+        get: operations["DiscountMatrixController_resolve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/discount-matrix/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Rule
+         * @description Remove a discount rule from the matrix.
+         */
+        delete: operations["DiscountMatrixController_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Rule
+         * @description Modify an existing discount rule.
+         */
+        patch: operations["DiscountMatrixController_update"];
+        trace?: never;
+    };
+    "/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Webhooks
+         * @description Retrieves all registered outbound webhooks.
+         */
+        get: operations["WebhooksController_list"];
+        put?: never;
+        /**
+         * Create Webhook
+         * @description Registers a new webhook endpoint for system events.
+         */
+        post: operations["WebhooksController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Available Events
+         * @description Retrieves all possible event types that webhooks can subscribe to.
+         */
+        get: operations["WebhooksController_listEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhooks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Webhook
+         * @description Modifies an existing webhook configuration.
+         */
+        put: operations["WebhooksController_update"];
+        post?: never;
+        /**
+         * Delete Webhook
+         * @description Removes a webhook subscription.
+         */
+        delete: operations["WebhooksController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List API Keys
+         * @description Retrieves all service API keys (without raw secrets).
+         */
+        get: operations["ApiKeysController_list"];
+        put?: never;
+        /**
+         * Create API Key
+         * @description Generates a new API key. Secret is only returned once.
+         */
+        post: operations["ApiKeysController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api-keys/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke API Key
+         * @description Permanently deletes and revokes an API key.
+         */
+        delete: operations["ApiKeysController_revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish Event
+         * @description Publishes an event to the backend message queue (outbox) to trigger workflows or webhooks.
+         */
+        post: operations["EventsController_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -1660,6 +5056,83 @@ export interface components {
             username: string;
             password: string;
         };
+        LoginResponseDto: {
+            access_token: string;
+            username: string;
+            role: string;
+        };
+        MeResponseDto: {
+            username: string;
+            role: string;
+        };
+        PermissionDto: {
+            resource: string;
+            action: string;
+            /** @enum {string} */
+            effect: "allow" | "deny";
+        };
+        RoleDetailsDto: {
+            role: string;
+            permissions: components["schemas"]["PermissionDto"][];
+            inherits?: string[];
+        };
+        SetRolePermissionsDto: {
+            permissions: components["schemas"]["PermissionDto"][];
+            inherits?: string[];
+        };
+        SuccessResponseDto: {
+            success?: boolean;
+        };
+        PaginatedResponse: {
+            limit: number;
+            page?: number;
+            total?: number;
+            nextCursor?: string;
+            prevCursor?: string;
+        };
+        AccountResponseDto: {
+            customerId: string;
+            customerNumber: string;
+            name: string;
+            address1Line1?: string;
+            address1Line2?: string;
+            address1City?: string;
+            address1StateOrProvince?: string;
+            address1PostalCode?: string;
+            address1Country: string;
+            telephone1?: string;
+            fax?: string;
+            emailAddress1?: string;
+            primaryContactName?: string;
+            primaryContactEmail?: string;
+            primaryContactPhone?: string;
+            customerGroupId?: string;
+            parentCustomerId?: string;
+            taxCategoryId?: string;
+            currencyCode: string;
+            customerDiscount?: string;
+            notes?: string;
+            bankAccountName?: string;
+            bankBsb?: string;
+            bankAccountNumber?: string;
+            businessNumber?: string;
+            isTaxRegistered?: boolean;
+            stateCode: string;
+            sourceId?: string;
+            source: string;
+            createdBy?: string;
+            /** Format: date-time */
+            createdOn?: string;
+            /** Format: date-time */
+            modifiedOn?: string;
+            customerGroupName?: string;
+            customerGroupCode?: string;
+            customerGroupTradingTermsId?: string;
+            customerGroupCreditLimit?: string;
+            customerGroupIsOnCreditHold?: boolean;
+            gstCategoryName?: string;
+            events?: Record<string, never>[];
+        };
         CreateAccountDto: {
             customerNumber: string;
             name: string;
@@ -1668,18 +5141,29 @@ export interface components {
             address1City?: string;
             address1StateOrProvince?: string;
             address1PostalCode?: string;
-            address1Country?: string;
+            address1Country: string;
             telephone1?: string;
             fax?: string;
+            /** Format: email */
             emailAddress1?: string;
             primaryContactName?: string;
+            /** Format: email */
             primaryContactEmail?: string;
             primaryContactPhone?: string;
+            /** Format: uuid */
             customerGroupId?: string;
-            TaxCategoryId?: string;
+            /** Format: uuid */
+            parentCustomerId?: string;
+            /** Format: uuid */
+            taxCategoryId?: string;
             currencyCode?: string;
             customerDiscount?: string;
             notes?: string;
+            bankAccountName?: string;
+            bankBsb?: string;
+            bankAccountNumber?: string;
+            businessNumber?: string;
+            isTaxRegistered?: boolean;
         };
         UpdateAccountDto: {
             name?: string;
@@ -1691,33 +5175,147 @@ export interface components {
             address1Country?: string;
             telephone1?: string;
             fax?: string;
+            /** Format: email */
             emailAddress1?: string;
             primaryContactName?: string;
+            /** Format: email */
             primaryContactEmail?: string;
             primaryContactPhone?: string;
+            /** Format: uuid */
             customerGroupId?: string;
             stateCode?: string;
-            TaxCategoryId?: string;
+            /** Format: uuid */
+            parentCustomerId?: string;
+            /** Format: uuid */
+            taxCategoryId?: string;
             currencyCode?: string;
             customerDiscount?: string;
             notes?: string;
+            bankAccountName?: string;
+            bankBsb?: string;
+            bankAccountNumber?: string;
+            businessNumber?: string;
+            isTaxRegistered?: boolean;
         };
-        CreateAccountGroupDto: {
+        EmptyBodyDto: Record<string, never>;
+        AccountGroupResponseDto: {
+            customerGroupId: string;
             groupCode: string;
             name: string;
             defaultDiscountPercentage?: string;
             defaultArAccountId?: string;
             defaultRevenueAccountId?: string;
+            defaultCostCenterId?: string;
+            defaultActivityId?: string;
+            isOnCreditHold?: boolean;
+            creditLimit?: string;
+            tradingTermsId?: string;
+            /** Format: date-time */
+            modifiedOn?: string;
+        };
+        CreateAccountGroupDto: {
+            groupCode: string;
+            name: string;
+            defaultDiscountPercentage?: string;
+            /** Format: uuid */
+            defaultArAccountId?: string;
+            /** Format: uuid */
+            defaultRevenueAccountId?: string;
+            /** Format: uuid */
+            defaultCostCenterId?: string;
+            /** Format: uuid */
+            defaultActivityId?: string;
         };
         UpdateAccountGroupDto: {
             groupCode?: string;
             name?: string;
             defaultDiscountPercentage?: string;
+            /** Format: uuid */
             defaultArAccountId?: string;
+            /** Format: uuid */
             defaultRevenueAccountId?: string;
+            /** Format: uuid */
+            defaultCostCenterId?: string;
+            /** Format: uuid */
+            defaultActivityId?: string;
         };
-        CreateProductDto: Record<string, never>;
-        UpdateProductDto: Record<string, never>;
+        ProductResponseDto: {
+            id: string;
+            productNumber: string;
+            name: string;
+            productType: string;
+            structureType: string;
+            barcode: string | null;
+            listPrice: string;
+            standardCost: string;
+            tradePrice: string | null;
+            priceLevel3: string | null;
+            priceLevel4: string | null;
+            purchaseTaxCategoryId: string | null;
+            salesTaxCategoryId: string | null;
+            externalTaxCode: string | null;
+            alternateProductNumber: string | null;
+            productGroupId: string | null;
+            notes: string | null;
+            stateCode: string | null;
+            baseUom: string;
+            defaultSalesUomId: string | null;
+            defaultPurchaseUomId: string | null;
+            tenantId: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        CreateProductDto: {
+            productNumber: string;
+            name: string;
+            productType?: Record<string, never>;
+            structureType?: Record<string, never>;
+            barcode?: string;
+            listPrice?: string;
+            standardCost?: string;
+            tradePrice?: string;
+            priceLevel3?: string;
+            priceLevel4?: string;
+            /** Format: uuid */
+            purchaseTaxCategoryId?: string;
+            /** Format: uuid */
+            salesTaxCategoryId?: string;
+            externalTaxCode?: string;
+            alternateProductNumber?: string;
+            /** Format: uuid */
+            productGroupId?: string;
+            notes?: string;
+            stateCode?: string;
+        };
+        UpdateProductDto: {
+            productNumber?: string;
+            name?: string;
+            productType?: Record<string, never>;
+            structureType?: Record<string, never>;
+            barcode?: string;
+            listPrice?: string;
+            standardCost?: string;
+            tradePrice?: string;
+            priceLevel3?: string;
+            priceLevel4?: string;
+            /** Format: uuid */
+            purchaseTaxCategoryId?: string;
+            /** Format: uuid */
+            salesTaxCategoryId?: string;
+            externalTaxCode?: string;
+            alternateProductNumber?: string;
+            /** Format: uuid */
+            productGroupId?: string;
+            notes?: string;
+            stateCode?: string;
+            baseUom?: string;
+            /** Format: uuid */
+            defaultSalesUomId?: string | null;
+            /** Format: uuid */
+            defaultPurchaseUomId?: string | null;
+        };
         AddSupplierDto: {
             /** Format: uuid */
             vendorId: string;
@@ -1726,19 +5324,656 @@ export interface components {
             effectiveFrom?: string;
             effectiveTo?: string;
         };
-        CreateProductGroupDto: Record<string, never>;
-        UpdateProductGroupDto: Record<string, never>;
-        CreateOrderLineDto: {
+        AddProductUomDto: {
+            uomCode: string;
+            ratio: string;
+            barcode?: string;
+        };
+        LinkBinDto: {
+            /** Format: uuid */
+            locationId: string;
+            /** Format: uuid */
+            binId: string;
+            isPrimaryPerLocation?: boolean;
+            minQuantity?: string;
+            maxQuantity?: string;
+        };
+        AddProductComponentDto: {
+            childProductId: string;
+            parentQuantity: string;
+            quantity: string;
+            sequenceNumber?: number;
+            /** @enum {string} */
+            fractionalBehavior?: "allow_fractional" | "round_up" | "round_down" | "round_nearest";
+        };
+        UpdateProductComponentDto: {
+            parentQuantity?: string;
+            quantity?: string;
+            sequenceNumber?: number;
+            /** @enum {string} */
+            fractionalBehavior?: "allow_fractional" | "round_up" | "round_down" | "round_nearest";
+        };
+        ProductGroupResponseDto: {
+            id: string;
+            groupCode: string;
+            name: string;
+            defaultRevenueAccountId: string | null;
+            defaultExpenseAccountId: string | null;
+            defaultCostCenterId: string | null;
+            defaultActivityId: string | null;
+            tenantId: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        CreateProductGroupDto: {
+            groupCode: string;
+            name: string;
+            /** Format: uuid */
+            defaultRevenueAccountId?: string;
+            /** Format: uuid */
+            defaultExpenseAccountId?: string;
+            /** Format: uuid */
+            defaultCostCenterId?: string;
+            /** Format: uuid */
+            defaultActivityId?: string;
+        };
+        UpdateProductGroupDto: {
+            groupCode?: string;
+            name?: string;
+            /** Format: uuid */
+            defaultRevenueAccountId?: string;
+            /** Format: uuid */
+            defaultExpenseAccountId?: string;
+            /** Format: uuid */
+            defaultCostCenterId?: string;
+            /** Format: uuid */
+            defaultActivityId?: string;
+        };
+        InventoryResponseDto: {
+            inventoryLevelId: string;
             productId: string;
+            productNumber: string;
+            productName: string;
+            locationNo: string;
+            locationName: string;
+            quantityOnHand: string;
+            quantityCommitted: string;
+            quantityReserved: string;
+            quantityOnOrder: string;
+            quantityAvailable: string;
+            alternateProductNumber?: string | null;
+            defaultBinNumber?: string | null;
+        };
+        FindByProductIdsBulkDto: {
+            productIds: string[];
+            locationId?: string;
+        };
+        InventoryBinResponseDto: {
+            binId: string;
+            binNumber: string;
+            binType?: string;
+            isUnavailable?: boolean;
+            onHand: string;
+        };
+        AvailableBinDto: {
+            binId: string;
+            binNumber: string;
+            binType: string;
+        };
+        PutawayContextResponseDto: {
+            primaryBinId?: string | null;
+            primaryBinNumber?: string | null;
+            currentQuantity: number;
+            availableBins: components["schemas"]["AvailableBinDto"][];
+        };
+        InventoryLocationResponseDto: {
+            locationId: string;
+            code: string;
+            name: string;
+        };
+        InventoryMovementResponseDto: {
+            id: string;
+            productId: string;
+            quantity: string;
+            /** Format: date-time */
+            date: string;
+        };
+        InventoryLedgerResponseDto: {
+            id: string;
+            productId: string;
+            quantity: string;
+            /** Format: date-time */
+            date: string;
+        };
+        InventoryEntryDetailsResponseDto: {
+            id: string;
+            productId: string;
+            quantity: string;
+            /** Format: date-time */
+            date: string;
+        };
+        PendingPutawayResponseDto: {
+            id: string;
+            sourceType: string;
+            referenceNumber: string;
+            productId: string;
+            productName: string;
+            productNumber: string;
+            quantity: string;
+            putawayStatus: string;
+            locationId: string;
+            /** Format: date-time */
+            createdOn?: string;
+            sourceBinCode: string;
+        };
+        PutawayLineDto: {
+            lineId: string;
+            /** @enum {string} */
+            sourceType: "goods_receipt" | "sales_return";
+            destinationBinId: string;
+            quantity: string;
+            newTotalQuantity?: string;
+        };
+        PutawayBulkDto: {
+            putaways: components["schemas"]["PutawayLineDto"][];
+        };
+        InventorySuccessResponseDto: {
+            success: boolean;
+        };
+        ToggleQuarantineDto: {
+            /** @enum {string} */
+            sourceType: "goods_receipt" | "sales_return";
+            reason?: string;
+        };
+        GlAccountResponseDto: {
+            glAccountId: string;
+            accountCode: string;
+            name: string;
+            accountType: string;
+            isGroup: boolean;
+            isActive: boolean;
+            parentAccountId?: string | null;
+            isSystem?: boolean;
+        };
+        CreateAccountRequestDto: {
+            accountCode: string;
+            name: string;
+            accountType: string;
+            parentAccountId?: string;
+            isGroup?: boolean;
+            isBankAccount?: boolean;
+            currencyCode?: string;
+            metadata?: Record<string, never>;
+        };
+        UpdateAccountRequestDto: {
+            name?: string;
+            isActive?: boolean;
+            isBankAccount?: boolean;
+            metadata?: Record<string, never>;
+        };
+        JournalEntryResponseDto: {
+            journalEntryId: string;
+            entryNumber: string;
+        };
+        PaginatedJournalEntriesDto: {
+            data: components["schemas"]["JournalEntryResponseDto"][];
+            meta: Record<string, never>;
+        };
+        JournalLineDto: {
+            accountCode?: string;
+            accountId?: string;
+            costCenterId?: string;
+            activityId?: string;
+            partyType?: Record<string, never>;
+            partyId?: string | null;
+            debit: number;
+            credit: number;
+            memo?: string;
+        };
+        CreateJournalEntryDto: {
+            /** Format: uuid */
+            journalEntryId?: string;
+            lines: components["schemas"]["JournalLineDto"][];
+            memo?: string;
+            entryDate?: string;
+            actor?: string;
+        };
+        TrialBalanceResponseDto: {
+            accountId: string;
+            accountCode: string;
+            name: string;
+            balance: number;
+        };
+        GeneralLedgerResponseDto: {
+            glEntryId: string;
+        };
+        SettingsResponseDto: {
+            id: string;
+            accountMetadataSchema?: Record<string, never>;
+        };
+        SuccessMessageResponseDto: {
+            success: boolean;
+            message?: string;
+        };
+        ChartFileDto: {
+            filename: string;
+            name: string;
+            countryCode?: string;
+        };
+        SeedRequestDto: {
+            filename?: string;
+        };
+        SettingsFileDto: {
+            filename: string;
+            name: string;
+            countryCode?: string;
+        };
+        SeedTaxRequestDto: {
+            filename: string;
+        };
+        CreateReconciliationDto: {
+            glAccountId: string;
+            statementDate: string;
+            statementBalance: number;
+            createdBy?: string;
+        };
+        CreateReconciliationResponseDto: {
+            reconciliationId: string;
+        };
+        ReconciliationDetailResponseDto: {
+            reconciliationId: string;
+            glAccountId: string;
+            accountName: string;
+            statementDate: string;
+            statementBalance: number;
+            status: string;
+            openingBalance: number;
+            clearedBalance: number;
+            variance: number;
+        };
+        ToggleLineDto: {
+            isCleared: boolean;
+            amount?: number;
+        };
+        ToggleLineResponseDto: {
+            success: boolean;
+        };
+        PostReconciliationResponseDto: {
+            success: boolean;
+        };
+        DiscardReconciliationResponseDto: {
+            success: boolean;
+        };
+        CreateAdjustmentDto: {
+            date: string;
+            amount: number;
+            type: Record<string, never>;
+            offsetAccountId: string;
+            memo: string;
+        };
+        CreateAdjustmentResponseDto: {
+            success: boolean;
+            journalEntryId: string;
+            journalLineId?: string;
+        };
+        FileUploadDto: {
+            /**
+             * Format: binary
+             * @description The CSV file to upload
+             */
+            file: string;
+        };
+        ParseCsvResponseDto: {
+            headers: string[];
+            sampleRows: string[][];
+        };
+        ImportCsvDto: {
+            /**
+             * Format: binary
+             * @description The CSV file to import
+             */
+            file: string;
+            /** Format: uuid */
+            glAccountId: string;
+            /** Format: uuid */
+            profileId: string;
+        };
+        ImportCsvResponseDto: {
+            autoMatchedCount: number;
+            smartMatchedCount: number;
+            unmatchedCount: number;
+        };
+        MappingProfileResponseDto: {
+            profileId: string;
+            /** Format: uuid */
+            glAccountId: string;
+            name: string;
+            dateColumn: string;
+            amountColumn: string;
+            descriptionColumn: string;
+            referenceColumn?: string;
+            headerRows: number;
+        };
+        CreateMappingProfileDto: {
+            /** Format: uuid */
+            glAccountId: string;
+            name: string;
+            dateColumn: string;
+            amountColumn: string;
+            descriptionColumn: string;
+            referenceColumn?: string;
+            headerRows: number;
+        };
+        ReconciliationRuleResponseDto: {
+            ruleId: string;
+            /** Format: uuid */
+            glAccountId?: string;
+            conditionType: string;
+            conditionValue: string;
+            /** Format: uuid */
+            targetGlAccountId: string;
+            priority?: number;
+        };
+        CreateReconciliationRuleDto: {
+            /** Format: uuid */
+            glAccountId?: string;
+            conditionType: string;
+            conditionValue: string;
+            /** Format: uuid */
+            targetGlAccountId: string;
+            priority?: number;
+        };
+        MatchedJournalLineDto: {
+            debit: number;
+            credit: number;
+            memo?: string | null;
+            /** Format: date */
+            entryDate: string;
+            isReconciled: boolean;
+        };
+        BankStatementLineDto: {
+            lineId: string;
+            /** Format: date-time */
+            date: string;
+            description: string;
+            amount: number;
+            reference?: string | null;
+            isReconciled: boolean;
+            matchedJournalLineId?: string | null;
+            matchedJournalLine?: components["schemas"]["MatchedJournalLineDto"] | null;
+        };
+        BankStatementConfirmMatchDto: {
+            /** @description Optional reconciliation ID to link the matched ledger line to */
+            reconciliationId?: string;
+        };
+        BankStatementManualMatchDto: {
+            /** @description The journal line ID to link against */
+            journalLineId: string;
+            /** @description Optional reconciliation ID to link the matched ledger line to */
+            reconciliationId?: string;
+        };
+        UomResponseDto: {
+            uomCode: string;
+            description: string;
+        };
+        CreateUomDto: {
+            uomCode: string;
+            description: string;
+        };
+        UpdateUomDto: {
+            description?: string;
+        };
+        ExchangeRateResponseDto: {
+            id: string;
+            currencyCode: string;
+            currencyName: string;
+            buyRate: string;
+            sellRate: string;
+            /** Format: date-time */
+            effectiveDate: string;
+        };
+        CreateExchangeRateDto: {
+            currencyCode: string;
+            currencyName: string;
+            buyRate: string;
+            sellRate: string;
+            effectiveDate?: string;
+        };
+        UpdateExchangeRateDto: {
+            currencyName?: string;
+            buyRate?: string;
+            sellRate?: string;
+            effectiveDate?: string;
+        };
+        OrganizationResponseDto: {
+            id: string;
+            name: string;
+        };
+        UpdateOrganizationDto: {
+            name: string;
+            addressLine1?: string;
+            addressLine2?: string;
+            city?: string;
+            state?: string;
+            country?: string;
+            postCode?: string;
+            /** Format: email */
+            email?: string;
+            phone?: string;
+            /** Format: uri */
+            website?: string;
+            companyNumber?: string;
+            taxNumber?: string;
+            /** Format: uri */
+            logoUrl?: string;
+            bankName?: string;
+            bankAccountName?: string;
+            bankAccountNumber?: string;
+            bankSwiftBic?: string;
+            bankIban?: string;
+        };
+        AppConfigResponseDto: {
+            defaultFulfillmentLocationId: string;
+            apiRateLimit: string;
+            taxProviderMappings?: Record<string, never>;
+            enrichmentProviderMappings?: Record<string, never>;
+        };
+        UpdateAppConfigDto: {
+            defaultFulfillmentLocationId?: string;
+            apiRateLimit?: string;
+            taxProviderMappings?: Record<string, never>;
+            enrichmentProviderMappings?: Record<string, never>;
+        };
+        TradingTermResponseDto: {
+            id: string;
+            name: string;
+        };
+        CostCenterResponseDto: {
+            id: string;
+            code: string;
+            name: string;
+            isActive: boolean;
+        };
+        CreateCostCenterDto: {
+            code: string;
+            name: string;
+            isActive?: boolean;
+        };
+        UpdateCostCenterDto: {
+            name?: string;
+            isActive?: boolean;
+        };
+        BulkImportResultDto: {
+            count: number;
+            updated: number;
+        };
+        ActivityResponseDto: {
+            id: string;
+            code: string;
+            name: string;
+            isActive: boolean;
+        };
+        CreateActivityDto: {
+            code: string;
+            name: string;
+            isActive?: boolean;
+        };
+        UpdateActivityDto: {
+            name?: string;
+            isActive?: boolean;
+        };
+        PickingQueueOrderDto: {
+            id: string;
+            orderNumber: string;
+            name?: string | null;
+            customerName: string;
+            customerOrderNumber?: string | null;
+            stateCode: string;
+            /** Format: date-time */
+            createdOn: string;
+            createdBy: string;
+            currencyCode?: string | null;
+            type?: string;
+            pickabilityStatus: string;
+            hasAllocation: boolean;
+        };
+        PickingSummaryAvailableBinDto: {
+            binId: string;
+            binName: string;
+            onHand: string;
+        };
+        PickingSummaryLineDto: {
+            salesOrderLineId: string;
+            lineNumber: number;
+            productId: string;
+            productNumber: string;
+            productType?: string;
+            productDescription: string;
+            locationName: string;
+            quantity: string;
+            quantityPicked: string;
+            quantityShipped: string;
+            remaining: string;
+            isFullyPicked: boolean;
+            isPhysical: boolean;
+            onHand: string;
+            availableBins: components["schemas"]["PickingSummaryAvailableBinDto"][];
+            hasAllocation: boolean;
+        };
+        PickingSummaryPickDto: {
+            pickId: string;
+            salesOrderId: string;
+            salesOrderLineId: string;
+            productId: string;
+            binId?: string | null;
+            quantity: string;
+            stateCode: string;
+            createdBy: string;
+            /** Format: date-time */
+            createdOn: string;
+            /** Format: date-time */
+            modifiedOn: string;
+            binName?: string | null;
+        };
+        PickingSummaryDto: {
+            totalLines: number;
+            fullyPickedLines: number;
+            isFullyPicked: boolean;
+            lines: components["schemas"]["PickingSummaryLineDto"][];
+            picks: components["schemas"]["PickingSummaryPickDto"][];
+        };
+        PickOrderLineDto: {
+            /** Format: uuid */
+            binId: string;
+            quantity: string;
+        };
+        ShippingQueueOrderDto: {
+            id: string;
+            orderNumber: string;
+            name?: string | null;
+            customerName: string;
+            customerOrderNumber?: string | null;
+            stateCode: string;
+            /** Format: date-time */
+            createdOn: string;
+            createdBy: string;
+            currencyCode?: string | null;
+            shippabilityStatus: string;
+            totalShippableLines: number;
+            totalLines: number;
+        };
+        ShippingContextLineDto: {
+            salesOrderLineId: string;
+            lineNumber: number;
+            productId: string;
+            productNumber: string;
+            productDescription: string;
+            quantity: string;
+            quantityPicked: string;
+            quantityShipped: string;
+            isPhysical: boolean;
+            availableToShip: string;
+        };
+        ShipmentLineResponseDto: {
+            shipmentLineId: string;
+            shipmentId: string;
+            orderLineId: string;
+            productId: string;
+            quantity: string;
+        };
+        ShipmentResponseDto: {
+            lines?: components["schemas"]["ShipmentLineResponseDto"][];
+            shipmentId: string;
+            shipmentNumber: string;
+            orderId: string;
+            stateCode: string;
+            trackingNumber?: string;
+            carrierId?: string;
+            notes?: string;
+            /** Format: date-time */
+            createdOn?: string;
+        };
+        ShippingContextDto: {
+            lines: components["schemas"]["ShippingContextLineDto"][];
+            shipments: components["schemas"]["ShipmentResponseDto"][];
+        };
+        OrderResponseDto: {
+            salesOrderId: string;
+            orderNumber: string;
+            name?: string | null;
+            customerId: string;
+            customerOrderNumber?: string | null;
+            fulfillmentLocationId: string;
+            stateCode: string;
+            currencyCode: string;
+            notes?: string | null;
+            customFields?: Record<string, never> | null;
+            discrepanciesAcknowledged: boolean;
+            taxProvider?: string | null;
+            sourceId?: string | null;
+            source: string;
+            createdBy?: string | null;
+            /** Format: date-time */
+            createdOn?: string | null;
+            /** Format: date-time */
+            modifiedOn?: string | null;
+        };
+        CreateOrderLineDto: {
+            productId?: string;
             productDescription?: string;
             quantity: string;
             pricePerUnit: string;
             discountPercentage?: string;
-            TaxCategoryId?: string;
+            taxCategoryId?: string;
+            tax?: string;
             unitOfMeasure?: string;
             fulfillmentLocationId?: string;
         };
         CreateOrderDto: {
+            /** Format: uuid */
+            salesOrderId: string;
             name?: string;
             customerId: string;
             customerOrderNumber?: string;
@@ -1752,11 +5987,17 @@ export interface components {
             notes?: string;
             fulfillmentLocationId?: string;
         };
+        ChangeOrderStateDto: {
+            stateCode: string;
+            generateBackorders?: boolean;
+            discrepanciesAcknowledged?: boolean;
+        };
         UpdateOrderLineDto: {
             quantity?: string;
             pricePerUnit?: string;
             discountPercentage?: string;
-            TaxCategoryId?: string;
+            taxCategoryId?: string;
+            tax?: string;
             productDescription?: string;
             unitOfMeasure?: string;
             fulfillmentLocationId?: string;
@@ -1771,8 +6012,25 @@ export interface components {
             notes?: string;
             lines: components["schemas"]["CreateReturnLineDto"][];
         };
+        ReturnLineResponseDto: {
+            lineId: string;
+            description: string;
+            quantityReturned: string;
+        };
+        ReturnResponseDto: {
+            returnId: string;
+            returnNumber: string;
+            stateCode: string;
+            notes?: string;
+            lines: components["schemas"]["ReturnLineResponseDto"][];
+        };
         UpdateReturnDto: {
             notes?: string;
+        };
+        ChangeReturnStateDto: {
+            stateCode: string;
+            /** Format: uuid */
+            locationId?: string;
         };
         AddReturnLineDto: {
             salesOrderLineId: string;
@@ -1784,6 +6042,14 @@ export interface components {
             quantityReturned?: string;
             reason?: string;
             returnFee?: string;
+        };
+        ReceiveReturnLineDto: {
+            returnLineId: string;
+            quantityReceived: string;
+        };
+        ReceiveReturnDto: {
+            locationId: string;
+            lines: components["schemas"]["ReceiveReturnLineDto"][];
         };
         CreateShipmentLineDto: {
             salesOrderLineId: string;
@@ -1798,12 +6064,186 @@ export interface components {
             notes?: string;
             trackingNumber?: string;
         };
+        ChangeShipmentStateDto: {
+            stateCode: string;
+        };
         AddShipmentLineDto: {
             salesOrderLineId: string;
             quantityShipped: string;
         };
         UpdateShipmentLineDto: {
             quantityShipped?: string;
+        };
+        GlobalReturnListResponseDto: {
+            data: components["schemas"]["ReturnResponseDto"][];
+            meta: {
+                total?: number;
+            };
+        };
+        OpenDemandLocationAvailabilityDto: {
+            locationId: string;
+            locationName: string;
+            availableQty: number;
+        };
+        OpenDemandDto: {
+            id: string;
+            salesOrderId: string;
+            orderNumber: string;
+            productId: string;
+            productName: string;
+            productDescription?: string | null;
+            quantity: number;
+            createdOn: string;
+            vendorId?: string | null;
+            vendorName?: string | null;
+            costPrice?: number | null;
+            currencyCode?: string | null;
+            locationId?: string | null;
+            locationName?: string | null;
+            purchaseOrderId?: string | null;
+            purchaseOrderNumber?: string | null;
+            purchaseOrderState?: string | null;
+            availableElsewhere: components["schemas"]["OpenDemandLocationAvailabilityDto"][];
+        };
+        PoAllocationDto: {
+            id: string;
+            salesOrderId: string;
+            orderNumber: string;
+            productId: string;
+            productName: string;
+            quantity: number;
+            createdOn: string;
+            purchaseOrderLineId?: string | null;
+            stateCode: string;
+        };
+        AvailablePoLineDto: {
+            purchaseOrderId: string;
+            purchaseOrderLineId: string;
+            orderNumber: string;
+            stateCode: string;
+            quantity: string;
+            vendorId: string;
+            vendorName: string;
+            deliveryLocationId: string;
+            locationName: string;
+            availableQty: number;
+        };
+        LinkDemandToPoDto: {
+            /** Format: uuid */
+            demandId: string;
+            /** Format: uuid */
+            purchaseOrderLineId: string;
+            quantity: string;
+        };
+        AllocationSuccessResponseDto: {
+            success: boolean;
+        };
+        AllocationResolveResponseDto: {
+            success: boolean;
+            message?: string;
+        };
+        ReallocateDemandDto: {
+            /** Format: uuid */
+            locationId: string;
+        };
+        GeneratePoLineDto: {
+            /** Format: uuid */
+            productId: string;
+            quantity: string;
+            pricePerUnit: string;
+            backorderIds?: string[];
+        };
+        GeneratePoDto: {
+            /** Format: uuid */
+            vendorId: string;
+            currencyCode?: string;
+            /** Format: uuid */
+            deliveryLocationId?: string;
+            soNumbers?: string[];
+            lines: components["schemas"]["GeneratePoLineDto"][];
+        };
+        GeneratePOsDto: {
+            pos: components["schemas"]["GeneratePoDto"][];
+        };
+        GenerateTransfersDto: {
+            transfers?: Record<string, never>[];
+        };
+        CreateTransferFromDemandsDto: {
+            sourceLocationId: string;
+            backorderIds: string[];
+        };
+        TransferLineResponseDto: {
+            id: string;
+            transferOrderLineId: string;
+            productId: string;
+            productNumber?: string;
+            productDescription?: string;
+            quantity: string;
+            quantityShipped?: string;
+            quantityReceived?: string;
+        };
+        TransferEventResponseDto: {
+            eventId: string;
+            eventType: string;
+            payload?: Record<string, never>;
+            actor?: string;
+            /** Format: date-time */
+            createdOn: string;
+        };
+        TransferResponseDto: {
+            id: string;
+            transferOrderId: string;
+            orderNumber: string;
+            stateCode: string;
+            sourceLocationId: string;
+            sourceLocationName?: string;
+            destinationLocationId: string;
+            destinationLocationName?: string;
+            notes?: string;
+            createdBy?: string;
+            /** Format: date-time */
+            createdOn: string;
+            lines?: components["schemas"]["TransferLineResponseDto"][];
+            events?: components["schemas"]["TransferEventResponseDto"][];
+        };
+        TransferPickingSummaryResponseDto: {
+            lineId: string;
+            productId: string;
+            orderedQuantity: string;
+            pickedQuantity: string;
+        };
+        PickLineDto: {
+            binId: string;
+            quantity: string;
+        };
+        ReceiveTransferDto: {
+            destinationBinId: string;
+        };
+        CreateTransferOrderLineDto: {
+            productId: string;
+            quantity: string;
+        };
+        CreateTransferOrderDto: {
+            sourceLocationId: string;
+            destinationLocationId: string;
+            notes?: string;
+            lines: components["schemas"]["CreateTransferOrderLineDto"][];
+        };
+        UpdateTransferOrderDto: {
+            sourceLocationId?: string;
+            destinationLocationId?: string;
+            notes?: string;
+        };
+        UpdateTransferOrderLineDto: {
+            quantity?: string;
+        };
+        TaxCategoryResponseDto: {
+            taxCategoryId: string;
+            code: string;
+            title: string;
+            type: string;
+            rate?: string;
+            isDefault: boolean;
         };
         CreateTaxCategoryDto: {
             code: string;
@@ -1819,22 +6259,297 @@ export interface components {
             rate?: string;
             isDefault?: boolean;
         };
+        RunHookBodyDto: Record<string, never>;
+        HookDto: {
+            slug: string;
+            name: string;
+            description: string;
+            contexts: string[];
+        };
+        HookAssignmentDto: {
+            hookSlug: string;
+            reportId: string;
+            contextSlug: string;
+        };
+        UpdateHookAssignmentDto: {
+            reportId?: string;
+            contextSlug?: string;
+        };
+        RandomIdData: {
+            id: string;
+        };
+        ReportDto: {
+            id: string;
+            slug: string;
+            name: string;
+            description?: string;
+            template: string;
+            outputNamePattern?: string;
+            contexts?: string[];
+            isSystem: boolean;
+        };
+        CreateReportDto: {
+            name: string;
+            slug: string;
+            description?: string;
+            template: string;
+            outputNamePattern?: string;
+            contexts?: string[];
+        };
+        UpdateReportDto: {
+            name?: string;
+            slug?: string;
+            description?: string;
+            template?: string;
+            outputNamePattern?: string;
+            contexts?: string[];
+        };
+        PreviewReportDto: {
+            template: string;
+            mockData?: Record<string, never>;
+            hookSlug?: string;
+            entityId?: string;
+        };
+        CreateSalesInvoiceLineDto: {
+            /** Format: uuid */
+            salesOrderLineId: string;
+            quantityToInvoice: number;
+        };
         CreateSalesInvoiceDto: {
             notes?: string;
-            lines?: {
-                salesOrderLineId: string;
-                quantityToInvoice: number;
-            }[];
+            lines?: components["schemas"]["CreateSalesInvoiceLineDto"][];
         };
-        CreatePurchaseBillDto: {
-            supplierInvoiceNumber?: string;
+        InvoiceLineResponseDto: {
+            lineId: string;
+            invoiceId: string;
+            description: string;
+            quantityInvoiced: string;
+            pricePerUnit: string;
+            amount: string;
+            productId?: string;
+            productNumber?: string;
+            glAccountId?: string;
+            matchStatus: string;
+            purchaseOrderId?: string;
+            purchaseOrderNumber?: string;
+            purchaseOrderLineId?: string;
+        };
+        SalesInvoiceResponseDto: {
+            invoiceId: string;
+            invoiceNumber: string;
+            customerId: string;
+            customerName: string;
+            totalAmount: string;
+            outstandingAmount: string;
+            taxAmount: string;
+            currencyCode: string;
+            stateCode: string;
             notes?: string;
+            salesOrderId?: string;
+            createdBy: string;
+            /** Format: date-time */
+            createdOn: string;
+            lines: components["schemas"]["InvoiceLineResponseDto"][];
+            allocations?: Record<string, never>[];
+        };
+        PurchaseInvoiceResponseDto: {
+            invoiceId: string;
+            invoiceNumber: string;
+            vendorId: string;
+            vendorName: string;
+            supplierInvoiceNumber?: string;
+            totalAmount: string;
+            outstandingAmount: string;
+            taxAmount: string;
+            currencyCode: string;
+            stateCode: string;
+            notes?: string;
+            purchaseOrderId?: string;
+            createdBy: string;
+            /** Format: date-time */
+            createdOn: string;
+            lines: components["schemas"]["InvoiceLineResponseDto"][];
+            allocations?: Record<string, never>[];
+        };
+        ChangeInvoiceStateDto: {
+            stateCode: string;
+            discrepanciesAcknowledged?: boolean;
+        };
+        CreateStandaloneInvoiceLineDto: {
+            description?: string;
+            /** Format: uuid */
+            productId?: string;
+            /** Format: uuid */
+            glAccountId?: string;
+            quantityInvoiced: number;
+            pricePerUnit: number;
+            /** Format: uuid */
+            purchaseOrderLineId?: string;
+        };
+        CreateStandaloneInvoiceDto: {
+            /** Format: uuid */
+            vendorId: string;
+            supplierInvoiceNumber: string;
+            /** Format: uuid */
+            purchaseOrderId?: string;
+            currencyCode: string;
+            totalAmount: number;
+            taxAmount: number;
+            notes?: string;
+            receiptFilename?: string;
+            lines?: components["schemas"]["CreateStandaloneInvoiceLineDto"][];
+        };
+        UpdateInvoiceLineDto: {
+            description?: string;
+            /** Format: uuid */
+            productId?: string;
+            /** Format: uuid */
+            glAccountId?: string;
+            quantityInvoiced?: number;
+            pricePerUnit?: number;
+        };
+        ResolveInvoiceLineDto: {
+            /** Format: uuid */
+            purchaseOrderLineId: string;
+        };
+        AutoMatchPurchaseOrderDto: {
+            /** Format: uuid */
+            purchaseOrderId: string;
+        };
+        SyncSummaryDto: {
+            pending: number;
+            processed: number;
+            failed: number;
+        };
+        TypeBreakdownDto: {
+            eventType: string;
+            total: number;
+            pending: number;
+            processed: number;
+            failed: number;
+        };
+        OutboxEventDto: {
+            outboxId: string;
+            entityType: string;
+            entityId: string;
+            eventType: string;
+            payload: Record<string, never>;
+            /** Format: date-time */
+            createdOn: string;
+            /** Format: date-time */
+            processedAt?: string;
+            lastError?: string;
+        };
+        SyncStatusResponseDto: {
+            summary: components["schemas"]["SyncSummaryDto"];
+            byType: components["schemas"]["TypeBreakdownDto"][];
+            recentEvents: components["schemas"]["OutboxEventDto"][];
+        };
+        SyncEventsResponseDto: {
+            data: string[];
+        };
+        DeleteEventsResponseDto: {
+            deleted: number;
+            eventType: string;
+        };
+        EnrichmentPayloadDto: {
+            /** @description Dynamic payload for the enrichment provider */
+            payload?: Record<string, never>;
+        };
+        PaymentResponseDto: {
+            paymentId: string;
+            paymentNumber: string;
+            paymentType: string;
+            partyType: string;
+            partyId: string;
+            paymentDate: Record<string, never>;
+            modeOfPayment: string;
+            totalAmount: Record<string, never>;
+            unallocatedAmount: Record<string, never>;
+            stateCode: string;
+            currencyCode: string;
+            glAccountBank: string;
+            referenceNumber: string | null;
+            createdOn: Record<string, never>;
+            createdBy: string;
+            partyName: string;
+        };
+        CreatePaymentDto: {
+            /** Format: uuid */
+            paymentId: string;
+            paymentType: Record<string, never>;
+            partyType: Record<string, never>;
+            /** Format: uuid */
+            partyId: string;
+            paymentDate: string;
+            modeOfPayment: Record<string, never>;
+            totalAmount: number;
+            /** Format: uuid */
+            glAccountBank: string;
+            referenceNumber?: string;
+            currencyCode: string;
+            submitImmediately?: boolean;
+        };
+        AllocationDto: {
+            referenceType: Record<string, never>;
+            /** Format: uuid */
+            referenceId: string;
+            allocatedAmount: number;
+        };
+        AllocatePaymentDto: {
+            allocations: components["schemas"]["AllocationDto"][];
+        };
+        BatchPaymentActionDto: {
+            paymentIds: string[];
+        };
+        ExportAbaResponseDto: {
+            fileContent: string;
+        };
+        ConfirmRejectResponseDto: {
+            success: boolean;
         };
         ClientErrorDto: {
             message: string;
             stack?: string;
             component?: string;
+            /** Format: uri */
             url?: string;
+        };
+        SupplierResponseDto: {
+            id: string;
+            vendorNumber: string;
+            name: string;
+            address1Line1: string | null;
+            address1Line2: string | null;
+            address1City: string | null;
+            address1StateOrProvince: string | null;
+            address1PostalCode: string | null;
+            address1Country: string;
+            telephone1: string | null;
+            fax: string | null;
+            emailAddress1: string | null;
+            tradingTermsId: string | null;
+            earlyPaymentDiscount: string | null;
+            creditLimit: string | null;
+            isPurchasingBlocked: boolean;
+            purchasingBlockReason: string | null;
+            isPaymentBlocked: boolean;
+            paymentBlockReason: string | null;
+            blockNotes: string | null;
+            supplierGroupId: string | null;
+            currencyCode: string | null;
+            notes: string | null;
+            bankAccountName: string | null;
+            bankBsb: string | null;
+            bankAccountNumber: string | null;
+            businessNumber: string | null;
+            isTaxRegistered: boolean;
+            stateCode: string | null;
+            tenantId: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
         };
         CreateSupplierDto: {
             vendorNumber: string;
@@ -1844,14 +6559,31 @@ export interface components {
             address1City?: string;
             address1StateOrProvince?: string;
             address1PostalCode?: string;
-            address1Country?: string;
+            address1Country: string;
             telephone1?: string;
             fax?: string;
+            /** Format: email */
             emailAddress1?: string;
-            paymentTerms?: string;
+            /** Format: uuid */
+            tradingTermsId?: string;
+            earlyPaymentDiscount?: string;
+            creditLimit?: string;
+            isPurchasingBlocked?: boolean;
+            /** @enum {string} */
+            purchasingBlockReason?: "compliance_breach" | "quality_issues" | "dispute" | "financial_risk" | "other";
+            isPaymentBlocked?: boolean;
+            /** @enum {string} */
+            paymentBlockReason?: "invoice_dispute" | "missing_goods" | "contractual_breach" | "other";
+            blockNotes?: string;
+            /** Format: uuid */
             supplierGroupId?: string;
             currencyCode?: string;
             notes?: string;
+            bankAccountName?: string;
+            bankBsb?: string;
+            bankAccountNumber?: string;
+            businessNumber?: string;
+            isTaxRegistered?: boolean;
         };
         UpdateSupplierDto: {
             name?: string;
@@ -1863,46 +6595,177 @@ export interface components {
             address1Country?: string;
             telephone1?: string;
             fax?: string;
+            /** Format: email */
             emailAddress1?: string;
-            paymentTerms?: string;
+            /** Format: uuid */
+            tradingTermsId?: string;
+            earlyPaymentDiscount?: string;
+            creditLimit?: string;
+            isPurchasingBlocked?: boolean;
+            /** @enum {string} */
+            purchasingBlockReason?: "compliance_breach" | "quality_issues" | "dispute" | "financial_risk" | "other";
+            isPaymentBlocked?: boolean;
+            /** @enum {string} */
+            paymentBlockReason?: "invoice_dispute" | "missing_goods" | "contractual_breach" | "other";
+            blockNotes?: string;
+            /** Format: uuid */
             supplierGroupId?: string;
             currencyCode?: string;
             notes?: string;
+            bankAccountName?: string;
+            bankBsb?: string;
+            bankAccountNumber?: string;
             stateCode?: string;
+            businessNumber?: string;
+            isTaxRegistered?: boolean;
+        };
+        CreateSupplierExpiryDto: {
+            /** @enum {string} */
+            expiryType: "insurance" | "tax_certificate" | "trial_period" | "other";
+            expiryDate: string;
+            notes?: string;
+        };
+        UpdateSupplierExpiryDto: {
+            /** @enum {string} */
+            expiryType?: "insurance" | "tax_certificate" | "trial_period" | "other";
+            expiryDate?: string;
+            notes?: string;
+        };
+        SupplierGroupResponseDto: {
+            id: string;
+            groupCode: string;
+            name: string;
+            defaultApAccountId: string | null;
+            defaultExpenseAccountId: string | null;
+            tradingTermsId: string | null;
+            earlyPaymentDiscount: string | null;
+            creditLimit: string | null;
+            isPurchasingBlocked: boolean;
+            purchasingBlockReason: string | null;
+            isPaymentBlocked: boolean;
+            paymentBlockReason: string | null;
+            blockNotes: string | null;
+            defaultCostCenterId: string | null;
+            defaultActivityId: string | null;
+            tenantId: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
         };
         CreateSupplierGroupDto: {
             groupCode: string;
             name: string;
+            /** Format: uuid */
             defaultApAccountId?: string;
+            /** Format: uuid */
+            defaultExpenseAccountId?: string;
+            /** Format: uuid */
+            tradingTermsId?: string;
+            earlyPaymentDiscount?: string;
+            creditLimit?: string;
+            isPurchasingBlocked?: boolean;
+            /** @enum {string} */
+            purchasingBlockReason?: "compliance_breach" | "quality_issues" | "dispute" | "financial_risk" | "other";
+            isPaymentBlocked?: boolean;
+            /** @enum {string} */
+            paymentBlockReason?: "invoice_dispute" | "missing_goods" | "contractual_breach" | "other";
+            blockNotes?: string;
+            /** Format: uuid */
+            defaultCostCenterId?: string;
+            /** Format: uuid */
+            defaultActivityId?: string;
         };
         UpdateSupplierGroupDto: {
             groupCode?: string;
             name?: string;
+            /** Format: uuid */
             defaultApAccountId?: string;
+            /** Format: uuid */
+            defaultExpenseAccountId?: string;
+            /** Format: uuid */
+            tradingTermsId?: string;
+            earlyPaymentDiscount?: string;
+            creditLimit?: string;
+            isPurchasingBlocked?: boolean;
+            /** @enum {string} */
+            purchasingBlockReason?: "compliance_breach" | "quality_issues" | "dispute" | "financial_risk" | "other";
+            isPaymentBlocked?: boolean;
+            /** @enum {string} */
+            paymentBlockReason?: "invoice_dispute" | "missing_goods" | "contractual_breach" | "other";
+            blockNotes?: string;
+            /** Format: uuid */
+            defaultCostCenterId?: string;
+            /** Format: uuid */
+            defaultActivityId?: string;
         };
         CreatePurchaseOrderLineDto: {
-            productId: string;
+            productId?: string;
             productDescription?: string;
             quantity: string;
             pricePerUnit: string;
             discountPercentage?: string;
             unitOfMeasure?: string;
+            taxCategoryId?: string;
         };
         CreatePurchaseOrderDto: {
+            /** Format: uuid */
+            purchaseOrderId: string;
             orderNumber: string;
+            deliveryLocationId: string;
             name?: string;
             vendorId: string;
             currencyCode?: string;
             notes?: string;
+            referenceNumber?: string;
             lines?: components["schemas"]["CreatePurchaseOrderLineDto"][];
+        };
+        PurchaseOrderLineResponseDto: {
+            purchaseOrderLineId: string;
+            purchaseOrderId: string;
+            lineNumber: number;
+            productId?: string | null;
+            productDescription?: string | null;
+            quantity: string;
+            pricePerUnit: string;
+            discountPercentage?: string | null;
+            amount?: string | null;
+            taxCategoryId: string;
+            tax?: string | null;
+            totalAmount?: string | null;
+            unitOfMeasure?: string | null;
+            quantityReceived?: string | null;
+        };
+        PurchaseOrderResponseDto: {
+            lines?: components["schemas"]["PurchaseOrderLineResponseDto"][];
+            purchaseOrderId: string;
+            orderNumber: string;
+            name?: string | null;
+            vendorId?: string | null;
+            deliveryLocationId: string;
+            referenceNumber?: string | null;
+            stateCode: string;
+            currencyCode: string;
+            notes?: string | null;
+            customFields?: Record<string, never> | null;
+            createdBy?: string | null;
+            /** Format: date-time */
+            createdOn?: string | null;
+            /** Format: date-time */
+            modifiedOn?: string | null;
+            vendorName?: string;
         };
         UpdatePurchaseOrderDto: {
             name?: string;
             vendorId?: string;
             currencyCode?: string;
             notes?: string;
-            invoiceNumber?: string;
+            referenceNumber?: string;
             stateCode?: string;
+            deliveryLocationId?: string;
+        };
+        ChangeStateDto: {
+            stateCode: string;
         };
         UpdatePurchaseOrderLineDto: {
             quantity?: string;
@@ -1910,56 +6773,87 @@ export interface components {
             discountPercentage?: string;
             productDescription?: string;
             unitOfMeasure?: string;
+            taxCategoryId?: string;
         };
-        CreateReceptionLineDto: {
+        CreatePurchaseReturnLineDto: {
             purchaseOrderLineId: string;
-            quantityReceived: string;
+            quantityReturned: string;
+            reason?: string;
+            returnFee?: string;
         };
-        CreateReceptionDto: {
-            purchaseOrderId: string;
-            packingSlipNumber?: string;
+        CreatePurchaseReturnDto: {
             notes?: string;
-            lines: components["schemas"]["CreateReceptionLineDto"][];
+            lines: components["schemas"]["CreatePurchaseReturnLineDto"][];
         };
-        CreateUomDto: {
-            uomCode: string;
-            description: string;
+        PurchaseReturnLineResponseDto: {
+            returnLineId: string;
+            returnId: string;
+            purchaseOrderLineId: string;
+            quantityReturned: string;
+            reason?: string | null;
+            returnFee?: string | null;
         };
-        UpdateUomDto: {
-            description?: string;
+        PurchaseReturnResponseDto: {
+            returnId: string;
+            returnNumber: string;
+            purchaseOrderId: string;
+            stateCode: string;
+            notes?: string | null;
+            createdBy?: string | null;
+            /** Format: date-time */
+            createdOn?: string | null;
+            /** Format: date-time */
+            modifiedOn?: string | null;
+            lines?: components["schemas"]["PurchaseReturnLineResponseDto"][];
         };
-        CreateExchangeRateDto: {
-            currencyCode: string;
-            currencyName: string;
-            buyRate: string;
-            sellRate: string;
-            effectiveDate?: string;
+        GlobalPurchaseReturnDto: {
+            orderNumber?: string;
+            vendorName?: string;
+            vendorId?: string;
+            currencyCode?: string;
+            returnId: string;
+            returnNumber: string;
+            purchaseOrderId: string;
+            stateCode: string;
+            notes?: string | null;
+            createdBy?: string | null;
+            /** Format: date-time */
+            createdOn?: string | null;
+            /** Format: date-time */
+            modifiedOn?: string | null;
+            lines?: components["schemas"]["PurchaseReturnLineResponseDto"][];
         };
-        UpdateExchangeRateDto: {
-            currencyName?: string;
-            buyRate?: string;
-            sellRate?: string;
-            effectiveDate?: string;
+        CreateDebitNoteLineDto: {
+            purchaseOrderLineId: string;
+            quantityInvoiced: string;
+            pricePerUnit: string;
+            amount: string;
+            taxAmount?: string;
         };
-        UpdateOrganizationDto: {
-            name: string;
-            addressLine1?: string;
-            addressLine2?: string;
-            city?: string;
-            state?: string;
-            country?: string;
-            postCode?: string;
-            email?: string;
-            phone?: string;
-            website?: string;
-            companyNumber?: string;
-            taxNumber?: string;
-            logoUrl?: string;
-            bankName?: string;
-            bankAccountName?: string;
-            bankAccountNumber?: string;
-            bankSwiftBic?: string;
-            bankIban?: string;
+        CreateDebitNoteDto: {
+            returnId: string;
+            supplierReferenceNumber?: string;
+            lines: components["schemas"]["CreateDebitNoteLineDto"][];
+            taxAmount?: string;
+            feeAmount?: string;
+            notes?: string;
+        };
+        PurchaseDebitNoteResponseDto: {
+            debitNoteId: string;
+            debitNoteNumber: string;
+            returnId: string;
+            purchaseOrderId: string;
+            stateCode: string;
+            totalAmount: string;
+            taxAmount: string;
+            feeAmount: string;
+            /** Format: date-time */
+            createdOn?: string | null;
+            /** Format: date-time */
+            modifiedOn?: string | null;
+        };
+        SystemLogResponseDto: {
+            lines: string[];
         };
         CreateLocationDto: {
             code: string;
@@ -1970,18 +6864,372 @@ export interface components {
             country?: string;
             postCode?: string;
         };
+        LocationResponseDto: {
+            id: string;
+            code: string;
+            name: string;
+            addressLine1?: string;
+            city?: string;
+            state?: string;
+            country?: string;
+            postCode?: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateLocationDto: {
+            code?: string;
+            name?: string;
+            addressLine1?: string;
+            city?: string;
+            state?: string;
+            country?: string;
+            postCode?: string;
+        };
         CreateZoneDto: {
+            /** Format: uuid */
             locationId: string;
             code: string;
             name: string;
         };
+        ZoneResponseDto: {
+            id: string;
+            locationId: string;
+            code: string;
+            name: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateZoneDto: {
+            /** Format: uuid */
+            locationId?: string;
+            code?: string;
+            name?: string;
+        };
         CreateBinDto: {
+            /** Format: uuid */
+            zoneId: string;
+            binNumber: string;
+            /** @enum {string} */
+            binType?: "storage" | "pick" | "bulk" | "receiving" | "staging" | "quarantine" | "in_transit";
+            isConsignment?: boolean;
+            isBonded?: boolean;
+            isUnavailable?: boolean;
+        };
+        BinResponseDto: {
+            id: string;
             zoneId: string;
             binNumber: string;
             binType?: string;
             isConsignment?: boolean;
             isBonded?: boolean;
             isUnavailable?: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        UpdateBinDto: {
+            /** Format: uuid */
+            zoneId?: string;
+            binNumber?: string;
+            /** @enum {string} */
+            binType?: "storage" | "pick" | "bulk" | "receiving" | "staging" | "quarantine" | "in_transit";
+            isConsignment?: boolean;
+            isBonded?: boolean;
+            isUnavailable?: boolean;
+        };
+        TestAbmConnectionDto: {
+            host: string;
+            database: string;
+            username: string;
+            password: string;
+            port?: number;
+        };
+        TestConnectionResultDto: {
+            success: boolean;
+            message: string;
+            preview?: Record<string, never>;
+        };
+        TestOdooConnectionDto: {
+            host: string;
+            database: string;
+            username: string;
+            password: string;
+            port?: number;
+        };
+        ResumeStateDto: {
+            completedTables: string[];
+        };
+        DbConfigDto: {
+            host?: string;
+            database?: string;
+            username?: string;
+            password?: string;
+            port?: number;
+        };
+        ExecuteEltDto: {
+            dbConfig?: components["schemas"]["DbConfigDto"];
+            abmImport?: boolean;
+            odooImport?: boolean;
+            resumeExtraction?: boolean;
+            skipExtraction?: boolean;
+            defaultLocationCode?: string;
+            baseCurrency?: string;
+            defaultTaxCategoryCode?: string;
+        };
+        JobResultDto: {
+            jobId: string;
+        };
+        JobProgressDto: {
+            status: string;
+            progress?: Record<string, never>[];
+            logs: string[];
+        };
+        SetupValidationDto: {
+            status: string;
+            metrics?: Record<string, never>;
+            dataCounts?: Record<string, never>;
+        };
+        ImportSummaryDto: {
+            products: number;
+            customers: number;
+            orders: number;
+        };
+        CsvMetadataDto: {
+            id: string;
+            name: string;
+            uniqueKey: string;
+            columns: string[];
+        };
+        CreateGoodsReceivedLineDto: {
+            productId: string;
+            quantityReceived: string;
+        };
+        CreateGoodsReceivedDto: {
+            /** Format: uuid */
+            goodsReceivedId?: string;
+            vendorId: string;
+            locationId: string;
+            packingSlipNumber?: string;
+            notes?: string;
+            lines: components["schemas"]["CreateGoodsReceivedLineDto"][];
+        };
+        GoodsReceivedResponseDto: {
+            goodsReceivedId: string;
+            receiptNumber: string;
+            vendorId: string;
+            locationId: string;
+            packingSlipNumber?: string;
+            notes?: string;
+            stateCode: string;
+            createdBy?: string;
+            /** Format: date-time */
+            createdOn?: string;
+            /** Format: date-time */
+            modifiedOn?: string;
+            vendorName?: string;
+            vendorNumber?: string;
+            totalLines?: number;
+            matchedLines?: number;
+        };
+        PaginatedGoodsReceivedDto: {
+            data: components["schemas"]["GoodsReceivedResponseDto"][];
+            meta: Record<string, never>;
+        };
+        GoodsReceivedLineResponseDto: {
+            goodsReceivedLineId: string;
+            goodsReceivedId: string;
+            productId: string;
+            purchaseOrderLineId?: string;
+            purchaseOrderId?: string;
+            quantityReceived: string;
+            matchStatus: string;
+            putawayStatus: string;
+            /** Format: date-time */
+            createdOn?: string;
+            /** Format: date-time */
+            modifiedOn?: string;
+            receiptNumber?: string;
+            packingSlipNumber?: string;
+            vendorId?: string;
+            vendorName?: string;
+            vendorNumber?: string;
+            locationId?: string;
+            locationName?: string;
+            productNumber?: string;
+            productName?: string;
+            orderNumber?: string;
+            stateCode?: string;
+        };
+        PaginatedGoodsReceivedLineDto: {
+            data: components["schemas"]["GoodsReceivedLineResponseDto"][];
+            meta: Record<string, never>;
+        };
+        CancelReceptionResponseDto: {
+            success: boolean;
+        };
+        ResolveAllocationDto: {
+            purchaseOrderLineId: string;
+            allocatedQuantity?: string;
+        };
+        ResolveAllocationResponseDto: {
+            success: boolean;
+            splitLine?: Record<string, never>;
+        };
+        CreateMacroDto: {
+            name: string;
+            macroType?: string;
+            content: string;
+        };
+        MacroResponseDto: {
+            macroId: string;
+            name: string;
+            macroType: string;
+            content: string;
+            /** Format: date-time */
+            createdOn: string;
+            /** Format: date-time */
+            modifiedOn: string;
+        };
+        UpdateMacroDto: {
+            name?: string;
+            macroType?: string;
+            content?: string;
+        };
+        UserResponseDto: {
+            id: string;
+            username: string;
+            role: string;
+            isActive: boolean;
+            displayName: string | null;
+            email: string | null;
+            tenantId: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        CreateUserDto: {
+            username: string;
+            password: string;
+            /** @enum {string} */
+            role: "admin" | "viewer" | "sales" | "warehouse" | "procurement" | "finance";
+            displayName?: string;
+            /** Format: email */
+            email?: string;
+        };
+        UpdateUserDto: {
+            password?: string;
+            /** @enum {string} */
+            role?: "admin" | "viewer" | "sales" | "warehouse" | "procurement" | "finance";
+            displayName?: string;
+            /** Format: email */
+            email?: string;
+        };
+        DiscountMatrixResponseDto: {
+            /** Format: uuid */
+            discountMatrixId: string;
+            /** Format: uuid */
+            customerGroupId: string | null;
+            /** Format: uuid */
+            customerId: string | null;
+            /** Format: uuid */
+            productGroupId: string | null;
+            discountPercentage: string;
+            /** Format: date-time */
+            createdOn: string | null;
+            /** Format: date-time */
+            modifiedOn: string | null;
+        };
+        ResolveDiscountRuleDto: {
+            ownerType: Record<string, never>;
+            /** Format: uuid */
+            productGroupId: string | null;
+            discountPercentage: string;
+        };
+        CreateDiscountMatrixDto: {
+            /** Format: uuid */
+            customerGroupId?: string;
+            /** Format: uuid */
+            customerId?: string;
+            /** Format: uuid */
+            productGroupId?: string;
+            discountPercentage: string;
+        };
+        UpdateDiscountMatrixDto: {
+            discountPercentage?: string;
+        };
+        WebhookResponseDto: {
+            /** Format: uuid */
+            webhookId: string;
+            targetUrl: string;
+            eventTypes: string[];
+            secretKey: string;
+            isActive: boolean;
+            /** Format: date-time */
+            createdOn: string | null;
+        };
+        CreateWebhookDto: {
+            /** Format: uri */
+            targetUrl: string;
+            eventTypes: string[];
+        };
+        UpdateWebhookDto: {
+            /** Format: uri */
+            targetUrl?: string;
+            eventTypes?: string[];
+            isActive?: boolean;
+        };
+        ApiKeyResponseDto: {
+            /** Format: uuid */
+            apiKeyId: string;
+            name: string;
+            prefix: string;
+            role: string;
+            /** Format: date-time */
+            createdOn: string;
+        };
+        CreateApiKeyDto: {
+            name: string;
+            /** @description The Casbin role granted to this API key (e.g. agent, webhook) */
+            role: string;
+        };
+        ApiKeyCreatedResponseDto: {
+            /** Format: uuid */
+            apiKeyId: string;
+            name: string;
+            prefix: string;
+            role: string;
+            keyHash: string;
+            createdBy: string;
+            /** Format: date-time */
+            createdOn: string;
+            /** Format: date-time */
+            modifiedOn: string;
+            secretKey: string;
+        };
+        ApiKeyFullResponseDto: {
+            /** Format: uuid */
+            apiKeyId: string;
+            name: string;
+            prefix: string;
+            role: string;
+            keyHash: string;
+            createdBy: string;
+            /** Format: date-time */
+            createdOn: string;
+            /** Format: date-time */
+            modifiedOn: string;
+        };
+        PublishEventDto: {
+            /** @description The type of event to publish (e.g. order.created) */
+            type: string;
+            /** @description The payload of the event */
+            payload: Record<string, never>;
         };
     };
     responses: never;
@@ -2009,7 +7257,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["LoginResponseDto"];
+                };
             };
         };
     };
@@ -2026,11 +7276,13 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MeResponseDto"];
+                };
             };
         };
     };
-    AccountsController_findAll: {
+    RolesController_findAll: {
         parameters: {
             query?: never;
             header?: never;
@@ -2043,7 +7295,100 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RoleDetailsDto"][];
+                };
+            };
+        };
+    };
+    RolesController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleDetailsDto"];
+                };
+            };
+        };
+    };
+    RolesController_setPermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetRolePermissionsDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleDetailsDto"];
+                };
+            };
+        };
+    };
+    RolesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
+            };
+        };
+    };
+    AccountsController_findAll: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["AccountResponseDto"][];
+                    };
+                };
             };
         };
     };
@@ -2064,13 +7409,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AccountResponseDto"];
+                };
             };
         };
     };
     AccountsController_findOne: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
             header?: never;
             path: {
                 id: string;
@@ -2083,7 +7433,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AccountResponseDto"];
+                };
             };
         };
     };
@@ -2106,7 +7458,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AccountResponseDto"];
+                };
             };
         };
     };
@@ -2119,13 +7473,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AccountResponseDto"];
+                };
             };
         };
     };
@@ -2138,19 +7498,28 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AccountResponseDto"];
+                };
             };
         };
     };
     AccountGroupsController_findAll: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2161,7 +7530,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AccountGroupResponseDto"][];
+                };
             };
         };
     };
@@ -2182,13 +7553,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AccountGroupResponseDto"];
+                };
             };
         };
     };
     AccountGroupsController_findOne: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
             header?: never;
             path: {
                 id: string;
@@ -2201,7 +7577,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AccountGroupResponseDto"];
+                };
             };
         };
     };
@@ -2220,7 +7598,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        deleted?: boolean;
+                    };
+                };
             };
         };
     };
@@ -2243,13 +7625,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AccountGroupResponseDto"];
+                };
             };
         };
     };
     ProductsController_findAll: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2260,7 +7647,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["ProductResponseDto"][];
+                    };
+                };
             };
         };
     };
@@ -2281,13 +7672,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProductResponseDto"];
+                };
             };
         };
     };
     ProductsController_findOne: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
             header?: never;
             path: {
                 id: string;
@@ -2300,7 +7696,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProductResponseDto"];
+                };
             };
         };
     };
@@ -2323,7 +7721,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProductResponseDto"];
+                };
             };
         };
     };
@@ -2336,13 +7736,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProductResponseDto"];
+                };
             };
         };
     };
@@ -2355,13 +7761,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProductResponseDto"];
+                };
             };
         };
     };
@@ -2384,7 +7796,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProductResponseDto"];
+                };
             };
         };
     };
@@ -2404,7 +7818,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProductResponseDto"];
+                };
             };
         };
     };
@@ -2417,13 +7833,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddProductUomDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProductResponseDto"];
+                };
             };
         };
     };
@@ -2443,13 +7865,161 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProductResponseDto"];
+                };
+            };
+        };
+    };
+    ProductsController_linkDefaultBin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkBinDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductResponseDto"];
+                };
+            };
+        };
+    };
+    ProductsController_removeDefaultBin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                binLinkId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductResponseDto"];
+                };
+            };
+        };
+    };
+    ProductsController_getComponents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["ProductResponseDto"][];
+                    };
+                };
+            };
+        };
+    };
+    ProductsController_addComponent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddProductComponentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductResponseDto"];
+                };
+            };
+        };
+    };
+    ProductsController_removeComponent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                componentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductResponseDto"];
+                };
+            };
+        };
+    };
+    ProductsController_updateComponent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                componentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProductComponentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductResponseDto"];
+                };
             };
         };
     };
     ProductGroupsController_findAll: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2460,7 +8030,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["ProductGroupResponseDto"][];
+                    };
+                };
             };
         };
     };
@@ -2481,13 +8055,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProductGroupResponseDto"];
+                };
             };
         };
     };
     ProductGroupsController_findOne: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
             header?: never;
             path: {
                 id: string;
@@ -2500,7 +8079,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProductGroupResponseDto"];
+                };
             };
         };
     };
@@ -2519,7 +8100,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProductGroupResponseDto"];
+                };
             };
         };
     };
@@ -2542,14 +8125,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProductGroupResponseDto"];
+                };
             };
         };
     };
     InventoryController_findAll: {
         parameters: {
-            query: {
-                locationNo: string;
+            query?: {
+                locationNo?: string;
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
             };
             header?: never;
             path?: never;
@@ -2561,15 +8148,19 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["InventoryResponseDto"][];
+                    };
+                };
             };
         };
     };
     InventoryController_findByProductIds: {
         parameters: {
-            query: {
-                productIds: string;
-                locationId: string;
+            query?: {
+                productIds?: string;
+                locationId?: string;
             };
             header?: never;
             path?: never;
@@ -2581,14 +8172,39 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["InventoryResponseDto"][];
+                };
+            };
+        };
+    };
+    InventoryController_findByProductIdsBulk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FindByProductIdsBulkDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryResponseDto"][];
+                };
             };
         };
     };
     InventoryController_findBins: {
         parameters: {
-            query: {
-                locationNo: string;
+            query?: {
+                locationNo?: string;
             };
             header?: never;
             path?: never;
@@ -2600,7 +8216,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["InventoryBinResponseDto"][];
+                    };
+                };
             };
         };
     };
@@ -2621,13 +8241,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BinResponseDto"];
+                };
             };
         };
     };
-    InventoryController_findAllLocations: {
+    InventoryController_getPutawayContext: {
         parameters: {
-            query?: never;
+            query: {
+                productId: string;
+                locationId: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2638,7 +8263,30 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PutawayContextResponseDto"];
+                };
+            };
+        };
+    };
+    InventoryController_findAllLocations: {
+        parameters: {
+            query?: {
+                productId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryLocationResponseDto"][];
+                };
             };
         };
     };
@@ -2659,14 +8307,16 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["LocationResponseDto"];
+                };
             };
         };
     };
     InventoryController_getMovements: {
         parameters: {
-            query: {
-                days: string;
+            query?: {
+                days?: string;
             };
             header?: never;
             path?: never;
@@ -2678,14 +8328,16 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["InventoryMovementResponseDto"][];
+                };
             };
         };
     };
     InventoryController_getLedger: {
         parameters: {
-            query: {
-                days: string;
+            query?: {
+                days?: string;
             };
             header?: never;
             path?: never;
@@ -2697,7 +8349,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["InventoryLedgerResponseDto"][];
+                };
             };
         };
     };
@@ -2716,11 +8370,294 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["InventoryEntryDetailsResponseDto"];
+                };
             };
         };
     };
-    OrdersController_findAll: {
+    InventoryController_getPendingPutaway: {
+        parameters: {
+            query?: {
+                locationId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingPutawayResponseDto"][];
+                };
+            };
+        };
+    };
+    InventoryController_putaway: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutawayBulkDto"];
+            };
+        };
+        responses: {
+            /** @description Putaway successful */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventorySuccessResponseDto"];
+                };
+            };
+        };
+    };
+    InventoryController_toggleQuarantine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToggleQuarantineDto"];
+            };
+        };
+        responses: {
+            /** @description Quarantine state toggled */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventorySuccessResponseDto"];
+                };
+            };
+        };
+    };
+    GlController_getAccounts: {
+        parameters: {
+            query?: {
+                format?: "tree" | "flat";
+                isBankAccount?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlAccountResponseDto"][];
+                };
+            };
+        };
+    };
+    GlController_createAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAccountRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlAccountResponseDto"];
+                };
+            };
+        };
+    };
+    GlController_updateAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAccountRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlAccountResponseDto"];
+                };
+            };
+        };
+    };
+    GlController_getJournalEntries: {
+        parameters: {
+            query?: {
+                fromDate?: string;
+                toDate?: string;
+                sourceType?: string;
+                q?: string;
+                limit?: string;
+                page?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedJournalEntriesDto"];
+                };
+            };
+        };
+    };
+    GlController_createManualJournalEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateJournalEntryDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JournalEntryResponseDto"];
+                };
+            };
+        };
+    };
+    GlController_getJournalEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JournalEntryResponseDto"];
+                };
+            };
+        };
+    };
+    GlController_getJournalEntryBySource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                type: string;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JournalEntryResponseDto"];
+                };
+            };
+        };
+    };
+    GlController_getTrialBalance: {
+        parameters: {
+            query?: {
+                asOfDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrialBalanceResponseDto"][];
+                };
+            };
+        };
+    };
+    GlController_getGeneralLedger: {
+        parameters: {
+            query?: {
+                account?: string;
+                fromDate?: string;
+                toDate?: string;
+                limit?: string;
+                page?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["GeneralLedgerResponseDto"][];
+                    };
+                };
+            };
+        };
+    };
+    GlController_getSettings: {
         parameters: {
             query?: never;
             header?: never;
@@ -2733,7 +8670,1270 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SettingsResponseDto"];
+                };
+            };
+        };
+    };
+    GlController_updateSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsResponseDto"];
+                };
+            };
+        };
+    };
+    GlController_reloadSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessMessageResponseDto"];
+                };
+            };
+        };
+    };
+    GlController_listCharts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChartFileDto"][];
+                };
+            };
+        };
+    };
+    GlController_seedChartOfAccounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeedRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessMessageResponseDto"];
+                };
+            };
+        };
+    };
+    GlController_listTaxSettingsFiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsFileDto"][];
+                };
+            };
+        };
+    };
+    GlController_seedTaxSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeedTaxRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessMessageResponseDto"];
+                };
+            };
+        };
+    };
+    ReconciliationController_getReconciliations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>[];
+                };
+            };
+        };
+    };
+    ReconciliationController_createReconciliation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReconciliationDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateReconciliationResponseDto"];
+                };
+            };
+        };
+    };
+    ReconciliationController_getReconciliation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReconciliationDetailResponseDto"];
+                };
+            };
+        };
+    };
+    ReconciliationController_discardReconciliation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscardReconciliationResponseDto"];
+                };
+            };
+        };
+    };
+    ReconciliationController_getLines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>[];
+                };
+            };
+        };
+    };
+    ReconciliationController_toggleLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToggleLineDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToggleLineResponseDto"];
+                };
+            };
+        };
+    };
+    ReconciliationController_postReconciliation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PostReconciliationResponseDto"];
+                };
+            };
+        };
+    };
+    ReconciliationController_createAdjustment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAdjustmentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateAdjustmentResponseDto"];
+                };
+            };
+        };
+    };
+    BankFeedsController_parseCsv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["FileUploadDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParseCsvResponseDto"];
+                };
+            };
+        };
+    };
+    BankFeedsController_importCsv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["ImportCsvDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportCsvResponseDto"];
+                };
+            };
+        };
+    };
+    BankFeedsController_getProfiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                glAccountId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MappingProfileResponseDto"][];
+                };
+            };
+        };
+    };
+    BankFeedsController_createProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMappingProfileDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MappingProfileResponseDto"];
+                };
+            };
+        };
+    };
+    BankFeedsController_getRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReconciliationRuleResponseDto"][];
+                };
+            };
+        };
+    };
+    BankFeedsController_createRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReconciliationRuleDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReconciliationRuleResponseDto"];
+                };
+            };
+        };
+    };
+    BankFeedsController_deleteRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ruleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReconciliationRuleResponseDto"];
+                };
+            };
+        };
+    };
+    BankStatementController_getLines: {
+        parameters: {
+            query: {
+                glAccountId: string;
+                isReconciled?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Returns bank statement lines */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankStatementLineDto"][];
+                };
+            };
+        };
+    };
+    BankStatementController_confirmMatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BankStatementConfirmMatchDto"];
+            };
+        };
+        responses: {
+            /** @description Match confirmed */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    BankStatementController_manualMatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BankStatementManualMatchDto"];
+            };
+        };
+        responses: {
+            /** @description Match confirmed */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    UomDictionaryController_findAll: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UomResponseDto"][];
+                };
+            };
+        };
+    };
+    UomDictionaryController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUomDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UomResponseDto"];
+                };
+            };
+        };
+    };
+    UomDictionaryController_findOne: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UomResponseDto"];
+                };
+            };
+        };
+    };
+    UomDictionaryController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UomResponseDto"];
+                };
+            };
+        };
+    };
+    UomDictionaryController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUomDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UomResponseDto"];
+                };
+            };
+        };
+    };
+    ExchangeRatesController_findAll: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExchangeRateResponseDto"][];
+                };
+            };
+        };
+    };
+    ExchangeRatesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateExchangeRateDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExchangeRateResponseDto"];
+                };
+            };
+        };
+    };
+    ExchangeRatesController_findOne: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExchangeRateResponseDto"];
+                };
+            };
+        };
+    };
+    ExchangeRatesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExchangeRateResponseDto"];
+                };
+            };
+        };
+    };
+    ExchangeRatesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateExchangeRateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExchangeRateResponseDto"];
+                };
+            };
+        };
+    };
+    OrganizationController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationResponseDto"];
+                };
+            };
+        };
+    };
+    OrganizationController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOrganizationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationResponseDto"];
+                };
+            };
+        };
+    };
+    AppConfigController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppConfigResponseDto"];
+                };
+            };
+        };
+    };
+    AppConfigController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAppConfigDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppConfigResponseDto"];
+                };
+            };
+        };
+    };
+    TradingTermsController_findAll: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TradingTermResponseDto"][];
+                };
+            };
+        };
+    };
+    CostCentersController_findAll: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostCenterResponseDto"][];
+                };
+            };
+        };
+    };
+    CostCentersController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCostCenterDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostCenterResponseDto"];
+                };
+            };
+        };
+    };
+    CostCentersController_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostCenterResponseDto"];
+                };
+            };
+        };
+    };
+    CostCentersController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCostCenterDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostCenterResponseDto"];
+                };
+            };
+        };
+    };
+    CostCentersController_import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCostCenterDto"][];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkImportResultDto"];
+                };
+            };
+        };
+    };
+    ActivitiesController_findAll: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityResponseDto"][];
+                };
+            };
+        };
+    };
+    ActivitiesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateActivityDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityResponseDto"];
+                };
+            };
+        };
+    };
+    ActivitiesController_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityResponseDto"];
+                };
+            };
+        };
+    };
+    ActivitiesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateActivityDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityResponseDto"];
+                };
+            };
+        };
+    };
+    ActivitiesController_import: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateActivityDto"][];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkImportResultDto"];
+                };
+            };
+        };
+    };
+    OrderPickingController_getPickingQueue: {
+        parameters: {
+            query?: {
+                locationId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickingQueueOrderDto"][];
+                };
+            };
+        };
+    };
+    OrderPickingController_getPickingSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickingSummaryDto"];
+                };
+            };
+        };
+    };
+    OrderPickingController_pickLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PickOrderLineDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickingSummaryPickDto"];
+                };
+            };
+        };
+    };
+    OrderPickingController_cancelPick: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                pickId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PickingSummaryPickDto"];
+                };
+            };
+        };
+    };
+    OrderPickingController_getShippingQueue: {
+        parameters: {
+            query?: {
+                locationId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingQueueOrderDto"][];
+                };
+            };
+        };
+    };
+    OrderPickingController_getShippingContext: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShippingContextDto"];
+                };
+            };
+        };
+    };
+    OrdersController_findAll: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["OrderResponseDto"][];
+                    };
+                };
             };
         };
     };
@@ -2754,13 +9954,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"];
+                };
             };
         };
     };
     OrdersController_findOne: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
             header?: never;
             path: {
                 id: string;
@@ -2773,7 +9978,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"];
+                };
             };
         };
     };
@@ -2796,7 +10003,34 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"];
+                };
+            };
+        };
+    };
+    OrdersController_triggerTaxCalculation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"];
+                };
             };
         };
     };
@@ -2809,13 +10043,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeOrderStateDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"];
+                };
             };
         };
     };
@@ -2828,13 +10068,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"];
+                };
             };
         };
     };
@@ -2847,13 +10093,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"];
+                };
             };
         };
     };
@@ -2876,7 +10128,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"];
+                };
             };
         };
     };
@@ -2896,7 +10150,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"];
+                };
             };
         };
     };
@@ -2920,7 +10176,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"];
+                };
             };
         };
     };
@@ -2943,7 +10201,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"];
+                };
             };
         };
     };
@@ -2962,7 +10222,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReturnResponseDto"];
+                };
             };
         };
     };
@@ -2985,7 +10247,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReturnResponseDto"];
+                };
             };
         };
     };
@@ -3005,7 +10269,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReturnResponseDto"];
+                };
             };
         };
     };
@@ -3029,11 +10295,13 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReturnResponseDto"];
+                };
             };
         };
     };
-    OrderReturnsController_changePurchasePurchasePurchasePurchaseReturnState: {
+    OrderReturnsController_changeReturnState: {
         parameters: {
             query?: never;
             header?: never;
@@ -3043,13 +10311,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeReturnStateDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReturnResponseDto"];
+                };
             };
         };
     };
@@ -3073,7 +10347,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReturnResponseDto"];
+                };
             };
         };
     };
@@ -3094,7 +10370,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReturnResponseDto"];
+                };
             };
         };
     };
@@ -3119,106 +10397,34 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-        };
-    };
-    OrderPickingController_getPickingSummary: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": components["schemas"]["ReturnResponseDto"];
                 };
-                content?: never;
             };
         };
     };
-    OrderPickingController_pickLine: {
+    OrderReturnsController_receiveReturn: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 id: string;
-                lineId: string;
+                returnId: string;
             };
             cookie?: never;
         };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiveReturnDto"];
             };
         };
-    };
-    OrderPickingController_updateLineLocation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                lineId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    OrderPickingController_pickAllForLine: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-                lineId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    OrderPickingController_pickAllOrder: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["ReturnResponseDto"];
                 };
             };
         };
@@ -3238,7 +10444,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ShipmentResponseDto"][];
+                };
             };
         };
     };
@@ -3261,7 +10469,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ShipmentResponseDto"];
+                };
             };
         };
     };
@@ -3281,7 +10491,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ShipmentResponseDto"];
+                };
             };
         };
     };
@@ -3305,7 +10517,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ShipmentResponseDto"];
+                };
             };
         };
     };
@@ -3319,13 +10533,45 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeShipmentStateDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ShipmentResponseDto"];
+                };
+            };
+        };
+    };
+    OrderShipmentsController_cancelShipment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                shipmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentResponseDto"];
+                };
             };
         };
     };
@@ -3349,7 +10595,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ShipmentResponseDto"];
+                };
             };
         };
     };
@@ -3370,7 +10618,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ShipmentResponseDto"];
+                };
             };
         };
     };
@@ -3395,11 +10645,83 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ShipmentResponseDto"];
+                };
             };
         };
     };
-    taxCategoriesController_findAll: {
+    GlobalShipmentsController_findAll: {
+        parameters: {
+            query?: {
+                days?: string;
+                salesOrderId?: string;
+                limit?: string;
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentResponseDto"][];
+                };
+            };
+        };
+    };
+    GlobalShipmentsController_findOne: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentResponseDto"];
+                };
+            };
+        };
+    };
+    GlobalReturnsController_findGlobalReturns: {
+        parameters: {
+            query?: {
+                stateCode?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalReturnListResponseDto"];
+                };
+            };
+        };
+    };
+    AllocationsController_getOpenDemands: {
         parameters: {
             query?: never;
             header?: never;
@@ -3412,11 +10734,601 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["OpenDemandDto"][];
+                };
             };
         };
     };
-    taxCategoriesController_create: {
+    AllocationsController_getAllocationsByPo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                poId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PoAllocationDto"][];
+                };
+            };
+        };
+    };
+    AllocationsController_getAvailablePoLines: {
+        parameters: {
+            query: {
+                productId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailablePoLineDto"][];
+                };
+            };
+        };
+    };
+    AllocationsController_linkDemandToPo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkDemandToPoDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllocationSuccessResponseDto"];
+                };
+            };
+        };
+    };
+    AllocationsController_resolveOpenDemands: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllocationResolveResponseDto"];
+                };
+            };
+        };
+    };
+    AllocationsController_unlinkDemand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllocationSuccessResponseDto"];
+                };
+            };
+        };
+    };
+    AllocationsController_reallocateDemand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReallocateDemandDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllocationSuccessResponseDto"];
+                };
+            };
+        };
+    };
+    AllocationsController_generatePOs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratePOsDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllocationSuccessResponseDto"];
+                };
+            };
+        };
+    };
+    AllocationsController_generateTransfers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateTransfersDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AllocationSuccessResponseDto"];
+                };
+            };
+        };
+    };
+    TransfersController_createTransferFromDemands: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransferFromDemandsDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferResponseDto"];
+                };
+            };
+        };
+    };
+    TransfersController_findEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferEventResponseDto"][];
+                };
+            };
+        };
+    };
+    TransfersController_getPickingSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferPickingSummaryResponseDto"][];
+                };
+            };
+        };
+    };
+    TransfersController_pickLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PickLineDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferResponseDto"];
+                };
+            };
+        };
+    };
+    TransfersController_cancelPick: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                pickId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferResponseDto"];
+                };
+            };
+        };
+    };
+    TransfersController_shipTransferOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferResponseDto"];
+                };
+            };
+        };
+    };
+    TransfersController_receiveTransferOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReceiveTransferDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferResponseDto"];
+                };
+            };
+        };
+    };
+    TransfersController_cancelTransferOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferResponseDto"];
+                };
+            };
+        };
+    };
+    TransfersController_cancelTransferOrderShipment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferResponseDto"];
+                };
+            };
+        };
+    };
+    TransfersController_findAll: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["TransferResponseDto"][];
+                    };
+                };
+            };
+        };
+    };
+    TransfersController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransferOrderDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferResponseDto"];
+                };
+            };
+        };
+    };
+    TransfersController_findOne: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferResponseDto"];
+                };
+            };
+        };
+    };
+    TransfersController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTransferOrderDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferResponseDto"];
+                };
+            };
+        };
+    };
+    TransfersController_addLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransferOrderLineDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferResponseDto"];
+                };
+            };
+        };
+    };
+    TransfersController_removeLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferResponseDto"];
+                };
+            };
+        };
+    };
+    TransfersController_updateLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTransferOrderLineDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferResponseDto"];
+                };
+            };
+        };
+    };
+    TaxCategoriesController_findAll: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxCategoryResponseDto"][];
+                };
+            };
+        };
+    };
+    TaxCategoriesController_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -3433,11 +11345,37 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TaxCategoryResponseDto"];
+                };
             };
         };
     };
-    taxCategoriesController_findOne: {
+    TaxCategoriesController_findOne: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxCategoryResponseDto"];
+                };
+            };
+        };
+    };
+    TaxCategoriesController_remove: {
         parameters: {
             query?: never;
             header?: never;
@@ -3452,30 +11390,13 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-        };
-    };
-    taxCategoriesController_remove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": components["schemas"]["TaxCategoryResponseDto"];
                 };
-                content?: never;
             };
         };
     };
-    taxCategoriesController_update: {
+    TaxCategoriesController_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -3494,203 +11415,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-        };
-    };
-    GlController_getAccounts: {
-        parameters: {
-            query: {
-                format: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
                 content: {
-                    "application/json": Record<string, never>[];
+                    "application/json": components["schemas"]["TaxCategoryResponseDto"];
                 };
-            };
-        };
-    };
-    GlController_createAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    GlController_updateAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    GlController_getJournalEntries: {
-        parameters: {
-            query: {
-                from: string;
-                to: string;
-                sourceType: string;
-                q: string;
-                limit: string;
-                page: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    GlController_createManualJournalEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    GlController_getJournalEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    GlController_getTrialBalance: {
-        parameters: {
-            query: {
-                asOf: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-        };
-    };
-    GlController_getGeneralLedger: {
-        parameters: {
-            query: {
-                customer: string;
-                from: string;
-                to: string;
-                limit: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-        };
-    };
-    GlController_getSettings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    GlController_seedChartOfAccounts: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -3706,47 +11433,20 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunHookBodyDto"];
             };
         };
-    };
-    ReportsController_getAllReports: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
         responses: {
+            /** @description PDF Document */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-        };
-    };
-    ReportsController_createReport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": string;
                 };
-                content?: never;
             };
         };
     };
@@ -3763,7 +11463,53 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["HookDto"][];
+                };
+            };
+        };
+    };
+    ReportsController_getAssignments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookAssignmentDto"][];
+                };
+            };
+        };
+    };
+    ReportsController_updateAssignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                hook: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateHookAssignmentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HookAssignmentDto"];
+                };
             };
         };
     };
@@ -3782,7 +11528,51 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RandomIdData"];
+                };
+            };
+        };
+    };
+    ReportsController_getAllReports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportDto"][];
+                };
+            };
+        };
+    };
+    ReportsController_createReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReportDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportDto"];
+                };
             };
         };
     };
@@ -3801,11 +11591,13 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReportDto"];
+                };
             };
         };
     };
-    ReportsController_updateReport: {
+    ReportsController_deleteReport: {
         parameters: {
             query?: never;
             header?: never;
@@ -3820,7 +11612,34 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReportDto"];
+                };
+            };
+        };
+    };
+    ReportsController_updateReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateReportDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportDto"];
+                };
             };
         };
     };
@@ -3831,13 +11650,20 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewReportDto"];
+            };
+        };
         responses: {
-            201: {
+            /** @description PDF Document */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": string;
+                };
             };
         };
     };
@@ -3860,7 +11686,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SalesInvoiceResponseDto"];
+                };
             };
         };
     };
@@ -3879,30 +11707,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-        };
-    };
-    PurchaseInvoiceController_createPurchaseBill: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreatePurchaseBillDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": components["schemas"]["SalesInvoiceResponseDto"][];
                 };
-                content?: never;
             };
         };
     };
@@ -3921,7 +11728,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"][];
+                };
             };
         };
     };
@@ -3940,17 +11749,45 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SalesInvoiceResponseDto"];
+                };
+            };
+        };
+    };
+    InvoiceDetailController_changeSalesInvoiceState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeInvoiceStateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesInvoiceResponseDto"];
+                };
             };
         };
     };
     InvoiceDetailController_getSalesInvoicesGlobal: {
         parameters: {
-            query: {
-                days: string;
-                customerId: string;
-                invoiceId: string;
-                limit: string;
+            query?: {
+                days?: string;
+                customerId?: string;
+                invoiceId?: string;
+                balanceStatus?: string;
+                limit?: string;
             };
             header?: never;
             path?: never;
@@ -3962,7 +11799,57 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SalesInvoiceResponseDto"][];
+                };
+            };
+        };
+    };
+    InvoiceDetailController_getPurchaseInvoicesGlobal: {
+        parameters: {
+            query?: {
+                days?: string;
+                vendorId?: string;
+                invoiceId?: string;
+                balanceStatus?: string;
+                limit?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"][];
+                };
+            };
+        };
+    };
+    InvoiceDetailController_createDraftInvoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStandaloneInvoiceDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"];
+                };
             };
         };
     };
@@ -3981,14 +11868,239 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"];
+                };
             };
         };
     };
-    OutboxSyncController_getSyncStatus: {
+    InvoiceDetailController_updateInvoice: {
         parameters: {
-            query: {
-                limit: string;
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInvoiceLineDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"];
+                };
+            };
+        };
+    };
+    InvoiceDetailController_postInvoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"];
+                };
+            };
+        };
+    };
+    InvoiceDetailController_changeInvoiceState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeInvoiceStateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"];
+                };
+            };
+        };
+    };
+    InvoiceDetailController_removeInvoiceLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"];
+                };
+            };
+        };
+    };
+    InvoiceDetailController_updateInvoiceLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInvoiceLineDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"];
+                };
+            };
+        };
+    };
+    InvoiceDetailController_addInvoiceLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInvoiceLineDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"];
+                };
+            };
+        };
+    };
+    InvoiceDetailController_resolveInvoiceLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveInvoiceLineDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"];
+                };
+            };
+        };
+    };
+    InvoiceDetailController_unresolveInvoiceLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"];
+                };
+            };
+        };
+    };
+    InvoiceDetailController_autoMatchPurchaseOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoMatchPurchaseOrderDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"];
+                };
+            };
+        };
+    };
+    ExternalSyncController_getSyncStatus: {
+        parameters: {
+            query?: {
+                limit?: string;
             };
             header?: never;
             path?: never;
@@ -4000,16 +12112,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SyncStatusResponseDto"];
+                };
             };
         };
     };
-    OutboxSyncController_getEventsByType: {
+    ExternalSyncController_getEventsByType: {
         parameters: {
             query: {
                 type: string;
-                status: string;
-                limit: string;
+                status?: string;
+                limit?: string;
             };
             header?: never;
             path?: never;
@@ -4021,15 +12135,17 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SyncEventsResponseDto"];
+                };
             };
         };
     };
-    OutboxSyncController_clearEventsByType: {
+    ExternalSyncController_clearEventsByType: {
         parameters: {
             query: {
                 type: string;
-                status: string;
+                status?: string;
             };
             header?: never;
             path?: never;
@@ -4041,7 +12157,433 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DeleteEventsResponseDto"];
+                };
+            };
+        };
+    };
+    EnrichmentController_lookup: {
+        parameters: {
+            query: {
+                field: string;
+                country: string;
+                query: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful lookup */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    EnrichmentController_lookupPost: {
+        parameters: {
+            query: {
+                field: string;
+                country: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrichmentPayloadDto"];
+            };
+        };
+        responses: {
+            /** @description Successful lookup */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    EnrichmentController_testLookup: {
+        parameters: {
+            query: {
+                provider: string;
+                query: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Test provider lookup */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    EnrichmentController_testLookupPost: {
+        parameters: {
+            query: {
+                provider: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrichmentPayloadDto"];
+            };
+        };
+        responses: {
+            /** @description Test provider lookup */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    EnrichmentController_getProviders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of providers */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>[];
+                };
+            };
+        };
+    };
+    EnrichmentController_getConfig: {
+        parameters: {
+            query: {
+                provider: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Get config for provider */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    EnrichmentController_updateConfig: {
+        parameters: {
+            query: {
+                provider: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Update config for provider */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    PaymentsController_findAll: {
+        parameters: {
+            query?: {
+                days?: string;
+                allocation?: string;
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["PaymentResponseDto"][];
+                    };
+                };
+            };
+        };
+    };
+    PaymentsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePaymentDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentResponseDto"];
+                };
+            };
+        };
+    };
+    PaymentsController_findOne: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentResponseDto"];
+                };
+            };
+        };
+    };
+    PaymentsController_submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentResponseDto"];
+                };
+            };
+        };
+    };
+    PaymentsController_allocate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AllocatePaymentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentResponseDto"];
+                };
+            };
+        };
+    };
+    PaymentsController_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentResponseDto"];
+                };
+            };
+        };
+    };
+    PaymentsController_exportAba: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchPaymentActionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportAbaResponseDto"];
+                };
+            };
+        };
+    };
+    PaymentsController_exportNacha: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchPaymentActionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportAbaResponseDto"];
+                };
+            };
+        };
+    };
+    PaymentsController_confirmExported: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchPaymentActionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmRejectResponseDto"];
+                };
+            };
+        };
+    };
+    PaymentsController_rejectExported: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchPaymentActionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmRejectResponseDto"];
+                };
             };
         };
     };
@@ -4058,7 +12600,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": Record<string, never>;
+                };
             };
         };
     };
@@ -4077,7 +12621,31 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": Record<string, never>[];
+                };
+            };
+        };
+    };
+    DashboardController_getTimeline: {
+        parameters: {
+            query: {
+                types: string;
+                limit: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>[];
+                };
             };
         };
     };
@@ -4094,6 +12662,14 @@ export interface operations {
             };
         };
         responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmptyBodyDto"];
+                };
+            };
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -4104,7 +12680,10 @@ export interface operations {
     };
     SuppliersController_findAll: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4115,7 +12694,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["SupplierResponseDto"][];
+                    };
+                };
             };
         };
     };
@@ -4136,7 +12719,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SupplierResponseDto"];
+                };
             };
         };
     };
@@ -4155,13 +12740,20 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["SupplierResponseDto"][];
+                    };
+                };
             };
         };
     };
     SuppliersController_findOne: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
             header?: never;
             path: {
                 id: string;
@@ -4174,7 +12766,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SupplierResponseDto"];
+                };
             };
         };
     };
@@ -4197,7 +12791,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SupplierResponseDto"];
+                };
             };
         };
     };
@@ -4216,7 +12812,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["SupplierResponseDto"][];
+                    };
+                };
             };
         };
     };
@@ -4229,13 +12829,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SupplierResponseDto"];
+                };
             };
         };
     };
@@ -4248,19 +12854,124 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SupplierResponseDto"];
+                };
+            };
+        };
+    };
+    SuppliersController_findSupplierExpiries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["SupplierResponseDto"][];
+                    };
+                };
+            };
+        };
+    };
+    SuppliersController_createExpiry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSupplierExpiryDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierResponseDto"];
+                };
+            };
+        };
+    };
+    SuppliersController_deleteExpiry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                expiryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierResponseDto"];
+                };
+            };
+        };
+    };
+    SuppliersController_updateExpiry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                expiryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSupplierExpiryDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierResponseDto"];
+                };
             };
         };
     };
     SupplierGroupsController_findAll: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4271,7 +12982,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SupplierGroupResponseDto"][];
+                };
             };
         };
     };
@@ -4292,13 +13005,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SupplierGroupResponseDto"];
+                };
             };
         };
     };
     SupplierGroupsController_findOne: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
             header?: never;
             path: {
                 id: string;
@@ -4311,7 +13029,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SupplierGroupResponseDto"];
+                };
             };
         };
     };
@@ -4330,7 +13050,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SupplierGroupResponseDto"];
+                };
             };
         };
     };
@@ -4353,13 +13075,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SupplierGroupResponseDto"];
+                };
             };
         };
     };
     PurchaseOrdersController_findAll: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4370,7 +13097,11 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["PurchaseOrderResponseDto"][];
+                    };
+                };
             };
         };
     };
@@ -4392,14 +13123,60 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["PurchaseOrderResponseDto"];
+                };
+            };
+        };
+    };
+    PurchaseOrdersController_findPendingLines: {
+        parameters: {
+            query?: {
+                productId?: string;
+                vendorId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOrderLineResponseDto"][];
+                };
+            };
+        };
+    };
+    PurchaseOrdersController_findReturnableLines: {
+        parameters: {
+            query: {
+                productId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseOrderLineResponseDto"][];
                 };
             };
         };
     };
     PurchaseOrdersController_findOne: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
             header?: never;
             path: {
                 id: string;
@@ -4413,7 +13190,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["PurchaseOrderResponseDto"];
                 };
             };
         };
@@ -4438,7 +13215,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["PurchaseOrderResponseDto"];
                 };
             };
         };
@@ -4452,14 +13229,18 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeStateDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["PurchaseOrderResponseDto"];
                 };
             };
         };
@@ -4473,13 +13254,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
         responses: {
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PurchaseOrderResponseDto"];
+                };
             };
         };
     };
@@ -4492,13 +13279,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
         responses: {
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PurchaseOrderResponseDto"];
+                };
             };
         };
     };
@@ -4522,7 +13315,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["PurchaseOrderResponseDto"];
                 };
             };
         };
@@ -4544,7 +13337,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["PurchaseOrderResponseDto"];
                 };
             };
         };
@@ -4570,61 +13363,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["PurchaseOrderResponseDto"];
                 };
             };
         };
     };
-    ReceptionsController_findAll: {
+    PurchaseReturnsController_findReturns: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                orderId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ReceptionsController_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                orderId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateReceptionDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-        };
-    };
-    ReceptionsController_findOne: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                orderId: string;
                 id: string;
             };
             cookie?: never;
@@ -4636,232 +13384,206 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["PurchaseReturnResponseDto"][];
+                };
+            };
+        };
+    };
+    PurchaseReturnsController_createReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePurchaseReturnDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseReturnResponseDto"];
+                };
+            };
+        };
+    };
+    PurchaseReturnsController_findReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                returnId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseReturnResponseDto"];
+                };
+            };
+        };
+    };
+    PurchaseReturnsController_stageReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                returnId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseReturnResponseDto"];
+                };
+            };
+        };
+    };
+    PurchaseReturnsController_shipReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                returnId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseReturnResponseDto"];
+                };
+            };
+        };
+    };
+    GlobalPurchaseReturnsController_getPurchaseReturns: {
+        parameters: {
+            query?: {
+                stateCode?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalPurchaseReturnDto"][];
+                };
+            };
+        };
+    };
+    GlobalPurchaseReturnsController_getPurchaseReturnById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlobalPurchaseReturnDto"];
+                };
+            };
+        };
+    };
+    PurchaseDebitNotesController_createDebitNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDebitNoteDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseDebitNoteResponseDto"];
+                };
+            };
+        };
+    };
+    PurchaseDebitNotesController_postDebitNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseDebitNoteResponseDto"];
                 };
             };
         };
     };
     SystemController_getSystemLogs: {
         parameters: {
-            query: {
-                service: string;
-                lines: string;
+            query?: {
+                service?: string;
+                lines?: string;
             };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    UomDictionaryController_findAll: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    UomDictionaryController_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateUomDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    UomDictionaryController_findOne: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    UomDictionaryController_remove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    UomDictionaryController_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateUomDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ExchangeRatesController_findAll: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ExchangeRatesController_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateExchangeRateDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ExchangeRatesController_findOne: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ExchangeRatesController_remove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    ExchangeRatesController_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateExchangeRateDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    OrganizationController_get: {
-        parameters: {
-            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4873,29 +13595,8 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["SystemLogResponseDto"];
                 };
-            };
-        };
-    };
-    OrganizationController_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateOrganizationDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -4914,7 +13615,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["LocationResponseDto"];
+                };
             };
         };
     };
@@ -4927,13 +13630,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLocationDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["LocationResponseDto"];
+                };
             };
         };
     };
@@ -4954,7 +13663,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ZoneResponseDto"];
+                };
             };
         };
     };
@@ -4973,7 +13684,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ZoneResponseDto"];
+                };
             };
         };
     };
@@ -4986,13 +13699,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateZoneDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ZoneResponseDto"];
+                };
             };
         };
     };
@@ -5011,11 +13730,514 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BinResponseDto"];
+                };
             };
         };
     };
     LocationsController_updateBin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBinDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BinResponseDto"];
+                };
+            };
+        };
+    };
+    SetupController_testAbm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestAbmConnectionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestConnectionResultDto"];
+                };
+            };
+        };
+    };
+    SetupController_testOdoo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestOdooConnectionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestConnectionResultDto"];
+                };
+            };
+        };
+    };
+    SetupController_getResumeState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResumeStateDto"];
+                };
+            };
+        };
+    };
+    SetupController_getResumeStateOdoo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResumeStateDto"];
+                };
+            };
+        };
+    };
+    SetupController_executeElt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExecuteEltDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobResultDto"];
+                };
+            };
+        };
+    };
+    SetupController_getProgress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobProgressDto"];
+                };
+            };
+        };
+    };
+    SetupController_getValidation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetupValidationDto"];
+                };
+            };
+        };
+    };
+    SetupController_getImportSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportSummaryDto"];
+                };
+            };
+        };
+    };
+    SetupController_getCsvMetadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsvMetadataDto"][];
+                };
+            };
+        };
+    };
+    SetupController_executeCsv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    tableName: string;
+                    strategy: string;
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    GoodsReceivedController_findAll: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedGoodsReceivedDto"];
+                };
+            };
+        };
+    };
+    GoodsReceivedController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGoodsReceivedDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoodsReceivedResponseDto"];
+                };
+            };
+        };
+    };
+    GoodsReceivedController_findAllLines: {
+        parameters: {
+            query?: {
+                purchaseOrderId?: string;
+                putawayStatus?: string;
+                locationId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedGoodsReceivedLineDto"];
+                };
+            };
+        };
+    };
+    GoodsReceivedController_findOne: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoodsReceivedResponseDto"];
+                };
+            };
+        };
+    };
+    GoodsReceivedController_cancelReception: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success?: boolean;
+                    };
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CancelReceptionResponseDto"];
+                };
+            };
+        };
+    };
+    GoodsReceivedController_resolveAllocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveAllocationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveAllocationResponseDto"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveAllocationResponseDto"];
+                };
+            };
+        };
+    };
+    GoodsReceivedController_unresolveAllocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lineId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoodsReceivedLineResponseDto"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoodsReceivedLineResponseDto"];
+                };
+            };
+        };
+    };
+    MacrosController_findAll: {
+        parameters: {
+            query?: {
+                macroType?: string;
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MacroResponseDto"][];
+                };
+            };
+        };
+    };
+    MacrosController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMacroDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MacroResponseDto"];
+                };
+            };
+        };
+    };
+    MacrosController_findOne: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MacroResponseDto"];
+                };
+            };
+        };
+    };
+    MacrosController_remove: {
         parameters: {
             query?: never;
             header?: never;
@@ -5030,7 +14252,491 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MacroResponseDto"];
+                };
+            };
+        };
+    };
+    MacrosController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMacroDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MacroResponseDto"];
+                };
+            };
+        };
+    };
+    UsersController_findAll: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponseDto"][];
+                };
+            };
+        };
+    };
+    UsersController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUserDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponseDto"];
+                };
+            };
+        };
+    };
+    UsersController_findOne: {
+        parameters: {
+            query?: {
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponseDto"];
+                };
+            };
+        };
+    };
+    UsersController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponseDto"];
+                };
+            };
+        };
+    };
+    UsersController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponseDto"];
+                };
+            };
+        };
+    };
+    UsersController_toggleActive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponseDto"];
+                };
+            };
+        };
+    };
+    DiscountMatrixController_list: {
+        parameters: {
+            query?: {
+                customerGroupId?: string;
+                customerId?: string;
+                ownerType?: string;
+                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
+                fields?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscountMatrixResponseDto"][];
+                };
+            };
+        };
+    };
+    DiscountMatrixController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDiscountMatrixDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscountMatrixResponseDto"];
+                };
+            };
+        };
+    };
+    DiscountMatrixController_resolve: {
+        parameters: {
+            query: {
+                customerId: string;
+                customerGroupId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolveDiscountRuleDto"][];
+                };
+            };
+        };
+    };
+    DiscountMatrixController_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        deleted?: boolean;
+                    };
+                };
+            };
+        };
+    };
+    DiscountMatrixController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDiscountMatrixDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscountMatrixResponseDto"];
+                };
+            };
+        };
+    };
+    WebhooksController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookResponseDto"][];
+                };
+            };
+        };
+    };
+    WebhooksController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWebhookDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookResponseDto"];
+                };
+            };
+        };
+    };
+    WebhooksController_listEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    WebhooksController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWebhookDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WebhookResponseDto"];
+                };
+            };
+        };
+    };
+    WebhooksController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success?: boolean;
+                    };
+                };
+            };
+        };
+    };
+    ApiKeysController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyResponseDto"][];
+                };
+            };
+        };
+    };
+    ApiKeysController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateApiKeyDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyCreatedResponseDto"];
+                };
+            };
+        };
+    };
+    ApiKeysController_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyFullResponseDto"];
+                };
+            };
+        };
+    };
+    EventsController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishEventDto"];
+            };
+        };
+        responses: {
+            /** @description The event was successfully published. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success?: boolean;
+                        outboxId?: string;
+                    };
+                };
             };
         };
     };

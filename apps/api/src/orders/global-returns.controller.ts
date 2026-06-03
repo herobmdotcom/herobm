@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -19,7 +20,7 @@ import {
 @ApiTags('Orders')
 @Controller('sales-returns')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('sales-returns')
+@CasbinResource(SystemResource.SALES_RETURNS)
 export class GlobalReturnsController {
   constructor(private readonly returnsWriteService: ReturnsWriteService) {}
 

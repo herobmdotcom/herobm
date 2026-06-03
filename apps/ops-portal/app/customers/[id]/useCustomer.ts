@@ -26,7 +26,7 @@ export function useAccount(id: string) {
   const [isDirty, setIsDirty] = useState(false);
 
   /* ── Tax categories ─────────────────────────────────────────── */
-  const [taxCategories, setTaxCategories] = useState<any[]>([]);
+  const [taxCategories, setTaxCategories] = useState<api.TaxCategoryResponseDto[]>([]);
 
   const [hasDiscountRules, setHasDiscountRules] = useState(false);
 
@@ -57,7 +57,7 @@ export function useAccount(id: string) {
 
   useEffect(() => {
     loadAccount();
-    api.taxCategoriesControllerFindAll().then((res: unknown) => setTaxCategories((res as { data: unknown[] }).data)).catch(console.error);
+    api.taxCategoriesControllerFindAll().then((res: unknown) => setTaxCategories((res as { data: unknown[] }).data as unknown as api.TaxCategoryResponseDto[])).catch(console.error);
   }, [id]);
 
   /* ── Field helpers ──────────────────────────────────────────── */

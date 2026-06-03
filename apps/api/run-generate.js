@@ -1,6 +1,6 @@
 const { spawn } = require('child_process');
 
-const p = spawn('npx', ['drizzle-kit', 'generate', '--name', 'sync_schema'], {
+const p = spawn(process.env.NPX_PATH || 'npx', ['drizzle-kit', 'generate', '--name', 'sync_schema'], {
   cwd: 'C:\\Users\\Marcel\\volz\\modbm\\modbm\\apps\\api',
   shell: true
 });

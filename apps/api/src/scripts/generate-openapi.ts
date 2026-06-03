@@ -50,6 +50,9 @@ async function generateDocs() {
     .addTag('GoodsReceived', 'Goods Receipt Notes (GRNI)')
     .addTag('Reports', 'Reporting hooks')
     .addTag('Events', 'System events')
+    .addTag('Business Reports', 'Dynamic business reports')
+    .addTag('Data Sources', 'Data Sources for reports and templates')
+    .addTag('SalesCreditNotes', 'Sales credit notes')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

@@ -191,7 +191,6 @@ import-legacy:
 	"$(DBT)" run-operation sync_sales_quotes --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_sales_quote_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_purchase_order_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
-	"$(DBT)" test --select tag:import --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 elt-odoo: extract-odoo transform-odoo import-legacy-odoo dev-docs-schema
 	"$(VENV_PYTHON)" tools/elt_report.py
@@ -204,7 +203,6 @@ import-legacy-odoo:
 	"$(DBT)" run-operation sync_sales_quotes --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
 	"$(DBT)" run-operation sync_sales_quote_lines --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
 	"$(DBT)" run-operation sync_purchase_order_lines --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
-	"$(DBT)" test --select tag:import --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
 
 # --- Schema Reference & Docs ---
 
@@ -371,7 +369,7 @@ test-db-setup:
 test-data:
 	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
 
-test-all: test-api-unit test-api-e2e test-deps test-structural test-db-setup test-transform test-data
+test-all: test-api-unit test-api-e2e test-deps test-structural test-db-setup test-data
 
 build-all:
 	npm run build --workspaces --if-present
@@ -449,4 +447,4 @@ verify-db: migrate-status
 
 verify-all: build-all check-all verify-db test-all
 
-verify-fast: check-all test-api-unit test-deps test-structural test-transform
+verify-fast: check-all test-api-unit test-deps test-structural

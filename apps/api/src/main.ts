@@ -73,6 +73,9 @@ async function bootstrap() {
       .addTag('Macros', 'Automated macros')
       .addTag('GoodsReceived', 'Goods Receipt Notes (GRNI)')
       .addTag('Reports', 'Reporting hooks')
+      .addTag('Business Reports', 'Dynamic business reports')
+      .addTag('Data Sources', 'Data Sources for reports and templates')
+      .addTag('SalesCreditNotes', 'Sales credit notes')
       .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document);

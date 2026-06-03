@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -41,7 +42,7 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @ApiTags('Suppliers')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @Controller('suppliers')
-@CasbinResource('suppliers')
+@CasbinResource(SystemResource.SUPPLIERS)
 export class SuppliersController {
   constructor(
     private readonly suppliersService: SuppliersService,

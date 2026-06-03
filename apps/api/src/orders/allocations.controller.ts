@@ -25,7 +25,11 @@ import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import { BackordersService } from './backorders.service';
 import { Inject } from '@nestjs/common';
-import { BACKORDER_STATE, calculateAvailableQuantity } from '@modbm/shared';
+import {
+  BACKORDER_STATE,
+  calculateAvailableQuantity,
+  SystemResource,
+} from '@modbm/shared';
 import {
   OpenDemandsListResponseDto,
   PoAllocationsListResponseDto,
@@ -39,6 +43,7 @@ import {
   OpenDemandDto,
   AvailablePoLineDto,
   PoAllocationDto,
+  EmptyBodyDto,
 } from './dto';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -58,7 +63,7 @@ import { sql, eq, and, inArray } from 'drizzle-orm';
 @ApiTags('Orders')
 @Controller('allocations')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('purchase-orders')
+@CasbinResource(SystemResource.PURCHASE_ORDERS)
 export class AllocationsController {
   constructor(
     private readonly backordersService: BackordersService,
@@ -287,7 +292,7 @@ export class AllocationsController {
     description:
       'Run the MRP engine to automatically resolve backorder demands.',
   })
-  @ApiBody({ schema: { type: 'object' } })
+  @ApiBody({ type: EmptyBodyDto })
   async resolveOpenDemands(@AuthUser() user: JwtUser) {
     const actor = user?.username || 'system';
     await this.backordersService.resolveOpenDemands(actor);
@@ -302,7 +307,7 @@ export class AllocationsController {
     description:
       'Remove the link between a backorder demand and its allocated purchase order.',
   })
-  @ApiBody({ schema: { type: 'object' } })
+  @ApiBody({ type: EmptyBodyDto })
   async unlinkDemand(@Param('id') id: string, @AuthUser() user: JwtUser) {
     const actor = user?.username || 'system';
     await this.backordersService.unlinkDemand(id, actor);

@@ -19,6 +19,9 @@ import {
   products as coreProducts,
   customerGroups,
   productGroups,
+  paymentEntries,
+  glJournalEntries,
+  glJournalLines,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -874,50 +877,104 @@ export class SalesInvoiceService {
       throw new BadRequestException(`Invalid invoice state: '${newState}'`);
     }
 
-    const db = tx || this.db;
-    const [existing] = await db
-      .select({
-        stateCode: salesInvoices.stateCode,
-        invoiceNumber: salesInvoices.invoiceNumber,
-      })
-      .from(salesInvoices)
-      .where(eq(salesInvoices.invoiceId, invoiceId))
-      .limit(1);
+    const execute = async (db: DrizzleDB) => {
+      const [existing] = await db
+        .select({
+          stateCode: salesInvoices.stateCode,
+          invoiceNumber: salesInvoices.invoiceNumber,
+        })
+        .from(salesInvoices)
+        .where(eq(salesInvoices.invoiceId, invoiceId))
+        .for('update')
+        .limit(1);
 
-    if (!existing) {
-      throw new NotFoundException(`Invoice ${invoiceId} not found`);
-    }
+      if (!existing) {
+        throw new NotFoundException(`Invoice ${invoiceId} not found`);
+      }
 
-    const allowed = SALES_INVOICE_TRANSITIONS[existing.stateCode];
-    if (!allowed || !allowed.includes(newState)) {
-      throw new BadRequestException(
-        `Cannot transition invoice from '${existing.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
-      );
-    }
+      const allowed = SALES_INVOICE_TRANSITIONS[existing.stateCode];
+      if (!allowed || !allowed.includes(newState)) {
+        throw new BadRequestException(
+          `Cannot transition invoice from '${existing.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+        );
+      }
 
-    const [updated] = await db
-      .update(salesInvoices)
-      .set({
-        stateCode: newState as any,
-        modifiedOn: new Date(),
-      })
-      .where(eq(salesInvoices.invoiceId, invoiceId))
-      .returning();
+      // If transitioning to CANCELLED, we must reverse the associated GL entries synchronously
+      if (newState === SALES_INVOICE_STATE.CANCELLED) {
+        const [originalEntry] = await db
+          .select()
+          .from(glJournalEntries)
+          .where(
+            and(
+              eq(glJournalEntries.sourceType, 'sales_invoice'),
+              eq(glJournalEntries.sourceId, invoiceId),
+            ),
+          )
+          .limit(1);
 
-    await emitEvent(db as any, {
-      entityType: EntityType.SALES_INVOICE,
-      entityId: invoiceId,
-      eventType: EventType.STATUS_CHANGED,
-      payload: {
-        entity: 'sales_invoice',
+        if (originalEntry) {
+          const originalLines = await db
+            .select()
+            .from(glJournalLines)
+            .where(
+              eq(glJournalLines.journalEntryId, originalEntry.journalEntryId),
+            );
+
+          const reversedLines = originalLines.map((line) => ({
+            accountId: line.glAccountId,
+            debit: parseFloat(line.credit),
+            credit: parseFloat(line.debit),
+            memo: `Cancellation Reversal: ${line.memo}`,
+            costCenterId: line.costCenterId,
+            activityId: line.activityId,
+            partyType: line.partyType,
+            partyId: line.partyId,
+          }));
+
+          await this.glService.postJournalEntry(
+            reversedLines as any,
+            {
+              sourceId: invoiceId,
+              sourceType: 'sales_invoice_reversal',
+              memo: `Reversal of Sales Invoice ${existing.invoiceNumber}`,
+              entryDate: new Date().toISOString().slice(0, 10),
+              actor,
+            },
+            db,
+          );
+        }
+      }
+
+      const [updated] = await db
+        .update(salesInvoices)
+        .set({
+          stateCode: newState as any,
+          modifiedOn: new Date(),
+        })
+        .where(eq(salesInvoices.invoiceId, invoiceId))
+        .returning();
+
+      await emitEvent(db as any, {
+        entityType: EntityType.SALES_INVOICE,
         entityId: invoiceId,
-        invoiceNumber: existing.invoiceNumber,
-        from: existing.stateCode,
-        to: newState,
-      },
-      actor,
-    });
+        eventType: EventType.STATUS_CHANGED,
+        payload: {
+          entity: 'sales_invoice',
+          entityId: invoiceId,
+          invoiceNumber: existing.invoiceNumber,
+          from: existing.stateCode,
+          to: newState,
+        },
+        actor,
+      });
 
-    return updated;
+      return updated;
+    };
+
+    if (tx) {
+      return await execute(tx);
+    } else {
+      return await this.db.transaction(execute);
+    }
   }
 }

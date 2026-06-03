@@ -32,6 +32,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
     removeLine,
     shipOrder,
     cancelOrder,
+    cancelShipment,
   } = useTransferOrder(id);
 
   useDocumentTitle(order ? tTransfers('transferTitle', { number: order.orderNumber }) : null);
@@ -58,16 +59,22 @@ export default function TransferDetailsClient({ id }: { id: string }) {
   }
 
   const isEditable = order.stateCode === TRANSFER_ORDER_STATE.CONFIRMED;
-  const canCancel = [
+  const canCancelOrder = [
     TRANSFER_ORDER_STATE.CONFIRMED,
     TRANSFER_ORDER_STATE.PICKING,
-    TRANSFER_ORDER_STATE.SHIPPED,
-  ].includes(order.stateCode );
+  ].includes(order.stateCode as any);
+  const canCancelShipment = order.stateCode === TRANSFER_ORDER_STATE.SHIPPED;
   const headerDirty = order.notes !== editNotes;
 
-  const handleCancel = async () => {
+  const handleCancelOrder = async () => {
     if (window.confirm(tTransfers('cancelConfirm'))) {
       await cancelOrder();
+    }
+  };
+
+  const handleCancelShipment = async () => {
+    if (window.confirm(tTransfers('cancelShipmentConfirm'))) {
+      await cancelShipment();
     }
   };
 
@@ -85,10 +92,21 @@ export default function TransferDetailsClient({ id }: { id: string }) {
           badges={<StateBadge state={order.stateCode as ValidState} />}
           actions={
             <div className="flex gap-2">
-              {canCancel && (
+              {canCancelShipment && (
                 <button
                   className="btn btn-danger btn-sm"
-                  onClick={handleCancel}
+                  onClick={handleCancelShipment}
+                  disabled={saving}
+                >
+                  {/* eslint-disable-next-line no-restricted-syntax */}
+                  <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>{'close'}</span>
+                  {tTransfers('cancelShipment')}
+                </button>
+              )}
+              {canCancelOrder && (
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={handleCancelOrder}
                   disabled={saving}
                 >
                   {/* eslint-disable-next-line i18next/no-literal-string */}
@@ -304,7 +322,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
 
         {/* Activity Timeline */}
         <div className="card">
-          <ActivityTimeline events={order.events || []} />
+          <ActivityTimeline events={(order.events || []) as any[]} />
         </div>
       </div>
     </DetailsLayout>

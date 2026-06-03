@@ -108,10 +108,10 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loadingJournal, setLoadingJournal] = useState(false);
-  const [journalEntry, setJournalEntry] = useState<any>(null);
+  const [journalEntry, setJournalEntry] = useState<any | null>(null);
   const [data, setData] = useState<PaymentData | null>(null);
   const [partialModalOpen, setPartialModalOpen] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<Record<string, unknown> | null>(null);
   const [isAllocating, setIsAllocating] = useState(false);
   
   // Creation Form State
@@ -832,7 +832,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         onClose={() => setPartialModalOpen(false)}
         invoice={selectedInvoice}
         currencyCode={data?.currencyCode || baseCurrency}
-        maxAvailable={data ? parseFloat(data.unallocatedAmount) - totalAllocatedNow + (selectedInvoice?.pendingAllocation || 0) : 0}
+        maxAvailable={data ? parseFloat(data.unallocatedAmount) - totalAllocatedNow + ((selectedInvoice as any)?.pendingAllocation || 0) : 0}
         onSave={(invoiceId, amount) => {
           setOutstandingInvoices(prev => prev.map(p => p.id === invoiceId ? { ...p, pendingAllocation: amount } : p));
         }}

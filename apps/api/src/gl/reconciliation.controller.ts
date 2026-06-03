@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -33,7 +34,7 @@ import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 
 @ApiTags('GL')
 @Controller('gl/reconciliations')
-@CasbinResource('gl')
+@CasbinResource(SystemResource.GL)
 export class ReconciliationController {
   constructor(private readonly service: ReconciliationService) {}
 

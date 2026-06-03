@@ -118,7 +118,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const [editBankBsb, setEditBankBsb] = useState('');
   const [editBankAccountNumber, setEditBankAccountNumber] = useState('');
 
-  const [availableTradingTerms, setAvailableTradingTerms] = useState<any[]>([]);
+  const [availableTradingTerms, setAvailableTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
 
   const loadSupplier = async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
@@ -532,7 +532,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               >
                 <option value="">{tCommon('selectEllipsis')}</option>
                 {availableTradingTerms.map(t => (
-                  <option key={t.tradingTermsId} value={t.tradingTermsId}>{t.code} - {t.description}</option>
+                  <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
               </select>
             </div>
@@ -603,7 +603,8 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   country={supplier.address1Country || ''}
                   value={editBusinessNumber}
                   isSaving={saving}
-                  onEnrich={(data) => {
+                  // modbm-allow-record-any
+          onEnrich={(data: Record<string, any>) => {
                     if (data.name && data.name !== editName) {
                       setEditName(data.name);
                       saveField('name', data.name, supplier.name);

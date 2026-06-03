@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -38,7 +39,7 @@ import {
 @ApiTags('Orders')
 @Controller('sales-orders')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('sales-orders')
+@CasbinResource(SystemResource.SALES_ORDERS)
 export class OrderPickingController {
   constructor(private readonly pickingService: PickingService) {}
 

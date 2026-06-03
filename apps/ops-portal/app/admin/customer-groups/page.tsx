@@ -11,18 +11,18 @@ import { getErrorMessage } from '@modbm/shared';
 import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
 
 export default function AccountGroupsAdmin() {
-  useDocumentTitle('Customer Groups');
+  useDocumentTitle('Account Groups');
   const t = useTranslations('admin.customerGroups');
   const tCommon = useTranslations('admin.common');
   const tGlobalCommon = useTranslations('common');
-  const [groups, setGroups] = useState<any[]>([]);
-  const [glAccounts, setGlAccounts] = useState<any[]>([]);
-  const [costCenters, setCostCenters] = useState<any[]>([]);
-  const [activities, setActivities] = useState<any[]>([]);
-  const [matrixRules, setMatrixRules] = useState<any[]>([]);
+  const [groups, setGroups] = useState<api.AccountGroupResponseDto[]>([]);
+  const [glAccounts, setGlAccounts] = useState<api.GlAccountResponseDto[]>([]);
+  const [costCenters, setCostCenters] = useState<api.CostCenterResponseDto[]>([]);
+  const [activities, setActivities] = useState<api.ActivityResponseDto[]>([]);
+  const [matrixRules, setMatrixRules] = useState<api.DiscountMatrixResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [discountGroup, setDiscountGroup] = useState<any | null>(null);
+  const [discountGroup, setDiscountGroup] = useState<Partial<api.AccountGroupResponseDto> | null>(null);
 
   const loadData = async () => {
     try {

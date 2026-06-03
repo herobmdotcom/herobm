@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -71,7 +72,7 @@ export class DeleteEventsResponseDto {
 @ApiTags('Invoices')
 @Controller('settings/external-sync')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('settings')
+@CasbinResource(SystemResource.SETTINGS)
 export class ExternalSyncController {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 

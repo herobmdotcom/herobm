@@ -11,7 +11,8 @@ import { getErrorMessage } from '@modbm/shared';
 interface LinkToPOSlideOverProps {
   isOpen: boolean;
   onClose: () => void;
-  demands: any[];
+  // modbm-allow-record-any
+  demands: Record<string, any>[];
   onRefresh: () => void;
 }
 
@@ -29,7 +30,8 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
   const t = useTranslations('purchaseOrders');
   const [demandStates, setDemandStates] = useState<Map<string, DemandState>>(new Map());
   const [activeDemandId, setActiveDemandId] = useState<string | null>(null);
-  const [localDemands, setLocalDemands] = useState<any[]>([]);
+  // modbm-allow-record-any
+  const [localDemands, setLocalDemands] = useState<Record<string, any>[]>([]);
   // Track which demand IDs have already been fetched to avoid the stale-closure race condition
   const fetchedRef = useRef<Set<string>>(new Set());
 

@@ -19,7 +19,8 @@ import { SuppliersModule } from './suppliers/suppliers.module';
 import { PurchaseOrdersModule } from './purchase-orders/purchase-orders.module';
 import { PurchaseDebitNotesModule } from './purchase-debit-notes/purchase-debit-notes.module';
 
-import { ReportsModule } from './reports/reports.module';
+import { PdfTemplatesModule } from './pdf-templates/pdf-templates.module';
+import { DataSourcesModule } from './data-sources/data-sources.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { GlModule } from './gl/gl.module';
 import { SystemModule } from './system/system.module';
@@ -37,6 +38,7 @@ import { EventsModule } from './events/events.module';
 import { EnrichmentModule } from './enrichment/enrichment.module';
 
 import { RolesModule } from './roles/roles.module';
+import { BusinessReportsModule } from './business-reports/business-reports.module';
 
 @Module({
   imports: [
@@ -64,7 +66,8 @@ import { RolesModule } from './roles/roles.module';
     PurchaseOrdersModule,
     PurchaseDebitNotesModule,
 
-    ReportsModule,
+    DataSourcesModule,
+    PdfTemplatesModule,
     GlModule,
     SystemModule,
     SettingsModule,
@@ -78,6 +81,7 @@ import { RolesModule } from './roles/roles.module';
     ApiKeysModule,
     EventsModule,
     EnrichmentModule,
+    BusinessReportsModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },

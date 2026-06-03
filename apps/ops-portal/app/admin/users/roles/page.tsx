@@ -10,41 +10,7 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import { getErrorMessage } from '@modbm/shared';
 import { useTranslations } from 'next-intl';
 
-const RESOURCES = [
-  'customers', 'products', 'inventory', 'sales-orders', 'sales-returns',
-  'purchase-orders', 'purchase-returns', 'suppliers', 'receptions', 'goods-received',
-  'dashboard', 'tax-categories', 'settings', 'report', 'payments', 'system_logs',
-  'import', 'api_keys', 'webhooks', 'events', 'roles', 'users', 'gl', 'locations'
-];
-
-const ACTIONS = ['read', 'write', 'archive', 'handle', 'invoice'];
-
-const VALID_ACTIONS: Record<string, string[]> = {
-  'customers': ['read', 'write', 'archive'],
-  'products': ['read', 'write', 'archive'],
-  'inventory': ['read', 'write', 'archive', 'handle'],
-  'sales-orders': ['read', 'write', 'archive', 'handle', 'invoice'],
-  'sales-returns': ['read', 'write', 'archive', 'handle', 'invoice'],
-  'purchase-orders': ['read', 'write', 'archive', 'handle', 'invoice'],
-  'purchase-returns': ['read', 'write', 'archive', 'handle', 'invoice'],
-  'suppliers': ['read', 'write', 'archive'],
-  'receptions': ['read', 'write', 'archive', 'handle'],
-  'goods-received': ['read', 'write', 'archive', 'handle'],
-  'dashboard': ['read'],
-  'tax-categories': ['read', 'write', 'archive'],
-  'settings': ['read', 'write', 'archive'],
-  'report': ['read', 'write', 'archive'],
-  'payments': ['read', 'write', 'archive'],
-  'system_logs': ['read', 'write', 'archive'],
-  'import': ['read', 'write', 'archive'],
-  'api_keys': ['read', 'write', 'archive'],
-  'webhooks': ['read', 'write', 'archive'],
-  'events': ['read', 'write', 'archive'],
-  'roles': ['read', 'write', 'archive'],
-  'users': ['read', 'write', 'archive'],
-  'gl': ['read', 'write'],
-  'locations': ['read', 'write', 'archive'],
-};
+import { RESOURCES, ACTIONS, VALID_ACTIONS } from './constants';
 
 interface PermissionDetail {
   resource: string;

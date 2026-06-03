@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -21,7 +22,7 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @ApiTags('Orders')
 @Controller('shipments')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('sales-orders')
+@CasbinResource(SystemResource.SALES_ORDERS)
 export class GlobalShipmentsController {
   constructor(private readonly shipmentService: ShipmentService) {}
 

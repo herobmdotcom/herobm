@@ -5,9 +5,9 @@ import postgres from 'postgres';
 import { v4 as uuidv4 } from 'uuid';
 import { eq, inArray } from 'drizzle-orm';
 import {
-  reports,
-  reportHookAssignments,
-  reportContexts,
+  pdfTemplates,
+  pdfTemplateHooks,
+  pdfTemplateContexts,
 } from '../drizzle/modbm-core-schema';
 
 const profile = process.env.PROFILE;
@@ -150,51 +150,32 @@ async function seed() {
 
       // 2. Remove any existing reports with the same slug
       const existing = await db
-        .select({ id: reports.id })
-        .from(reports)
-        .where(eq(reports.slug, seedData.slug));
+        .select({ id: pdfTemplates.id })
+        .from(pdfTemplates)
+        .where(eq(pdfTemplates.slug, seedData.slug));
 
       if (existing.length > 0) {
         console.log(`Removing existing ${seedData.slug} reports...`);
-        await db.delete(reports).where(
-          inArray(
-            reports.id,
-            existing.map((e) => e.id),
-          ),
-        );
+        const ids = existing.map((e) => e.id);
+        await db
+          .delete(pdfTemplateHooks)
+          .where(inArray(pdfTemplateHooks.reportId, ids));
+        await db
+          .delete(pdfTemplateContexts)
+          .where(inArray(pdfTemplateContexts.templateId, ids));
+        await db.delete(pdfTemplates).where(inArray(pdfTemplates.id, ids));
       }
-
-      // 3. Insert the new Report
-      const newReportId = uuidv4();
-      await db.insert(reports).values({
-        id: newReportId,
+      // 3. Insert the new Template
+      const newTemplateId = uuidv4();
+      await db.insert(pdfTemplates).values({
+        id: newTemplateId,
         slug: seedData.slug,
         name: seedData.name,
+        description: seedData.description,
         template: typstContent,
         outputNamePattern: seedData.outputPattern,
       });
-      console.log(`✅ Created Report: ${seedData.name}`);
-
-      // 4. Assign the hook
-      await db
-        .insert(reportHookAssignments)
-        .values({
-          reportId: newReportId,
-          hookSlug: seedData.slug,
-          contextSlug: (seedData as any).contexts?.[0] || 'sales-order',
-          updatedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: reportHookAssignments.hookSlug,
-          set: {
-            reportId: newReportId,
-            contextSlug: (seedData as any).contexts?.[0] || 'sales-order',
-            updatedAt: new Date(),
-          },
-        });
-      console.log(
-        `✅ Assigned Hook: ${seedData.slug} -> ${seedData.name} (${(seedData as any).contexts?.[0]})`,
-      );
+      console.log(`✅ Created Template: ${seedData.name}`);
 
       // 5. Seed report contexts
       if (
@@ -203,21 +184,21 @@ async function seed() {
       ) {
         for (const ctx of (seedData as any).contexts) {
           await db
-            .insert(reportContexts)
+            .insert(pdfTemplateContexts)
             .values({
-              reportId: newReportId,
+              templateId: newTemplateId,
               context: ctx,
             })
             .onConflictDoNothing();
+
+          await db.insert(pdfTemplateHooks).values({
+            hookSlug: seedData.slug,
+            reportId: newTemplateId,
+            contextSlug: ctx,
+          });
         }
       }
     }
-
-    // cleanup legacy hooks
-    console.log('Cleaning up legacy hooks...');
-    await db
-      .delete(reportHookAssignments)
-      .where(inArray(reportHookAssignments.hookSlug, ['sales-quote']));
 
     console.log('Seeding completed successfully!');
   } catch (error) {

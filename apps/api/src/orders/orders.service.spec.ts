@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersService } from './orders.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import {
   salesOrders,
   salesOrderLineItems,
@@ -89,7 +90,11 @@ describe('OrdersService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [OrdersService, { provide: DRIZZLE, useValue: pg.db }],
+      providers: [
+        OrdersService,
+        { provide: DRIZZLE, useValue: pg.db },
+        { provide: DataSourcesRegistry, useValue: { register: jest.fn() } },
+      ],
     }).compile();
 
     service = module.get<OrdersService>(OrdersService);

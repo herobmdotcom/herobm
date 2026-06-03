@@ -7,6 +7,7 @@ import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { AbaGeneratorService } from './aba-generator.service';
 import { NachaGeneratorService } from './nacha-generator.service';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import {
   glAccounts,
   glSettings,
@@ -204,6 +205,10 @@ describe('PaymentsService', () => {
       providers: [
         PaymentsService,
         GlService,
+        {
+          provide: DataSourcesRegistry,
+          useValue: { registerReport: jest.fn(), getReport: jest.fn() },
+        },
         { provide: AbaGeneratorService, useValue: { generateAba: jest.fn() } },
         {
           provide: NachaGeneratorService,

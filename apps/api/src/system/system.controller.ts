@@ -22,7 +22,7 @@ import {
 import * as fs from 'fs';
 import * as path from 'path';
 import { SystemLogResponseDto } from './dto';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage, SystemResource } from '@modbm/shared';
 
 /**
  * Endpoint for streaming backend logs securely to the frontend Ops Portal.
@@ -31,7 +31,7 @@ import { getErrorMessage } from '@modbm/shared';
 @ApiTags('System')
 @Controller('admin')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('system_logs')
+@CasbinResource(SystemResource.SYSTEM_LOGS)
 export class SystemController {
   @Get('system-logs')
   @CasbinAction('read')

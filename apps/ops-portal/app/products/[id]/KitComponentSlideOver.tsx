@@ -12,7 +12,8 @@ interface KitComponentSlideOverProps {
   onClose: () => void;
   productId: string;
   componentId?: string;
-  existingData?: any;
+  // modbm-allow-record-any
+  existingData?: Record<string, any>;
   onSaved: () => void;
 }
 

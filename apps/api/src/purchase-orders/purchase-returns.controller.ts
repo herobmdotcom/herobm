@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -33,7 +34,7 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 
 @Controller('purchase-orders/:id/returns')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('purchase-returns')
+@CasbinResource(SystemResource.PURCHASE_RETURNS)
 @ApiTags('PurchaseReturns')
 export class PurchaseReturnsController {
   constructor(
@@ -112,5 +113,23 @@ export class PurchaseReturnsController {
     @AuthUser() user: JwtUser,
   ) {
     return this.purchaseReturnsService.shipReturn(returnId, user.username);
+  }
+
+  @Post(':returnId/cancel')
+  @CasbinAction('handle')
+  @ApiOperation({
+    summary: 'Cancel Purchase Return',
+    description: 'Cancel a draft or staged purchase return.',
+  })
+  @ApiOkResponse({ type: PurchaseReturnResponseDto })
+  @ApiBody({ type: EmptyBodyDto })
+  @HttpCode(200)
+  cancelReturn(
+    @Param('id') _id: string,
+    @Param('returnId') returnId: string,
+    @Body() body: EmptyBodyDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.purchaseReturnsService.cancelReturn(returnId, user.username);
   }
 }

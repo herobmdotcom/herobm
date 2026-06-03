@@ -12,7 +12,8 @@ import { getErrorMessage } from '@modbm/shared';
 interface QuickAdjustmentFormProps {
   reconciliationId: string;
   onSuccess: (journalLineId?: string) => void;
-  bankLine?: any;
+  // modbm-allow-record-any
+  bankLine?: Record<string, any>;
 }
 
 export default function QuickAdjustmentForm({
@@ -26,18 +27,18 @@ export default function QuickAdjustmentForm({
   const tCommon = useTranslations('common');
 
   const [loading, setLoading] = useState(false);
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<api.GlAccountResponseDto[]>([]);
   
-  const initialDate = bankLine?.date || new Date().toISOString().split('T')[0];
-  const initialAmount = bankLine ? Math.abs(bankLine.amount).toString() : '';
-  const initialType = bankLine ? (bankLine.amount > 0 ? 'debit' : 'credit') : 'credit';
-  const initialMemo = bankLine?.description || '';
+  const initialDate: string = (bankLine?.date as string) || new Date().toISOString().split('T')[0];
+  const initialAmount: string = bankLine ? Math.abs(bankLine.amount as number).toString() : '';
+  const initialType: 'debit' | 'credit' = bankLine ? ((bankLine.amount as number) > 0 ? 'debit' : 'credit') : 'credit';
+  const initialMemo: string = (bankLine?.description as string) || '';
 
-  const [date, setDate] = useState(initialDate);
+  const [date, setDate] = useState<string>(initialDate);
   const [type, setType] = useState<'debit' | 'credit'>(initialType);
-  const [amount, setAmount] = useState(initialAmount);
-  const [offsetAccountId, setOffsetAccountId] = useState('');
-  const [memo, setMemo] = useState(initialMemo);
+  const [amount, setAmount] = useState<string>(initialAmount);
+  const [offsetAccountId, setOffsetAccountId] = useState<string>('');
+  const [memo, setMemo] = useState<string>(initialMemo);
 
   useEffect(() => {
     if (accounts.length === 0) {

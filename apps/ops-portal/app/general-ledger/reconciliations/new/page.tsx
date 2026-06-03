@@ -16,7 +16,7 @@ export default function NewReconciliationPage() {
   const [glAccountId, setGlAccountId] = useState('');
   const [statementDate, setStatementDate] = useState('');
   const [statementBalance, setStatementBalance] = useState('');
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<api.GlAccountResponseDto[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

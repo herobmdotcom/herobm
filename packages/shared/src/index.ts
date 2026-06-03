@@ -137,6 +137,7 @@ export {
 export {
   calculateInventoryGaps,
   calculateAvailableQuantity,
+  BIN_TYPE,
 } from './inventory';
 export type { InventoryLevelMinimal, OrderLineMinimal, InventoryGap, InventoryLevelData } from './inventory';
 
@@ -156,3 +157,5 @@ export type { GLAccountType } from './accounting';
 export {
   getErrorMessage,
 } from './errors';
+
+export { SystemResource } from './permissions';

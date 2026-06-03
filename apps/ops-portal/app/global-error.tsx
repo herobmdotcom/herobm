@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable i18next/no-literal-string */
-
 import { useEffect } from 'react';
 
 /**
@@ -46,6 +44,10 @@ export default function GlobalError({
     }
   }, [error]);
 
+  const errorTitle = 'Something went wrong';
+  const fallbackError = 'An unexpected error occurred.';
+  const tryAgain = 'Try Again';
+
   return (
     <html lang="en" className="dark">
       <body
@@ -71,11 +73,10 @@ export default function GlobalError({
           }}
         >
           <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
-            Something went wrong
+            {errorTitle}
           </h2>
           <p style={{ fontSize: 14, color: '#94a3b8', marginBottom: 24 }}>
-            {/* eslint-disable-next-line no-restricted-syntax */}
-            {error?.message || 'An unexpected error occurred.'}
+            {error?.message || fallbackError}
           </p>
           <button
             onClick={reset}
@@ -91,7 +92,7 @@ export default function GlobalError({
               marginBottom: 24,
             }}
           >
-            Try Again
+            {tryAgain}
           </button>
         </div>
       </body>

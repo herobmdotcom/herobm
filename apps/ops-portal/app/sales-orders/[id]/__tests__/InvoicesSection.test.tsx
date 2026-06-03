@@ -22,7 +22,7 @@ jest.mock('@/lib/api', () => ({
 
 jest.mock('@modbm/sdk', () => ({
     salesInvoiceControllerCreateSalesInvoice: jest.fn().mockResolvedValue({}),
-    reportsControllerRunHook: jest.fn().mockResolvedValue({ data: new Blob(['pdf'], { type: 'application/pdf' }) })
+    pdfTemplatesControllerRunHook: jest.fn().mockResolvedValue({ data: new Blob(['pdf'], { type: 'application/pdf' }) })
 }));
 
 jest.mock('react-hot-toast', () => ({
@@ -300,7 +300,7 @@ describe('InvoicesSection — PDF download', () => {
 
         const api = require('@modbm/sdk');
         await waitFor(() => {
-            expect(api.reportsControllerRunHook).toHaveBeenCalledWith(
+            expect(api.pdfTemplatesControllerRunHook).toHaveBeenCalledWith(
                 'sales-invoice',
                 {},
                 expect.objectContaining({ id: 'inv-1', context: 'sales-invoice' })

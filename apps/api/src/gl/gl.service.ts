@@ -44,7 +44,9 @@ export class JournalMeta {
     | 'inventory_receipt'
     | 'inventory_dispatch'
     | 'inventory_adjustment'
-    | 'payment_entry';
+    | 'payment_entry'
+    | 'sales_invoice_reversal'
+    | 'purchase_invoice_reversal';
   sourceId?: string;
   memo?: string;
   entryDate?: string; // ISO date, defaults to today
@@ -57,15 +59,25 @@ export class JournalMeta {
 // ---------------------------------------------------------------------------
 
 import { AppConfigService } from '../settings/app-config.service';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
+import type { OnModuleInit } from '@nestjs/common';
 
 @Injectable()
-export class GlService {
+export class GlService implements OnModuleInit {
   private readonly logger = new Logger(GlService.name);
 
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly appConfig: AppConfigService,
+    private readonly dataSourcesRegistry: DataSourcesRegistry,
   ) {}
+
+  onModuleInit() {
+    this.dataSourcesRegistry.register('financial-gl', {
+      fetchData: (filters: Record<string, unknown>) =>
+        this.getBusinessReportData(filters),
+    });
+  }
 
   private defaultCostCenterId: string | null = null;
   private defaultActivityId: string | null = null;
@@ -853,5 +865,45 @@ export class GlService {
     };
 
     return build(null);
+  }
+
+  // -------------------------------------------------------------------------
+  // Business Reporting
+  // -------------------------------------------------------------------------
+  async getBusinessReportData(filters: Record<string, unknown>) {
+    const conditions: any[] = [];
+    if (filters.fromDate) {
+      conditions.push(sql`je.entry_date >= ${filters.fromDate}`);
+    }
+    if (filters.toDate) {
+      conditions.push(sql`je.entry_date <= ${filters.toDate}`);
+    }
+
+    const whereClause =
+      conditions.length > 0
+        ? sql`WHERE ${sql.join(conditions, sql` AND `)}`
+        : sql``;
+
+    const rows = await this.db.execute(sql`
+      SELECT
+        a.account_code AS "accountCode",
+        a.name AS "accountName",
+        a.account_type AS "accountType",
+        COALESCE(SUM(activity.debit), 0)::numeric  AS "totalDebit",
+        COALESCE(SUM(activity.credit), 0)::numeric AS "totalCredit",
+        COALESCE(SUM(activity.debit), 0) - COALESCE(SUM(activity.credit), 0) AS "balance"
+      FROM modbm_core.gl_accounts a
+      JOIN (
+        SELECT jl.gl_account_id, jl.debit, jl.credit
+        FROM modbm_core.gl_journal_lines jl
+        JOIN modbm_core.gl_journal_entries je ON je.journal_entry_id = jl.journal_entry_id
+        ${whereClause}
+      ) activity ON activity.gl_account_id = a.gl_account_id
+      WHERE a.is_group = false
+      GROUP BY a.gl_account_id, a.account_code, a.name, a.account_type, a.is_group
+      ORDER BY a.account_code
+    `);
+
+    return (rows as any).rows ?? rows;
   }
 }

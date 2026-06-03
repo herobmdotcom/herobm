@@ -44,10 +44,12 @@ interface ReturnsSectionProps {
     setShowCreateReturn: (v: boolean) => void;
     setError: (msg: string) => void;
     loadReturns: () => Promise<void>;
-    loadOrder: (autoTransitions?: any[], showSpinner?: boolean) => Promise<void>;
-    pickingSummary?: any;
+    // modbm-allow-record-any
+  loadOrder: (autoTransitions?: Record<string, any>[], showSpinner?: boolean) => Promise<void>;
+    // modbm-allow-record-any
+  pickingSummary?: Record<string, any> | null;
     taxCategories: TaxCategory[];
-    locations: { locationId: string; name: string; code?: string }[];
+    locations: api.InventoryLocationResponseDto[];
 }
 
 export default function ReturnsSection({
@@ -494,9 +496,7 @@ export default function ReturnsSection({
                 <div className="space-y-3">
                     {returns.map((ret) => {
                         let allowedRetTransitions = RETURN_TRANSITIONS[ret.stateCode] || [];
-                        if (ret.stateCode === RETURN_STATE.CONFIRMED || ret.stateCode === RETURN_STATE.PARTIALLY_RECEIVED) {
-                            allowedRetTransitions = allowedRetTransitions.filter((s: string) => s !== RETURN_STATE.RECEIVED && s !== RETURN_STATE.PARTIALLY_RECEIVED);
-                        }
+                        allowedRetTransitions = allowedRetTransitions.filter((s: string) => s !== RETURN_STATE.RECEIVED && s !== RETURN_STATE.PARTIALLY_RECEIVED);
                         const isRetEditable = ret.stateCode === RETURN_STATE.DRAFT;
                         return (
                             <div
@@ -545,7 +545,7 @@ export default function ReturnsSection({
                                             className="btn btn-secondary btn-sm"
                                             onClick={async () => {
                                                 try {
-                                                    const response = await api.reportsControllerRunHook('return-slip', {}, { id: ret.returnId, context: 'sales-return' });
+                                                    const response = await api.pdfTemplatesControllerRunHook('return-slip', {}, { id: ret.returnId, context: 'sales-return' });
                                                     const blob = response.data ;
                                                     const url = URL.createObjectURL(blob);
                                                     window.open(url, '_blank');
@@ -561,7 +561,7 @@ export default function ReturnsSection({
                                                 className="btn btn-secondary btn-sm"
                                                 onClick={async () => {
                                                     try {
-                                                        const response = await api.reportsControllerRunHook('sales-return-credit', {}, { id: ret.returnId, context: 'sales-return' });
+                                                        const response = await api.pdfTemplatesControllerRunHook('sales-return-credit', {}, { id: ret.returnId, context: 'sales-return' });
                                                         const blob = response.data ;
                                                         const url = URL.createObjectURL(blob);
                                                         window.open(url, '_blank');

@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiOperation,
   ApiOkResponse,
@@ -28,7 +29,7 @@ import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import {
   PutawayBulkDto,
-  ToggleQuarantineDto,
+  QuarantineMoveDto,
   InventoryResponseDto,
   InventoryBinResponseDto,
   PutawayContextResponseDto,
@@ -46,7 +47,7 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @ApiTags('Inventory')
 @Controller('inventory')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('inventory')
+@CasbinResource(SystemResource.INVENTORY)
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
@@ -211,26 +212,20 @@ export class InventoryController {
     return this.inventoryService.putaway(dto, user.username);
   }
 
-  @Post('quarantine/:lineId')
+  @Post('quarantine/move')
   @CasbinAction('write')
   @ApiOperation({
-    summary: 'Toggle Quarantine',
-    description: 'Toggle quarantine state for an inventory item.',
+    summary: 'Move to/from Quarantine',
+    description: 'Move stock between quarantine and regular storage.',
   })
   @ApiCreatedResponse({
     type: InventorySuccessResponseDto,
-    description: 'Quarantine state toggled',
+    description: 'Quarantine move successful',
   })
-  async toggleQuarantine(
-    @Param('lineId') lineId: string,
-    @Body() dto: ToggleQuarantineDto,
+  async quarantineMove(
+    @Body() dto: QuarantineMoveDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.inventoryService.toggleQuarantine(
-      lineId,
-      dto.sourceType,
-      user.username,
-      dto.reason,
-    );
+    return this.inventoryService.quarantineStock(dto, user.username);
   }
 }

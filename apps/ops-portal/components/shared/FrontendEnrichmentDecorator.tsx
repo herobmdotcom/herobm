@@ -11,7 +11,7 @@ interface FrontendEnrichmentDecoratorProps {
   country: string;
   value: string;
   isSaving?: boolean;
-  onEnrich: (data: any) => void;
+  onEnrich: (data: Record<string, unknown>) => void;
 }
 
 export function FrontendEnrichmentDecorator({

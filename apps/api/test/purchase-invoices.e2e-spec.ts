@@ -241,5 +241,41 @@ describe('API E2E — Purchase Invoices', () => {
       );
       expect(glEvent).toBeDefined();
     });
+
+    it('Cancels the AP invoice and verifies the GL reversal is posted', async () => {
+      // 1. Cancel the invoice
+      await request(app.getHttpServer())
+        .patch(`/api/purchase-invoices/${createdInvoiceId}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: 'cancelled' })
+        .expect(200);
+
+      // 2. Fetch the GL reversals
+      const glRes = await request(app.getHttpServer())
+        .get(`/api/gl/journal-entries?sourceType=purchase_invoice_reversal`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const je = glRes.body.data.find(
+        (j: any) => j.sourceId === createdInvoiceId,
+      );
+      expect(je).toBeDefined();
+
+      const detailRes = await request(app.getHttpServer())
+        .get(`/api/gl/journal-entries/${je.journalEntryId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const lines = detailRes.body.lines;
+      expect(lines.length).toBeGreaterThanOrEqual(2);
+
+      // Reversal AP Line should be the DEBIT line for the supplier
+      const apReversalLine = lines.find(
+        (l: any) => l.partyId === validVendorId && parseFloat(l.debit) > 0,
+      );
+      expect(apReversalLine).toBeDefined();
+      expect(apReversalLine.partyType).toBe('supplier');
+      expect(parseFloat(apReversalLine.debit)).toBeGreaterThan(59.0);
+    });
   });
 });

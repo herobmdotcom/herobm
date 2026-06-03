@@ -55,14 +55,17 @@ import {
   PUTAWAY_STATUS,
   RETURN_STATE,
 } from '@modbm/shared';
+import {
+  isPickableBinSqlCondition,
+  PICKABLE_BIN_TYPES,
+  filterPickableBins,
+  calculatePickableOnHand,
+} from './inventory-math.utils';
+import { BIN_TYPE } from '@modbm/shared';
 import { UomService } from './uom.service';
 import { GlService } from '../gl/gl.service';
 import { getValuationStrategy } from './valuation';
 import { getAccountingStrategy } from './inventory-accounting';
-import {
-  filterPickableBins,
-  calculatePickableOnHand,
-} from './inventory-math.utils';
 
 @Injectable()
 export class InventoryService {
@@ -451,7 +454,7 @@ export class InventoryService {
       .where(
         and(
           eq(zones.locationId, locationId),
-          sql`${bins.binType} IN ('storage', 'pick', 'bulk')`,
+          inArray(bins.binType, [...PICKABLE_BIN_TYPES]),
         ),
       );
 
@@ -627,9 +630,7 @@ export class InventoryService {
         SELECT bc.product_id, SUM(bc.actual_quantity) as qty
         FROM modbm_core.bin_contents bc
         JOIN modbm_core.bins b ON b.bin_id = bc.bin_id
-        WHERE b.bin_type IN ('storage', 'pick', 'bulk')
-          AND b.is_unavailable = false
-          AND b.is_bonded = false
+        WHERE ${isPickableBinSqlCondition('b')}
         GROUP BY bc.product_id
       ) inv ON inv.product_id = p.product_id
       WHERE e.entry_date >= ${cutoffIso}
@@ -666,10 +667,9 @@ export class InventoryService {
       LEFT JOIN (
         SELECT bc.product_id, SUM(bc.actual_quantity) as qty
         FROM modbm_core.bin_contents bc
+        FROM modbm_core.bin_contents bc
         JOIN modbm_core.bins b ON b.bin_id = bc.bin_id
-        WHERE b.bin_type IN ('storage', 'pick', 'bulk')
-          AND b.is_unavailable = false
-          AND b.is_bonded = false
+        WHERE ${isPickableBinSqlCondition('b')}
         GROUP BY bc.product_id
       ) inv ON inv.product_id = p.product_id
       WHERE e.entry_date >= ${cutoffIso}
@@ -1374,164 +1374,298 @@ export class InventoryService {
     });
   }
 
-  async toggleQuarantine(
-    lineId: string,
-    sourceType: 'goods_receipt' | 'sales_return',
+  async quarantineStock(
+    dto: import('./dto').QuarantineMoveDto,
     userId: string,
-    reason?: string,
   ) {
     return await this.db.transaction(async (tx) => {
       let locationId: string;
-      let productId: string;
-      let currentPutawayStatus: string;
-      let referenceNumber: string;
-      let recordSourceType: string;
-      let recordSourceId: string;
-      let linePrefix: string;
-      let quantityToMove: number;
-      let defaultBinCode: string;
+      let productId = dto.productId;
+      let quantityToMove = parseFloat(dto.quantity || '0');
+      let currentPutawayStatus: string | undefined;
 
-      if (sourceType === 'goods_receipt') {
-        const [grLine] = await tx
-          .select({
-            line: goodsReceivedLines,
-            locationId: goodsReceived.locationId,
-            receiptNumber: goodsReceived.receiptNumber,
-          })
-          .from(goodsReceivedLines)
-          .innerJoin(
-            goodsReceived,
-            eq(
-              goodsReceivedLines.goodsReceivedId,
-              goodsReceived.goodsReceivedId,
-            ),
-          )
-          .where(eq(goodsReceivedLines.goodsReceivedLineId, lineId))
-          .limit(1);
+      // Auto-resolve for line-based actions
+      if (dto.lineId && dto.sourceType) {
+        let defaultBinCode: string;
 
-        if (!grLine) throw new NotFoundException('Line not found');
+        if (dto.sourceType === 'goods_receipt') {
+          const [grLine] = await tx
+            .select({
+              line: goodsReceivedLines,
+              locationId: goodsReceived.locationId,
+            })
+            .from(goodsReceivedLines)
+            .innerJoin(
+              goodsReceived,
+              eq(
+                goodsReceivedLines.goodsReceivedId,
+                goodsReceived.goodsReceivedId,
+              ),
+            )
+            .where(eq(goodsReceivedLines.goodsReceivedLineId, dto.lineId))
+            .limit(1);
 
-        locationId = grLine.locationId;
-        productId = grLine.line.productId;
-        currentPutawayStatus = grLine.line.putawayStatus;
-        referenceNumber = grLine.receiptNumber;
-        recordSourceType = 'PO_RECEIPT';
-        recordSourceId = grLine.line.goodsReceivedId;
-        linePrefix = grLine.line.goodsReceivedLineId.substring(0, 4);
-        quantityToMove = parseFloat(grLine.line.quantityReceived);
-        defaultBinCode = 'RECEIVING';
-      } else {
-        // sales_return
-        const [retLine] = await tx
-          .select({
-            line: salesOrderReturnLines,
-            locationId: salesOrders.fulfillmentLocationId,
-            returnNumber: salesOrderReturns.returnNumber,
-            productId: salesOrderLineItems.productId,
-          })
-          .from(salesOrderReturnLines)
-          .innerJoin(
-            salesOrderReturns,
-            eq(salesOrderReturnLines.returnId, salesOrderReturns.returnId),
-          )
-          .innerJoin(
-            salesOrders,
-            eq(salesOrderReturns.salesOrderId, salesOrders.salesOrderId),
-          )
-          .innerJoin(
-            salesOrderLineItems,
-            eq(
-              salesOrderReturnLines.salesOrderLineId,
-              salesOrderLineItems.salesOrderLineId,
-            ),
-          )
-          .where(eq(salesOrderReturnLines.returnLineId, lineId))
-          .limit(1);
+          if (!grLine) throw new NotFoundException('Line not found');
 
-        if (!retLine) throw new NotFoundException('Line not found');
+          locationId = grLine.locationId;
+          productId = productId || grLine.line.productId;
+          currentPutawayStatus = grLine.line.putawayStatus;
+          if (!dto.quantity)
+            quantityToMove = parseFloat(grLine.line.quantityReceived);
+          defaultBinCode = 'RECEIVING';
+        } else {
+          const [retLine] = await tx
+            .select({
+              line: salesOrderReturnLines,
+              locationId: salesOrders.fulfillmentLocationId,
+              productId: salesOrderLineItems.productId,
+            })
+            .from(salesOrderReturnLines)
+            .innerJoin(
+              salesOrderReturns,
+              eq(salesOrderReturnLines.returnId, salesOrderReturns.returnId),
+            )
+            .innerJoin(
+              salesOrders,
+              eq(salesOrderReturns.salesOrderId, salesOrders.salesOrderId),
+            )
+            .innerJoin(
+              salesOrderLineItems,
+              eq(
+                salesOrderReturnLines.salesOrderLineId,
+                salesOrderLineItems.salesOrderLineId,
+              ),
+            )
+            .where(eq(salesOrderReturnLines.returnLineId, dto.lineId))
+            .limit(1);
 
-        locationId = retLine.locationId;
-        productId = retLine.productId!;
-        currentPutawayStatus = retLine.line.putawayStatus;
-        referenceNumber = retLine.returnNumber;
-        recordSourceType = 'SO_RETURN';
-        recordSourceId = retLine.line.returnId;
-        linePrefix = retLine.line.returnLineId.substring(0, 4);
-        quantityToMove = parseFloat(retLine.line.quantityReturned);
-        defaultBinCode = 'CUSTOMER_RETURNS';
+          if (!retLine) throw new NotFoundException('Line not found');
+
+          locationId = retLine.locationId;
+          productId = productId || retLine.productId!;
+          currentPutawayStatus = retLine.line.putawayStatus;
+          if (!dto.quantity)
+            quantityToMove = parseFloat(retLine.line.quantityReturned);
+          defaultBinCode = 'CUSTOMER_RETURNS';
+        }
+
+        if (currentPutawayStatus === PUTAWAY_STATUS.COMPLETED) {
+          throw new BadRequestException(
+            'Cannot quarantine an already putaway line',
+          );
+        }
+
+        const isCurrentlyQuarantined =
+          currentPutawayStatus === PUTAWAY_STATUS.QUARANTINED;
+
+        if (!dto.sourceBinId) {
+          const sourceBinCode = isCurrentlyQuarantined
+            ? 'QUARANTINE'
+            : defaultBinCode;
+          const [sBin] = await tx
+            .select({ binId: bins.binId })
+            .from(bins)
+            .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+            .where(
+              and(
+                eq(zones.locationId, locationId),
+                eq(bins.binNumber, sourceBinCode),
+              ),
+            )
+            .limit(1);
+          if (!sBin)
+            throw new BadRequestException(
+              `Source bin ${sourceBinCode} not found`,
+            );
+          dto.sourceBinId = sBin.binId;
+        }
+
+        if (!dto.targetBinId) {
+          const targetBinCode = isCurrentlyQuarantined
+            ? defaultBinCode
+            : 'QUARANTINE';
+          const [tBin] = await tx
+            .select({ binId: bins.binId })
+            .from(bins)
+            .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+            .where(
+              and(
+                eq(zones.locationId, locationId),
+                eq(bins.binNumber, targetBinCode),
+              ),
+            )
+            .limit(1);
+          if (!tBin)
+            throw new BadRequestException(
+              `Target bin ${targetBinCode} not found`,
+            );
+          dto.targetBinId = tBin.binId;
+        }
       }
 
-      if (currentPutawayStatus === PUTAWAY_STATUS.COMPLETED) {
-        throw new BadRequestException(
-          'Cannot quarantine an already putaway line',
-        );
-      }
+      if (!dto.sourceBinId)
+        throw new BadRequestException('sourceBinId is required');
+      if (!productId) throw new BadRequestException('productId is required');
+      if (!quantityToMove || quantityToMove <= 0)
+        throw new BadRequestException('quantity is required');
 
-      const isCurrentlyQuarantined =
-        currentPutawayStatus === PUTAWAY_STATUS.QUARANTINED;
-      const newStatus = isCurrentlyQuarantined
-        ? PUTAWAY_STATUS.PENDING_PUTAWAY
-        : PUTAWAY_STATUS.QUARANTINED;
-
-      const sourceBinCode = isCurrentlyQuarantined
-        ? 'QUARANTINE'
-        : defaultBinCode;
-      const targetBinCode = isCurrentlyQuarantined
-        ? defaultBinCode
-        : 'QUARANTINE';
-
+      // Fetch source bin
       const [sourceBin] = await tx
-        .select({ binId: bins.binId })
+        .select({
+          binId: bins.binId,
+          binType: bins.binType,
+          zoneId: bins.zoneId,
+          locationId: zones.locationId,
+        })
         .from(bins)
         .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+        .where(eq(bins.binId, dto.sourceBinId))
+        .limit(1);
+
+      if (!sourceBin) throw new BadRequestException('Source bin not found');
+
+      const isUnquarantining = sourceBin.binType === BIN_TYPE.QUARANTINE;
+
+      let targetBinId = dto.targetBinId;
+
+      if (isUnquarantining) {
+        if (!targetBinId) {
+          throw new BadRequestException(
+            'targetBinId is required when moving stock out of quarantine',
+          );
+        }
+        const [targetBin] = await tx
+          .select({
+            binId: bins.binId,
+            binType: bins.binType,
+            locationId: zones.locationId,
+          })
+          .from(bins)
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+          .where(eq(bins.binId, targetBinId))
+          .limit(1);
+
+        if (!targetBin) throw new BadRequestException('Target bin not found');
+        if (targetBin.locationId !== sourceBin.locationId)
+          throw new BadRequestException(
+            'Target bin must be in the same location',
+          );
+        if (targetBin.binType === BIN_TYPE.QUARANTINE)
+          throw new BadRequestException(
+            'Target bin cannot be a quarantine bin when unquarantining',
+          );
+      } else {
+        if (targetBinId) {
+          const [targetBin] = await tx
+            .select({
+              binId: bins.binId,
+              binType: bins.binType,
+              locationId: zones.locationId,
+            })
+            .from(bins)
+            .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+            .where(eq(bins.binId, targetBinId))
+            .limit(1);
+
+          if (!targetBin) throw new BadRequestException('Target bin not found');
+          if (targetBin.locationId !== sourceBin.locationId)
+            throw new BadRequestException(
+              'Target bin must be in the same location',
+            );
+          if (targetBin.binType !== BIN_TYPE.QUARANTINE)
+            throw new BadRequestException(
+              'Target bin must be a quarantine type bin',
+            );
+        } else {
+          // Auto-resolve first quarantine bin in location
+          const [targetBin] = await tx
+            .select({ binId: bins.binId })
+            .from(bins)
+            .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+            .where(
+              and(
+                eq(zones.locationId, sourceBin.locationId),
+                eq(bins.binType, BIN_TYPE.QUARANTINE),
+              ),
+            )
+            .limit(1);
+          if (!targetBin)
+            throw new BadRequestException(
+              'No quarantine bin found in this location',
+            );
+          targetBinId = targetBin.binId;
+        }
+      }
+
+      // Check available quantity in source bin
+      const [binContent] = await tx
+        .select({ quantity: binContents.actualQuantity })
+        .from(binContents)
         .where(
           and(
-            eq(zones.locationId, locationId),
-            eq(bins.binNumber, sourceBinCode),
+            eq(binContents.binId, sourceBin.binId),
+            eq(binContents.productId, productId),
           ),
         )
         .limit(1);
 
-      const [targetBin] = await tx
-        .select({ binId: bins.binId })
-        .from(bins)
-        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-        .where(
-          and(
-            eq(zones.locationId, locationId),
-            eq(bins.binNumber, targetBinCode),
-          ),
-        )
-        .limit(1);
+      const availableQty = parseFloat(binContent?.quantity || '0');
 
-      if (!sourceBin || !targetBin) {
+      if (availableQty < quantityToMove) {
         throw new BadRequestException(
-          `Source or target bin for quarantine operation not found in this location (${sourceBinCode} -> ${targetBinCode}).`,
+          `Insufficient stock in source bin. Available: ${availableQty}`,
         );
       }
+
+      const reference = dto.lineId
+        ? `LINE-${dto.lineId.substring(0, 4)}`
+        : `BIN-${sourceBin.binId.substring(0, 4)}`;
+      const prefix = isUnquarantining ? 'UNQUAR' : 'QUAR';
+      const recordSourceType =
+        dto.sourceType === 'goods_receipt'
+          ? 'PO_RECEIPT'
+          : dto.sourceType === 'sales_return'
+            ? 'SO_RETURN'
+            : 'MANUAL';
+      const recordSourceId = dto.lineId || dto.sourceBinId;
 
       await this.recordInventoryMovement(tx, {
-        entryNumber: `${isCurrentlyQuarantined ? 'UN' : ''}QUAR-${referenceNumber}-${linePrefix}`,
+        entryNumber: `${prefix}-${reference}`,
         sourceType: recordSourceType,
         sourceId: recordSourceId,
-        memo: `${isCurrentlyQuarantined ? 'Un-quarantine' : 'Quarantine'} item. Reason: ${reason || 'None'}`,
+        memo: `${isUnquarantining ? 'Un-quarantine' : 'Quarantine'} item. Reason: ${dto.reason || 'None'}`,
         userId,
         lines: [
-          { productId, binId: sourceBin.binId, quantity: -quantityToMove },
-          { productId, binId: targetBin.binId, quantity: quantityToMove },
+          {
+            productId: productId,
+            binId: sourceBin.binId,
+            quantity: -quantityToMove,
+          },
+          {
+            productId: productId,
+            binId: targetBinId,
+            quantity: quantityToMove,
+          },
         ],
       });
 
-      if (sourceType === 'goods_receipt') {
-        await tx
-          .update(goodsReceivedLines)
-          .set({ putawayStatus: newStatus })
-          .where(eq(goodsReceivedLines.goodsReceivedLineId, lineId));
-      } else {
-        await tx
-          .update(salesOrderReturnLines)
-          .set({ putawayStatus: newStatus })
-          .where(eq(salesOrderReturnLines.returnLineId, lineId));
+      let newStatus = undefined;
+      // Optional line update
+      if (dto.lineId && dto.sourceType) {
+        newStatus = isUnquarantining
+          ? PUTAWAY_STATUS.PENDING_PUTAWAY
+          : PUTAWAY_STATUS.QUARANTINED;
+        if (dto.sourceType === 'goods_receipt') {
+          await tx
+            .update(goodsReceivedLines)
+            .set({ putawayStatus: newStatus })
+            .where(eq(goodsReceivedLines.goodsReceivedLineId, dto.lineId));
+        } else if (dto.sourceType === 'sales_return') {
+          await tx
+            .update(salesOrderReturnLines)
+            .set({ putawayStatus: newStatus })
+            .where(eq(salesOrderReturnLines.returnLineId, dto.lineId));
+        }
       }
 
       return { success: true, putawayStatus: newStatus };

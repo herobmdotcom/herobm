@@ -10,7 +10,8 @@ import { getErrorMessage } from '@modbm/shared';
 interface ShipReturnSlideOverProps {
   isOpen: boolean;
   onClose: () => void;
-  returnRecord: any;
+  // modbm-allow-record-any
+  returnRecord: Record<string, any>;
   onRefresh: () => void;
 }
 
@@ -20,7 +21,7 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
   const tShipments = useTranslations('shipments');
   
   const [loading, setLoading] = useState(false);
-  const [returnDetails, setReturnDetails] = useState<any>(null);
+  const [returnDetails, setReturnDetails] = useState<any | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

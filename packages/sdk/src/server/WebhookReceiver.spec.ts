@@ -2,7 +2,7 @@ import { WebhookReceiver, HeroEvent } from './WebhookReceiver';
 import * as crypto from 'crypto';
 
 describe('WebhookReceiver', () => {
-  const SECRET = 'test_secret_key_123';
+  const SECRET = 'test_secret_key_123'; // TEST_CREDENTIAL
   let receiver: WebhookReceiver;
 
   beforeEach(() => {

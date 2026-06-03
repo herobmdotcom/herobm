@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -28,7 +29,7 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @Controller('settings/uom-dictionary')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('settings')
+@CasbinResource(SystemResource.SETTINGS)
 @ApiTags('System')
 export class UomDictionaryController {
   constructor(private readonly uomService: UomDictionaryService) {}

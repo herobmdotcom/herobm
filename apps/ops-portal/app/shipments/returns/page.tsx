@@ -15,7 +15,8 @@ export default function ShipmentsReturnsPage() {
     const [refreshKey, setRefreshKey] = useState(0);
 
     const [slideOverOpen, setSlideOverOpen] = useState(false);
-    const [selectedReturn, setSelectedReturn] = useState<any>(null);
+    // modbm-allow-record-any
+  const [selectedReturn, setSelectedReturn] = useState<Record<string, any> | null>(null);
 
     const handleShip = useCallback((returnRecord: any) => {
         setSelectedReturn(returnRecord);
@@ -74,7 +75,7 @@ export default function ShipmentsReturnsPage() {
               <ShipReturnSlideOver 
                   isOpen={slideOverOpen} 
                   onClose={handleSlideOverClose} 
-                  returnRecord={selectedReturn} 
+                  returnRecord={selectedReturn as any} 
                   onRefresh={triggerRefresh} 
               />
             )}

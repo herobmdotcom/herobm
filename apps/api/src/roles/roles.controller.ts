@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   Controller,
   Get,
@@ -27,7 +28,7 @@ import {
 
 @ApiTags('Roles')
 @UseGuards(CasbinGuard)
-@CasbinResource('roles')
+@CasbinResource(SystemResource.ROLES)
 @Controller('roles')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}

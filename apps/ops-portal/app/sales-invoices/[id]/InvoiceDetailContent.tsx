@@ -13,17 +13,34 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useSalesInvoice } from './useSalesInvoice';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 
+import * as api from '@modbm/sdk';
+import { getErrorMessage, SALES_INVOICE_STATE } from '@modbm/shared';
+
 export default function InvoiceDetailContent({ id }: { id: string }) {
   const router = useRouter();
   const tCommon = useTranslations('common');
   const t = useTranslations('salesInvoices');
   const { invoice, loading, error } = useSalesInvoice(id);
+  const [cancelling, setCancelling] = React.useState(false);
 
   useDocumentTitle(invoice ? `Invoice ${invoice.invoiceNumber}` : t('loading'));
 
   if (loading) return <div className="p-8">{t('loadingEllipsis')}</div>;
   if (error) return <div className="p-8 text-red-500">{t('errorLoading', { message: error.message })}</div>;
   if (!invoice) return <div className="p-8 text-red-500">{t('notFound')}</div>;
+
+  const handleCancel = async () => {
+    if (!window.confirm('Are you sure you want to cancel this invoice? This will reverse the GL postings.')) return;
+    setCancelling(true);
+    try {
+      await api.invoiceDetailControllerChangeSalesInvoiceState(id, { stateCode: SALES_INVOICE_STATE.CANCELLED });
+      window.location.reload();
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to cancel invoice');
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   return (
     <DetailsLayout
@@ -33,7 +50,17 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           subtitle={`Customer: ${invoice.customerName}`}
           onBack={() => router.push('/sales-invoices')}
           badges={<StateBadge state={invoice.stateCode as ValidState} />}
-          actions={null}
+          actions={
+            invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && (
+              <button
+                className="btn btn-secondary btn-sm text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                onClick={handleCancel}
+                disabled={cancelling}
+              >
+                {cancelling ? tCommon('saving') : tCommon('cancel')}
+              </button>
+            )
+          }
         />
       }
     >

@@ -1,4 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
+import type { OnModuleInit } from '@nestjs/common';
 import { eq, ilike, or, sql, inArray, and, asc, desc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -6,6 +7,8 @@ import {
   salesOrderLineItems,
   customers as coreAccounts,
   salesOrders,
+  products,
+  productGroups,
 } from '../drizzle/modbm-core-schema';
 import {
   PaginationQuery,
@@ -13,6 +16,7 @@ import {
   withCursorPagination,
 } from '../common/pagination';
 import { SALES_ORDER_STATE } from '@modbm/shared';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 
 export interface UnifiedOrderRow {
   id: string;
@@ -29,8 +33,336 @@ export interface UnifiedOrderRow {
 }
 
 @Injectable()
-export class OrdersService {
-  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
+export class OrdersService implements OnModuleInit {
+  constructor(
+    @Inject(DRIZZLE) private db: DrizzleDB,
+    private readonly dataSourcesRegistry: DataSourcesRegistry,
+  ) {}
+
+  onModuleInit() {
+    this.dataSourcesRegistry.register('sales-performance-customer', {
+      fetchData: (filters: Record<string, unknown>) =>
+        this.getSalesPerformanceByCustomer(filters),
+    });
+    this.dataSourcesRegistry.register('sales-performance-product', {
+      fetchData: (filters: Record<string, unknown>) =>
+        this.getSalesPerformanceByProduct(filters),
+    });
+    this.dataSourcesRegistry.register('sales-performance-product-group', {
+      fetchData: (filters: Record<string, unknown>) =>
+        this.getSalesPerformanceByProductGroup(filters),
+    });
+    this.dataSourcesRegistry.register('sales-performance-trend', {
+      fetchData: (filters: Record<string, unknown>) =>
+        this.getSalesPerformanceTrend(filters),
+    });
+    this.dataSourcesRegistry.register('sales-performance-salesperson', {
+      fetchData: (filters: Record<string, unknown>) =>
+        this.getSalesPerformanceBySalesperson(filters),
+    });
+  }
+
+  private getSalesPerformanceConditions(filters: Record<string, unknown>) {
+    const conditions = [];
+    if (filters.fromDate) {
+      conditions.push(
+        sql`${salesOrders.createdOn} >= ${filters.fromDate}::timestamp`,
+      );
+    }
+    if (filters.toDate) {
+      conditions.push(
+        sql`${salesOrders.createdOn} <= ${filters.toDate}::timestamp`,
+      );
+    }
+    conditions.push(
+      inArray(salesOrders.stateCode, [
+        SALES_ORDER_STATE.SHIPPED,
+        SALES_ORDER_STATE.INVOICED,
+        SALES_ORDER_STATE.LEGACY,
+      ] as any[]),
+    );
+    return conditions;
+  }
+
+  async getSalesPerformanceByCustomer(filters: Record<string, unknown>) {
+    const conditions = this.getSalesPerformanceConditions(filters);
+    const drillDown = filters.drillDown as string | undefined;
+
+    const selectCols: any = {
+      customerId: coreAccounts.customerId,
+      customerName: coreAccounts.name,
+      orderCount: sql<number>`count(distinct ${salesOrders.salesOrderId})::integer`,
+      totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
+    };
+
+    const groupCols: any[] = [coreAccounts.customerId, coreAccounts.name];
+
+    if (drillDown === 'product') {
+      selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
+      groupCols.push(products.productId, products.name);
+    } else if (drillDown === 'product-group') {
+      selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
+      groupCols.push(productGroups.productGroupId, productGroups.name);
+    } else if (drillDown === 'month') {
+      selectCols.yearMonth = sql<string>`to_char(${salesOrders.createdOn}, 'YYYY-MM')`;
+      groupCols.push(sql`to_char(${salesOrders.createdOn}, 'YYYY-MM')`);
+    }
+
+    let qb = this.db
+      .select(selectCols)
+      .from(salesOrders)
+      .leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.customerId),
+      )
+      .leftJoin(
+        salesOrderLineItems,
+        eq(salesOrders.salesOrderId, salesOrderLineItems.salesOrderId),
+      )
+      .$dynamic();
+
+    if (drillDown === 'product' || drillDown === 'product-group') {
+      qb = qb.leftJoin(
+        products,
+        eq(products.productId, salesOrderLineItems.productId),
+      );
+      if (drillDown === 'product-group') {
+        qb = qb.leftJoin(
+          productGroups,
+          eq(productGroups.productGroupId, products.productGroupId),
+        );
+      }
+    }
+
+    qb = qb.where(and(...conditions)).groupBy(...groupCols);
+
+    return await qb;
+  }
+
+  async getSalesPerformanceByProduct(filters: Record<string, unknown>) {
+    const conditions = this.getSalesPerformanceConditions(filters);
+    const drillDown = filters.drillDown as string | undefined;
+
+    const selectCols: any = {
+      productId: products.productId,
+      productNumber: products.productNumber,
+      productName: products.name,
+      quantitySold: sql<number>`coalesce(sum(${salesOrderLineItems.quantity}::numeric), 0)::float`,
+      totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
+    };
+
+    const groupCols: any[] = [
+      products.productId,
+      products.productNumber,
+      products.name,
+    ];
+
+    if (drillDown === 'customer') {
+      selectCols.customerName = sql<string>`coalesce(${coreAccounts.name}, 'Unknown')`;
+      groupCols.push(coreAccounts.customerId, coreAccounts.name);
+    } else if (drillDown === 'month') {
+      selectCols.yearMonth = sql<string>`to_char(${salesOrders.createdOn}, 'YYYY-MM')`;
+      groupCols.push(sql`to_char(${salesOrders.createdOn}, 'YYYY-MM')`);
+    } else if (drillDown === 'channel') {
+      selectCols.source = salesOrders.source;
+      groupCols.push(salesOrders.source);
+    }
+
+    let qb = this.db
+      .select(selectCols)
+      .from(salesOrderLineItems)
+      .innerJoin(
+        salesOrders,
+        eq(salesOrders.salesOrderId, salesOrderLineItems.salesOrderId),
+      )
+      .leftJoin(products, eq(products.productId, salesOrderLineItems.productId))
+      .$dynamic();
+
+    if (drillDown === 'customer') {
+      qb = qb.leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.customerId),
+      );
+    }
+
+    if (conditions.length > 0) qb = qb.where(and(...conditions));
+    qb = qb.groupBy(...groupCols);
+
+    return await qb;
+  }
+
+  async getSalesPerformanceByProductGroup(filters: Record<string, unknown>) {
+    const conditions = this.getSalesPerformanceConditions(filters);
+    const drillDown = filters.drillDown as string | undefined;
+
+    const selectCols: any = {
+      productGroupId: productGroups.productGroupId,
+      productGroupName: productGroups.name,
+      quantitySold: sql<number>`coalesce(sum(${salesOrderLineItems.quantity}::numeric), 0)::float`,
+      totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
+    };
+
+    const groupCols: any[] = [productGroups.productGroupId, productGroups.name];
+
+    if (drillDown === 'product') {
+      selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
+      groupCols.push(products.productId, products.name);
+    } else if (drillDown === 'customer') {
+      selectCols.customerName = sql<string>`coalesce(${coreAccounts.name}, 'Unknown')`;
+      groupCols.push(coreAccounts.customerId, coreAccounts.name);
+    } else if (drillDown === 'month') {
+      selectCols.yearMonth = sql<string>`to_char(${salesOrders.createdOn}, 'YYYY-MM')`;
+      groupCols.push(sql`to_char(${salesOrders.createdOn}, 'YYYY-MM')`);
+    } else if (drillDown === 'channel') {
+      selectCols.source = salesOrders.source;
+      groupCols.push(salesOrders.source);
+    }
+
+    let qb = this.db
+      .select(selectCols)
+      .from(salesOrderLineItems)
+      .innerJoin(
+        salesOrders,
+        eq(salesOrders.salesOrderId, salesOrderLineItems.salesOrderId),
+      )
+      .leftJoin(products, eq(products.productId, salesOrderLineItems.productId))
+      .leftJoin(
+        productGroups,
+        eq(productGroups.productGroupId, products.productGroupId),
+      )
+      .$dynamic();
+
+    if (drillDown === 'customer') {
+      qb = qb.leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.customerId),
+      );
+    }
+
+    if (conditions.length > 0) qb = qb.where(and(...conditions));
+    qb = qb.groupBy(...groupCols);
+
+    return await qb;
+  }
+
+  async getSalesPerformanceTrend(filters: Record<string, unknown>) {
+    const conditions = this.getSalesPerformanceConditions(filters);
+    const drillDown = filters.drillDown as string | undefined;
+
+    const selectCols: any = {
+      yearMonth: sql<string>`to_char(${salesOrders.createdOn}, 'YYYY-MM')`,
+      orderCount: sql<number>`count(distinct ${salesOrders.salesOrderId})::integer`,
+      totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
+    };
+
+    const groupCols: any[] = [
+      sql`to_char(${salesOrders.createdOn}, 'YYYY-MM')`,
+    ];
+
+    if (drillDown === 'product') {
+      selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
+      groupCols.push(products.productId, products.name);
+    } else if (drillDown === 'product-group') {
+      selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
+      groupCols.push(productGroups.productGroupId, productGroups.name);
+    } else if (drillDown === 'customer') {
+      selectCols.customerName = sql<string>`coalesce(${coreAccounts.name}, 'Unknown')`;
+      groupCols.push(coreAccounts.customerId, coreAccounts.name);
+    } else if (drillDown === 'channel') {
+      selectCols.source = salesOrders.source;
+      groupCols.push(salesOrders.source);
+    }
+
+    let qb = this.db
+      .select(selectCols)
+      .from(salesOrders)
+      .leftJoin(
+        salesOrderLineItems,
+        eq(salesOrders.salesOrderId, salesOrderLineItems.salesOrderId),
+      )
+      .$dynamic();
+
+    if (drillDown === 'customer') {
+      qb = qb.leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.customerId),
+      );
+    }
+    if (drillDown === 'product' || drillDown === 'product-group') {
+      qb = qb.leftJoin(
+        products,
+        eq(products.productId, salesOrderLineItems.productId),
+      );
+      if (drillDown === 'product-group') {
+        qb = qb.leftJoin(
+          productGroups,
+          eq(productGroups.productGroupId, products.productGroupId),
+        );
+      }
+    }
+
+    if (conditions.length > 0) qb = qb.where(and(...conditions));
+    qb = qb
+      .groupBy(...groupCols)
+      .orderBy(sql`to_char(${salesOrders.createdOn}, 'YYYY-MM') ASC`);
+
+    return await qb;
+  }
+
+  async getSalesPerformanceBySalesperson(filters: Record<string, unknown>) {
+    const conditions = this.getSalesPerformanceConditions(filters);
+    const drillDown = filters.drillDown as string | undefined;
+
+    const selectCols: any = {
+      createdBy: sql<string>`COALESCE(${salesOrders.createdBy}, 'System')`,
+      source: salesOrders.source,
+      orderCount: sql<number>`count(distinct ${salesOrders.salesOrderId})::integer`,
+      totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
+    };
+
+    const groupCols: any[] = [
+      sql`COALESCE(${salesOrders.createdBy}, 'System')`,
+      salesOrders.source,
+    ];
+
+    if (drillDown === 'product') {
+      selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
+      groupCols.push(products.productId, products.name);
+    } else if (drillDown === 'customer') {
+      selectCols.customerName = sql<string>`coalesce(${coreAccounts.name}, 'Unknown')`;
+      groupCols.push(coreAccounts.customerId, coreAccounts.name);
+    } else if (drillDown === 'month') {
+      selectCols.yearMonth = sql<string>`to_char(${salesOrders.createdOn}, 'YYYY-MM')`;
+      groupCols.push(sql`to_char(${salesOrders.createdOn}, 'YYYY-MM')`);
+    }
+
+    let qb = this.db
+      .select(selectCols)
+      .from(salesOrders)
+      .leftJoin(
+        salesOrderLineItems,
+        eq(salesOrders.salesOrderId, salesOrderLineItems.salesOrderId),
+      )
+      .$dynamic();
+
+    if (drillDown === 'customer') {
+      qb = qb.leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.customerId),
+      );
+    }
+    if (drillDown === 'product') {
+      qb = qb.leftJoin(
+        products,
+        eq(products.productId, salesOrderLineItems.productId),
+      );
+    }
+
+    if (conditions.length > 0) qb = qb.where(and(...conditions));
+    qb = qb.groupBy(...groupCols);
+
+    return await qb;
+  }
 
   async findAll(query?: PaginationQuery) {
     const {

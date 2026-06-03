@@ -5,7 +5,7 @@ const fs = require('fs');
 // Ensure DATABASE_URL is unset, so Drizzle falls back to POSTGRES_* vars
 delete process.env.DATABASE_URL;
 
-const result = spawnSync('npm', ['run', 'test:e2e', '--', 'test/inventory-cycle.e2e-spec.ts'], { 
+const result = spawnSync(process.env.NPM_PATH || 'npm', ['run', 'test:e2e', '--', 'test/inventory-cycle.e2e-spec.ts'], { 
   env: { ...process.env, PATH: process.env.PATH },
   shell: true 
 });

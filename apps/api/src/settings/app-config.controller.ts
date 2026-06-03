@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -17,7 +18,7 @@ import { AppConfigResponseDto, UpdateAppConfigDto } from './dto';
 
 @Controller('settings/app')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('settings')
+@CasbinResource(SystemResource.SETTINGS)
 @ApiTags('System')
 export class AppConfigController {
   constructor(private readonly appConfigService: AppConfigService) {}

@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -43,7 +44,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Setup')
 @Controller('setup')
-@CasbinResource('import')
+@CasbinResource(SystemResource.IMPORT)
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard, ThrottlerGuard)
 export class SetupController {
   constructor(private readonly setupService: SetupService) {}

@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -17,7 +18,7 @@ import { UpdateOrganizationDto, OrganizationResponseDto } from './dto';
 
 @Controller('settings/organization')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('settings')
+@CasbinResource(SystemResource.SETTINGS)
 @ApiTags('System')
 export class OrganizationController {
   constructor(private readonly orgService: OrganizationService) {}

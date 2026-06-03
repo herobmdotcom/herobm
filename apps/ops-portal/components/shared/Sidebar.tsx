@@ -107,7 +107,16 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
                   {item.subItems && isActive && (
                     <div className="ml-9 mt-1 mb-2 flex flex-col gap-0.5 border-l-2 pl-3 py-1" style={{ borderColor: 'var(--border)' }}>
                       {item.subItems.map(sub => {
-                        const isSubActive = pathname === sub.href;
+                        const isSubActive =
+                          sub.href === '/'
+                            ? pathname === '/'
+                            : (pathname === sub.href || pathname.startsWith(sub.href + '/')) &&
+                              !item.subItems!.some(
+                                (other) =>
+                                  other.href !== sub.href &&
+                                  other.href.length > sub.href.length &&
+                                  (pathname === other.href || pathname.startsWith(other.href + '/'))
+                              );
                         return (
                           <Link
                             key={sub.href}

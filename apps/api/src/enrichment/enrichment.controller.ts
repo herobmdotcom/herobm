@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   Controller,
   Get,
@@ -22,7 +23,7 @@ import { ApiOkResponse, ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 export class EnrichmentController {
   constructor(private readonly enrichmentService: EnrichmentService) {}
 
-  @CasbinResource('external_api')
+  @CasbinResource(SystemResource.EXTERNAL_API)
   @CasbinAction('read')
   @Get('lookup')
   @ApiOperation({ summary: 'Lookup data', description: 'Lookup data by field' })
@@ -40,7 +41,7 @@ export class EnrichmentController {
     return result;
   }
 
-  @CasbinResource('external_api')
+  @CasbinResource(SystemResource.EXTERNAL_API)
   @CasbinAction('read')
   @Post('lookup')
   @ApiOperation({
@@ -61,7 +62,7 @@ export class EnrichmentController {
     return result;
   }
 
-  @CasbinResource('external_api')
+  @CasbinResource(SystemResource.EXTERNAL_API)
   @CasbinAction('read')
   @Get('test')
   @ApiOperation({
@@ -77,7 +78,7 @@ export class EnrichmentController {
     return result;
   }
 
-  @CasbinResource('external_api')
+  @CasbinResource(SystemResource.EXTERNAL_API)
   @CasbinAction('read')
   @Post('test')
   @ApiOperation({
@@ -96,7 +97,7 @@ export class EnrichmentController {
     return result;
   }
 
-  @CasbinResource('settings')
+  @CasbinResource(SystemResource.SETTINGS)
   @CasbinAction('read')
   @Get('providers')
   @ApiOperation({
@@ -108,7 +109,7 @@ export class EnrichmentController {
     return this.enrichmentService.getProviders();
   }
 
-  @CasbinResource('settings')
+  @CasbinResource(SystemResource.SETTINGS)
   @CasbinAction('read')
   @Get('config')
   @ApiOperation({
@@ -120,7 +121,7 @@ export class EnrichmentController {
     return this.enrichmentService.getConfig(provider);
   }
 
-  @CasbinResource('settings')
+  @CasbinResource(SystemResource.SETTINGS)
   @CasbinAction('write')
   @Put('config')
   @ApiOperation({
@@ -128,7 +129,7 @@ export class EnrichmentController {
     description: 'Update config for provider',
   })
   @ApiOkResponse({ description: 'Update config for provider', type: Object }) // BYPASS-TYPING-TEST
-  @ApiBody({ schema: { type: 'object' } })
+  @ApiBody({ type: Object }) // BYPASS-TYPING-TEST
   async updateConfig(
     @Query('provider') provider: string,
     // modbm-allow-record-any

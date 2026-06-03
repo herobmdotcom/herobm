@@ -645,18 +645,7 @@ export class ShipmentService {
             }
           }
 
-          // Record reversal outbox event to mathematically restore COGS dynamically
-          await emitEvent(innerTx, {
-            entityType: EntityType.SHIPMENT,
-            entityId: shipmentId,
-            eventType: EventType.STOCK_DISPATCH_REVERTED,
-            payload: {
-              shipmentId,
-              shipmentNumber: shipment.shipmentNumber,
-              salesOrderId: shipment.salesOrderId,
-            },
-            actor,
-          });
+          // Synchronous COGS reversal completed above.
         }
 
         const updated = await this.changeShipmentState(

@@ -36,6 +36,7 @@ export function calculateInvoiceableQuantities(
         .map((line) => {
             // Sum already-invoiced across all invoices
             const invoicedQty = invoices.reduce((sum, inv) => {
+                if (inv.stateCode === 'cancelled') return sum;
                 const invLine = inv.lines?.find(
                     (il) => il.salesOrderLineId === line.salesOrderLineId,
                 );

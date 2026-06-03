@@ -14,7 +14,7 @@ export default function ReceivingReturnsPage() {
     const [refreshKey, setRefreshKey] = useState(0);
 
     const [slideOverOpen, setSlideOverOpen] = useState(false);
-    const [selectedReturn, setSelectedReturn] = useState<any>(null);
+    const [selectedReturn, setSelectedReturn] = useState<Record<string, unknown> | null>(null);
 
     const handleReceive = useCallback((returnRecord: any) => {
         setSelectedReturn(returnRecord);

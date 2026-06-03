@@ -39,14 +39,14 @@ export default function DevelopersPage() {
   const router = useRouter();
 
   // ── Rate Limits State ───────────────────────────────────────────────────────
-  const [appForm, setAppForm] = useState<any>({});
+  const [appForm, setAppForm] = useState<Partial<api.AppConfigResponseDto>>({});
   const [appLoading, setAppLoading] = useState(true);
 
   // ── API Keys State ──────────────────────────────────────────────────────────
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [keysLoading, setKeysLoading] = useState(true);
   const [newSecret, setNewSecret] = useState<string | null>(null);
-  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
+  const [roles, setRoles] = useState<api.RoleDetailsDto[]>([]);
 
   // ── Webhooks State ──────────────────────────────────────────────────────────
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
@@ -104,7 +104,7 @@ export default function DevelopersPage() {
   const loadRoles = async () => {
     try {
       const res = await api.rolesControllerFindAll();
-      setAvailableRoles((res.data ) || []);
+      setRoles((res.data as api.RoleDetailsDto[]) || []);
     } catch (err: unknown) {
       reportError(err, 'DevelopersPage_loadRoles');
       toast.error('Failed to load roles: ' + getErrorMessage(err));
@@ -222,7 +222,7 @@ export default function DevelopersPage() {
                   { value: 'webhook', label: tDev('roleWebhook') },
                   { value: 'viewer', label: tDev('roleViewer') },
                   { value: 'admin', label: tDev('roleAdmin') },
-                  ...availableRoles
+                  ...roles
                     .filter(r => !['agent', 'webhook', 'viewer', 'admin'].includes(r.role))
                     .map(r => ({ value: r.role, label: `${r.role} ${tDev('customRoleSuffix')}` }))
                 ]

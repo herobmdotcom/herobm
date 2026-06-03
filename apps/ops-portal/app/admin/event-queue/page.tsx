@@ -444,7 +444,7 @@ export default function EventQueueDashboard() {
                             </span>
                           </td>
                           <td style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                            {evt.aggregateType}:{evt.aggregateId.substring(0, 8)}
+                            {(evt as any).aggregateType}:{(evt as any).aggregateId?.substring(0, 8)}
                           </td>
                           <td style={{ fontSize: 11, fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>
                             {evt.processedAt ? new Date(evt.processedAt).toLocaleString() : '—'}

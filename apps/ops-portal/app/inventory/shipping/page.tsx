@@ -67,7 +67,7 @@ export default function ShippingPage() {
     const { app } = useSettings();
 
     // Location
-    const [locations, setLocations] = useState<any[]>([]);
+    const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
     const [selectedLocationId, setSelectedLocationId] = useState<string>('');
 
     // Queue
@@ -464,7 +464,7 @@ export default function ShippingPage() {
                                                                 try {
                                                                     const { reportError } = await import('@/lib/api');
                                                                     const api = await import('@modbm/sdk');
-                                                                    const res = await api.reportsControllerRunHook('shipping-docket', { shipmentId: shipment.shipmentId }, { id: shipment.shipmentId, context: 'shipment' });
+                                                                    const res = await api.pdfTemplatesControllerRunHook('shipping-docket', { shipmentId: shipment.shipmentId }, { id: shipment.shipmentId, context: 'shipment' });
                                                                     const blob = res.data as Blob;
                                                                     const url = URL.createObjectURL(blob);
                                                                     window.open(url, '_blank');

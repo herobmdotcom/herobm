@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -33,7 +34,7 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @ApiTags('Tax')
 @Controller('tax-categories')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('settings')
+@CasbinResource(SystemResource.SETTINGS)
 export class TaxCategoriesController {
   constructor(private readonly taxService: TaxCategoriesService) {}
 

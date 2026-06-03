@@ -51,25 +51,25 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState<'details' | 'suppliers' | 'inventory' | 'kit'>('details');
   const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false);
   const [refreshGrid, setRefreshGrid] = useState(0);
-  const [product, setProduct] = useState<any>(null);
-  const [taxCategories, setTaxCategories] = useState<any[]>([]);
+  const [product, setProduct] = useState<api.ProductResponseDto | null>(null);
+  const [taxCategories, setTaxCategories] = useState<api.TaxCategoryResponseDto[]>([]);
   const [uomDictionary, setUomDictionary] = useState<{ uomCode: string; description: string }[]>([]);
   const [addingUom, setAddingUom] = useState(false);
 
   // Storage Strategy State
-  const [locations, setLocations] = useState<any[]>([]);
+  const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
   const [addingBinLink, setAddingBinLink] = useState(false);
   const [newBinLink, setNewBinLink] = useState({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
   const [editingBinId, setEditingBinId] = useState<string | null>(null);
   const [editingBinData, setEditingBinData] = useState({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
-  const [availableBins, setAvailableBins] = useState<any[]>([]);
-  const [inventoryLevels, setInventoryLevels] = useState<any[]>([]);
+  const [availableBins, setAvailableBins] = useState<Record<string, unknown>[]>([]);
+  const [inventoryLevels, setInventoryLevels] = useState<api.InventoryResponseDto[]>([]);
   const [kitComponents, setKitComponents] = useState<KitComponent[]>([]);
 
   const buildableQuantity = useMemo(() => {
     if (product?.structureType !== 'kit' || !kitComponents.length || !inventoryLevels.length) return null;
     const inventoryByProduct = inventoryLevels.reduce((acc, lvl) => {
-      acc[lvl.productId] = (acc[lvl.productId] || 0) + (lvl.quantityAvailable || 0);
+      acc[lvl.productId] = (acc[lvl.productId] || 0) + (parseFloat(lvl.quantityAvailable as string) || 0);
       return acc;
     }, {} as Record<string, number>);
 
@@ -80,7 +80,7 @@ export default function ProductDetailPage() {
     return Math.min(...maxBuildable);
   }, [product, kitComponents, inventoryLevels]);
 
-  const [dto, setDto] = useState<any>({
+  const [dto, setDto] = useState<Partial<api.ProductResponseDto>>({
     productNumber: '',
     name: '',
     barcode: '',
@@ -128,9 +128,10 @@ export default function ProductDetailPage() {
       if (data.structureType === 'kit') {
         try {
           const componentsData = await api.productsControllerGetComponents(id as string);
-          if (componentsData.data?.length) {
-            setKitComponents((componentsData.data || []) as unknown as KitComponent[]);
-            productIdsToFetch = componentsData.data.map((c: any) => c.id);
+          const comps: any = (componentsData.data as any).data || componentsData.data;
+          if (comps?.length) {
+            setKitComponents(comps);
+            productIdsToFetch = comps.map((c: any) => c.id);
           }
         } catch (e) {
           reportError(e, 'ProductDetailPage');
@@ -163,7 +164,7 @@ export default function ProductDetailPage() {
     const loc = locations.find(l => l.locationId === newBinLink.locationId);
     if (!loc) return;
 
-    const bins = (loc.zones || []).flatMap((z: any) => z.bins || []);
+    const bins = ((loc as any).zones || []).flatMap((z: any) => z.bins || []);
     bins.sort((a: any, b: any) => (a.binNumber || '').localeCompare(b.binNumber || ''));
     
     setAvailableBins(bins);
@@ -184,12 +185,12 @@ export default function ProductDetailPage() {
   };
 
   const handleBlur = (field: string, value: any) => {
-    if (product[field] === value) return;
+    if (product && (product as any)[field] === value) return;
     saveProduct({ [field]: value });
   };
 
   const handleSelectChange = (field: string, value: any) => {
-    if (product[field] === value) return;
+    if (product && (product as any)[field] === value) return;
     
     const payload: any = { [field]: value };
     if (field === 'structureType' && value === 'kit') {
@@ -284,7 +285,7 @@ export default function ProductDetailPage() {
 
     inventoryLevels.forEach(lvl => {
       const loc = {
-        locationId: lvl.locationId,
+        locationId: (lvl as any).locationId,
         locationNo: lvl.locationNo,
         locationName: lvl.locationName,
         quantityOnHand: lvl.quantityOnHand || 0,
@@ -294,13 +295,13 @@ export default function ProductDetailPage() {
         bins: new Map<string, any>()
       };
       
-      (lvl.binBalances || []).forEach((b: any) => {
+      ((lvl as any).binBalances || []).forEach((b: any) => {
         loc.bins.set(b.binId, { ...b, isDefault: false });
       });
-      locMap.set(lvl.locationId, loc);
+      locMap.set((lvl as any).locationId, loc);
     });
 
-    (product.defaultBins || []).forEach((db: any) => {
+    ((product as any).defaultBins || []).forEach((db: any) => {
       let loc = locMap.get(db.locationId);
       if (!loc) {
         loc = {
@@ -538,7 +539,7 @@ export default function ProductDetailPage() {
                     onChange={(e) => setNewBinLink({ ...newBinLink, binId: e.target.value })}
                   >
                     <option value="">{t('common.selectEllipsis')}</option>
-                    {availableBins.map((b) => (
+                    {availableBins.map((b: any) => (
                       <option key={b.binId} value={b.binId}>
                         {b.binNumber}
                       </option>
@@ -802,7 +803,7 @@ export default function ProductDetailPage() {
                     className="input"
                     required
                     disabled={!isEditable || saving}
-                    value={dto.productNumber}
+                    value={dto.productNumber ?? ''}
                     onChange={(e) => setDto({ ...dto, productNumber: e.target.value })}
                     onBlur={(e) => handleBlur('productNumber', e.target.value)}
                     placeholder={t('common.placeholders.number')}
@@ -816,7 +817,7 @@ export default function ProductDetailPage() {
                     className="input w-full"
                     required
                     disabled={!isEditable || saving}
-                    value={dto.name}
+                    value={dto.name ?? ''}
                     onChange={(e) => setDto({ ...dto, name: e.target.value })}
                     onBlur={(e) => handleBlur('name', e.target.value)}
                     placeholder={t('products.placeholders.productDisplayName')}
@@ -831,7 +832,7 @@ export default function ProductDetailPage() {
                   <input
                     className="input"
                     disabled={!isEditable || saving}
-                    value={dto.barcode}
+                    value={dto.barcode ?? ''}
                     onChange={(e) => setDto({ ...dto, barcode: e.target.value })}
                     onBlur={(e) => handleBlur('barcode', e.target.value)}
                     placeholder={t('products.placeholders.barcode')}
@@ -844,7 +845,7 @@ export default function ProductDetailPage() {
                   <input
                     className="input"
                     disabled={!isEditable || saving}
-                    value={dto.alternateProductNumber}
+                    value={dto.alternateProductNumber ?? ''}
                     onChange={(e) => setDto({ ...dto, alternateProductNumber: e.target.value })}
                     onBlur={(e) => handleBlur('alternateProductNumber', e.target.value)}
                     placeholder={t('products.columns.alternateProductNumber')}
@@ -899,7 +900,7 @@ export default function ProductDetailPage() {
                 <select
                   className="input"
                   disabled={!isEditable || saving}
-                  value={dto.stateCode}
+                  value={dto.stateCode ?? ''}
                   onChange={(e) => handleSelectChange('stateCode', e.target.value)}
                 >
                   <option value={PRODUCT_STATE.ACTIVE}>{t('common.states.active')}</option>
@@ -913,7 +914,7 @@ export default function ProductDetailPage() {
                 </label>
                 <GroupSelect
                   type="product"
-                  value={dto.productGroupId}
+                  value={dto.productGroupId ?? ''}
                   onChange={(val) => handleSelectChange('productGroupId', val)}
                   disabled={!isEditable || saving}
                   placeholder={t('products.placeholders.noProductGroup')}
@@ -939,7 +940,7 @@ export default function ProductDetailPage() {
                   step="0.01"
                   className="input"
                   disabled={!isEditable || saving}
-                  value={dto.listPrice}
+                  value={dto.listPrice ?? ''}
                   onChange={(e) => setDto({ ...dto, listPrice: e.target.value })}
                   onBlur={(e) => {
                     const formatted = formatMoney(e.target.value);
@@ -957,7 +958,7 @@ export default function ProductDetailPage() {
                   step="0.01"
                   className="input"
                   disabled={!isEditable || saving}
-                  value={dto.tradePrice}
+                  value={dto.tradePrice ?? ''}
                   onChange={(e) => setDto({ ...dto, tradePrice: e.target.value })}
                   onBlur={(e) => {
                     const formatted = formatMoney(e.target.value);
@@ -975,7 +976,7 @@ export default function ProductDetailPage() {
                   step="0.01"
                   className="input"
                   disabled={!isEditable || saving}
-                  value={dto.priceLevel3}
+                  value={dto.priceLevel3 ?? ''}
                   onChange={(e) => setDto({ ...dto, priceLevel3: e.target.value })}
                   onBlur={(e) => {
                     const formatted = formatMoney(e.target.value);
@@ -993,7 +994,7 @@ export default function ProductDetailPage() {
                   step="0.01"
                   className="input"
                   disabled={!isEditable || saving}
-                  value={dto.priceLevel4}
+                  value={dto.priceLevel4 ?? ''}
                   onChange={(e) => setDto({ ...dto, priceLevel4: e.target.value })}
                   onBlur={(e) => {
                     const formatted = formatMoney(e.target.value);
@@ -1011,7 +1012,7 @@ export default function ProductDetailPage() {
                   step="0.01"
                   className="input"
                   disabled={!isEditable || saving}
-                  value={dto.standardCost}
+                  value={dto.standardCost ?? ''}
                   onChange={(e) => setDto({ ...dto, standardCost: e.target.value })}
                   onBlur={(e) => {
                     const formatted = formatMoney(e.target.value);
@@ -1038,7 +1039,7 @@ export default function ProductDetailPage() {
                 <select
                   className="input"
                   disabled={!isEditable || saving}
-                  value={dto.purchaseTaxCategoryId || ''}
+                  value={dto.purchaseTaxCategoryId ?? ''}
                   onChange={(e) => handleSelectChange('purchaseTaxCategoryId', e.target.value)}
                 >
                   <option value="">{t('common.none')}</option>
@@ -1060,7 +1061,7 @@ export default function ProductDetailPage() {
                 <select
                   className="input"
                   disabled={!isEditable || saving}
-                  value={dto.salesTaxCategoryId || ''}
+                  value={dto.salesTaxCategoryId ?? ''}
                   onChange={(e) => handleSelectChange('salesTaxCategoryId', e.target.value)}
                 >
                   <option value="">{t('common.none')}</option>
@@ -1082,7 +1083,7 @@ export default function ProductDetailPage() {
                 <input
                   className="input w-full"
                   disabled={!isEditable || saving}
-                  value={dto.externalTaxCode}
+                  value={dto.externalTaxCode ?? ''}
                   onChange={(e) => setDto({ ...dto, externalTaxCode: e.target.value })}
                   onBlur={(e) => handleBlur('externalTaxCode', e.target.value)}
                   placeholder="e.g. 20010"
@@ -1132,7 +1133,7 @@ export default function ProductDetailPage() {
                 onChange={(e) => handleSelectChange('defaultSalesUomId', e.target.value || null)}
               >
                 <option value="">{t('products.baseUomLabel', { uom: product.baseUom || 'EA' })}</option>
-                {(product.productUoms || []).map((u: any) => (
+                {((product as any).productUoms || []).map((u: any) => (
                   <option key={u.productUomId} value={u.productUomId}>
                     {t('products.uomRatioLabel', { uom: u.uomCode, ratio: u.ratio })}
                   </option>
@@ -1150,7 +1151,7 @@ export default function ProductDetailPage() {
                 onChange={(e) => handleSelectChange('defaultPurchaseUomId', e.target.value || null)}
               >
                 <option value="">{t('products.baseUomLabel', { uom: product.baseUom || 'EA' })}</option>
-                {(product.productUoms || []).map((u: any) => (
+                {((product as any).productUoms || []).map((u: any) => (
                   <option key={u.productUomId} value={u.productUomId}>
                     {t('products.uomRatioLabel', { uom: u.uomCode, ratio: u.ratio })}
                   </option>
@@ -1163,7 +1164,7 @@ export default function ProductDetailPage() {
           <div className="pt-4 mt-4 border-t border-[var(--border)]">
             <InlineSettingsTable
               title={<span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{t('products.packagingConversions')}</span>}
-              data={product.productUoms || []}
+              data={(product as any).productUoms || []}
               rowKey={(row: any) => row.productUomId}
               columns={[
                 {
@@ -1229,7 +1230,7 @@ export default function ProductDetailPage() {
             className="input w-full"
             style={{ height: 110, paddingTop: 12 }}
             disabled={!isEditable || saving}
-            value={dto.notes}
+            value={dto.notes ?? ''}
             onChange={(e) => setDto({ ...dto, notes: e.target.value })}
             onBlur={(e) => handleBlur('notes', e.target.value)}
             placeholder={t('products.placeholders.notes')}
@@ -1238,7 +1239,7 @@ export default function ProductDetailPage() {
 
         {/* Activity Timeline */}
         <div id="activity-section" className="card">
-          <ActivityTimeline events={product.events || []} />
+          <ActivityTimeline events={(product as any).events || []} />
         </div>
 
         {/* Bottom Actions */}

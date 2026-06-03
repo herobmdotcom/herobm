@@ -1,16 +1,22 @@
 CREATE OR REPLACE VIEW modbm_core.dashboard_timeline AS
-SELECT event_id, entity_type, entity_id, event_type, payload, actor, created_on FROM modbm_core.sales_events
+SELECT event_id, 'sales_order' AS aggregate_type, sales_order_id AS aggregate_id, event_type, payload, actor, created_on FROM modbm_core.order_events
 UNION ALL
-SELECT event_id, entity_type, entity_id, event_type, payload, actor, created_on FROM modbm_core.procurement_events
+SELECT event_id, 'purchase_order', purchase_order_id, event_type, payload, actor, created_on FROM modbm_core.purchase_order_events
 UNION ALL
-SELECT event_id, entity_type, entity_id, event_type, payload, actor, created_on FROM modbm_core.warehouse_events
+SELECT event_id, 'shipment', shipment_id, event_type, payload, actor, created_on FROM modbm_core.shipment_events
 UNION ALL
-SELECT event_id, entity_type, entity_id, event_type, payload, actor, created_on FROM modbm_core.master_data_events
+SELECT event_id, 'transfer_order', transfer_order_id, event_type, payload, actor, created_on FROM modbm_core.transfer_order_events
 UNION ALL
-SELECT event_id, entity_type, entity_id, event_type, payload, actor, created_on FROM modbm_core.financial_events
+SELECT event_id, 'product', product_id, event_type, payload, actor, created_on FROM modbm_core.product_events
 UNION ALL
-SELECT event_id, entity_type, entity_id, event_type, payload, actor, created_on FROM modbm_core.inventory_events
+SELECT event_id, 'customer', customer_id, event_type, payload, actor, created_on FROM modbm_core.customer_events
 UNION ALL
-SELECT event_id, entity_type, entity_id, event_type, payload, actor, created_on FROM modbm_core.system_events
+SELECT event_id, 'supplier', vendor_id, event_type, payload, actor, created_on FROM modbm_core.supplier_events
 UNION ALL
-SELECT event_id, 'user' AS entity_type, user_id AS entity_id, event_type, payload, actor, created_on FROM modbm_core.user_events;
+SELECT event_id, 'product_supplier', product_supplier_id, event_type, payload, actor, created_on FROM modbm_core.product_supplier_events
+UNION ALL
+SELECT event_id, 'user', user_id, event_type, payload, actor, created_on FROM modbm_core.user_events
+UNION ALL
+SELECT event_id, 'payment', payment_id, event_type, payload, actor, created_on FROM modbm_core.payment_events
+UNION ALL
+SELECT event_id, aggregate_type, aggregate_id, event_type, payload, actor, created_on FROM modbm_core.system_events;

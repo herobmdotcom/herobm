@@ -79,7 +79,7 @@ export default function FinancialSettingsPage() {
   const [categories, setCategories] = useState<TaxCategory[]>([]);
   const [taxLoading, setTaxLoading] = useState(true);
   const [taxEditingId, setTaxEditingId] = useState<string | null>(null);
-  const [taxForm, setTaxForm] = useState<any>({});
+  const [taxForm, setTaxForm] = useState<Partial<api.TaxCategoryResponseDto>>({});
   const [taxCreating, setTaxCreating] = useState(false);
   const [importTaxModalOpen, setImportTaxModalOpen] = useState(false);
 
@@ -87,25 +87,25 @@ export default function FinancialSettingsPage() {
   const [rates, setRates] = useState<ExchangeRate[]>([]);
   const [rateLoading, setRateLoading] = useState(true);
   const [rateEditingId, setRateEditingId] = useState<string | null>(null);
-  const [rateForm, setRateForm] = useState<any>({});
+  const [rateForm, setRateForm] = useState<Partial<api.ExchangeRateResponseDto>>({});
   const [rateCreating, setRateCreating] = useState(false);
 
   // ── Cost Centers state ─────────────────────────────────────────────────────
   const [ccs, setCcs] = useState<CostCenter[]>([]);
   const [ccLoading, setCcLoading] = useState(true);
   const [ccEditingId, setCcEditingId] = useState<string | null>(null);
-  const [ccForm, setCcForm] = useState<any>({});
+  const [ccForm, setCcForm] = useState<Partial<api.CostCenterResponseDto>>({});
   const [ccCreating, setCcCreating] = useState(false);
 
   // ── Activities state ───────────────────────────────────────────────────────
   const [activitiesData, setActivitiesData] = useState<Activity[]>([]);
   const [activityLoading, setActivityLoading] = useState(true);
   const [activityEditingId, setActivityEditingId] = useState<string | null>(null);
-  const [activityForm, setActivityForm] = useState<any>({});
+  const [activityForm, setActivityForm] = useState<Partial<api.ActivityResponseDto>>({});
   const [activityCreating, setActivityCreating] = useState(false);
 
   // ── GL Settings state ────────────────────────────────────────────────────────
-  const [glSettings, setGlSettings] = useState<any>(null);
+  const [glSettings, setGlSettings] = useState<any | null>(null);
 
   const ratesWithBase = useMemo(() => {
     if (!glSettings?.baseCurrency) return rates;
@@ -120,14 +120,16 @@ export default function FinancialSettingsPage() {
     return [baseRow, ...rates];
   }, [glSettings, rates]);
 
-  const [glAccounts, setGlAccounts] = useState<any[]>([]);
+  const [glAccounts, setGlAccounts] = useState<api.GlAccountResponseDto[]>([]);
   const [glLoading, setGlLoading] = useState(true);
-  const [schemaObj, setSchemaObj] = useState<any>({ type: 'object', properties: {} });
+  // modbm-allow-record-any
+  const [schemaObj, setSchemaObj] = useState<Record<string, any>>({ type: 'object', properties: {} });
   const [schemaEditorOpen, setSchemaEditorOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
   // ── CoA state ──────────────────────────────────────────────────────────────
-  const [coaForm, setCoaForm] = useState<any>({});
+  // modbm-allow-record-any
+  const [coaForm, setCoaForm] = useState<Record<string, any>>({});
   const [coaCreating, setCoaCreating] = useState(false);
   const [coaEditingId, setCoaEditingId] = useState<string | null>(null);
   const [importCoaModalOpen, setImportCoaModalOpen] = useState(false);
@@ -172,7 +174,8 @@ export default function FinancialSettingsPage() {
       ]);
       setGlSettings(settingsRes.data);
       setGlAccounts(accountsRes.data);
-      setSchemaObj((settingsRes.data as unknown as { accountMetadataSchema?: Record<string, unknown> }).accountMetadataSchema || { type: 'object', properties: {} });
+      // modbm-allow-record-any
+      setSchemaObj((settingsRes.data as unknown as { accountMetadataSchema?: Record<string, any> }).accountMetadataSchema || { type: 'object', properties: {} });
     } catch (err: unknown) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.gl }) + ': ' + getErrorMessage(err));
     } finally {
@@ -215,7 +218,7 @@ export default function FinancialSettingsPage() {
   const coaSave = async () => {
     if (!coaForm.accountCode || !coaForm.name || !coaForm.accountType) { toast.error(tCommon('errors.typeAndDateRequired') || 'Required fields missing'); return; }
     try {
-      const payload = { ...coaForm };
+      const payload: any = { ...coaForm };
       if (coaEditingId) {
         await api.glControllerUpdateAccount(coaEditingId, payload);
         toast.success('Saved');
@@ -247,7 +250,7 @@ export default function FinancialSettingsPage() {
 
   const taxSave = async () => {
     try {
-      const payload = { ...taxForm };
+      const payload: any = { ...taxForm };
       if (taxEditingId) {
         await api.taxCategoriesControllerUpdate(taxEditingId, payload);
         toast.success(tSettings('toasts.taxUpdated'));
@@ -622,7 +625,7 @@ export default function FinancialSettingsPage() {
       </td>
       <td style={{ textAlign: 'center' }}>
         {isEdit ? (
-          <input type="checkbox" checked={taxForm.isDefault === true || taxForm.isDefault === 'true'} onChange={e => setTaxForm({ ...taxForm, isDefault: e.target.checked })} />
+          <input type="checkbox" checked={taxForm.isDefault === true} onChange={e => setTaxForm({ ...taxForm, isDefault: e.target.checked })} />
         ) : data.isDefault ? (
           <>
             {/* eslint-disable-next-line i18next/no-literal-string */}

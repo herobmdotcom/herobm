@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   Controller,
   Get,
@@ -45,7 +46,7 @@ import { ApiFieldMask } from '../../common/decorators/api-field-mask.decorator';
 @ApiTags('Orders')
 @Controller('transfers')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('sales-orders')
+@CasbinResource(SystemResource.SALES_ORDERS)
 export class TransfersController {
   constructor(private readonly transferService: TransferService) {}
 
@@ -172,6 +173,21 @@ export class TransfersController {
     @AuthUser() user: JwtUser,
   ) {
     return this.transferService.cancelTransferOrder(id, user.username);
+  }
+
+  @Post(':id/cancel-shipment')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Cancel Transfer Order Shipment',
+    description: 'Cancel the active dispatched shipment of a transfer order.',
+  })
+  @ApiCreatedResponse({ type: TransferResponseDto })
+  async cancelTransferOrderShipment(
+    @Param('id') id: string,
+    @Body() body: EmptyBodyDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.transferService.cancelActiveShipment(id, user.username);
   }
 
   @Get()

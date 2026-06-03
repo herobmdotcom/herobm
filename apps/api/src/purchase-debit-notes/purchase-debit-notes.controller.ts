@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -31,7 +32,7 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 
 @Controller('purchase-debit-notes')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('purchase-debit-notes')
+@CasbinResource(SystemResource.PURCHASE_DEBIT_NOTES)
 @ApiTags('PurchaseDebitNotes')
 export class PurchaseDebitNotesController {
   constructor(private readonly debitNotesService: PurchaseDebitNotesService) {}

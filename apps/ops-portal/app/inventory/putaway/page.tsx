@@ -43,7 +43,7 @@ export default function PutawayPage() {
     useDocumentTitle(t('putaway.title'));
     const { app } = useSettings();
 
-    const [locations, setLocations] = useState<any[]>([]);
+    const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
     const [selectedLocationId, setSelectedLocationId] = useState<string>('');
     const [pendingLines, setPendingLines] = useState<PutawayLine[]>([]);
     const [selectedLine, setSelectedLine] = useState<PutawayLine | null>(null);

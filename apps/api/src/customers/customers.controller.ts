@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   Controller,
   Get,
@@ -37,7 +38,7 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @ApiTags('Customers')
 @Controller('customers')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('customers')
+@CasbinResource(SystemResource.CUSTOMERS)
 export class AccountsController {
   constructor(
     private readonly accountsService: AccountsService,

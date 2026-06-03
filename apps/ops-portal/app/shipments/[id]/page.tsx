@@ -147,7 +147,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
               onClick={async () => {
                 try {
                   const api = await import('@modbm/sdk');
-                  const res = await api.reportsControllerRunHook('shipping-docket', {}, { id, context: 'shipment' });
+                  const res = await api.pdfTemplatesControllerRunHook('shipping-docket', {}, { id, context: 'shipment' });
                   const blob = res.data as Blob;
                   const url = URL.createObjectURL(blob);
                   window.open(url, '_blank');

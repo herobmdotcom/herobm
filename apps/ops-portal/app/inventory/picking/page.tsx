@@ -225,7 +225,7 @@ export default function PickingPage() {
         if (!selectedOrder) return;
         setIsGeneratingPdf(true);
         try {
-            const response = await api.reportsControllerRunHook('picking-slip', { shipmentId: selectedOrder.id }, { id: selectedOrder.id, context: 'picking-slip' });
+            const response = await api.pdfTemplatesControllerRunHook('picking-slip', { shipmentId: selectedOrder.id }, { id: selectedOrder.id, context: 'picking-slip' });
             const blob = response.data as Blob;
             const url = window.URL.createObjectURL(blob);
             window.open(url, '_blank');

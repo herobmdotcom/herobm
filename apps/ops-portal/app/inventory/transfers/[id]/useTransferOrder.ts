@@ -3,7 +3,7 @@ import * as api from '@modbm/sdk';
 import { getErrorMessage } from '@modbm/shared';
 
 export function useTransferOrder(id: string) {
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<api.TransferResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -125,6 +125,18 @@ export function useTransferOrder(id: string) {
     }
   };
 
+  const cancelShipment = async () => {
+    try {
+      setSaving(true);
+      await api.transfersControllerCancelTransferOrderShipment(id, {} as unknown as import('@modbm/sdk').EmptyBodyDto);
+      await loadOrder();
+    } catch (e: unknown) {
+      setError(getErrorMessage(e) || 'Failed to cancel shipment');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     order,
     loading,
@@ -144,6 +156,7 @@ export function useTransferOrder(id: string) {
     shipOrder,
     cancelOrder,
     receiveOrder,
+    cancelShipment,
     loadOrder,
   };
 }

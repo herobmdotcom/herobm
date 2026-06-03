@@ -44,14 +44,17 @@ export class AuthController {
 
   /** Return the current user's identity from JWT — used by frontend for role-aware UI. */
   @Get('me')
+  @ApiOkResponse({ type: MeResponseDto })
   @SkipCasbin()
-  @UseGuards(AuthGuard(['jwt', 'api-key']))
+  @UseGuards(ThrottlerGuard, AuthGuard(['jwt', 'api-key']))
+  @Throttle({
+    default: { limit: process.env.NODE_ENV === 'test' ? 100 : 30, ttl: 60000 },
+  })
   @ApiOperation({
     summary: 'Get Current User',
     description:
       'Returns the identity and role of the currently authenticated user.',
   })
-  @ApiOkResponse({ type: MeResponseDto })
   me(@Request() req: any) {
     return {
       username: req.user.username,

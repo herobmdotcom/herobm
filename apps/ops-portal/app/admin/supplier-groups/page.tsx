@@ -16,10 +16,10 @@ export default function SupplierGroupsAdmin() {
 
   useDocumentTitle(t('title'));
   
-  const [rawGroups, setRawGroups] = useState<any[]>([]);
-  const [glAccounts, setGlAccounts] = useState<any[]>([]);
-  const [costCenters, setCostCenters] = useState<any[]>([]);
-  const [activities, setActivities] = useState<any[]>([]);
+  const [rawGroups, setRawGroups] = useState<api.SupplierGroupResponseDto[]>([]);
+  const [glAccounts, setGlAccounts] = useState<api.GlAccountResponseDto[]>([]);
+  const [costCenters, setCostCenters] = useState<api.CostCenterResponseDto[]>([]);
+  const [activities, setActivities] = useState<api.ActivityResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   
   const loadData = async () => {
@@ -131,7 +131,7 @@ export default function SupplierGroupsAdmin() {
           title={<span style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>{t('definedGroups')}</span>}
           columns={columns}
           data={groups}
-          rowKey={row => row.supplierGroupId}
+          rowKey={(row: any) => row.supplierGroupId}
           onSave={handleSave}
           onDelete={handleDelete}
           onAdd={() => ({

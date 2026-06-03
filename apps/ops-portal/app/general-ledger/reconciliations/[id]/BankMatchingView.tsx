@@ -20,12 +20,16 @@ export default function BankMatchingView({
   reconciliation, 
   onUpdate 
 }: { 
-  reconciliation: any, 
+  // modbm-allow-record-any
+  reconciliation: Record<string, any>, 
   onUpdate: () => void 
 }) {
-  const [bankLines, setBankLines] = useState<api.BankStatementLineDto[]>([]);
+  // modbm-allow-record-any
+  const [bankLines, setBankLines] = useState<Record<string, any>[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
+  // modbm-allow-record-any
+  const [selectedRow, setSelectedRow] = useState<Record<string, any> | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [activeTab, setActiveTab] = useState<'find' | 'create'>('find');
   const [unreconciledLines, setUnreconciledLines] = useState<UnreconciledLine[]>([]);

@@ -16,7 +16,8 @@ interface ProviderConfig {
   name: string;
   type?: 'enrichment' | 'tax_engine';
   supportedCountries?: string[] | 'global';
-  schema: any;
+  // modbm-allow-record-any
+  schema: Record<string, any>;
 }
 
 type TaxRule = { id: string; country: string; provider: string };
@@ -44,7 +45,7 @@ export default function IntegrationsSettingsPage() {
   const [testResult, setTestResult] = useState<{ success: boolean; data?: unknown; error?: string } | null>(null);
 
   // Routing Rules State
-  const [appConfig, setAppConfig] = useState<any>(null);
+  const [appConfig, setAppConfig] = useState<Partial<api.AppConfigResponseDto> | null>(null);
   const [taxRules, setTaxRules] = useState<TaxRule[]>([]);
   const [enrichmentRules, setEnrichmentRules] = useState<EnrichmentRule[]>([]);
 
@@ -176,8 +177,9 @@ export default function IntegrationsSettingsPage() {
       setConfigData(data);
       if (data.testPayload) {
         setTestPayload(typeof data.testPayload === 'object' ? JSON.stringify(data.testPayload, null, 2) : data.testPayload);
-      } else if (provider.schema?.properties?.testPayload?.default) {
-        setTestPayload(provider.schema.properties.testPayload.default);
+      } else if ((provider.schema?.properties as Record<string, Record<string, unknown>>)?.testPayload?.default) {
+        const props = provider.schema.properties as Record<string, Record<string, unknown>>;
+        setTestPayload((props?.testPayload?.default as string) || '');
       } else {
         setTestPayload('');
       }
@@ -447,7 +449,7 @@ export default function IntegrationsSettingsPage() {
                                   const displaySchema = { ...p.schema };
                                   if (displaySchema.properties) {
                                     displaySchema.properties = { ...displaySchema.properties };
-                                    delete displaySchema.properties.testPayload;
+                                    delete (displaySchema.properties as any).testPayload;
                                   }
                                   return (
                                     <DynamicForm

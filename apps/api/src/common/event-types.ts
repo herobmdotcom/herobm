@@ -52,7 +52,6 @@ export const EventType = {
   // ── Sales domain ────────────────────────────────────────────────────
   SALES_INVOICED: 'sales_invoiced',
   STOCK_DISPATCHED: 'stock_dispatched',
-  STOCK_DISPATCH_REVERTED: 'stock_dispatch_reverted',
   BACKORDERS_ALLOCATED: 'backorders_allocated',
   CREDIT_NOTE_POSTED: 'credit_note_posted',
 

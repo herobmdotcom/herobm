@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 
 import type { OrderDetail, TaxCategory, SalesInvoice } from './types';
-import { computeLinePrice, SALES_ORDER_STATE } from '@modbm/shared';
+import { computeLinePrice, SALES_ORDER_STATE, SALES_INVOICE_STATE } from '@modbm/shared';
 import type { NewInvoiceLine } from './useOrder';
 import { calculateInvoiceableQuantities } from '@/lib/sales-order-utils';
 import { useSettings } from '@/components/SettingsProvider';
@@ -20,10 +20,12 @@ interface InvoicesSectionProps {
 
     invoices: SalesInvoice[];
     taxCategories: TaxCategory[];
-    pickingSummary: any;
+    // modbm-allow-record-any
+  pickingSummary: Record<string, any> | null;
     setError: (msg: string) => void;
     loadInvoices: () => Promise<void>;
-    loadOrder: (autoTransitions?: any[], showSpinner?: boolean) => Promise<void>;
+    // modbm-allow-record-any
+  loadOrder: (autoTransitions?: Record<string, any>[], showSpinner?: boolean) => Promise<void>;
 }
 
 export default function InvoicesSection({
@@ -143,6 +145,7 @@ export default function InvoicesSection({
                             const pickedQty = pLine && pLine.quantityPicked != null ? parseFloat(pLine.quantityPicked) : 0;
                             const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
                             const invoicedQty = invoices.reduce((sum, inv) => {
+                                if (inv.stateCode === SALES_INVOICE_STATE.CANCELLED) return sum;
                                 const invLine = inv.lines?.find(il => il.salesOrderLineId === nl.salesOrderLineId);
                                 return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
                             }, 0);
@@ -180,6 +183,7 @@ export default function InvoicesSection({
                             const pickedQty = pLine && pLine.quantityPicked != null ? parseFloat(pLine.quantityPicked) : 0;
                             const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
                             const invoicedQty = invoices.reduce((sum, inv) => {
+                                if (inv.stateCode === SALES_INVOICE_STATE.CANCELLED) return sum;
                                 const invLine = inv.lines?.find(il => il.salesOrderLineId === nl.salesOrderLineId);
                                 return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
                             }, 0);
@@ -247,12 +251,17 @@ export default function InvoicesSection({
                                 <Link href={`/sales-invoices/${inv.invoiceId}`} className="text-[var(--accent)] hover:underline">
                                     <strong style={{ fontSize: 13 }}>{inv.invoiceNumber}</strong>
                                 </Link>
+                                {inv.stateCode === SALES_INVOICE_STATE.CANCELLED && (
+                                    <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-100 text-red-700">
+                                        {tCommon('states.cancelled')}
+                                    </span>
+                                )}
                             </div>
                             <button
                                 className="btn btn-secondary btn-sm"
                                 onClick={async () => {
                                     try {
-                                        const response = await api.reportsControllerRunHook('sales-invoice', {}, { id: inv.invoiceId, context: 'sales-invoice' });
+                                        const response = await api.pdfTemplatesControllerRunHook('sales-invoice', {}, { id: inv.invoiceId, context: 'sales-invoice' });
                                         const blob = response.data ;
                                         const url = URL.createObjectURL(blob);
                                         window.open(url, '_blank');

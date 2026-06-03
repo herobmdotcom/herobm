@@ -13,7 +13,8 @@ import { getErrorMessage } from '@modbm/shared';
 interface AllocationSlideOverProps {
   isOpen: boolean;
   onClose: () => void;
-  grLines: any[];
+  // modbm-allow-record-any
+  grLines: Record<string, any>[];
   onRefresh: () => void;
 }
 
@@ -31,7 +32,8 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
   const t = useTranslations('goodsReceived');
   const [lineStates, setLineStates] = useState<Map<string, LineState>>(new Map());
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
-  const [localLines, setLocalLines] = useState<any[]>([]);
+  // modbm-allow-record-any
+  const [localLines, setLocalLines] = useState<Record<string, any>[]>([]);
   // Track which line IDs have already been fetched to avoid the stale-closure race condition
   const fetchedRef = useRef<Set<string>>(new Set());
 

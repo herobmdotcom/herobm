@@ -17,7 +17,7 @@ export default function PurchaseReturnDetailPage({ params }: { params: Promise<{
   const tCommon = useTranslations('common');
   const t = useTranslations('purchaseOrders.returns');
   
-  const [returnDetails, setReturnDetails] = useState<any>(null);
+  const [returnDetails, setReturnDetails] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

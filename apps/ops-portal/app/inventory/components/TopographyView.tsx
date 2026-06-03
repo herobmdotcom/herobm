@@ -6,7 +6,7 @@ import * as api from '@modbm/sdk';
 import { useAuth } from '@/components/AuthGate';
 import SlideOver from '@/components/shared/SlideOver';
 import toast from 'react-hot-toast';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage, BIN_TYPE } from '@modbm/shared';
 
 interface Bin {
   binId: string;
@@ -753,7 +753,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
         isUnavailable: initialData.bin.isUnavailable
       });
     } else {
-      setFormData({ binNumber: '', binType: 'storage', isConsignment: false, isBonded: false, isUnavailable: false });
+      setFormData({ binNumber: '', binType: BIN_TYPE.STORAGE, isConsignment: false, isBonded: false, isUnavailable: false });
     }
   }, [initialData, isOpen]);
 

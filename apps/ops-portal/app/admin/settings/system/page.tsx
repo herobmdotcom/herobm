@@ -46,12 +46,13 @@ export default function SystemSettingsPage() {
   const [macroLoading, setMacroLoading] = useState(true);
 
   // ── App Settings state ─────────────────────────────────────────────────────
-  const [appForm, setAppForm] = useState<any>({});
+  const [appForm, setAppForm] = useState<Partial<api.AppConfigResponseDto>>({});
   const [appLoading, setAppLoading] = useState(true);
-  const [locations, setLocations] = useState<any[]>([]);
+  const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
 
   // ── Organization state ─────────────────────────────────────────────────────
-  const [orgForm, setOrgForm] = useState<any>({});
+  // modbm-allow-record-any
+  const [orgForm, setOrgForm] = useState<Partial<api.OrganizationResponseDto> & Record<string, any>>({});
   const [orgLoading, setOrgLoading] = useState(true);
   const [orgSaving, setOrgSaving] = useState(false);
   const [isOrgDirty, setIsOrgDirty] = useState(false);
@@ -91,7 +92,7 @@ export default function SystemSettingsPage() {
     setIsOrgDirty(false);
     try {
       setOrgSaving(true);
-      const payload = { ...orgForm };
+      const payload: any = { ...orgForm };
       Object.keys(payload).forEach(key => {
         if (payload[key] === '') payload[key] = null;
       });
@@ -552,7 +553,7 @@ export default function SystemSettingsPage() {
                 >
                   {!appForm?.defaultFulfillmentLocationId && <option value="">{tSettings('none')}</option>}
                   {locations.map((loc) => (
-                    <option key={loc.locationId || loc.id} value={loc.locationId || loc.id}>
+                    <option key={loc.locationId} value={loc.locationId}>
                       {loc.name} ({loc.code})
                     </option>
                   ))}

@@ -12,6 +12,8 @@ import { GlModule } from '../gl/gl.module';
 import { TaxModule } from '../tax/tax.module';
 import { EnrichmentModule } from '../enrichment/enrichment.module';
 
+import { SalesCreditNotesController } from './sales-credit-notes.controller';
+
 @Module({
   imports: [GlModule, TaxModule, EnrichmentModule],
   controllers: [
@@ -19,6 +21,7 @@ import { EnrichmentModule } from '../enrichment/enrichment.module';
     PurchaseInvoiceController,
     InvoiceDetailController,
     ExternalSyncController,
+    SalesCreditNotesController,
   ],
   providers: [
     SalesInvoiceService,

@@ -25,7 +25,7 @@ export default function NewProductPage() {
   useDocumentTitle(t('products.newTitle'));
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  const [taxCategories, setTaxCategories] = useState<any[]>([]);
+  const [taxCategories, setTaxCategories] = useState<api.TaxCategoryResponseDto[]>([]);
   const [dto, setDto] = useState({
     productNumber: '',
     name: '',
@@ -47,7 +47,7 @@ export default function NewProductPage() {
   });
 
   useEffect(() => {
-    api.taxCategoriesControllerFindAll().then((res: unknown) => setTaxCategories((res as { data: unknown[] }).data)).catch(console.error);
+    api.taxCategoriesControllerFindAll().then((res: unknown) => setTaxCategories((res as { data: unknown[] }).data as unknown as api.TaxCategoryResponseDto[])).catch(console.error);
   }, []);
 
   const handleSubmit = async () => {

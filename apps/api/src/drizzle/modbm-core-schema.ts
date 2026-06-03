@@ -16,7 +16,7 @@ import {
   pgEnum,
   foreignKey,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
+import { sql, relations } from 'drizzle-orm';
 import {
   CURRENCIES,
   getValidStates,
@@ -1957,45 +1957,61 @@ export const appSettings = modbmCore.table('app_settings', {
 // DYNAMIC REPORTING
 // ===========================================================================
 
-export const reports = modbmCore.table('reports', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  slug: text('slug').unique().notNull(),
+export const pdfTemplates = modbmCore.table('pdf_templates', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  slug: text('slug').notNull().unique(),
   name: text('name').notNull(),
+  description: text('description'),
   template: text('template').notNull(),
   // modbm-allow-record-any
   mockData: jsonb('mock_data').$type<Record<string, any>>(),
+  contextResolver: text('context_resolver'),
   outputNamePattern: text('output_name_pattern').default('Report.pdf'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
 });
 
-export const reportContexts = modbmCore.table(
-  'report_contexts',
+export const pdfTemplateHooks = modbmCore.table('pdf_template_hooks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  hookSlug: text('hook_slug').notNull().unique(),
+  reportId: uuid('report_id')
+    .references(() => pdfTemplates.id, { onDelete: 'cascade' })
+    .notNull(),
+  contextSlug: text('context_slug').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+export const pdfTemplateContexts = modbmCore.table(
+  'pdf_template_contexts',
   {
-    reportId: uuid('report_id')
-      .references(() => reports.id, { onDelete: 'cascade' })
+    templateId: uuid('template_id')
+      .references(() => pdfTemplates.id, { onDelete: 'cascade' })
       .notNull(),
     context: text('context').notNull(),
   },
   (t) => ({
-    pk: primaryKey({ columns: [t.reportId, t.context] }),
+    pk: primaryKey({ columns: [t.templateId, t.context] }),
   }),
 );
 
-export const reportHookAssignments = modbmCore.table(
-  'report_hook_assignments',
-  {
-    hookSlug: text('hook_slug').primaryKey(),
-    reportId: uuid('report_id')
-      .references(() => reports.id, { onDelete: 'cascade' })
-      .notNull(),
-    contextSlug: text('context_slug').notNull(),
-    updatedAt: timestamp('updated_at', { withTimezone: true })
-      .defaultNow()
-      .notNull(),
-  },
-);
+export const businessReports = modbmCore.table('business_reports', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  slug: text('slug').unique().notNull(),
+  name: text('name').notNull(),
+  description: text('description'),
+  dataSourceHook: text('data_source_hook').notNull(),
+  // modbm-allow-record-any
+  uiConfig: jsonb('ui_config')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  isSystem: boolean('is_system').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
 
 // ---------------------------------------------------------------------------
 // sales_events  (Sales domain audit log)
@@ -2262,3 +2278,17 @@ export const integrations = modbmCore.table('integrations', {
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
 });
+
+export const pdfTemplatesRelations = relations(pdfTemplates, ({ many }) => ({
+  hooks: many(pdfTemplateHooks),
+}));
+
+export const pdfTemplateHooksRelations = relations(
+  pdfTemplateHooks,
+  ({ one }) => ({
+    template: one(pdfTemplates, {
+      fields: [pdfTemplateHooks.reportId],
+      references: [pdfTemplates.id],
+    }),
+  }),
+);

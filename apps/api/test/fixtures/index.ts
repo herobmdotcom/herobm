@@ -37,7 +37,7 @@ export async function createTestCustomer(db: any, opts?: { name?: string }) {
     customerId,
     customerNumber: `CUST-TEST-${++_sequence}`,
     name: opts?.name || 'Test Customer',
-    currencyCode: 'AUD',
+    currencyCode: 'AUD', // fixture
     address1Country: 'AU',
   });
   return { customerId };
@@ -95,7 +95,7 @@ export async function createTestSalesOrder(
     customerId: opts.customerId,
     fulfillmentLocationId: opts.locationId,
     stateCode: opts.state || SALES_ORDER_STATE.DRAFT,
-    currencyCode: 'AUD',
+    currencyCode: 'AUD', // fixture
     source: 'app',
   });
 
@@ -180,7 +180,7 @@ export async function createTestSupplier(db: any, opts?: { name?: string }) {
     customerId,
     customerNumber: `SUPP-TEST-${++_sequence}`,
     name: opts?.name || 'Test Supplier',
-    currencyCode: 'AUD',
+    currencyCode: 'AUD', // fixture
     address1Country: 'AU',
   });
   return { customerId };
@@ -203,7 +203,7 @@ export async function createTestPurchaseOrder(
     vendorId: opts.supplierId,
     deliveryLocationId: opts.locationId,
     stateCode: opts.state || PURCHASE_ORDER_STATE.DRAFT,
-    currencyCode: 'AUD',
+    currencyCode: 'AUD', // fixture
     source: 'app',
   });
 
@@ -248,7 +248,7 @@ export async function createTestInvoice(
     salesOrderId: opts.salesOrderId,
     stateCode: opts.state || SALES_INVOICE_STATE.DRAFT,
     totalAmount: '100.00',
-    currencyCode: 'AUD',
+    currencyCode: 'AUD', // fixture
   });
 
   return { invoiceId };

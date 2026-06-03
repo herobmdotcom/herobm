@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -22,7 +23,7 @@ import * as crypto from 'crypto';
 @ApiBearerAuth()
 @Controller('events')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('events') // Assigning 'events' resource for Casbin
+@CasbinResource(SystemResource.EVENTS) // Assigning 'events' resource for Casbin
 export class EventsController {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 

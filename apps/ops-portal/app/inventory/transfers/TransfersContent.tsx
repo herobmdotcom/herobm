@@ -60,7 +60,10 @@ export default function TransfersContent() {
   ], [tTransfers]);
 
   const handleRowClicked = useCallback((order: UnifiedTransferOrderRow) => {
-    router.push(`/inventory/transfers/${order.id}`);
+    const id = order.id || (order as any).transferOrderId;
+    if (id) {
+      router.push(`/inventory/transfers/${id}`);
+    }
   }, [router]);
 
   return (

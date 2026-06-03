@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -38,7 +39,7 @@ import { OUTBOX_EVENT_TYPES } from '../common/event-types';
 @ApiBearerAuth()
 @Controller('webhooks')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('webhooks')
+@CasbinResource(SystemResource.WEBHOOKS)
 export class WebhooksController {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 

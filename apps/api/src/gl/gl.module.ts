@@ -10,8 +10,10 @@ import { BankFeedsService } from './bank-feeds.service';
 import { BankStatementController } from './bank-statement.controller';
 import { BankStatementService } from './bank-statement.service';
 
+import { BusinessReportsModule } from '../business-reports/business-reports.module';
+
 @Module({
-  imports: [SettingsModule],
+  imports: [SettingsModule, BusinessReportsModule],
   controllers: [
     GlController,
     ReconciliationController,

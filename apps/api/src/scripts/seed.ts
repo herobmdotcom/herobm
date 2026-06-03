@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
@@ -17,9 +18,9 @@ import {
   glSettings,
   appSettings,
   glAccounts,
-  reports,
-  reportHookAssignments,
-  reportContexts,
+  pdfTemplates,
+  pdfTemplateHooks,
+  pdfTemplateContexts,
   locations,
   zones,
   bins,
@@ -102,259 +103,835 @@ async function seedCasbinPolicies(db: any, dryRun: boolean) {
   }
 
   const policies = [
-    { ptype: 'p', v0: 'viewer', v1: 'customers', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'viewer', v1: 'products', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'viewer', v1: 'inventory', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'viewer', v1: 'sales-orders', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'viewer', v1: 'sales-returns', v2: 'read', v3: 'allow' },
     {
       ptype: 'p',
       v0: 'viewer',
-      v1: 'purchase-orders',
+      v1: SystemResource.CUSTOMERS,
       v2: 'read',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'viewer',
-      v1: 'purchase-returns',
+      v1: SystemResource.PRODUCTS,
       v2: 'read',
       v3: 'allow',
     },
-    { ptype: 'p', v0: 'viewer', v1: 'suppliers', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'viewer', v1: 'receptions', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'viewer', v1: 'goods-received', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'viewer', v1: 'dashboard', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'viewer', v1: 'tax-categories', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'viewer', v1: 'settings', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'viewer', v1: 'report', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'viewer', v1: 'payments', v2: 'read', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'report', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'report', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'report', v2: 'archive', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'customers', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'customers', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'customers', v2: 'archive', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'products', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'products', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'products', v2: 'archive', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'archive', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'handle', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'sales-orders', v2: 'invoice', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'sales-returns', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'sales-returns', v2: 'write', v3: 'allow' },
     {
       ptype: 'p',
-      v0: 'admin',
-      v1: 'sales-returns',
-      v2: 'archive',
+      v0: 'viewer',
+      v1: SystemResource.INVENTORY,
+      v2: 'read',
       v3: 'allow',
     },
-    { ptype: 'p', v0: 'admin', v1: 'sales-returns', v2: 'handle', v3: 'allow' },
     {
       ptype: 'p',
-      v0: 'admin',
-      v1: 'sales-returns',
-      v2: 'invoice',
+      v0: 'viewer',
+      v1: SystemResource.SALES_ORDERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.SALES_RETURNS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.PURCHASE_ORDERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.PURCHASE_RETURNS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.PURCHASE_DEBIT_NOTES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.SUPPLIERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.RECEPTIONS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.GOODS_RECEIVED,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.DASHBOARD,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.TAX_CATEGORIES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.SETTINGS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.REPORT,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.BUSINESS_REPORT,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.PAYMENTS,
+      v2: 'read',
       v3: 'allow',
     },
 
-    { ptype: 'p', v0: 'admin', v1: 'purchase-orders', v2: 'read', v3: 'allow' },
     {
       ptype: 'p',
       v0: 'admin',
-      v1: 'purchase-orders',
+      v1: SystemResource.REPORT,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.REPORT,
       v2: 'write',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'admin',
-      v1: 'purchase-orders',
+      v1: SystemResource.REPORT,
       v2: 'archive',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'admin',
-      v1: 'purchase-orders',
-      v2: 'handle',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'admin',
-      v1: 'purchase-orders',
-      v2: 'invoice',
-      v3: 'allow',
-    },
-
-    {
-      ptype: 'p',
-      v0: 'admin',
-      v1: 'purchase-returns',
+      v1: SystemResource.BUSINESS_REPORT,
       v2: 'read',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'admin',
-      v1: 'purchase-returns',
+      v1: SystemResource.BUSINESS_REPORT,
       v2: 'write',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'admin',
-      v1: 'purchase-returns',
+      v1: SystemResource.BUSINESS_REPORT,
+      v2: 'archive',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.CUSTOMERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.CUSTOMERS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.CUSTOMERS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PRODUCTS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PRODUCTS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PRODUCTS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SALES_ORDERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SALES_ORDERS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SALES_ORDERS,
       v2: 'archive',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'admin',
-      v1: 'purchase-returns',
+      v1: SystemResource.SALES_ORDERS,
       v2: 'handle',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'admin',
-      v1: 'purchase-returns',
+      v1: SystemResource.SALES_ORDERS,
       v2: 'invoice',
       v3: 'allow',
     },
 
-    { ptype: 'p', v0: 'admin', v1: 'suppliers', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'suppliers', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'suppliers', v2: 'archive', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'receptions', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'receptions', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'receptions', v2: 'archive', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'receptions', v2: 'handle', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'goods-received', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'goods-received', v2: 'write', v3: 'allow' },
     {
       ptype: 'p',
       v0: 'admin',
-      v1: 'goods-received',
+      v1: SystemResource.SALES_RETURNS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SALES_RETURNS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SALES_RETURNS,
       v2: 'archive',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'admin',
-      v1: 'goods-received',
+      v1: SystemResource.SALES_RETURNS,
+      v2: 'handle',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SALES_RETURNS,
+      v2: 'invoice',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_ORDERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_ORDERS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_ORDERS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_ORDERS,
+      v2: 'handle',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_ORDERS,
+      v2: 'invoice',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_RETURNS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_RETURNS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_RETURNS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_RETURNS,
+      v2: 'handle',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_RETURNS,
+      v2: 'invoice',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_DEBIT_NOTES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_DEBIT_NOTES,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_DEBIT_NOTES,
+      v2: 'archive',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_DEBIT_NOTES,
+      v2: 'handle',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PURCHASE_DEBIT_NOTES,
+      v2: 'invoice',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SUPPLIERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SUPPLIERS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SUPPLIERS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.RECEPTIONS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.RECEPTIONS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.RECEPTIONS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.RECEPTIONS,
       v2: 'handle',
       v3: 'allow',
     },
 
-    { ptype: 'p', v0: 'admin', v1: 'inventory', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'inventory', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'inventory', v2: 'archive', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'inventory', v2: 'handle', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'users', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'users', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'users', v2: 'archive', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'roles', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'roles', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'roles', v2: 'archive', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'settings', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'settings', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'settings', v2: 'archive', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'gl', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'gl', v2: 'write', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'payments', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'payments', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'payments', v2: 'archive', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'system_logs', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'system_logs', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'system_logs', v2: 'archive', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'external_api', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'external_api', v2: 'write', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'import', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'import', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'import', v2: 'archive', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'api_keys', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'api_keys', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'api_keys', v2: 'archive', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'webhooks', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'webhooks', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'webhooks', v2: 'archive', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'events', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'events', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'events', v2: 'archive', v3: 'allow' },
-
-    { ptype: 'p', v0: 'admin', v1: 'tax-categories', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'admin', v1: 'tax-categories', v2: 'write', v3: 'allow' },
     {
       ptype: 'p',
       v0: 'admin',
-      v1: 'tax-categories',
+      v1: SystemResource.GOODS_RECEIVED,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.GOODS_RECEIVED,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.GOODS_RECEIVED,
+      v2: 'archive',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.GOODS_RECEIVED,
+      v2: 'handle',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.INVENTORY,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.INVENTORY,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.INVENTORY,
+      v2: 'archive',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.INVENTORY,
+      v2: 'handle',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.USERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.USERS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.USERS,
       v2: 'archive',
       v3: 'allow',
     },
 
-    { ptype: 'p', v0: 'finance', v1: 'gl', v2: 'read', v3: 'allow' },
-    { ptype: 'p', v0: 'finance', v1: 'gl', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'finance', v1: 'payments', v2: 'write', v3: 'allow' },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.ROLES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.ROLES,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.ROLES,
+      v2: 'archive',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SETTINGS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SETTINGS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SETTINGS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+
+    { ptype: 'p', v0: 'admin', v1: SystemResource.GL, v2: 'read', v3: 'allow' },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.GL,
+      v2: 'write',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PAYMENTS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PAYMENTS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.PAYMENTS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SYSTEM_LOGS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SYSTEM_LOGS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SYSTEM_LOGS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.EXTERNAL_API,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.EXTERNAL_API,
+      v2: 'write',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.IMPORT,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.IMPORT,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.IMPORT,
+      v2: 'archive',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.API_KEYS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.API_KEYS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.API_KEYS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.WEBHOOKS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.WEBHOOKS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.WEBHOOKS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.EVENTS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.EVENTS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.EVENTS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.TAX_CATEGORIES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.TAX_CATEGORIES,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.TAX_CATEGORIES,
+      v2: 'archive',
+      v3: 'allow',
+    },
+
     {
       ptype: 'p',
       v0: 'finance',
-      v1: 'sales-orders',
+      v1: SystemResource.GL,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: SystemResource.GL,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: SystemResource.PAYMENTS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: SystemResource.SALES_ORDERS,
       v2: 'invoice',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'finance',
-      v1: 'purchase-orders',
+      v1: SystemResource.PURCHASE_ORDERS,
       v2: 'invoice',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'finance',
-      v1: 'sales-returns',
+      v1: SystemResource.SALES_RETURNS,
       v2: 'invoice',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'finance',
-      v1: 'purchase-returns',
+      v1: SystemResource.PURCHASE_RETURNS,
+      v2: 'invoice',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: SystemResource.PURCHASE_DEBIT_NOTES,
       v2: 'invoice',
       v3: 'allow',
     },
 
-    { ptype: 'p', v0: 'sales', v1: 'customers', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'sales', v1: 'sales-orders', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'sales', v1: 'sales-orders', v2: 'invoice', v3: 'allow' },
-    { ptype: 'p', v0: 'sales', v1: 'sales-returns', v2: 'write', v3: 'allow' },
     {
       ptype: 'p',
       v0: 'sales',
-      v1: 'sales-returns',
+      v1: SystemResource.CUSTOMERS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'sales',
+      v1: SystemResource.SALES_ORDERS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'sales',
+      v1: SystemResource.SALES_ORDERS,
+      v2: 'invoice',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'sales',
+      v1: SystemResource.SALES_RETURNS,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'sales',
+      v1: SystemResource.SALES_RETURNS,
       v2: 'invoice',
       v3: 'allow',
     },
@@ -362,87 +939,120 @@ async function seedCasbinPolicies(db: any, dryRun: boolean) {
     {
       ptype: 'p',
       v0: 'warehouse',
-      v1: 'sales-orders',
+      v1: SystemResource.SALES_ORDERS,
       v2: 'handle',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'warehouse',
-      v1: 'purchase-orders',
+      v1: SystemResource.PURCHASE_ORDERS,
       v2: 'handle',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'warehouse',
-      v1: 'sales-returns',
+      v1: SystemResource.SALES_RETURNS,
       v2: 'handle',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'warehouse',
-      v1: 'purchase-returns',
+      v1: SystemResource.PURCHASE_RETURNS,
       v2: 'handle',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'warehouse',
-      v1: 'receptions',
+      v1: SystemResource.PURCHASE_DEBIT_NOTES,
       v2: 'handle',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'warehouse',
-      v1: 'goods-received',
+      v1: SystemResource.RECEPTIONS,
+      v2: 'handle',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'warehouse',
+      v1: SystemResource.GOODS_RECEIVED,
       v2: 'write',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'warehouse',
-      v1: 'goods-received',
+      v1: SystemResource.GOODS_RECEIVED,
       v2: 'handle',
       v3: 'allow',
     },
-    { ptype: 'p', v0: 'warehouse', v1: 'inventory', v2: 'write', v3: 'allow' },
-    { ptype: 'p', v0: 'warehouse', v1: 'inventory', v2: 'handle', v3: 'allow' },
+    {
+      ptype: 'p',
+      v0: 'warehouse',
+      v1: SystemResource.INVENTORY,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'warehouse',
+      v1: SystemResource.INVENTORY,
+      v2: 'handle',
+      v3: 'allow',
+    },
 
     {
       ptype: 'p',
       v0: 'procurement',
-      v1: 'suppliers',
+      v1: SystemResource.SUPPLIERS,
       v2: 'write',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'procurement',
-      v1: 'purchase-orders',
+      v1: SystemResource.PURCHASE_ORDERS,
       v2: 'write',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'procurement',
-      v1: 'purchase-orders',
+      v1: SystemResource.PURCHASE_ORDERS,
       v2: 'invoice',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'procurement',
-      v1: 'purchase-returns',
+      v1: SystemResource.PURCHASE_RETURNS,
       v2: 'write',
       v3: 'allow',
     },
     {
       ptype: 'p',
       v0: 'procurement',
-      v1: 'purchase-returns',
+      v1: SystemResource.PURCHASE_RETURNS,
+      v2: 'invoice',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'procurement',
+      v1: SystemResource.PURCHASE_DEBIT_NOTES,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'procurement',
+      v1: SystemResource.PURCHASE_DEBIT_NOTES,
       v2: 'invoice',
       v3: 'allow',
     },
@@ -455,6 +1065,107 @@ async function seedCasbinPolicies(db: any, dryRun: boolean) {
     { ptype: 'g', v0: 'agent', v1: 'viewer' },
     { ptype: 'g', v0: 'webhook', v1: 'viewer' },
   ];
+
+  policies.push(
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'archive',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'handle',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'invoice',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'invoice',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: SystemResource.PURCHASE_DEBIT_NOTES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: SystemResource.PURCHASE_DEBIT_NOTES,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'sales',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'sales',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'sales',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'invoice',
+      v3: 'allow',
+    },
+  );
 
   const toInsert = policies.filter((p: any) => {
     const key = [
@@ -492,9 +1203,9 @@ async function seedUsers(db: any, dryRun: boolean) {
   }
 
   const hash = await bcrypt.hash(adminPass, 10);
-  const viewerPass = process.env.DEV_VIEWER_PASSWORD || 'password';
+  const viewerPass = process.env.DEV_VIEWER_PASSWORD || 'password'; // TEST_CREDENTIAL
   const viewerHash = await bcrypt.hash(viewerPass, 10);
-  const salesHash = await bcrypt.hash('password', 10);
+  const salesHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
 
   await db
     .insert(users)
@@ -535,7 +1246,95 @@ async function seedUsers(db: any, dryRun: boolean) {
       set: { passwordHash: salesHash, role: 'sales' as any, isActive: true },
     });
 
-  console.log('  Seeded user: admin');
+  const financeHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
+  await db
+    .insert(users)
+    .values({
+      username: 'finance',
+      passwordHash: financeHash,
+      role: 'finance' as any,
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: {
+        passwordHash: financeHash,
+        role: 'finance' as any,
+        isActive: true,
+      },
+    });
+
+  const warehouseHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
+  await db
+    .insert(users)
+    .values({
+      username: 'warehouse',
+      passwordHash: warehouseHash,
+      role: 'warehouse' as any,
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: {
+        passwordHash: warehouseHash,
+        role: 'warehouse' as any,
+        isActive: true,
+      },
+    });
+
+  const procurementHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
+  await db
+    .insert(users)
+    .values({
+      username: 'procurement',
+      passwordHash: procurementHash,
+      role: 'procurement' as any,
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: {
+        passwordHash: procurementHash,
+        role: 'procurement' as any,
+        isActive: true,
+      },
+    });
+
+  const systemHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
+  await db
+    .insert(users)
+    .values({
+      username: 'system',
+      passwordHash: systemHash,
+      role: 'system' as any,
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: { passwordHash: systemHash, role: 'system' as any, isActive: true },
+    });
+
+  const restrictedHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
+  await db
+    .insert(users)
+    .values({
+      username: 'restricted_user',
+      passwordHash: restrictedHash,
+      role: 'restricted_user' as any,
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: users.username,
+      set: {
+        passwordHash: restrictedHash,
+        role: 'restricted_user' as any,
+        isActive: true,
+      },
+    });
+
+  console.log(
+    '  Seeded users: admin, viewer, sales, finance, warehouse, procurement, system, restricted_user',
+  );
 
   if (generated) {
     console.log(
@@ -572,10 +1371,15 @@ async function seedProducts(db: any, dryRun: boolean) {
       productId: '00000000-0000-0000-0000-000000000000',
       productNumber: 'SYSTEM-CUSTOM-LINE',
       name: 'Custom Line Product',
+      type: 'non-stock',
     })
     .onConflictDoUpdate({
       target: products.productId,
-      set: { productNumber: 'SYSTEM-CUSTOM-LINE', name: 'Custom Line Product' },
+      set: {
+        productNumber: 'SYSTEM-CUSTOM-LINE',
+        name: 'Custom Line Product',
+        type: 'non-stock',
+      },
     });
 
   console.log("  Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product");
@@ -775,7 +1579,7 @@ export async function seedCoaAccounts(
         accountType: row.accountType,
         isGroup: row.isGroup,
         isSystem: true,
-        currencyCode: prefix === 'us_standard' ? 'USD' : 'AUD',
+        currencyCode: prefix === 'us_standard' ? 'USD' : 'AUD', // testData
       })
       .onConflictDoUpdate({
         target: glAccounts.accountCode,
@@ -960,7 +1764,7 @@ async function seedReports(db: any, dryRun: boolean) {
     if (!templateContent) continue;
 
     await db
-      .insert(reports)
+      .insert(pdfTemplates)
       .values({
         id: r.id,
         slug: r.slug,
@@ -969,9 +1773,8 @@ async function seedReports(db: any, dryRun: boolean) {
         outputNamePattern: r.output_name_pattern,
       })
       .onConflictDoUpdate({
-        target: reports.id,
+        target: pdfTemplates.slug,
         set: {
-          template: templateContent,
           name: r.name,
           slug: r.slug,
           outputNamePattern: r.output_name_pattern,
@@ -982,14 +1785,14 @@ async function seedReports(db: any, dryRun: boolean) {
     if (r.hook) {
       const ctx = r.context || 'default';
       await db
-        .insert(reportHookAssignments)
+        .insert(pdfTemplateHooks)
         .values({
           hookSlug: r.hook,
           reportId: r.id,
           contextSlug: ctx,
         })
         .onConflictDoUpdate({
-          target: reportHookAssignments.hookSlug,
+          target: pdfTemplateHooks.hookSlug,
           set: { reportId: r.id, contextSlug: ctx },
         });
       hookCount++;
@@ -997,9 +1800,9 @@ async function seedReports(db: any, dryRun: boolean) {
 
     if (r.context) {
       await db
-        .insert(reportContexts)
+        .insert(pdfTemplateContexts)
         .values({
-          reportId: r.id,
+          templateId: r.id,
           context: r.context,
         })
         .onConflictDoNothing();
@@ -1053,7 +1856,7 @@ export async function seedAccounts(db: any, dryRun: boolean) {
       customerId: '20000000-0000-0000-0000-000000000001',
       customerNumber: 'CUST-E2E-001',
       name: 'E2E Default Customer',
-      currencyCode: 'AUD',
+      currencyCode: 'AUD', // testData
       address1Country: 'AU',
     })
     .onConflictDoUpdate({
@@ -1068,7 +1871,7 @@ export async function seedAccounts(db: any, dryRun: boolean) {
       vendorId: '20000000-0000-0000-0000-000000000002',
       vendorNumber: 'VEND-E2E-001',
       name: 'E2E Default Vendor',
-      currencyCode: 'AUD',
+      currencyCode: 'AUD', // testData
       address1Country: 'AU',
     })
     .onConflictDoUpdate({

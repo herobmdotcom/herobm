@@ -53,10 +53,10 @@ export default function NewAccountPage() {
     businessNumber: '',
     isTaxRegistered: false,
   });
-  const [taxCategories, settaxCategories] = useState<any[]>([]);
+  const [taxCategories, setTaxCategories] = useState<api.TaxCategoryResponseDto[]>([]);
 
   useEffect(() => {
-    api.taxCategoriesControllerFindAll().then((res: unknown) => settaxCategories((res as { data: unknown[] }).data)).catch(console.error);
+    api.taxCategoriesControllerFindAll().then((res: unknown) => setTaxCategories((res as { data: unknown[] }).data as unknown as api.TaxCategoryResponseDto[])).catch(console.error);
   }, []);
 
   const handleSubmit = async () => {

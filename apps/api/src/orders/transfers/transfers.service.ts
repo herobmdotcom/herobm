@@ -1,4 +1,4 @@
-import { PICKABLE_BIN_TYPES } from '../../inventory/inventory-math.utils';
+import { isPickableBinCondition } from '../../inventory/inventory-math.utils';
 import {
   Injectable,
   BadRequestException,
@@ -263,9 +263,7 @@ export class TransferService {
               and(
                 eq(binContents.productId, line.productId),
                 eq(zones.locationId, order.sourceLocationId),
-                inArray(bins.binType, [...PICKABLE_BIN_TYPES]),
-                eq(bins.isUnavailable, false),
-                eq(bins.isBonded, false),
+                isPickableBinCondition(bins),
               ),
             );
 
@@ -334,9 +332,7 @@ export class TransferService {
               where: eq(transferOrders.transferOrderId, transferOrderId),
             }))!.sourceLocationId,
           ),
-          inArray(bins.binType, [...PICKABLE_BIN_TYPES]),
-          eq(bins.isUnavailable, false),
-          eq(bins.isBonded, false),
+          isPickableBinCondition(bins),
         ),
       );
 
@@ -732,6 +728,27 @@ export class TransferService {
     });
   }
 
+  async cancelActiveShipment(transferOrderId: string, actor: string) {
+    const shipment = await this.db.query.transferOrderShipments.findFirst({
+      where: and(
+        eq(transferOrderShipments.transferOrderId, transferOrderId),
+        eq(
+          transferOrderShipments.stateCode,
+          TRANSFER_ORDER_STATE.SHIPPED as any,
+        ),
+      ),
+    });
+
+    if (!shipment) {
+      throw new BadRequestException(
+        'No active shipment found for this order. Ensure the order is in a shipped state.',
+      );
+    }
+
+    await this.cancelShipment(transferOrderId, shipment.shipmentId, actor);
+    return this.findOne(transferOrderId);
+  }
+
   // -------------------------------------------------------------------------
   // Receiving
   // -------------------------------------------------------------------------
@@ -937,6 +954,12 @@ export class TransferService {
     if (!order) {
       throw new NotFoundException(
         `Transfer Order ${transferOrderId} not found`,
+      );
+    }
+
+    if (order.stateCode === TRANSFER_ORDER_STATE.SHIPPED) {
+      throw new BadRequestException(
+        'Cannot cancel a shipped transfer order. Please cancel the shipment first.',
       );
     }
 

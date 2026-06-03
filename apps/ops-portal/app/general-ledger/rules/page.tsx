@@ -57,8 +57,7 @@ export default function RulesEnginePage() {
   const handleDelete = async (row: any) => {
     if (!confirm('Are you sure you want to delete this rule?')) return;
     try {
-      // @ts-expect-error - this is a manually added endpoint
-      await api.apiClient.delete(`/gl/bank-feeds/rules/${row.ruleId}`);
+      await api.bankFeedsControllerDeleteRule(row.ruleId);
       toast.success(t('ruleDeleted') || 'Rule deleted');
       await loadData();
     } catch (err) {

@@ -102,7 +102,7 @@ export function usePurchaseOrder(id: string) {
       (l: any) => parseFloat(l.quantityReceived || '0') > 0,
     );
     return [...allowedTransitions]
-      .filter(state => ![PURCHASE_ORDER_STATE.RECEIVED, PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED].some(s => s === state))
+      .filter(state => ![PURCHASE_ORDER_STATE.RECEIVED, PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED, PURCHASE_ORDER_STATE.INVOICED].some(s => s === state))
       .filter(state => {
         if (state === PURCHASE_ORDER_STATE.CANCELLED && anyReceived) return false;
         if (state === PURCHASE_ORDER_STATE.CLOSED_SHORT && !anyReceived) return false;
@@ -283,7 +283,7 @@ export function usePurchaseOrder(id: string) {
         name: order.name ? `Copy of ${order.name}` : undefined,
         vendorId: order.vendorId || '',
         deliveryLocationId: order.deliveryLocationId || '',
-        currencyCode: order.currencyCode || 'EUR',
+        currencyCode: order.currencyCode ?? 'EUR',
         notes: order.notes || undefined,
         lines: order.lines.map((l) => ({
           productId: l.productId,

@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -37,7 +38,7 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 @ApiTags('Orders')
 @Controller('sales-orders')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('sales-returns')
+@CasbinResource(SystemResource.SALES_RETURNS)
 export class OrderReturnsController {
   constructor(private readonly returnsWriteService: ReturnsWriteService) {}
 

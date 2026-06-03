@@ -1950,33 +1950,24 @@
         ]
       }
     },
-    "/inventory/quarantine/{lineId}": {
+    "/inventory/quarantine/move": {
       "post": {
-        "description": "Toggle quarantine state for an inventory item.",
-        "operationId": "InventoryController_toggleQuarantine",
-        "parameters": [
-          {
-            "name": "lineId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "description": "Move stock between quarantine and regular storage.",
+        "operationId": "InventoryController_quarantineMove",
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ToggleQuarantineDto"
+                "$ref": "#/components/schemas/QuarantineMoveDto"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Quarantine state toggled",
+            "description": "Quarantine move successful",
             "content": {
               "application/json": {
                 "schema": {
@@ -1986,7 +1977,7 @@
             }
           }
         },
-        "summary": "Toggle Quarantine",
+        "summary": "Move to/from Quarantine",
         "tags": [
           "Inventory"
         ]
@@ -3195,7 +3186,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/MatchConfirmedResponseDto"
                 }
               }
             }
@@ -3242,7 +3233,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/MatchConfirmedResponseDto"
                 }
               }
             }
@@ -4106,6 +4097,236 @@
         "summary": "Bulk import activities",
         "tags": [
           "System"
+        ]
+      }
+    },
+    "/business-reports": {
+      "get": {
+        "description": "Returns a list of available business reports",
+        "operationId": "BusinessReportsController_getReports",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List available business reports",
+        "tags": [
+          "Business Reports"
+        ]
+      },
+      "post": {
+        "description": "Creates a new business report configuration",
+        "operationId": "BusinessReportsController_createReport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessReportResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a business report",
+        "tags": [
+          "Business Reports"
+        ]
+      }
+    },
+    "/business-reports/hooks": {
+      "get": {
+        "description": "Returns a list of all registered business report data source hooks",
+        "operationId": "BusinessReportsController_getHooks",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List available data source hooks",
+        "tags": [
+          "Business Reports"
+        ]
+      }
+    },
+    "/business-reports/{slug}/data": {
+      "post": {
+        "description": "Returns data for a specific business report",
+        "operationId": "BusinessReportsController_runReport",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Fetch data for a business report",
+        "tags": [
+          "Business Reports"
+        ]
+      }
+    },
+    "/business-reports/{id}": {
+      "get": {
+        "description": "Returns the configuration for a specific business report",
+        "operationId": "BusinessReportsController_getReportById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a business report by ID",
+        "tags": [
+          "Business Reports"
+        ]
+      },
+      "put": {
+        "description": "Updates an existing business report configuration",
+        "operationId": "BusinessReportsController_updateReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusinessReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessReportResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update a business report",
+        "tags": [
+          "Business Reports"
+        ]
+      },
+      "delete": {
+        "description": "Deletes an existing business report configuration",
+        "operationId": "BusinessReportsController_deleteReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a business report",
+        "tags": [
+          "Business Reports"
         ]
       }
     },
@@ -5935,7 +6156,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "$ref": "#/components/schemas/EmptyBodyDto"
               }
             }
           }
@@ -5977,7 +6198,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "$ref": "#/components/schemas/EmptyBodyDto"
               }
             }
           }
@@ -6422,6 +6643,48 @@
           }
         },
         "summary": "Cancel Transfer Order",
+        "tags": [
+          "Orders"
+        ]
+      }
+    },
+    "/transfers/{id}/cancel-shipment": {
+      "post": {
+        "description": "Cancel the active dispatched shipment of a transfer order.",
+        "operationId": "TransfersController_cancelTransferOrderShipment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cancel Transfer Order Shipment",
         "tags": [
           "Orders"
         ]
@@ -6894,10 +7157,10 @@
         ]
       }
     },
-    "/reports/hooks/{hookSlug}/run": {
+    "/pdf-templates/hooks/{hookSlug}/run": {
       "post": {
         "description": "Execute a specific reporting hook and generate a PDF document.",
-        "operationId": "ReportsController_runHook",
+        "operationId": "PdfTemplatesController_runHook",
         "parameters": [
           {
             "name": "hookSlug",
@@ -6953,10 +7216,10 @@
         ]
       }
     },
-    "/reports/hooks": {
+    "/pdf-templates/hooks": {
       "get": {
         "description": "Retrieve a list of available reporting hooks.",
-        "operationId": "ReportsController_getHooks",
+        "operationId": "PdfTemplatesController_getHooks",
         "parameters": [],
         "responses": {
           "200": {
@@ -6979,10 +7242,10 @@
         ]
       }
     },
-    "/reports/hook-assignments": {
+    "/pdf-templates/hook-assignments": {
       "get": {
         "description": "Retrieve current template assignments for reporting hooks.",
-        "operationId": "ReportsController_getAssignments",
+        "operationId": "PdfTemplatesController_getAssignments",
         "parameters": [],
         "responses": {
           "200": {
@@ -7005,10 +7268,10 @@
         ]
       }
     },
-    "/reports/hook-assignments/{hook}": {
+    "/pdf-templates/hook-assignments/{hook}": {
       "patch": {
         "description": "Update the assigned template and context for a reporting hook.",
-        "operationId": "ReportsController_updateAssignment",
+        "operationId": "PdfTemplatesController_updateAssignment",
         "parameters": [
           {
             "name": "hook",
@@ -7047,10 +7310,10 @@
         ]
       }
     },
-    "/reports/hooks/{slug}/random-id": {
+    "/pdf-templates/hooks/{slug}/random-id": {
       "get": {
         "description": "Fetch a random valid entity ID for a given reporting context (used for previewing).",
-        "operationId": "ReportsController_getRandomId",
+        "operationId": "PdfTemplatesController_getRandomId",
         "parameters": [
           {
             "name": "slug",
@@ -7079,10 +7342,10 @@
         ]
       }
     },
-    "/reports": {
+    "/pdf-templates": {
       "get": {
         "description": "Retrieve a list of all configured report templates.",
-        "operationId": "ReportsController_getAllReports",
+        "operationId": "PdfTemplatesController_getAllReports",
         "parameters": [],
         "responses": {
           "200": {
@@ -7106,7 +7369,7 @@
       },
       "post": {
         "description": "Create a new custom report template.",
-        "operationId": "ReportsController_createReport",
+        "operationId": "PdfTemplatesController_createReport",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -7136,10 +7399,10 @@
         ]
       }
     },
-    "/reports/{id}": {
+    "/pdf-templates/{id}": {
       "get": {
         "description": "Retrieve the details and template content of a specific report.",
-        "operationId": "ReportsController_getReport",
+        "operationId": "PdfTemplatesController_getReport",
         "parameters": [
           {
             "name": "id",
@@ -7169,7 +7432,7 @@
       },
       "patch": {
         "description": "Modify the configuration or content of an existing report template.",
-        "operationId": "ReportsController_updateReport",
+        "operationId": "PdfTemplatesController_updateReport",
         "parameters": [
           {
             "name": "id",
@@ -7209,7 +7472,7 @@
       },
       "delete": {
         "description": "Remove a report template from the system.",
-        "operationId": "ReportsController_deleteReport",
+        "operationId": "PdfTemplatesController_deleteReport",
         "parameters": [
           {
             "name": "id",
@@ -7238,10 +7501,10 @@
         ]
       }
     },
-    "/reports/preview": {
+    "/pdf-templates/preview": {
       "post": {
         "description": "Generate a preview PDF of a report template using mock or real entity data.",
-        "operationId": "ReportsController_preview",
+        "operationId": "PdfTemplatesController_preview",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -7411,6 +7674,48 @@
           }
         },
         "summary": "Get Sales Invoice Details",
+        "tags": [
+          "Invoices"
+        ]
+      }
+    },
+    "/sales-invoices/{id}/state": {
+      "patch": {
+        "description": "Change the state of a sales invoice (e.g. to cancel it)",
+        "operationId": "InvoiceDetailController_changeSalesInvoiceState",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeInvoiceStateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesInvoiceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Change Sales Invoice State",
         "tags": [
           "Invoices"
         ]
@@ -8111,6 +8416,113 @@
         ]
       }
     },
+    "/sales-credit-notes/{id}": {
+      "get": {
+        "description": "Retrieve a sales credit note by ID.",
+        "operationId": "SalesCreditNotesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested credit note",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Credit Note",
+        "tags": [
+          "SalesCreditNotes"
+        ]
+      }
+    },
+    "/sales-credit-notes": {
+      "post": {
+        "description": "Create a credit note from a return.",
+        "operationId": "SalesCreditNotesController_createCreditNote",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSalesCreditNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created Credit Note",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create Credit Note",
+        "tags": [
+          "SalesCreditNotes"
+        ]
+      }
+    },
+    "/sales-credit-notes/{id}/post": {
+      "post": {
+        "description": "Post an existing credit note.",
+        "operationId": "SalesCreditNotesController_postCreditNote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Posted Credit Note",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Post Credit Note",
+        "tags": [
+          "SalesCreditNotes"
+        ]
+      }
+    },
     "/enrichment/lookup": {
       "get": {
         "description": "Lookup data by field",
@@ -8382,7 +8794,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "$ref": "#/components/schemas/Object"
               }
             }
           }
@@ -10330,6 +10742,56 @@
         ]
       }
     },
+    "/purchase-orders/{id}/returns/{returnId}/cancel": {
+      "post": {
+        "description": "Cancel a draft or staged purchase return.",
+        "operationId": "PurchaseReturnsController_cancelReturn",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "returnId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseReturnResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cancel Purchase Return",
+        "tags": [
+          "PurchaseReturns"
+        ]
+      }
+    },
     "/purchase-returns": {
       "get": {
         "description": "Retrieve a list of purchase returns based on state.",
@@ -10469,6 +10931,96 @@
         "summary": "Post Debit Note",
         "tags": [
           "PurchaseDebitNotes"
+        ]
+      }
+    },
+    "/data-sources": {
+      "get": {
+        "description": "Retrieves a list of all available data sources registered in the system.",
+        "operationId": "DataSourcesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of data sources",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all registered data sources",
+        "tags": [
+          "Data Sources"
+        ]
+      }
+    },
+    "/data-sources/{slug}/sample-report": {
+      "get": {
+        "description": "Retrieves sample data suitable for Business Reports preview.",
+        "operationId": "DataSourcesController_getSampleReport",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sample report data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get sample data for Business Reports (fetchData format)",
+        "tags": [
+          "Data Sources"
+        ]
+      }
+    },
+    "/data-sources/{slug}/sample-record": {
+      "get": {
+        "description": "Retrieves a sample record suitable for PDF template preview and context generation.",
+        "operationId": "DataSourcesController_getSampleRecord",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sample record data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get sample data for PDF Templates (resolveData format)",
+        "tags": [
+          "Data Sources"
         ]
       }
     },
@@ -12474,6 +13026,18 @@
     {
       "name": "Events",
       "description": "System events"
+    },
+    {
+      "name": "Business Reports",
+      "description": "Dynamic business reports"
+    },
+    {
+      "name": "Data Sources",
+      "description": "Data Sources for reports and templates"
+    },
+    {
+      "name": "SalesCreditNotes",
+      "description": "Sales credit notes"
     }
   ],
   "servers": [
@@ -13894,9 +14458,21 @@
           "success"
         ]
       },
-      "ToggleQuarantineDto": {
+      "QuarantineMoveDto": {
         "type": "object",
         "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "sourceBinId": {
+            "type": "string"
+          },
+          "targetBinId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          },
           "sourceType": {
             "type": "string",
             "enum": [
@@ -13904,13 +14480,13 @@
               "sales_return"
             ]
           },
+          "lineId": {
+            "type": "string"
+          },
           "reason": {
             "type": "string"
           }
-        },
-        "required": [
-          "sourceType"
-        ]
+        }
       },
       "GlAccountResponseDto": {
         "type": "object",
@@ -14675,6 +15251,18 @@
           }
         }
       },
+      "MatchConfirmedResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the match was successful"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
       "BankStatementManualMatchDto": {
         "type": "object",
         "properties": {
@@ -15053,6 +15641,94 @@
           },
           "isActive": {
             "type": "boolean"
+          }
+        }
+      },
+      "Object": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateBusinessReportDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "The unique slug of the report configuration"
+          },
+          "name": {
+            "type": "string",
+            "description": "The name of the report"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the report"
+          },
+          "dataSourceHook": {
+            "type": "string",
+            "description": "The data source hook"
+          },
+          "uiConfig": {
+            "type": "object",
+            "description": "UI configuration as JSON object"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "dataSourceHook"
+        ]
+      },
+      "BusinessReportResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "dataSourceHook": {
+            "type": "string"
+          },
+          "uiConfig": {
+            "type": "object"
+          },
+          "isSystem": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "dataSourceHook",
+          "isSystem"
+        ]
+      },
+      "UpdateBusinessReportDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the report"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the report"
+          },
+          "dataSourceHook": {
+            "type": "string",
+            "description": "The data source hook"
+          },
+          "uiConfig": {
+            "type": "object",
+            "description": "UI configuration as JSON object"
           }
         }
       },
@@ -17062,6 +17738,20 @@
           "lines"
         ]
       },
+      "ChangeInvoiceStateDto": {
+        "type": "object",
+        "properties": {
+          "stateCode": {
+            "type": "string"
+          },
+          "discrepanciesAcknowledged": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "stateCode"
+        ]
+      },
       "CreateStandaloneInvoiceLineDto": {
         "type": "object",
         "properties": {
@@ -17134,20 +17824,6 @@
           "currencyCode",
           "totalAmount",
           "taxAmount"
-        ]
-      },
-      "ChangeInvoiceStateDto": {
-        "type": "object",
-        "properties": {
-          "stateCode": {
-            "type": "string"
-          },
-          "discrepanciesAcknowledged": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "stateCode"
         ]
       },
       "UpdateInvoiceLineDto": {
@@ -17248,10 +17924,10 @@
           "outboxId": {
             "type": "string"
           },
-          "aggregateType": {
+          "entityType": {
             "type": "string"
           },
-          "aggregateId": {
+          "entityId": {
             "type": "string"
           },
           "eventType": {
@@ -17274,8 +17950,8 @@
         },
         "required": [
           "outboxId",
-          "aggregateType",
-          "aggregateId",
+          "entityType",
+          "entityId",
           "eventType",
           "payload",
           "createdOn"
@@ -17333,6 +18009,18 @@
         "required": [
           "deleted",
           "eventType"
+        ]
+      },
+      "CreateSalesCreditNoteDto": {
+        "type": "object",
+        "properties": {
+          "returnId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "returnId"
         ]
       },
       "EnrichmentPayloadDto": {

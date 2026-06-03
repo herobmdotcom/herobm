@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { MATCH_STATUS } from '@modbm/shared';
 
 interface POAllocationCellProps {
-  data: any;
+  // modbm-allow-record-any
+  data: Record<string, any>;
 }
 
 /**

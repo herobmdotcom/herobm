@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -21,6 +22,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { LocationsService } from './locations.service';
 import {
   CreateLocationDto,
@@ -37,7 +39,7 @@ import {
 @ApiTags('Locations')
 @Controller('inventory')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('settings')
+@CasbinResource(SystemResource.SETTINGS)
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
@@ -51,8 +53,8 @@ export class LocationsController {
     description: 'Create a new warehouse location.',
   })
   @ApiCreatedResponse({ type: LocationResponseDto })
-  createLocation(@Body() dto: CreateLocationDto, @Req() req: any) {
-    return this.locationsService.createLocation(dto, req.user?.userId);
+  createLocation(@Body() dto: CreateLocationDto, @AuthUser() user: JwtUser) {
+    return this.locationsService.createLocation(dto, user?.userId);
   }
 
   @Patch('locations/:id')
@@ -88,8 +90,8 @@ export class LocationsController {
     description: 'Create a new storage zone.',
   })
   @ApiCreatedResponse({ type: ZoneResponseDto })
-  createZone(@Body() dto: CreateZoneDto, @Req() req: any) {
-    return this.locationsService.createZone(dto, req.user?.userId);
+  createZone(@Body() dto: CreateZoneDto, @AuthUser() user: JwtUser) {
+    return this.locationsService.createZone(dto, user?.userId);
   }
 
   @Patch('zones/:id')
@@ -125,8 +127,8 @@ export class LocationsController {
     description: 'Create a new storage bin.',
   })
   @ApiCreatedResponse({ type: BinResponseDto })
-  createBin(@Body() dto: CreateBinDto, @Req() req: any) {
-    return this.locationsService.createBin(dto, req.user?.userId);
+  createBin(@Body() dto: CreateBinDto, @AuthUser() user: JwtUser) {
+    return this.locationsService.createBin(dto, user?.userId);
   }
 
   @Patch('bins/:id')

@@ -1,5 +1,13 @@
 import { ProductType } from './index';
-
+export enum BIN_TYPE {
+  STORAGE = 'storage',
+  PICK = 'pick',
+  BULK = 'bulk',
+  RECEIVING = 'receiving',
+  STAGING = 'staging',
+  QUARANTINE = 'quarantine',
+  IN_TRANSIT = 'in_transit',
+}
 export interface InventoryLevelData {
   inventoryLevelId: string;
   productId: string;

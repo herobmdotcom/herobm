@@ -57,13 +57,14 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
   useDocumentTitle(t('detailsTitle'));
   const router = useRouter();
   
-  const [reconciliation, setReconciliation] = useState<any>(null);
+  const [reconciliation, setReconciliation] = useState<api.ReconciliationDetailResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isAdjustmentModalOpen, setAdjustmentModalOpen] = useState(false);
   const [isSplitModalOpen, setSplitModalOpen] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<any>(null);
+  // modbm-allow-record-any
+  const [selectedRow, setSelectedRow] = useState<Record<string, any> | null>(null);
   const [viewMode, setViewMode] = useState<'bank' | 'ledger'>('bank');
 
   const fetchDetails = useCallback(async () => {
@@ -335,7 +336,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
                         </button>
                         <button
                           onClick={() => setSplitModalOpen(true)}
-                          disabled={!selectedRow || selectedRow.isCleared}
+                          disabled={!selectedRow || !!selectedRow.isCleared}
                           className="btn btn-secondary btn-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
                           title={!selectedRow ? t('tooltips.selectRowToSplit') : selectedRow.isCleared ? t('tooltips.splitRowDisabled') : ''}
                         >
@@ -366,7 +367,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
         isOpen={isSplitModalOpen}
         onClose={() => setSplitModalOpen(false)}
         reconciliationId={id}
-        selectedLine={selectedRow}
+        selectedLine={selectedRow!}
         onSuccess={() => {
           fetchDetails();
           setRefreshKey(k => k + 1);

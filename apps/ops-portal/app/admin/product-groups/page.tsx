@@ -16,10 +16,10 @@ export default function ProductGroupsAdmin() {
   
   useDocumentTitle(t('title'));
   
-  const [groups, setGroups] = useState<any[]>([]);
-  const [glAccounts, setGlAccounts] = useState<any[]>([]);
-  const [costCenters, setCostCenters] = useState<any[]>([]);
-  const [activities, setActivities] = useState<any[]>([]);
+  const [groups, setGroups] = useState<Partial<api.ProductGroupResponseDto>[]>([]);
+  const [glAccounts, setGlAccounts] = useState<api.GlAccountResponseDto[]>([]);
+  const [costCenters, setCostCenters] = useState<api.CostCenterResponseDto[]>([]);
+  const [activities, setActivities] = useState<api.ActivityResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   
   const loadData = async () => {
@@ -119,7 +119,7 @@ export default function ProductGroupsAdmin() {
           title={<span style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>{t('definedGroups')}</span>}
           columns={columns}
           data={groups}
-          rowKey={row => row.productGroupId}
+          rowKey={row => row.id || ''}
           onSave={handleSave}
           onDelete={handleDelete}
           onAdd={() => ({

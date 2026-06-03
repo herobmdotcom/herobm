@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   Controller,
   Post,
@@ -40,7 +41,7 @@ import {
 @ApiTags('GL')
 @Controller('gl/bank-feeds')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('gl')
+@CasbinResource(SystemResource.GL)
 export class BankFeedsController {
   constructor(private readonly bankFeedsService: BankFeedsService) {}
 

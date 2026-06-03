@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -41,7 +42,7 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @ApiBearerAuth()
 @Controller('discount-matrix')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('settings')
+@CasbinResource(SystemResource.SETTINGS)
 export class DiscountMatrixController {
   constructor(private readonly service: DiscountMatrixService) {}
 

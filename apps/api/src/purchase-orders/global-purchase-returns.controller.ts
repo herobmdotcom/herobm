@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -56,7 +57,7 @@ export class GlobalPurchaseReturnsListDto {
 
 @Controller('purchase-returns')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('purchase-returns')
+@CasbinResource(SystemResource.PURCHASE_RETURNS)
 @ApiTags('PurchaseReturns')
 export class GlobalPurchaseReturnsController {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}

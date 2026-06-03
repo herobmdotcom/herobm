@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -17,7 +18,7 @@ import {
 @ApiTags('Dashboard')
 @Controller('dashboard')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('dashboard')
+@CasbinResource(SystemResource.DASHBOARD)
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 

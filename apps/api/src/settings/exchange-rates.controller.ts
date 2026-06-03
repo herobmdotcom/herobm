@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -32,7 +33,7 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
 @Controller('settings/exchange-rates')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('settings')
+@CasbinResource(SystemResource.SETTINGS)
 @ApiTags('System')
 export class ExchangeRatesController {
   constructor(private readonly exchangeService: ExchangeRatesService) {}

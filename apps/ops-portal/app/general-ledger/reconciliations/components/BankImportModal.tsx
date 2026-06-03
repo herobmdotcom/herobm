@@ -31,9 +31,9 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
   const [step, setStep] = useState(1);
   const [file, setFile] = useState<File | null>(null);
   const [glAccountId, setGlAccountId] = useState('');
-  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<api.GlAccountResponseDto[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<api.MappingProfileResponseDto[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState('');
   
   // profile mapping state
@@ -51,7 +51,7 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
     if (isOpen) {
       // fetch bank accounts
       api.glControllerGetAccounts({ isBankAccount: 'true' })
-        .then(res => setBankAccounts(Array.isArray(res.data) ? res.data : (res.data as unknown as { items: unknown[] }).items || []))
+        .then(res => setBankAccounts(Array.isArray(res.data) ? (res.data as unknown as api.GlAccountResponseDto[]) : (((res.data as unknown as { items: unknown[] }).items as unknown as api.GlAccountResponseDto[]) || [])))
         .catch(console.error);
     } else {
       // reset state when closed

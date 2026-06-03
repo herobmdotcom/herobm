@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   Controller,
   Get,
@@ -31,11 +32,12 @@ import {
   BankStatementConfirmMatchDto,
   BankStatementManualMatchDto,
 } from './dto/bank-statement.dto';
+import { MatchConfirmedResponseDto } from './dto';
 
 @ApiTags('BankFeeds')
 @ApiBearerAuth()
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('gl')
+@CasbinResource(SystemResource.GL)
 @Controller('gl/bank-statement')
 export class BankStatementController {
   constructor(private readonly bankStatementService: BankStatementService) {}
@@ -71,7 +73,7 @@ export class BankStatementController {
   })
   @ApiCreatedResponse({
     description: 'Match confirmed',
-    schema: { type: 'object' },
+    type: MatchConfirmedResponseDto,
   })
   @ApiBody({ type: BankStatementConfirmMatchDto })
   async confirmMatch(
@@ -95,7 +97,7 @@ export class BankStatementController {
   })
   @ApiCreatedResponse({
     description: 'Match confirmed',
-    schema: { type: 'object' },
+    type: MatchConfirmedResponseDto,
   })
   @ApiBody({ type: BankStatementManualMatchDto })
   async manualMatch(

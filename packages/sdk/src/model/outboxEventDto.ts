@@ -9,8 +9,8 @@ import type { OutboxEventDtoPayload } from './outboxEventDtoPayload';
 
 export interface OutboxEventDto {
   outboxId: string;
-  aggregateType: string;
-  aggregateId: string;
+  entityType: string;
+  entityId: string;
   eventType: string;
   payload: OutboxEventDtoPayload;
   createdOn: string;

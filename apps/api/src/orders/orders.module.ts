@@ -4,8 +4,8 @@ import {
   Inject,
   NotFoundException,
 } from '@nestjs/common';
-import { ReportsRegistry } from '../reports/reports.registry';
-import { ReportsModule } from '../reports/reports.module';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
+import { PdfTemplatesModule } from '../pdf-templates/pdf-templates.module';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { eq, sql } from 'drizzle-orm';
@@ -41,12 +41,13 @@ import { GlModule } from '../gl/gl.module';
 import { SettingsModule } from '../settings/settings.module';
 import { InvoicesModule } from '../invoices/invoices.module';
 import { EnrichmentModule } from '../enrichment/enrichment.module';
-import { PickingSlipService } from '../reports/picking-slip.service';
-import { SalesInvoiceService as ReportSalesInvoiceService } from '../reports/sales-invoice.service';
-import { SalesQuoteService } from '../reports/sales-quote.service';
-import { SalesReturnCreditService } from '../reports/sales-return-credit.service';
+import { PickingSlipService } from '../pdf-templates/picking-slip.service';
+import { SalesInvoiceService as ReportSalesInvoiceService } from '../pdf-templates/sales-invoice.service';
+import { SalesQuoteService } from '../pdf-templates/sales-quote.service';
+import { SalesReturnCreditService } from '../pdf-templates/sales-return-credit.service';
 
-import { ShippingDocketService } from '../reports/shipping-docket.service';
+import { ShippingDocketService } from '../pdf-templates/shipping-docket.service';
+import { BusinessReportsModule } from '../business-reports/business-reports.module';
 
 @Module({
   imports: [
@@ -57,9 +58,10 @@ import { ShippingDocketService } from '../reports/shipping-docket.service';
     ProductsModule,
     GlModule,
     SettingsModule,
-    ReportsModule,
+    PdfTemplatesModule,
     InvoicesModule,
     EnrichmentModule,
+    BusinessReportsModule,
   ],
   controllers: [
     OrderPickingController,
@@ -89,7 +91,7 @@ import { ShippingDocketService } from '../reports/shipping-docket.service';
 })
 export class OrdersModule implements OnModuleInit {
   constructor(
-    private readonly reportsRegistry: ReportsRegistry,
+    private readonly dataSourcesRegistry: DataSourcesRegistry,
     private readonly pickingSlipService: PickingSlipService,
     private readonly reportSalesInvoiceService: ReportSalesInvoiceService,
     private readonly salesQuoteService: SalesQuoteService,
@@ -99,7 +101,8 @@ export class OrdersModule implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.reportsRegistry.register('sales-order', {
+    this.dataSourcesRegistry.register('sales-order', {
+      requiredPermissions: [{ resource: 'sales_order', action: 'read' }],
       resolveData: async (
         id: string,
         user: any,
@@ -120,7 +123,8 @@ export class OrdersModule implements OnModuleInit {
       },
     });
 
-    this.reportsRegistry.register('picking-slip', {
+    this.dataSourcesRegistry.register('picking-slip', {
+      requiredPermissions: [{ resource: 'sales_order', action: 'read' }],
       resolveData: async (id: string, user: any) => {
         return (await this.pickingSlipService.assembleData(
           id,
@@ -144,7 +148,8 @@ export class OrdersModule implements OnModuleInit {
       },
     });
 
-    this.reportsRegistry.register('sales-invoice', {
+    this.dataSourcesRegistry.register('sales-invoice', {
+      requiredPermissions: [{ resource: 'sales_invoice', action: 'read' }],
       resolveData: async (id: string, user: any) => {
         // Find corresponding orderId for the specified invoiceId
         const [inv] = await this.db
@@ -169,7 +174,8 @@ export class OrdersModule implements OnModuleInit {
       },
     });
 
-    this.reportsRegistry.register('sales-return', {
+    this.dataSourcesRegistry.register('sales-return', {
+      requiredPermissions: [{ resource: 'sales_return', action: 'read' }],
       resolveData: async (id: string, user: any) => {
         return (await this.reportSalesReturnCreditService.assembleData(
           id,
@@ -181,7 +187,8 @@ export class OrdersModule implements OnModuleInit {
       },
     });
 
-    this.reportsRegistry.register('shipment', {
+    this.dataSourcesRegistry.register('shipment', {
+      requiredPermissions: [{ resource: 'shipment', action: 'read' }],
       resolveData: async (id: string, user: any) => {
         return (await this.shippingDocketService.assembleData(
           id,

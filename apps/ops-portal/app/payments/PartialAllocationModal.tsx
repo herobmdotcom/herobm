@@ -5,7 +5,8 @@ import { formatAmount } from '@/lib/currency';
 interface PartialAllocationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  invoice: any | null;
+  // modbm-allow-record-any
+  invoice: Record<string, any> | null;
   currencyCode: string;
   maxAvailable: number; // The maximum amount that can be allocated (lesser of payment remaining or invoice outstanding)
   onSave: (invoiceId: string, amount: number) => void;

@@ -4,6 +4,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import {
   glAccounts,
   glJournalEntries,
@@ -32,6 +33,10 @@ describe('GlService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GlService,
+        {
+          provide: DataSourcesRegistry,
+          useValue: { registerReport: jest.fn(), getReport: jest.fn() },
+        },
         { provide: DRIZZLE, useValue: pg.db },
         {
           provide: AppConfigService,

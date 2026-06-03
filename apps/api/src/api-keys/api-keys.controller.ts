@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -39,7 +40,7 @@ import {
 @ApiBearerAuth()
 @Controller('api-keys')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('api_keys')
+@CasbinResource(SystemResource.API_KEYS)
 export class ApiKeysController {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 

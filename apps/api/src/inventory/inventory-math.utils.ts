@@ -1,4 +1,11 @@
-export const PICKABLE_BIN_TYPES = ['storage', 'pick', 'bulk'] as const;
+import { SQL, sql, inArray, eq, and } from 'drizzle-orm';
+import { BIN_TYPE } from '@modbm/shared';
+
+export const PICKABLE_BIN_TYPES = [
+  BIN_TYPE.STORAGE,
+  BIN_TYPE.PICK,
+  BIN_TYPE.BULK,
+] as const;
 
 export interface BinState {
   binType: string | null;
@@ -49,4 +56,26 @@ export function calculatePickableOnHand<T extends BinState>(bins: T[]): number {
     const parsed = parseFloat(qty as string) || 0;
     return sum + parsed;
   }, 0);
+}
+
+/**
+ * Drizzle condition for filtering pickable bins.
+ * Expects the `bins` table object from the schema.
+ */
+export function isPickableBinCondition(binTable: any) {
+  return and(
+    inArray(binTable.binType, [...PICKABLE_BIN_TYPES]),
+    eq(binTable.isUnavailable, false),
+    eq(binTable.isBonded, false),
+  );
+}
+
+/**
+ * Raw SQL condition for filtering pickable bins.
+ * Expects the alias of the bins table (e.g. 'b').
+ */
+export function isPickableBinSqlCondition(binTableAlias: string): SQL {
+  return sql`${sql.raw(binTableAlias)}.bin_type IN (${sql.raw(PICKABLE_BIN_TYPES.map((t) => `'${t}'`).join(', '))}) 
+         AND ${sql.raw(binTableAlias)}.is_unavailable = false 
+         AND ${sql.raw(binTableAlias)}.is_bonded = false`;
 }

@@ -171,7 +171,7 @@ async function seedMasterData(db: any): Promise<MasterData> {
       vendorId: s.id,
       vendorNumber: s.number,
       name: s.name,
-      currencyCode: 'USD',
+      currencyCode: 'USD', // testData
       taxCategoryId: taxCatId,
       tradingTermsId: termId,
     });
@@ -189,7 +189,7 @@ async function seedMasterData(db: any): Promise<MasterData> {
       customerId: c.id,
       customerNumber: c.number,
       name: c.name,
-      currencyCode: 'USD',
+      currencyCode: 'USD', // testData
       taxCategoryId: taxCatId,
       tradingTermsId: termId,
       creditLimit: '50000.00',
@@ -269,7 +269,7 @@ async function generateTransactions(db: any, data: MasterData) {
       vendorId: supplier.id,
       deliveryLocationId: location.id,
       stateCode: PURCHASE_ORDER_STATE.RECEIVED,
-      currencyCode: 'USD',
+      currencyCode: 'USD', // testData
       createdOn: poDate,
     });
 
@@ -353,7 +353,7 @@ async function generateTransactions(db: any, data: MasterData) {
       stateCode: isCompleted
         ? SALES_ORDER_STATE.SHIPPED
         : SALES_ORDER_STATE.CONFIRMED,
-      currencyCode: 'USD',
+      currencyCode: 'USD', // testData
       createdOn: soDate,
     });
 

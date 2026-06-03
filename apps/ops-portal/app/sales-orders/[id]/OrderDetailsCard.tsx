@@ -4,11 +4,12 @@ import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import * as api from '@modbm/sdk';
 import Link from 'next/link';
+import type { OrderDetail } from './types';
 import { SALES_ORDER_STATE } from '@modbm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
 
 interface OrderDetailsCardProps {
-    order: any;
+    order: OrderDetail;
     isOrderDetailsEditable: boolean;
     editName: string;
     setEditName: (val: string) => void;
@@ -19,7 +20,7 @@ interface OrderDetailsCardProps {
     editNotes: string;
     setEditNotes: (val: string) => void;
     saveHeader: () => void;
-    locations: any[];
+    locations: api.InventoryLocationResponseDto[];
     copyOrder: () => void;
     copying: boolean;
     onQuoteClick: () => void;
@@ -90,7 +91,7 @@ export default function OrderDetailsCard({
                                         className="text-sm px-3 py-2 text-left hover:bg-[var(--bg-secondary)] rounded-md w-full transition-colors"
                                         onClick={async () => {
                                             try {
-                                                const response = await api.reportsControllerRunHook('sales-order-confirmation', {}, { id: order.salesOrderId!, context: 'sales-order' });
+                                                const response = await api.pdfTemplatesControllerRunHook('sales-order-confirmation', {}, { id: order.salesOrderId!, context: 'sales-order' });
                                                 const blob = response.data ;
                                                 const url = URL.createObjectURL(blob);
                                                 window.open(url, '_blank');
@@ -108,7 +109,7 @@ export default function OrderDetailsCard({
                                         className="text-sm px-3 py-2 text-left hover:bg-[var(--bg-secondary)] rounded-md w-full transition-colors"
                                         onClick={async () => {
                                             try {
-                                                const response = await api.reportsControllerRunHook('pro-forma-invoice', {}, { id: order.salesOrderId!, context: 'sales-order' });
+                                                const response = await api.pdfTemplatesControllerRunHook('pro-forma-invoice', {}, { id: order.salesOrderId!, context: 'sales-order' });
                                                 const blob = response.data ;
                                                 const url = URL.createObjectURL(blob);
                                                 window.open(url, '_blank');
@@ -213,7 +214,7 @@ export default function OrderDetailsCard({
                         onChange={(e) => setEditFulfillmentLocationId(e.target.value)}
                         onBlur={saveHeader}
                     >
-                        {(locations || []).map((loc: { locationId: string; name: string; code?: string }) => (
+                        {(locations || []).map((loc: api.InventoryLocationResponseDto) => (
                             <option key={loc.locationId} value={loc.locationId}>
                                 {formatLocationDisplay(loc)}
                             </option>

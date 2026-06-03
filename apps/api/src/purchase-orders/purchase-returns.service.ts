@@ -240,6 +240,57 @@ export class PurchaseReturnsService {
     return result;
   }
 
+  async cancelReturn(returnId: string, actor: string) {
+    const [ret] = await this.db
+      .select()
+      .from(purchaseOrderReturns)
+      .where(eq(purchaseOrderReturns.returnId, returnId))
+      .limit(1);
+
+    if (!ret) throw new NotFoundException('Return not found');
+    if (
+      ret.stateCode !== PURCHASE_RETURN_STATE.DRAFT &&
+      ret.stateCode !== PURCHASE_RETURN_STATE.STAGED
+    ) {
+      throw new BadRequestException(
+        'Only DRAFT or STAGED returns can be cancelled',
+      );
+    }
+
+    const [po] = await this.db
+      .select()
+      .from(purchaseOrders)
+      .where(eq(purchaseOrders.purchaseOrderId, ret.purchaseOrderId))
+      .limit(1);
+
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      const updated = await this.changePurchaseReturnState(
+        returnId,
+        PURCHASE_RETURN_STATE.CANCELLED,
+        actor,
+        tx,
+      );
+
+      await emitEvent(tx as any, {
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: po.purchaseOrderId,
+        eventType: EventType.STATUS_CHANGED,
+        payload: {
+          entity: 'return',
+          entityId: returnId,
+          returnNumber: ret.returnNumber,
+          from: ret.stateCode,
+          to: PURCHASE_RETURN_STATE.CANCELLED,
+        },
+        actor,
+      });
+
+      return updated;
+    });
+
+    return result;
+  }
+
   async shipReturn(returnId: string, actor: string) {
     const [ret] = await this.db
       .select()

@@ -95,18 +95,36 @@ export default function Sidebar() {
     });
   }
 
+  // Reporting section — visible to admin and finance/sales/etc. based on roles later
+  if (role === 'admin' || role === 'finance') {
+    sections.push({
+      label: 'Reporting',
+      items: [
+        { 
+          href: '/reporting', 
+          label: 'Reports', 
+          icon: 'bar_chart',
+          subItems: [
+            { href: '/reporting', label: 'View Reports' },
+            { href: '/reporting/config', label: 'Configuration' },
+          ]
+        },
+      ],
+    });
+  }
+
   // Admin section — visible only to admin role
   if (role === 'admin') {
     sections.push({
       label: t('groups.admin'),
       items: [
         { 
-          href: '/admin/reporting', 
-          label: 'Reporting', 
-          icon: 'architecture',
+          href: '/admin/pdf-templates', 
+          label: 'PDF Templates', 
+          icon: 'picture_as_pdf',
           subItems: [
-            { href: '/admin/reporting', label: 'Templates' },
-            { href: '/admin/reporting/hooks', label: 'Hooks' },
+            { href: '/admin/pdf-templates', label: 'Templates' },
+            { href: '/admin/pdf-templates/hooks', label: 'Hooks' },
           ]
         },
         { 

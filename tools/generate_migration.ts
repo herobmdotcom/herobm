@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 
 const name = process.argv[2];
 
@@ -10,9 +10,8 @@ if (!name) {
 
 const run = (cmd: string) => {
   console.log(`\n> ${cmd}`);
-  try {
-    execSync(cmd, { stdio: 'inherit', cwd: 'apps/api' });
-  } catch (err) {
+  const result = spawnSync(cmd, { stdio: 'inherit', shell: true, cwd: 'apps/api' });
+  if (result.error || result.status !== 0) {
     console.error(`\n❌ Command failed: ${cmd}`);
     process.exit(1);
   }

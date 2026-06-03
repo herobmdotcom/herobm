@@ -182,6 +182,11 @@ export class SeedRequestDto {
 }
 export class EmptyBodyDto {}
 
+export class MatchConfirmedResponseDto {
+  @ApiProperty({ description: 'Whether the match was successful' })
+  success: boolean;
+}
+
 export class PaginatedJournalEntriesDto {
   data!: JournalEntryResponseDto[];
   meta!: any;

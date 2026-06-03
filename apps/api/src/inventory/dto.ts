@@ -41,11 +41,31 @@ export class PutawayBulkDto {
   putaways!: PutawayLineDto[];
 }
 
-export class ToggleQuarantineDto {
+export class QuarantineMoveDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
+  productId?: string;
+
+  @IsOptional()
+  @IsString()
+  sourceBinId?: string;
+
+  @IsOptional()
+  @IsString()
+  targetBinId?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  quantity?: string;
+
+  @IsOptional()
+  @IsString()
   @IsIn(['goods_receipt', 'sales_return'])
-  sourceType!: 'goods_receipt' | 'sales_return';
+  sourceType?: 'goods_receipt' | 'sales_return';
+
+  @IsOptional()
+  @IsString()
+  lineId?: string;
 
   @IsOptional()
   @IsString()

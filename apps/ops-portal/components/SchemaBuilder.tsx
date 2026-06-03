@@ -3,8 +3,8 @@ import { useTranslations } from 'next-intl';
 import { FormField } from './shared/FormField';
 
 export interface SchemaBuilderProps {
-  value: any;
-  onChange: (value: any) => void;
+  value: Record<string, unknown>;
+  onChange: (value: Record<string, unknown>) => void;
 }
 
 type FieldType = 'string' | 'number' | 'boolean' | 'enum';

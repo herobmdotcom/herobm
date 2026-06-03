@@ -12,7 +12,8 @@ import {
   PURCHASE_INVOICE_LIFECYCLE, 
   getAllowedTransitions, 
   isBackTransition,
-  MATCH_STATUS
+  MATCH_STATUS,
+  PURCHASE_INVOICE_STATE
 } from '@modbm/shared';
 
 export interface PurchaseInvoiceDetails {
@@ -90,7 +91,7 @@ export function useSupplierInvoice(id: string) {
   const [editTaxAmount, setEditTaxAmount] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editVendorId, setEditVendorId] = useState('');
-  const [glAccounts, setGlAccounts] = useState<any[]>([]);
+  const [glAccounts, setGlAccounts] = useState<api.GlAccountResponseDto[]>([]);
   const [headerDirty, setHeaderDirty] = useState(false);
 
   const loadInvoice = () => {
@@ -101,7 +102,7 @@ export function useSupplierInvoice(id: string) {
         setInvoice(data);
         setEditSupplierInvoiceNumber(data.supplierInvoiceNumber || '');
         setEditReceiptFilename(data.receiptFilename || '');
-        setEditCurrencyCode(data.currencyCode || 'EUR');
+        setEditCurrencyCode(data.currencyCode ?? 'EUR');
         setEditTaxAmount(data.taxAmount || '0.00');
         setEditNotes(data.notes || '');
         setEditVendorId(data.vendorId || '');
@@ -114,7 +115,7 @@ export function useSupplierInvoice(id: string) {
   useEffect(() => {
     loadInvoice();
     api.glControllerGetAccounts({} as unknown as Parameters<typeof api.glControllerGetAccounts>[0])
-      .then((res: unknown) => setGlAccounts((res as { data: unknown[] }).data || []))
+      .then((res: unknown) => setGlAccounts(((res as { data: unknown[] }).data as unknown as api.GlAccountResponseDto[]) || []))
       .catch(err => reportError(err, 'useSupplierInvoice'));
   }, [id, refreshKey]);
 
@@ -123,7 +124,7 @@ export function useSupplierInvoice(id: string) {
     const changed = 
       editSupplierInvoiceNumber !== (invoice.supplierInvoiceNumber || '') ||
       editReceiptFilename !== (invoice.receiptFilename || '') ||
-      editCurrencyCode !== (invoice.currencyCode || 'EUR') ||
+      editCurrencyCode !== (invoice.currencyCode ?? 'EUR') ||
       parseFloat(editTaxAmount || '0').toFixed(2) !== parseFloat(invoice.taxAmount || '0').toFixed(2) ||
       editNotes !== (invoice.notes || '') ||
       editVendorId !== (invoice.vendorId || '');
@@ -139,7 +140,7 @@ export function useSupplierInvoice(id: string) {
       await api.invoiceDetailControllerUpdateInvoice(id, {
         supplierInvoiceNumber: editSupplierInvoiceNumber || null,
         receiptFilename: editReceiptFilename || null,
-        currencyCode: editCurrencyCode || 'EUR',
+        currencyCode: editCurrencyCode ?? 'EUR',
         taxAmount: editTaxAmount || '0.00',
         notes: editNotes || null,
         vendorId: newVendorId || editVendorId || invoice.vendorId,
@@ -312,7 +313,9 @@ export function useSupplierInvoice(id: string) {
   }, [invoice]);
 
   const allowedTransitions = useMemo(() => {
-    return invoice ? getAllowedTransitions(PURCHASE_INVOICE_TRANSITIONS, invoice.stateCode) : [];
+    if (!invoice) return [];
+    return getAllowedTransitions(PURCHASE_INVOICE_TRANSITIONS, invoice.stateCode)
+      .filter(state => ![PURCHASE_INVOICE_STATE.PAID, PURCHASE_INVOICE_STATE.PARTIALLY_PAID].some(s => s === state));
   }, [invoice?.stateCode]);
 
   return {

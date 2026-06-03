@@ -183,7 +183,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
     const handleGenerateQuote = async (text: string) => {
         try {
-            const response = await api.reportsControllerRunHook(
+            const response = await api.pdfTemplatesControllerRunHook(
                 'sales-order-quote', 
                 { quoteIntroText: text }, 
                 { id, context: 'sales-order' }
@@ -223,7 +223,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
         order.lines, 
         inventoryData.map(inv => ({ 
             productId: inv.productId, 
-            locationId: inv.locationId, 
+            locationId: inv.locationId as any, 
             quantityAvailable: inv.quantityAvailable 
         })), 
         order.fulfillmentLocationId
@@ -253,7 +253,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
 
                                 {[...allowedTransitions]
-                                    .filter(state => state !== SALES_ORDER_STATE.PICKING && state !== SALES_ORDER_STATE.SHIPPED)
+                                    .filter(state => state !== SALES_ORDER_STATE.PICKING && state !== SALES_ORDER_STATE.SHIPPED && state !== SALES_ORDER_STATE.INVOICED)
                                     .sort((a, b) => {
                                         const aBack = isBackTransition(order.stateCode, a);
                                         const bBack = isBackTransition(order.stateCode, b);
@@ -320,7 +320,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         editNotes={editNotes}
                         setEditNotes={setEditNotes}
                         saveHeader={saveHeader}
-                        locations={locations}
+                        locations={locations as any}
                         copyOrder={copyOrder}
                         copying={copying}
                         onQuoteClick={() => setShowQuoteDialog(true)}
@@ -481,15 +481,14 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     const hasGap = gapMap.has(line.salesOrderLineId);
                                     const warningIcon = hasGap ? (
                                         <>
-                                            {/* eslint-disable i18next/no-literal-string */}
                                             <span 
                                                 className="material-symbols-outlined" 
                                                 style={{ fontSize: 14, color: 'var(--danger)', position: isEditable ? 'absolute' : 'relative', left: isEditable ? -16 : undefined, top: isEditable ? '50%' : undefined, transform: isEditable ? 'translateY(-50%)' : undefined, verticalAlign: !isEditable ? 'middle' : undefined, marginRight: !isEditable ? 4 : 0, zIndex: 1 }}
                                                 title={tSales('availabilityStatus.shortage')}
                                             >
-                                                warning
+                                                {/* eslint-disable-next-line no-restricted-syntax */}
+                                                {'warning'}
                                             </span>
-                                            {/* eslint-enable i18next/no-literal-string */}
                                         </>
                                     ) : null;
 

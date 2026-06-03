@@ -66,7 +66,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState<any>({});
+  const [form, setForm] = useState<Partial<User> & { password?: string }>({});
 
   const currentUserId = useMemo(() => getCurrentUserId(), []);
 
@@ -204,7 +204,7 @@ export default function UsersPage() {
         {isEdit
           ? <input
               className="input"
-              value={form.displayName}
+              value={form.displayName ?? ''}
               onChange={e => setForm({ ...form, displayName: e.target.value })}
               placeholder={t('placeholders.displayName')}
               style={{ width: 160 }}
@@ -217,7 +217,7 @@ export default function UsersPage() {
         {isEdit
           ? <input
               className="input"
-              value={form.email}
+              value={form.email ?? ''}
               onChange={e => setForm({ ...form, email: e.target.value.toLowerCase() })}
               placeholder={t('placeholders.email')}
               style={{ width: 180 }}

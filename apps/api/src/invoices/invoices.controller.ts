@@ -1,3 +1,4 @@
+import { SystemResource } from '@modbm/shared';
 import {
   Controller,
   Post,
@@ -48,7 +49,7 @@ export class EmptyBodyDto {}
  */
 @Controller('sales-orders')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('sales-orders')
+@CasbinResource(SystemResource.SALES_ORDERS)
 @ApiTags('Invoices')
 export class SalesInvoiceController {
   constructor(private readonly salesInvoiceService: SalesInvoiceService) {}
@@ -87,7 +88,7 @@ export class SalesInvoiceController {
  */
 @Controller('purchase-orders')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@CasbinResource('purchase-orders')
+@CasbinResource(SystemResource.PURCHASE_ORDERS)
 @ApiTags('Invoices')
 export class PurchaseInvoiceController {
   constructor(
@@ -119,7 +120,7 @@ export class InvoiceDetailController {
   ) {}
 
   @Get('sales-invoices/:id')
-  @CasbinResource('sales-orders')
+  @CasbinResource(SystemResource.SALES_ORDERS)
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Sales Invoice Details',
@@ -130,8 +131,29 @@ export class InvoiceDetailController {
     return this.salesInvoiceService.findOne(id);
   }
 
+  @Patch('sales-invoices/:id/state')
+  @CasbinResource(SystemResource.SALES_ORDERS)
+  @CasbinAction('invoice')
+  @ApiOperation({
+    summary: 'Change Sales Invoice State',
+    description: 'Change the state of a sales invoice (e.g. to cancel it)',
+  })
+  @ApiOkResponse({ type: SalesInvoiceResponseDto })
+  async changeSalesInvoiceState(
+    @Param('id') id: string,
+    @Body() dto: ChangeInvoiceStateDto,
+    @Request() req: any,
+  ) {
+    const actor = req.user?.username || 'system';
+    return this.salesInvoiceService.changeSalesInvoiceState(
+      id,
+      dto.stateCode,
+      actor,
+    );
+  }
+
   @Get('sales-invoices')
-  @CasbinResource('sales-orders')
+  @CasbinResource(SystemResource.SALES_ORDERS)
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get All Sales Invoices',
@@ -161,7 +183,7 @@ export class InvoiceDetailController {
   }
 
   @Get('purchase-invoices')
-  @CasbinResource('purchase-orders')
+  @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get All Purchase Invoices',
@@ -191,7 +213,7 @@ export class InvoiceDetailController {
   }
 
   @Get('purchase-invoices/:id')
-  @CasbinResource('purchase-orders')
+  @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Purchase Invoice Details',
@@ -203,7 +225,7 @@ export class InvoiceDetailController {
   }
 
   @Post('purchase-invoices')
-  @CasbinResource('purchase-orders')
+  @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
   @ApiOperation({
     summary: 'Create Draft Invoice',
@@ -219,7 +241,7 @@ export class InvoiceDetailController {
   }
 
   @Post('purchase-invoices/:id/post')
-  @CasbinResource('purchase-orders')
+  @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
   @HttpCode(200)
   @ApiOperation({
@@ -234,7 +256,7 @@ export class InvoiceDetailController {
   }
 
   @Patch('purchase-invoices/:id/state')
-  @CasbinResource('purchase-orders')
+  @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
   @ApiOperation({
     summary: 'Change Invoice State',
@@ -256,7 +278,7 @@ export class InvoiceDetailController {
   }
 
   @Patch('purchase-invoices/:id')
-  @CasbinResource('purchase-orders')
+  @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
   @ApiOperation({
     summary: 'Update Invoice',
@@ -273,7 +295,7 @@ export class InvoiceDetailController {
   }
 
   @Patch('purchase-invoices/:id/lines/:lineId')
-  @CasbinResource('purchase-orders')
+  @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
   @ApiOperation({
     summary: 'Update Invoice Line',
@@ -296,7 +318,7 @@ export class InvoiceDetailController {
   }
 
   @Delete('purchase-invoices/:id/lines/:lineId')
-  @CasbinResource('purchase-orders')
+  @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
   @ApiOperation({
     summary: 'Remove Invoice Line',
@@ -313,7 +335,7 @@ export class InvoiceDetailController {
   }
 
   @Post('purchase-invoices/:id/lines')
-  @CasbinResource('purchase-orders')
+  @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
   @ApiOperation({
     summary: 'Add Invoice Line',
@@ -330,7 +352,7 @@ export class InvoiceDetailController {
   }
 
   @Post('purchase-invoices/lines/:lineId/resolve')
-  @CasbinResource('purchase-orders')
+  @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
   @ApiOperation({
     summary: 'Resolve Invoice Line',
@@ -352,7 +374,7 @@ export class InvoiceDetailController {
   }
 
   @Post('purchase-invoices/lines/:lineId/unresolve')
-  @CasbinResource('purchase-orders')
+  @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
   @ApiOperation({
     summary: 'Unresolve Invoice Line',
@@ -370,7 +392,7 @@ export class InvoiceDetailController {
   }
 
   @Post('purchase-invoices/:id/auto-match')
-  @CasbinResource('purchase-orders')
+  @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
   @ApiOperation({
     summary: 'Auto-Match Purchase Order',

@@ -9,7 +9,8 @@ interface SplitEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
   reconciliationId: string;
-  selectedLine: any;
+  // modbm-allow-record-any
+  selectedLine: Record<string, any>;
   onSuccess: () => void;
 }
 

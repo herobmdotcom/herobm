@@ -22,7 +22,7 @@ interface InvoicesSectionProps {
     taxCategories: TaxCategory[];
     setError: (msg: string) => void;
     loadInvoices: () => Promise<void>;
-    loadOrder: (autoTransitions?: any[], showSpinner?: boolean) => Promise<void>;
+    loadOrder: (autoTransitions?: Record<string, unknown>[], showSpinner?: boolean) => Promise<void>;
 }
 
 export default function InvoicesSection({

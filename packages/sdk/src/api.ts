@@ -25,8 +25,6 @@ import type {
   AllocationResolveResponseDto,
   AllocationSuccessResponseDto,
   AllocationsControllerGetAvailablePoLinesParams,
-  AllocationsControllerResolveOpenDemandsBody,
-  AllocationsControllerUnlinkDemandBody,
   ApiKeyCreatedResponseDto,
   ApiKeyFullResponseDto,
   ApiKeyResponseDto,
@@ -34,14 +32,17 @@ import type {
   AutoMatchPurchaseOrderDto,
   AvailablePoLineDto,
   BankStatementConfirmMatchDto,
-  BankStatementControllerConfirmMatch201,
   BankStatementControllerGetLinesParams,
-  BankStatementControllerManualMatch201,
   BankStatementLineDto,
   BankStatementManualMatchDto,
   BatchPaymentActionDto,
   BinResponseDto,
   BulkImportResultDto,
+  BusinessReportResponseDto,
+  BusinessReportsControllerDeleteReport200,
+  BusinessReportsControllerGetReportById200,
+  BusinessReportsControllerGetReports200Item,
+  BusinessReportsControllerRunReport200Item,
   CancelReceptionResponseDto,
   ChangeInvoiceStateDto,
   ChangeOrderStateDto,
@@ -61,6 +62,7 @@ import type {
   CreateAdjustmentResponseDto,
   CreateApiKeyDto,
   CreateBinDto,
+  CreateBusinessReportDto,
   CreateCostCenterDto,
   CreateDebitNoteDto,
   CreateDiscountMatrixDto,
@@ -124,7 +126,6 @@ import type {
   EnrichmentControllerTestLookupPost201,
   EnrichmentControllerTestLookupPostParams,
   EnrichmentControllerUpdateConfig200,
-  EnrichmentControllerUpdateConfigBody,
   EnrichmentControllerUpdateConfigParams,
   EnrichmentPayloadDto,
   EventsControllerPublish201,
@@ -194,7 +195,9 @@ import type {
   MacrosControllerFindAllParams,
   MacrosControllerFindOneParams,
   MappingProfileResponseDto,
+  MatchConfirmedResponseDto,
   MeResponseDto,
+  Object,
   OpenDemandDto,
   OrderPickingControllerGetPickingQueueParams,
   OrderPickingControllerGetShippingQueueParams,
@@ -211,6 +214,7 @@ import type {
   PaymentsControllerFindAll200,
   PaymentsControllerFindAllParams,
   PaymentsControllerFindOneParams,
+  PdfTemplatesControllerRunHookParams,
   PendingPutawayResponseDto,
   PickLineDto,
   PickOrderLineDto,
@@ -242,6 +246,7 @@ import type {
   PurchaseReturnResponseDto,
   PutawayBulkDto,
   PutawayContextResponseDto,
+  QuarantineMoveDto,
   RandomIdData,
   ReallocateDemandDto,
   ReceiveReturnDto,
@@ -251,7 +256,6 @@ import type {
   ReconciliationDetailResponseDto,
   ReconciliationRuleResponseDto,
   ReportDto,
-  ReportsControllerRunHookParams,
   ResolveAllocationDto,
   ResolveAllocationResponseDto,
   ResolveDiscountRuleDto,
@@ -296,7 +300,6 @@ import type {
   TestOdooConnectionDto,
   ToggleLineDto,
   ToggleLineResponseDto,
-  ToggleQuarantineDto,
   TradingTermResponseDto,
   TradingTermsControllerFindAllParams,
   TransferEventResponseDto,
@@ -315,6 +318,7 @@ import type {
   UpdateActivityDto,
   UpdateAppConfigDto,
   UpdateBinDto,
+  UpdateBusinessReportDto,
   UpdateCostCenterDto,
   UpdateDiscountMatrixDto,
   UpdateExchangeRateDto,
@@ -2410,39 +2414,38 @@ export const inventoryControllerPutaway = async (putawayBulkDto: PutawayBulkDto,
 
 
 /**
- * Toggle quarantine state for an inventory item.
- * @summary Toggle Quarantine
+ * Move stock between quarantine and regular storage.
+ * @summary Move to/from Quarantine
  */
-export type inventoryControllerToggleQuarantineResponse201 = {
+export type inventoryControllerQuarantineMoveResponse201 = {
   data: InventorySuccessResponseDto
   status: 201
 }
     
-export type inventoryControllerToggleQuarantineResponseSuccess = (inventoryControllerToggleQuarantineResponse201) & {
+export type inventoryControllerQuarantineMoveResponseSuccess = (inventoryControllerQuarantineMoveResponse201) & {
   headers: Headers;
 };
 ;
 
-export type inventoryControllerToggleQuarantineResponse = (inventoryControllerToggleQuarantineResponseSuccess)
+export type inventoryControllerQuarantineMoveResponse = (inventoryControllerQuarantineMoveResponseSuccess)
 
-export const getInventoryControllerToggleQuarantineUrl = (lineId: string,) => {
+export const getInventoryControllerQuarantineMoveUrl = () => {
 
 
   
 
-  return `/inventory/quarantine/${lineId}`
+  return `/inventory/quarantine/move`
 }
 
-export const inventoryControllerToggleQuarantine = async (lineId: string,
-    toggleQuarantineDto: ToggleQuarantineDto, options?: RequestInit): Promise<inventoryControllerToggleQuarantineResponse> => {
+export const inventoryControllerQuarantineMove = async (quarantineMoveDto: QuarantineMoveDto, options?: RequestInit): Promise<inventoryControllerQuarantineMoveResponse> => {
   
-  return customFetch<inventoryControllerToggleQuarantineResponse>(getInventoryControllerToggleQuarantineUrl(lineId),
+  return customFetch<inventoryControllerQuarantineMoveResponse>(getInventoryControllerQuarantineMoveUrl(),
   {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      toggleQuarantineDto,)
+      quarantineMoveDto,)
   }
 );}
 
@@ -3701,7 +3704,7 @@ export const bankStatementControllerGetLines = async (params: BankStatementContr
  * @summary Confirm a smart match
  */
 export type bankStatementControllerConfirmMatchResponse201 = {
-  data: BankStatementControllerConfirmMatch201
+  data: MatchConfirmedResponseDto
   status: 201
 }
     
@@ -3740,7 +3743,7 @@ export const bankStatementControllerConfirmMatch = async (id: string,
  * @summary Manually match a line
  */
 export type bankStatementControllerManualMatchResponse201 = {
-  data: BankStatementControllerManualMatch201
+  data: MatchConfirmedResponseDto
   status: 201
 }
     
@@ -4763,6 +4766,270 @@ export const activitiesControllerImport = async (createActivityDto: CreateActivi
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createActivityDto,)
+  }
+);}
+
+
+
+/**
+ * Returns a list of available business reports
+ * @summary List available business reports
+ */
+export type businessReportsControllerGetReportsResponse200 = {
+  data: BusinessReportsControllerGetReports200Item[]
+  status: 200
+}
+    
+export type businessReportsControllerGetReportsResponseSuccess = (businessReportsControllerGetReportsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type businessReportsControllerGetReportsResponse = (businessReportsControllerGetReportsResponseSuccess)
+
+export const getBusinessReportsControllerGetReportsUrl = () => {
+
+
+  
+
+  return `/business-reports`
+}
+
+export const businessReportsControllerGetReports = async ( options?: RequestInit): Promise<businessReportsControllerGetReportsResponse> => {
+  
+  return customFetch<businessReportsControllerGetReportsResponse>(getBusinessReportsControllerGetReportsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Creates a new business report configuration
+ * @summary Create a business report
+ */
+export type businessReportsControllerCreateReportResponse201 = {
+  data: BusinessReportResponseDto
+  status: 201
+}
+    
+export type businessReportsControllerCreateReportResponseSuccess = (businessReportsControllerCreateReportResponse201) & {
+  headers: Headers;
+};
+;
+
+export type businessReportsControllerCreateReportResponse = (businessReportsControllerCreateReportResponseSuccess)
+
+export const getBusinessReportsControllerCreateReportUrl = () => {
+
+
+  
+
+  return `/business-reports`
+}
+
+export const businessReportsControllerCreateReport = async (createBusinessReportDto: CreateBusinessReportDto, options?: RequestInit): Promise<businessReportsControllerCreateReportResponse> => {
+  
+  return customFetch<businessReportsControllerCreateReportResponse>(getBusinessReportsControllerCreateReportUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createBusinessReportDto,)
+  }
+);}
+
+
+
+/**
+ * Returns a list of all registered business report data source hooks
+ * @summary List available data source hooks
+ */
+export type businessReportsControllerGetHooksResponse200 = {
+  data: string[]
+  status: 200
+}
+    
+export type businessReportsControllerGetHooksResponseSuccess = (businessReportsControllerGetHooksResponse200) & {
+  headers: Headers;
+};
+;
+
+export type businessReportsControllerGetHooksResponse = (businessReportsControllerGetHooksResponseSuccess)
+
+export const getBusinessReportsControllerGetHooksUrl = () => {
+
+
+  
+
+  return `/business-reports/hooks`
+}
+
+export const businessReportsControllerGetHooks = async ( options?: RequestInit): Promise<businessReportsControllerGetHooksResponse> => {
+  
+  return customFetch<businessReportsControllerGetHooksResponse>(getBusinessReportsControllerGetHooksUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Returns data for a specific business report
+ * @summary Fetch data for a business report
+ */
+export type businessReportsControllerRunReportResponse200 = {
+  data: BusinessReportsControllerRunReport200Item[]
+  status: 200
+}
+    
+export type businessReportsControllerRunReportResponseSuccess = (businessReportsControllerRunReportResponse200) & {
+  headers: Headers;
+};
+;
+
+export type businessReportsControllerRunReportResponse = (businessReportsControllerRunReportResponseSuccess)
+
+export const getBusinessReportsControllerRunReportUrl = (slug: string,) => {
+
+
+  
+
+  return `/business-reports/${slug}/data`
+}
+
+export const businessReportsControllerRunReport = async (slug: string,
+    businessReportsControllerRunReportBody: Object, options?: RequestInit): Promise<businessReportsControllerRunReportResponse> => {
+  
+  return customFetch<businessReportsControllerRunReportResponse>(getBusinessReportsControllerRunReportUrl(slug),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      businessReportsControllerRunReportBody,)
+  }
+);}
+
+
+
+/**
+ * Returns the configuration for a specific business report
+ * @summary Get a business report by ID
+ */
+export type businessReportsControllerGetReportByIdResponse200 = {
+  data: BusinessReportsControllerGetReportById200
+  status: 200
+}
+    
+export type businessReportsControllerGetReportByIdResponseSuccess = (businessReportsControllerGetReportByIdResponse200) & {
+  headers: Headers;
+};
+;
+
+export type businessReportsControllerGetReportByIdResponse = (businessReportsControllerGetReportByIdResponseSuccess)
+
+export const getBusinessReportsControllerGetReportByIdUrl = (id: string,) => {
+
+
+  
+
+  return `/business-reports/${id}`
+}
+
+export const businessReportsControllerGetReportById = async (id: string, options?: RequestInit): Promise<businessReportsControllerGetReportByIdResponse> => {
+  
+  return customFetch<businessReportsControllerGetReportByIdResponse>(getBusinessReportsControllerGetReportByIdUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Updates an existing business report configuration
+ * @summary Update a business report
+ */
+export type businessReportsControllerUpdateReportResponse200 = {
+  data: BusinessReportResponseDto
+  status: 200
+}
+    
+export type businessReportsControllerUpdateReportResponseSuccess = (businessReportsControllerUpdateReportResponse200) & {
+  headers: Headers;
+};
+;
+
+export type businessReportsControllerUpdateReportResponse = (businessReportsControllerUpdateReportResponseSuccess)
+
+export const getBusinessReportsControllerUpdateReportUrl = (id: string,) => {
+
+
+  
+
+  return `/business-reports/${id}`
+}
+
+export const businessReportsControllerUpdateReport = async (id: string,
+    updateBusinessReportDto: UpdateBusinessReportDto, options?: RequestInit): Promise<businessReportsControllerUpdateReportResponse> => {
+  
+  return customFetch<businessReportsControllerUpdateReportResponse>(getBusinessReportsControllerUpdateReportUrl(id),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateBusinessReportDto,)
+  }
+);}
+
+
+
+/**
+ * Deletes an existing business report configuration
+ * @summary Delete a business report
+ */
+export type businessReportsControllerDeleteReportResponse200 = {
+  data: BusinessReportsControllerDeleteReport200
+  status: 200
+}
+    
+export type businessReportsControllerDeleteReportResponseSuccess = (businessReportsControllerDeleteReportResponse200) & {
+  headers: Headers;
+};
+;
+
+export type businessReportsControllerDeleteReportResponse = (businessReportsControllerDeleteReportResponseSuccess)
+
+export const getBusinessReportsControllerDeleteReportUrl = (id: string,) => {
+
+
+  
+
+  return `/business-reports/${id}`
+}
+
+export const businessReportsControllerDeleteReport = async (id: string, options?: RequestInit): Promise<businessReportsControllerDeleteReportResponse> => {
+  
+  return customFetch<businessReportsControllerDeleteReportResponse>(getBusinessReportsControllerDeleteReportUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
   }
 );}
 
@@ -6531,7 +6798,7 @@ export const getAllocationsControllerResolveOpenDemandsUrl = () => {
   return `/allocations/resolve`
 }
 
-export const allocationsControllerResolveOpenDemands = async (allocationsControllerResolveOpenDemandsBody: AllocationsControllerResolveOpenDemandsBody, options?: RequestInit): Promise<allocationsControllerResolveOpenDemandsResponse> => {
+export const allocationsControllerResolveOpenDemands = async (emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<allocationsControllerResolveOpenDemandsResponse> => {
   
   return customFetch<allocationsControllerResolveOpenDemandsResponse>(getAllocationsControllerResolveOpenDemandsUrl(),
   {      
@@ -6539,7 +6806,7 @@ export const allocationsControllerResolveOpenDemands = async (allocationsControl
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      allocationsControllerResolveOpenDemandsBody,)
+      emptyBodyDto,)
   }
 );}
 
@@ -6570,7 +6837,7 @@ export const getAllocationsControllerUnlinkDemandUrl = (id: string,) => {
 }
 
 export const allocationsControllerUnlinkDemand = async (id: string,
-    allocationsControllerUnlinkDemandBody: AllocationsControllerUnlinkDemandBody, options?: RequestInit): Promise<allocationsControllerUnlinkDemandResponse> => {
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<allocationsControllerUnlinkDemandResponse> => {
   
   return customFetch<allocationsControllerUnlinkDemandResponse>(getAllocationsControllerUnlinkDemandUrl(id),
   {      
@@ -6578,7 +6845,7 @@ export const allocationsControllerUnlinkDemand = async (id: string,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      allocationsControllerUnlinkDemandBody,)
+      emptyBodyDto,)
   }
 );}
 
@@ -6997,6 +7264,45 @@ export const transfersControllerCancelTransferOrder = async (id: string,
     emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<transfersControllerCancelTransferOrderResponse> => {
   
   return customFetch<transfersControllerCancelTransferOrderResponse>(getTransfersControllerCancelTransferOrderUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
+ * Cancel the active dispatched shipment of a transfer order.
+ * @summary Cancel Transfer Order Shipment
+ */
+export type transfersControllerCancelTransferOrderShipmentResponse201 = {
+  data: TransferResponseDto
+  status: 201
+}
+    
+export type transfersControllerCancelTransferOrderShipmentResponseSuccess = (transfersControllerCancelTransferOrderShipmentResponse201) & {
+  headers: Headers;
+};
+;
+
+export type transfersControllerCancelTransferOrderShipmentResponse = (transfersControllerCancelTransferOrderShipmentResponseSuccess)
+
+export const getTransfersControllerCancelTransferOrderShipmentUrl = (id: string,) => {
+
+
+  
+
+  return `/transfers/${id}/cancel-shipment`
+}
+
+export const transfersControllerCancelTransferOrderShipment = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<transfersControllerCancelTransferOrderShipmentResponse> => {
+  
+  return customFetch<transfersControllerCancelTransferOrderShipmentResponse>(getTransfersControllerCancelTransferOrderShipmentUrl(id),
   {      
     ...options,
     method: 'POST',
@@ -7502,20 +7808,20 @@ export const taxCategoriesControllerRemove = async (id: string, options?: Reques
  * Execute a specific reporting hook and generate a PDF document.
  * @summary Run Hook
  */
-export type reportsControllerRunHookResponse200 = {
+export type pdfTemplatesControllerRunHookResponse200 = {
   data: Blob
   status: 200
 }
     
-export type reportsControllerRunHookResponseSuccess = (reportsControllerRunHookResponse200) & {
+export type pdfTemplatesControllerRunHookResponseSuccess = (pdfTemplatesControllerRunHookResponse200) & {
   headers: Headers;
 };
 ;
 
-export type reportsControllerRunHookResponse = (reportsControllerRunHookResponseSuccess)
+export type pdfTemplatesControllerRunHookResponse = (pdfTemplatesControllerRunHookResponseSuccess)
 
-export const getReportsControllerRunHookUrl = (hookSlug: string,
-    params: ReportsControllerRunHookParams,) => {
+export const getPdfTemplatesControllerRunHookUrl = (hookSlug: string,
+    params: PdfTemplatesControllerRunHookParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -7527,14 +7833,14 @@ export const getReportsControllerRunHookUrl = (hookSlug: string,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/reports/hooks/${hookSlug}/run?${stringifiedParams}` : `/reports/hooks/${hookSlug}/run`
+  return stringifiedParams.length > 0 ? `/pdf-templates/hooks/${hookSlug}/run?${stringifiedParams}` : `/pdf-templates/hooks/${hookSlug}/run`
 }
 
-export const reportsControllerRunHook = async (hookSlug: string,
+export const pdfTemplatesControllerRunHook = async (hookSlug: string,
     runHookBodyDto: RunHookBodyDto,
-    params: ReportsControllerRunHookParams, options?: RequestInit): Promise<reportsControllerRunHookResponse> => {
+    params: PdfTemplatesControllerRunHookParams, options?: RequestInit): Promise<pdfTemplatesControllerRunHookResponse> => {
   
-  return customFetch<reportsControllerRunHookResponse>(getReportsControllerRunHookUrl(hookSlug,params),
+  return customFetch<pdfTemplatesControllerRunHookResponse>(getPdfTemplatesControllerRunHookUrl(hookSlug,params),
   {      
     ...options,
     method: 'POST',
@@ -7550,29 +7856,29 @@ export const reportsControllerRunHook = async (hookSlug: string,
  * Retrieve a list of available reporting hooks.
  * @summary Get Hooks
  */
-export type reportsControllerGetHooksResponse200 = {
+export type pdfTemplatesControllerGetHooksResponse200 = {
   data: HookDto[]
   status: 200
 }
     
-export type reportsControllerGetHooksResponseSuccess = (reportsControllerGetHooksResponse200) & {
+export type pdfTemplatesControllerGetHooksResponseSuccess = (pdfTemplatesControllerGetHooksResponse200) & {
   headers: Headers;
 };
 ;
 
-export type reportsControllerGetHooksResponse = (reportsControllerGetHooksResponseSuccess)
+export type pdfTemplatesControllerGetHooksResponse = (pdfTemplatesControllerGetHooksResponseSuccess)
 
-export const getReportsControllerGetHooksUrl = () => {
+export const getPdfTemplatesControllerGetHooksUrl = () => {
 
 
   
 
-  return `/reports/hooks`
+  return `/pdf-templates/hooks`
 }
 
-export const reportsControllerGetHooks = async ( options?: RequestInit): Promise<reportsControllerGetHooksResponse> => {
+export const pdfTemplatesControllerGetHooks = async ( options?: RequestInit): Promise<pdfTemplatesControllerGetHooksResponse> => {
   
-  return customFetch<reportsControllerGetHooksResponse>(getReportsControllerGetHooksUrl(),
+  return customFetch<pdfTemplatesControllerGetHooksResponse>(getPdfTemplatesControllerGetHooksUrl(),
   {      
     ...options,
     method: 'GET'
@@ -7587,29 +7893,29 @@ export const reportsControllerGetHooks = async ( options?: RequestInit): Promise
  * Retrieve current template assignments for reporting hooks.
  * @summary Get Hook Assignments
  */
-export type reportsControllerGetAssignmentsResponse200 = {
+export type pdfTemplatesControllerGetAssignmentsResponse200 = {
   data: HookAssignmentDto[]
   status: 200
 }
     
-export type reportsControllerGetAssignmentsResponseSuccess = (reportsControllerGetAssignmentsResponse200) & {
+export type pdfTemplatesControllerGetAssignmentsResponseSuccess = (pdfTemplatesControllerGetAssignmentsResponse200) & {
   headers: Headers;
 };
 ;
 
-export type reportsControllerGetAssignmentsResponse = (reportsControllerGetAssignmentsResponseSuccess)
+export type pdfTemplatesControllerGetAssignmentsResponse = (pdfTemplatesControllerGetAssignmentsResponseSuccess)
 
-export const getReportsControllerGetAssignmentsUrl = () => {
+export const getPdfTemplatesControllerGetAssignmentsUrl = () => {
 
 
   
 
-  return `/reports/hook-assignments`
+  return `/pdf-templates/hook-assignments`
 }
 
-export const reportsControllerGetAssignments = async ( options?: RequestInit): Promise<reportsControllerGetAssignmentsResponse> => {
+export const pdfTemplatesControllerGetAssignments = async ( options?: RequestInit): Promise<pdfTemplatesControllerGetAssignmentsResponse> => {
   
-  return customFetch<reportsControllerGetAssignmentsResponse>(getReportsControllerGetAssignmentsUrl(),
+  return customFetch<pdfTemplatesControllerGetAssignmentsResponse>(getPdfTemplatesControllerGetAssignmentsUrl(),
   {      
     ...options,
     method: 'GET'
@@ -7624,30 +7930,30 @@ export const reportsControllerGetAssignments = async ( options?: RequestInit): P
  * Update the assigned template and context for a reporting hook.
  * @summary Update Hook Assignment
  */
-export type reportsControllerUpdateAssignmentResponse200 = {
+export type pdfTemplatesControllerUpdateAssignmentResponse200 = {
   data: HookAssignmentDto
   status: 200
 }
     
-export type reportsControllerUpdateAssignmentResponseSuccess = (reportsControllerUpdateAssignmentResponse200) & {
+export type pdfTemplatesControllerUpdateAssignmentResponseSuccess = (pdfTemplatesControllerUpdateAssignmentResponse200) & {
   headers: Headers;
 };
 ;
 
-export type reportsControllerUpdateAssignmentResponse = (reportsControllerUpdateAssignmentResponseSuccess)
+export type pdfTemplatesControllerUpdateAssignmentResponse = (pdfTemplatesControllerUpdateAssignmentResponseSuccess)
 
-export const getReportsControllerUpdateAssignmentUrl = (hook: string,) => {
+export const getPdfTemplatesControllerUpdateAssignmentUrl = (hook: string,) => {
 
 
   
 
-  return `/reports/hook-assignments/${hook}`
+  return `/pdf-templates/hook-assignments/${hook}`
 }
 
-export const reportsControllerUpdateAssignment = async (hook: string,
-    updateHookAssignmentDto: UpdateHookAssignmentDto, options?: RequestInit): Promise<reportsControllerUpdateAssignmentResponse> => {
+export const pdfTemplatesControllerUpdateAssignment = async (hook: string,
+    updateHookAssignmentDto: UpdateHookAssignmentDto, options?: RequestInit): Promise<pdfTemplatesControllerUpdateAssignmentResponse> => {
   
-  return customFetch<reportsControllerUpdateAssignmentResponse>(getReportsControllerUpdateAssignmentUrl(hook),
+  return customFetch<pdfTemplatesControllerUpdateAssignmentResponse>(getPdfTemplatesControllerUpdateAssignmentUrl(hook),
   {      
     ...options,
     method: 'PATCH',
@@ -7663,29 +7969,29 @@ export const reportsControllerUpdateAssignment = async (hook: string,
  * Fetch a random valid entity ID for a given reporting context (used for previewing).
  * @summary Get Random ID
  */
-export type reportsControllerGetRandomIdResponse200 = {
+export type pdfTemplatesControllerGetRandomIdResponse200 = {
   data: RandomIdData
   status: 200
 }
     
-export type reportsControllerGetRandomIdResponseSuccess = (reportsControllerGetRandomIdResponse200) & {
+export type pdfTemplatesControllerGetRandomIdResponseSuccess = (pdfTemplatesControllerGetRandomIdResponse200) & {
   headers: Headers;
 };
 ;
 
-export type reportsControllerGetRandomIdResponse = (reportsControllerGetRandomIdResponseSuccess)
+export type pdfTemplatesControllerGetRandomIdResponse = (pdfTemplatesControllerGetRandomIdResponseSuccess)
 
-export const getReportsControllerGetRandomIdUrl = (slug: string,) => {
+export const getPdfTemplatesControllerGetRandomIdUrl = (slug: string,) => {
 
 
   
 
-  return `/reports/hooks/${slug}/random-id`
+  return `/pdf-templates/hooks/${slug}/random-id`
 }
 
-export const reportsControllerGetRandomId = async (slug: string, options?: RequestInit): Promise<reportsControllerGetRandomIdResponse> => {
+export const pdfTemplatesControllerGetRandomId = async (slug: string, options?: RequestInit): Promise<pdfTemplatesControllerGetRandomIdResponse> => {
   
-  return customFetch<reportsControllerGetRandomIdResponse>(getReportsControllerGetRandomIdUrl(slug),
+  return customFetch<pdfTemplatesControllerGetRandomIdResponse>(getPdfTemplatesControllerGetRandomIdUrl(slug),
   {      
     ...options,
     method: 'GET'
@@ -7700,29 +8006,29 @@ export const reportsControllerGetRandomId = async (slug: string, options?: Reque
  * Retrieve a list of all configured report templates.
  * @summary Get All Reports
  */
-export type reportsControllerGetAllReportsResponse200 = {
+export type pdfTemplatesControllerGetAllReportsResponse200 = {
   data: ReportDto[]
   status: 200
 }
     
-export type reportsControllerGetAllReportsResponseSuccess = (reportsControllerGetAllReportsResponse200) & {
+export type pdfTemplatesControllerGetAllReportsResponseSuccess = (pdfTemplatesControllerGetAllReportsResponse200) & {
   headers: Headers;
 };
 ;
 
-export type reportsControllerGetAllReportsResponse = (reportsControllerGetAllReportsResponseSuccess)
+export type pdfTemplatesControllerGetAllReportsResponse = (pdfTemplatesControllerGetAllReportsResponseSuccess)
 
-export const getReportsControllerGetAllReportsUrl = () => {
+export const getPdfTemplatesControllerGetAllReportsUrl = () => {
 
 
   
 
-  return `/reports`
+  return `/pdf-templates`
 }
 
-export const reportsControllerGetAllReports = async ( options?: RequestInit): Promise<reportsControllerGetAllReportsResponse> => {
+export const pdfTemplatesControllerGetAllReports = async ( options?: RequestInit): Promise<pdfTemplatesControllerGetAllReportsResponse> => {
   
-  return customFetch<reportsControllerGetAllReportsResponse>(getReportsControllerGetAllReportsUrl(),
+  return customFetch<pdfTemplatesControllerGetAllReportsResponse>(getPdfTemplatesControllerGetAllReportsUrl(),
   {      
     ...options,
     method: 'GET'
@@ -7737,29 +8043,29 @@ export const reportsControllerGetAllReports = async ( options?: RequestInit): Pr
  * Create a new custom report template.
  * @summary Create Report
  */
-export type reportsControllerCreateReportResponse201 = {
+export type pdfTemplatesControllerCreateReportResponse201 = {
   data: ReportDto
   status: 201
 }
     
-export type reportsControllerCreateReportResponseSuccess = (reportsControllerCreateReportResponse201) & {
+export type pdfTemplatesControllerCreateReportResponseSuccess = (pdfTemplatesControllerCreateReportResponse201) & {
   headers: Headers;
 };
 ;
 
-export type reportsControllerCreateReportResponse = (reportsControllerCreateReportResponseSuccess)
+export type pdfTemplatesControllerCreateReportResponse = (pdfTemplatesControllerCreateReportResponseSuccess)
 
-export const getReportsControllerCreateReportUrl = () => {
+export const getPdfTemplatesControllerCreateReportUrl = () => {
 
 
   
 
-  return `/reports`
+  return `/pdf-templates`
 }
 
-export const reportsControllerCreateReport = async (createReportDto: CreateReportDto, options?: RequestInit): Promise<reportsControllerCreateReportResponse> => {
+export const pdfTemplatesControllerCreateReport = async (createReportDto: CreateReportDto, options?: RequestInit): Promise<pdfTemplatesControllerCreateReportResponse> => {
   
-  return customFetch<reportsControllerCreateReportResponse>(getReportsControllerCreateReportUrl(),
+  return customFetch<pdfTemplatesControllerCreateReportResponse>(getPdfTemplatesControllerCreateReportUrl(),
   {      
     ...options,
     method: 'POST',
@@ -7775,29 +8081,29 @@ export const reportsControllerCreateReport = async (createReportDto: CreateRepor
  * Retrieve the details and template content of a specific report.
  * @summary Get Report
  */
-export type reportsControllerGetReportResponse200 = {
+export type pdfTemplatesControllerGetReportResponse200 = {
   data: ReportDto
   status: 200
 }
     
-export type reportsControllerGetReportResponseSuccess = (reportsControllerGetReportResponse200) & {
+export type pdfTemplatesControllerGetReportResponseSuccess = (pdfTemplatesControllerGetReportResponse200) & {
   headers: Headers;
 };
 ;
 
-export type reportsControllerGetReportResponse = (reportsControllerGetReportResponseSuccess)
+export type pdfTemplatesControllerGetReportResponse = (pdfTemplatesControllerGetReportResponseSuccess)
 
-export const getReportsControllerGetReportUrl = (id: string,) => {
+export const getPdfTemplatesControllerGetReportUrl = (id: string,) => {
 
 
   
 
-  return `/reports/${id}`
+  return `/pdf-templates/${id}`
 }
 
-export const reportsControllerGetReport = async (id: string, options?: RequestInit): Promise<reportsControllerGetReportResponse> => {
+export const pdfTemplatesControllerGetReport = async (id: string, options?: RequestInit): Promise<pdfTemplatesControllerGetReportResponse> => {
   
-  return customFetch<reportsControllerGetReportResponse>(getReportsControllerGetReportUrl(id),
+  return customFetch<pdfTemplatesControllerGetReportResponse>(getPdfTemplatesControllerGetReportUrl(id),
   {      
     ...options,
     method: 'GET'
@@ -7812,30 +8118,30 @@ export const reportsControllerGetReport = async (id: string, options?: RequestIn
  * Modify the configuration or content of an existing report template.
  * @summary Update Report
  */
-export type reportsControllerUpdateReportResponse200 = {
+export type pdfTemplatesControllerUpdateReportResponse200 = {
   data: ReportDto
   status: 200
 }
     
-export type reportsControllerUpdateReportResponseSuccess = (reportsControllerUpdateReportResponse200) & {
+export type pdfTemplatesControllerUpdateReportResponseSuccess = (pdfTemplatesControllerUpdateReportResponse200) & {
   headers: Headers;
 };
 ;
 
-export type reportsControllerUpdateReportResponse = (reportsControllerUpdateReportResponseSuccess)
+export type pdfTemplatesControllerUpdateReportResponse = (pdfTemplatesControllerUpdateReportResponseSuccess)
 
-export const getReportsControllerUpdateReportUrl = (id: string,) => {
+export const getPdfTemplatesControllerUpdateReportUrl = (id: string,) => {
 
 
   
 
-  return `/reports/${id}`
+  return `/pdf-templates/${id}`
 }
 
-export const reportsControllerUpdateReport = async (id: string,
-    updateReportDto: UpdateReportDto, options?: RequestInit): Promise<reportsControllerUpdateReportResponse> => {
+export const pdfTemplatesControllerUpdateReport = async (id: string,
+    updateReportDto: UpdateReportDto, options?: RequestInit): Promise<pdfTemplatesControllerUpdateReportResponse> => {
   
-  return customFetch<reportsControllerUpdateReportResponse>(getReportsControllerUpdateReportUrl(id),
+  return customFetch<pdfTemplatesControllerUpdateReportResponse>(getPdfTemplatesControllerUpdateReportUrl(id),
   {      
     ...options,
     method: 'PATCH',
@@ -7851,29 +8157,29 @@ export const reportsControllerUpdateReport = async (id: string,
  * Remove a report template from the system.
  * @summary Delete Report
  */
-export type reportsControllerDeleteReportResponse200 = {
+export type pdfTemplatesControllerDeleteReportResponse200 = {
   data: ReportDto
   status: 200
 }
     
-export type reportsControllerDeleteReportResponseSuccess = (reportsControllerDeleteReportResponse200) & {
+export type pdfTemplatesControllerDeleteReportResponseSuccess = (pdfTemplatesControllerDeleteReportResponse200) & {
   headers: Headers;
 };
 ;
 
-export type reportsControllerDeleteReportResponse = (reportsControllerDeleteReportResponseSuccess)
+export type pdfTemplatesControllerDeleteReportResponse = (pdfTemplatesControllerDeleteReportResponseSuccess)
 
-export const getReportsControllerDeleteReportUrl = (id: string,) => {
+export const getPdfTemplatesControllerDeleteReportUrl = (id: string,) => {
 
 
   
 
-  return `/reports/${id}`
+  return `/pdf-templates/${id}`
 }
 
-export const reportsControllerDeleteReport = async (id: string, options?: RequestInit): Promise<reportsControllerDeleteReportResponse> => {
+export const pdfTemplatesControllerDeleteReport = async (id: string, options?: RequestInit): Promise<pdfTemplatesControllerDeleteReportResponse> => {
   
-  return customFetch<reportsControllerDeleteReportResponse>(getReportsControllerDeleteReportUrl(id),
+  return customFetch<pdfTemplatesControllerDeleteReportResponse>(getPdfTemplatesControllerDeleteReportUrl(id),
   {      
     ...options,
     method: 'DELETE'
@@ -7888,29 +8194,29 @@ export const reportsControllerDeleteReport = async (id: string, options?: Reques
  * Generate a preview PDF of a report template using mock or real entity data.
  * @summary Preview Report
  */
-export type reportsControllerPreviewResponse200 = {
+export type pdfTemplatesControllerPreviewResponse200 = {
   data: Blob
   status: 200
 }
     
-export type reportsControllerPreviewResponseSuccess = (reportsControllerPreviewResponse200) & {
+export type pdfTemplatesControllerPreviewResponseSuccess = (pdfTemplatesControllerPreviewResponse200) & {
   headers: Headers;
 };
 ;
 
-export type reportsControllerPreviewResponse = (reportsControllerPreviewResponseSuccess)
+export type pdfTemplatesControllerPreviewResponse = (pdfTemplatesControllerPreviewResponseSuccess)
 
-export const getReportsControllerPreviewUrl = () => {
+export const getPdfTemplatesControllerPreviewUrl = () => {
 
 
   
 
-  return `/reports/preview`
+  return `/pdf-templates/preview`
 }
 
-export const reportsControllerPreview = async (previewReportDto: PreviewReportDto, options?: RequestInit): Promise<reportsControllerPreviewResponse> => {
+export const pdfTemplatesControllerPreview = async (previewReportDto: PreviewReportDto, options?: RequestInit): Promise<pdfTemplatesControllerPreviewResponse> => {
   
-  return customFetch<reportsControllerPreviewResponse>(getReportsControllerPreviewUrl(),
+  return customFetch<pdfTemplatesControllerPreviewResponse>(getPdfTemplatesControllerPreviewUrl(),
   {      
     ...options,
     method: 'POST',
@@ -8067,6 +8373,45 @@ export const invoiceDetailControllerGetSalesInvoiceDetails = async (id: string, 
     method: 'GET'
     
     
+  }
+);}
+
+
+
+/**
+ * Change the state of a sales invoice (e.g. to cancel it)
+ * @summary Change Sales Invoice State
+ */
+export type invoiceDetailControllerChangeSalesInvoiceStateResponse200 = {
+  data: SalesInvoiceResponseDto
+  status: 200
+}
+    
+export type invoiceDetailControllerChangeSalesInvoiceStateResponseSuccess = (invoiceDetailControllerChangeSalesInvoiceStateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type invoiceDetailControllerChangeSalesInvoiceStateResponse = (invoiceDetailControllerChangeSalesInvoiceStateResponseSuccess)
+
+export const getInvoiceDetailControllerChangeSalesInvoiceStateUrl = (id: string,) => {
+
+
+  
+
+  return `/sales-invoices/${id}/state`
+}
+
+export const invoiceDetailControllerChangeSalesInvoiceState = async (id: string,
+    changeInvoiceStateDto: ChangeInvoiceStateDto, options?: RequestInit): Promise<invoiceDetailControllerChangeSalesInvoiceStateResponse> => {
+  
+  return customFetch<invoiceDetailControllerChangeSalesInvoiceStateResponse>(getInvoiceDetailControllerChangeSalesInvoiceStateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      changeInvoiceStateDto,)
   }
 );}
 
@@ -9022,7 +9367,7 @@ export const getEnrichmentControllerUpdateConfigUrl = (params: EnrichmentControl
   return stringifiedParams.length > 0 ? `/enrichment/config?${stringifiedParams}` : `/enrichment/config`
 }
 
-export const enrichmentControllerUpdateConfig = async (enrichmentControllerUpdateConfigBody: EnrichmentControllerUpdateConfigBody,
+export const enrichmentControllerUpdateConfig = async (enrichmentControllerUpdateConfigBody: Object,
     params: EnrichmentControllerUpdateConfigParams, options?: RequestInit): Promise<enrichmentControllerUpdateConfigResponse> => {
   
   return customFetch<enrichmentControllerUpdateConfigResponse>(getEnrichmentControllerUpdateConfigUrl(params),
@@ -10970,6 +11315,47 @@ export const purchaseReturnsControllerShipReturn = async (id: string,
 
 
 /**
+ * Cancel a draft or staged purchase return.
+ * @summary Cancel Purchase Return
+ */
+export type purchaseReturnsControllerCancelReturnResponse200 = {
+  data: PurchaseReturnResponseDto
+  status: 200
+}
+    
+export type purchaseReturnsControllerCancelReturnResponseSuccess = (purchaseReturnsControllerCancelReturnResponse200) & {
+  headers: Headers;
+};
+;
+
+export type purchaseReturnsControllerCancelReturnResponse = (purchaseReturnsControllerCancelReturnResponseSuccess)
+
+export const getPurchaseReturnsControllerCancelReturnUrl = (id: string,
+    returnId: string,) => {
+
+
+  
+
+  return `/purchase-orders/${id}/returns/${returnId}/cancel`
+}
+
+export const purchaseReturnsControllerCancelReturn = async (id: string,
+    returnId: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<purchaseReturnsControllerCancelReturnResponse> => {
+  
+  return customFetch<purchaseReturnsControllerCancelReturnResponse>(getPurchaseReturnsControllerCancelReturnUrl(id,returnId),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
  * Retrieve a list of purchase returns based on state.
  * @summary List Purchase Returns
  */
@@ -11122,6 +11508,114 @@ export const purchaseDebitNotesControllerPostDebitNote = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       emptyBodyDto,)
+  }
+);}
+
+
+
+/**
+ * @summary List all registered data sources
+ */
+export type dataSourcesControllerListResponse200 = {
+  data: string[]
+  status: 200
+}
+    
+export type dataSourcesControllerListResponseSuccess = (dataSourcesControllerListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type dataSourcesControllerListResponse = (dataSourcesControllerListResponseSuccess)
+
+export const getDataSourcesControllerListUrl = () => {
+
+
+  
+
+  return `/data-sources`
+}
+
+export const dataSourcesControllerList = async ( options?: RequestInit): Promise<dataSourcesControllerListResponse> => {
+  
+  return customFetch<dataSourcesControllerListResponse>(getDataSourcesControllerListUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Get sample data for Business Reports (fetchData format)
+ */
+export type dataSourcesControllerGetSampleReportResponse200 = {
+  data: void
+  status: 200
+}
+    
+export type dataSourcesControllerGetSampleReportResponseSuccess = (dataSourcesControllerGetSampleReportResponse200) & {
+  headers: Headers;
+};
+;
+
+export type dataSourcesControllerGetSampleReportResponse = (dataSourcesControllerGetSampleReportResponseSuccess)
+
+export const getDataSourcesControllerGetSampleReportUrl = (slug: string,) => {
+
+
+  
+
+  return `/data-sources/${slug}/sample-report`
+}
+
+export const dataSourcesControllerGetSampleReport = async (slug: string, options?: RequestInit): Promise<dataSourcesControllerGetSampleReportResponse> => {
+  
+  return customFetch<dataSourcesControllerGetSampleReportResponse>(getDataSourcesControllerGetSampleReportUrl(slug),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Get sample data for PDF Templates (resolveData format)
+ */
+export type dataSourcesControllerGetSampleRecordResponse200 = {
+  data: void
+  status: 200
+}
+    
+export type dataSourcesControllerGetSampleRecordResponseSuccess = (dataSourcesControllerGetSampleRecordResponse200) & {
+  headers: Headers;
+};
+;
+
+export type dataSourcesControllerGetSampleRecordResponse = (dataSourcesControllerGetSampleRecordResponseSuccess)
+
+export const getDataSourcesControllerGetSampleRecordUrl = (slug: string,) => {
+
+
+  
+
+  return `/data-sources/${slug}/sample-record`
+}
+
+export const dataSourcesControllerGetSampleRecord = async (slug: string, options?: RequestInit): Promise<dataSourcesControllerGetSampleRecordResponse> => {
+  
+  return customFetch<dataSourcesControllerGetSampleRecordResponse>(getDataSourcesControllerGetSampleRecordUrl(slug),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 

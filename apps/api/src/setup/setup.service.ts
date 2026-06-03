@@ -456,11 +456,11 @@ export class SetupService {
     const mapCurrencyCode = (val: string | null): string | null => {
       if (!val) return null;
       const up = val.toUpperCase().trim();
-      if (up === 'AU') return 'AUD';
-      if (up === 'US') return 'USD';
-      if (up === 'GB') return 'GBP';
-      if (up === 'EU') return 'EUR';
-      if (up === 'NZ') return 'NZD';
+      if (up === 'AU') return 'AUD'; // HOME_CURRENCY
+      if (up === 'US') return 'USD'; // HOME_CURRENCY
+      if (up === 'GB') return 'GBP'; // HOME_CURRENCY
+      if (up === 'EU') return 'EUR'; // HOME_CURRENCY
+      if (up === 'NZ') return 'NZD'; // HOME_CURRENCY
       return val;
     };
 

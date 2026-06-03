@@ -62,6 +62,7 @@ import {
   BackorderState,
   PUTAWAY_STATUS,
   MATCH_STATUS,
+  BIN_TYPE,
 } from '@modbm/shared';
 
 const VALID_GRN_STATES = getValidStates(RECEIPT_TRANSITIONS);
@@ -265,7 +266,7 @@ export class GoodsReceivedService {
             .values({
               zoneId: receivingZone.zoneId,
               binNumber: 'RECEIVING',
-              binType: 'receiving',
+              binType: BIN_TYPE.RECEIVING,
               createdBy: userId,
             })
             .returning();

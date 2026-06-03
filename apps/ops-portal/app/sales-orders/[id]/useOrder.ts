@@ -53,14 +53,14 @@ export function useOrder(id: string) {
     const [saving, setSaving] = useState(false);
     const [copying, setCopying] = useState(false);
 
-    const [locations, setLocations] = useState<{ locationId: string; name: string }[]>([]);
+    const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
 
     useEffect(() => {
         api.inventoryControllerFindAllLocations()
             .then((res) => {
                 const payload = (res as any).data;
                 const arr = Array.isArray(payload) ? payload : (payload?.data || []);
-                setLocations(arr as { locationId: string; name: string }[]);
+                setLocations(arr as api.InventoryLocationResponseDto[]);
             })
             .catch((err) => reportError(err, 'Locations_Fetch'));
     }, []);
@@ -92,7 +92,7 @@ export function useOrder(id: string) {
     const [invoices, setInvoices] = useState<SalesInvoice[]>([]);
     const [invoicing, setInvoicing] = useState(false);
     const [showCreateInvoice, setShowCreateInvoice] = useState(false);
-    const [pickingSummary, setPickingSummary] = useState<any>(null);
+    const [pickingSummary, setPickingSummary] = useState<any | null>(null);
     const [newInvoiceNotes, setNewInvoiceNotes] = useState('');
     const [newInvoiceLines, setNewInvoiceLines] = useState<NewInvoiceLine[]>([]);
 
@@ -144,7 +144,7 @@ export function useOrder(id: string) {
     const loadInvoices = async () => {
         try {
             const res = await api.salesInvoiceControllerGetSalesInvoices(encodeURIComponent(id));
-            setInvoices(((res.data as unknown as { data: SalesInvoice[] }).data || []));
+            setInvoices((res.data as unknown as SalesInvoice[]) || []);
         } catch {
             setInvoices([]);
         }

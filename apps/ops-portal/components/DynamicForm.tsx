@@ -2,7 +2,8 @@ import React from 'react';
 import { FormField } from './shared/FormField';
 
 export interface DynamicFormProps {
-  schema: any;
+  // modbm-allow-record-any
+  schema: Record<string, any>;
   // modbm-allow-record-any
   data: Record<string, any>;
   // modbm-allow-record-any

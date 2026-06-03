@@ -65,8 +65,37 @@
       "name": "Internal Reports Theme",
       "filename": "theme-internal.typ",
       "output_name_pattern": "Theme-Internal.pdf",
-      "context": "theme",
       "type": "internal"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000006",
+      "slug": "return-slip-template",
+      "name": "Return Slip",
+      "filename": "return-slip.typ",
+      "output_name_pattern": "ReturnSlip-${returnNumber}.pdf",
+      "hook": "return-slip",
+      "context": "sales-return",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000007",
+      "slug": "sales-order-confirmation-template",
+      "name": "Sales Order Confirmation",
+      "filename": "sales-order-confirmation.typ",
+      "output_name_pattern": "OrderConfirmation-${orderNumber}.pdf",
+      "hook": "sales-order-confirmation",
+      "context": "sales-order",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000008",
+      "slug": "shipping-docket-template",
+      "name": "Shipping Docket",
+      "filename": "shipping-docket.typ",
+      "output_name_pattern": "ShippingDocket-${shipmentNumber}.pdf",
+      "hook": "shipping-docket",
+      "context": "shipment",
+      "type": "hook"
     }
   ]
 }

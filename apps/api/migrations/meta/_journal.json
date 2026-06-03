@@ -113,6 +113,27 @@
       "when": 1780430592813,
       "tag": "0015_resolve_drift",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1780492922341,
+      "tag": "0016_add_business_reports",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1780492930000,
+      "tag": "0017_rename_reports_to_pdf_templates",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1780513846124,
+      "tag": "0018_add_pdf_template_columns",
+      "breakpoints": true
     }
   ]
 }

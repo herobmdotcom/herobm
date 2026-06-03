@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { tDynamic } from '@/lib/i18n';
+import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
 import { PURCHASE_RETURN_STATE } from '@modbm/shared';
 import InitiateReturnModal from './InitiateReturnModal';
@@ -60,11 +61,13 @@ function ReturnCard({
   orderLines,
   events,
   currencyCode,
+  orderId,
 }: {
   r: Return;
   orderLines: import("./types").OrderLine[];
   events: import("./types").OrderEvent[];
   currencyCode?: string;
+  orderId: string;
 }) {
   const tPurchase = useTranslations('purchaseOrders');
 
@@ -88,6 +91,24 @@ function ReturnCard({
           >
             {tPurchase('returns.enterDebitNote')}
           </a>
+        )}
+        {(r.stateCode === PURCHASE_RETURN_STATE.DRAFT || r.stateCode === PURCHASE_RETURN_STATE.STAGED) && (
+          <button
+            className="btn btn-danger btn-sm"
+            onClick={async () => {
+              if (!confirm('Are you sure you want to cancel this return?')) return;
+              try {
+                await api.purchaseReturnsControllerCancelReturn(orderId, r.returnId, {});
+                window.location.reload(); // Simple refresh to update state
+              } catch (err) {
+                reportError(err, 'ReturnsSection.cancelReturn');
+                alert(err instanceof Error ? err.message : 'Failed to cancel return');
+              }
+            }}
+          >
+            {/* eslint-disable-next-line no-restricted-syntax */}
+            {'Cancel Return'}
+          </button>
         )}
       </div>
 
@@ -363,7 +384,7 @@ export default function ReturnsSection({
 
       <div style={{ marginTop: 16 }}>
         {returns.map((rec) => (
-          <ReturnCard key={rec.returnId} r={rec} orderLines={orderLines || []} events={events} currencyCode={currencyCode} />
+          <ReturnCard key={rec.returnId} r={rec} orderLines={orderLines || []} events={events} currencyCode={currencyCode} orderId={orderId} />
         ))}
       </div>
       <InitiateReturnModal

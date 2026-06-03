@@ -37,7 +37,8 @@ export function getTaxLabel(category: TaxCategory) {
 export interface OrderEvent {
     eventId: string;
     eventType: string;
-    payload: Record<string, unknown>;
+    // modbm-allow-record-any
+  payload: Record<string, any>;
     actor: string;
     createdOn: string;
 }
@@ -155,6 +156,7 @@ export interface SalesInvoice {
     invoiceNumber: string;
     totalAmount: string;
     taxAmount: string;
+    stateCode?: string;
     createdOn: string;
     createdBy: string;
     lines?: InvoiceLine[];
