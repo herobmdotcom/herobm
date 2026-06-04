@@ -506,7 +506,7 @@ export default function NewOrderPage() {
                 />
               </div>
               <button className="btn btn-secondary btn-sm whitespace-nowrap" onClick={addLine}>
-                + {tSales('salesOrders.buttons.customLine')}
+                {tSales('salesOrders.buttons.customLine')}
               </button>
             </div>
           </div>

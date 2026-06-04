@@ -393,7 +393,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         onClick={addBlankLine}
                                         disabled={saving}
                                     >
-                                        + {tSales('buttons.customLine')}
+                                        {tSales('buttons.customLine')}
                                     </button>
                                 </>
                             )}
@@ -408,7 +408,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     disabled={saving}
                                     title={tSales('postConfirmationLineWarningTitle')}
                                 >
-                                    + {tSales('buttons.addPostConfirmationLine')}
+                                    {tSales('buttons.addPostConfirmationLine')}
                                 </button>
                             )}
                         </div>

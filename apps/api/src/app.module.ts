@@ -39,6 +39,7 @@ import { EnrichmentModule } from './enrichment/enrichment.module';
 
 import { RolesModule } from './roles/roles.module';
 import { BusinessReportsModule } from './business-reports/business-reports.module';
+import { UserSettingsModule } from './user-settings/user-settings.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { BusinessReportsModule } from './business-reports/business-reports.modul
     EventsModule,
     EnrichmentModule,
     BusinessReportsModule,
+    UserSettingsModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },

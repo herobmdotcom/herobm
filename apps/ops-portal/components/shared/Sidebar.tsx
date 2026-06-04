@@ -40,14 +40,14 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
       style={{ background: 'var(--bg-secondary)', borderRight: '1px solid var(--border)' }}
     >
       <div className="px-5 py-5">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
           <div className="flex items-center justify-center w-7 h-7 rounded border-2 border-[var(--accent)] text-[var(--accent)] font-extrabold text-lg" style={{ fontFamily: 'Manrope, sans-serif' }}>
             H
           </div>
           <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Manrope, sans-serif' }}>
             {title}
           </h1>
-        </div>
+        </Link>
         <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
           {subtitle}
         </p>
@@ -143,7 +143,7 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
       </nav>
       <div className="px-5 py-4 flex items-center justify-between" style={{ borderTop: '1px solid var(--border)' }}>
         {/* eslint-disable-next-line no-restricted-syntax */}
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{footer || 'herobm'}</p>
+        <Link href="/" className="text-xs hover:opacity-80 transition-opacity" style={{ color: 'var(--text-muted)' }}>{footer || 'herobm'}</Link>
         <button
           onClick={() => logout()}
           className="text-xs font-medium px-2 py-1 rounded transition-colors"

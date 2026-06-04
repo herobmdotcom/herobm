@@ -86,7 +86,7 @@ export default function CustomersContent() {
       pageTitle={tAccounts('title')}
       headerActions={
         <Link href="/customers/new" className="px-3 lg:px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
-          + {tAccounts('buttons.createCustomer')}
+          {tAccounts('buttons.createCustomer')}
         </Link>
       }
     />

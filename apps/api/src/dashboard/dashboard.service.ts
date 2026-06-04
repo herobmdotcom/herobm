@@ -202,9 +202,9 @@ export class DashboardService {
         conditions.push(
           sql`(e.entity_type = 'system' AND e.event_type = 'gl_posted')`,
         );
-      } else if (t === 'inventory_ledger.adjustment_processed') {
+      } else if (t === 'inventory_ledger.entry_posted') {
         conditions.push(
-          sql`(e.entity_type = 'system' AND e.event_type = 'stock_adjusted')`,
+          sql`(e.entity_type = 'inventory_ledger' AND e.event_type = 'entry_posted')`,
         );
       } else if (t === 'warehouse.receipt_created') {
         conditions.push(
@@ -254,7 +254,7 @@ export class DashboardService {
         e.event_id as "eventId", 
         CASE 
           WHEN e.entity_type = 'system' AND e.event_type = 'gl_posted' THEN 'general_ledger.entry_posted'
-          WHEN e.entity_type = 'system' AND e.event_type = 'stock_adjusted' THEN 'inventory_ledger.adjustment_processed'
+          WHEN e.entity_type = 'inventory_ledger' AND e.event_type = 'entry_posted' THEN 'inventory_ledger.entry_posted'
           WHEN e.entity_type = 'goods_receipt' AND e.event_type = 'created' THEN 'warehouse.receipt_created'
           WHEN e.entity_type = 'goods_receipt' AND e.event_type = 'status_changed' THEN 'warehouse.receipt_status_changed'
           WHEN e.entity_type = 'shipment' AND e.event_type = 'stock_dispatched' THEN 'warehouse.shipment_dispatched'
@@ -264,7 +264,7 @@ export class DashboardService {
           ELSE e.entity_type || '.' || e.event_type
         END as "eventType",
         e.entity_id as "entityId", 
-        COALESCE(so.order_number, po.order_number, a.name, s.name, gr.receipt_number, to_tbl.order_number, pe.payment_number, e.entity_id::text) as "entityDisplay", 
+        COALESCE(so.order_number, po.order_number, a.name, s.name, gr.receipt_number, to_tbl.order_number, pe.payment_number, ie.entry_number, e.entity_id::text) as "entityDisplay", 
         e.actor, 
         e.created_on as "timestamp"
       FROM modbm_core.dashboard_timeline e
@@ -275,6 +275,7 @@ export class DashboardService {
       LEFT JOIN modbm_core.goods_received gr ON e.entity_type = 'goods_receipt' AND e.entity_id = gr.goods_received_id
       LEFT JOIN modbm_core.transfer_orders to_tbl ON e.entity_type = 'transfer_order' AND e.entity_id = to_tbl.transfer_order_id
       LEFT JOIN modbm_core.payment_entries pe ON e.entity_type = 'payment' AND e.entity_id = pe.payment_id
+      LEFT JOIN modbm_core.inventory_entries ie ON e.entity_type = 'inventory_ledger' AND e.event_type = 'entry_posted' AND e.entity_id = ie.entry_id
       WHERE ${whereClause}
       ORDER BY e.created_on DESC
       LIMIT ${limit}

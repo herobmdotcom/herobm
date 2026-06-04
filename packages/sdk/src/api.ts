@@ -30,9 +30,14 @@ import type {
   ApiKeyResponseDto,
   AppConfigResponseDto,
   AutoMatchPurchaseOrderDto,
+  AutoMatchRequestDto,
+  AutoMatchResponseDto,
   AvailablePoLineDto,
+  BankStatementBulkMatchDto,
   BankStatementConfirmMatchDto,
   BankStatementControllerGetLinesParams,
+  BankStatementControllerGetMatchGroup200,
+  BankStatementControllerUnmatch201,
   BankStatementLineDto,
   BankStatementManualMatchDto,
   BatchPaymentActionDto,
@@ -61,6 +66,7 @@ import type {
   CreateAdjustmentDto,
   CreateAdjustmentResponseDto,
   CreateApiKeyDto,
+  CreateBankStatementLineDto,
   CreateBinDto,
   CreateBusinessReportDto,
   CreateCostCenterDto,
@@ -85,6 +91,7 @@ import type {
   CreateReconciliationRuleDto,
   CreateReportDto,
   CreateReturnDto,
+  CreateSalesCreditNoteDto,
   CreateSalesInvoiceDto,
   CreateShipmentDto,
   CreateStandaloneInvoiceDto,
@@ -105,6 +112,7 @@ import type {
   DashboardControllerGetTimelineParams,
   DashboardControllerSearch200Item,
   DashboardControllerSearchParams,
+  DataSourceItemDto,
   DeleteEventsResponseDto,
   DiscardReconciliationResponseDto,
   DiscountMatrixControllerDelete200,
@@ -197,6 +205,7 @@ import type {
   MappingProfileResponseDto,
   MatchConfirmedResponseDto,
   MeResponseDto,
+  MoveStockDto,
   Object,
   OpenDemandDto,
   OrderPickingControllerGetPickingQueueParams,
@@ -264,7 +273,10 @@ import type {
   ReturnResponseDto,
   RoleDetailsDto,
   RunHookBodyDto,
+  SalesCreditNoteResponseDto,
   SalesInvoiceResponseDto,
+  SampleRecordDto,
+  SampleReportDto,
   SeedRequestDto,
   SeedTaxRequestDto,
   SetRolePermissionsDto,
@@ -309,6 +321,7 @@ import type {
   TransfersControllerFindAllParams,
   TransfersControllerFindOneParams,
   TrialBalanceResponseDto,
+  UnmatchRequestDto,
   UomDictionaryControllerFindAllParams,
   UomDictionaryControllerFindOneParams,
   UomResponseDto,
@@ -334,6 +347,7 @@ import type {
   UpdateProductGroupDto,
   UpdatePurchaseOrderDto,
   UpdatePurchaseOrderLineDto,
+  UpdateReconciliationRuleDto,
   UpdateReportDto,
   UpdateReturnDto,
   UpdateReturnLineDto,
@@ -347,9 +361,11 @@ import type {
   UpdateTransferOrderLineDto,
   UpdateUomDto,
   UpdateUserDto,
+  UpdateUserSettingsDto,
   UpdateWebhookDto,
   UpdateZoneDto,
   UserResponseDto,
+  UserSettingsResponseDto,
   UsersControllerFindAllParams,
   UsersControllerFindOneParams,
   WebhookResponseDto,
@@ -2452,6 +2468,44 @@ export const inventoryControllerQuarantineMove = async (quarantineMoveDto: Quara
 
 
 /**
+ * Manually move stock between bins in the same location.
+ * @summary Move Stock manually
+ */
+export type inventoryControllerMoveStockResponse201 = {
+  data: InventorySuccessResponseDto
+  status: 201
+}
+    
+export type inventoryControllerMoveStockResponseSuccess = (inventoryControllerMoveStockResponse201) & {
+  headers: Headers;
+};
+;
+
+export type inventoryControllerMoveStockResponse = (inventoryControllerMoveStockResponseSuccess)
+
+export const getInventoryControllerMoveStockUrl = () => {
+
+
+  
+
+  return `/inventory/move`
+}
+
+export const inventoryControllerMoveStock = async (moveStockDto: MoveStockDto, options?: RequestInit): Promise<inventoryControllerMoveStockResponse> => {
+  
+  return customFetch<inventoryControllerMoveStockResponse>(getInventoryControllerMoveStockUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      moveStockDto,)
+  }
+);}
+
+
+
+/**
  * Retrieve the chart of accounts or a flat list of accounts.
  * @summary Get Accounts
  */
@@ -3619,6 +3673,45 @@ export const bankFeedsControllerCreateRule = async (createReconciliationRuleDto:
 
 
 /**
+ * Updates an existing reconciliation rule.
+ * @summary Update Rule
+ */
+export type bankFeedsControllerUpdateRuleResponse200 = {
+  data: ReconciliationRuleResponseDto
+  status: 200
+}
+    
+export type bankFeedsControllerUpdateRuleResponseSuccess = (bankFeedsControllerUpdateRuleResponse200) & {
+  headers: Headers;
+};
+;
+
+export type bankFeedsControllerUpdateRuleResponse = (bankFeedsControllerUpdateRuleResponseSuccess)
+
+export const getBankFeedsControllerUpdateRuleUrl = (ruleId: string,) => {
+
+
+  
+
+  return `/gl/bank-feeds/rules/${ruleId}`
+}
+
+export const bankFeedsControllerUpdateRule = async (ruleId: string,
+    updateReconciliationRuleDto: UpdateReconciliationRuleDto, options?: RequestInit): Promise<bankFeedsControllerUpdateRuleResponse> => {
+  
+  return customFetch<bankFeedsControllerUpdateRuleResponse>(getBankFeedsControllerUpdateRuleUrl(ruleId),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateReconciliationRuleDto,)
+  }
+);}
+
+
+
+/**
  * Deletes a reconciliation rule.
  * @summary Delete Rule
  */
@@ -3772,6 +3865,195 @@ export const bankStatementControllerManualMatch = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       bankStatementManualMatchDto,)
+  }
+);}
+
+
+
+/**
+ * Manually creates multiple bank statement lines at once.
+ * @summary Create bank statement lines in bulk
+ */
+export type bankStatementControllerCreateLinesBulkResponse201 = {
+  data: MatchConfirmedResponseDto
+  status: 201
+}
+    
+export type bankStatementControllerCreateLinesBulkResponseSuccess = (bankStatementControllerCreateLinesBulkResponse201) & {
+  headers: Headers;
+};
+;
+
+export type bankStatementControllerCreateLinesBulkResponse = (bankStatementControllerCreateLinesBulkResponseSuccess)
+
+export const getBankStatementControllerCreateLinesBulkUrl = () => {
+
+
+  
+
+  return `/gl/bank-statement/lines/bulk`
+}
+
+export const bankStatementControllerCreateLinesBulk = async (createBankStatementLineDto: CreateBankStatementLineDto[], options?: RequestInit): Promise<bankStatementControllerCreateLinesBulkResponse> => {
+  
+  return customFetch<bankStatementControllerCreateLinesBulkResponse>(getBankStatementControllerCreateLinesBulkUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createBankStatementLineDto,)
+  }
+);}
+
+
+
+/**
+ * Links an N:M set of bank lines and journal lines together.
+ * @summary Bulk match bank statement lines and journal lines
+ */
+export type bankStatementControllerMatchBulkResponse201 = {
+  data: MatchConfirmedResponseDto
+  status: 201
+}
+    
+export type bankStatementControllerMatchBulkResponseSuccess = (bankStatementControllerMatchBulkResponse201) & {
+  headers: Headers;
+};
+;
+
+export type bankStatementControllerMatchBulkResponse = (bankStatementControllerMatchBulkResponseSuccess)
+
+export const getBankStatementControllerMatchBulkUrl = () => {
+
+
+  
+
+  return `/gl/bank-statement/match-bulk`
+}
+
+export const bankStatementControllerMatchBulk = async (bankStatementBulkMatchDto: BankStatementBulkMatchDto, options?: RequestInit): Promise<bankStatementControllerMatchBulkResponse> => {
+  
+  return customFetch<bankStatementControllerMatchBulkResponse>(getBankStatementControllerMatchBulkUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      bankStatementBulkMatchDto,)
+  }
+);}
+
+
+
+/**
+ * Runs auto-matching rules and suggests smart matches.
+ * @summary Auto match bank statement lines
+ */
+export type bankStatementControllerAutoMatchResponse201 = {
+  data: AutoMatchResponseDto
+  status: 201
+}
+    
+export type bankStatementControllerAutoMatchResponseSuccess = (bankStatementControllerAutoMatchResponse201) & {
+  headers: Headers;
+};
+;
+
+export type bankStatementControllerAutoMatchResponse = (bankStatementControllerAutoMatchResponseSuccess)
+
+export const getBankStatementControllerAutoMatchUrl = () => {
+
+
+  
+
+  return `/gl/bank-statement/auto-match`
+}
+
+export const bankStatementControllerAutoMatch = async (autoMatchRequestDto: AutoMatchRequestDto, options?: RequestInit): Promise<bankStatementControllerAutoMatchResponse> => {
+  
+  return customFetch<bankStatementControllerAutoMatchResponse>(getBankStatementControllerAutoMatchUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      autoMatchRequestDto,)
+  }
+);}
+
+
+
+/**
+ * Breaks a match group, and reverses any rule-generated entries.
+ * @summary Unmatch items
+ */
+export type bankStatementControllerUnmatchResponse201 = {
+  data: BankStatementControllerUnmatch201
+  status: 201
+}
+    
+export type bankStatementControllerUnmatchResponseSuccess = (bankStatementControllerUnmatchResponse201) & {
+  headers: Headers;
+};
+;
+
+export type bankStatementControllerUnmatchResponse = (bankStatementControllerUnmatchResponseSuccess)
+
+export const getBankStatementControllerUnmatchUrl = () => {
+
+
+  
+
+  return `/gl/bank-statement/unmatch`
+}
+
+export const bankStatementControllerUnmatch = async (unmatchRequestDto: UnmatchRequestDto, options?: RequestInit): Promise<bankStatementControllerUnmatchResponse> => {
+  
+  return customFetch<bankStatementControllerUnmatchResponse>(getBankStatementControllerUnmatchUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      unmatchRequestDto,)
+  }
+);}
+
+
+
+/**
+ * Retrieves metadata about a match group
+ * @summary Get match group
+ */
+export type bankStatementControllerGetMatchGroupResponse200 = {
+  data: BankStatementControllerGetMatchGroup200
+  status: 200
+}
+    
+export type bankStatementControllerGetMatchGroupResponseSuccess = (bankStatementControllerGetMatchGroupResponse200) & {
+  headers: Headers;
+};
+;
+
+export type bankStatementControllerGetMatchGroupResponse = (bankStatementControllerGetMatchGroupResponseSuccess)
+
+export const getBankStatementControllerGetMatchGroupUrl = (matchGroupId: string,) => {
+
+
+  
+
+  return `/gl/bank-statement/match-group/${matchGroupId}`
+}
+
+export const bankStatementControllerGetMatchGroup = async (matchGroupId: string, options?: RequestInit): Promise<bankStatementControllerGetMatchGroupResponse> => {
+  
+  return customFetch<bankStatementControllerGetMatchGroupResponse>(getBankStatementControllerGetMatchGroupUrl(matchGroupId),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 
@@ -9066,6 +9348,120 @@ export const externalSyncControllerClearEventsByType = async (params: ExternalSy
 
 
 /**
+ * Retrieve a sales credit note by ID.
+ * @summary Get Credit Note
+ */
+export type salesCreditNotesControllerFindOneResponse200 = {
+  data: SalesCreditNoteResponseDto
+  status: 200
+}
+    
+export type salesCreditNotesControllerFindOneResponseSuccess = (salesCreditNotesControllerFindOneResponse200) & {
+  headers: Headers;
+};
+;
+
+export type salesCreditNotesControllerFindOneResponse = (salesCreditNotesControllerFindOneResponseSuccess)
+
+export const getSalesCreditNotesControllerFindOneUrl = (id: string,) => {
+
+
+  
+
+  return `/sales-credit-notes/${id}`
+}
+
+export const salesCreditNotesControllerFindOne = async (id: string, options?: RequestInit): Promise<salesCreditNotesControllerFindOneResponse> => {
+  
+  return customFetch<salesCreditNotesControllerFindOneResponse>(getSalesCreditNotesControllerFindOneUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Create a credit note from a return.
+ * @summary Create Credit Note
+ */
+export type salesCreditNotesControllerCreateCreditNoteResponse201 = {
+  data: SalesCreditNoteResponseDto
+  status: 201
+}
+    
+export type salesCreditNotesControllerCreateCreditNoteResponseSuccess = (salesCreditNotesControllerCreateCreditNoteResponse201) & {
+  headers: Headers;
+};
+;
+
+export type salesCreditNotesControllerCreateCreditNoteResponse = (salesCreditNotesControllerCreateCreditNoteResponseSuccess)
+
+export const getSalesCreditNotesControllerCreateCreditNoteUrl = () => {
+
+
+  
+
+  return `/sales-credit-notes`
+}
+
+export const salesCreditNotesControllerCreateCreditNote = async (createSalesCreditNoteDto: CreateSalesCreditNoteDto, options?: RequestInit): Promise<salesCreditNotesControllerCreateCreditNoteResponse> => {
+  
+  return customFetch<salesCreditNotesControllerCreateCreditNoteResponse>(getSalesCreditNotesControllerCreateCreditNoteUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createSalesCreditNoteDto,)
+  }
+);}
+
+
+
+/**
+ * Post an existing credit note.
+ * @summary Post Credit Note
+ */
+export type salesCreditNotesControllerPostCreditNoteResponse200 = {
+  data: SalesCreditNoteResponseDto
+  status: 200
+}
+    
+export type salesCreditNotesControllerPostCreditNoteResponseSuccess = (salesCreditNotesControllerPostCreditNoteResponse200) & {
+  headers: Headers;
+};
+;
+
+export type salesCreditNotesControllerPostCreditNoteResponse = (salesCreditNotesControllerPostCreditNoteResponseSuccess)
+
+export const getSalesCreditNotesControllerPostCreditNoteUrl = (id: string,) => {
+
+
+  
+
+  return `/sales-credit-notes/${id}/post`
+}
+
+export const salesCreditNotesControllerPostCreditNote = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<salesCreditNotesControllerPostCreditNoteResponse> => {
+  
+  return customFetch<salesCreditNotesControllerPostCreditNoteResponse>(getSalesCreditNotesControllerPostCreditNoteUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
  * Lookup data by field
  * @summary Lookup data
  */
@@ -11514,10 +11910,11 @@ export const purchaseDebitNotesControllerPostDebitNote = async (id: string,
 
 
 /**
+ * Retrieves a list of all available data sources registered in the system.
  * @summary List all registered data sources
  */
 export type dataSourcesControllerListResponse200 = {
-  data: string[]
+  data: DataSourceItemDto[]
   status: 200
 }
     
@@ -11550,10 +11947,11 @@ export const dataSourcesControllerList = async ( options?: RequestInit): Promise
 
 
 /**
+ * Retrieves sample data suitable for Business Reports preview.
  * @summary Get sample data for Business Reports (fetchData format)
  */
 export type dataSourcesControllerGetSampleReportResponse200 = {
-  data: void
+  data: SampleReportDto
   status: 200
 }
     
@@ -11586,10 +11984,11 @@ export const dataSourcesControllerGetSampleReport = async (slug: string, options
 
 
 /**
+ * Retrieves a sample record suitable for PDF template preview and context generation.
  * @summary Get sample data for PDF Templates (resolveData format)
  */
 export type dataSourcesControllerGetSampleRecordResponse200 = {
-  data: void
+  data: SampleRecordDto
   status: 200
 }
     
@@ -13595,6 +13994,81 @@ export const eventsControllerPublish = async (publishEventDto: PublishEventDto, 
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       publishEventDto,)
+  }
+);}
+
+
+
+/**
+ * Retrieves the settings for the currently authenticated user.
+ * @summary Get user settings
+ */
+export type userSettingsControllerGetSettingsResponse200 = {
+  data: UserSettingsResponseDto
+  status: 200
+}
+    
+export type userSettingsControllerGetSettingsResponseSuccess = (userSettingsControllerGetSettingsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type userSettingsControllerGetSettingsResponse = (userSettingsControllerGetSettingsResponseSuccess)
+
+export const getUserSettingsControllerGetSettingsUrl = () => {
+
+
+  
+
+  return `/user-settings`
+}
+
+export const userSettingsControllerGetSettings = async ( options?: RequestInit): Promise<userSettingsControllerGetSettingsResponse> => {
+  
+  return customFetch<userSettingsControllerGetSettingsResponse>(getUserSettingsControllerGetSettingsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Updates specific sections of the settings for the currently authenticated user.
+ * @summary Update user settings
+ */
+export type userSettingsControllerUpdateSettingsResponse200 = {
+  data: UserSettingsResponseDto
+  status: 200
+}
+    
+export type userSettingsControllerUpdateSettingsResponseSuccess = (userSettingsControllerUpdateSettingsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type userSettingsControllerUpdateSettingsResponse = (userSettingsControllerUpdateSettingsResponseSuccess)
+
+export const getUserSettingsControllerUpdateSettingsUrl = () => {
+
+
+  
+
+  return `/user-settings`
+}
+
+export const userSettingsControllerUpdateSettings = async (updateUserSettingsDto: UpdateUserSettingsDto, options?: RequestInit): Promise<userSettingsControllerUpdateSettingsResponse> => {
+  
+  return customFetch<userSettingsControllerUpdateSettingsResponse>(getUserSettingsControllerUpdateSettingsUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateUserSettingsDto,)
   }
 );}
 

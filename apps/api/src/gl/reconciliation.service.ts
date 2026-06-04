@@ -138,7 +138,6 @@ export class ReconciliationService {
 
     // Return lines for this account where:
     // entryDate <= statementDate AND
-    // (reconciliationId IS NULL OR reconciliationId = THIS)
     const lines = await this.db
       .select({
         journalLineId: glJournalLines.journalLineId,
@@ -149,7 +148,8 @@ export class ReconciliationService {
         entryMemo: glJournalEntries.memo,
         debit: glJournalLines.debit,
         credit: glJournalLines.credit,
-        isCleared: sql<boolean>`${glJournalLines.reconciliationId} = ${id}`,
+        isCleared: sql<boolean>`${glJournalLines.reconciliationId} IS NOT NULL`,
+        matchGroupId: glJournalLines.matchGroupId,
         partyType: glJournalLines.partyType,
         partyId: glJournalLines.partyId,
         partyName: sql<string>`COALESCE(${customers.name}, ${suppliers.name})`,
@@ -180,6 +180,7 @@ export class ReconciliationService {
             isNull(glJournalLines.reconciliationId),
             eq(glJournalLines.reconciliationId, id),
           ),
+          eq(glJournalEntries.isReversed, false),
         ),
       )
       .orderBy(
@@ -191,6 +192,7 @@ export class ReconciliationService {
       ...line,
       debit: Number(line.debit),
       credit: Number(line.credit),
+      isCleared: Boolean(line.isCleared),
     }));
 
     // Post-query sort to guarantee split lines perfectly follow their parent line

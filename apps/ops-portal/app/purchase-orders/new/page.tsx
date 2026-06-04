@@ -106,6 +106,7 @@ export default function NewPurchaseOrderPage() {
   const [name, setName] = useState('');
   const [deliveryLocationId, setDeliveryLocationId] = useState<string | null>(null);
   const [referenceNumber, setReferenceNumber] = useState('');
+  const [expectedDate, setExpectedDate] = useState('');
   const [notes, setNotes] = useState('');
 
   const [lines, setLines] = useState<LineItem[]>([]);
@@ -218,6 +219,7 @@ export default function NewPurchaseOrderPage() {
         currencyCode,
         deliveryLocationId: deliveryLocationId || '',
         referenceNumber: referenceNumber || undefined,
+        expectedDate: expectedDate ? new Date(expectedDate).toISOString() : undefined,
         notes: notes || undefined,
         lines: lines
           .filter((l) => l.productId)
@@ -348,6 +350,19 @@ export default function NewPurchaseOrderPage() {
 
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('purchaseOrders.labels.expectedDate')}
+              </label>
+              <input
+                id="order-expected-date"
+                type="date"
+                className="input"
+                value={expectedDate}
+                onChange={(e) => setExpectedDate(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {t('purchaseOrders.labels.location')} *
               </label>
               <LocationSelect
@@ -417,7 +432,7 @@ export default function NewPurchaseOrderPage() {
                 />
               </div>
               <button className="btn btn-secondary btn-sm whitespace-nowrap" onClick={addLine}>
-                + {t('purchaseOrders.buttons.customLine')}
+                {t('purchaseOrders.buttons.customLine')}
               </button>
             </div>
           </div>

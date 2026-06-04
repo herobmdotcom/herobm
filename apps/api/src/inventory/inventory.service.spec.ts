@@ -152,7 +152,13 @@ describe('InventoryService', () => {
       expect(bins_data[0].actualQuantity).toBe('10');
 
       // Verify event emission
-      expect(emitEvent).toHaveBeenCalled();
+      expect(emitEvent).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          entityType: 'inventory_ledger',
+          eventType: 'entry_posted',
+        }),
+      );
     });
 
     it('should correctly handle negative quantities (picks)', async () => {
@@ -171,7 +177,117 @@ describe('InventoryService', () => {
         .select()
         .from(binContents)
         .where(eq(binContents.binId, BIN_ID));
-      expect(bins_data[0].actualQuantity).toBe('-5');
+      expect(bins_data).toHaveLength(0);
+    });
+  });
+
+  describe('moveStock', () => {
+    it('should emit stock_moved and entry_posted events', async () => {
+      // Seed target bin
+      const TARGET_BIN_ID = '00000000-0000-0000-0000-000000000010';
+      await pg.db.insert(bins).values({
+        binId: TARGET_BIN_ID,
+        zoneId: ZONE_ID,
+        binNumber: 'B-01-02',
+      });
+
+      // Seed initial stock
+      await pg.db.insert(binContents).values({
+        binId: BIN_ID,
+        productId: PRODUCT_ID,
+        actualQuantity: '100',
+      });
+
+      const params = {
+        lines: [
+          {
+            productId: PRODUCT_ID,
+            sourceBinId: BIN_ID,
+            targetBinId: TARGET_BIN_ID,
+            quantity: '10',
+          },
+        ],
+        reason: 'Consolidation',
+      };
+
+      await service.moveStock(params as any, 'admin');
+
+      // Verify emitEvent called at least twice (one for ledger, one for warehouse)
+      expect(emitEvent).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          entityType: 'warehouse',
+          eventType: 'stock_moved',
+        }),
+      );
+
+      expect(emitEvent).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          entityType: 'inventory_ledger',
+          eventType: 'entry_posted',
+        }),
+      );
+
+      // Check cache updated
+      const sourceBin = await pg.db
+        .select()
+        .from(binContents)
+        .where(eq(binContents.binId, BIN_ID));
+      expect(sourceBin[0].actualQuantity).toBe('90');
+
+      const targetBin = await pg.db
+        .select()
+        .from(binContents)
+        .where(eq(binContents.binId, TARGET_BIN_ID));
+      expect(targetBin[0].actualQuantity).toBe('10');
+    });
+  });
+
+  describe('quarantineMove', () => {
+    it('should emit stock_moved and entry_posted events', async () => {
+      // Seed target bin
+      const TARGET_BIN_ID = '00000000-0000-0000-0000-000000000011';
+      await pg.db.insert(bins).values({
+        binId: TARGET_BIN_ID,
+        zoneId: ZONE_ID,
+        binNumber: 'QUARANTINE-1',
+        binType: 'quarantine',
+      });
+
+      // Seed initial stock
+      await pg.db.insert(binContents).values({
+        binId: BIN_ID,
+        productId: PRODUCT_ID,
+        actualQuantity: '100',
+      });
+
+      await service.quarantineStock(
+        {
+          productId: PRODUCT_ID,
+          sourceBinId: BIN_ID,
+          targetBinId: TARGET_BIN_ID,
+          quantity: '5',
+          reason: 'Damaged',
+        },
+        'admin',
+      );
+
+      expect(emitEvent).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          entityType: 'warehouse',
+          eventType: 'stock_moved',
+        }),
+      );
+
+      expect(emitEvent).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          entityType: 'inventory_ledger',
+          eventType: 'entry_posted',
+        }),
+      );
     });
   });
 

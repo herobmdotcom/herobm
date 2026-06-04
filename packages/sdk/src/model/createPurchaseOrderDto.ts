@@ -16,5 +16,6 @@ export interface CreatePurchaseOrderDto {
   currencyCode?: string;
   notes?: string;
   referenceNumber?: string;
+  expectedDate?: string;
   lines?: CreatePurchaseOrderLineDto[];
 }

@@ -1,17 +1,19 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import LedgerEntrySlideOver from './LedgerEntrySlideOver';
 
-export default function LedgerView() {
+function LedgerViewContent() {
   const tCommon = useTranslations('common');
   const tInventory = useTranslations('inventory');
   
+  const searchParams = useSearchParams();
   const [days, setDays] = useState<number>(30);
-  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(searchParams.get('entryId'));
 
   const columns = useMemo<ColDef[]>(() => [
     { 
@@ -105,5 +107,13 @@ export default function LedgerView() {
         onClose={() => setSelectedEntryId(null)}
       />
     </>
+  );
+}
+
+export default function LedgerView() {
+  return (
+    <Suspense>
+      <LedgerViewContent />
+    </Suspense>
   );
 }

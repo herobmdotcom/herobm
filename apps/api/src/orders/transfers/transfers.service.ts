@@ -362,7 +362,7 @@ export class TransferService {
         .from(transferOrders)
         .where(eq(transferOrders.transferOrderId, transferOrderId));
 
-      if (order && order.stateCode !== TRANSFER_ORDER_STATE.CONFIRMED) {
+      if (order && order.stateCode === TRANSFER_ORDER_STATE.CONFIRMED) {
         await this.changeTransferState(
           transferOrderId,
           TRANSFER_ORDER_STATE.PICKING,
@@ -957,7 +957,10 @@ export class TransferService {
       );
     }
 
-    if (order.stateCode === TRANSFER_ORDER_STATE.SHIPPED) {
+    if (
+      order.stateCode === TRANSFER_ORDER_STATE.SHIPPED &&
+      newState === TRANSFER_ORDER_STATE.CANCELLED
+    ) {
       throw new BadRequestException(
         'Cannot cancel a shipped transfer order. Please cancel the shipment first.',
       );

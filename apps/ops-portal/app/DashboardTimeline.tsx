@@ -39,12 +39,13 @@ const EVENT_ICONS: Record<string, { icon: string, color: string, bg: string, pat
   'warehouse.shipment_created': { icon: 'local_shipping', color: '#f97316', bg: 'rgba(249, 115, 22, 0.1)', path: '/shipments' },
   'warehouse.shipment_dispatched': { icon: 'flight_takeoff', color: '#f97316', bg: 'rgba(249, 115, 22, 0.1)', path: '/shipments' },
   
-  'inventory_ledger.adjustment_processed': { icon: 'exposure', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', path: '/inventory' },
+  'inventory_ledger.entry_posted': { icon: 'exposure', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/inventory/ledger?entryId=' },
   'transfer_order.created': { icon: 'sync_alt', color: '#6366f1', bg: 'rgba(99, 102, 241, 0.1)', path: '/inventory' },
   
   'payment.submitted': { icon: 'payments', color: '#14b8a6', bg: 'rgba(20, 184, 166, 0.1)', path: '/payments' },
   'payment.allocated': { icon: 'account_balance', color: '#14b8a6', bg: 'rgba(20, 184, 166, 0.1)', path: '/payments' },
   'general_ledger.entry_posted': { icon: 'menu_book', color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)', path: '/general-ledger' },
+  'stock_adjusted': { icon: 'tune', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', path: '/inventory/ledger?entryId=' },
 };
 
 function getEventStyle(eventType: string) {
@@ -136,7 +137,7 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
         return (
           <Link 
             key={evt.eventId} 
-            href={`${style.path}/${evt.entityId}`}
+            href={style.path.includes('?') ? `${style.path}${evt.entityId}` : `${style.path}/${evt.entityId}`}
             className="group flex gap-4 p-4 rounded-xl transition-all hover:scale-[1.01] hover:shadow-md border"
             style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
           >

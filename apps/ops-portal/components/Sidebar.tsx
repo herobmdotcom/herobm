@@ -26,10 +26,10 @@ export default function Sidebar() {
           icon: 'inventory_2',
           subItems: [
             { href: '/inventory/bins', label: tInventory('tabs.binContents') },
-            { href: '/inventory/movements', label: t('items.movements') },
             { href: '/inventory/ledger', label: tInventory('tabs.ledger') },
             { href: '/inventory/locations', label: tInventory('tabs.locations') },
-            { href: '/inventory/transfers', label: t('items.transfers') }
+            { href: '/inventory/transfers', label: t('items.transfers') },
+            { href: '/inventory/quarantine', label: t('items.quarantine') }
           ]
         },
         { 
@@ -87,10 +87,18 @@ export default function Sidebar() {
             { href: '/general-ledger', label: t('items.generalLedger') },
             { href: '/general-ledger/trial-balance', label: t('items.trialBalance') },
             { href: '/general-ledger/journal-entries', label: t('items.journalEntries') },
-            { href: '/general-ledger/reconciliations', label: 'Bank Reconciliations' },
           ]
         },
         { href: '/payments', label: 'Payments', icon: 'account_balance_wallet' },
+        { 
+          href: '/reconciliations', 
+          label: 'Bank Rec\'n', 
+          icon: 'compare_arrows',
+          subItems: [
+            { href: '/reconciliations', label: 'Statements' },
+            { href: '/reconciliations/rules', label: 'Rules' },
+          ]
+        },
       ],
     });
   }

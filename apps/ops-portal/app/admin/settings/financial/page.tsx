@@ -1180,7 +1180,7 @@ export default function FinancialSettingsPage() {
             </h3>
             <div className="flex items-center gap-2">
               <CsvImportButton onImport={handleImportCc} disabled={isImporting} />
-              <button className="btn btn-primary btn-sm" onClick={ccCreate}>+ {tSettings('actions.create')}</button>
+              <button className="btn btn-primary btn-sm" onClick={ccCreate}>{tSettings('actions.create')}</button>
             </div>
           </div>
           <table className="table-lines w-full">
@@ -1217,7 +1217,7 @@ export default function FinancialSettingsPage() {
             </h3>
             <div className="flex items-center gap-2">
               <CsvImportButton onImport={handleImportActivity} disabled={isImporting} />
-              <button className="btn btn-primary btn-sm" onClick={activityCreate}>+ {tSettings('actions.create')}</button>
+              <button className="btn btn-primary btn-sm" onClick={activityCreate}>{tSettings('actions.create')}</button>
             </div>
           </div>
           <table className="table-lines w-full">

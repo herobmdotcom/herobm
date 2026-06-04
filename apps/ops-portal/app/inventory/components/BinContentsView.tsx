@@ -7,6 +7,8 @@ import { useTranslations } from 'next-intl';
 import { formatCompositeQuantity } from '@modbm/shared';
 import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
+import MoveStockModal from '../bins/MoveStockModal';
+import { toast } from 'react-hot-toast';
 
 interface Location {
   locationId: string;
@@ -22,6 +24,10 @@ export default function BinContentsView() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocationCode, setSelectedLocationCode] = useState<string | null>(null);
   const [locationsLoaded, setLocationsLoaded] = useState(false);
+  // modbm-allow-record-any
+  const [selectedRows, setSelectedRows] = useState<Record<string, any>[]>([]);
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Load locations and resolve default
   useEffect(() => {
@@ -73,6 +79,32 @@ export default function BinContentsView() {
     { field: 'binType', headerName: tBins('columns.binType'), width: 90 },
   ], [tCommon, tBins]);
 
+  const handleSelectionChanged = (rows: any[]) => {
+    setSelectedRows(rows);
+  };
+
+  const selectedLocationId = useMemo(() => {
+    if (selectedRows.length === 0) return null;
+    return selectedRows[0].locationNo;
+  }, [selectedRows]);
+
+  const canMove = selectedRows.length > 0 && selectedRows.every(r => r.locationNo === selectedLocationId);
+
+  const handleMoveSubmit = async (lines: any[], reason: string) => {
+    try {
+      await api.inventoryControllerMoveStock({
+        lines,
+        reason
+      });
+      toast.success('Stock moved successfully');
+      setRefreshKey(prev => prev + 1);
+      setSelectedRows([]);
+    } catch (err) {
+      reportError(err, 'BinContentsView.moveStock');
+      throw err; // rethrow so modal stays open on error if we want, or handle inside modal
+    }
+  };
+
   if (!locationsLoaded) return null;
 
   return (
@@ -80,11 +112,29 @@ export default function BinContentsView() {
       <DataGrid
         endpoint={binsEndpoint}
         columns={columns}
-        gridKey="ops-bins"
+        gridKey={`ops-bins-${refreshKey}`}
+        rowSelection="multiple"
+        onSelectionChanged={handleSelectionChanged}
         searchPlaceholder={tBins('placeholders.searchBins')}
         exportFileName="bins"
         fetchAll
         pageTitle={tInventory('tabs.binContents')}
+        headerActions={
+          <div className="flex items-center">
+            {selectedRows.length > 0 && !canMove && (
+              <span className="text-xs text-red-500 mr-3 hidden sm:inline-block">
+                {tCommon('cannotMoveCrossLocation')}
+              </span>
+            )}
+            <button
+              className="btn btn-primary"
+              disabled={!canMove}
+              onClick={() => setIsMoveModalOpen(true)}
+            >
+              {tCommon('moveStock')}
+            </button>
+          </div>
+        }
         headerFilters={
           <select
             id="bin-contents-location-filter"
@@ -102,6 +152,20 @@ export default function BinContentsView() {
             ))}
           </select>
         }
+      />
+      
+      <MoveStockModal
+        isOpen={isMoveModalOpen}
+        onClose={() => setIsMoveModalOpen(false)}
+        onSubmit={handleMoveSubmit}
+        selectedLines={selectedRows.map(r => ({
+          productId: r.productId,
+          productName: r.productName,
+          sourceBinId: r.binId,
+          sourceBinNumber: r.binNumber,
+          quantity: parseFloat(r.actualQuantity),
+          locationNo: r.locationNo
+        }))}
       />
     </>
   );

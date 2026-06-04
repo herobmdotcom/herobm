@@ -26,6 +26,7 @@ describe('API E2E — Runtime Ledger Balancing', () => {
 
   let apAccountId: string;
   let arAccountId: string;
+  let expenseAccountId: string;
 
   beforeAll(async () => {
     register.clear();
@@ -64,6 +65,10 @@ describe('API E2E — Runtime Ledger Balancing', () => {
     const arAccount = leaves.find((l) => l.accountCode === '1200') || leaves[1];
     apAccountId = apAccount.glAccountId;
     arAccountId = arAccount.glAccountId;
+
+    const expenseAccount =
+      leaves.find((l) => l.accountType === 'expense') || leaves[4];
+    expenseAccountId = expenseAccount.glAccountId;
 
     // Fetch Master Data
     const customers = await request(app.getHttpServer())
@@ -115,6 +120,7 @@ describe('API E2E — Runtime Ledger Balancing', () => {
               productId: validProductId,
               quantityInvoiced: 1,
               pricePerUnit: 100.0,
+              glAccountId: expenseAccountId,
             },
           ],
         })
@@ -185,6 +191,19 @@ describe('API E2E — Runtime Ledger Balancing', () => {
       const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
 
       // We must first create a dummy sales order because sales invoices MUST have a salesOrderId.
+      const prodRes = await request(app.getHttpServer())
+        .post('/api/products')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          productNumber: `BAL-PROD-${rand}`,
+          name: 'Balancing Product',
+          productType: 'service',
+          uom: 'EA',
+          revenueAccountId: apAccountId, // or any valid account
+        })
+        .expect(201);
+      const testProductId = prodRes.body.productId;
+
       const orderRes = await request(app.getHttpServer())
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -194,7 +213,7 @@ describe('API E2E — Runtime Ledger Balancing', () => {
           name: `E2E Bal Test Order ${rand}`,
           lines: [
             {
-              productId: validProductId,
+              productId: testProductId,
               quantity: '1',
               pricePerUnit: '100.00',
             },
@@ -204,6 +223,18 @@ describe('API E2E — Runtime Ledger Balancing', () => {
 
       const salesOrderId = orderRes.body.salesOrderId;
 
+      // Transition to picking
+      await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${salesOrderId}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: 'picking' })
+        .expect(200);
+
+      const fullOrder = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${salesOrderId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      const lineId = fullOrder.body.lines[0].salesOrderLineId;
+
       // In order to invoice, we just force an invoice through the controller
       const invoiceRes = await request(app.getHttpServer())
         .post(`/api/sales-orders/${salesOrderId}/invoice`)
@@ -212,10 +243,8 @@ describe('API E2E — Runtime Ledger Balancing', () => {
           notes: 'Test AR Balancing',
           lines: [
             {
-              description: 'Balancing Product',
-              productId: validProductId,
+              salesOrderLineId: lineId,
               quantityToInvoice: 1,
-              pricePerUnit: 100.0,
             },
           ],
         });

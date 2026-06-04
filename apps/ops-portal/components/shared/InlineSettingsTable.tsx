@@ -9,7 +9,7 @@ export interface InlineTableColumn<T> {
   render?: (row: T, isEditing: boolean, onChange?: (val: any) => void) => React.ReactNode;
   width?: string | number;
   disabled?: boolean; // if true, input is disabled during edit
-  emptyLabel?: string; // override or hide the empty select option
+  emptyLabel?: string | null; // override or hide the empty select option
   validate?: (value: any, row: Partial<T>) => string | null;
 }
 
@@ -40,7 +40,7 @@ export function InlineSettingsTable<T extends Record<string, any>>({
   className,
   title,
   headerActions,
-  addLabel = 'Add Row',
+  addLabel = '+ Add Row',
   emptyLabel,
   canEdit,
   canDelete
@@ -142,7 +142,7 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                 onClick={handleAdd}
                 disabled={editingId !== null}
               >
-                + {addLabel}
+                {addLabel}
               </button>
             )}
           </div>

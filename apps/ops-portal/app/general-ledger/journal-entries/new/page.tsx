@@ -191,8 +191,7 @@ export default function NewJournalEntryPage() {
             </h3>
             <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
               <button className="btn btn-secondary btn-sm whitespace-nowrap" onClick={addLine}>
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined text-[16px]">add</span> {t('addLine')}
+                {t('addLine')}
               </button>
             </div>
           </div>

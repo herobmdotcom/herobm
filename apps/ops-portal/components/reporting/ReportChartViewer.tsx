@@ -34,12 +34,18 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
 
   const pivotedData = useMemo(() => {
     if (!activeDrillDown || activeDrillDown.field === config.xAxisField) {
-      // Sort single-series data descending by value
-      const sortedData = [...chartData].sort((a: any, b: any) => Number(b[config.yAxisField] || 0) - Number(a[config.yAxisField] || 0));
+      const isTimeAxis = config.xAxisField === 'yearMonth' || config.xAxisField.toLowerCase().includes('date') || config.xAxisField.toLowerCase().includes('month');
+      
+      const sortedData = [...chartData].sort((a: any, b: any) => {
+        if (isTimeAxis) {
+          return String(a[config.xAxisField] || '').localeCompare(String(b[config.xAxisField] || ''));
+        }
+        return Number(b[config.yAxisField] || 0) - Number(a[config.yAxisField] || 0);
+      });
       return { data: sortedData, seriesKeys: [config.yAxisField], isMultiSeries: false, primaryAxis: config.xAxisField };
     }
 
-    const isTimeDrillDown = activeDrillDown.field === 'yearMonth';
+    const isTimeDrillDown = activeDrillDown.field === 'yearMonth' || activeDrillDown.field.toLowerCase().includes('date') || activeDrillDown.field.toLowerCase().includes('month');
     const primaryAxis = isTimeDrillDown ? activeDrillDown.field : config.xAxisField;
     const seriesAxis = isTimeDrillDown ? config.xAxisField : activeDrillDown.field;
 
@@ -63,7 +69,9 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
     const data = Array.from(grouped.values());
     const seriesKeysArray = Array.from(seriesKeys);
     
-    if (isTimeDrillDown) {
+    const isPrimaryTimeAxis = primaryAxis === 'yearMonth' || primaryAxis.toLowerCase().includes('date') || primaryAxis.toLowerCase().includes('month');
+    
+    if (isPrimaryTimeAxis) {
       data.sort((a, b) => String(a[primaryAxis]).localeCompare(String(b[primaryAxis])));
     } else {
       // Sort descending by the sum of all series in the group

@@ -144,6 +144,8 @@ export interface DataGridProps<T> {
   urlPrefix?: string;
   /** Default sort model to apply when no saved state exists */
   defaultSortModel?: { colId: string; sort: 'asc' | 'desc' }[];
+  /** Custom HTML string for the empty state */
+  overlayNoRowsTemplate?: string;
 }
 
 /** Format numbers: integers stay as integers, decimals get 2 places */
@@ -306,6 +308,7 @@ export default function DataGrid<T>({
   urlPrefix,
   secondaryHeader,
   defaultSortModel,
+  overlayNoRowsTemplate,
 }: DataGridProps<T>) {
   const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
@@ -1123,6 +1126,7 @@ export default function DataGrid<T>({
             tooltipShowDelay={300}
             {...(domLayout ? { domLayout } : {})}
             {...(effectiveFetchAll ? { quickFilterText: search } : {})}
+            {...(overlayNoRowsTemplate ? { overlayNoRowsTemplate: overlayNoRowsTemplate } : {})}
           />
         </div>
       </div>

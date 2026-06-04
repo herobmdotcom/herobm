@@ -67,9 +67,9 @@ The `eventType` is formed by combining the `entityType` and the action (e.g., `s
 | `purchase_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted` |
 | `purchase_invoice` | `created`, `status_changed`, `deleted` |
 | `purchase_return` | `created`, `status_changed`, `processed` |
-| `warehouse` | `receipt_created`, `receipt_status_changed`, `shipment_created`, `shipment_status_changed`, `shipment_dispatched`, `pick_created`, `pick_cancelled`, `putaway_completed` |
+| `warehouse` | `receipt_created`, `receipt_status_changed`, `shipment_created`, `shipment_status_changed`, `shipment_dispatched`, `pick_created`, `pick_cancelled`, `putaway_completed`, `stock_moved` |
 | `transfer_order` | `created`, `status_changed`, `deleted` |
-| `inventory_ledger` | `adjustment_processed` |
+| `inventory_ledger` | `entry_posted` |
 | `product` | `created`, `updated`, `deleted`, `archived`, `unarchived` |
 | `customer` | `created`, `updated`, `archived`, `unarchived` |
 | `supplier` | `created`, `updated`, `archived`, `unarchived` |

@@ -102,6 +102,10 @@ export class CreatePurchaseOrderDto {
   referenceNumber?: string;
 
   @IsOptional()
+  @IsString()
+  expectedDate?: string;
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreatePurchaseOrderLineDto)
@@ -136,6 +140,10 @@ export class UpdatePurchaseOrderDto {
   @IsOptional()
   @IsString()
   deliveryLocationId?: string;
+
+  @IsOptional()
+  @IsString()
+  expectedDate?: string;
 }
 
 // ── PO Return DTOs ──
@@ -181,6 +189,7 @@ export class PurchaseOrderResponseDto {
   createdBy?: string | null;
   createdOn?: Date | null;
   modifiedOn?: Date | null;
+  expectedDate?: Date | null;
 
   vendorName?: string;
   @ApiProperty({

@@ -254,7 +254,10 @@ export class SalesCreditNoteService {
         let taxRate = 0;
         if (orderLine.taxCategoryId) {
           try {
-            const cat = await this.taxService.getById(orderLine.taxCategoryId);
+            const cat = await this.taxService.getById(
+              orderLine.taxCategoryId,
+              innerTx,
+            );
             taxRate = parseFloat(cat.rate ?? '0');
           } catch {
             // Category not found — fall back to 0%
@@ -408,7 +411,7 @@ export class SalesCreditNoteService {
         orderTaxProvider !== 'internal' &&
         !orderTaxProvider.endsWith('-error')
       ) {
-        const org = await this.organizationService.get();
+        const org = await this.organizationService.get(innerTx);
         const freightLines = cnLineValues.filter(
           (l) => l.productType === 'freight',
         );
@@ -465,6 +468,7 @@ export class SalesCreditNoteService {
           const enrichRes = await this.enrichmentService.recordRefund(
             orderTaxProvider,
             payload,
+            innerTx,
           );
           if (!enrichRes.isValid) {
             throw new BadRequestException(
@@ -518,8 +522,9 @@ export class SalesCreditNoteService {
   /**
    * Find a single credit note by ID.
    */
-  async findOne(creditNoteId: string) {
-    const [cn] = await this.db
+  async findOne(creditNoteId: string, tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const [cn] = await db
       .select()
       .from(salesCreditNotes)
       .where(eq(salesCreditNotes.creditNoteId, creditNoteId))
@@ -529,7 +534,7 @@ export class SalesCreditNoteService {
       throw new NotFoundException(`Credit note '${creditNoteId}' not found`);
     }
 
-    const lines = await this.db
+    const lines = await db
       .select()
       .from(salesCreditNoteLines)
       .where(eq(salesCreditNoteLines.creditNoteId, creditNoteId));
@@ -583,7 +588,7 @@ export class SalesCreditNoteService {
       throw new BadRequestException(`Invalid credit note state: '${newState}'`);
     }
 
-    const existing = await this.findOne(creditNoteId);
+    const existing = await this.findOne(creditNoteId, tx);
     const allowed = SALES_CREDIT_NOTE_TRANSITIONS[existing.stateCode];
 
     if (!allowed || !allowed.includes(newState)) {

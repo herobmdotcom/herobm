@@ -508,7 +508,7 @@ export default function ProductDetailPage() {
                   onClick={() => setAddingBinLink(true)}
                   disabled={saving}
                 >
-                  + {t('products.storage.addBinLink')}
+                  {t('products.storage.addBinLink')}
                 </button>
               )}
             </div>

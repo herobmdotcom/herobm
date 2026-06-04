@@ -40,9 +40,13 @@ export class EnrichmentService {
     }));
   }
 
-  // modbm-allow-record-any
-  async getConfig(providerName: string): Promise<Record<string, any>> {
-    const [integration] = await this.db
+  async getConfig(
+    providerName: string,
+    tx?: DrizzleDB,
+    // modbm-allow-record-any
+  ): Promise<Record<string, any>> {
+    const db = tx || this.db;
+    const [integration] = await db
       .select()
       .from(integrations)
       .where(eq(integrations.provider, providerName))
@@ -124,6 +128,7 @@ export class EnrichmentService {
     providerName: string,
     // modbm-allow-record-any
     payload: Record<string, any>,
+    tx?: DrizzleDB,
   ): Promise<EnrichmentResult> {
     const provider = this.providers.get(providerName);
 
@@ -137,7 +142,7 @@ export class EnrichmentService {
       return { isValid: false, data: { error: 'Not supported' } };
     }
 
-    const config = await this.getConfig(providerName);
+    const config = await this.getConfig(providerName, tx);
     return provider.recordTransaction(payload, config);
   }
 
@@ -145,6 +150,7 @@ export class EnrichmentService {
     providerName: string,
     // modbm-allow-record-any
     payload: Record<string, any>,
+    tx?: DrizzleDB,
   ): Promise<EnrichmentResult> {
     const provider = this.providers.get(providerName);
 
@@ -158,7 +164,7 @@ export class EnrichmentService {
       return { isValid: false, data: { error: 'Not supported' } };
     }
 
-    const config = await this.getConfig(providerName);
+    const config = await this.getConfig(providerName, tx);
     return provider.recordRefund(payload, config);
   }
 }

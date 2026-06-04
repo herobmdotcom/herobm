@@ -435,8 +435,11 @@ export class OrdersWriteService {
    * Create a new sales order with line items.
    */
   async create(dto: CreateOrderDto, actor: string) {
+    console.log('OrdersWriteService.create START');
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      console.log('inside tx, calling resolveCustomer');
       const customer = await this.resolveCustomer(dto.customerId, tx);
+      console.log('resolveCustomer done');
 
       for (const line of dto.lines) {
         if (line.productId) {

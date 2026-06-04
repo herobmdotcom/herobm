@@ -1,0 +1,2 @@
+ALTER TABLE "modbm_core"."bank_statement_lines" ADD COLUMN IF NOT EXISTS "match_group_id" uuid;--> statement-breakpoint
+ALTER TABLE "modbm_core"."gl_journal_lines" ADD COLUMN IF NOT EXISTS "match_group_id" uuid;

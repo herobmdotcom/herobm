@@ -321,7 +321,7 @@ export default function IntegrationsSettingsPage() {
                 onSave={saveTaxRule}
                 onDelete={deleteTaxRule}
                 onAdd={() => ({ id: '', country: '', provider: 'internal' })}
-                addLabel="Add Rule"
+                addLabel="+ Add Rule"
               />
             </div>
 
@@ -381,7 +381,7 @@ export default function IntegrationsSettingsPage() {
                 onSave={saveEnrichmentRule}
                 onDelete={deleteEnrichmentRule}
                 onAdd={() => ({ id: '', field: '', country: '', provider: providers[0]?.name || '' })}
-                addLabel="Add Rule"
+                addLabel="+ Add Rule"
               />
             </div>
           </div>

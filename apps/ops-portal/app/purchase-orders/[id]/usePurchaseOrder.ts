@@ -52,6 +52,7 @@ export function usePurchaseOrder(id: string) {
   /* ── Editable header fields ──────────────────────────────────── */
   const [editName, setEditName] = useState('');
   const [editReferenceNumber, setEditReferenceNumber] = useState('');
+  const [editExpectedDate, setEditExpectedDate] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editLocationId, setEditLocationId] = useState<string | null>(null);
   const [headerDirty, setHeaderDirty] = useState(false);
@@ -87,7 +88,7 @@ export function usePurchaseOrder(id: string) {
   const [allocationsLoading, setAllocationsLoading] = useState(false);
 
   /* ── Derived flags ──────────────────────────────────────────── */
-  const isHeaderEditable = order?.stateCode !== PURCHASE_ORDER_STATE.CANCELLED && order?.stateCode !== PURCHASE_ORDER_STATE.LEGACY;
+  const isHeaderEditable = order?.stateCode === PURCHASE_ORDER_STATE.DRAFT || order?.stateCode === PURCHASE_ORDER_STATE.ORDERED || order?.stateCode === PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED;
   const isLinesEditable = order?.stateCode === PURCHASE_ORDER_STATE.DRAFT;
 
   const allowedTransitions = useMemo(() => {
@@ -143,6 +144,7 @@ export function usePurchaseOrder(id: string) {
       setOrder(data as unknown as OrderDetail);
       setEditName(data.name || '');
       setEditReferenceNumber(data.referenceNumber || '');
+      setEditExpectedDate(data.expectedDate ? new Date(data.expectedDate).toISOString().split('T')[0] : '');
       setEditNotes(data.notes || '');
       setEditLocationId(data.deliveryLocationId || null);
       setHeaderDirty(false);
@@ -237,10 +239,11 @@ export function usePurchaseOrder(id: string) {
     const changed =
       editName !== (order.name || '') ||
       editReferenceNumber !== (order.referenceNumber || '') ||
+      editExpectedDate !== (order.expectedDate ? new Date(order.expectedDate).toISOString().split('T')[0] : '') ||
       editNotes !== (order.notes || '') ||
       editLocationId !== (order.deliveryLocationId || null);
     setHeaderDirty(changed);
-  }, [editName, editReferenceNumber, editNotes, editLocationId, order]);
+  }, [editName, editReferenceNumber, editExpectedDate, editNotes, editLocationId, order]);
 
   /* ── Mutations ──────────────────────────────────────────────── */
 
@@ -251,6 +254,7 @@ export function usePurchaseOrder(id: string) {
       await api.purchaseOrdersControllerUpdate(id, {
         name: editName || undefined,
         referenceNumber: editReferenceNumber || undefined,
+        expectedDate: editExpectedDate ? new Date(editExpectedDate).toISOString() : undefined,
         notes: editNotes || undefined,
         deliveryLocationId: editLocationId || undefined,
       });
@@ -401,6 +405,7 @@ export function usePurchaseOrder(id: string) {
     // Header editing
     editName, setEditName,
     editReferenceNumber, setEditReferenceNumber,
+    editExpectedDate, setEditExpectedDate,
     editNotes, setEditNotes,
     editLocationId, setEditLocationId,
     headerDirty,

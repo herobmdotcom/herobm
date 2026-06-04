@@ -351,16 +351,6 @@ describe('API E2E — Ledger Symmetry Register', () => {
         const grId = grRes.body.goodsReceivedId;
         const grLineId = grRes.body.lines[0].goodsReceivedLineId;
 
-        // Resolve the line against the PO line
-        await request(app.getHttpServer())
-          .post(`/api/goods-received/lines/${grLineId}/resolve`)
-          .set('Authorization', `Bearer ${ctx.adminToken}`)
-          .send({
-            purchaseOrderLineId: poLineId,
-            allocatedQuantity: '2',
-          })
-          .expect(201);
-
         ctx.purchaseOrderLineId = poLineId;
 
         // Create the return
@@ -429,7 +419,20 @@ describe('API E2E — Ledger Symmetry Register', () => {
         await request(app.getHttpServer())
           .patch(`/api/sales-orders/${ctx.shipOrderId}/state`)
           .set('Authorization', `Bearer ${ctx.adminToken}`)
-          .send({ stateCode: 'picking' });
+          .send({ stateCode: 'quoted' })
+          .expect(200);
+
+        await request(app.getHttpServer())
+          .patch(`/api/sales-orders/${ctx.shipOrderId}/state`)
+          .set('Authorization', `Bearer ${ctx.adminToken}`)
+          .send({ stateCode: 'confirmed' })
+          .expect(200);
+
+        await request(app.getHttpServer())
+          .patch(`/api/sales-orders/${ctx.shipOrderId}/state`)
+          .set('Authorization', `Bearer ${ctx.adminToken}`)
+          .send({ stateCode: 'picking' })
+          .expect(200);
 
         const fullOrder = await request(app.getHttpServer())
           .get(`/api/sales-orders/${ctx.shipOrderId}`)
@@ -437,10 +440,12 @@ describe('API E2E — Ledger Symmetry Register', () => {
         const lineId = fullOrder.body.lines[0].salesOrderLineId;
         ctx.shipOrderLineId = lineId;
 
-        await request(app.getHttpServer())
+        const pickRes = await request(app.getHttpServer())
           .post(`/api/sales-orders/${ctx.shipOrderId}/picking/lines/${lineId}`)
           .set('Authorization', `Bearer ${ctx.adminToken}`)
           .send({ binId: ctx.validBinId, quantity: '2' });
+        if (pickRes.status !== 201) console.error('Pick Error:', pickRes.body);
+        expect(pickRes.status).toBe(201);
       },
       action: async (app, ctx) => {
         const shipRes = await request(app.getHttpServer())
@@ -451,6 +456,8 @@ describe('API E2E — Ledger Symmetry Register', () => {
               { salesOrderLineId: ctx.shipOrderLineId, quantityShipped: '2' },
             ],
           });
+        if (shipRes.status !== 201) console.error('Ship Error:', shipRes.body);
+        expect(shipRes.status).toBe(201);
         ctx.shipmentId = shipRes.body.shipmentId;
 
         await request(app.getHttpServer())
@@ -521,16 +528,22 @@ describe('API E2E — Ledger Symmetry Register', () => {
         expect(pickRes.status).toBe(201);
       },
       action: async (app, ctx) => {
-        await request(app.getHttpServer())
+        const shipRes = await request(app.getHttpServer())
           .post(`/api/transfers/${ctx.shipTransferId}/ship`)
           .set('Authorization', `Bearer ${ctx.adminToken}`)
           .send({});
+        if (shipRes.status !== 200 && shipRes.status !== 201)
+          console.error('Transfer Ship Error:', shipRes.body);
+        expect([200, 201]).toContain(shipRes.status);
       },
       inverseAction: async (app, ctx) => {
-        await request(app.getHttpServer())
+        const cancelRes = await request(app.getHttpServer())
           .post(`/api/transfers/${ctx.shipTransferId}/cancel-shipment`)
           .set('Authorization', `Bearer ${ctx.adminToken}`)
           .send({});
+        if (cancelRes.status !== 200 && cancelRes.status !== 201)
+          console.error('Cancel Shipment Error:', cancelRes.body);
+        expect([200, 201]).toContain(cancelRes.status);
       },
     },
     {
@@ -555,10 +568,13 @@ describe('API E2E — Ledger Symmetry Register', () => {
           })
           .expect(201);
         ctx.grOrderId = poRes.body.purchaseOrderId;
-        await request(app.getHttpServer())
+        // Draft -> Ordered
+        const p2 = await request(app.getHttpServer())
           .patch(`/api/purchase-orders/${ctx.grOrderId}/state`)
           .set('Authorization', `Bearer ${ctx.adminToken}`)
           .send({ stateCode: 'ordered' });
+        if (p2.status !== 200) console.error('PO Ordered Error:', p2.body);
+        expect(p2.status).toBe(200);
 
         const fullPO = await request(app.getHttpServer())
           .get(`/api/purchase-orders/${ctx.grOrderId}`)
@@ -571,21 +587,27 @@ describe('API E2E — Ledger Symmetry Register', () => {
           .set('Authorization', `Bearer ${ctx.adminToken}`)
           .send({
             purchaseOrderId: ctx.grOrderId,
+            vendorId: ctx.validVendorId,
             locationId: ctx.validLocationId,
             lines: [
               {
-                purchaseOrderLineId: ctx.grOrderLineId,
+                productId: ctx.validProductId,
                 quantityReceived: '3',
               },
             ],
           });
-        ctx.receiptId = recRes.body.receiptId;
+        if (recRes.status !== 201) console.error('GR Error:', recRes.body);
+        expect(recRes.status).toBe(201);
+        ctx.receiptId = recRes.body.goodsReceivedId;
       },
       inverseAction: async (app, ctx) => {
-        await request(app.getHttpServer())
+        const cancelRes = await request(app.getHttpServer())
           .post(`/api/goods-received/${ctx.receiptId}/cancel`)
           .set('Authorization', `Bearer ${ctx.adminToken}`)
           .send({});
+        if (cancelRes.status !== 200 && cancelRes.status !== 201)
+          console.error('Cancel GR Error:', cancelRes.body);
+        expect([200, 201]).toContain(cancelRes.status);
       },
     },
     {
@@ -663,12 +685,14 @@ describe('API E2E — Ledger Symmetry Register', () => {
     app.setGlobalPrefix('api');
     await app.init();
 
+    console.log('before adminLogin');
     const adminLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
       .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
       .expect(201);
     const adminToken = adminLogin.body.access_token;
 
+    console.log('before accountsRes');
     const accountsRes = await request(app.getHttpServer())
       .get('/api/gl/accounts')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -693,24 +717,28 @@ describe('API E2E — Ledger Symmetry Register', () => {
       leaves.find((l) => l.accountCode === '1110') || leaves[2]
     ).glAccountId;
 
+    console.log('before customers');
     const customers = await request(app.getHttpServer())
       .get('/api/customers?limit=1')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     const validCustomerId = customers.body.data[0].customerId;
 
+    console.log('before vendors');
     const vendors = await request(app.getHttpServer())
       .get('/api/suppliers?limit=1')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     const validVendorId = vendors.body.data[0].vendorId;
 
+    console.log('before products');
     const products = await request(app.getHttpServer())
       .get('/api/products?limit=1')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     const validProductId = products.body.data[0].productId;
 
+    console.log('before locations');
     const locations = await request(app.getHttpServer())
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
@@ -718,6 +746,7 @@ describe('API E2E — Ledger Symmetry Register', () => {
     const validLocationId = locations.body[0].locationId;
     let validLocationId2 = locations.body[1]?.locationId;
     if (!validLocationId2) {
+      console.log('before createLocRes');
       const createLocRes = await request(app.getHttpServer())
         .post('/api/inventory/locations')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -730,11 +759,7 @@ describe('API E2E — Ledger Symmetry Register', () => {
       validLocationId2 = createLocRes.body.locationId;
     }
 
-    const bins = await request(app.getHttpServer())
-      .get('/api/inventory/bins')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    const validBinId = bins.body.data[0]?.binId;
+    const validBinId = '40000000-0000-0000-0000-000000000003';
 
     if (!validLocationId)
       console.error('validLocationId is undefined! Response:', locations.body);
@@ -767,15 +792,21 @@ describe('API E2E — Ledger Symmetry Register', () => {
   for (const pair of registerPairs) {
     describe(`Symmetry Flow: ${pair.name}`, () => {
       it('Executes the action and inverseAction leaving ledgers symmetrical', async () => {
+        console.log('starting test', pair.name);
         if (pair.setup) {
+          console.log('running setup');
           await pair.setup(app, context);
         }
 
+        console.log('running snapshotA');
         const snapshotA = await snapshotLedgers(app, context.adminToken);
 
+        console.log('running action');
         await pair.action(app, context);
+        console.log('running inverseAction');
         await pair.inverseAction(app, context);
 
+        console.log('running snapshotB');
         const snapshotB = await snapshotLedgers(app, context.adminToken);
 
         // Assert Trial Balance matches exactly

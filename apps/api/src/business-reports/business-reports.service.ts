@@ -3,6 +3,7 @@ import {
   NotFoundException,
   Inject,
   InternalServerErrorException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -10,16 +11,51 @@ import { businessReports } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import { BadRequestException } from '@nestjs/common';
+import { CASBIN_ENFORCER } from '../auth/casbin.provider';
+import type { Enforcer } from 'casbin';
 
 @Injectable()
 export class BusinessReportsService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly registry: DataSourcesRegistry,
+    @Inject(CASBIN_ENFORCER) private enforcer: Enforcer,
   ) {}
 
-  async getReports() {
-    return this.db.select().from(businessReports).orderBy(businessReports.name);
+  async getReports(user?: any) {
+    const reports = await this.db
+      .select()
+      .from(businessReports)
+      .orderBy(businessReports.name);
+
+    if (!user?.role) return reports;
+
+    const filtered: typeof reports = [];
+    for (const report of reports) {
+      const provider = this.registry.getProvider(report.dataSourceHook);
+      if (!provider || !provider.requiredPermissions) {
+        filtered.push(report);
+        continue;
+      }
+
+      let allowed = true;
+      for (const p of provider.requiredPermissions) {
+        const hasAccess = await this.enforcer.enforce(
+          user.role,
+          p.resource,
+          p.action,
+        );
+        if (!hasAccess) {
+          allowed = false;
+          break;
+        }
+      }
+
+      if (allowed) {
+        filtered.push(report);
+      }
+    }
+    return filtered;
   }
 
   getAvailableHooks() {
@@ -41,6 +77,21 @@ export class BusinessReportsService {
       throw new BadRequestException(
         `No data provider registered for hook: ${report.dataSourceHook}`,
       );
+    }
+
+    if (provider.requiredPermissions && user?.role) {
+      for (const p of provider.requiredPermissions) {
+        const allowed = await this.enforcer.enforce(
+          user.role,
+          p.resource,
+          p.action,
+        );
+        if (!allowed) {
+          throw new ForbiddenException(
+            `Insufficient permissions to read ${p.resource} for this report.`,
+          );
+        }
+      }
     }
     if (!provider.fetchData) {
       throw new InternalServerErrorException(

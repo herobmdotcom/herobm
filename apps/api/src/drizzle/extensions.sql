@@ -82,8 +82,7 @@ BEGIN
         ('RECEIVING', handling_zone_id, 'staging', 'system', true, 'system'),
         ('CUSTOMER_RETURNS', handling_zone_id, 'staging', 'system', true, 'system'),
         ('SUPPLIER_RETURNS', handling_zone_id, 'staging', 'system', true, 'system'),
-        ('INTRA_TRANSIT', handling_zone_id, 'in_transit', 'system', true, 'system'),
-        ('QUARANTINE', handling_zone_id, 'quarantine', 'system', true, 'system');
+        ('INTRA_TRANSIT', handling_zone_id, 'in_transit', 'system', true, 'system');
 
     RETURN NEW;
 END;
@@ -116,15 +115,5 @@ WHERE z.code = 'HANDLING'
   AND NOT EXISTS (
     SELECT 1 FROM modbm_core.bins b
     WHERE b.zone_id = z.zone_id AND b.bin_number = 'SUPPLIER_RETURNS'
-  );
-
--- Back-fill QUARANTINE bin for existing locations that don't have one yet
-INSERT INTO modbm_core.bins (bin_number, zone_id, bin_type, source, is_unavailable, created_by)
-SELECT 'QUARANTINE', z.zone_id, 'quarantine', 'system', true, 'system'
-FROM modbm_core.zones z
-WHERE z.code = 'HANDLING'
-  AND NOT EXISTS (
-    SELECT 1 FROM modbm_core.bins b
-    WHERE b.zone_id = z.zone_id AND b.bin_number = 'QUARANTINE'
   );
 

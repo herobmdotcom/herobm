@@ -13,4 +13,5 @@ export type QuarantineMoveDtoSourceType = typeof QuarantineMoveDtoSourceType[key
 export const QuarantineMoveDtoSourceType = {
   goods_receipt: 'goods_receipt',
   sales_return: 'sales_return',
+  manual: 'manual',
 } as const;

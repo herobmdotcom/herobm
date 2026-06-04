@@ -71,6 +71,14 @@ export function isPickableBinCondition(binTable: any) {
 }
 
 /**
+ * Drizzle condition for filtering quarantine bins.
+ * Expects the `bins` table object from the schema.
+ */
+export function isQuarantineBinCondition(binTable: any) {
+  return eq(binTable.binType, BIN_TYPE.QUARANTINE);
+}
+
+/**
  * Raw SQL condition for filtering pickable bins.
  * Expects the alias of the bins table (e.g. 'b').
  */

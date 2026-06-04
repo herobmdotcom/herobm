@@ -3,6 +3,11 @@ import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';
 import { DataSourcesRegistry } from './data-sources.registry';
+import {
+  DataSourceItemDto,
+  SampleReportDto,
+  SampleRecordDto,
+} from './data-sources.dto';
 
 @ApiTags('Data Sources')
 @CasbinResource(SystemResource.BUSINESS_REPORT)
@@ -14,7 +19,7 @@ export class DataSourcesController {
   @CasbinAction('read')
   @ApiOkResponse({
     description: 'List of data sources',
-    schema: { type: 'array', items: { type: 'object' } },
+    type: [DataSourceItemDto],
   })
   @ApiOperation({
     summary: 'List all registered data sources',
@@ -29,7 +34,7 @@ export class DataSourcesController {
   @CasbinAction('read')
   @ApiOkResponse({
     description: 'Sample report data',
-    schema: { type: 'object' },
+    type: SampleReportDto,
   })
   @ApiOperation({
     summary: 'Get sample data for Business Reports (fetchData format)',
@@ -66,7 +71,7 @@ export class DataSourcesController {
   @CasbinAction('read')
   @ApiOkResponse({
     description: 'Sample record data',
-    schema: { type: 'object' },
+    type: SampleRecordDto,
   })
   @ApiOperation({
     summary: 'Get sample data for PDF Templates (resolveData format)',

@@ -33,6 +33,7 @@ const EVENT_TABLE_MAP: Record<string, unknown> = {
   [EntityType.WAREHOUSE]: warehouseEvents,
   [EntityType.PAYMENT]: financialEvents,
   [EntityType.SYSTEM]: systemEvents, // or financialEvents if GL_POSTED, see domain mapping
+  [EntityType.INVENTORY_LEDGER]: inventoryEvents,
 };
 
 // ---------------------------------------------------------------------------
@@ -80,12 +81,6 @@ export async function emitEvent(
   ) {
     finalEventForOutbox = 'general_ledger.entry_posted';
     targetTable = financialEvents;
-  } else if (
-    params.entityType === EntityType.SYSTEM &&
-    params.eventType === EventType.STOCK_ADJUSTED
-  ) {
-    finalEventForOutbox = 'inventory_ledger.adjustment_processed';
-    targetTable = inventoryEvents;
   } else if (params.entityType === EntityType.SHIPMENT) {
     if (params.eventType === EventType.STOCK_DISPATCHED) {
       finalEventForOutbox = 'warehouse.shipment_dispatched';

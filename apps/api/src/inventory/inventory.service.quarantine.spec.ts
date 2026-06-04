@@ -74,7 +74,17 @@ describe('InventoryService - Quarantine', () => {
     // The locations trigger automatically scaffolds system bins. Let's fetch them.
     const autoBins = await pg.db.select().from(bins);
     RECV_BIN_ID = autoBins.find((b) => b.binNumber === 'RECEIVING')!.binId;
-    QUAR_BIN_ID = autoBins.find((b) => b.binNumber === 'QUARANTINE')!.binId;
+
+    // Manually insert QUARANTINE bin since it was removed from auto-scaffolding
+    QUAR_BIN_ID = '00000000-0000-0000-0000-000000000010';
+    await pg.db.insert(bins).values({
+      binId: QUAR_BIN_ID,
+      zoneId: autoBins[0].zoneId,
+      binNumber: 'QUARANTINE',
+      binType: 'quarantine',
+      isUnavailable: true,
+      source: 'system',
+    });
     await pg.db
       .insert(uomDictionary)
       .values({ uomCode: 'EA', description: 'Each' });

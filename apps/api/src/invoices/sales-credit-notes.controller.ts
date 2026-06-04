@@ -24,7 +24,10 @@ import {
 } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
-import { CreateSalesCreditNoteDto } from './sales-credit-notes.dto';
+import {
+  CreateSalesCreditNoteDto,
+  SalesCreditNoteResponseDto,
+} from './sales-credit-notes.dto';
 
 export class EmptyBodyDto {}
 
@@ -43,7 +46,7 @@ export class SalesCreditNotesController {
   })
   @ApiOkResponse({
     description: 'The requested credit note',
-    schema: { type: 'object' },
+    type: SalesCreditNoteResponseDto,
   })
   findOne(@Param('id') id: string) {
     return this.creditNoteService.findOne(id);
@@ -58,7 +61,7 @@ export class SalesCreditNotesController {
   })
   @ApiCreatedResponse({
     description: 'Created Credit Note',
-    schema: { type: 'object' },
+    type: SalesCreditNoteResponseDto,
   })
   createCreditNote(
     @Body() body: CreateSalesCreditNoteDto,
@@ -78,7 +81,7 @@ export class SalesCreditNotesController {
   })
   @ApiOkResponse({
     description: 'Posted Credit Note',
-    schema: { type: 'object' },
+    type: SalesCreditNoteResponseDto,
   })
   @ApiBody({ type: EmptyBodyDto })
   @HttpCode(200)

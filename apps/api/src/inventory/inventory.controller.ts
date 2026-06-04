@@ -7,6 +7,7 @@ import {
   ApiTags,
   ApiExtraModels,
   getSchemaPath,
+  ApiResponse,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -30,6 +31,7 @@ import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import {
   PutawayBulkDto,
   QuarantineMoveDto,
+  MoveStockDto,
   InventoryResponseDto,
   InventoryBinResponseDto,
   PutawayContextResponseDto,
@@ -113,11 +115,13 @@ export class InventoryController {
   })
   @ApiPaginatedResponse(InventoryBinResponseDto)
   @ApiQuery({ name: 'locationNo', required: false })
+  @ApiQuery({ name: 'binType', required: false })
   findBins(
     @Query() query: PaginationQuery,
     @Query('locationNo') locationNo?: string,
+    @Query('binType') binType?: string,
   ) {
-    return this.inventoryService.findBins({ ...query, locationNo });
+    return this.inventoryService.findBins({ ...query, locationNo, binType });
   }
 
   @Get('putaway-context')
@@ -227,5 +231,19 @@ export class InventoryController {
     @AuthUser() user: JwtUser,
   ) {
     return this.inventoryService.quarantineStock(dto, user.username);
+  }
+
+  @Post('move')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Move Stock manually',
+    description: 'Manually move stock between bins in the same location.',
+  })
+  @ApiCreatedResponse({
+    type: InventorySuccessResponseDto,
+    description: 'Move successful',
+  })
+  async moveStock(@Body() dto: MoveStockDto, @AuthUser() user: JwtUser) {
+    return this.inventoryService.moveStock(dto, user.username);
   }
 }

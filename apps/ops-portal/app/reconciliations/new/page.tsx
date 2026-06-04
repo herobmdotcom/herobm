@@ -43,7 +43,7 @@ export default function NewReconciliationPage() {
       });
       const data = res.data;
       
-      router.push(`/general-ledger/reconciliations/${data.reconciliationId}`);
+      router.push(`/reconciliations/${data.reconciliationId}`);
     } catch (err) {
       reportError(err, 'NewReconciliationSubmit');
       alert(t('createError'));

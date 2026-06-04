@@ -134,6 +134,41 @@
       "when": 1780513846124,
       "tag": "0018_add_pdf_template_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1780554958752,
+      "tag": "0019_open_zeigeist",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1780580588847,
+      "tag": "0020_add_gl_match_groups",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1780582315894,
+      "tag": "0021_add_user_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1780587946230,
+      "tag": "0022_rich_leech",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1780594365909,
+      "tag": "0023_rules_features",
+      "breakpoints": true
     }
   ]
 }

@@ -31,18 +31,10 @@ export default function ReconciliationsPage() {
       field: 'status', 
       headerName: t('columns.status'), 
       width: 120,
-      cellRenderer: (params: any) => {
+      valueFormatter: (params: any) => {
         if (!params.value) return '';
         const isPosted = params.value === 'posted';
-        return (
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
-            isPosted 
-              ? 'bg-emerald-50 text-[var(--success)] border-emerald-200' 
-              : 'bg-amber-50 text-[var(--warning)] border-amber-200'
-          }`}>
-            {isPosted ? tCommon('states.posted') : tCommon('states.draft')}
-          </span>
-        );
+        return isPosted ? tCommon('states.posted') : tCommon('states.draft');
       }
     }
   ], [t, tCommon]);
@@ -54,10 +46,10 @@ export default function ReconciliationsPage() {
           endpoint="/api/gl/reconciliations"
           columns={columns}
           fetchAll={true}
-          onRowClicked={(row: any) => router.push(`/general-ledger/reconciliations/${row.reconciliationId}`)}
+          onRowClicked={(row: any) => router.push(`/reconciliations/${row.reconciliationId}`)}
           pageTitle={t('title')}
           headerActions={
-            <>
+            <div className="flex gap-2">
               <button
                 onClick={() => setIsImportModalOpen(true)}
                 className="btn btn-secondary"
@@ -65,12 +57,12 @@ export default function ReconciliationsPage() {
                 {t('importStatement')}
               </button>
               <button
-                onClick={() => router.push('/general-ledger/reconciliations/new')}
+                onClick={() => router.push('/reconciliations/new')}
                 className="px-3 lg:px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap"
               >
-                + {t('newReconciliation')}
+                {t('newReconciliation')}
               </button>
-            </>
+            </div>
           }
         />
       </div>

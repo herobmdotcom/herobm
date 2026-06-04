@@ -104,7 +104,7 @@ export default function NewAccountPage() {
                   onClick={handleSubmit}
                   disabled={!isValid || submitting}
                 >
-                  {submitting ? t('common.saving') : `+ ${t('customers.buttons.createCustomer')}`}
+                  {submitting ? t('common.saving') : t('customers.buttons.createCustomer')}
                 </button>
               </>
             }

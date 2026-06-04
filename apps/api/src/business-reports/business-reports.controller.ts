@@ -46,8 +46,8 @@ export class BusinessReportsController {
     description: 'Returns a list of available business reports',
   })
   @ApiOkResponse({ type: [Object] }) // BYPASS-TYPING-TEST
-  async getReports() {
-    return this.service.getReports();
+  async getReports(@AuthUser() user: JwtUser) {
+    return this.service.getReports(user);
   }
 
   @Get('hooks')

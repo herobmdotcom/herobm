@@ -836,19 +836,24 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5 items-start">
                   <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>{t('compliance.purchasingBlock')}</label>
-                  <label className="switch" title={editIsPurchasingBlocked ? t('tooltips.currentlyBlocked') : t('tooltips.currentlyActive')}>
-                    <input 
-                      type="checkbox" 
-                      checked={!editIsPurchasingBlocked} 
-                      disabled={!isEditable || saving}
-                      onChange={e => {
-                        const newBlocked = !e.target.checked;
-                        setEditIsPurchasingBlocked(newBlocked);
-                        saveField('isPurchasingBlocked', newBlocked, supplier.isPurchasingBlocked || false);
-                      }} 
-                    />
-                    <span className="switch-slider"></span>
-                  </label>
+                  <div className="flex items-center gap-3">
+                    <label className="switch" title={editIsPurchasingBlocked ? t('tooltips.currentlyBlocked') : t('tooltips.currentlyActive')}>
+                      <input 
+                        type="checkbox" 
+                        checked={!editIsPurchasingBlocked} 
+                        disabled={!isEditable || saving}
+                        onChange={e => {
+                          const newBlocked = !e.target.checked;
+                          setEditIsPurchasingBlocked(newBlocked);
+                          saveField('isPurchasingBlocked', newBlocked, supplier.isPurchasingBlocked || false);
+                        }} 
+                      />
+                      <span className="switch-slider"></span>
+                    </label>
+                    <span className={`text-sm font-semibold ${!editIsPurchasingBlocked ? 'text-[var(--success)]' : 'text-red-500'}`}>
+                      {!editIsPurchasingBlocked ? t('compliance.noBlock') : t('compliance.blocked')}
+                    </span>
+                  </div>
                 </div>
                 {editIsPurchasingBlocked && (
                   <div>
@@ -879,19 +884,24 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5 items-start">
                   <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>{t('compliance.paymentBlock')}</label>
-                  <label className="switch" title={editIsPaymentBlocked ? t('tooltips.currentlyBlocked') : t('tooltips.currentlyActive')}>
-                    <input 
-                      type="checkbox" 
-                      checked={!editIsPaymentBlocked} 
-                      disabled={!isEditable || saving}
-                      onChange={e => {
-                        const newBlocked = !e.target.checked;
-                        setEditIsPaymentBlocked(newBlocked);
-                        saveField('isPaymentBlocked', newBlocked, supplier.isPaymentBlocked || false);
-                      }} 
-                    />
-                    <span className="switch-slider"></span>
-                  </label>
+                  <div className="flex items-center gap-3">
+                    <label className="switch" title={editIsPaymentBlocked ? t('tooltips.currentlyBlocked') : t('tooltips.currentlyActive')}>
+                      <input 
+                        type="checkbox" 
+                        checked={!editIsPaymentBlocked} 
+                        disabled={!isEditable || saving}
+                        onChange={e => {
+                          const newBlocked = !e.target.checked;
+                          setEditIsPaymentBlocked(newBlocked);
+                          saveField('isPaymentBlocked', newBlocked, supplier.isPaymentBlocked || false);
+                        }} 
+                      />
+                      <span className="switch-slider"></span>
+                    </label>
+                    <span className={`text-sm font-semibold ${!editIsPaymentBlocked ? 'text-[var(--success)]' : 'text-red-500'}`}>
+                      {!editIsPaymentBlocked ? t('compliance.noBlock') : t('compliance.blocked')}
+                    </span>
+                  </div>
                 </div>
                 {editIsPaymentBlocked && (
                   <div>

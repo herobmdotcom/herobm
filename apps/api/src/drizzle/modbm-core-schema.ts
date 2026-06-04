@@ -433,6 +433,7 @@ export const purchaseOrders = modbmCore.table(
     currencyCode: text('currency_code').notNull(),
     notes: text('notes'),
     customFields: jsonb('custom_fields'),
+    expectedDate: timestamp('expected_date', { withTimezone: true }),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -1573,6 +1574,30 @@ export const users = modbmCore.table('users', {
 });
 
 // ---------------------------------------------------------------------------
+// user_settings  (User-specific configurations like dashboards and saved views)
+// ---------------------------------------------------------------------------
+export const userSettings = modbmCore.table('user_settings', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.userId, { onDelete: 'cascade' }),
+  // modbm-allow-record-any
+  dashboardConfig: jsonb('dashboard_config')
+    .$type<Record<string, unknown>>()
+    .default({}),
+  // modbm-allow-record-any
+  reportConfigs: jsonb('report_configs')
+    .$type<Record<string, unknown>>()
+    .default({}),
+  // modbm-allow-record-any
+  preferences: jsonb('preferences')
+    .$type<Record<string, unknown>>()
+    .default({}),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+// ---------------------------------------------------------------------------
 // user_events  (Audit log for user management actions)
 // ---------------------------------------------------------------------------
 export const userEvents = modbmCore.table('user_events', {
@@ -1850,6 +1875,7 @@ export const glJournalLines = modbmCore.table('gl_journal_lines', {
     () => costCenters.costCenterId,
   ),
   activityId: uuid('activity_id').references(() => activities.activityId),
+  matchGroupId: uuid('match_group_id'),
 });
 
 // ---------------------------------------------------------------------------
@@ -1886,6 +1912,9 @@ export const glSettings = modbmCore.table('gl_settings', {
     .$type<any[]>()
     .default([]),
   fiscalYearStartMonth: integer('fiscal_year_start_month').notNull(), // Sourced from settings JSON
+  bankMatchDateToleranceDays: integer('bank_match_date_tolerance_days')
+    .notNull()
+    .default(3),
   defaultArAccountId: uuid('default_ar_account_id').references(
     () => glAccounts.glAccountId,
   ),
@@ -2238,10 +2267,29 @@ export const reconciliationRules = modbmCore.table('reconciliation_rules', {
   glAccountId: uuid('gl_account_id').references(() => glAccounts.glAccountId), // Nullable for global rules
   conditionType: text('condition_type').notNull(), // 'contains', 'starts_with', 'exact_match'
   conditionValue: text('condition_value').notNull(),
+  amountMin: numeric('amount_min'),
+  amountMax: numeric('amount_max'),
   targetGlAccountId: uuid('target_gl_account_id')
     .notNull()
     .references(() => glAccounts.glAccountId),
+  costCenterId: uuid('cost_center_id').references(
+    () => costCenters.costCenterId,
+  ),
+  activityId: uuid('activity_id').references(() => activities.activityId),
+  partyType: text('party_type'), // 'customer' | 'supplier'
+  partyId: text('party_id'),
   priority: integer('priority').notNull().default(10),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// gl_match_groups (Metadata about bank statement matches)
+// ---------------------------------------------------------------------------
+export const glMatchGroups = modbmCore.table('gl_match_groups', {
+  matchGroupId: uuid('match_group_id').primaryKey(),
+  matchType: text('match_type').notNull(), // 'manual', 'rule', 'auto'
+  ruleId: uuid('rule_id').references(() => reconciliationRules.ruleId),
+  createdBy: text('created_by').notNull(),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 
@@ -2264,6 +2312,7 @@ export const bankStatementLines = modbmCore.table('bank_statement_lines', {
   matchedJournalLineId: uuid('matched_journal_line_id').references(
     () => glJournalLines.journalLineId,
   ),
+  matchGroupId: uuid('match_group_id'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 

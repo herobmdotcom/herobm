@@ -5,9 +5,11 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { InventoryLocationResponseDtoZonesItem } from './inventoryLocationResponseDtoZonesItem';
 
 export interface InventoryLocationResponseDto {
   locationId: string;
   code: string;
   name: string;
+  zones?: InventoryLocationResponseDtoZonesItem[];
 }

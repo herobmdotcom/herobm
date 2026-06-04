@@ -10,6 +10,12 @@ export interface CreateReconciliationRuleDto {
   glAccountId?: string;
   conditionType: string;
   conditionValue: string;
+  amountMin?: number;
+  amountMax?: number;
   targetGlAccountId: string;
+  costCenterId?: string;
+  activityId?: string;
+  partyType?: string;
+  partyId?: string;
   priority?: number;
 }

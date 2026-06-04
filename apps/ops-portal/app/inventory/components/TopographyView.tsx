@@ -176,7 +176,7 @@ export default function TopographyView() {
             }}
             className="btn btn-primary"
           >
-            + {tLoc('addLocation')}
+            {tLoc('addLocation')}
           </button>
         )}
       </div>

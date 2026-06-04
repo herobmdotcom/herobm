@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 
 import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
 
 export class CreateMappingProfileDto {
   @IsUUID()
@@ -50,15 +50,40 @@ export class CreateReconciliationRuleDto {
   @IsNotEmpty()
   conditionValue: string;
 
+  @IsOptional()
+  amountMin?: number;
+
+  @IsOptional()
+  amountMax?: number;
+
   @IsUUID()
   @IsNotEmpty()
   targetGlAccountId: string;
+
+  @IsUUID()
+  @IsOptional()
+  costCenterId?: string;
+
+  @IsUUID()
+  @IsOptional()
+  activityId?: string;
+
+  @IsString()
+  @IsOptional()
+  partyType?: string;
+
+  @IsString()
+  @IsOptional()
+  partyId?: string;
 
   @IsNumber()
   @IsOptional()
   priority?: number;
 }
 
+export class UpdateReconciliationRuleDto extends PartialType(
+  CreateReconciliationRuleDto,
+) {}
 export class ImportCsvDto {
   @ApiProperty({
     type: 'string',

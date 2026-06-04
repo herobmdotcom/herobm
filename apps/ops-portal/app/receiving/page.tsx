@@ -13,6 +13,7 @@ import POAllocationCell from './POAllocationCell';
 import AllocationSlideOver from './AllocationSlideOver';
 import { GOODS_RECEIVED_STATE, PUTAWAY_STATUS, MATCH_STATUS } from '@modbm/shared';
 import { getErrorMessage } from '@modbm/shared';
+import QuarantineModal from './QuarantineModal';
 
 function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, days, setDays, t, tCommon, defaultLocId }: { locations: unknown[], selectedLocationId: string, setSelectedLocationId: (v: string) => void, days: string, setDays: (v: string) => void, t: ReturnType<typeof useTranslations>, tCommon: ReturnType<typeof useTranslations>, defaultLocId: string }) {
     const [open, setOpen] = useState(false);
@@ -30,48 +31,87 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
     const isActive = selectedLocationId !== defaultLocId || days !== '90';
 
     return (
-        <div className="sm:relative" ref={ref}>
-            <button 
-                onClick={() => setOpen(!open)}
-                className={`flex items-center justify-center h-10 w-10 rounded-lg transition-all ${isActive ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-white lg:bg-transparent border border-[var(--border)] lg:border-none text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'}`}
-                title="Filters"
-            >
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined text-[20px]">filter_list</span>
-            </button>
-            {open && (
-                <div className="absolute left-0 right-0 sm:left-auto sm:right-0 top-full mt-2 w-full sm:w-64 bg-white shadow-[0_4px_24px_rgba(0,0,0,0.12)] rounded-xl border border-[var(--border)] p-4 z-50 flex flex-col gap-4">
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{tCommon('columns.location')}</label>
-                        <select
-                            value={selectedLocationId}
-                            onChange={(e) => setSelectedLocationId(e.target.value)}
-                            className="input text-sm w-full"
-                        >
-                            <option value="">{t('buttons.allLocations')}</option>
-                            {locations.map((loc: any) => (
-                                <option key={loc.locationId} value={loc.locationId}>
-                                    {loc.code} - {loc.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{tCommon('columns.date')}</label>
-                        <select
-                            value={days}
-                            onChange={(e) => setDays(e.target.value)}
-                            className="input text-sm w-full"
-                        >
-                            <option value="30">{tCommon('filters.last30Days')}</option>
-                            <option value="90">{tCommon('filters.last90Days')}</option>
-                            <option value="365">{tCommon('filters.last1Year')}</option>
-                            <option value="0">{tCommon('filters.allTime')}</option>
-                        </select>
-                    </div>
+        <>
+            <div className="hidden lg:flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider whitespace-nowrap">{tCommon('columns.location')}</label>
+                    <select
+                        value={selectedLocationId}
+                        onChange={(e) => {
+                            setSelectedLocationId(e.target.value);
+                            localStorage.setItem('receiving_selected_location', e.target.value);
+                        }}
+                        className="input text-sm w-48"
+                    >
+                        <option value="">{t('buttons.allLocations')}</option>
+                        {locations.map((loc: any) => (
+                            <option key={loc.locationId} value={loc.locationId}>
+                                {loc.code} - {loc.name}
+                            </option>
+                        ))}
+                    </select>
                 </div>
-            )}
-        </div>
+                <div className="flex items-center gap-2">
+                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider whitespace-nowrap">{tCommon('columns.date')}</label>
+                    <select
+                        value={days}
+                        onChange={(e) => setDays(e.target.value)}
+                        className="input text-sm w-40"
+                    >
+                        <option value="30">{tCommon('filters.last30Days')}</option>
+                        <option value="90">{tCommon('filters.last90Days')}</option>
+                        <option value="365">{tCommon('filters.last1Year')}</option>
+                        <option value="0">{tCommon('filters.allTime')}</option>
+                    </select>
+                </div>
+            </div>
+
+            <div className="lg:hidden sm:relative" ref={ref}>
+                <button 
+                    onClick={() => setOpen(!open)}
+                    className={`flex items-center justify-center h-10 w-10 rounded-lg transition-all ${isActive ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-white border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'}`}
+                    title="Filters"
+                >
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    <span className="material-symbols-outlined text-[20px]">filter_list</span>
+                </button>
+                {open && (
+                    <div className="absolute left-0 right-0 sm:left-auto sm:right-0 top-full mt-2 w-full sm:w-64 bg-white shadow-[0_4px_24px_rgba(0,0,0,0.12)] rounded-xl border border-[var(--border)] p-4 z-50 flex flex-col gap-4">
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{tCommon('columns.location')}</label>
+                            <select
+                                value={selectedLocationId}
+                                onChange={(e) => {
+                                    setSelectedLocationId(e.target.value);
+                                    localStorage.setItem('receiving_selected_location', e.target.value);
+                                }}
+                                className="input text-sm w-full"
+                            >
+                                <option value="">{t('buttons.allLocations')}</option>
+                                {locations.map((loc: any) => (
+                                    <option key={loc.locationId} value={loc.locationId}>
+                                        {loc.code} - {loc.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{tCommon('columns.date')}</label>
+                            <select
+                                value={days}
+                                onChange={(e) => setDays(e.target.value)}
+                                className="input text-sm w-full"
+                            >
+                                <option value="30">{tCommon('filters.last30Days')}</option>
+                                <option value="90">{tCommon('filters.last90Days')}</option>
+                                <option value="365">{tCommon('filters.last1Year')}</option>
+                                <option value="0">{tCommon('filters.allTime')}</option>
+                            </select>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </>
     );
 }
 
@@ -91,14 +131,16 @@ export default function GoodsReceivedListPage() {
             .then((response) => {
                 const locs = response.data || [];
                 setLocations(locs);
-                // For receiving, we default to the app default but allow "All" (which is empty string)
-                const defaultLocId = app?.defaultFulfillmentLocationId || (locs.length > 0 ? locs[0].locationId : '');
+                // For receiving, we check localStorage first, then app default, then first location
+                const storedLocId = localStorage.getItem('receiving_selected_location');
+                const defaultLocId = storedLocId !== null ? storedLocId : (app?.defaultFulfillmentLocationId || (locs.length > 0 ? locs[0].locationId : ''));
                 setSelectedLocationId(defaultLocId);
             })
             .catch((err: unknown) => reportError(err, 'GoodsReceivedListPage.loadLocations'));
     }, [app?.defaultFulfillmentLocationId]);
 
     const [slideOverOpen, setSlideOverOpen] = useState(false);
+    const [quarantineModalOpen, setQuarantineModalOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState<Record<string, unknown>[]>([]);
 
     const handleAllocate = useCallback(() => {
@@ -112,37 +154,32 @@ export default function GoodsReceivedListPage() {
 
     const triggerRefresh = useCallback(() => setRefreshKey(k => k + 1), []);
 
-    const handleToggleQuarantine = useCallback(async () => {
+    const handleToggleQuarantine = useCallback(() => {
         if (selectedRows.length === 0) return;
-        
-        try {
-            const reason = window.prompt('Reason for quarantine', '') || undefined;
+        setQuarantineModalOpen(true);
+    }, [selectedRows]);
 
-            // Toggle for all selected that are not completed
-            const eligible = selectedRows.filter(r => r.putawayStatus !== PUTAWAY_STATUS.COMPLETED);
-            const errors: string[] = [];
-            for (const row of eligible) {
-                try {
-                    if (reason) {
-                        await api.inventoryControllerQuarantineMove({
-                            lineId: row.goodsReceivedLineId as string,
-                            sourceType: 'goods_receipt',
-                            quantity: (row.quantityReceived || '0') as string,
-                            reason
-                        });
-                        toast.success('Line quarantined successfully');
-                    }
-                } catch (err: unknown) {
-                    errors.push(getErrorMessage(err) || `Failed for ${row.receiptNumber}`);
-                }
+    const handleQuarantineSubmit = useCallback(async (reason: string, targetBinId?: string) => {
+        const eligible = selectedRows.filter(r => r.putawayStatus !== PUTAWAY_STATUS.COMPLETED);
+        const errors: string[] = [];
+        for (const row of eligible) {
+            try {
+                await api.inventoryControllerQuarantineMove({
+                    lineId: row.goodsReceivedLineId as string,
+                    sourceType: 'goods_receipt',
+                    quantity: (row.quantityReceived || '0') as string,
+                    reason,
+                    targetBinId
+                });
+                toast.success('Line quarantined successfully');
+            } catch (err: unknown) {
+                errors.push(getErrorMessage(err) || `Failed for ${row.receiptNumber}`);
             }
-            if (errors.length > 0) {
-                alert(`Quarantine errors:\n${errors.join('\n')}`);
-            }
-            triggerRefresh();
-        } catch (err: unknown) {
-            alert(getErrorMessage(err) || 'Failed to toggle quarantine');
         }
+        if (errors.length > 0) {
+            alert(`Quarantine errors:\n${errors.join('\n')}`);
+        }
+        triggerRefresh();
     }, [selectedRows, triggerRefresh]);
 
     const handleCancelReceipt = useCallback(async () => {
@@ -231,6 +268,7 @@ export default function GoodsReceivedListPage() {
     // Count unmatched (and not quarantined) in selection — quarantined items cannot be matched
     const matchableCount = selectedRows.filter((r) => r.matchStatus !== MATCH_STATUS.MATCHED && r.putawayStatus !== PUTAWAY_STATUS.QUARANTINED).length;
     const hasQuarantinedSelected = selectedRows.some((r) => r.putawayStatus === PUTAWAY_STATUS.QUARANTINED);
+    const canQuarantine = selectedRows.filter(r => r.putawayStatus !== PUTAWAY_STATUS.COMPLETED).length > 0 && new Set(selectedRows.map(r => (r as any).locationId)).size <= 1;
 
     return (
         <>
@@ -267,7 +305,8 @@ export default function GoodsReceivedListPage() {
                         </Link>
                         <button
                             onClick={handleToggleQuarantine}
-                            disabled={selectedRows.filter(r => r.putawayStatus !== PUTAWAY_STATUS.COMPLETED).length === 0}
+                            disabled={!canQuarantine}
+                            title={new Set(selectedRows.map(r => (r as any).locationId)).size > 1 ? 'Cannot quarantine items from different locations at once' : undefined}
                             className="px-4 py-2 text-sm font-bold rounded-lg transition-all border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                         >
                             {t('buttons.quarantine')}
@@ -298,7 +337,8 @@ export default function GoodsReceivedListPage() {
                         <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
                         <button
                             onClick={handleToggleQuarantine}
-                            disabled={selectedRows.filter(r => r.putawayStatus !== PUTAWAY_STATUS.COMPLETED).length === 0}
+                            disabled={!canQuarantine}
+                            title={new Set(selectedRows.map(r => (r as any).locationId)).size > 1 ? 'Cannot quarantine items from different locations at once' : undefined}
                             className="px-4 py-2 text-sm font-bold rounded-lg transition-all border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                         >
                             {t('buttons.quarantine')}
@@ -329,6 +369,13 @@ export default function GoodsReceivedListPage() {
                 onClose={handleSlideOverClose} 
                 grLines={selectedRows} 
                 onRefresh={triggerRefresh} 
+            />
+
+            <QuarantineModal
+                isOpen={quarantineModalOpen}
+                onClose={() => setQuarantineModalOpen(false)}
+                onSubmit={handleQuarantineSubmit}
+                locationId={selectedLocationId || (selectedRows.length > 0 ? (selectedRows[0] as any).locationId : '')}
             />
         </>
     );

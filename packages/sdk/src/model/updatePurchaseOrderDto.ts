@@ -14,4 +14,5 @@ export interface UpdatePurchaseOrderDto {
   referenceNumber?: string;
   stateCode?: string;
   deliveryLocationId?: string;
+  expectedDate?: string;
 }

@@ -63,6 +63,7 @@ export interface OrderDetail {
   createdBy: string | null;
   createdOn: string;
   modifiedOn: string;
+  expectedDate?: string | null;
 
   lines: OrderLine[];
   events: OrderEvent[];

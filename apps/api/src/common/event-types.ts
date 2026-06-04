@@ -20,6 +20,7 @@ export const EntityType = {
   PURCHASE_INVOICE: 'purchase_invoice',
   SYSTEM: 'system', // the entire system (for system-wide events or generic stuff)
   WAREHOUSE: 'warehouse', // warehouse operations
+  INVENTORY_LEDGER: 'inventory_ledger',
 } as const;
 
 export type EntityTypeValue = (typeof EntityType)[keyof typeof EntityType];
@@ -76,6 +77,8 @@ export const EventType = {
   PUTAWAY_COMPLETED: 'putaway_completed',
   RECEIPT_CREATED: 'receipt_created',
   RECEIPT_STATUS_CHANGED: 'receipt_status_changed',
+  ENTRY_POSTED: 'entry_posted',
+  STOCK_MOVED: 'stock_moved',
 
   // ── Product domain ──────────────────────────────────────────────────
   LINKED: 'linked',
@@ -140,10 +143,11 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'warehouse.pick_created',
   'warehouse.pick_cancelled',
   'warehouse.putaway_completed',
+  'warehouse.stock_moved',
   'transfer_order.created',
   'transfer_order.status_changed',
   'transfer_order.deleted',
-  'inventory_ledger.adjustment_processed',
+  'inventory_ledger.entry_posted',
 
   // Master Data
   'product.created',

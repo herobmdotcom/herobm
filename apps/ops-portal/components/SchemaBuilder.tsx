@@ -164,7 +164,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
     <div className="flex flex-col gap-4">
       <div className="flex justify-end mb-2">
         <button className="btn btn-secondary btn-sm" onClick={handleAddField}>
-          + {t('addField')}
+          {t('addField')}
         </button>
       </div>
       

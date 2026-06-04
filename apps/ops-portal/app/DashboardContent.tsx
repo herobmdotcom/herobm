@@ -1,11 +1,15 @@
 'use client';
 
+import { reportError } from '@/lib/api';
+
 import React, { useState, useEffect } from 'react';
 import UniversalSearch from '@/components/shared/UniversalSearch';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import DashboardTimeline from './DashboardTimeline';
 import TimelineSettingsSlideOver, { DEFAULT_ENABLED_EVENTS, EventType } from './TimelineSettingsSlideOver';
+import PinnedReportWidget from './PinnedReportWidget';
+import { userSettingsControllerGetSettings, userSettingsControllerUpdateSettings } from '@modbm/sdk';
 
 export default function DashboardContent() {
   const t = useTranslations('dashboard');
@@ -13,29 +17,33 @@ export default function DashboardContent() {
   const [isTimelineSettingsOpen, setIsTimelineSettingsOpen] = useState(false);
   const [enabledEvents, setEnabledEvents] = useState<EventType[]>(DEFAULT_ENABLED_EVENTS);
   const [isLoaded, setIsLoaded] = useState(false);
+  // modbm-allow-record-any
+  const [dashboardConfig, setDashboardConfig] = useState<Record<string, any> | null>(null);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('modbm_timeline_preferences');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0 && !parsed[0].includes('.')) {
-          // Legacy format detected, fallback to default
-          setEnabledEvents(DEFAULT_ENABLED_EVENTS);
+    userSettingsControllerGetSettings()
+      .then((res) => {
+        const settings = res.data;
+        setDashboardConfig(settings.dashboardConfig || {});
+        if (settings.dashboardConfig?.timelineEvents) {
+          setEnabledEvents(settings.dashboardConfig?.timelineEvents as EventType[]);
         } else {
-          setEnabledEvents(parsed);
+          setEnabledEvents(DEFAULT_ENABLED_EVENTS);
         }
-      }
-    } catch (err) {
-      console.warn('Failed to load timeline preferences', err);
-    }
-    setIsLoaded(true);
+        setIsLoaded(true);
+      })
+      .catch((err: any) => {
+        reportError(err, 'DashboardContent');
+        setIsLoaded(true);
+      });
   }, []);
 
   const handlePreferencesChange = (events: EventType[]) => {
     setEnabledEvents(events);
+    const updatedConfig = { ...dashboardConfig, timelineEvents: events };
+    setDashboardConfig(updatedConfig);
     try {
-      localStorage.setItem('modbm_timeline_preferences', JSON.stringify(events));
+      userSettingsControllerUpdateSettings({ dashboardConfig: updatedConfig }).catch(console.warn);
     } catch (err) {
       console.warn('Failed to save timeline preferences', err);
     }
@@ -52,6 +60,21 @@ export default function DashboardContent() {
           </div>
 
           <div className="flex flex-col gap-12">
+            {dashboardConfig?.pinnedReports?.length > 0 && (
+              <div className="w-full">
+                <div className="flex items-center gap-2 mb-6 text-[11px] font-bold uppercase tracking-[0.1em] opacity-50" style={{ color: 'var(--text-primary)' }}>
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  <span className="material-symbols-outlined text-[16px]">push_pin</span>
+                  {t('pinnedReports')}
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {dashboardConfig?.pinnedReports?.map((report: any, idx: number) => (
+                    <PinnedReportWidget key={idx} slug={report.slug} configId={report.configId} name={report.name} />
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="w-full">
               <div className="flex items-center gap-2 mb-6 text-[11px] font-bold uppercase tracking-[0.1em] opacity-50" style={{ color: 'var(--text-primary)' }}>
                 {/* eslint-disable-next-line i18next/no-literal-string */}

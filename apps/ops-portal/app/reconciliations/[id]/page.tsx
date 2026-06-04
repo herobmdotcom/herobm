@@ -6,6 +6,8 @@ import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import QuickAdjustmentModal from './QuickAdjustmentModal';
 import SplitEntryModal from './SplitEntryModal';
+import MatchDetailsModal from './MatchDetailsModal';
+import AutoMatchPreviewModal from './AutoMatchPreviewModal';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
@@ -63,9 +65,10 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
   const [refreshKey, setRefreshKey] = useState(0);
   const [isAdjustmentModalOpen, setAdjustmentModalOpen] = useState(false);
   const [isSplitModalOpen, setSplitModalOpen] = useState(false);
+  const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<api.AutoMatchResponseDto | null>(null);
   // modbm-allow-record-any
   const [selectedRow, setSelectedRow] = useState<Record<string, any> | null>(null);
-  const [viewMode, setViewMode] = useState<'bank' | 'ledger'>('bank');
 
   const fetchDetails = useCallback(async () => {
     try {
@@ -105,7 +108,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
     try {
       await api.reconciliationControllerPostReconciliation(id, {});
       toast.success(t('postSuccess'));
-      router.push('/general-ledger/reconciliations');
+      router.push('/reconciliations');
     } catch (err) {
       reportError(err, 'ReconciliationPost');
       toast.error(t('postError'));
@@ -121,7 +124,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
     try {
       await api.reconciliationControllerDiscardReconciliation(id);
       toast.success(t('discardSuccess'));
-      router.push('/general-ledger/reconciliations');
+      router.push('/reconciliations');
     } catch (err: unknown) {
       reportError(err, 'ReconciliationDiscard');
       toast.error(getErrorMessage(err) || t('discardError'));
@@ -226,28 +229,37 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
             }`}>
               {isPosted ? tCommon('states.posted') : tCommon('states.draft')}
             </span>
-            <span className="text-sm text-gray-500 font-medium ml-2">
-              {t('statementDateLabel', { date: reconciliation.statementDate })}
-            </span>
-            
-            <div className="flex bg-gray-100 p-1 rounded-lg ml-6 items-center">
-              <button 
-                onClick={() => setViewMode('bank')} 
-                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'bank' ? 'bg-white shadow-sm text-[var(--accent)]' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                {t('bankStatementMatch')}
-              </button>
-              <button 
-                onClick={() => setViewMode('ledger')} 
-                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'ledger' ? 'bg-white shadow-sm text-[var(--accent)]' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                {t('ledgerLines')}
-              </button>
-            </div>
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {!isPosted && (
               <>
+                <button
+                  onClick={async () => {
+                    try {
+                      setPosting(true);
+                      const res = await api.bankStatementControllerAutoMatch({ 
+                        glAccountId: reconciliation.glAccountId,
+                        reconciliationId: reconciliation.reconciliationId,
+                        dryRun: true,
+                      });
+                      const data = res.data as any;
+                      if (data.autoMatchedCount > 0 || data.smartMatchedCount > 0) {
+                        setPreviewData(data);
+                        setPreviewModalOpen(true);
+                      } else {
+                        toast('No matches found.', { icon: 'ℹ️' });
+                      }
+                    } catch (e) {
+                      reportError(e, 'AutoMatchPreview');
+                    } finally {
+                      setPosting(false);
+                    }
+                  }}
+                  disabled={posting || loading}
+                  className="btn btn-secondary font-semibold text-sm h-8 flex items-center gap-2"
+                >
+                  {t('autoMatch')}
+                </button>
                 <button
                   onClick={handleDiscard}
                   disabled={posting}
@@ -268,91 +280,37 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
-          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('openingBalance')}</div>
-            <div className="text-xl font-bold mt-0.5 text-gray-900">
-              {formatCurrency(reconciliation.openingBalance)}
-            </div>
+        <div className="flex items-center gap-6 mt-1 text-sm text-gray-600">
+          <span>{t('statementDateLabel', { date: reconciliation.statementDate })}</span>
+          <div className="flex items-center gap-2">
+            <span>{t('opening')}:</span>
+            <span>{formatCurrency(reconciliation.openingBalance)}</span>
           </div>
-          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('clearedBalance')}</div>
-            <div className="text-xl font-bold mt-0.5 text-gray-900">
-              {formatCurrency(reconciliation.clearedBalance)}
-            </div>
+          <div className="flex items-center gap-2">
+            <span>{t('cleared')}:</span>
+            <span>{formatCurrency(reconciliation.clearedBalance)}</span>
           </div>
-          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('statementBalance')}</div>
-            <div className="text-xl font-bold mt-0.5 text-gray-900">
-              {formatCurrency(reconciliation.statementBalance)}
-            </div>
+          <div className="flex items-center gap-2">
+            <span>{t('statement')}:</span>
+            <span>{formatCurrency(reconciliation.statementBalance)}</span>
           </div>
-          <div className={`p-3 rounded-lg border shadow-sm transition-colors ${Math.abs(reconciliation.variance) < 0.001 ? 'bg-[#f0f8f6] border-[#006b5c]/30' : 'bg-red-50 border-red-200'}`}>
-            <div className={`text-[10px] uppercase tracking-wider font-bold ${Math.abs(reconciliation.variance) < 0.001 ? 'text-[#006b5c]' : 'text-[var(--danger)]'}`}>
-              {t('variance')}
-            </div>
-            <div className={`text-xl font-bold mt-0.5 ${Math.abs(reconciliation.variance) < 0.001 ? 'text-[#006b5c]' : 'text-[var(--danger)]'}`}>
+          <div className="flex items-center gap-2 border-l border-gray-200 pl-6">
+            <span>{t('variance')}:</span>
+            <span className={`${Math.abs(reconciliation.variance) < 0.001 ? 'text-[#006b5c]' : 'text-[var(--danger)]'}`}>
               {formatCurrency(reconciliation.variance)}
-            </div>
+            </span>
           </div>
         </div>
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col bg-gray-50 relative">
-        {viewMode === 'bank' ? (
-          <BankMatchingView reconciliation={reconciliation} onUpdate={() => { fetchDetails(); setRefreshKey(k => k + 1); }} />
-        ) : (
-          <DataGrid
-            refreshTrigger={refreshKey}
-            endpoint={`/api/gl/reconciliations/${id}/unreconciled`}
-            columns={columns}
-            rowIdField="journalLineId"
-            fetchAll={true}
-            rowSelection="single"
-            onSelectionChanged={(rows) => setSelectedRow(rows[0] || null)}
-            context={{ handleToggle, isPosted }}
-            renderHeader={({ searchInput, optionsButton, rowCount, loading: gridLoading }) => (
-              <div className="flex flex-col bg-white border-b border-gray-200">
-                <div className="flex flex-col px-6 py-3">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center bg-[#f0f8f6] rounded px-2 py-0.5 mr-2">
-                      <span className="text-[10px] font-bold text-[#006b5c] uppercase tracking-wider mr-1.5">{t('rows')}</span>
-                      <span className="text-[11px] font-bold text-[#006b5c]">
-                        {gridLoading ? '...' : rowCount.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex-1 max-w-sm">
-                      {searchInput}
-                    </div>
-                    {!isPosted && (
-                      <>
-                        <button
-                          onClick={() => setAdjustmentModalOpen(true)}
-                          className="btn btn-secondary btn-sm flex items-center gap-2 font-semibold"
-                        >
-                          {/* eslint-disable-next-line i18next/no-literal-string */}
-                          <span className="material-symbols-outlined text-[18px]">add</span>
-                          {t('quickAdjustment')}
-                        </button>
-                        <button
-                          onClick={() => setSplitModalOpen(true)}
-                          disabled={!selectedRow || !!selectedRow.isCleared}
-                          className="btn btn-secondary btn-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
-                          title={!selectedRow ? t('tooltips.selectRowToSplit') : selectedRow.isCleared ? t('tooltips.splitRowDisabled') : ''}
-                        >
-                          {/* eslint-disable-next-line i18next/no-literal-string */}
-                          <span className="material-symbols-outlined text-[18px]">call_split</span>
-                          {t('splitEntry')}
-                        </button>
-                      </>
-                    )}
-                    {optionsButton}
-                  </div>
-                </div>
-              </div>
-            )}
-          />
-        )}
+        <BankMatchingView 
+          key={refreshKey}
+          reconciliation={reconciliation} 
+          onUpdate={() => { fetchDetails(); setRefreshKey(k => k + 1); }} 
+          onQuickAdjustment={() => setAdjustmentModalOpen(true)}
+          onSplitEntry={(line) => { setSelectedRow(line); setSplitModalOpen(true); }}
+        />
       </div>
       <QuickAdjustmentModal 
         isOpen={isAdjustmentModalOpen} 
@@ -372,6 +330,17 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
           fetchDetails();
           setRefreshKey(k => k + 1);
           setSelectedRow(null); // Clear selection after split
+        }}
+      />
+      <AutoMatchPreviewModal
+        isOpen={isPreviewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+        previewData={previewData}
+        glAccountId={reconciliation.glAccountId}
+        reconciliationId={id}
+        onConfirmSuccess={() => {
+          fetchDetails();
+          setRefreshKey(k => k + 1);
         }}
       />
     </div>

@@ -45,7 +45,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
     await app.close();
   });
 
-  it('POST /api/reports/hooks/:hookSlug/run — handles sparse data (App Orders) without crashing Typst', async () => {
+  it('POST /api/pdf-templates/hooks/:hookSlug/run — handles sparse data (App Orders) without crashing Typst', async () => {
     // 1. Fetch valid foreign keys required for minimal creation
     const customers = await request(app.getHttpServer())
       .get('/api/customers?limit=1')
@@ -83,7 +83,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
     // 3. Execute the Quote Hook against the sparse order
     const pdfRes = await request(app.getHttpServer())
       .post(
-        `/api/reports/hooks/sales-order-quote/run?id=${orderId}&context=sales-order`,
+        `/api/pdf-templates/hooks/sales-order-quote/run?id=${orderId}&context=sales-order`,
       )
       .set('Authorization', `Bearer ${adminToken}`)
       .responseType('blob');
@@ -96,7 +96,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
     expect(buf.subarray(0, 5).toString('utf8')).toBe('%PDF-');
   }, 10000);
 
-  it('POST /api/reports/hooks/:hookSlug/run — handles rich data seamlessly', async () => {
+  it('POST /api/pdf-templates/hooks/:hookSlug/run — handles rich data seamlessly', async () => {
     // 1. Fetch valid foreign keys required for creation
     const customers = await request(app.getHttpServer())
       .get('/api/customers?limit=1')
@@ -146,7 +146,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
     // 3. Execute the Quote Hook against the rich order
     const pdfRes = await request(app.getHttpServer())
       .post(
-        `/api/reports/hooks/sales-order-quote/run?id=${orderId}&context=sales-order`,
+        `/api/pdf-templates/hooks/sales-order-quote/run?id=${orderId}&context=sales-order`,
       )
       .set('Authorization', `Bearer ${adminToken}`)
       .responseType('blob');
@@ -178,9 +178,9 @@ describe('Dynamic Reports Engine (e2e)', () => {
       viewerToken = viewerRes.body.access_token;
     });
 
-    it('POST /api/reports — creates a new template', async () => {
+    it('POST /api/pdf-templates — creates a new template', async () => {
       const res = await request(app.getHttpServer())
-        .post('/api/reports')
+        .post('/api/pdf-templates')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'E2E Test Template',
@@ -197,9 +197,9 @@ describe('Dynamic Reports Engine (e2e)', () => {
       testReportId = res.body.id;
     });
 
-    it('GET /api/reports — lists templates', async () => {
+    it('GET /api/pdf-templates — lists templates', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/reports')
+        .get('/api/pdf-templates')
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
@@ -207,18 +207,18 @@ describe('Dynamic Reports Engine (e2e)', () => {
       expect(res.body.some((r: any) => r.id === testReportId)).toBe(true);
     });
 
-    it('GET /api/reports/:id — retrieves a specific template', async () => {
+    it('GET /api/pdf-templates/:id — retrieves a specific template', async () => {
       const res = await request(app.getHttpServer())
-        .get(`/api/reports/${testReportId}`)
+        .get(`/api/pdf-templates/${testReportId}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
       expect(res.body.name).toBe('E2E Test Template');
     });
 
-    it('PATCH /api/reports/:id — updates a template', async () => {
+    it('PATCH /api/pdf-templates/:id — updates a template', async () => {
       const res = await request(app.getHttpServer())
-        .patch(`/api/reports/${testReportId}`)
+        .patch(`/api/pdf-templates/${testReportId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'E2E Test Template Updated',
@@ -234,7 +234,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
 
     it('AuthZ: viewer cannot CREATE templates (403 Forbidden)', async () => {
       await request(app.getHttpServer())
-        .post('/api/reports')
+        .post('/api/pdf-templates')
         .set('Authorization', `Bearer ${viewerToken}`)
         .send({
           name: 'Hacked Template',
@@ -247,7 +247,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
 
     it('AuthZ: viewer cannot UPDATE templates (403 Forbidden)', async () => {
       await request(app.getHttpServer())
-        .patch(`/api/reports/${testReportId}`)
+        .patch(`/api/pdf-templates/${testReportId}`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .send({
           name: 'Hacked Updated',
@@ -257,14 +257,14 @@ describe('Dynamic Reports Engine (e2e)', () => {
 
     it('AuthZ: viewer CAN READ templates (200 OK)', async () => {
       await request(app.getHttpServer())
-        .get('/api/reports')
+        .get('/api/pdf-templates')
         .set('Authorization', `Bearer ${viewerToken}`)
         .expect(200);
     });
 
-    it('DELETE /api/reports/:id — removes the template', async () => {
+    it('DELETE /api/pdf-templates/:id — removes the template', async () => {
       const res = await request(app.getHttpServer())
-        .delete(`/api/reports/${testReportId}`)
+        .delete(`/api/pdf-templates/${testReportId}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);
@@ -272,7 +272,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
 
       // Verify it's gone
       const check = await request(app.getHttpServer())
-        .get(`/api/reports/${testReportId}`)
+        .get(`/api/pdf-templates/${testReportId}`)
         .set('Authorization', `Bearer ${adminToken}`);
       expect(check.status).toBe(404);
     });
@@ -280,7 +280,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
     it('Assignment Management: lists and updates assignments', async () => {
       const testSlug = `assign-test-${Date.now()}`;
       const newReport = await request(app.getHttpServer())
-        .post('/api/reports')
+        .post('/api/pdf-templates')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Assignment Test Report',
@@ -291,14 +291,14 @@ describe('Dynamic Reports Engine (e2e)', () => {
 
       // Update assignment
       await request(app.getHttpServer())
-        .patch('/api/reports/hook-assignments/sales-invoice')
+        .patch('/api/pdf-templates/hook-assignments/sales-invoice')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ reportId: rid, contextSlug: 'sales-invoice' })
         .expect(200);
 
       // Check listing
       const res = await request(app.getHttpServer())
-        .get('/api/reports/hook-assignments')
+        .get('/api/pdf-templates/hook-assignments')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -309,7 +309,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
 
       // Deletion Guard: Should fail to delete since it's assigned
       const delFail = await request(app.getHttpServer())
-        .delete(`/api/reports/${rid}`)
+        .delete(`/api/pdf-templates/${rid}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(delFail.status).toBe(400);
@@ -319,7 +319,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
 
       // Cleanup: Unassign and then restore the standard assignment
       await request(app.getHttpServer())
-        .patch('/api/reports/hook-assignments/sales-invoice')
+        .patch('/api/pdf-templates/hook-assignments/sales-invoice')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           reportId: 'a0000000-0000-0000-0000-000000000003',
@@ -330,14 +330,14 @@ describe('Dynamic Reports Engine (e2e)', () => {
 
     it('AuthZ: viewer cannot DELETE templates (403 Forbidden)', async () => {
       await request(app.getHttpServer())
-        .delete(`/api/reports/${testReportId}`)
+        .delete(`/api/pdf-templates/${testReportId}`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .expect(403);
     });
 
-    it('GET /api/reports/hooks — lists available hooks', async () => {
+    it('GET /api/pdf-templates/hooks — lists available hooks', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/reports/hooks')
+        .get('/api/pdf-templates/hooks')
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(res.status).toBe(200);

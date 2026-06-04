@@ -46,6 +46,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const { order, loading, error, saving, copying, latestAutoTransition,
     isHeaderEditable, isLinesEditable, visibleTransitions, subtotal, totalTax,
     editName, setEditName, editReferenceNumber, setEditReferenceNumber,
+    editExpectedDate, setEditExpectedDate,
     editNotes, setEditNotes, editLocationId, setEditLocationId, headerDirty,
     taxCategories, activeTab, setActiveTab, inventoryData, inventoryLoading,
     invoices, setInvoicing,
@@ -433,6 +434,25 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {tPurchase('labels.expectedDate')}
+                  </label>
+                  {isHeaderEditable ? (
+                    <input
+                      type="date"
+                      className="input"
+                      value={editExpectedDate}
+                      onChange={(e) => setEditExpectedDate(e.target.value)}
+                      onBlur={saveHeader}
+                      disabled={!isHeaderEditable}
+                    />
+                  ) : (
+                    <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+                      {order.expectedDate ? new Date(order.expectedDate).toLocaleDateString() : '—'}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tPurchase('labels.orderName')}
                   </label>
                   <input
@@ -551,7 +571,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   onClick={addBlankLine}
                   disabled={saving}
                 >
-                  + {tPurchase('buttons.customLine')}
+                  {tPurchase('buttons.customLine')}
                 </button>
               </div>
             )}

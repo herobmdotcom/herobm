@@ -104,7 +104,7 @@ export default function NewProductPage() {
                   onClick={handleSubmit}
                   disabled={!isValid || submitting}
                 >
-                  {submitting ? t('common.saving') : `+ ${t('products.buttons.addProduct')}`}
+                  {submitting ? t('common.saving') : t('products.buttons.addProduct')}
                 </button>
               </>
             }

@@ -80,7 +80,7 @@ export default function ProductsContent() {
       pageTitle={tProducts('title')}
       headerActions={
         <Link href="/products/new" className="px-3 lg:px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
-          + {tProducts('buttons.addProduct')}
+          {tProducts('buttons.addProduct')}
         </Link>
       }
     />

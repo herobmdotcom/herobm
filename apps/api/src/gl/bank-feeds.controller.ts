@@ -1,4 +1,6 @@
 import { SystemResource } from '@modbm/shared';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
 import {
   Controller,
   Post,
@@ -6,6 +8,7 @@ import {
   Body,
   Param,
   Delete,
+  Put,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
@@ -22,6 +25,7 @@ import { BankFeedsService } from './bank-feeds.service';
 import {
   CreateMappingProfileDto,
   CreateReconciliationRuleDto,
+  UpdateReconciliationRuleDto,
   ImportCsvDto,
   MappingProfileResponseDto,
   ReconciliationRuleResponseDto,
@@ -74,6 +78,7 @@ export class BankFeedsController {
   async importCsv(
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: ImportCsvDto,
+    @AuthUser() user: JwtUser,
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
     if (!dto.glAccountId || !dto.profileId)
@@ -82,6 +87,7 @@ export class BankFeedsController {
       file.buffer,
       dto.glAccountId,
       dto.profileId,
+      user.username,
     );
   }
 
@@ -127,6 +133,20 @@ export class BankFeedsController {
   @ApiCreatedResponse({ type: ReconciliationRuleResponseDto })
   async createRule(@Body() dto: CreateReconciliationRuleDto) {
     return this.bankFeedsService.createReconciliationRule(dto);
+  }
+
+  @Put('rules/:ruleId')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Rule',
+    description: 'Updates an existing reconciliation rule.',
+  })
+  @ApiOkResponse({ type: ReconciliationRuleResponseDto })
+  async updateRule(
+    @Param('ruleId') ruleId: string,
+    @Body() dto: UpdateReconciliationRuleDto,
+  ) {
+    return this.bankFeedsService.updateReconciliationRule(ruleId, dto);
   }
 
   @Delete('rules/:ruleId')

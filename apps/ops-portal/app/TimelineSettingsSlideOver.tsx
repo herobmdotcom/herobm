@@ -9,7 +9,7 @@ export type EventType = string;
 export const DEFAULT_ENABLED_EVENTS: EventType[] = [
   'sales_order.created', 'sales_order.status_changed', 'sales_order.deleted',
   'purchase_order.created', 'purchase_order.status_changed', 'purchase_order.deleted',
-  'warehouse.receipt_created', 'inventory_ledger.adjustment_processed', 'transfer_order.created',
+  'warehouse.receipt_created', 'inventory_ledger.entry_posted', 'transfer_order.created',
   'payment.submitted',
   'customer.created', 'supplier.created'
 ];
@@ -96,9 +96,10 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
           <OptionRow event="warehouse.shipment_created" />
           <OptionRow event="warehouse.shipment_status_changed" />
           <OptionRow event="warehouse.shipment_dispatched" />
-          <OptionRow event="inventory_ledger.adjustment_processed" />
+          <OptionRow event="inventory_ledger.entry_posted" />
           <OptionRow event="transfer_order.created" />
           <OptionRow event="transfer_order.status_changed" />
+          <OptionRow event="stock_adjusted" />
         </div>
 
         <div className="flex flex-col gap-1">

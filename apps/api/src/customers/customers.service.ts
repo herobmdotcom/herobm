@@ -158,7 +158,7 @@ export class AccountsService {
     const customer = rows[0];
 
     // Load activity events
-    const eventsQuery = this.db
+    const eventsQuery = db
       .select()
       .from(masterDataEvents)
       .where(eq(masterDataEvents.entityId, customer.customerId))

@@ -9,8 +9,9 @@ import { UpdateOrganizationDto } from './dto';
 export class OrganizationService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
-  async get() {
-    const rows = await this.db.select().from(organization).limit(1);
+  async get(tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const rows = await db.select().from(organization).limit(1);
     if (rows.length === 0) {
       // Return a default object if no record exists yet
       return {

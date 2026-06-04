@@ -31,5 +31,7 @@ export interface PurchaseOrderResponseDto {
   createdOn?: string | null;
   /** @nullable */
   modifiedOn?: string | null;
+  /** @nullable */
+  expectedDate?: string | null;
   vendorName?: string;
 }

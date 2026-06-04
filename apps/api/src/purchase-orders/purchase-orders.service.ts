@@ -180,6 +180,9 @@ export class PurchaseOrdersService {
             stateCode: PURCHASE_ORDER_STATE.DRAFT,
             deliveryLocationId: createDto.deliveryLocationId,
             referenceNumber: createDto.referenceNumber,
+            expectedDate: createDto.expectedDate
+              ? new Date(createDto.expectedDate)
+              : null,
           })
           .returning();
         order = inserted;
@@ -309,6 +312,7 @@ export class PurchaseOrdersService {
         source: sql<string>`'app'`.as('source'),
         createdBy: purchaseOrders.createdBy,
         createdOn: purchaseOrders.createdOn,
+        expectedDate: purchaseOrders.expectedDate,
         currencyCode: purchaseOrders.currencyCode,
       })
       .from(purchaseOrders)
@@ -396,6 +400,9 @@ export class PurchaseOrdersService {
         stateCode: r.stateCode ?? PURCHASE_ORDER_STATE.DRAFT,
         createdBy: r.createdBy ?? '',
         createdOn: r.createdOn ? new Date(r.createdOn).toISOString() : null,
+        expectedDate: r.expectedDate
+          ? new Date(r.expectedDate).toISOString()
+          : null,
         totalPrice: appTotalMap.get(r.id) ?? null,
         currencyCode: r.currencyCode ?? 'EUR',
       };
@@ -522,7 +529,7 @@ export class PurchaseOrdersService {
       throw new BadRequestException(`Invalid state: '${stateCode}'`);
     }
 
-    const existing = await this.findOne(id);
+    const existing = await this.findOne(id, db);
     if (!existing) {
       throw new NotFoundException(`Purchase Order ${id} not found`);
     }
@@ -566,7 +573,7 @@ export class PurchaseOrdersService {
         );
       }
 
-      const invoiceLines = await this.db
+      const invoiceLines = await db
         .select()
         .from(purchaseInvoices)
         .where(eq(purchaseInvoices.purchaseOrderId, id))
@@ -583,7 +590,7 @@ export class PurchaseOrdersService {
       for (const line of existing.lines) {
         const received = parseFloat(line.quantityReceived || '0');
         if (received > 0) {
-          const [{ totalInvoiced }] = await this.db
+          const [{ totalInvoiced }] = await db
             .select({
               totalInvoiced:
                 sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
@@ -878,8 +885,23 @@ export class PurchaseOrdersService {
   async update(id: string, updateDto: any, userId: string) {
     return await this.db.transaction(async (tx) => {
       const existing = await this.findOne(id, tx);
-      if (existing.stateCode !== PURCHASE_ORDER_STATE.DRAFT) {
-        throw new BadRequestException('Can only update draft purchase orders');
+      if (
+        existing.stateCode !== PURCHASE_ORDER_STATE.DRAFT &&
+        existing.stateCode !== PURCHASE_ORDER_STATE.ORDERED &&
+        existing.stateCode !== PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED
+      ) {
+        throw new BadRequestException(
+          `Cannot update purchase orders in state ${existing.stateCode}`,
+        );
+      }
+
+      if (
+        existing.stateCode !== PURCHASE_ORDER_STATE.DRAFT &&
+        updateDto.lines
+      ) {
+        throw new BadRequestException(
+          'Cannot update lines on non-draft purchase orders',
+        );
       }
 
       const [updated] = await tx
@@ -893,6 +915,9 @@ export class PurchaseOrdersService {
           stateCode: updateDto.stateCode, // allow transition to 'ordered'
           deliveryLocationId: updateDto.deliveryLocationId,
           referenceNumber: updateDto.referenceNumber,
+          expectedDate: updateDto.expectedDate
+            ? new Date(updateDto.expectedDate)
+            : null,
           modifiedOn: new Date(),
         })
         .where(eq(purchaseOrders.purchaseOrderId, id))

@@ -352,6 +352,360 @@ async function seedBusinessReports() {
         },
       },
     },
+    {
+      slug: 'inventory-valuation',
+      name: 'Inventory Valuation',
+      description: 'Current inventory value and quantity on hand by product.',
+      dataSourceHook: 'inventory-valuation',
+      isSystem: true,
+      uiConfig: {
+        type: 'ag-grid',
+        columns: [
+          { field: 'productNumber', headerName: 'Product No.', flex: 1 },
+          { field: 'productName', headerName: 'Product Name', flex: 2 },
+          {
+            field: 'quantityOnHand',
+            headerName: 'Qty on Hand',
+            type: 'numericColumn',
+          },
+          { field: 'unitCost', headerName: 'Unit Cost', type: 'numericColumn' },
+          {
+            field: 'totalValue',
+            headerName: 'Total Value',
+            type: 'numericColumn',
+          },
+        ],
+        filters: [],
+        drillDownOptions: [
+          {
+            id: 'location',
+            label: 'Location',
+            field: 'locationName',
+            headerName: 'Location',
+            flex: 1,
+          },
+          {
+            id: 'product-group',
+            label: 'Product Group',
+            field: 'productGroupName',
+            headerName: 'Product Group',
+            flex: 1,
+          },
+        ],
+        chartConfig: {
+          type: 'pie',
+          xAxisField: 'productName',
+          yAxisField: 'totalValue',
+          seriesName: 'Total Value',
+        },
+      },
+    },
+    {
+      slug: 'inventory-movements',
+      name: 'Stock Movements',
+      description: 'In/out movements summarizing net changes over a period.',
+      dataSourceHook: 'inventory-movements',
+      isSystem: true,
+      uiConfig: {
+        type: 'ag-grid',
+        columns: [
+          { field: 'productNumber', headerName: 'Product No.', flex: 1 },
+          { field: 'productName', headerName: 'Product Name', flex: 2 },
+          {
+            field: 'startingQty',
+            headerName: 'Starting Qty',
+            type: 'numericColumn',
+          },
+          { field: 'qtyIn', headerName: 'Qty In', type: 'numericColumn' },
+          { field: 'qtyOut', headerName: 'Qty Out', type: 'numericColumn' },
+          {
+            field: 'endingQty',
+            headerName: 'Ending Qty',
+            type: 'numericColumn',
+          },
+        ],
+        filters: [
+          { type: 'date', name: 'fromDate', label: 'From Date' },
+          { type: 'date', name: 'toDate', label: 'To Date' },
+        ],
+        drillDownOptions: [
+          {
+            id: 'location',
+            label: 'Location',
+            field: 'locationName',
+            headerName: 'Location',
+            flex: 1,
+          },
+          {
+            id: 'movement-type',
+            label: 'Movement Type',
+            field: 'movementType',
+            headerName: 'Type',
+            flex: 1,
+          },
+        ],
+      },
+    },
+    {
+      slug: 'inventory-replenishment',
+      name: 'Stock Replenishment',
+      description:
+        'Highlights products currently below their minimum or reorder levels.',
+      dataSourceHook: 'inventory-replenishment',
+      isSystem: true,
+      uiConfig: {
+        type: 'ag-grid',
+        columns: [
+          { field: 'productNumber', headerName: 'Product No.', flex: 1 },
+          { field: 'productName', headerName: 'Product Name', flex: 2 },
+          {
+            field: 'currentQty',
+            headerName: 'Current Qty',
+            type: 'numericColumn',
+          },
+          { field: 'minLevel', headerName: 'Min Level', type: 'numericColumn' },
+          { field: 'deficit', headerName: 'Deficit', type: 'numericColumn' },
+          {
+            field: 'suggestedOrderQty',
+            headerName: 'Suggested Order Qty',
+            type: 'numericColumn',
+          },
+        ],
+        filters: [],
+        drillDownOptions: [
+          {
+            id: 'supplier',
+            label: 'Supplier',
+            field: 'supplierName',
+            headerName: 'Supplier',
+            flex: 1,
+          },
+          {
+            id: 'product-group',
+            label: 'Product Group',
+            field: 'productGroupName',
+            headerName: 'Product Group',
+            flex: 1,
+          },
+        ],
+      },
+    },
+    {
+      slug: 'inventory-quarantine',
+      name: 'Stock Quarantine / Aging',
+      description: 'Tracks stock in quarantine or aged/expiring stock.',
+      dataSourceHook: 'inventory-quarantine',
+      isSystem: true,
+      uiConfig: {
+        type: 'ag-grid',
+        columns: [
+          { field: 'productNumber', headerName: 'Product No.', flex: 1 },
+          { field: 'productName', headerName: 'Product Name', flex: 2 },
+          {
+            field: 'quarantineQty',
+            headerName: 'Quarantine Qty',
+            type: 'numericColumn',
+          },
+          { field: 'reason', headerName: 'Reason', flex: 1 },
+          { field: 'locationName', headerName: 'Location', flex: 1 },
+        ],
+        filters: [],
+        drillDownOptions: [
+          {
+            id: 'reason',
+            label: 'Reason',
+            field: 'reason',
+            headerName: 'Reason',
+            flex: 1,
+          },
+          {
+            id: 'location',
+            label: 'Location',
+            field: 'locationName',
+            headerName: 'Location',
+            flex: 1,
+          },
+        ],
+      },
+    },
+    {
+      slug: 'purchasing-supplier',
+      name: 'Purchases by Supplier',
+      description: 'Total spend and order volume grouped by supplier.',
+      dataSourceHook: 'purchasing-supplier',
+      isSystem: true,
+      uiConfig: {
+        type: 'ag-grid',
+        columns: [
+          { field: 'supplierName', headerName: 'Supplier', flex: 2 },
+          {
+            field: 'orderCount',
+            headerName: 'Order Count',
+            type: 'numericColumn',
+          },
+          {
+            field: 'totalSpend',
+            headerName: 'Total Spend',
+            type: 'numericColumn',
+          },
+        ],
+        filters: [
+          { type: 'date', name: 'fromDate', label: 'From Date' },
+          { type: 'date', name: 'toDate', label: 'To Date' },
+        ],
+        drillDownOptions: [
+          {
+            id: 'product',
+            label: 'Product',
+            field: 'productName',
+            headerName: 'Product',
+            flex: 2,
+          },
+          {
+            id: 'month',
+            label: 'Month',
+            field: 'yearMonth',
+            headerName: 'Month',
+            flex: 1,
+          },
+        ],
+        chartConfig: {
+          type: 'bar',
+          xAxisField: 'supplierName',
+          yAxisField: 'totalSpend',
+          seriesName: 'Total Spend',
+        },
+      },
+    },
+    {
+      slug: 'purchasing-product',
+      name: 'Purchases by Product',
+      description: 'Total spend and quantity purchased per product SKU.',
+      dataSourceHook: 'purchasing-product',
+      isSystem: true,
+      uiConfig: {
+        type: 'ag-grid',
+        columns: [
+          { field: 'productNumber', headerName: 'Product No.', flex: 1 },
+          { field: 'productName', headerName: 'Product Name', flex: 2 },
+          {
+            field: 'qtyPurchased',
+            headerName: 'Qty Purchased',
+            type: 'numericColumn',
+          },
+          {
+            field: 'totalSpend',
+            headerName: 'Total Spend',
+            type: 'numericColumn',
+          },
+        ],
+        filters: [
+          { type: 'date', name: 'fromDate', label: 'From Date' },
+          { type: 'date', name: 'toDate', label: 'To Date' },
+        ],
+        drillDownOptions: [
+          {
+            id: 'product-group',
+            label: 'Product Group',
+            field: 'productGroupName',
+            headerName: 'Product Group',
+            flex: 1,
+          },
+          {
+            id: 'supplier',
+            label: 'Supplier',
+            field: 'supplierName',
+            headerName: 'Supplier',
+            flex: 1,
+          },
+        ],
+        chartConfig: {
+          type: 'bar',
+          xAxisField: 'productName',
+          yAxisField: 'totalSpend',
+          seriesName: 'Total Spend',
+        },
+      },
+    },
+    {
+      slug: 'purchasing-trend',
+      name: 'Purchase Trend',
+      description: 'Monthly trend of purchasing spend and order counts.',
+      dataSourceHook: 'purchasing-trend',
+      isSystem: true,
+      uiConfig: {
+        type: 'ag-grid',
+        columns: [
+          { field: 'yearMonth', headerName: 'Month', flex: 1 },
+          {
+            field: 'orderCount',
+            headerName: 'Order Count',
+            type: 'numericColumn',
+          },
+          {
+            field: 'totalSpend',
+            headerName: 'Total Spend',
+            type: 'numericColumn',
+          },
+        ],
+        filters: [
+          { type: 'date', name: 'fromDate', label: 'From Date' },
+          { type: 'date', name: 'toDate', label: 'To Date' },
+        ],
+        drillDownOptions: [
+          {
+            id: 'product-group',
+            label: 'Product Group',
+            field: 'productGroupName',
+            headerName: 'Product Group',
+            flex: 1,
+          },
+          {
+            id: 'supplier',
+            label: 'Supplier',
+            field: 'supplierName',
+            headerName: 'Supplier',
+            flex: 1,
+          },
+        ],
+        chartConfig: {
+          type: 'line',
+          xAxisField: 'yearMonth',
+          yAxisField: 'totalSpend',
+          seriesName: 'Total Spend',
+        },
+      },
+    },
+    {
+      slug: 'purchasing-outstanding',
+      name: 'Outstanding POs',
+      description: 'Open purchase orders and pending financial commitments.',
+      dataSourceHook: 'purchasing-outstanding',
+      isSystem: true,
+      uiConfig: {
+        type: 'ag-grid',
+        columns: [
+          { field: 'poNumber', headerName: 'PO Number', flex: 1 },
+          { field: 'supplierName', headerName: 'Supplier', flex: 2 },
+          { field: 'expectedDate', headerName: 'Expected Date', flex: 1 },
+          {
+            field: 'pendingValue',
+            headerName: 'Pending Value',
+            type: 'numericColumn',
+          },
+        ],
+        filters: [{ type: 'date', name: 'toDate', label: 'Expected By' }],
+        drillDownOptions: [
+          {
+            id: 'product',
+            label: 'Product',
+            field: 'productName',
+            headerName: 'Product',
+            flex: 2,
+          },
+        ],
+      },
+    },
   ];
 
   for (const report of reports) {

@@ -42,34 +42,74 @@ export class PutawayBulkDto {
 }
 
 export class QuarantineMoveDto {
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   productId?: string;
 
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   sourceBinId?: string;
 
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   targetBinId?: string;
 
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsNumberString()
   quantity?: string;
 
+  @ApiProperty({
+    required: false,
+    enum: ['goods_receipt', 'sales_return', 'manual'],
+  })
   @IsOptional()
   @IsString()
-  @IsIn(['goods_receipt', 'sales_return'])
-  sourceType?: 'goods_receipt' | 'sales_return';
+  @IsIn(['goods_receipt', 'sales_return', 'manual'])
+  sourceType?: 'goods_receipt' | 'sales_return' | 'manual';
 
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   lineId?: string;
 
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   reason?: string;
+}
+
+export class MoveStockDto {
+  @ApiProperty({ isArray: true, type: () => MoveStockLineDto })
+  @ValidateNested({ each: true })
+  @Type(() => MoveStockLineDto)
+  lines!: MoveStockLineDto[];
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}
+
+export class MoveStockLineDto {
+  @ApiProperty()
+  @IsString()
+  productId!: string;
+
+  @ApiProperty()
+  @IsString()
+  sourceBinId!: string;
+
+  @ApiProperty()
+  @IsString()
+  targetBinId!: string;
+
+  @ApiProperty()
+  @IsNumberString()
+  quantity!: string;
 }
 
 export class InventoryResponseDto {
@@ -128,6 +168,9 @@ export class InventoryLocationResponseDto {
 
   @ApiProperty()
   name!: string;
+
+  @ApiProperty({ required: false })
+  zones?: any[];
 }
 
 export class InventoryMovementResponseDto {

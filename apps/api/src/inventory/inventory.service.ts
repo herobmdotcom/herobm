@@ -15,6 +15,7 @@ import {
   isNull,
   desc,
   asc,
+  lte,
 } from 'drizzle-orm';
 import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -42,6 +43,7 @@ import {
   goodsReceived,
   goodsReceivedLines,
 } from '../drizzle/modbm-core-schema';
+import { randomUUID } from 'crypto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {
@@ -323,7 +325,9 @@ export class InventoryService {
     return { data: mappedRows };
   }
 
-  async findBins(query?: PaginationQuery & { locationNo?: string }) {
+  async findBins(
+    query?: PaginationQuery & { locationNo?: string; binType?: string },
+  ) {
     const { page, limit, cursor, direction, searchTerm } =
       parsePagination(query);
 
@@ -364,6 +368,12 @@ export class InventoryService {
     if (query?.locationNo) {
       filters.push(eq(locations.code, query.locationNo));
     }
+
+    if (query?.binType) {
+      filters.push(eq(bins.binType, query.binType as any));
+    }
+
+    filters.push(sql`${binContents.actualQuantity}::numeric > 0`);
 
     const whereClause = filters.length > 0 ? and(...filters) : undefined;
     if (whereClause) {
@@ -667,7 +677,6 @@ export class InventoryService {
       LEFT JOIN (
         SELECT bc.product_id, SUM(bc.actual_quantity) as qty
         FROM modbm_core.bin_contents bc
-        FROM modbm_core.bin_contents bc
         JOIN modbm_core.bins b ON b.bin_id = bc.bin_id
         WHERE ${isPickableBinSqlCondition('b')}
         GROUP BY bc.product_id
@@ -920,6 +929,19 @@ export class InventoryService {
         });
     }
 
+    // 5. Cleanup Zero Quantity Cache Entries
+    for (const line of processedLines) {
+      await tx
+        .delete(binContents)
+        .where(
+          and(
+            eq(binContents.binId, line.binId),
+            eq(binContents.productId, line.productId),
+            lte(sql`${binContents.actualQuantity}::numeric`, 0),
+          ),
+        );
+    }
+
     // --- Financial Integration: Post Shrinkage Journal Entry via Accounting Strategy ---
     if (params.sourceType === 'MANUAL_ADJUST') {
       const productIds = [...new Set(processedLines.map((l) => l.productId))];
@@ -1007,9 +1029,9 @@ export class InventoryService {
 
     // 4. Emit event for ERP sync (and system events audit)
     await emitEvent(tx, {
-      entityType: EntityType.SYSTEM,
+      entityType: EntityType.INVENTORY_LEDGER,
       entityId: entry.entryId,
-      eventType: EventType.STOCK_ADJUSTED,
+      eventType: EventType.ENTRY_POSTED,
       payload: { header: params, lines: ledgerPayload },
     });
   }
@@ -1524,7 +1546,8 @@ export class InventoryService {
 
       if (!sourceBin) throw new BadRequestException('Source bin not found');
 
-      const isUnquarantining = sourceBin.binType === BIN_TYPE.QUARANTINE;
+      const isUnquarantining =
+        sourceBin.binType === (BIN_TYPE.QUARANTINE as string);
 
       let targetBinId = dto.targetBinId;
 
@@ -1550,7 +1573,7 @@ export class InventoryService {
           throw new BadRequestException(
             'Target bin must be in the same location',
           );
-        if (targetBin.binType === BIN_TYPE.QUARANTINE)
+        if (targetBin.binType === (BIN_TYPE.QUARANTINE as string))
           throw new BadRequestException(
             'Target bin cannot be a quarantine bin when unquarantining',
           );
@@ -1572,7 +1595,7 @@ export class InventoryService {
             throw new BadRequestException(
               'Target bin must be in the same location',
             );
-          if (targetBin.binType !== BIN_TYPE.QUARANTINE)
+          if (targetBin.binType !== (BIN_TYPE.QUARANTINE as string))
             throw new BadRequestException(
               'Target bin must be a quarantine type bin',
             );
@@ -1585,7 +1608,7 @@ export class InventoryService {
             .where(
               and(
                 eq(zones.locationId, sourceBin.locationId),
-                eq(bins.binType, BIN_TYPE.QUARANTINE),
+                eq(bins.binType, 'quarantine'),
               ),
             )
             .limit(1);
@@ -1649,6 +1672,21 @@ export class InventoryService {
         ],
       });
 
+      await emitEvent(tx as any, {
+        entityType: EntityType.WAREHOUSE,
+        entityId: dto.sourceBinId,
+        eventType: EventType.STOCK_MOVED,
+        payload: {
+          productId,
+          sourceBinId: sourceBin.binId,
+          targetBinId,
+          quantity: quantityToMove,
+          reason: dto.reason,
+          isUnquarantining,
+        },
+        actor: userId,
+      });
+
       let newStatus = undefined;
       // Optional line update
       if (dto.lineId && dto.sourceType) {
@@ -1669,6 +1707,123 @@ export class InventoryService {
       }
 
       return { success: true, putawayStatus: newStatus };
+    });
+  }
+
+  async moveStock(dto: import('./dto').MoveStockDto, userId: string) {
+    return await this.db.transaction(async (tx) => {
+      const movementLines: any[] = [];
+      const reasonStr = dto.reason || 'Manual stock move';
+
+      for (const line of dto.lines) {
+        // Fetch source and target bin details
+        const [sourceBinInfo] = await tx
+          .select({
+            binId: bins.binId,
+            locationId: zones.locationId,
+            zoneCode: zones.code,
+          })
+          .from(bins)
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+          .where(eq(bins.binId, line.sourceBinId))
+          .limit(1);
+
+        const [targetBinInfo] = await tx
+          .select({
+            binId: bins.binId,
+            locationId: zones.locationId,
+            zoneCode: zones.code,
+          })
+          .from(bins)
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+          .where(eq(bins.binId, line.targetBinId))
+          .limit(1);
+
+        if (!sourceBinInfo) {
+          throw new BadRequestException(
+            `Source bin ${line.sourceBinId} not found`,
+          );
+        }
+        if (!targetBinInfo) {
+          throw new BadRequestException(
+            `Target bin ${line.targetBinId} not found`,
+          );
+        }
+        if (sourceBinInfo.locationId !== targetBinInfo.locationId) {
+          throw new BadRequestException(
+            'Cannot move stock between different locations. Please use Transfer Orders instead.',
+          );
+        }
+        if (targetBinInfo.zoneCode === 'HANDLING') {
+          throw new BadRequestException(
+            'Cannot manually move stock into system HANDLING bins.',
+          );
+        }
+
+        const qtyToMove = parseFloat(line.quantity);
+        if (qtyToMove <= 0) {
+          throw new BadRequestException(
+            'Quantity to move must be greater than zero',
+          );
+        }
+
+        // Verify available quantity in source bin
+        const [binContent] = await tx
+          .select({ quantity: binContents.actualQuantity })
+          .from(binContents)
+          .where(
+            and(
+              eq(binContents.binId, line.sourceBinId),
+              eq(binContents.productId, line.productId),
+            ),
+          )
+          .limit(1);
+
+        const availableQty = parseFloat(binContent?.quantity || '0');
+        if (availableQty < qtyToMove) {
+          throw new BadRequestException(
+            `Insufficient stock in source bin. Available: ${availableQty}`,
+          );
+        }
+
+        movementLines.push(
+          {
+            productId: line.productId,
+            binId: line.sourceBinId,
+            quantity: -qtyToMove,
+          },
+          {
+            productId: line.productId,
+            binId: line.targetBinId,
+            quantity: qtyToMove,
+          },
+        );
+      }
+
+      if (movementLines.length > 0) {
+        await this.recordInventoryMovement(tx, {
+          entryNumber: `MOVE-${randomUUID().substring(0, 8).toUpperCase()}`,
+          sourceType: 'MANUAL',
+          memo: dto.reason || 'N/A',
+          userId,
+          lines: movementLines,
+        });
+
+        // Emit general inventory moved event
+        // Note: For advanced integration, we could emit individual events per line, but for this workflow one bulk event is often simpler.
+        await emitEvent(tx as any, {
+          entityType: EntityType.WAREHOUSE,
+          entityId: dto.lines[0].sourceBinId, // Using first source bin as reference
+          eventType: EventType.STOCK_MOVED,
+          payload: {
+            reason: reasonStr,
+            lines: dto.lines,
+          },
+          actor: userId,
+        });
+      }
+
+      return { success: true };
     });
   }
 

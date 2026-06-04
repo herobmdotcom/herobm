@@ -1609,6 +1609,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "binType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1978,6 +1986,39 @@
           }
         },
         "summary": "Move to/from Quarantine",
+        "tags": [
+          "Inventory"
+        ]
+      }
+    },
+    "/inventory/move": {
+      "post": {
+        "description": "Manually move stock between bins in the same location.",
+        "operationId": "InventoryController_moveStock",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveStockDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Move successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventorySuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Move Stock manually",
         "tags": [
           "Inventory"
         ]
@@ -3077,6 +3118,46 @@
       }
     },
     "/gl/bank-feeds/rules/{ruleId}": {
+      "put": {
+        "description": "Updates an existing reconciliation rule.",
+        "operationId": "BankFeedsController_updateRule",
+        "parameters": [
+          {
+            "name": "ruleId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReconciliationRuleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReconciliationRuleResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Rule",
+        "tags": [
+          "GL"
+        ]
+      },
       "delete": {
         "description": "Deletes a reconciliation rule.",
         "operationId": "BankFeedsController_deleteRule",
@@ -3245,6 +3326,198 @@
           }
         ],
         "summary": "Manually match a line",
+        "tags": [
+          "BankFeeds"
+        ]
+      }
+    },
+    "/gl/bank-statement/lines/bulk": {
+      "post": {
+        "description": "Manually creates multiple bank statement lines at once.",
+        "operationId": "BankStatementController_createLinesBulk",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CreateBankStatementLineDto"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Lines created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchConfirmedResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create bank statement lines in bulk",
+        "tags": [
+          "BankFeeds"
+        ]
+      }
+    },
+    "/gl/bank-statement/match-bulk": {
+      "post": {
+        "description": "Links an N:M set of bank lines and journal lines together.",
+        "operationId": "BankStatementController_matchBulk",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BankStatementBulkMatchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Match confirmed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchConfirmedResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Bulk match bank statement lines and journal lines",
+        "tags": [
+          "BankFeeds"
+        ]
+      }
+    },
+    "/gl/bank-statement/auto-match": {
+      "post": {
+        "description": "Runs auto-matching rules and suggests smart matches.",
+        "operationId": "BankStatementController_autoMatch",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoMatchRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoMatchResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Auto match bank statement lines",
+        "tags": [
+          "BankFeeds"
+        ]
+      }
+    },
+    "/gl/bank-statement/unmatch": {
+      "post": {
+        "description": "Breaks a match group, and reverses any rule-generated entries.",
+        "operationId": "BankStatementController_unmatch",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnmatchRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BankStatementSuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unmatch items",
+        "tags": [
+          "BankFeeds"
+        ]
+      }
+    },
+    "/gl/bank-statement/match-group/{matchGroupId}": {
+      "get": {
+        "description": "Retrieves metadata about a match group",
+        "operationId": "BankStatementController_getMatchGroup",
+        "parameters": [
+          {
+            "name": "matchGroupId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BankStatementMatchGroupResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get match group",
         "tags": [
           "BankFeeds"
         ]
@@ -8436,7 +8709,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SalesCreditNoteResponseDto"
                 }
               }
             }
@@ -8469,7 +8742,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SalesCreditNoteResponseDto"
                 }
               }
             }
@@ -8511,7 +8784,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SalesCreditNoteResponseDto"
                 }
               }
             }
@@ -10947,7 +11220,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object"
+                    "$ref": "#/components/schemas/DataSourceItemDto"
                   }
                 }
               }
@@ -10980,7 +11253,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SampleReportDto"
                 }
               }
             }
@@ -11012,7 +11285,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/SampleRecordDto"
                 }
               }
             }
@@ -12902,6 +13175,60 @@
           "Events"
         ]
       }
+    },
+    "/user-settings": {
+      "get": {
+        "description": "Retrieves the settings for the currently authenticated user.",
+        "operationId": "UserSettingsController_getSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettingsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get user settings",
+        "tags": [
+          "Users"
+        ]
+      },
+      "patch": {
+        "description": "Updates specific sections of the settings for the currently authenticated user.",
+        "operationId": "UserSettingsController_updateSettings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettingsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update user settings",
+        "tags": [
+          "Users"
+        ]
+      }
     }
   },
   "info": {
@@ -14272,6 +14599,12 @@
           },
           "name": {
             "type": "string"
+          },
+          "zones": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           }
         },
         "required": [
@@ -14477,7 +14810,8 @@
             "type": "string",
             "enum": [
               "goods_receipt",
-              "sales_return"
+              "sales_return",
+              "manual"
             ]
           },
           "lineId": {
@@ -14487,6 +14821,46 @@
             "type": "string"
           }
         }
+      },
+      "MoveStockLineDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "sourceBinId": {
+            "type": "string"
+          },
+          "targetBinId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId",
+          "sourceBinId",
+          "targetBinId",
+          "quantity"
+        ]
+      },
+      "MoveStockDto": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MoveStockLineDto"
+            }
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lines"
+        ]
       },
       "GlAccountResponseDto": {
         "type": "object",
@@ -15128,9 +15502,29 @@
           "conditionValue": {
             "type": "string"
           },
+          "amountMin": {
+            "type": "number"
+          },
+          "amountMax": {
+            "type": "number"
+          },
           "targetGlAccountId": {
             "type": "string",
             "format": "uuid"
+          },
+          "costCenterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "activityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "partyType": {
+            "type": "string"
+          },
+          "partyId": {
+            "type": "string"
           },
           "priority": {
             "type": "number"
@@ -15156,9 +15550,29 @@
           "conditionValue": {
             "type": "string"
           },
+          "amountMin": {
+            "type": "number"
+          },
+          "amountMax": {
+            "type": "number"
+          },
           "targetGlAccountId": {
             "type": "string",
             "format": "uuid"
+          },
+          "costCenterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "activityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "partyType": {
+            "type": "string"
+          },
+          "partyId": {
+            "type": "string"
           },
           "priority": {
             "type": "number"
@@ -15169,6 +15583,48 @@
           "conditionValue",
           "targetGlAccountId"
         ]
+      },
+      "UpdateReconciliationRuleDto": {
+        "type": "object",
+        "properties": {
+          "glAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "conditionType": {
+            "type": "string"
+          },
+          "conditionValue": {
+            "type": "string"
+          },
+          "amountMin": {
+            "type": "number"
+          },
+          "amountMax": {
+            "type": "number"
+          },
+          "targetGlAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "costCenterId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "activityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "partyType": {
+            "type": "string"
+          },
+          "partyId": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "number"
+          }
+        }
       },
       "MatchedJournalLineDto": {
         "type": "object",
@@ -15277,6 +15733,231 @@
         },
         "required": [
           "journalLineId"
+        ]
+      },
+      "CreateBankStatementLineDto": {
+        "type": "object",
+        "properties": {
+          "glAccountId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "reference": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "glAccountId",
+          "date",
+          "description",
+          "amount"
+        ]
+      },
+      "BankStatementBulkMatchDto": {
+        "type": "object",
+        "properties": {
+          "bankLineIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "journalLineIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reconciliationId": {
+            "type": "string",
+            "description": "Reconciliation ID to link the lines to"
+          }
+        },
+        "required": [
+          "bankLineIds",
+          "journalLineIds",
+          "reconciliationId"
+        ]
+      },
+      "AutoMatchRequestDto": {
+        "type": "object",
+        "properties": {
+          "glAccountId": {
+            "type": "string"
+          },
+          "reconciliationId": {
+            "type": "string"
+          },
+          "dryRun": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "glAccountId"
+        ]
+      },
+      "AutoMatchSmartMatchDto": {
+        "type": "object",
+        "properties": {
+          "bankLineIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "journalLineIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium"
+            ]
+          },
+          "date": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "bankLineIds",
+          "journalLineIds",
+          "confidence",
+          "date",
+          "description",
+          "amount"
+        ]
+      },
+      "AutoMatchProposedRuleMatchDto": {
+        "type": "object",
+        "properties": {
+          "bankLineId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "ruleId": {
+            "type": "string"
+          },
+          "targetGlAccountId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "bankLineId",
+          "date",
+          "description",
+          "amount",
+          "ruleId",
+          "targetGlAccountId"
+        ]
+      },
+      "AutoMatchResponseDto": {
+        "type": "object",
+        "properties": {
+          "autoMatchedCount": {
+            "type": "number"
+          },
+          "smartMatchedCount": {
+            "type": "number"
+          },
+          "unmatchedCount": {
+            "type": "number"
+          },
+          "smartMatches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutoMatchSmartMatchDto"
+            }
+          },
+          "proposedRuleMatches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutoMatchProposedRuleMatchDto"
+            }
+          }
+        },
+        "required": [
+          "autoMatchedCount",
+          "smartMatchedCount",
+          "unmatchedCount",
+          "smartMatches"
+        ]
+      },
+      "UnmatchRequestDto": {
+        "type": "object",
+        "properties": {
+          "matchGroupId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "matchGroupId"
+        ]
+      },
+      "BankStatementSuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "BankStatementMatchGroupResponseDto": {
+        "type": "object",
+        "properties": {
+          "matchGroupId": {
+            "type": "string"
+          },
+          "matchType": {
+            "type": "string"
+          },
+          "ruleName": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdOn": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "matchGroupId",
+          "matchType",
+          "createdBy",
+          "createdOn"
         ]
       },
       "UomResponseDto": {
@@ -18011,6 +18692,25 @@
           "eventType"
         ]
       },
+      "SalesCreditNoteResponseDto": {
+        "type": "object",
+        "properties": {
+          "creditNoteId": {
+            "type": "string"
+          },
+          "creditNoteNumber": {
+            "type": "string"
+          },
+          "stateCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "creditNoteId",
+          "creditNoteNumber",
+          "stateCode"
+        ]
+      },
       "CreateSalesCreditNoteDto": {
         "type": "object",
         "properties": {
@@ -18944,6 +19644,9 @@
           "referenceNumber": {
             "type": "string"
           },
+          "expectedDate": {
+            "type": "string"
+          },
           "lines": {
             "type": "array",
             "items": {
@@ -19079,6 +19782,11 @@
             "type": "string",
             "nullable": true
           },
+          "expectedDate": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
           "vendorName": {
             "type": "string"
           }
@@ -19113,6 +19821,9 @@
             "type": "string"
           },
           "deliveryLocationId": {
+            "type": "string"
+          },
+          "expectedDate": {
             "type": "string"
           }
         }
@@ -19429,6 +20140,54 @@
           "totalAmount",
           "taxAmount",
           "feeAmount"
+        ]
+      },
+      "DataSourceItemDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "name"
+        ]
+      },
+      "SampleReportDto": {
+        "type": "object",
+        "properties": {
+          "isMockData": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "isMockData",
+          "data"
+        ]
+      },
+      "SampleRecordDto": {
+        "type": "object",
+        "properties": {
+          "isMockData": {
+            "type": "boolean"
+          },
+          "data": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "isMockData",
+          "data"
         ]
       },
       "SystemLogResponseDto": {
@@ -20718,6 +21477,37 @@
           "type",
           "payload"
         ]
+      },
+      "UserSettingsResponseDto": {
+        "type": "object",
+        "properties": {
+          "dashboardConfig": {
+            "type": "object"
+          },
+          "reportConfigs": {
+            "type": "object"
+          },
+          "preferences": {
+            "type": "object"
+          }
+        }
+      },
+      "UpdateUserSettingsDto": {
+        "type": "object",
+        "properties": {
+          "dashboardConfig": {
+            "type": "object",
+            "description": "Dashboard configuration layout and pinned widgets"
+          },
+          "reportConfigs": {
+            "type": "object",
+            "description": "Saved report configurations and filters"
+          },
+          "preferences": {
+            "type": "object",
+            "description": "Generic UI preferences"
+          }
+        }
       }
     }
   }
