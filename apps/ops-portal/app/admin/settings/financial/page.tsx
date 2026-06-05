@@ -581,8 +581,7 @@ export default function FinancialSettingsPage() {
               <button className="btn btn-secondary btn-xs" onClick={() => coaEdit(data)}>{tSettings('actions.edit')}</button>
               {Object.keys(data.metadata || {}).length > 0 && (
                 <button className="btn btn-secondary btn-xs" onClick={() => setViewMetadataObj(data)}>
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
-                  View Metadata
+                  {tSettings('actions.viewMetadata')}
                 </button>
               )}
               {data.isSystem && <span className="text-xs text-muted italic px-2">{tCommon('system')}</span>}

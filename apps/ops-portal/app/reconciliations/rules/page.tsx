@@ -224,17 +224,17 @@ export default function RulesEnginePage() {
             <div className="font-medium text-[var(--text-primary)]">{bankStr}</div>
             {r.conditionType && r.conditionValue && (
               <div className="text-sm text-[var(--text-muted)]">
-                Desc {condType} <span className="font-semibold px-1 bg-[var(--bg-tertiary)] rounded">"{r.conditionValue}"</span>
+                {t('descriptionCondition')} {condType} <span className="font-semibold px-1 bg-[var(--bg-tertiary)] rounded">"{r.conditionValue}"</span>
               </div>
             )}
             {r.typeCondition && (
               <div className="text-sm text-[var(--text-muted)]">
-                Type <span className="font-semibold px-1 bg-[var(--bg-tertiary)] rounded">"{r.typeCondition}"</span>
+                {t('typeCondition')} <span className="font-semibold px-1 bg-[var(--bg-tertiary)] rounded">"{r.typeCondition}"</span>
               </div>
             )}
             {r.payeeConditionValue && (
               <div className="text-sm text-[var(--text-muted)]">
-                Payee {r.payeeConditionType === 'contains' ? t('descriptionContains') : r.payeeConditionType === 'starts_with' ? t('descriptionStartsWith') : t('descriptionExactMatch')} <span className="font-semibold px-1 bg-[var(--bg-tertiary)] rounded">"{r.payeeConditionValue}"</span>
+                {t('payeeCondition')} {r.payeeConditionType === 'contains' ? t('descriptionContains') : r.payeeConditionType === 'starts_with' ? t('descriptionStartsWith') : t('descriptionExactMatch')} <span className="font-semibold px-1 bg-[var(--bg-tertiary)] rounded">"{r.payeeConditionValue}"</span>
               </div>
             )}
             {amtStr && <div className="text-xs text-[var(--text-muted)]">{amtStr}</div>}
@@ -405,14 +405,14 @@ export default function RulesEnginePage() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Description Condition</label>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{t('descriptionCondition')}</label>
                   <div className="grid grid-cols-3 gap-2">
                     <select 
                       className="input col-span-1"
                       value={editingRule.conditionType || ''}
                       onChange={e => setEditingRule({ ...editingRule, conditionType: e.target.value })}
                     >
-                      <option value="">(Any Description)</option>
+                      <option value="">{t('anyDescription')}</option>
                       <option value="contains">{t('descriptionContains')}</option>
                       <option value="starts_with">{t('descriptionStartsWith')}</option>
                       <option value="exact_match">{t('descriptionExactMatch')}</option>
@@ -428,7 +428,7 @@ export default function RulesEnginePage() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Type Condition</label>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{t('typeCondition')}</label>
                   <input 
                     type="text"
                     className="input w-full"
@@ -439,14 +439,14 @@ export default function RulesEnginePage() {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">Payee Condition</label>
+                  <label className="block text-xs font-medium mb-1.5 text-[var(--text-muted)]">{t('payeeCondition')}</label>
                   <div className="grid grid-cols-3 gap-2">
                     <select 
                       className="input col-span-1"
                       value={editingRule.payeeConditionType || ''}
                       onChange={e => setEditingRule({ ...editingRule, payeeConditionType: e.target.value })}
                     >
-                      <option value="">(Any Payee)</option>
+                      <option value="">{t('anyPayee')}</option>
                       <option value="contains">{t('descriptionContains')}</option>
                       <option value="starts_with">{t('descriptionStartsWith')}</option>
                       <option value="exact_match">{t('descriptionExactMatch')}</option>

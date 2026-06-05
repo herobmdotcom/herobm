@@ -496,7 +496,8 @@
         "importCsv": "Import CSV",
         "importSettings": "Import Settings",
         "save": "Save",
-        "saveSchema": "Save Schema"
+        "saveSchema": "Save Schema",
+        "viewMetadata": "View Metadata"
       },
       "activities": {
         "empty": "No activities defined. Create one to get started."
@@ -1452,6 +1453,11 @@
       "descriptionContains": "Description Contains",
       "descriptionExactMatch": "Description Exact Match",
       "descriptionStartsWith": "Description Starts With",
+      "descriptionCondition": "Description Condition",
+      "anyDescription": "(Any Description)",
+      "typeCondition": "Type Condition",
+      "payeeCondition": "Payee Condition",
+      "anyPayee": "(Any Payee)",
       "detailsTitle": "Reconciliation Details",
       "discard": "Discard",
       "discardError": "Failed to discard reconciliation",
@@ -2844,6 +2850,8 @@
       "noFileChosen": "No file chosen",
       "options": {
         "alreadyStaged": "Already staged: ",
+        "enableCustomImports": "Enable custom imports",
+        "enableCustomImportsDesc": "Executes any additional custom extract and transform scripts configured in the pipeline extensions directory.",
         "fullExtractionDesc": "Extract everything from scratch.",
         "fullExtractionTitle": "Full Extraction",
         "resumeModeDesc": "Skip already imported tables.",

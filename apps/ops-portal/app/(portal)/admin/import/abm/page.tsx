@@ -406,8 +406,8 @@ export default function AdminImportPage() {
                 className="mt-1 text-[#006b5c] focus:ring-[#006b5c] rounded" 
               />
               <div>
-                <div className="font-bold text-slate-800">Enable custom imports</div>
-                <div className="text-sm text-slate-500">Executes any additional custom extract and transform scripts configured in the pipeline extensions directory.</div>
+                <div className="font-bold text-slate-800">{t('options.enableCustomImports')}</div>
+                <div className="text-sm text-slate-500">{t('options.enableCustomImportsDesc')}</div>
               </div>
             </label>
           </div>
