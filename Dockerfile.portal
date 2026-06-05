@@ -41,6 +41,10 @@ COPY package.json package-lock.json ./
 COPY packages/ ./packages/
 COPY apps/ops-portal/ ./apps/ops-portal/
 
+# Build workspace packages first (dist is excluded by .dockerignore)
+RUN npm run build -w packages/shared
+RUN npm run build -w packages/sdk
+
 # Typecheck (quality gate — catches type errors before build)
 RUN cd apps/ops-portal && npx tsc --noEmit
 

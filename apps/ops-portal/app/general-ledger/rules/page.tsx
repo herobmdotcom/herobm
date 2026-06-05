@@ -28,7 +28,10 @@ export default function RulesEnginePage() {
       const accs = await api.glControllerGetAccounts();
       setGlAccounts(accs.data || []);
       const r = await api.bankFeedsControllerGetRules();
-      setRules(r.data || []);
+      setRules((r.data || []).map((rule: any) => ({
+        ...rule,
+        glAccountId: rule.glAccountIds?.[0] || ''
+      })));
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -42,7 +45,7 @@ export default function RulesEnginePage() {
     }
     if (isNew) {
       await api.bankFeedsControllerCreateRule({
-        glAccountId: row.glAccountId || undefined,
+        glAccountIds: row.glAccountId ? [row.glAccountId] : [],
         conditionType: row.conditionType,
         conditionValue: row.conditionValue,
         targetGlAccountId: row.targetGlAccountId,

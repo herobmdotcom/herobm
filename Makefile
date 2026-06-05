@@ -136,7 +136,6 @@ nuke:
 # Create the active profile database and base schemas on a running container
 init-db:
 	@echo "Initializing database: $(POSTGRES_DB)"
-	-@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d postgres -c "CREATE DATABASE $(POSTGRES_DB);"
 	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -f /docker-entrypoint-initdb.d/init-schemas.sql
 
 # Generate .env from .env.example with auto-generated local secrets.
@@ -397,6 +396,7 @@ cli-help:
 	@echo "  6. make cli-init-db          - Initialize schemas (waits for PG)"
 	@echo "  7. make cli-migrate          - Apply SQL migrations"
 	@echo "  8. make cli-bootstrap        - Seed data & verify"
+	@echo "  9. make up                   - Start FE and API containers"
 
 cli-install-prereqs:
 ifeq ($(OS),Windows_NT)
@@ -436,9 +436,11 @@ endif
 cli-migrate: migrate
 
 cli-bootstrap:
+	$(MAKE) build-shared
 	$(MAKE) build-api
 	npm run seed
 	$(MAKE) verify-db
+	@"$(VENV_PYTHON)" -c "import os; env=dict(line.strip().split('=',1) for line in open('.env') if '=' in line and not line.strip().startswith('#')) if os.path.exists('.env') else {}; print('\n=============================================================\n  [SECURE] Admin Password:\n  ' + env.get('DEV_ADMIN_PASSWORD', 'UNKNOWN') + '\n  (This is also saved securely in your .env file)\n=============================================================\n') if env.get('DEV_ADMIN_PASSWORD') else None"
 
 verify-db: migrate-status
 	@echo "Verifying seeded system records..."

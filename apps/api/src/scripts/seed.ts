@@ -1,5 +1,5 @@
 import { SystemResource } from '@modbm/shared';
-import 'dotenv/config';
+
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as crypto from 'crypto';
@@ -30,7 +30,7 @@ import {
 import { eq } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 
 const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 

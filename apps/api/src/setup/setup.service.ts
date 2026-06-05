@@ -719,6 +719,18 @@ export class SetupService {
       }
 
       await this.inferAndSaveGlMetadataSchema(jobId);
+
+      // Reload app config cache so API picks up the new settings
+      try {
+        await this.appConfig.reload();
+      } catch (e) {
+        this.log(
+          jobId,
+          `Warning: Failed to reload app config cache: ${e.message}`,
+          'error',
+        );
+      }
+
       this.log(jobId, 'DATA IMPORT COMPLETED SUCCESSFULLY');
       if (jobId && this.activeJobs[jobId]) {
         this.activeJobs[jobId].progress[0].status = 'done';

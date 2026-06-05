@@ -28,7 +28,8 @@ export class AppConfigController {
   @CasbinAction('read')
   @ApiOperation({ summary: 'get', description: 'get operation' })
   async get() {
-    return this.appConfigService.getAppSettingsRaw();
+    const settings = this.appConfigService.getAppSettingsRaw();
+    return settings || {};
   }
 
   @Patch()
