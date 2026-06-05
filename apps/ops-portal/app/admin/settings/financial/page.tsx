@@ -126,6 +126,7 @@ export default function FinancialSettingsPage() {
   const [schemaObj, setSchemaObj] = useState<Record<string, any>>({ type: 'object', properties: {} });
   const [schemaEditorOpen, setSchemaEditorOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [viewMetadataObj, setViewMetadataObj] = useState<any | null>(null);
 
   // ── CoA state ──────────────────────────────────────────────────────────────
   // modbm-allow-record-any
@@ -578,6 +579,12 @@ export default function FinancialSettingsPage() {
             <div className="flex justify-end gap-2 flex-nowrap whitespace-nowrap">
               {data.isGroup && <button className="btn btn-secondary btn-xs" onClick={() => coaCreate(data.glAccountId, data.accountType)}>{tSettings('actions.addChild')}</button>}
               <button className="btn btn-secondary btn-xs" onClick={() => coaEdit(data)}>{tSettings('actions.edit')}</button>
+              {Object.keys(data.metadata || {}).length > 0 && (
+                <button className="btn btn-secondary btn-xs" onClick={() => setViewMetadataObj(data)}>
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  View Metadata
+                </button>
+              )}
               {data.isSystem && <span className="text-xs text-muted italic px-2">{tCommon('system')}</span>}
             </div>
           )}
@@ -1261,6 +1268,18 @@ export default function FinancialSettingsPage() {
             <button className="btn btn-secondary" onClick={() => setSchemaEditorOpen(false)}>{tSettings('actions.cancel')}</button>
             <button className="btn btn-primary" onClick={saveSchema}>{tSettings('actions.saveSchema')}</button>
           </div>
+        </div>
+      </SlideOver>
+
+      <SlideOver
+        isOpen={!!viewMetadataObj}
+        onClose={() => setViewMetadataObj(null)}
+        title="Account Metadata"
+      >
+        <div className="p-4">
+          <pre className="text-xs bg-[var(--bg-secondary)] p-4 rounded-lg overflow-auto border border-[var(--border)]">
+            {JSON.stringify(viewMetadataObj?.metadata, null, 2)}
+          </pre>
         </div>
       </SlideOver>
 

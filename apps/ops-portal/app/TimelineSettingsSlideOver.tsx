@@ -11,7 +11,7 @@ export const DEFAULT_ENABLED_EVENTS: EventType[] = [
   'purchase_order.created', 'purchase_order.status_changed', 'purchase_order.deleted',
   'warehouse.receipt_created', 'inventory_ledger.entry_posted', 'transfer_order.created',
   'payment.submitted',
-  'customer.created', 'supplier.created'
+  'customer.created', 'supplier.created', 'stock_adjusted'
 ];
 
 interface Props {

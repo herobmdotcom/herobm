@@ -13,4 +13,8 @@ export interface CreateBankStatementLineDto {
   amount: number;
   /** @nullable */
   reference?: string | null;
+  /** @nullable */
+  type?: string | null;
+  /** @nullable */
+  payee?: string | null;
 }

@@ -2024,6 +2024,39 @@
         ]
       }
     },
+    "/inventory/adjust": {
+      "post": {
+        "description": "Manually adjust stock levels to match a physical count.",
+        "operationId": "InventoryController_adjustStock",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdjustStockDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Adjustment successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventorySuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Adjust Stock manually",
+        "tags": [
+          "Inventory"
+        ]
+      }
+    },
     "/gl/accounts": {
       "get": {
         "description": "Retrieve the chart of accounts or a flat list of accounts.",
@@ -2992,20 +3025,11 @@
         ]
       }
     },
-    "/gl/bank-feeds/profiles/{glAccountId}": {
+    "/gl/bank-feeds/profiles": {
       "get": {
-        "description": "Retrieves all mapping profiles for a specific GL account.",
+        "description": "Retrieves all mapping profiles.",
         "operationId": "BankFeedsController_getProfiles",
-        "parameters": [
-          {
-            "name": "glAccountId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "",
@@ -3025,9 +3049,7 @@
         "tags": [
           "GL"
         ]
-      }
-    },
-    "/gl/bank-feeds/profiles": {
+      },
       "post": {
         "description": "Creates a new CSV mapping profile.",
         "operationId": "BankFeedsController_createProfile",
@@ -3055,6 +3077,78 @@
           }
         },
         "summary": "Create Mapping Profile",
+        "tags": [
+          "GL"
+        ]
+      }
+    },
+    "/gl/bank-feeds/profiles/{profileId}": {
+      "put": {
+        "description": "Updates an existing CSV mapping profile.",
+        "operationId": "BankFeedsController_updateProfile",
+        "parameters": [
+          {
+            "name": "profileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMappingProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingProfileResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Mapping Profile",
+        "tags": [
+          "GL"
+        ]
+      },
+      "delete": {
+        "description": "Deletes a CSV mapping profile.",
+        "operationId": "BankFeedsController_deleteProfile",
+        "parameters": [
+          {
+            "name": "profileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MappingProfileResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete Mapping Profile",
         "tags": [
           "GL"
         ]
@@ -3481,6 +3575,43 @@
           }
         ],
         "summary": "Unmatch items",
+        "tags": [
+          "BankFeeds"
+        ]
+      }
+    },
+    "/gl/bank-statement/lines/{id}": {
+      "delete": {
+        "description": "Deletes a bank statement line that has not been reconciled.",
+        "operationId": "BankStatementController_deleteLine",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BankStatementSuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete bank statement line",
         "tags": [
           "BankFeeds"
         ]
@@ -14862,6 +14993,44 @@
           "lines"
         ]
       },
+      "AdjustStockLineDto": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "binId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "newQuantity": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "productId",
+          "binId",
+          "newQuantity"
+        ]
+      },
+      "AdjustStockDto": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdjustStockLineDto"
+            }
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lines"
+        ]
+      },
       "GlAccountResponseDto": {
         "type": "object",
         "properties": {
@@ -15415,13 +15584,6 @@
       "MappingProfileResponseDto": {
         "type": "object",
         "properties": {
-          "profileId": {
-            "type": "string"
-          },
-          "glAccountId": {
-            "type": "string",
-            "format": "uuid"
-          },
           "name": {
             "type": "string"
           },
@@ -15431,7 +15593,19 @@
           "amountColumn": {
             "type": "string"
           },
+          "debitColumn": {
+            "type": "string"
+          },
+          "creditColumn": {
+            "type": "string"
+          },
           "descriptionColumn": {
+            "type": "string"
+          },
+          "typeColumn": {
+            "type": "string"
+          },
+          "payeeColumn": {
             "type": "string"
           },
           "referenceColumn": {
@@ -15439,25 +15613,22 @@
           },
           "headerRows": {
             "type": "number"
+          },
+          "profileId": {
+            "type": "string"
           }
         },
         "required": [
-          "profileId",
-          "glAccountId",
           "name",
           "dateColumn",
-          "amountColumn",
           "descriptionColumn",
-          "headerRows"
+          "headerRows",
+          "profileId"
         ]
       },
       "CreateMappingProfileDto": {
         "type": "object",
         "properties": {
-          "glAccountId": {
-            "type": "string",
-            "format": "uuid"
-          },
           "name": {
             "type": "string"
           },
@@ -15467,7 +15638,19 @@
           "amountColumn": {
             "type": "string"
           },
+          "debitColumn": {
+            "type": "string"
+          },
+          "creditColumn": {
+            "type": "string"
+          },
           "descriptionColumn": {
+            "type": "string"
+          },
+          "typeColumn": {
+            "type": "string"
+          },
+          "payeeColumn": {
             "type": "string"
           },
           "referenceColumn": {
@@ -15478,17 +15661,59 @@
           }
         },
         "required": [
-          "glAccountId",
           "name",
           "dateColumn",
-          "amountColumn",
           "descriptionColumn",
           "headerRows"
         ]
       },
+      "UpdateMappingProfileDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "dateColumn": {
+            "type": "string"
+          },
+          "amountColumn": {
+            "type": "string"
+          },
+          "debitColumn": {
+            "type": "string"
+          },
+          "creditColumn": {
+            "type": "string"
+          },
+          "descriptionColumn": {
+            "type": "string"
+          },
+          "typeColumn": {
+            "type": "string"
+          },
+          "payeeColumn": {
+            "type": "string"
+          },
+          "referenceColumn": {
+            "type": "string"
+          },
+          "headerRows": {
+            "type": "number"
+          }
+        }
+      },
       "ReconciliationRuleResponseDto": {
         "type": "object",
         "properties": {
+          "typeCondition": {
+            "type": "string"
+          },
+          "payeeConditionType": {
+            "type": "string"
+          },
+          "payeeConditionValue": {
+            "type": "string"
+          },
           "ruleId": {
             "type": "string"
           },
@@ -15526,6 +15751,9 @@
           "partyId": {
             "type": "string"
           },
+          "memo": {
+            "type": "string"
+          },
           "priority": {
             "type": "number"
           }
@@ -15540,6 +15768,15 @@
       "CreateReconciliationRuleDto": {
         "type": "object",
         "properties": {
+          "typeCondition": {
+            "type": "string"
+          },
+          "payeeConditionType": {
+            "type": "string"
+          },
+          "payeeConditionValue": {
+            "type": "string"
+          },
           "glAccountId": {
             "type": "string",
             "format": "uuid"
@@ -15572,6 +15809,9 @@
             "type": "string"
           },
           "partyId": {
+            "type": "string"
+          },
+          "memo": {
             "type": "string"
           },
           "priority": {
@@ -15587,6 +15827,15 @@
       "UpdateReconciliationRuleDto": {
         "type": "object",
         "properties": {
+          "typeCondition": {
+            "type": "string"
+          },
+          "payeeConditionType": {
+            "type": "string"
+          },
+          "payeeConditionValue": {
+            "type": "string"
+          },
           "glAccountId": {
             "type": "string",
             "format": "uuid"
@@ -15619,6 +15868,9 @@
             "type": "string"
           },
           "partyId": {
+            "type": "string"
+          },
+          "memo": {
             "type": "string"
           },
           "priority": {
@@ -15674,6 +15926,14 @@
             "type": "string",
             "nullable": true
           },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "payee": {
+            "type": "string",
+            "nullable": true
+          },
           "isReconciled": {
             "type": "boolean"
           },
@@ -15688,6 +15948,10 @@
                 "$ref": "#/components/schemas/MatchedJournalLineDto"
               }
             ]
+          },
+          "matchGroupId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -15754,6 +16018,14 @@
           "reference": {
             "type": "string",
             "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "payee": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -15800,6 +16072,12 @@
           },
           "dryRun": {
             "type": "boolean"
+          },
+          "ignoredStatementLineIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -15951,6 +16229,18 @@
           "createdOn": {
             "type": "string",
             "format": "date-time"
+          },
+          "bankLines": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "ledgerLines": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           }
         },
         "required": [

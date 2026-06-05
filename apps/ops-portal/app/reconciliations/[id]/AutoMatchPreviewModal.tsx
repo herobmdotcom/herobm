@@ -27,6 +27,7 @@ export default function AutoMatchPreviewModal({
   // modbm-allow-record-any
   const [accounts, setAccounts] = useState<Record<string, any>[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(false);
+  const [ignoredLineIds, setIgnoredLineIds] = useState<string[]>([]);
   const tCommon = useTranslations('common');
   const t = useTranslations('admin.reconciliations');
 
@@ -38,6 +39,7 @@ export default function AutoMatchPreviewModal({
 
   useEffect(() => {
     if (isOpen && previewData) {
+      setIgnoredLineIds([]);
       setLoadingExtras(true);
       Promise.all([
         api.reconciliationControllerGetLines(reconciliationId),
@@ -59,7 +61,8 @@ export default function AutoMatchPreviewModal({
       const res = await api.bankStatementControllerAutoMatch({
         glAccountId,
         reconciliationId,
-        dryRun: false
+        dryRun: false,
+        ignoredStatementLineIds: ignoredLineIds.length > 0 ? ignoredLineIds : undefined
       });
       const data = res.data as any;
       if (data.autoMatchedCount > 0 || data.smartMatchedCount > 0) {
@@ -84,6 +87,24 @@ export default function AutoMatchPreviewModal({
     return acc ? acc.name : 'Unknown Account';
   };
 
+  const handleToggleIgnore = (ids: string | string[]) => {
+    const idArray = Array.isArray(ids) ? ids : [ids];
+    setIgnoredLineIds(prev => {
+      const allIncluded = idArray.every(id => prev.includes(id));
+      if (allIncluded) {
+        return prev.filter(id => !idArray.includes(id)); // un-ignore
+      } else {
+        return [...prev, ...idArray.filter(id => !prev.includes(id))]; // ignore
+      }
+    });
+  };
+
+  const ignoredRuleMatches = previewData ? (previewData.proposedRuleMatches || []).filter(m => ignoredLineIds.includes(m.bankLineId)).length : 0;
+  const ignoredSmartMatches = previewData ? (previewData.smartMatches || []).filter(m => m.bankLineIds.some((id: string) => ignoredLineIds.includes(id))).length : 0;
+  const effectiveAutoMatchedCount = previewData ? Math.max(0, previewData.autoMatchedCount - ignoredRuleMatches) : 0;
+  const effectiveSmartMatchedCount = previewData ? Math.max(0, previewData.smartMatchedCount - ignoredSmartMatches) : 0;
+  const effectiveUnmatchedCount = previewData ? previewData.unmatchedCount + ignoredRuleMatches + ignoredSmartMatches : 0;
+
   const footerActions = (
     <div className="flex justify-end gap-3 w-full">
       <button
@@ -97,7 +118,7 @@ export default function AutoMatchPreviewModal({
       <button
         type="button"
         onClick={handleConfirm}
-        disabled={confirming || !previewData || (previewData.autoMatchedCount === 0 && previewData.smartMatchedCount === 0)}
+        disabled={confirming || !previewData || (effectiveAutoMatchedCount === 0 && effectiveSmartMatchedCount === 0)}
         className="btn btn-primary font-semibold px-4 py-2 flex items-center gap-2"
       >
         {/* eslint-disable-next-line i18next/no-literal-string */}
@@ -192,11 +213,11 @@ export default function AutoMatchPreviewModal({
             </p>
             <ul className="list-disc list-inside text-sm text-blue-800 mt-2 space-y-1">
               {/* eslint-disable-next-line i18next/no-literal-string */}
-              <li><strong>{previewData.autoMatchedCount}</strong> lines will be matched using rules.</li>
+              <li><strong>{effectiveAutoMatchedCount}</strong> lines will be matched using rules.</li>
               {/* eslint-disable-next-line i18next/no-literal-string */}
-              <li><strong>{previewData.smartMatchedCount}</strong> lines will be matched using smart matches.</li>
+              <li><strong>{effectiveSmartMatchedCount}</strong> lines will be matched using smart matches.</li>
               {/* eslint-disable-next-line i18next/no-literal-string */}
-              <li><strong>{previewData.unmatchedCount}</strong> lines will remain unmatched.</li>
+              <li><strong>{effectiveUnmatchedCount}</strong> lines will remain unmatched.</li>
             </ul>
           </div>
         </div>
@@ -209,18 +230,32 @@ export default function AutoMatchPreviewModal({
               <div className="flex flex-col gap-4">
                 {/* eslint-disable-next-line i18next/no-literal-string */}
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider border-b pb-2">Proposed Rule Matches</h3>
-                {previewData.proposedRuleMatches.map((m: any, i: number) => (
-                  <div key={i} className="card p-5 space-y-6 bg-gray-50/50 border border-gray-200 rounded-xl">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {renderStatementTable([{ date: m.date, description: m.description, amount: m.amount }])}
-                      {renderLedgerTable([{ 
-                        date: m.date, 
-                        memo: `To be created (Account: ${getTargetAccountName(m.targetGlAccountId)})`, 
-                        amount: m.amount 
-                      }])}
+                {previewData.proposedRuleMatches.map((m: any, i: number) => {
+                  const isIgnored = ignoredLineIds.includes(m.bankLineId);
+                  return (
+                    <div key={i} className={`card p-5 space-y-6 border rounded-xl relative transition-all ${isIgnored ? 'opacity-50 grayscale bg-gray-100 border-gray-200' : 'bg-gray-50/50 border-gray-200'}`}>
+                      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <span className="text-sm font-medium text-gray-700">{t('applyMatch')}</span>
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm checkbox-primary"
+                            checked={!isIgnored}
+                            onChange={() => handleToggleIgnore(m.bankLineId)}
+                          />
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                        {renderStatementTable([{ date: m.date, description: m.description, amount: m.amount }])}
+                        {renderLedgerTable([{ 
+                          date: m.date, 
+                          memo: `To be created (Account: ${getTargetAccountName(m.targetGlAccountId)})`, 
+                          amount: m.amount 
+                        }])}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -230,9 +265,21 @@ export default function AutoMatchPreviewModal({
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider border-b pb-2">Proposed Smart Matches</h3>
                 {previewData.smartMatches.map((m: any, i: number) => {
                   const matchedLedgerLines = ledgerLines.filter(l => m.journalLineIds.includes(l.journalLineId));
+                  const isIgnored = m.bankLineIds.some((id: string) => ignoredLineIds.includes(id));
                   return (
-                    <div key={i} className="card p-5 space-y-6 bg-gray-50/50 border border-gray-200 rounded-xl">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div key={i} className={`card p-5 space-y-6 border rounded-xl relative transition-all ${isIgnored ? 'opacity-50 grayscale bg-gray-100 border-gray-200' : 'bg-gray-50/50 border-gray-200'}`}>
+                      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <span className="text-sm font-medium text-gray-700">{t('applyMatch')}</span>
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-sm checkbox-primary"
+                            checked={!isIgnored}
+                            onChange={() => handleToggleIgnore(m.bankLineIds)}
+                          />
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                         {renderStatementTable([{ date: m.date, description: m.description, amount: m.amount }])}
                         {renderLedgerTable(matchedLedgerLines)}
                       </div>

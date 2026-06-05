@@ -21,6 +21,7 @@ import type {
   AddReturnLineDto,
   AddShipmentLineDto,
   AddSupplierDto,
+  AdjustStockDto,
   AllocatePaymentDto,
   AllocationResolveResponseDto,
   AllocationSuccessResponseDto,
@@ -36,10 +37,10 @@ import type {
   BankStatementBulkMatchDto,
   BankStatementConfirmMatchDto,
   BankStatementControllerGetLinesParams,
-  BankStatementControllerGetMatchGroup200,
-  BankStatementControllerUnmatch201,
   BankStatementLineDto,
   BankStatementManualMatchDto,
+  BankStatementMatchGroupResponseDto,
+  BankStatementSuccessResponseDto,
   BatchPaymentActionDto,
   BinResponseDto,
   BulkImportResultDto,
@@ -339,6 +340,7 @@ import type {
   UpdateInvoiceLineDto,
   UpdateLocationDto,
   UpdateMacroDto,
+  UpdateMappingProfileDto,
   UpdateOrderDto,
   UpdateOrderLineDto,
   UpdateOrganizationDto,
@@ -2506,6 +2508,44 @@ export const inventoryControllerMoveStock = async (moveStockDto: MoveStockDto, o
 
 
 /**
+ * Manually adjust stock levels to match a physical count.
+ * @summary Adjust Stock manually
+ */
+export type inventoryControllerAdjustStockResponse201 = {
+  data: InventorySuccessResponseDto
+  status: 201
+}
+    
+export type inventoryControllerAdjustStockResponseSuccess = (inventoryControllerAdjustStockResponse201) & {
+  headers: Headers;
+};
+;
+
+export type inventoryControllerAdjustStockResponse = (inventoryControllerAdjustStockResponseSuccess)
+
+export const getInventoryControllerAdjustStockUrl = () => {
+
+
+  
+
+  return `/inventory/adjust`
+}
+
+export const inventoryControllerAdjustStock = async (adjustStockDto: AdjustStockDto, options?: RequestInit): Promise<inventoryControllerAdjustStockResponse> => {
+  
+  return customFetch<inventoryControllerAdjustStockResponse>(getInventoryControllerAdjustStockUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      adjustStockDto,)
+  }
+);}
+
+
+
+/**
  * Retrieve the chart of accounts or a flat list of accounts.
  * @summary Get Accounts
  */
@@ -3523,7 +3563,7 @@ formData.append(`profileId`, importCsvDto.profileId)
 
 
 /**
- * Retrieves all mapping profiles for a specific GL account.
+ * Retrieves all mapping profiles.
  * @summary Get Mapping Profiles
  */
 export type bankFeedsControllerGetProfilesResponse200 = {
@@ -3538,17 +3578,17 @@ export type bankFeedsControllerGetProfilesResponseSuccess = (bankFeedsController
 
 export type bankFeedsControllerGetProfilesResponse = (bankFeedsControllerGetProfilesResponseSuccess)
 
-export const getBankFeedsControllerGetProfilesUrl = (glAccountId: string,) => {
+export const getBankFeedsControllerGetProfilesUrl = () => {
 
 
   
 
-  return `/gl/bank-feeds/profiles/${glAccountId}`
+  return `/gl/bank-feeds/profiles`
 }
 
-export const bankFeedsControllerGetProfiles = async (glAccountId: string, options?: RequestInit): Promise<bankFeedsControllerGetProfilesResponse> => {
+export const bankFeedsControllerGetProfiles = async ( options?: RequestInit): Promise<bankFeedsControllerGetProfilesResponse> => {
   
-  return customFetch<bankFeedsControllerGetProfilesResponse>(getBankFeedsControllerGetProfilesUrl(glAccountId),
+  return customFetch<bankFeedsControllerGetProfilesResponse>(getBankFeedsControllerGetProfilesUrl(),
   {      
     ...options,
     method: 'GET'
@@ -3592,6 +3632,82 @@ export const bankFeedsControllerCreateProfile = async (createMappingProfileDto: 
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createMappingProfileDto,)
+  }
+);}
+
+
+
+/**
+ * Updates an existing CSV mapping profile.
+ * @summary Update Mapping Profile
+ */
+export type bankFeedsControllerUpdateProfileResponse200 = {
+  data: MappingProfileResponseDto
+  status: 200
+}
+    
+export type bankFeedsControllerUpdateProfileResponseSuccess = (bankFeedsControllerUpdateProfileResponse200) & {
+  headers: Headers;
+};
+;
+
+export type bankFeedsControllerUpdateProfileResponse = (bankFeedsControllerUpdateProfileResponseSuccess)
+
+export const getBankFeedsControllerUpdateProfileUrl = (profileId: string,) => {
+
+
+  
+
+  return `/gl/bank-feeds/profiles/${profileId}`
+}
+
+export const bankFeedsControllerUpdateProfile = async (profileId: string,
+    updateMappingProfileDto: UpdateMappingProfileDto, options?: RequestInit): Promise<bankFeedsControllerUpdateProfileResponse> => {
+  
+  return customFetch<bankFeedsControllerUpdateProfileResponse>(getBankFeedsControllerUpdateProfileUrl(profileId),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateMappingProfileDto,)
+  }
+);}
+
+
+
+/**
+ * Deletes a CSV mapping profile.
+ * @summary Delete Mapping Profile
+ */
+export type bankFeedsControllerDeleteProfileResponse200 = {
+  data: MappingProfileResponseDto
+  status: 200
+}
+    
+export type bankFeedsControllerDeleteProfileResponseSuccess = (bankFeedsControllerDeleteProfileResponse200) & {
+  headers: Headers;
+};
+;
+
+export type bankFeedsControllerDeleteProfileResponse = (bankFeedsControllerDeleteProfileResponseSuccess)
+
+export const getBankFeedsControllerDeleteProfileUrl = (profileId: string,) => {
+
+
+  
+
+  return `/gl/bank-feeds/profiles/${profileId}`
+}
+
+export const bankFeedsControllerDeleteProfile = async (profileId: string, options?: RequestInit): Promise<bankFeedsControllerDeleteProfileResponse> => {
+  
+  return customFetch<bankFeedsControllerDeleteProfileResponse>(getBankFeedsControllerDeleteProfileUrl(profileId),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
   }
 );}
 
@@ -3989,7 +4105,7 @@ export const bankStatementControllerAutoMatch = async (autoMatchRequestDto: Auto
  * @summary Unmatch items
  */
 export type bankStatementControllerUnmatchResponse201 = {
-  data: BankStatementControllerUnmatch201
+  data: BankStatementSuccessResponseDto
   status: 201
 }
     
@@ -4023,11 +4139,48 @@ export const bankStatementControllerUnmatch = async (unmatchRequestDto: UnmatchR
 
 
 /**
+ * Deletes a bank statement line that has not been reconciled.
+ * @summary Delete bank statement line
+ */
+export type bankStatementControllerDeleteLineResponse200 = {
+  data: BankStatementSuccessResponseDto
+  status: 200
+}
+    
+export type bankStatementControllerDeleteLineResponseSuccess = (bankStatementControllerDeleteLineResponse200) & {
+  headers: Headers;
+};
+;
+
+export type bankStatementControllerDeleteLineResponse = (bankStatementControllerDeleteLineResponseSuccess)
+
+export const getBankStatementControllerDeleteLineUrl = (id: string,) => {
+
+
+  
+
+  return `/gl/bank-statement/lines/${id}`
+}
+
+export const bankStatementControllerDeleteLine = async (id: string, options?: RequestInit): Promise<bankStatementControllerDeleteLineResponse> => {
+  
+  return customFetch<bankStatementControllerDeleteLineResponse>(getBankStatementControllerDeleteLineUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
  * Retrieves metadata about a match group
  * @summary Get match group
  */
 export type bankStatementControllerGetMatchGroupResponse200 = {
-  data: BankStatementControllerGetMatchGroup200
+  data: BankStatementMatchGroupResponseDto
   status: 200
 }
     

@@ -82,6 +82,7 @@
       }
     },
     "reporting": {
+
       "hooks": {
         "toast": {
           "success": "Updated successfully"
@@ -362,6 +363,7 @@
       "title": "Event Queue"
     },
     "integrations": {
+      "addRule": "+ Add Rule",
       "availableIntegrations": "Available Integrations",
       "configuration": "Configuration",
       "externalDataProvider": "External Data Provider",
@@ -398,7 +400,10 @@
       }
     },
     "reconciliations": {
+      "profiles": "Profiles",
+      "import": "Import",
       "allLinesMatched": "All bank statement lines are matched!",
+      "applyMatch": "Apply Match",
       "autoMatch": "Auto Match",
       "autoMatchedSuccess": "Auto-matched {count} items.",
       "autoMatchNoResults": "No rule-based matches found.",
@@ -478,6 +483,7 @@
       "saveChanges": "Save Changes"
     },
     "settings": {
+      "addRow": "+ Add Row",
       "actions": {
         "actions": "Actions",
         "addChild": "+ Child",
@@ -827,6 +833,7 @@
     "title": "Bin Contents"
   },
   "common": {
+    "adjustStock": "Adjust stock",
     "copiedToClipboard": "Copied to clipboard",
     "copy": "Copy",
     "actions": "Actions",
@@ -1046,8 +1053,10 @@
     "loading": "Loading...",
     "loadingEllipsis": "Loading...",
     "location": "Location",
+    "memo": "Memo",
     "na": "N/A",
     "no": "No",
+    "optional": "Optional",
     "noEvents": "No events recorded",
     "noMatchingResults": "No matching results",
     "none": "(None)",
@@ -1241,8 +1250,23 @@
       "taxUpdated": "Tax updated"
     }
   },
+  "reporting": {
+    "dateRange": {
+      "fixedDates": "Fixed Dates",
+      "relative": "Relative",
+      "latest": "Latest",
+      "lastFull": "Last full",
+      "days": "Days",
+      "months": "Months",
+      "years": "Years"
+    }
+  },
   "dashboard": {
+    "managePinnedReports": "Manage Pinned Reports",
+    "noPinnedReports": "You haven't pinned any reports yet. Click the settings icon to add some.",
+    "noSavedReports": "You don't have any saved report views yet. Go to the Reporting section to save some!",
     "pinnedReports": "Pinned Reports",
+    "reportSettingsDescription": "Select which saved report views you want to pin to your dashboard.",
     "quickActions": {
       "createPurchaseDesc": "Restock inventory from supplier",
       "createPurchaseOrder": "Create Purchase Order",
@@ -1250,6 +1274,7 @@
       "createSalesOrder": "Create Sales Order",
       "title": "Quick Actions"
     },
+    "viewFull": "View Full",
     "search": {
       "noResults": "No results found",
       "placeholder": "Search products, customers, orders, suppliers...",
@@ -1370,6 +1395,8 @@
   },
   "gl": {
     "reconciliations": {
+      "matchingConditions": "Matching Conditions",
+      "effect": "Effect",
       "confirming": "Confirming...",
       "addRule": "+ Add Rule",
       "ruleCreated": "Rule Created",
@@ -1410,7 +1437,7 @@
       "maxAmount": "Max Amount",
       "targetGlAccount": "Target GL Account",
       "conditionValue": "Condition Value",
-      "confirmDiscard": "Are you sure you want to discard this draft reconciliation? This will un-clear all related lines and delete the draft.",
+      "confirmDiscard": "Are you sure you want to discard this draft reconciliation?",
       "confirmPost": "Are you sure you want to post this reconciliation? This cannot be undone.",
       "create": "Start Reconciling",
       "createError": "Failed to create reconciliation",
@@ -1435,12 +1462,13 @@
       "importBankStatement": "Import Bank Statement",
       "importComplete": "Import complete",
       "importStatement": "Import Statement",
+      "importStatementFromCsvOptional": "Import Statement from CSV (Optional)",
       "importing": "Importing...",
       "ledgerLines": "Ledger Lines",
       "linesAutoReconciled": "{count} lines were auto-reconciled by rules.",
       "linesQueued": "{count} lines were queued for manual reconciliation.",
       "loading": "Loading...",
-      "newReconciliation": "+ New Reconciliation",
+      "newReconciliation": "New Reconciliation",
       "next": "Next",
       "noFileSelected": "No file selected",
       "noRulesDefinedYet": "No rules defined yet.",
@@ -1480,6 +1508,7 @@
       "savedProfile": "Saved Profile",
       "select": "Select...",
       "selectAccount": "Select an account...",
+      "selectProfile": "Select an Import Profile",
       "selectAccountPlaceholder": "Select Account...",
       "selectAnAccount": "Select an account...",
       "splitEntry": "Split Entry",

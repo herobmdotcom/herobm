@@ -40,12 +40,13 @@ export function InlineSettingsTable<T extends Record<string, any>>({
   className,
   title,
   headerActions,
-  addLabel = '+ Add Row',
+  addLabel,
   emptyLabel,
   canEdit,
   canDelete
 }: InlineSettingsTableProps<T>) {
   const tSettings = useTranslations('admin.settings');
+  const actualAddLabel = addLabel || tSettings('addRow');
   const tCommon = useTranslations('admin.common');
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -142,7 +143,7 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                 onClick={handleAdd}
                 disabled={editingId !== null}
               >
-                {addLabel}
+                {actualAddLabel}
               </button>
             )}
           </div>

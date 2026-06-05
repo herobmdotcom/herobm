@@ -23,9 +23,10 @@ interface BankImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  fixedGlAccountId?: string;
 }
 
-export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImportModalProps) {
+export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAccountId }: BankImportModalProps) {
   const t = useTranslations('gl.reconciliations');
   const tCommon = useTranslations('common');
   const [step, setStep] = useState(1);
@@ -49,24 +50,27 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
 
   useEffect(() => {
     if (isOpen) {
-      // fetch bank accounts
-      api.glControllerGetAccounts({ isBankAccount: 'true' })
-        .then(res => setBankAccounts(Array.isArray(res.data) ? (res.data as unknown as api.GlAccountResponseDto[]) : (((res.data as unknown as { items: unknown[] }).items as unknown as api.GlAccountResponseDto[]) || [])))
-        .catch(console.error);
+      if (fixedGlAccountId) {
+        setGlAccountId(fixedGlAccountId);
+      } else {
+        // fetch bank accounts
+        api.glControllerGetAccounts({ isBankAccount: 'true' })
+          .then(res => setBankAccounts(Array.isArray(res.data) ? (res.data as unknown as api.GlAccountResponseDto[]) : (((res.data as unknown as { items: unknown[] }).items as unknown as api.GlAccountResponseDto[]) || [])))
+          .catch(console.error);
+      }
     } else {
       // reset state when closed
       setStep(1);
       setFile(null);
       setResults(null);
       setSelectedProfileId('');
+      if (!fixedGlAccountId) setGlAccountId('');
     }
-  }, [isOpen]);
+  }, [isOpen, fixedGlAccountId]);
 
   useEffect(() => {
-    if (glAccountId) {
-      api.bankFeedsControllerGetProfiles(glAccountId).then(res => setProfiles(res.data)).catch(console.error);
-    }
-  }, [glAccountId]);
+    api.bankFeedsControllerGetProfiles().then(res => setProfiles(res.data)).catch(console.error);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -104,7 +108,6 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
       if (!selectedProfileId) {
         // create new profile
         const profileRes = await api.bankFeedsControllerCreateProfile({
-          glAccountId,
           name: name || 'New Profile',
           dateColumn,
           amountColumn,
@@ -148,13 +151,15 @@ export default function BankImportModal({ isOpen, onClose, onSuccess }: BankImpo
         <div className="p-6 overflow-y-auto flex-1 text-[var(--text-primary)]">
           {step === 1 && (
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('bankAccount')}</label>
-                <select className="input w-full" value={glAccountId} onChange={e => setGlAccountId(e.target.value)}>
-                  <option value="">{t('selectAccount')}</option>
-                  {bankAccounts.map(a => <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>)}
-                </select>
-              </div>
+              {!fixedGlAccountId && (
+                <div>
+                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('bankAccount')}</label>
+                  <select className="input w-full" value={glAccountId} onChange={e => setGlAccountId(e.target.value)}>
+                    <option value="">{t('selectAccount')}</option>
+                    {bankAccounts.map(a => <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>)}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('csvFile')}</label>
                 <div className="flex items-center gap-4">

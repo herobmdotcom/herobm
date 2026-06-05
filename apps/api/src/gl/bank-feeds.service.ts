@@ -15,6 +15,7 @@ import {
 import { eq, asc, and, gte, lte } from 'drizzle-orm';
 import {
   CreateMappingProfileDto,
+  UpdateMappingProfileDto,
   CreateReconciliationRuleDto,
   UpdateReconciliationRuleDto,
 } from './dto/bank-feeds.dto';
@@ -47,11 +48,10 @@ export class BankFeedsService {
     };
   }
 
-  async getMappingProfiles(glAccountId: string) {
+  async getMappingProfiles() {
     return this.db
       .select()
       .from(csvMappingProfiles)
-      .where(eq(csvMappingProfiles.glAccountId, glAccountId))
       .orderBy(asc(csvMappingProfiles.createdOn));
   }
 
@@ -59,15 +59,56 @@ export class BankFeedsService {
     const result = await this.db
       .insert(csvMappingProfiles)
       .values({
-        glAccountId: dto.glAccountId,
         name: dto.name,
         dateColumn: dto.dateColumn,
-        amountColumn: dto.amountColumn,
+        amountColumn: dto.amountColumn || '',
+        debitColumn: dto.debitColumn,
+        creditColumn: dto.creditColumn,
         descriptionColumn: dto.descriptionColumn,
+        typeColumn: dto.typeColumn,
+        payeeColumn: dto.payeeColumn,
         referenceColumn: dto.referenceColumn,
         headerRows: dto.headerRows,
       })
       .returning();
+    return result[0];
+  }
+
+  async updateMappingProfile(profileId: string, dto: UpdateMappingProfileDto) {
+    const values: any = {};
+    if (dto.name !== undefined) values.name = dto.name;
+    if (dto.dateColumn !== undefined) values.dateColumn = dto.dateColumn;
+    if (dto.amountColumn !== undefined)
+      values.amountColumn = dto.amountColumn || '';
+    if (dto.debitColumn !== undefined) values.debitColumn = dto.debitColumn;
+    if (dto.creditColumn !== undefined) values.creditColumn = dto.creditColumn;
+    if (dto.descriptionColumn !== undefined)
+      values.descriptionColumn = dto.descriptionColumn;
+    if (dto.typeColumn !== undefined) values.typeColumn = dto.typeColumn;
+    if (dto.payeeColumn !== undefined) values.payeeColumn = dto.payeeColumn;
+    if (dto.referenceColumn !== undefined)
+      values.referenceColumn = dto.referenceColumn;
+    if (dto.headerRows !== undefined) values.headerRows = dto.headerRows;
+
+    const result = await this.db
+      .update(csvMappingProfiles)
+      .set(values)
+      .where(eq(csvMappingProfiles.profileId, profileId))
+      .returning();
+    if (!result.length) {
+      throw new NotFoundException('Mapping profile not found');
+    }
+    return result[0];
+  }
+
+  async deleteMappingProfile(profileId: string) {
+    const result = await this.db
+      .delete(csvMappingProfiles)
+      .where(eq(csvMappingProfiles.profileId, profileId))
+      .returning();
+    if (!result.length) {
+      throw new NotFoundException('Mapping profile not found');
+    }
     return result[0];
   }
 
@@ -82,9 +123,12 @@ export class BankFeedsService {
     const result = await this.db
       .insert(reconciliationRules)
       .values({
-        glAccountId: dto.glAccountId,
-        conditionType: dto.conditionType,
-        conditionValue: dto.conditionValue,
+        glAccountIds: dto.glAccountIds?.length ? dto.glAccountIds : null,
+        conditionType: dto.conditionType || null,
+        conditionValue: dto.conditionValue || null,
+        typeCondition: dto.typeCondition || null,
+        payeeConditionType: dto.payeeConditionType || null,
+        payeeConditionValue: dto.payeeConditionValue || null,
         targetGlAccountId: dto.targetGlAccountId,
         amountMin: dto.amountMin?.toString(),
         amountMax: dto.amountMax?.toString(),
@@ -92,6 +136,7 @@ export class BankFeedsService {
         activityId: dto.activityId,
         partyType: dto.partyType,
         partyId: dto.partyId,
+        memo: dto.memo,
         priority: dto.priority ?? 10,
       })
       .returning();
@@ -103,11 +148,18 @@ export class BankFeedsService {
     dto: UpdateReconciliationRuleDto,
   ) {
     const values: any = {};
-    if (dto.glAccountId !== undefined) values.glAccountId = dto.glAccountId;
+    if (dto.glAccountIds !== undefined)
+      values.glAccountIds = dto.glAccountIds?.length ? dto.glAccountIds : null;
     if (dto.conditionType !== undefined)
       values.conditionType = dto.conditionType;
     if (dto.conditionValue !== undefined)
       values.conditionValue = dto.conditionValue;
+    if (dto.typeCondition !== undefined)
+      values.typeCondition = dto.typeCondition;
+    if (dto.payeeConditionType !== undefined)
+      values.payeeConditionType = dto.payeeConditionType;
+    if (dto.payeeConditionValue !== undefined)
+      values.payeeConditionValue = dto.payeeConditionValue;
     if (dto.targetGlAccountId !== undefined)
       values.targetGlAccountId = dto.targetGlAccountId;
     if (dto.amountMin !== undefined)
@@ -118,6 +170,7 @@ export class BankFeedsService {
     if (dto.activityId !== undefined) values.activityId = dto.activityId;
     if (dto.partyType !== undefined) values.partyType = dto.partyType;
     if (dto.partyId !== undefined) values.partyId = dto.partyId;
+    if (dto.memo !== undefined) values.memo = dto.memo;
     if (dto.priority !== undefined) values.priority = dto.priority;
 
     const result = await this.db
@@ -175,14 +228,45 @@ export class BankFeedsService {
       from_line: (profile.headerRows || 0) + 1,
     });
 
+    const colToIndex = (col: string | null): number => {
+      if (!col) return -1;
+      if (/^\d+$/.test(col)) return parseInt(col, 10);
+      let index = 0;
+      for (let i = 0; i < col.length; i++) {
+        index = index * 26 + (col.toUpperCase().charCodeAt(i) - 64);
+      }
+      return index - 1;
+    };
+
+    const dateIdx = colToIndex(profile.dateColumn);
+    const amountIdx = colToIndex(profile.amountColumn || '');
+    const debitIdx = profile.debitColumn ? colToIndex(profile.debitColumn) : -1;
+    const creditIdx = profile.creditColumn
+      ? colToIndex(profile.creditColumn)
+      : -1;
+    const descIdx = colToIndex(profile.descriptionColumn);
+    const typeIdx = profile.typeColumn ? colToIndex(profile.typeColumn) : -1;
+    const payeeIdx = profile.payeeColumn ? colToIndex(profile.payeeColumn) : -1;
+    const refIdx = profile.referenceColumn
+      ? colToIndex(profile.referenceColumn)
+      : -1;
+
     await this.db.transaction(async (tx) => {
       for (const record of records) {
-        const dateStr = record[profile.dateColumn];
-        const amountStr = record[profile.amountColumn];
-        const desc = record[profile.descriptionColumn] || '';
-        const ref = profile.referenceColumn
-          ? record[profile.referenceColumn]
-          : '';
+        const dateStr = record[dateIdx];
+        const desc = record[descIdx] || '';
+        const type = typeIdx >= 0 ? record[typeIdx] : '';
+        const payee = payeeIdx >= 0 ? record[payeeIdx] : '';
+        const ref = refIdx >= 0 ? record[refIdx] : '';
+
+        let amountStr = '';
+        if (amountIdx >= 0 && record[amountIdx]) {
+          amountStr = record[amountIdx];
+        } else if (debitIdx >= 0 && record[debitIdx]) {
+          amountStr = '-' + record[debitIdx];
+        } else if (creditIdx >= 0 && record[creditIdx]) {
+          amountStr = record[creditIdx];
+        }
 
         if (!dateStr || !amountStr) continue;
 
@@ -200,6 +284,8 @@ export class BankFeedsService {
           description: desc,
           amount: String(amount),
           reference: ref,
+          type: type || null,
+          payee: payee || null,
           isReconciled: false,
           matchedJournalLineId: null,
         });
@@ -214,6 +300,7 @@ export class BankFeedsService {
     actor: string = 'system',
     reconciliationId?: string,
     dryRun: boolean = false,
+    ignoredStatementLineIds?: string[],
   ) {
     let autoMatchedCount = 0;
     let smartMatchedCount = 0;
@@ -264,30 +351,79 @@ export class BankFeedsService {
         );
 
       for (const line of lines) {
+        if (ignoredStatementLineIds?.includes(line.lineId)) {
+          unmatchedCount++;
+          continue;
+        }
+
         const desc = line.description || '';
+        const lineType = line.type || '';
+        const linePayee = line.payee || '';
         const amount = parseFloat(line.amount);
         const dateIso = line.date;
 
         let matchedRule = null;
         for (const rule of rules) {
-          if (rule.glAccountId && rule.glAccountId !== glAccountId) continue;
-
-          let matches = false;
-          const searchDesc = desc.toLowerCase();
-          const targetVal = rule.conditionValue.toLowerCase();
-
           if (
-            rule.conditionType === 'contains' &&
-            searchDesc.includes(targetVal)
-          )
-            matches = true;
-          if (
-            rule.conditionType === 'starts_with' &&
-            searchDesc.startsWith(targetVal)
-          )
-            matches = true;
-          if (rule.conditionType === 'exact_match' && searchDesc === targetVal)
-            matches = true;
+            rule.glAccountIds &&
+            rule.glAccountIds.length > 0 &&
+            !rule.glAccountIds.includes(glAccountId)
+          ) {
+            continue;
+          }
+
+          let matchesDesc = true;
+          if (rule.conditionType && rule.conditionValue) {
+            matchesDesc = false;
+            const searchDesc = desc.toLowerCase();
+            const targetVal = rule.conditionValue.toLowerCase();
+
+            if (
+              rule.conditionType === 'contains' &&
+              searchDesc.includes(targetVal)
+            )
+              matchesDesc = true;
+            if (
+              rule.conditionType === 'starts_with' &&
+              searchDesc.startsWith(targetVal)
+            )
+              matchesDesc = true;
+            if (
+              rule.conditionType === 'exact_match' &&
+              searchDesc === targetVal
+            )
+              matchesDesc = true;
+          }
+
+          let matchesType = true;
+          if (rule.typeCondition) {
+            matchesType =
+              lineType.toLowerCase() === rule.typeCondition.toLowerCase();
+          }
+
+          let matchesPayee = true;
+          if (rule.payeeConditionType && rule.payeeConditionValue) {
+            matchesPayee = false;
+            const searchPayee = linePayee.toLowerCase();
+            const targetPayeeVal = rule.payeeConditionValue.toLowerCase();
+            if (
+              rule.payeeConditionType === 'contains' &&
+              searchPayee.includes(targetPayeeVal)
+            )
+              matchesPayee = true;
+            if (
+              rule.payeeConditionType === 'starts_with' &&
+              searchPayee.startsWith(targetPayeeVal)
+            )
+              matchesPayee = true;
+            if (
+              rule.payeeConditionType === 'exact_match' &&
+              searchPayee === targetPayeeVal
+            )
+              matchesPayee = true;
+          }
+
+          if (!matchesDesc || !matchesType || !matchesPayee) continue;
 
           if (rule.amountMin !== null && rule.amountMin !== undefined) {
             if (amount < parseFloat(rule.amountMin as any)) continue;
@@ -296,10 +432,8 @@ export class BankFeedsService {
             if (amount > parseFloat(rule.amountMax as any)) continue;
           }
 
-          if (matches) {
-            matchedRule = rule;
-            break;
-          }
+          matchedRule = rule;
+          break;
         }
 
         if (matchedRule) {

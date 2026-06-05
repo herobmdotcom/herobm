@@ -7,6 +7,9 @@
  */
 
 export interface ReconciliationRuleResponseDto {
+  typeCondition?: string;
+  payeeConditionType?: string;
+  payeeConditionValue?: string;
   ruleId: string;
   glAccountId?: string;
   conditionType: string;
@@ -18,5 +21,6 @@ export interface ReconciliationRuleResponseDto {
   activityId?: string;
   partyType?: string;
   partyId?: string;
+  memo?: string;
   priority?: number;
 }

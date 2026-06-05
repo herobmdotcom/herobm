@@ -375,6 +375,29 @@ export class BankStatementService {
     });
   }
 
+  async deleteLine(lineId: string, _actor: string) {
+    return this.db.transaction(async (tx) => {
+      const bsLine = await tx
+        .select()
+        .from(bankStatementLines)
+        .where(eq(bankStatementLines.lineId, lineId));
+      if (!bsLine.length)
+        throw new NotFoundException('Bank statement line not found');
+
+      const line = bsLine[0];
+      if (line.isReconciled || line.matchGroupId)
+        throw new BadRequestException(
+          'Cannot delete a reconciled line. Unmatch it first.',
+        );
+
+      await tx
+        .delete(bankStatementLines)
+        .where(eq(bankStatementLines.lineId, lineId));
+
+      return { success: true };
+    });
+  }
+
   async getMatchGroup(matchGroupId: string) {
     const records = await this.db
       .select({
@@ -392,6 +415,32 @@ export class BankStatementService {
       return null;
     }
 
+    const bLines = await this.db
+      .select({
+        lineId: bankStatementLines.lineId,
+        date: bankStatementLines.date,
+        description: bankStatementLines.description,
+        amount: bankStatementLines.amount,
+      })
+      .from(bankStatementLines)
+      .where(eq(bankStatementLines.matchGroupId, matchGroupId));
+
+    const jLines = await this.db
+      .select({
+        journalLineId: glJournalLines.journalLineId,
+        entryDate: glJournalEntries.entryDate,
+        memo: glJournalLines.memo,
+        entryMemo: glJournalEntries.memo,
+        debit: glJournalLines.debit,
+        credit: glJournalLines.credit,
+      })
+      .from(glJournalLines)
+      .innerJoin(
+        glJournalEntries,
+        eq(glJournalLines.journalEntryId, glJournalEntries.journalEntryId),
+      )
+      .where(eq(glJournalLines.matchGroupId, matchGroupId));
+
     const { matchGroup, ruleName } = records[0];
     return {
       matchGroupId: matchGroup.matchGroupId,
@@ -399,6 +448,15 @@ export class BankStatementService {
       ruleName: ruleName || null,
       createdBy: matchGroup.createdBy,
       createdOn: matchGroup.createdOn,
+      bankLines: bLines.map((l) => ({
+        ...l,
+        amount: Number(l.amount),
+      })),
+      ledgerLines: jLines.map((l) => ({
+        ...l,
+        debit: Number(l.debit),
+        credit: Number(l.credit),
+      })),
     };
   }
 }

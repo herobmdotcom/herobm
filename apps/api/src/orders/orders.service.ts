@@ -15,6 +15,10 @@ import {
   parsePagination,
   withCursorPagination,
 } from '../common/pagination';
+import {
+  getAggregationPeriod,
+  getAggregationSql,
+} from '../common/utils/date-range.util';
 import { SALES_ORDER_STATE } from '@modbm/shared';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 
@@ -103,9 +107,10 @@ export class OrdersService implements OnModuleInit {
     } else if (drillDown === 'product-group') {
       selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
       groupCols.push(productGroups.productGroupId, productGroups.name);
-    } else if (drillDown === 'month') {
-      selectCols.yearMonth = sql<string>`to_char(${salesOrders.createdOn}, 'YYYY-MM')`;
-      groupCols.push(sql`to_char(${salesOrders.createdOn}, 'YYYY-MM')`);
+    } else if (drillDown === 'period') {
+      const period = getAggregationPeriod(filters);
+      selectCols.period = getAggregationSql(salesOrders.createdOn, period);
+      groupCols.push(selectCols.period);
     }
 
     let qb = this.db
@@ -160,9 +165,10 @@ export class OrdersService implements OnModuleInit {
     if (drillDown === 'customer') {
       selectCols.customerName = sql<string>`coalesce(${coreAccounts.name}, 'Unknown')`;
       groupCols.push(coreAccounts.customerId, coreAccounts.name);
-    } else if (drillDown === 'month') {
-      selectCols.yearMonth = sql<string>`to_char(${salesOrders.createdOn}, 'YYYY-MM')`;
-      groupCols.push(sql`to_char(${salesOrders.createdOn}, 'YYYY-MM')`);
+    } else if (drillDown === 'period') {
+      const period = getAggregationPeriod(filters);
+      selectCols.period = getAggregationSql(salesOrders.createdOn, period);
+      groupCols.push(selectCols.period);
     } else if (drillDown === 'channel') {
       selectCols.source = salesOrders.source;
       groupCols.push(salesOrders.source);
@@ -210,9 +216,10 @@ export class OrdersService implements OnModuleInit {
     } else if (drillDown === 'customer') {
       selectCols.customerName = sql<string>`coalesce(${coreAccounts.name}, 'Unknown')`;
       groupCols.push(coreAccounts.customerId, coreAccounts.name);
-    } else if (drillDown === 'month') {
-      selectCols.yearMonth = sql<string>`to_char(${salesOrders.createdOn}, 'YYYY-MM')`;
-      groupCols.push(sql`to_char(${salesOrders.createdOn}, 'YYYY-MM')`);
+    } else if (drillDown === 'period') {
+      const period = getAggregationPeriod(filters);
+      selectCols.period = getAggregationSql(salesOrders.createdOn, period);
+      groupCols.push(selectCols.period);
     } else if (drillDown === 'channel') {
       selectCols.source = salesOrders.source;
       groupCols.push(salesOrders.source);
@@ -248,16 +255,16 @@ export class OrdersService implements OnModuleInit {
   async getSalesPerformanceTrend(filters: Record<string, unknown>) {
     const conditions = this.getSalesPerformanceConditions(filters);
     const drillDown = filters.drillDown as string | undefined;
+    const period = getAggregationPeriod(filters);
+    const periodSql = getAggregationSql(salesOrders.createdOn, period);
 
     const selectCols: any = {
-      yearMonth: sql<string>`to_char(${salesOrders.createdOn}, 'YYYY-MM')`,
+      period: periodSql,
       orderCount: sql<number>`count(distinct ${salesOrders.salesOrderId})::integer`,
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
-    const groupCols: any[] = [
-      sql`to_char(${salesOrders.createdOn}, 'YYYY-MM')`,
-    ];
+    const groupCols: any[] = [periodSql];
 
     if (drillDown === 'product') {
       selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
@@ -302,9 +309,7 @@ export class OrdersService implements OnModuleInit {
     }
 
     if (conditions.length > 0) qb = qb.where(and(...conditions));
-    qb = qb
-      .groupBy(...groupCols)
-      .orderBy(sql`to_char(${salesOrders.createdOn}, 'YYYY-MM') ASC`);
+    qb = qb.groupBy(...groupCols).orderBy(asc(periodSql));
 
     return await qb;
   }
@@ -331,9 +336,10 @@ export class OrdersService implements OnModuleInit {
     } else if (drillDown === 'customer') {
       selectCols.customerName = sql<string>`coalesce(${coreAccounts.name}, 'Unknown')`;
       groupCols.push(coreAccounts.customerId, coreAccounts.name);
-    } else if (drillDown === 'month') {
-      selectCols.yearMonth = sql<string>`to_char(${salesOrders.createdOn}, 'YYYY-MM')`;
-      groupCols.push(sql`to_char(${salesOrders.createdOn}, 'YYYY-MM')`);
+    } else if (drillDown === 'period') {
+      const period = getAggregationPeriod(filters);
+      selectCols.period = getAggregationSql(salesOrders.createdOn, period);
+      groupCols.push(selectCols.period);
     }
 
     let qb = this.db

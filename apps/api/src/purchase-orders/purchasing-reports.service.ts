@@ -9,7 +9,11 @@ import {
   products,
   productGroups,
 } from '../drizzle/modbm-core-schema';
-import { sql, eq, and, gte, lte } from 'drizzle-orm';
+import { sql, eq, and, gte, lte, asc } from 'drizzle-orm';
+import {
+  getAggregationPeriod,
+  getAggregationSql,
+} from '../common/utils/date-range.util';
 
 @Injectable()
 export class PurchasingReportsService implements OnModuleInit {
@@ -70,9 +74,10 @@ export class PurchasingReportsService implements OnModuleInit {
     if (drillDown === 'product') {
       selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
       groupCols.push(products.name);
-    } else if (drillDown === 'month') {
-      selectCols.yearMonth = sql<string>`to_char(${purchaseOrders.createdOn}, 'YYYY-MM')`;
-      groupCols.push(sql`to_char(${purchaseOrders.createdOn}, 'YYYY-MM')`);
+    } else if (drillDown === 'period') {
+      const period = getAggregationPeriod(filters);
+      selectCols.period = getAggregationSql(purchaseOrders.createdOn, period);
+      groupCols.push(selectCols.period);
     }
 
     let qb = this.db
@@ -171,15 +176,15 @@ export class PurchasingReportsService implements OnModuleInit {
     ];
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const drillDown = filters.drillDown as string | undefined;
+    const period = getAggregationPeriod(filters);
+    const periodSql = getAggregationSql(purchaseOrders.createdOn, period);
 
     const selectCols: any = {
-      yearMonth: sql<string>`to_char(${purchaseOrders.createdOn}, 'YYYY-MM')`,
+      period: periodSql,
       orderCount: sql<number>`count(distinct ${purchaseOrders.purchaseOrderId})::int`,
       totalSpend: sql<number>`sum(${purchaseOrderLineItems.totalAmount})::numeric`,
     };
-    const groupCols: any[] = [
-      sql`to_char(${purchaseOrders.createdOn}, 'YYYY-MM')`,
-    ];
+    const groupCols: any[] = [periodSql];
 
     if (drillDown === 'product-group') {
       selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
@@ -218,9 +223,7 @@ export class PurchasingReportsService implements OnModuleInit {
     }
 
     if (whereClause) qb = qb.where(whereClause);
-    qb = qb
-      .groupBy(...groupCols)
-      .orderBy(sql`to_char(${purchaseOrders.createdOn}, 'YYYY-MM')`);
+    qb = qb.groupBy(...groupCols).orderBy(asc(periodSql));
 
     return await qb;
   }

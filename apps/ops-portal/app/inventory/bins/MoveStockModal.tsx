@@ -142,7 +142,9 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
                       {/* eslint-disable-next-line i18next/no-literal-string */}
                       <th className="px-4 py-2">Source Bin</th>
                       {/* eslint-disable-next-line i18next/no-literal-string */}
-                      <th className="px-4 py-2">Quantity</th>
+                      <th className="px-4 py-2">Recorded Qty</th>
+                      {/* eslint-disable-next-line i18next/no-literal-string */}
+                      <th className="px-4 py-2">Move Qty</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 flex flex-col sm:table-row-group">
@@ -158,9 +160,14 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
                             <span className="sm:hidden text-xs text-gray-500 font-bold uppercase">Source:</span>
                             <span>{line.sourceBinNumber}</span>
                           </td>
+                          <td className="px-0 sm:px-4 py-1 sm:py-3 text-[#041627] flex items-center justify-between sm:table-cell">
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            <span className="sm:hidden text-xs text-gray-500 font-bold uppercase">Recorded:</span>
+                            <span>{originalLine?.quantity || 0}</span>
+                          </td>
                           <td className="px-0 sm:px-4 py-2 sm:py-3 flex items-center justify-between sm:table-cell">
                             {/* eslint-disable-next-line i18next/no-literal-string */}
-                            <span className="sm:hidden text-xs text-gray-500 font-bold uppercase">Qty:</span>
+                            <span className="sm:hidden text-xs text-gray-500 font-bold uppercase">Move Qty:</span>
                             <div className="flex items-center gap-2">
                               <input 
                                 type="number" 
@@ -177,8 +184,6 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
                                 }} 
                                 required
                               />
-                              {/* eslint-disable-next-line i18next/no-literal-string */}
-                              <span className="text-xs text-gray-400 whitespace-nowrap">/ {originalLine?.quantity || line.quantity}</span>
                             </div>
                           </td>
                         </tr>

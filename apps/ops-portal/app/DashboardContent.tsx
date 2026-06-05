@@ -9,33 +9,44 @@ import Link from 'next/link';
 import DashboardTimeline from './DashboardTimeline';
 import TimelineSettingsSlideOver, { DEFAULT_ENABLED_EVENTS, EventType } from './TimelineSettingsSlideOver';
 import PinnedReportWidget from './PinnedReportWidget';
-import { userSettingsControllerGetSettings, userSettingsControllerUpdateSettings } from '@modbm/sdk';
+import ReportSettingsSlideOver from './ReportSettingsSlideOver';
+import { userSettingsControllerGetSettings, userSettingsControllerUpdateSettings, businessReportsControllerGetReports } from '@modbm/sdk';
 
 export default function DashboardContent() {
   const t = useTranslations('dashboard');
   const tTimeline = useTranslations('dashboard.timeline');
   const [isTimelineSettingsOpen, setIsTimelineSettingsOpen] = useState(false);
+  const [isReportSettingsOpen, setIsReportSettingsOpen] = useState(false);
   const [enabledEvents, setEnabledEvents] = useState<EventType[]>(DEFAULT_ENABLED_EVENTS);
   const [isLoaded, setIsLoaded] = useState(false);
   // modbm-allow-record-any
+  // modbm-allow-record-any
   const [dashboardConfig, setDashboardConfig] = useState<Record<string, any> | null>(null);
+  // modbm-allow-record-any
+  const [userSettings, setUserSettings] = useState<Record<string, any> | null>(null);
+  // modbm-allow-record-any
+  const [reports, setReports] = useState<Record<string, any>[]>([]);
 
   useEffect(() => {
-    userSettingsControllerGetSettings()
-      .then((res) => {
-        const settings = res.data;
-        setDashboardConfig(settings.dashboardConfig || {});
-        if (settings.dashboardConfig?.timelineEvents) {
-          setEnabledEvents(settings.dashboardConfig?.timelineEvents as EventType[]);
-        } else {
-          setEnabledEvents(DEFAULT_ENABLED_EVENTS);
-        }
-        setIsLoaded(true);
-      })
-      .catch((err: any) => {
-        reportError(err, 'DashboardContent');
-        setIsLoaded(true);
-      });
+    Promise.all([
+      userSettingsControllerGetSettings(),
+      businessReportsControllerGetReports()
+    ]).then(([settingsRes, reportsRes]) => {
+      const settings = settingsRes.data;
+      setUserSettings(settings);
+      setDashboardConfig(settings.dashboardConfig || {});
+      if (settings.dashboardConfig?.timelineEvents) {
+        setEnabledEvents(settings.dashboardConfig?.timelineEvents as EventType[]);
+      } else {
+        setEnabledEvents(DEFAULT_ENABLED_EVENTS);
+      }
+      // modbm-allow-record-any
+      setReports(((reportsRes as unknown as Record<string, any>).data as Record<string, any>[]) || (reportsRes as unknown as Record<string, any>[]));
+      setIsLoaded(true);
+    }).catch((err: unknown) => {
+      reportError(err, 'DashboardContent');
+      setIsLoaded(true);
+    });
   }, []);
 
   const handlePreferencesChange = (events: EventType[]) => {
@@ -46,6 +57,16 @@ export default function DashboardContent() {
       userSettingsControllerUpdateSettings({ dashboardConfig: updatedConfig }).catch(console.warn);
     } catch (err) {
       console.warn('Failed to save timeline preferences', err);
+    }
+  };
+
+  const handlePinnedReportsChange = (newPinnedReports: any[]) => {
+    const updatedConfig = { ...dashboardConfig, pinnedReports: newPinnedReports };
+    setDashboardConfig(updatedConfig);
+    try {
+      userSettingsControllerUpdateSettings({ dashboardConfig: updatedConfig }).catch(console.warn);
+    } catch (err) {
+      console.warn('Failed to save pinned reports preferences', err);
     }
   };
 
@@ -60,23 +81,40 @@ export default function DashboardContent() {
           </div>
 
           <div className="flex flex-col gap-12">
-            {dashboardConfig?.pinnedReports?.length > 0 && (
+            {(Object.keys(userSettings?.reportConfigs || {}).length > 0 || dashboardConfig?.pinnedReports?.length > 0) && (
               <div className="w-full">
-                <div className="flex items-center gap-2 mb-6 text-[11px] font-bold uppercase tracking-[0.1em] opacity-50" style={{ color: 'var(--text-primary)' }}>
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
-                  <span className="material-symbols-outlined text-[16px]">push_pin</span>
-                  {t('pinnedReports')}
+                <div className="flex items-center justify-between mb-6 border-b pb-4" style={{ borderColor: 'var(--border)' }}>
+                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] opacity-50" style={{ color: 'var(--text-primary)' }}>
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    <span className="material-symbols-outlined text-[16px]">push_pin</span>
+                    {t('pinnedReports')}
+                  </div>
+                  <button 
+                    onClick={() => setIsReportSettingsOpen(true)}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
+                    title={t('managePinnedReports')}
+                  >
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    <span className="material-symbols-outlined text-[18px] text-[var(--accent)] group-hover:rotate-90 transition-transform duration-300">settings</span>
+                  </button>
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {dashboardConfig?.pinnedReports?.map((report: any, idx: number) => (
-                    <PinnedReportWidget key={idx} slug={report.slug} configId={report.configId} name={report.name} />
-                  ))}
-                </div>
+                
+                {(!dashboardConfig?.pinnedReports || dashboardConfig.pinnedReports.length === 0) ? (
+                  <div className="text-center p-8 border border-dashed rounded-xl opacity-50 text-[14px]">
+                    {t('noPinnedReports')}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {dashboardConfig?.pinnedReports?.map((report: any, idx: number) => (
+                      <PinnedReportWidget key={idx} slug={report.slug} configId={report.configId} name={report.name} />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
             <div className="w-full">
-              <div className="flex items-center gap-2 mb-6 text-[11px] font-bold uppercase tracking-[0.1em] opacity-50" style={{ color: 'var(--text-primary)' }}>
+              <div className="flex items-center gap-2 mb-6 border-b pb-4 text-[11px] font-bold uppercase tracking-[0.1em] opacity-50" style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>
                 {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined text-[16px]">bolt</span>
                 {t('quickActions.title')}
@@ -136,7 +174,7 @@ export default function DashboardContent() {
             </div>
 
             <div className="w-full flex flex-col">
-              <div className="flex items-center justify-between mb-6 border-t pt-8" style={{ borderColor: 'var(--border)' }}>
+              <div className="flex items-center justify-between mb-6 border-b pb-4" style={{ borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] opacity-50" style={{ color: 'var(--text-primary)' }}>
                   {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined text-[16px]">history</span>
@@ -162,12 +200,22 @@ export default function DashboardContent() {
       </div>
 
       {isLoaded && (
-        <TimelineSettingsSlideOver 
-          isOpen={isTimelineSettingsOpen}
-          onClose={() => setIsTimelineSettingsOpen(false)}
-          enabledEvents={enabledEvents}
-          onChange={handlePreferencesChange}
-        />
+        <>
+          <TimelineSettingsSlideOver 
+            isOpen={isTimelineSettingsOpen}
+            onClose={() => setIsTimelineSettingsOpen(false)}
+            enabledEvents={enabledEvents}
+            onChange={handlePreferencesChange}
+          />
+          <ReportSettingsSlideOver
+            isOpen={isReportSettingsOpen}
+            onClose={() => setIsReportSettingsOpen(false)}
+            reportConfigs={userSettings?.reportConfigs || {}}
+            pinnedReports={dashboardConfig?.pinnedReports || []}
+            reports={reports}
+            onChange={handlePinnedReportsChange}
+          />
+        </>
       )}
     </>
   );

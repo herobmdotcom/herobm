@@ -32,6 +32,7 @@ import {
   PutawayBulkDto,
   QuarantineMoveDto,
   MoveStockDto,
+  AdjustStockDto,
   InventoryResponseDto,
   InventoryBinResponseDto,
   PutawayContextResponseDto,
@@ -245,5 +246,19 @@ export class InventoryController {
   })
   async moveStock(@Body() dto: MoveStockDto, @AuthUser() user: JwtUser) {
     return this.inventoryService.moveStock(dto, user.username);
+  }
+
+  @Post('adjust')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Adjust Stock manually',
+    description: 'Manually adjust stock levels to match a physical count.',
+  })
+  @ApiCreatedResponse({
+    type: InventorySuccessResponseDto,
+    description: 'Adjustment successful',
+  })
+  async adjustStock(@Body() dto: AdjustStockDto, @AuthUser() user: JwtUser) {
+    return this.inventoryService.adjustStock(dto, user.username);
   }
 }

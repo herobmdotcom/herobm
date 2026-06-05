@@ -148,7 +148,7 @@ export class ReconciliationService {
         entryMemo: glJournalEntries.memo,
         debit: glJournalLines.debit,
         credit: glJournalLines.credit,
-        isCleared: sql<boolean>`${glJournalLines.reconciliationId} IS NOT NULL`,
+        isCleared: sql<boolean>`${glJournalLines.reconciliationId} IS NOT NULL OR ${glJournalLines.isReconciled} = true`,
         matchGroupId: glJournalLines.matchGroupId,
         partyType: glJournalLines.partyType,
         partyId: glJournalLines.partyId,

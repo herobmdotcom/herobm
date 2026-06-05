@@ -1467,7 +1467,7 @@ async function seedAppSettings(db: any, dryRun: boolean) {
     .insert(appSettings)
     .values({
       inventoryValuationMethod: 'weighted_average',
-      inventoryAccountingMode: 'periodic',
+      inventoryAccountingMode: 'perpetual',
       creditLimitBehavior: 'soft',
       setupCompletedAt: new Date(),
     })

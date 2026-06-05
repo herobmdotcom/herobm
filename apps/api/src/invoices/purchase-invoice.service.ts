@@ -45,6 +45,8 @@ import {
 
 const VALID_INVOICE_STATES = getValidStates(PURCHASE_INVOICE_TRANSITIONS);
 import { CreateStandaloneInvoiceDto } from './dto';
+import { getAccountingStrategy } from '../inventory/inventory-accounting';
+import type { InventoryGlAccounts } from '../inventory/inventory-accounting';
 
 @Injectable()
 export class PurchaseInvoiceService {
@@ -669,14 +671,17 @@ export class PurchaseInvoiceService {
             (settings.defaultExpenseAccountId &&
               idToCode.get(settings.defaultExpenseAccountId));
 
-          // In perpetual mode, matched inventory lines clear the GRNI liability.
-          // In periodic mode, matched lines are treated as direct expenses.
-          const isPerpetual =
-            this.appConfig.inventoryAccountingMode() === 'perpetual';
-          const grniCode =
-            isPerpetual && settings.defaultGrniAccountId
+          const strategy = getAccountingStrategy(
+            this.appConfig.inventoryAccountingMode(),
+            {} as InventoryGlAccounts,
+          );
+
+          const grniCode = strategy.resolvePurchaseClearingAccount(
+            settings.defaultGrniAccountId
               ? idToCode.get(settings.defaultGrniAccountId)
-              : fallbackExpCode; // Periodic: route through expense
+              : null,
+            fallbackExpCode,
+          );
 
           const taxCode = settings.defaultTaxAccountId
             ? idToCode.get(settings.defaultTaxAccountId)

@@ -108,10 +108,10 @@ async function seedBusinessReports() {
             flex: 1,
           },
           {
-            id: 'month',
-            label: 'Month',
-            field: 'yearMonth',
-            headerName: 'Month',
+            id: 'period',
+            label: 'Period',
+            field: 'period',
+            headerName: 'Period',
             flex: 1,
           },
         ],
@@ -159,10 +159,10 @@ async function seedBusinessReports() {
             flex: 1,
           },
           {
-            id: 'month',
-            label: 'Month',
-            field: 'yearMonth',
-            headerName: 'Month',
+            id: 'period',
+            label: 'Period',
+            field: 'period',
+            headerName: 'Period',
             flex: 1,
           },
           {
@@ -223,10 +223,10 @@ async function seedBusinessReports() {
             flex: 1,
           },
           {
-            id: 'month',
-            label: 'Month',
-            field: 'yearMonth',
-            headerName: 'Month',
+            id: 'period',
+            label: 'Period',
+            field: 'period',
+            headerName: 'Period',
             flex: 1,
           },
         ],
@@ -247,7 +247,7 @@ async function seedBusinessReports() {
       uiConfig: {
         type: 'ag-grid',
         columns: [
-          { field: 'yearMonth', headerName: 'Month', flex: 1 },
+          { field: 'period', headerName: 'Period', flex: 1 },
           {
             field: 'orderCount',
             headerName: 'Order Count',
@@ -288,7 +288,7 @@ async function seedBusinessReports() {
         ],
         chartConfig: {
           type: 'line',
-          xAxisField: 'yearMonth',
+          xAxisField: 'period',
           yAxisField: 'totalSales',
           seriesName: 'Total Sales',
         },
@@ -337,10 +337,10 @@ async function seedBusinessReports() {
             flex: 1,
           },
           {
-            id: 'month',
-            label: 'Month',
-            field: 'yearMonth',
-            headerName: 'Month',
+            id: 'period',
+            label: 'Period',
+            field: 'period',
+            headerName: 'Period',
             flex: 1,
           },
         ],
@@ -562,10 +562,10 @@ async function seedBusinessReports() {
             flex: 2,
           },
           {
-            id: 'month',
-            label: 'Month',
-            field: 'yearMonth',
-            headerName: 'Month',
+            id: 'period',
+            label: 'Period',
+            field: 'period',
+            headerName: 'Period',
             flex: 1,
           },
         ],
@@ -636,7 +636,7 @@ async function seedBusinessReports() {
       uiConfig: {
         type: 'ag-grid',
         columns: [
-          { field: 'yearMonth', headerName: 'Month', flex: 1 },
+          { field: 'period', headerName: 'Period', flex: 1 },
           {
             field: 'orderCount',
             headerName: 'Order Count',
@@ -670,7 +670,7 @@ async function seedBusinessReports() {
         ],
         chartConfig: {
           type: 'line',
-          xAxisField: 'yearMonth',
+          xAxisField: 'period',
           yAxisField: 'totalSpend',
           seriesName: 'Total Spend',
         },

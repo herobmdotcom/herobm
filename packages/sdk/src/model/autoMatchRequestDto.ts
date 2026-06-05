@@ -10,4 +10,5 @@ export interface AutoMatchRequestDto {
   glAccountId: string;
   reconciliationId?: string;
   dryRun?: boolean;
+  ignoredStatementLineIds?: string[];
 }

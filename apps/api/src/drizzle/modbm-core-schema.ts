@@ -2249,11 +2249,14 @@ export const casbinRule = modbmCore.table('casbin_rule', {
 // ---------------------------------------------------------------------------
 export const csvMappingProfiles = modbmCore.table('csv_mapping_profiles', {
   profileId: uuid('profile_id').primaryKey().defaultRandom(),
-  glAccountId: uuid('gl_account_id').references(() => glAccounts.glAccountId),
   name: text('name').notNull(),
   dateColumn: text('date_column').notNull(),
-  amountColumn: text('amount_column').notNull(),
+  amountColumn: text('amount_column'),
+  debitColumn: text('debit_column'),
+  creditColumn: text('credit_column'),
   descriptionColumn: text('description_column').notNull(),
+  typeColumn: text('type_column'),
+  payeeColumn: text('payee_column'),
   referenceColumn: text('reference_column'),
   headerRows: integer('header_rows').notNull().default(1),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -2264,9 +2267,12 @@ export const csvMappingProfiles = modbmCore.table('csv_mapping_profiles', {
 // ---------------------------------------------------------------------------
 export const reconciliationRules = modbmCore.table('reconciliation_rules', {
   ruleId: uuid('rule_id').primaryKey().defaultRandom(),
-  glAccountId: uuid('gl_account_id').references(() => glAccounts.glAccountId), // Nullable for global rules
-  conditionType: text('condition_type').notNull(), // 'contains', 'starts_with', 'exact_match'
-  conditionValue: text('condition_value').notNull(),
+  glAccountIds: jsonb('gl_account_ids').$type<string[]>(), // Nullable/empty for global rules
+  conditionType: text('condition_type'), // 'contains', 'starts_with', 'exact_match'
+  conditionValue: text('condition_value'),
+  typeCondition: text('type_condition'), // exact match case insensitive
+  payeeConditionType: text('payee_condition_type'), // 'contains', 'starts_with', 'exact_match'
+  payeeConditionValue: text('payee_condition_value'),
   amountMin: numeric('amount_min'),
   amountMax: numeric('amount_max'),
   targetGlAccountId: uuid('target_gl_account_id')
@@ -2278,6 +2284,7 @@ export const reconciliationRules = modbmCore.table('reconciliation_rules', {
   activityId: uuid('activity_id').references(() => activities.activityId),
   partyType: text('party_type'), // 'customer' | 'supplier'
   partyId: text('party_id'),
+  memo: text('memo'),
   priority: integer('priority').notNull().default(10),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
@@ -2305,6 +2312,8 @@ export const bankStatementLines = modbmCore.table('bank_statement_lines', {
   description: text('description').notNull(),
   amount: numeric('amount').notNull(),
   reference: text('reference'),
+  type: text('type'),
+  payee: text('payee'),
   isReconciled: boolean('is_reconciled').notNull().default(false),
   reconciliationId: uuid('reconciliation_id').references(
     () => glReconciliations.reconciliationId,

@@ -8,6 +8,7 @@ import { formatCompositeQuantity } from '@modbm/shared';
 import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
 import MoveStockModal from '../bins/MoveStockModal';
+import AdjustStockModal from '../bins/AdjustStockModal';
 import { toast } from 'react-hot-toast';
 
 interface Location {
@@ -27,6 +28,7 @@ export default function BinContentsView() {
   // modbm-allow-record-any
   const [selectedRows, setSelectedRows] = useState<Record<string, any>[]>([]);
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Load locations and resolve default
@@ -105,6 +107,25 @@ export default function BinContentsView() {
     }
   };
 
+  const handleAdjustSubmit = async (lines: any[], reason: string) => {
+    try {
+      await api.inventoryControllerAdjustStock({
+        lines: lines.map(l => ({
+          productId: l.productId,
+          binId: l.sourceBinId,
+          newQuantity: l.quantity.toString()
+        })),
+        reason
+      });
+      toast.success('Stock adjusted successfully');
+      setRefreshKey(prev => prev + 1);
+      setSelectedRows([]);
+    } catch (err) {
+      reportError(err, 'BinContentsView.adjustStock');
+      throw err;
+    }
+  };
+
   if (!locationsLoaded) return null;
 
   return (
@@ -113,6 +134,7 @@ export default function BinContentsView() {
         endpoint={binsEndpoint}
         columns={columns}
         gridKey={`ops-bins-${refreshKey}`}
+        rowIdField="binContentId"
         rowSelection="multiple"
         onSelectionChanged={handleSelectionChanged}
         searchPlaceholder={tBins('placeholders.searchBins')}
@@ -126,6 +148,13 @@ export default function BinContentsView() {
                 {tCommon('cannotMoveCrossLocation')}
               </span>
             )}
+            <button
+              className="btn btn-secondary mr-2"
+              disabled={selectedRows.length === 0}
+              onClick={() => setIsAdjustModalOpen(true)}
+            >
+              {tCommon('adjustStock')}
+            </button>
             <button
               className="btn btn-primary"
               disabled={!canMove}
@@ -158,6 +187,20 @@ export default function BinContentsView() {
         isOpen={isMoveModalOpen}
         onClose={() => setIsMoveModalOpen(false)}
         onSubmit={handleMoveSubmit}
+        selectedLines={selectedRows.map(r => ({
+          productId: r.productId,
+          productName: r.productName,
+          sourceBinId: r.binId,
+          sourceBinNumber: r.binNumber,
+          quantity: parseFloat(r.actualQuantity),
+          locationNo: r.locationNo
+        }))}
+      />
+      
+      <AdjustStockModal
+        isOpen={isAdjustModalOpen}
+        onClose={() => setIsAdjustModalOpen(false)}
+        onSubmit={handleAdjustSubmit}
         selectedLines={selectedRows.map(r => ({
           productId: r.productId,
           productName: r.productName,

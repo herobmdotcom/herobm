@@ -6,14 +6,12 @@ import { useRouter } from 'next/navigation';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
-import BankImportModal from './components/BankImportModal';
 
 export default function ReconciliationsPage() {
   const t = useTranslations('gl.reconciliations');
   const tCommon = useTranslations('common');
   useDocumentTitle(t('title'));
   const router = useRouter();
-  const [isImportModalOpen, setIsImportModalOpen] = React.useState(false);
 
   const columns = useMemo<ColDef[]>(() => [
     { field: 'statementDate', headerName: t('columns.statementDate'), width: 140 },
@@ -51,26 +49,15 @@ export default function ReconciliationsPage() {
           headerActions={
             <div className="flex gap-2">
               <button
-                onClick={() => setIsImportModalOpen(true)}
-                className="btn btn-secondary"
-              >
-                {t('importStatement')}
-              </button>
-              <button
                 onClick={() => router.push('/reconciliations/new')}
                 className="px-3 lg:px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap"
               >
-                {t('newReconciliation')}
+                + {t('newReconciliation')}
               </button>
             </div>
           }
         />
       </div>
-      <BankImportModal 
-        isOpen={isImportModalOpen} 
-        onClose={() => setIsImportModalOpen(false)} 
-        onSuccess={() => setIsImportModalOpen(false)} 
-      />
     </div>
   );
 }

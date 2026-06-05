@@ -27,14 +27,18 @@ export default function BankMatchingView({
   reconciliation, 
   onUpdate,
   onQuickAdjustment,
-  onSplitEntry
+  onSplitEntry,
+  onImportClick,
+  refreshTrigger
 }: { 
   // modbm-allow-record-any
   reconciliation: Record<string, any>, 
   onUpdate: () => void,
   onQuickAdjustment: () => void,
   // modbm-allow-record-any
-  onSplitEntry: (line: Record<string, any>) => void
+  onSplitEntry: (line: Record<string, any>) => void,
+  onImportClick: () => void,
+  refreshTrigger?: number
 }) {
   // modbm-allow-record-any
   const [bankLines, setBankLines] = useState<Record<string, any>[]>([]);
@@ -55,7 +59,7 @@ export default function BankMatchingView({
 
   useEffect(() => {
     fetchData();
-  }, [reconciliation.glAccountId, showAllBankLines]);
+  }, [reconciliation.glAccountId, showAllBankLines, refreshTrigger]);
 
   const fetchData = async () => {
     try {
@@ -168,11 +172,13 @@ export default function BankMatchingView({
         return (
           <div className="font-medium text-[var(--text-primary)]">
             {line.description}
+            {line.payee && <div className="text-xs font-normal text-[var(--text-secondary)]">{line.payee}</div>}
           </div>
         );
       }
     },
-    { field: 'reference', headerName: t('reference'), width: 160 }
+    { field: 'reference', headerName: t('reference'), width: 120 },
+    { field: 'type', headerName: 'Type', width: 100 }
   ], [t]);
 
   const ledgerColumns = useMemo<ColDef[]>(() => [
@@ -226,11 +232,11 @@ export default function BankMatchingView({
   ], [t]);
 
   return (
-    <div className="flex flex-col h-full bg-[var(--bg-primary)] overflow-hidden relative">
-      <div className="flex-1 flex overflow-hidden p-4 gap-4">
+    <div className="flex flex-col h-full bg-[var(--bg-primary)] relative">
+      <div className="flex-1 flex p-4 gap-4 min-h-0">
         {/* LEFT PANE: Bank Lines */}
-        <div className="w-1/2 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-hidden relative" style={{ '--ag-row-height': '40px', '--ag-header-height': '40px' } as React.CSSProperties}>
+        <div className="w-1/2 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] flex flex-col z-10 min-h-0">
+          <div className="flex-1 relative" style={{ '--ag-row-height': '40px', '--ag-header-height': '40px' } as React.CSSProperties}>
             {loading ? (
               <div className="p-8 text-center text-[var(--text-muted)]">{tCommon('loading')}</div>
             ) : (
@@ -271,22 +277,28 @@ export default function BankMatchingView({
                     </div>
                     <div className="flex items-center gap-2">
                       <style>{`
-                        .options-btn-wrapper button {
+                        .options-btn-wrapper > div > button:first-child {
                           width: 32px !important;
                           height: 32px !important;
                           padding: 0 !important;
                           display: flex !important;
                           align-items: center !important;
                           justify-content: center !important;
-                          font-size: 0 !important;
-                          gap: 0 !important;
+                          border-color: var(--border) !important;
+                          color: var(--text-secondary) !important;
                         }
-                        .options-btn-wrapper button span.material-symbols-outlined {
+                        .options-btn-wrapper > div > button:first-child span.material-symbols-outlined {
                           font-size: 18px !important;
                           margin: 0 !important;
                         }
+                        .options-btn-wrapper > div > button:first-child span {
+                          margin-right: 0 !important;
+                        }
                         .search-wrapper input {
                           height: 32px !important;
+                          width: 180px !important;
+                          background: transparent !important;
+                          border-color: var(--border) !important;
                           padding-top: 0 !important;
                           padding-bottom: 0 !important;
                           font-size: 14px !important;
@@ -298,9 +310,35 @@ export default function BankMatchingView({
                       <div className="flex items-center search-wrapper">
                         {searchInput}
                       </div>
-                      <div className="flex items-center options-btn-wrapper">
+                      <div className="flex items-center options-btn-wrapper relative z-50">
                         {optionsButton}
                       </div>
+                      {selectedBankLines.size > 0 && (
+                        <button 
+                          onClick={async () => {
+                            if (!confirm(tCommon('confirmDelete'))) return;
+                            try {
+                              for (const id of Array.from(selectedBankLines)) {
+                                await api.bankStatementControllerDeleteLine(id);
+                              }
+                              toast.success(tCommon('deleted'));
+                              setSelectedBankLines(new Set());
+                              fetchData();
+                            } catch (e) {
+                              reportError(e, 'DeleteLines');
+                            }
+                          }}
+                          className="btn btn-secondary btn-sm font-semibold h-8 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                        >
+                          {tCommon('delete')}
+                        </button>
+                      )}
+                      <button 
+                        onClick={onImportClick}
+                        className="btn btn-secondary btn-sm font-semibold h-8"
+                      >
+                        {t('import')}
+                      </button>
                       <button 
                         onClick={() => setShowManualEntry(true)}
                         className="btn btn-secondary btn-sm font-semibold h-8"
@@ -316,8 +354,8 @@ export default function BankMatchingView({
         </div>
 
         {/* RIGHT PANE: Journal Lines */}
-        <div className="w-1/2 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-hidden relative" style={{ '--ag-row-height': '40px', '--ag-header-height': '40px' } as React.CSSProperties}>
+        <div className="w-1/2 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] flex flex-col z-10 min-h-0">
+          <div className="flex-1 relative" style={{ '--ag-row-height': '40px', '--ag-header-height': '40px' } as React.CSSProperties}>
             {loading ? (
               <div className="p-8 text-center text-[var(--text-muted)]">{tCommon('loading')}</div>
             ) : (
@@ -358,7 +396,7 @@ export default function BankMatchingView({
                     </div>
                     <div className="flex items-center gap-2">
                       <style>{`
-                        .options-btn-wrapper button {
+                        .options-btn-wrapper > div > button:first-child {
                           width: 32px !important;
                           height: 32px !important;
                           padding: 0 !important;
@@ -368,7 +406,7 @@ export default function BankMatchingView({
                           font-size: 0 !important;
                           gap: 0 !important;
                         }
-                        .options-btn-wrapper button span.material-symbols-outlined {
+                        .options-btn-wrapper > div > button:first-child span.material-symbols-outlined {
                           font-size: 18px !important;
                           margin: 0 !important;
                         }
@@ -377,6 +415,7 @@ export default function BankMatchingView({
                           padding-top: 0 !important;
                           padding-bottom: 0 !important;
                           font-size: 14px !important;
+                          width: 140px !important;
                         }
                         .overflow-visible-cell .ag-cell-value {
                           overflow: visible !important;
@@ -385,7 +424,7 @@ export default function BankMatchingView({
                       <div className="flex items-center search-wrapper">
                         {searchInput}
                       </div>
-                      <div className="flex items-center options-btn-wrapper">
+                      <div className="flex items-center options-btn-wrapper relative z-50">
                         {optionsButton}
                       </div>
                       <button

@@ -3,20 +3,23 @@
 'use client';
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { businessReportsControllerGetReports, businessReportsControllerRunReport, userSettingsControllerGetSettings, userSettingsControllerUpdateSettings } from '@modbm/sdk';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
-import PageNav from '@/components/shared/PageNav';
 import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import { ReportChartViewer } from '@/components/reporting/ReportChartViewer';
+import { DateRangeFilter } from '@/components/reporting/DateRangeFilter';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 export default function ReportViewer() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { slug } = useParams() as { slug: string };
+  const configId = searchParams.get('configId');
+  const [lastLoadedConfigId, setLastLoadedConfigId] = useState<string | null>(null);
   const [filters, setFilters] = useState<Record<string, unknown>>({});
   const gridRef = useRef<AgGridReact>(null);
 
@@ -31,6 +34,7 @@ export default function ReportViewer() {
   const [isSavingView, setIsSavingView] = useState(false);
   const [newViewName, setNewViewName] = useState('');
   const [pinToDashboard, setPinToDashboard] = useState(false);
+  const loadedConfig = configId && userSettings ? (userSettings.reportConfigs?.[slug] || []).find((c: { id: string }) => c.id === configId) : null;
 
   useEffect(() => {
     userSettingsControllerGetSettings()
@@ -80,15 +84,40 @@ export default function ReportViewer() {
     }
   };
 
-  const handleLoadView = (configId: string) => {
-    if (!configId) return;
-    const reportSaves = userSettings?.reportConfigs?.[slug] || [];
-    const config = reportSaves.find((c: any) => c.id === configId);
-    if (config) {
-      setFilters(config.filters || {});
-      setViewMode(config.viewMode || 'grid');
-      setTimeout(() => fetchReportData(config.filters || {}), 0);
+  const handleUnsaveView = async (idToUnsave: string) => {
+    const currentReportConfigs = userSettings?.reportConfigs || {};
+    const reportSaves = currentReportConfigs[slug] || [];
+    
+    const updatedConfigs = {
+      ...currentReportConfigs,
+      [slug]: reportSaves.filter((c: any) => c.id !== idToUnsave)
+    };
+
+    let updatedDashboard = userSettings?.dashboardConfig || {};
+    const pinned = updatedDashboard.pinnedReports || [];
+    if (pinned.some((p: any) => p.configId === idToUnsave)) {
+      updatedDashboard = {
+        ...updatedDashboard,
+        pinnedReports: pinned.filter((p: any) => p.configId !== idToUnsave)
+      };
     }
+
+    try {
+      const res = await userSettingsControllerUpdateSettings({
+        reportConfigs: updatedConfigs,
+        dashboardConfig: updatedDashboard
+      });
+      setUserSettings(res.data);
+      router.push(`/reporting/${slug}`);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleLoadView = (val: string) => {
+    if (!val) return;
+    const [targetSlug, configId] = val.split('|');
+    router.push(`/reporting/${targetSlug}?configId=${configId}`);
   };
 
   const syncGridDataToChart = useCallback(() => {
@@ -120,10 +149,27 @@ export default function ReportViewer() {
   }, [report, slug, filters]);
 
   useEffect(() => {
-    if (report) {
-      fetchReportData();
+    if (!report || !userSettings) return;
+
+    const effectiveConfigId = configId || 'none';
+    if (lastLoadedConfigId !== effectiveConfigId) {
+      setLastLoadedConfigId(effectiveConfigId);
+      
+      if (configId) {
+        const reportSaves = userSettings?.reportConfigs?.[slug] || [];
+        const config = reportSaves.find((c: any) => c.id === configId);
+        if (config) {
+          setFilters(config.filters || {});
+          setViewMode(config.viewMode || 'grid');
+          fetchReportData(config.filters || {});
+          return;
+        }
+      }
+      
+      setFilters({});
+      fetchReportData({});
     }
-  }, [report]); // Only auto-fetch on first load when report is available
+  }, [report, userSettings, configId, slug, fetchReportData, lastLoadedConfigId]);
 
   const defaultColDef = useMemo(() => ({
     sortable: true,
@@ -160,70 +206,78 @@ export default function ReportViewer() {
   const isPurchasingActive = slug.startsWith('purchasing-');
   const isFinancialActive = !isSalesActive && !isWarehouseActive && !isPurchasingActive;
 
-  const createSection = (id: string, label: string, isActive: boolean, sectionReports: any[]) => ({
-    id,
-    label,
-    isSubPage: true,
-    isActive,
-    onClick: () => {
-      if (sectionReports.length > 0 && !isActive) {
-        router.push(`/reporting/${sectionReports[0].slug}`);
-      }
-    },
-    subtargets: sectionReports.map(r => ({
-      id: r.slug,
-      label: r.name,
-      isActive: r.slug === slug,
-      onClick: () => router.push(`/reporting/${r.slug}`),
-    }))
-  });
-
-  const navSections = [
-    createSection('warehouse', 'Warehouse', isWarehouseActive, warehouseReports),
-    createSection('sales', 'Sales', isSalesActive, salesReports),
-    createSection('purchasing', 'Purchasing', isPurchasingActive, purchasingReports),
-    createSection('financial', 'Financial', isFinancialActive, financialReports),
-  ];
-
   return (
     <DetailsLayout
       header={
         <EntityHeader
-          title={report.name}
+          title={loadedConfig ? `${report.name} - ${loadedConfig.name}` : report.name}
           onBack={() => router.push('/reporting')}
-          nav={<PageNav sections={navSections} />}
+          nav={undefined}
           actions={
             <div className="flex gap-2">
-              {userSettings?.reportConfigs?.[slug]?.length > 0 && (
-                <select 
-                  className="input max-w-[150px] !py-1"
-                  onChange={(e) => handleLoadView(e.target.value)}
-                  defaultValue=""
+              <select 
+                className="input max-w-[200px] !py-1"
+                onChange={(e) => {
+                  if (e.target.value) router.push(`/reporting/${e.target.value}`);
+                }}
+                value=""
+              >
+                <option value="" disabled>Load Standard View...</option>
+                {warehouseReports.length > 0 && (
+                  <optgroup label="Warehouse">
+                    {warehouseReports.map(r => <option key={r.slug} value={r.slug}>{r.name}</option>)}
+                  </optgroup>
+                )}
+                {salesReports.length > 0 && (
+                  <optgroup label="Sales">
+                    {salesReports.map(r => <option key={r.slug} value={r.slug}>{r.name}</option>)}
+                  </optgroup>
+                )}
+                {purchasingReports.length > 0 && (
+                  <optgroup label="Purchasing">
+                    {purchasingReports.map(r => <option key={r.slug} value={r.slug}>{r.name}</option>)}
+                  </optgroup>
+                )}
+                {financialReports.length > 0 && (
+                  <optgroup label="Financial">
+                    {financialReports.map(r => <option key={r.slug} value={r.slug}>{r.name}</option>)}
+                  </optgroup>
+                )}
+              </select>
+              <select 
+                className="input max-w-[200px] !py-1"
+                onChange={(e) => handleLoadView(e.target.value)}
+                value=""
+              >
+                <option value="" disabled>Load Saved View...</option>
+                {Object.entries(userSettings?.reportConfigs || {}).map(([rSlug, configs]) => {
+                  const r = reports?.find(rep => rep.slug === rSlug);
+                  const rName = r ? r.name : rSlug;
+                  if (!configs || (configs as any[]).length === 0) return null;
+                  return (
+                    <optgroup key={rSlug} label={rName}>
+                      {(configs as any[]).map((c) => (
+                        <option key={c.id} value={`${rSlug}|${c.id}`}>{c.name}</option>
+                      ))}
+                    </optgroup>
+                  );
+                })}
+              </select>
+              {loadedConfig ? (
+                <button 
+                  onClick={() => handleUnsaveView(loadedConfig.id)}
+                  className="btn btn-secondary"
                 >
-                  <option value="" disabled>Load Saved View...</option>
-                  {userSettings.reportConfigs[slug].map((c: { id: string, name: string, isDefault: boolean, columns: string[] }) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                  Unsave View
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setIsSavingView(true)}
+                  className="btn btn-secondary"
+                >
+                  Save View
+                </button>
               )}
-              <button 
-                onClick={() => setIsSavingView(true)}
-                className="btn btn-secondary"
-              >
-                Save View
-              </button>
-              <button 
-                onClick={() => fetchReportData()}
-                className="btn btn-primary"
-              >
-                Run Report
-              </button>
-              <button 
-                onClick={() => gridRef.current?.api.exportDataAsCsv()}
-                className="btn btn-secondary"
-              >
-                Export CSV
-              </button>
             </div>
           }
         />
@@ -262,59 +316,85 @@ export default function ReportViewer() {
         </div>
       )}
       <div className="flex flex-col h-full bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden">
-        {uiConfig.filters && uiConfig.filters.length > 0 && (
-          <div className="flex flex-wrap gap-4 p-4 border-b border-[rgba(196,198,205,0.4)] bg-[#f2f4f6]">
-            {uiConfig.filters.map((f: any) => (
-              <div key={f.name} className="flex flex-col">
-                <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--text-muted)' }}>{f.label}</label>
-                <input 
-                  type={f.type} 
-                  className="input max-w-xs"
-                  value={(filters[f.name] as string) || ''}
-                  onChange={(e) => setFilters({ ...filters, [f.name]: e.target.value })}
-                />
-              </div>
-            ))}
-            {drillDownOptions.length > 0 && (
-              <div className="flex flex-col">
-                <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--text-muted)' }}>Split By</label>
-                <select
-                  className="input max-w-xs"
-                  value={(filters['drillDown'] as string) || ''}
-                  onChange={(e) => {
-                    const newFilters = { ...filters, drillDown: e.target.value };
-                    setFilters(newFilters);
-                    fetchReportData(newFilters);
-                  }}
-                >
-                  <option value="">None</option>
-                  {drillDownOptions.map((opt: any) => (
-                    <option key={opt.id} value={opt.id}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            {uiConfig.chartConfig && (
-              <div className="flex flex-col ml-auto">
-                <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--text-muted)' }}>View As</label>
-                <div className="flex bg-white rounded-md border border-[rgba(196,198,205,0.4)] p-0.5">
-                  <button
-                    className={`px-3 py-1 text-xs font-medium rounded-sm transition-colors ${viewMode === 'grid' ? 'bg-[#f2f4f6] text-[var(--text-color)]' : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'}`}
-                    onClick={() => setViewMode('grid')}
-                  >
-                    Table
-                  </button>
-                  <button
-                    className={`px-3 py-1 text-xs font-medium rounded-sm transition-colors ${viewMode === 'chart' ? 'bg-[#f2f4f6] text-[var(--text-color)]' : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'}`}
-                    onClick={() => setViewMode('chart')}
-                  >
-                    Chart
-                  </button>
+        <div className="flex flex-wrap items-end gap-4 p-4 border-b border-[rgba(196,198,205,0.4)] bg-[#f2f4f6]">
+          {uiConfig.filters && uiConfig.filters.length > 0 && (
+            <>
+              {uiConfig.filters.some((f: any) => f.name === 'fromDate') && uiConfig.filters.some((f: any) => f.name === 'toDate') && (
+                <div className="flex flex-col">
+                  <DateRangeFilter 
+                    value={(filters._dateRange || { mode: 'absolute', from: filters.fromDate, to: filters.toDate }) as any}
+                    onChange={(val) => setFilters({ ...filters, _dateRange: val, fromDate: undefined, toDate: undefined })}
+                  />
                 </div>
+              )}
+              {uiConfig.filters.filter((f: any) => f.name !== 'fromDate' && f.name !== 'toDate').map((f: any) => (
+                <div key={f.name} className="flex flex-col">
+                  <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--text-muted)' }}>{f.label}</label>
+                  <input 
+                    type={f.type} 
+                    className="input max-w-xs"
+                    value={(filters[f.name] as string) || ''}
+                    onChange={(e) => setFilters({ ...filters, [f.name]: e.target.value })}
+                  />
+                </div>
+              ))}
+            </>
+          )}
+          {drillDownOptions.length > 0 && (
+            <div className="flex flex-col">
+              <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--text-muted)' }}>Split By</label>
+              <select
+                className="input max-w-xs"
+                value={(filters['drillDown'] as string) || ''}
+                onChange={(e) => {
+                  const newFilters = { ...filters, drillDown: e.target.value };
+                  setFilters(newFilters);
+                  fetchReportData(newFilters);
+                }}
+              >
+                <option value="">None</option>
+                {drillDownOptions.map((opt: any) => (
+                  <option key={opt.id} value={opt.id}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          {uiConfig.chartConfig && (
+            <div className="flex flex-col">
+              <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--text-muted)' }}>View As</label>
+              <div className="flex bg-white rounded-md border border-[rgba(196,198,205,0.4)] p-0.5 h-[34px]">
+                <button
+                  className={`px-3 flex items-center justify-center text-xs font-medium rounded-sm transition-colors ${viewMode === 'grid' ? 'bg-[#f2f4f6] text-[var(--text-color)]' : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'}`}
+                  onClick={() => setViewMode('grid')}
+                >
+                  Table
+                </button>
+                <button
+                  className={`px-3 flex items-center justify-center text-xs font-medium rounded-sm transition-colors ${viewMode === 'chart' ? 'bg-[#f2f4f6] text-[var(--text-color)]' : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'}`}
+                  onClick={() => setViewMode('chart')}
+                >
+                  Chart
+                </button>
               </div>
-            )}
+            </div>
+          )}
+          
+          <div className="flex items-end gap-3 ml-auto">
+            <button 
+              onClick={() => fetchReportData()}
+              className="btn btn-primary h-[34px] !py-0 px-4"
+            >
+              Run Report
+            </button>
+            <button 
+              onClick={() => gridRef.current?.api.exportDataAsCsv()}
+              className="btn btn-secondary h-[34px] !py-0 px-4"
+            >
+              Export CSV
+            </button>
           </div>
-        )}
+        </div>
 
         <div className="flex-1 ag-theme-alpine-dark w-full min-h-0 relative">
           {isLoadingData ? (

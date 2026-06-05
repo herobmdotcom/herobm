@@ -369,16 +369,23 @@ export default function DataGrid<T>({
     const fromUrl = searchParams?.get(limitParam);
     if (fromUrl) return Number(fromUrl);
     
+    const initialIsMobile = typeof window !== 'undefined' ? window.innerWidth < 1024 : false;
+
     if (gridKey && typeof window !== 'undefined') {
       try {
         const savedLimit = localStorage.getItem(`${STORAGE_PREFIX}${gridKey}-limit`);
-        if (savedLimit) return Number(savedLimit);
+        if (savedLimit) {
+          const parsed = Number(savedLimit);
+          // Don't use desktop's large limits on mobile
+          if (!initialIsMobile || parsed <= 50) {
+            return parsed;
+          }
+        }
       } catch (e) {
         /* ignore */
       }
     }
 
-    const initialIsMobile = typeof window !== 'undefined' ? window.innerWidth < 1024 : false;
     if (fetchAll && !initialIsMobile) return 99999;
     return initialIsMobile ? 25 : 200;
   });
@@ -410,10 +417,16 @@ export default function DataGrid<T>({
       setLimit(Number(fromUrl));
     } else {
       let savedLimit: number | null = null;
+      const initialIsMobile = typeof window !== 'undefined' ? window.innerWidth < 1024 : false;
       if (gridKey && typeof window !== 'undefined') {
         try {
           const val = localStorage.getItem(`${STORAGE_PREFIX}${gridKey}-limit`);
-          if (val) savedLimit = Number(val);
+          if (val) {
+            const parsed = Number(val);
+            if (!initialIsMobile || parsed <= 50) {
+              savedLimit = parsed;
+            }
+          }
         } catch (e) {
           /* ignore */
         }
@@ -421,8 +434,7 @@ export default function DataGrid<T>({
       if (savedLimit) {
         setLimit(savedLimit);
       } else {
-        const isMobile = typeof window !== 'undefined' ? window.innerWidth < 1024 : false;
-        setLimit(isMobile ? 25 : 200);
+        setLimit(initialIsMobile ? 25 : 200);
       }
     }
   }, [searchParams, qParam, archivedParam, cursorParam, dirParam, initialSearch, limitParam]);

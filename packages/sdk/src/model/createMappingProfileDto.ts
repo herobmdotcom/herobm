@@ -7,11 +7,14 @@
  */
 
 export interface CreateMappingProfileDto {
-  glAccountId: string;
   name: string;
   dateColumn: string;
-  amountColumn: string;
+  amountColumn?: string;
+  debitColumn?: string;
+  creditColumn?: string;
   descriptionColumn: string;
+  typeColumn?: string;
+  payeeColumn?: string;
   referenceColumn?: string;
   headerRows: number;
 }

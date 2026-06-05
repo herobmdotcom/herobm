@@ -29,6 +29,8 @@ import {
 import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
+import type { InventoryGlAccounts } from '../inventory/inventory-accounting';
+import { glAccounts } from '../drizzle/modbm-core-schema';
 
 const VALID_DN_STATES = getValidStates(PURCHASE_DEBIT_NOTE_TRANSITIONS);
 
@@ -171,16 +173,20 @@ export class PurchaseDebitNotesService {
         tx,
       );
 
-      // --- Financial Integration: Post Debit Note GL ---
-      const accountingStrategy = getAccountingStrategy(
-        this.appConfig.inventoryAccountingMode(),
-        {
-          inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
-          grniAccountId: this.appConfig.defaultGrniAccountId(),
-          cogsAccountId: this.appConfig.defaultCogsAccountId(),
-          shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
-        },
-      );
+      const settings = await this.glService.getSettings(tx);
+      const apCodeRow = await tx
+        .select({ accountCode: glAccounts.accountCode })
+        .from(glAccounts)
+        .where(eq(glAccounts.glAccountId, settings?.defaultApAccountId!))
+        .limit(1);
+      const apCode = apCodeRow[0]?.accountCode;
+
+      const expenseCodeRow = await tx
+        .select({ accountCode: glAccounts.accountCode })
+        .from(glAccounts)
+        .where(eq(glAccounts.glAccountId, settings?.defaultExpenseAccountId!))
+        .limit(1);
+      const fallbackExpCode = expenseCodeRow[0]?.accountCode;
 
       let suppCostCenterId: string | undefined;
       let suppActivityId: string | undefined;
@@ -202,20 +208,49 @@ export class PurchaseDebitNotesService {
         }
       }
 
-      // We debit Accounts Payable (reduce liability) and credit GRNI or Inventory.
-      // Note: accountingStrategy.onSupplierReturn creates this GL structure.
-      const supplierReturnGl = accountingStrategy.onSupplierReturn({
-        amount: Number(dn.totalAmount),
-        memo: `Debit Note ${dn.debitNoteNumber}`,
-        partyType: 'supplier',
-        partyId: po.vendorId || undefined,
-        costCenterId: suppCostCenterId,
-        activityId: suppActivityId,
-      });
+      const grniCodeRow = await tx
+        .select({ accountCode: glAccounts.accountCode })
+        .from(glAccounts)
+        .where(eq(glAccounts.glAccountId, settings?.defaultGrniAccountId!))
+        .limit(1);
+      const grniCodeCandidate = grniCodeRow[0]?.accountCode;
 
-      if (supplierReturnGl) {
+      const strategy = getAccountingStrategy(
+        this.appConfig.inventoryAccountingMode(),
+        {} as InventoryGlAccounts,
+      );
+
+      const clearingAccountCode = strategy.resolvePurchaseClearingAccount(
+        grniCodeCandidate || null,
+        fallbackExpCode || null,
+      );
+
+      if (apCode && clearingAccountCode) {
+        const glLines = [
+          {
+            accountCode: apCode,
+            debit: Number(dn.totalAmount),
+            credit: 0,
+            memo: `Debit Note ${dn.debitNoteNumber}`,
+            partyType: 'supplier',
+            partyId: po.vendorId || undefined,
+            costCenterId: suppCostCenterId,
+            activityId: suppActivityId,
+          },
+          {
+            accountCode: clearingAccountCode,
+            debit: 0,
+            credit: Number(dn.totalAmount),
+            memo: `Debit Note ${dn.debitNoteNumber}`,
+            partyType: 'supplier',
+            partyId: po.vendorId || undefined,
+            costCenterId: suppCostCenterId,
+            activityId: suppActivityId,
+          },
+        ];
+
         await this.glService.postJournalEntry(
-          supplierReturnGl.lines as any,
+          glLines as any,
           {
             actor,
             entryDate: new Date().toISOString().slice(0, 10),

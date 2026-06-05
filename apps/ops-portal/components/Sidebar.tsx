@@ -96,6 +96,7 @@ export default function Sidebar() {
           icon: 'compare_arrows',
           subItems: [
             { href: '/reconciliations', label: 'Statements' },
+            { href: '/reconciliations/profiles', label: 'Import Profiles' },
             { href: '/reconciliations/rules', label: 'Rules' },
           ]
         },

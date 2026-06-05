@@ -13,6 +13,10 @@ import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import { BadRequestException } from '@nestjs/common';
 import { CASBIN_ENFORCER } from '../auth/casbin.provider';
 import type { Enforcer } from 'casbin';
+import {
+  resolveDateRangeFilter,
+  type DateRangeConfig,
+} from '../common/utils/date-range.util';
 
 @Injectable()
 export class BusinessReportsService {
@@ -98,7 +102,18 @@ export class BusinessReportsService {
         `Provider for hook "${report.dataSourceHook}" does not support fetchData`,
       );
     }
-    return provider.fetchData(filters, user);
+
+    // Intercept and resolve complex date range filters
+    const finalFilters = { ...filters };
+    if (finalFilters._dateRange) {
+      const dateRange = finalFilters._dateRange as DateRangeConfig;
+      const { fromDate, toDate } = resolveDateRangeFilter(dateRange);
+      if (fromDate) finalFilters.fromDate = fromDate;
+      if (toDate) finalFilters.toDate = toDate;
+      delete finalFilters._dateRange;
+    }
+
+    return provider.fetchData(finalFilters, user);
   }
 
   async getReportById(id: string) {

@@ -101,6 +101,16 @@ export interface InventoryAccountingStrategy {
 
   /** Supplier Debit Note → DR AP, CR GRNI */
   onSupplierDebitNote(ctx: GlPostingContext): InventoryGlResult | null;
+
+  /**
+   * Resolves the target GL account for clearing matched purchase/invoice lines.
+   * Perpetual: Returns the GRNI account (liability).
+   * Periodic: Returns the default expense account.
+   */
+  resolvePurchaseClearingAccount(
+    grniAccountCode: string | null | undefined,
+    expenseAccountCode: string | null | undefined,
+  ): string | null | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -128,6 +138,12 @@ class PeriodicAccountingStrategy implements InventoryAccountingStrategy {
   }
   onSupplierDebitNote(): null {
     return null;
+  }
+  resolvePurchaseClearingAccount(
+    grniAccountCode: string | null | undefined,
+    expenseAccountCode: string | null | undefined,
+  ): string | null | undefined {
+    return expenseAccountCode;
   }
 }
 
@@ -399,6 +415,13 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
         },
       ],
     };
+  }
+
+  resolvePurchaseClearingAccount(
+    grniAccountCode: string | null | undefined,
+    expenseAccountCode: string | null | undefined,
+  ): string | null | undefined {
+    return grniAccountCode || expenseAccountCode;
   }
 }
 

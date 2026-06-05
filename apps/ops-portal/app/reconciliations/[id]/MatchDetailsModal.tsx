@@ -34,23 +34,33 @@ export default function MatchDetailsModal({
 
   useEffect(() => {
     if (isOpen && matchGroupId) {
-      loadData();
+      fetchData();
     }
   }, [isOpen, matchGroupId]);
 
-  const loadData = async () => {
-    setLoading(true);
+  const fetchData = async () => {
     try {
+      setLoading(true);
       const [bankRes, journalRes, metadataRes] = await Promise.all([
         api.bankStatementControllerGetLines({ glAccountId, isReconciled: undefined }),
         api.reconciliationControllerGetLines(reconciliationId),
         api.bankStatementControllerGetMatchGroup(matchGroupId).catch(() => ({ data: null }))
       ]);
-      const bLines = (bankRes.data as any[]).filter(l => l.matchGroupId === matchGroupId);
-      const jLines = (journalRes.data as any[]).filter(l => l.matchGroupId === matchGroupId);
+
+      if (metadataRes.data) {
+        setMatchMetadata(metadataRes.data);
+        if (metadataRes.data.bankLines && metadataRes.data.ledgerLines) {
+          setBankLines(metadataRes.data.bankLines);
+          setLedgerLines(metadataRes.data.ledgerLines);
+          return;
+        }
+      }
+
+      const bLines = (bankRes.data || []).filter(l => l.matchGroupId === matchGroupId);
+      const jLines = (journalRes.data || []).filter(l => l.matchGroupId === matchGroupId);
+
       setBankLines(bLines);
       setLedgerLines(jLines);
-      setMatchMetadata(metadataRes.data);
     } catch (e) {
       reportError(e, 'MatchDetailsLoad');
     } finally {

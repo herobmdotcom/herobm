@@ -6,7 +6,7 @@ import * as path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
-const connectionString = `postgres://postgres:Xk9mQv2Lp7wBnZ4Tj@localhost:5432/modbm_volzau`;
+const connectionString = process.env.DATABASE_URL as string;
 
 const migrationClient = postgres(connectionString, { max: 1 });
 

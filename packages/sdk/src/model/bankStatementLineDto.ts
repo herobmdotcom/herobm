@@ -14,9 +14,15 @@ export interface BankStatementLineDto {
   amount: number;
   /** @nullable */
   reference?: string | null;
+  /** @nullable */
+  type?: string | null;
+  /** @nullable */
+  payee?: string | null;
   isReconciled: boolean;
   /** @nullable */
   matchedJournalLineId?: string | null;
   /** @nullable */
   matchedJournalLine?: BankStatementLineDtoMatchedJournalLine;
+  /** @nullable */
+  matchGroupId?: string | null;
 }

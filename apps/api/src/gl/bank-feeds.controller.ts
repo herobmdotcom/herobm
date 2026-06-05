@@ -24,6 +24,7 @@ import {
 import { BankFeedsService } from './bank-feeds.service';
 import {
   CreateMappingProfileDto,
+  UpdateMappingProfileDto,
   CreateReconciliationRuleDto,
   UpdateReconciliationRuleDto,
   ImportCsvDto,
@@ -91,15 +92,15 @@ export class BankFeedsController {
     );
   }
 
-  @Get('profiles/:glAccountId')
+  @Get('profiles')
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Mapping Profiles',
-    description: 'Retrieves all mapping profiles for a specific GL account.',
+    description: 'Retrieves all mapping profiles.',
   })
   @ApiOkResponse({ type: [MappingProfileResponseDto] })
-  async getProfiles(@Param('glAccountId') glAccountId: string) {
-    return this.bankFeedsService.getMappingProfiles(glAccountId);
+  async getProfiles() {
+    return this.bankFeedsService.getMappingProfiles();
   }
 
   @Post('profiles')
@@ -111,6 +112,31 @@ export class BankFeedsController {
   @ApiCreatedResponse({ type: MappingProfileResponseDto })
   async createProfile(@Body() dto: CreateMappingProfileDto) {
     return this.bankFeedsService.createMappingProfile(dto);
+  }
+
+  @Put('profiles/:profileId')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Mapping Profile',
+    description: 'Updates an existing CSV mapping profile.',
+  })
+  @ApiOkResponse({ type: MappingProfileResponseDto })
+  async updateProfile(
+    @Param('profileId') profileId: string,
+    @Body() dto: UpdateMappingProfileDto,
+  ) {
+    return this.bankFeedsService.updateMappingProfile(profileId, dto);
+  }
+
+  @Delete('profiles/:profileId')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Delete Mapping Profile',
+    description: 'Deletes a CSV mapping profile.',
+  })
+  @ApiOkResponse({ type: MappingProfileResponseDto })
+  async deleteProfile(@Param('profileId') profileId: string) {
+    return this.bankFeedsService.deleteMappingProfile(profileId);
   }
 
   @Get('rules')

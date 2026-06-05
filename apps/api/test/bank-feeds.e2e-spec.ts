@@ -110,6 +110,50 @@ describe('BankFeedsController (e2e)', () => {
     expect(res.body.find((p: any) => p.profileId === profileId)).toBeDefined();
   });
 
+  it('should update a mapping profile', async () => {
+    const res = await request(app.getHttpServer())
+      .put(`/api/gl/bank-feeds/profiles/${profileId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        name: 'Updated Profile Name',
+      })
+      .expect(200);
+
+    expect(res.body.name).toBe('Updated Profile Name');
+  });
+
+  it('should delete a mapping profile', async () => {
+    // Create a temporary profile to delete
+    const tempProfileRes = await request(app.getHttpServer())
+      .post('/api/gl/bank-feeds/profiles')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        glAccountId: bankAccountId,
+        name: 'Temp Profile for Deletion',
+        dateColumn: '0',
+        amountColumn: '1',
+        descriptionColumn: '2',
+        headerRows: 1,
+      })
+      .expect(201);
+
+    const tempProfileId = tempProfileRes.body.profileId;
+
+    await request(app.getHttpServer())
+      .delete(`/api/gl/bank-feeds/profiles/${tempProfileId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    const res = await request(app.getHttpServer())
+      .get(`/api/gl/bank-feeds/profiles/${bankAccountId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    expect(
+      res.body.find((p: any) => p.profileId === tempProfileId),
+    ).toBeUndefined();
+  });
+
   let targetAccountId: string;
   it('should create a reconciliation rule', async () => {
     const db = app.get(DRIZZLE);

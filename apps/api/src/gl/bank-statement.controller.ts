@@ -7,6 +7,7 @@ import {
   Query,
   UseGuards,
   Body,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -182,6 +183,7 @@ export class BankStatementController {
       user.username,
       dto.reconciliationId,
       dto.dryRun || false,
+      dto.ignoredStatementLineIds,
     );
   }
 
@@ -197,6 +199,18 @@ export class BankStatementController {
   async unmatch(@Body() dto: UnmatchRequestDto, @AuthUser() user: JwtUser) {
     const actor = user?.username || 'system';
     return this.bankStatementService.unmatch(dto.matchGroupId, actor);
+  }
+
+  @Delete('lines/:id')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Delete bank statement line',
+    description: 'Deletes a bank statement line that has not been reconciled.',
+  })
+  @ApiOkResponse({ type: BankStatementSuccessResponseDto })
+  async deleteLine(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    const actor = user?.username || 'system';
+    return this.bankStatementService.deleteLine(id, actor);
   }
 
   @Get('match-group/:matchGroupId')

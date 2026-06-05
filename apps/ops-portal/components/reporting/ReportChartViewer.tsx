@@ -34,18 +34,32 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
 
   const pivotedData = useMemo(() => {
     if (!activeDrillDown || activeDrillDown.field === config.xAxisField) {
-      const isTimeAxis = config.xAxisField === 'yearMonth' || config.xAxisField.toLowerCase().includes('date') || config.xAxisField.toLowerCase().includes('month');
+      const isTimeAxis = config.xAxisField === 'period' || config.xAxisField === 'yearMonth' || config.xAxisField.toLowerCase().includes('date') || config.xAxisField.toLowerCase().includes('month');
       
-      const sortedData = [...chartData].sort((a: any, b: any) => {
+      let sortedData = [...chartData].sort((a: any, b: any) => {
         if (isTimeAxis) {
           return String(a[config.xAxisField] || '').localeCompare(String(b[config.xAxisField] || ''));
         }
         return Number(b[config.yAxisField] || 0) - Number(a[config.yAxisField] || 0);
       });
+
+      if (!isTimeAxis) {
+        const MAX_ITEMS = 50;
+        if (sortedData.length > MAX_ITEMS) {
+          const topItems = sortedData.slice(0, MAX_ITEMS);
+          const otherItems = sortedData.slice(MAX_ITEMS);
+          
+          const otherRow: any = { [config.xAxisField]: 'Other' };
+          otherRow[config.yAxisField] = otherItems.reduce((acc: number, row: any) => acc + (Number(row[config.yAxisField]) || 0), 0);
+          
+          sortedData = [...topItems, otherRow];
+        }
+      }
+
       return { data: sortedData, seriesKeys: [config.yAxisField], isMultiSeries: false, primaryAxis: config.xAxisField };
     }
 
-    const isTimeDrillDown = activeDrillDown.field === 'yearMonth' || activeDrillDown.field.toLowerCase().includes('date') || activeDrillDown.field.toLowerCase().includes('month');
+    const isTimeDrillDown = activeDrillDown.field === 'period' || activeDrillDown.field === 'yearMonth' || activeDrillDown.field.toLowerCase().includes('date') || activeDrillDown.field.toLowerCase().includes('month');
     const primaryAxis = isTimeDrillDown ? activeDrillDown.field : config.xAxisField;
     const seriesAxis = isTimeDrillDown ? config.xAxisField : activeDrillDown.field;
 
@@ -66,10 +80,10 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
       group[sVal] = (group[sVal] || 0) + yVal;
     });
 
-    const data = Array.from(grouped.values());
+    let data = Array.from(grouped.values());
     const seriesKeysArray = Array.from(seriesKeys);
     
-    const isPrimaryTimeAxis = primaryAxis === 'yearMonth' || primaryAxis.toLowerCase().includes('date') || primaryAxis.toLowerCase().includes('month');
+    const isPrimaryTimeAxis = primaryAxis === 'period' || primaryAxis === 'yearMonth' || primaryAxis.toLowerCase().includes('date') || primaryAxis.toLowerCase().includes('month');
     
     if (isPrimaryTimeAxis) {
       data.sort((a, b) => String(a[primaryAxis]).localeCompare(String(b[primaryAxis])));
@@ -80,6 +94,19 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
         const sumB = seriesKeysArray.reduce((acc, k) => acc + (Number(b[k]) || 0), 0);
         return sumB - sumA;
       });
+
+      const MAX_ITEMS = 50;
+      if (data.length > MAX_ITEMS) {
+        const topItems = data.slice(0, MAX_ITEMS);
+        const otherItems = data.slice(MAX_ITEMS);
+        
+        const otherRow: any = { [primaryAxis]: 'Other' };
+        seriesKeysArray.forEach(k => {
+          otherRow[k] = otherItems.reduce((acc: number, row: any) => acc + (Number(row[k]) || 0), 0);
+        });
+        
+        data = [...topItems, otherRow];
+      }
     }
 
     return {

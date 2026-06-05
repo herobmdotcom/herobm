@@ -1837,4 +1837,64 @@ export class InventoryService {
       .set({ stateCode })
       .where(eq(salesOrderReturns.returnId, returnId));
   }
+
+  async adjustStock(dto: import('./dto').AdjustStockDto, userId: string) {
+    if (!dto.lines || dto.lines.length === 0) return { success: true };
+
+    return await this.db.transaction(async (tx) => {
+      const movementLines = [];
+      const reasonStr = dto.reason || 'N/A';
+
+      for (const line of dto.lines) {
+        const currentContent = await tx
+          .select({ actualQuantity: binContents.actualQuantity })
+          .from(binContents)
+          .where(
+            and(
+              eq(binContents.binId, line.binId),
+              eq(binContents.productId, line.productId),
+            ),
+          )
+          .limit(1);
+
+        const currentQty =
+          currentContent.length > 0
+            ? Number(currentContent[0].actualQuantity)
+            : 0;
+        const newQty = Number(line.newQuantity);
+        const diff = newQty - currentQty;
+
+        if (Math.abs(diff) > 0.001) {
+          movementLines.push({
+            productId: line.productId,
+            binId: line.binId,
+            quantity: diff,
+          });
+        }
+      }
+
+      if (movementLines.length > 0) {
+        await this.recordInventoryMovement(tx, {
+          entryNumber: `ADJ-${randomUUID().substring(0, 8).toUpperCase()}`,
+          sourceType: 'MANUAL_ADJUST',
+          memo: reasonStr,
+          userId,
+          lines: movementLines,
+        });
+
+        await emitEvent(tx as any, {
+          entityType: EntityType.WAREHOUSE,
+          entityId: dto.lines[0].binId,
+          eventType: EventType.STOCK_MOVED,
+          payload: {
+            reason: reasonStr,
+            lines: movementLines,
+          },
+          actor: userId,
+        });
+      }
+
+      return { success: true };
+    });
+  }
 }

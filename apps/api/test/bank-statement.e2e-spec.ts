@@ -126,7 +126,7 @@ describe('BankStatementController (e2e)', () => {
       .insert(glJournalEntries)
       .values({
         entryNumber: 'JE-E2E-1234',
-        entryDate: new Date('2026-06-02'),
+        entryDate: '2026-06-02',
         sourceType: 'manual',
         sourceId: '00000000-0000-0000-0000-000000000000',
       })
@@ -149,9 +149,9 @@ describe('BankStatementController (e2e)', () => {
       .insert(glReconciliations)
       .values({
         glAccountId: bankAccountId,
-        status: RECONCILIATION_STATE.DRAFT,
-        statementDate: new Date('2026-06-02'),
+        statementDate: '2026-06-02',
         statementBalance: '1000.00',
+        status: RECONCILIATION_STATE.DRAFT,
       })
       .returning();
 

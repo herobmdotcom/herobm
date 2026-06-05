@@ -53,19 +53,16 @@ export default function SlideOver({
     <div className="fixed inset-0 z-[9999] overflow-hidden">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" 
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
         onClick={onClose}
         aria-hidden="true"
       />
       
       {/* Slide-over panel */}
-      <div className="absolute inset-y-0 right-0 flex max-w-full sm:pl-10 pointer-events-none">
+      <div className="absolute inset-y-0 right-0 flex w-full justify-end pointer-events-none sm:pl-10">
         <div 
           ref={panelRef}
-          className={`pointer-events-auto w-screen ${width} transform transition ease-in-out duration-300 bg-white shadow-2xl flex flex-col`}
-          style={{ 
-            animation: 'slideInRight 0.3s ease-out forwards'
-          }}
+          className={`pointer-events-auto w-full ${width} bg-white shadow-2xl flex flex-col`}
         >
           {/* Header */}
           <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between bg-white shrink-0">
@@ -105,13 +102,6 @@ export default function SlideOver({
           )}
         </div>
       </div>
-      
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-      `}} />
     </div>
   );
 }

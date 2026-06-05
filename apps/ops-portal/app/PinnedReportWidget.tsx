@@ -8,6 +8,7 @@ import { ReportChartViewer } from '@/components/reporting/ReportChartViewer';
 import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -18,6 +19,7 @@ interface PinnedReportWidgetProps {
 }
 
 export default function PinnedReportWidget({ slug, configId, name }: PinnedReportWidgetProps) {
+  const t = useTranslations('dashboard');
   // modbm-allow-record-any
   const [reportConfig, setReportConfig] = useState<Record<string, any> | null>(null);
   // modbm-allow-record-any
@@ -86,9 +88,8 @@ export default function PinnedReportWidget({ slug, configId, name }: PinnedRepor
         <h3 className="font-bold text-[15px] truncate text-[var(--text-primary)]">
           {name || reportConfig.name || slug}
         </h3>
-        {/* eslint-disable-next-line i18next/no-literal-string */}
-        <Link href={`/reporting/${slug}`} className="text-[var(--accent)] hover:underline text-xs font-bold uppercase tracking-wider">
-          View Full
+        <Link href={`/reporting/${slug}?configId=${configId}`} className="text-[var(--accent)] hover:underline text-xs font-bold uppercase tracking-wider">
+          {t('viewFull')}
         </Link>
       </div>
       <div className="flex-1 min-h-0 relative p-4 w-full">

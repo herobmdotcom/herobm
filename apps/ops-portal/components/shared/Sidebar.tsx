@@ -42,7 +42,7 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
       <div className="px-5 py-5">
         <Link href="/" className="flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
           <div className="flex items-center justify-center w-7 h-7 rounded border-2 border-[var(--accent)] text-[var(--accent)] font-extrabold text-lg" style={{ fontFamily: 'Manrope, sans-serif' }}>
-            H
+            M
           </div>
           <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Manrope, sans-serif' }}>
             {title}

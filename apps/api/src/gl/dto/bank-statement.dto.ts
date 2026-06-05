@@ -33,6 +33,12 @@ export class BankStatementLineDto {
   @ApiProperty({ required: false, nullable: true })
   reference?: string;
 
+  @ApiProperty({ required: false, nullable: true })
+  type?: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  payee?: string;
+
   @ApiProperty()
   isReconciled: boolean;
 
@@ -41,6 +47,9 @@ export class BankStatementLineDto {
 
   @ApiProperty({ type: MatchedJournalLineDto, required: false, nullable: true })
   matchedJournalLine?: MatchedJournalLineDto;
+
+  @ApiProperty({ required: false, nullable: true })
+  matchGroupId?: string;
 }
 
 export class BankStatementLinesResponseDto {
@@ -84,6 +93,12 @@ export class CreateBankStatementLineDto {
 
   @ApiProperty({ required: false, nullable: true })
   reference?: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  type?: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  payee?: string;
 }
 
 import { IsArray, IsString, IsNotEmpty, IsOptional } from 'class-validator';
@@ -179,6 +194,12 @@ export class AutoMatchRequestDto {
   @ApiProperty({ required: false })
   @IsOptional()
   dryRun?: boolean;
+
+  @ApiProperty({ required: false, type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  ignoredStatementLineIds?: string[];
 }
 
 export class UnmatchRequestDto {
@@ -208,4 +229,10 @@ export class BankStatementMatchGroupResponseDto {
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdOn: Date;
+
+  @ApiProperty({ type: [Object], required: false })
+  bankLines?: any[];
+
+  @ApiProperty({ type: [Object], required: false })
+  ledgerLines?: any[];
 }

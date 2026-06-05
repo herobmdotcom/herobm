@@ -8,6 +8,7 @@ import QuickAdjustmentModal from './QuickAdjustmentModal';
 import SplitEntryModal from './SplitEntryModal';
 import MatchDetailsModal from './MatchDetailsModal';
 import AutoMatchPreviewModal from './AutoMatchPreviewModal';
+import BankImportModal from '../components/BankImportModal';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
@@ -61,11 +62,13 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
   
   const [reconciliation, setReconciliation] = useState<api.ReconciliationDetailResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isAdjustmentModalOpen, setAdjustmentModalOpen] = useState(false);
   const [isSplitModalOpen, setSplitModalOpen] = useState(false);
   const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [previewData, setPreviewData] = useState<api.AutoMatchResponseDto | null>(null);
   // modbm-allow-record-any
   const [selectedRow, setSelectedRow] = useState<Record<string, any> | null>(null);
@@ -76,6 +79,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
       setReconciliation(recRes.data );
     } catch (err) {
       reportError(err, 'ReconciliationDetails');
+      setFetchError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -200,6 +204,8 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
   }, [reconciliation?.status, t]);
 
   if (loading) return <div className="p-4">{t('loading')}</div>;
+  // eslint-disable-next-line i18next/no-literal-string
+  if (fetchError) return <div className="p-4 text-red-500">Error: {fetchError}</div>;
   if (!reconciliation) return <div className="p-4">{t('notFound')}</div>;
 
   const isPosted = reconciliation.status === 'posted';
@@ -305,11 +311,12 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
 
       <div className="flex-1 min-h-0 flex flex-col bg-gray-50 relative">
         <BankMatchingView 
-          key={refreshKey}
+          refreshTrigger={refreshKey}
           reconciliation={reconciliation} 
           onUpdate={() => { fetchDetails(); setRefreshKey(k => k + 1); }} 
           onQuickAdjustment={() => setAdjustmentModalOpen(true)}
           onSplitEntry={(line) => { setSelectedRow(line); setSplitModalOpen(true); }}
+          onImportClick={() => setIsImportModalOpen(true)}
         />
       </div>
       <QuickAdjustmentModal 
@@ -342,6 +349,16 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
           fetchDetails();
           setRefreshKey(k => k + 1);
         }}
+      />
+      <BankImportModal 
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={() => {
+          setIsImportModalOpen(false);
+          fetchDetails();
+          setRefreshKey(k => k + 1);
+        }}
+        fixedGlAccountId={reconciliation.glAccountId}
       />
     </div>
   );

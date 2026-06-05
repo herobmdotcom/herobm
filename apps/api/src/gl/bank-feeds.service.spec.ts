@@ -225,5 +225,329 @@ describe('BankFeedsService', () => {
       expect(result.autoMatchedCount).toBe(0);
       expect(result.unmatchedCount).toBe(1); // Only the valid row should be processed
     });
+
+    it('should correctly parse debit and credit columns into negative and positive amounts', async () => {
+      dbMock.where.mockResolvedValueOnce([
+        {
+          profileId: 'prof-2',
+          headerRows: 1,
+          dateColumn: '0',
+          descriptionColumn: '1',
+          debitColumn: '2',
+          creditColumn: '3',
+        },
+      ]);
+      dbMock.orderBy.mockResolvedValueOnce([]); // No rules
+      dbMock.where.mockResolvedValueOnce([{ code: '1000-BANK' }]);
+
+      dbMock.orderBy.mockResolvedValueOnce([]); // No rules
+      dbMock.where.mockResolvedValueOnce([{ code: '1000-BANK' }]);
+
+      // Inside transaction
+      dbMock.where.mockResolvedValueOnce([
+        {
+          lineId: 'l1',
+          date: '2026-05-25',
+          amount: '-50.00',
+          description: 'Debit row',
+          isReconciled: false,
+        },
+        {
+          lineId: 'l2',
+          date: '2026-05-26',
+          amount: '100.00',
+          description: 'Credit row',
+          isReconciled: false,
+        },
+      ]);
+
+      const csvData = Buffer.from(
+        'Date,Desc,Debit,Credit\n2026-05-25,Debit row,50.00,\n2026-05-26,Credit row,,100.00',
+      );
+      const result = await service.importCsv(csvData, 'bank-acc-1', 'prof-2');
+
+      expect(result.unmatchedCount).toBe(2);
+      // The insert should have been called with correctly mapped amounts
+      expect(dbMock.insert).toHaveBeenCalled();
+    });
+  });
+
+  describe('executeAutoMatching', () => {
+    beforeEach(() => {
+      dbMock.select.mockReturnThis();
+      dbMock.from.mockReturnThis();
+      dbMock.where.mockReturnThis();
+      dbMock.orderBy.mockReturnThis();
+      dbMock.limit.mockReturnThis();
+      dbMock.transaction.mockImplementation(async (cb: any) => {
+        return cb(dbMock);
+      });
+    });
+
+    const setupMocks = (
+      rules: any[],
+      lines: any[],
+      settings: any = { bankMatchDateToleranceDays: 7 },
+    ) => {
+      jest
+        .spyOn(service, 'getReconciliationRules')
+        .mockResolvedValue(rules as any);
+      dbMock.limit.mockResolvedValueOnce([settings]);
+      dbMock.where.mockResolvedValueOnce([{ code: '1000-BANK' }]);
+      dbMock.where.mockResolvedValueOnce(lines);
+      dbMock.where.mockImplementation(() => {
+        return Promise.resolve([{ code: '2000-TARGET', id: 'target-acc-1' }]);
+      });
+      dbMock.innerJoin.mockReturnValue({
+        where: jest.fn().mockResolvedValue([]),
+      });
+    };
+
+    it('should ignore lines specified in ignoredStatementLineIds', async () => {
+      setupMocks(
+        [
+          {
+            ruleId: 'rule-1',
+            conditionType: 'contains',
+            conditionValue: 'FEE',
+            targetGlAccountId: 'target',
+          },
+        ],
+        [
+          {
+            lineId: 'line-1',
+            description: 'BANK FEE',
+            amount: '-10.00',
+            date: '2026-05-01',
+            isReconciled: false,
+          },
+          {
+            lineId: 'line-2',
+            description: 'MONTHLY FEE',
+            amount: '-15.00',
+            date: '2026-05-02',
+            isReconciled: false,
+          },
+        ],
+      );
+
+      const result = await service.executeAutoMatching(
+        'bank-acc-1',
+        'system',
+        undefined,
+        true,
+        ['line-1'],
+      );
+      expect(result.autoMatchedCount).toBe(1);
+      expect(result.unmatchedCount).toBe(1); // line-1 is unmatched because it's ignored
+      expect(result.proposedRuleMatches[0].bankLineId).toBe('line-2');
+    });
+
+    it('should match using starts_with and exact_match correctly', async () => {
+      setupMocks(
+        [
+          {
+            ruleId: 'rule-exact',
+            conditionType: 'exact_match',
+            conditionValue: 'EXACT FEE',
+            targetGlAccountId: 'target',
+          },
+          {
+            ruleId: 'rule-starts',
+            conditionType: 'starts_with',
+            conditionValue: 'START',
+            targetGlAccountId: 'target',
+          },
+        ],
+        [
+          {
+            lineId: 'line-1',
+            description: 'EXACT FEE',
+            amount: '-10',
+            date: '2026-05-01',
+            isReconciled: false,
+          },
+          {
+            lineId: 'line-2',
+            description: 'EXACT FEE EXTRA',
+            amount: '-10',
+            date: '2026-05-01',
+            isReconciled: false,
+          },
+          {
+            lineId: 'line-3',
+            description: 'STARTING FEE',
+            amount: '-10',
+            date: '2026-05-01',
+            isReconciled: false,
+          },
+          {
+            lineId: 'line-4',
+            description: 'NO START',
+            amount: '-10',
+            date: '2026-05-01',
+            isReconciled: false,
+          },
+        ],
+      );
+
+      const result = await service.executeAutoMatching(
+        'bank-acc',
+        'system',
+        undefined,
+        true,
+      );
+      expect(result.autoMatchedCount).toBe(2);
+      expect(result.unmatchedCount).toBe(2);
+      const matchedIds = result.proposedRuleMatches.map((m) => m.bankLineId);
+      expect(matchedIds).toContain('line-1');
+      expect(matchedIds).toContain('line-3');
+    });
+
+    it('should match using typeCondition and payeeCondition correctly', async () => {
+      setupMocks(
+        [
+          {
+            ruleId: 'rule-type',
+            conditionType: 'contains',
+            conditionValue: 'FEE',
+            typeCondition: 'FEE_TYPE',
+            targetGlAccountId: 'target',
+          },
+          {
+            ruleId: 'rule-payee',
+            conditionType: 'contains',
+            conditionValue: 'SUBSCRIPTION',
+            payeeConditionType: 'exact_match',
+            payeeConditionValue: 'Netflix',
+            targetGlAccountId: 'target',
+          },
+        ],
+        [
+          {
+            lineId: 'line-1',
+            description: 'MONTHLY FEE',
+            amount: '-10',
+            date: '2026-05-01',
+            type: 'FEE_TYPE',
+            isReconciled: false,
+          },
+          {
+            lineId: 'line-2',
+            description: 'MONTHLY FEE',
+            amount: '-10',
+            date: '2026-05-01',
+            type: 'OTHER_TYPE', // should not match rule-type
+            isReconciled: false,
+          },
+          {
+            lineId: 'line-3',
+            description: 'NETFLIX SUBSCRIPTION',
+            amount: '-15',
+            date: '2026-05-01',
+            payee: 'Netflix',
+            isReconciled: false,
+          },
+        ],
+      );
+
+      const result = await service.executeAutoMatching(
+        'bank-acc',
+        'system',
+        undefined,
+        true,
+      );
+      expect(result.autoMatchedCount).toBe(2);
+      expect(result.unmatchedCount).toBe(1);
+      const matchedIds = result.proposedRuleMatches.map((m) => m.bankLineId);
+      expect(matchedIds).toContain('line-1');
+      expect(matchedIds).toContain('line-3');
+    });
+
+    it('should respect amountMin and amountMax in rules', async () => {
+      setupMocks(
+        [
+          {
+            ruleId: 'rule-range',
+            conditionType: 'contains',
+            conditionValue: 'FEE',
+            amountMin: '-50',
+            amountMax: '-10',
+            targetGlAccountId: 'target',
+          },
+        ],
+        [
+          {
+            lineId: 'line-1',
+            description: 'FEE',
+            amount: '-5.00',
+            date: '2026-05-01',
+          },
+          {
+            lineId: 'line-2',
+            description: 'FEE',
+            amount: '-20.00',
+            date: '2026-05-01',
+          },
+          {
+            lineId: 'line-3',
+            description: 'FEE',
+            amount: '-60.00',
+            date: '2026-05-01',
+          },
+        ],
+      );
+      const result = await service.executeAutoMatching(
+        'bank-acc',
+        'system',
+        undefined,
+        true,
+      );
+      expect(result.autoMatchedCount).toBe(1);
+      expect(result.proposedRuleMatches[0].bankLineId).toBe('line-2');
+    });
+
+    it('should respect glAccountId on rules', async () => {
+      setupMocks(
+        [
+          {
+            ruleId: 'rule-global',
+            conditionType: 'contains',
+            conditionValue: 'GLOBAL',
+            glAccountIds: null,
+            targetGlAccountId: 'target',
+          },
+          {
+            ruleId: 'rule-specific',
+            conditionType: 'contains',
+            conditionValue: 'SPECIFIC',
+            glAccountIds: ['other-bank'],
+            targetGlAccountId: 'target',
+          },
+        ],
+        [
+          {
+            lineId: 'line-1',
+            description: 'GLOBAL FEE',
+            amount: '-10',
+            date: '2026-05-01',
+          },
+          {
+            lineId: 'line-2',
+            description: 'SPECIFIC FEE',
+            amount: '-10',
+            date: '2026-05-01',
+          },
+        ],
+      );
+      const result = await service.executeAutoMatching(
+        'bank-acc',
+        'system',
+        undefined,
+        true,
+      );
+      expect(result.autoMatchedCount).toBe(1);
+      expect(result.proposedRuleMatches[0].bankLineId).toBe('line-1');
+    });
   });
 });

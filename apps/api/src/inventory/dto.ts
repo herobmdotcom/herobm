@@ -6,6 +6,7 @@ import {
   ValidateNested,
   IsNumberString,
   IsIn,
+  IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -232,4 +233,26 @@ export class PendingPutawayResponseDto {
 export class InventorySuccessResponseDto {
   @ApiProperty()
   success!: boolean;
+}
+
+export class AdjustStockLineDto {
+  @IsUUID()
+  productId!: string;
+
+  @IsUUID()
+  binId!: string;
+
+  @IsNumberString()
+  newQuantity!: string;
+}
+
+export class AdjustStockDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AdjustStockLineDto)
+  lines!: AdjustStockLineDto[];
+
+  @IsOptional()
+  @IsString()
+  reason?: string;
 }

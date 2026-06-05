@@ -4,51 +4,98 @@ import {
   IsOptional,
   IsNumber,
   IsUUID,
+  IsArray,
 } from 'class-validator';
 
 import { Type } from 'class-transformer';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 
 export class CreateMappingProfileDto {
-  @IsUUID()
-  glAccountId: string;
-
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   name: string;
 
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   dateColumn: string;
 
+  @ApiProperty({ required: false })
   @IsString()
-  @IsNotEmpty()
-  amountColumn: string;
+  @IsOptional()
+  amountColumn?: string;
 
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  debitColumn?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  creditColumn?: string;
+
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   descriptionColumn: string;
 
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  typeColumn?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  payeeColumn?: string;
+
+  @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
   referenceColumn?: string;
 
+  @ApiProperty()
   @IsNumber()
   headerRows: number;
 }
 
+export class UpdateMappingProfileDto extends PartialType(
+  CreateMappingProfileDto,
+) {}
+
 export class CreateReconciliationRuleDto {
-  @IsUUID()
+  @ApiProperty({ required: false })
+  @IsArray()
+  @IsString({ each: true })
   @IsOptional()
-  glAccountId?: string;
+  glAccountIds?: string[];
 
+  @ApiProperty({ required: false })
   @IsString()
-  @IsNotEmpty()
-  conditionType: string;
+  @IsOptional()
+  conditionType?: string;
 
+  @ApiProperty({ required: false })
   @IsString()
-  @IsNotEmpty()
-  conditionValue: string;
+  @IsOptional()
+  conditionValue?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  typeCondition?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  payeeConditionType?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  payeeConditionValue?: string;
 
   @IsOptional()
   amountMin?: number;
@@ -75,6 +122,10 @@ export class CreateReconciliationRuleDto {
   @IsString()
   @IsOptional()
   partyId?: string;
+
+  @IsString()
+  @IsOptional()
+  memo?: string;
 
   @IsNumber()
   @IsOptional()
