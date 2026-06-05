@@ -218,6 +218,8 @@ dev-docs-api: build-api
 dev-generate-sdk: dev-docs-api
 	@echo "Generating TypeScript SDK..."
 	npm run generate --workspace=@modbm/sdk
+	@echo "Building TypeScript SDK..."
+	npm run build --workspace=@modbm/sdk
 
 dev-db-generate:
 	$(if $(NAME),,$(error Error: NAME is required. Usage: make dev-db-generate NAME=migration_name))
@@ -340,9 +342,12 @@ endif
 build-shared:
 	npm run build -w packages/shared
 
+build-sdk:
+	npm run build -w packages/sdk
+
 # --- Quality Gates & Verification ---
 
-check-types:
+check-types: build-shared build-sdk
 	@npm run typecheck -w apps/api
 	@npm run typecheck -w apps/ops-portal
 
