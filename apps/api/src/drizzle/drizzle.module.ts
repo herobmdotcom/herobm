@@ -33,7 +33,7 @@ export type DrizzleDB = PostgresJsDatabase<typeof schema>;
               port: Number(process.env.POSTGRES_PORT ?? 5432),
               user: requireEnv('POSTGRES_USER'),
               password: requireEnv('POSTGRES_PASSWORD'),
-              database: process.env.POSTGRES_DB ?? 'custom_app',
+              database: process.env.POSTGRES_DB ?? 'herobm',
             });
       },
     },

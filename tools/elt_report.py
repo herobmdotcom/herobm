@@ -30,7 +30,7 @@ def get_db_metrics():
     sql = "SELECT run_ts, duration_s, table_count, status, error_msg FROM raw_abm._pipeline_metrics ORDER BY run_id DESC LIMIT 1;"
     cmd = [
         "podman", "exec", "-i", "postgres-custom",
-        "psql", "-U", os.environ.get("POSTGRES_USER", "postgres"), "-d", os.environ.get("POSTGRES_DB", "custom_app"),
+        "psql", "-U", os.environ.get("POSTGRES_USER", "postgres"), "-d", os.environ.get("POSTGRES_DB", "herobm"),
         "-t", "-A", "-c", sql,
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)

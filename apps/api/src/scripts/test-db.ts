@@ -6,7 +6,7 @@ const sql = postgres({
   port: Number(process.env.POSTGRES_PORT ?? 5432),
   user: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
-  database: process.env.POSTGRES_DB ?? 'custom_app',
+  database: process.env.POSTGRES_DB ?? 'herobm',
 });
 async function main() {
   const result = await sql`SELECT * FROM modbm_core.payment_entries`;

@@ -37,7 +37,7 @@ if (Test-Path $EnvFile) {
 }
 
 $DbUser = if ($env:POSTGRES_USER) { $env:POSTGRES_USER } else { "postgres" }
-$DbName = if ($env:POSTGRES_DB) { $env:POSTGRES_DB } else { "custom_app" }
+$DbName = if ($env:POSTGRES_DB) { $env:POSTGRES_DB } else { "herobm" }
 
 Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host " MODBM PostgreSQL Database Backup Worker " -ForegroundColor White

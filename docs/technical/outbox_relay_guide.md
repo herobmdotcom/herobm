@@ -118,7 +118,7 @@ All configuration is via environment variables (no hardcoded secrets per Constit
 | `POSTGRES_PASSWORD` | Yes | — | Postgres password |
 | `POSTGRES_HOST` | No | `localhost` | Postgres hostname |
 | `POSTGRES_PORT` | No | `5432` | Postgres port |
-| `POSTGRES_DB` | No | `custom_app` | Postgres database name |
+| `POSTGRES_DB` | No | `herobm` | Postgres database name |
 | `REDIS_HOST` | No | `localhost` | Redis hostname |
 | `REDIS_PASSWORD` | Yes | — | Redis password |
 | `EXTERNAL_API_URL` | No | — | External system base URL |

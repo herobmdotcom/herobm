@@ -2,7 +2,7 @@
 # ==============================================================================
 # MODBM PostgreSQL Database Backup Worker (Linux/cron-ready)
 # ==============================================================================
-# Backups the custom_app PostgreSQL database from the podman container.
+# Backups the herobm PostgreSQL database from the podman container.
 # Suitable for execution via cron.
 # Optional: Integrates with rclone for external storage (e.g., Google Drive).
 #
@@ -52,7 +52,7 @@ if [ -f "$ENV_FILE" ]; then
 fi
 
 DB_USER=${POSTGRES_USER:-postgres}
-DB_NAME=${POSTGRES_DB:-custom_app}
+DB_NAME=${POSTGRES_DB:-herobm}
 
 echo -e "\e[36m=========================================\e[0m"
 echo -e "\e[97m MODBM PostgreSQL Database Backup Worker \e[0m"

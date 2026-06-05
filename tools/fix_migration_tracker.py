@@ -8,7 +8,7 @@ load_dotenv()
 
 CONTAINER = os.environ.get("POSTGRES_CONTAINER", "postgres-custom")
 DB_USER = os.environ.get("POSTGRES_USER", "postgres")
-DB_NAME = os.environ.get("POSTGRES_DB", "custom_app")
+DB_NAME = os.environ.get("POSTGRES_DB", "herobm")
 
 def psql(sql: str, capture: bool = False) -> str | None:
     cmd = [

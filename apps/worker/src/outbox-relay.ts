@@ -24,7 +24,7 @@ const PG_USER = requireEnv('POSTGRES_USER');
 const PG_PASS = requireEnv('POSTGRES_PASSWORD');
 const PG_HOST = process.env.POSTGRES_HOST || 'localhost';
 const PG_PORT = process.env.POSTGRES_PORT || '5432';
-const PG_DB = process.env.POSTGRES_DB || 'custom_app';
+const PG_DB = process.env.POSTGRES_DB || 'herobm';
 
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
 const REDIS_PASSWORD = requireEnv('REDIS_PASSWORD');

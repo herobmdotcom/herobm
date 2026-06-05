@@ -22,7 +22,7 @@ const queryClient = dbUrl
       port: Number(process.env.POSTGRES_PORT ?? 5432),
       user: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
-      database: process.env.POSTGRES_DB ?? 'custom_app',
+      database: process.env.POSTGRES_DB ?? 'herobm',
     });
 const db = drizzle(queryClient);
 

@@ -47,7 +47,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-custom_app}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
     ports:
       - "${BIND_IP:-127.0.0.1}:5432:5432"
     volumes:
@@ -76,7 +76,7 @@ services:
       POSTGRES_PORT: "5432"
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-custom_app}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
       JWT_SECRET: ${JWT_SECRET}
       DEV_ADMIN_PASSWORD: ${DEV_ADMIN_PASSWORD}
       DEV_VIEWER_PASSWORD: ${DEV_VIEWER_PASSWORD}
@@ -137,7 +137,7 @@ services:
       POSTGRES_PORT: "5432"
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-custom_app}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
       REDIS_HOST: redis-broker
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
@@ -179,7 +179,7 @@ services:
       POSTGRES_PORT: "5432"
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-custom_app}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
       PIPELINE_LOG_DIR: /app/logs
     volumes:
       - ./logs:/app/logs

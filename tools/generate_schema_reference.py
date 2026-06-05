@@ -42,7 +42,7 @@ def load_env() -> dict:
 
 def psql(query: str, env: dict) -> str:
     user = env.get("POSTGRES_USER", "postgres")
-    db = env.get("POSTGRES_DB", "custom_app")
+    db = env.get("POSTGRES_DB", "herobm")
     result = subprocess.run(
         ["podman", "exec", "-i", CONTAINER, "psql", "-U", user, "-d", db,
          "-t", "-A", "-c", query],

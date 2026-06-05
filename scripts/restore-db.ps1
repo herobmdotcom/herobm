@@ -14,7 +14,7 @@ Write-Host " MODBM PostgreSQL Database Restore Worker " -ForegroundColor White
 Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Target container : postgres-custom"
-Write-Host "Target database  : custom_app"
+Write-Host "Target database  : herobm"
 Write-Host "Source file      : $BackupFile"
 Write-Host ""
 Write-Host "WARNING: This will absolutely overwrite the existing database content inside the container." -ForegroundColor Yellow
@@ -29,7 +29,7 @@ Write-Host "Executing psql ingestion natively via Podman..." -ForegroundColor Da
 
 # We use cmd.exe to inject the file strictly bypassing PowerShell's slow 
 # Get-Content Object pipe mapping, which averts catastrophic RAM overflow on large DBs.
-cmd.exe /c "podman exec -i postgres-custom psql -q -U postgres -d custom_app < `"$BackupFile`""
+cmd.exe /c "podman exec -i postgres-custom psql -q -U postgres -d herobm < `"$BackupFile`""
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Restore successfully completed!" -ForegroundColor Green

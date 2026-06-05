@@ -15705,6 +15705,18 @@
       "ReconciliationRuleResponseDto": {
         "type": "object",
         "properties": {
+          "glAccountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "conditionType": {
+            "type": "string"
+          },
+          "conditionValue": {
+            "type": "string"
+          },
           "typeCondition": {
             "type": "string"
           },
@@ -15715,16 +15727,6 @@
             "type": "string"
           },
           "ruleId": {
-            "type": "string"
-          },
-          "glAccountId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "conditionType": {
-            "type": "string"
-          },
-          "conditionValue": {
             "type": "string"
           },
           "amountMin": {
@@ -15760,14 +15762,24 @@
         },
         "required": [
           "ruleId",
-          "conditionType",
-          "conditionValue",
           "targetGlAccountId"
         ]
       },
       "CreateReconciliationRuleDto": {
         "type": "object",
         "properties": {
+          "glAccountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "conditionType": {
+            "type": "string"
+          },
+          "conditionValue": {
+            "type": "string"
+          },
           "typeCondition": {
             "type": "string"
           },
@@ -15775,16 +15787,6 @@
             "type": "string"
           },
           "payeeConditionValue": {
-            "type": "string"
-          },
-          "glAccountId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "conditionType": {
-            "type": "string"
-          },
-          "conditionValue": {
             "type": "string"
           },
           "amountMin": {
@@ -15819,14 +15821,24 @@
           }
         },
         "required": [
-          "conditionType",
-          "conditionValue",
           "targetGlAccountId"
         ]
       },
       "UpdateReconciliationRuleDto": {
         "type": "object",
         "properties": {
+          "glAccountIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "conditionType": {
+            "type": "string"
+          },
+          "conditionValue": {
+            "type": "string"
+          },
           "typeCondition": {
             "type": "string"
           },
@@ -15834,16 +15846,6 @@
             "type": "string"
           },
           "payeeConditionValue": {
-            "type": "string"
-          },
-          "glAccountId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "conditionType": {
-            "type": "string"
-          },
-          "conditionValue": {
             "type": "string"
           },
           "amountMin": {
@@ -20907,6 +20909,9 @@
           },
           "defaultTaxCategoryCode": {
             "type": "string"
+          },
+          "enableCustomImports": {
+            "type": "boolean"
           }
         }
       },

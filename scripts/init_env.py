@@ -90,12 +90,17 @@ def main():
             print(f"  Generated: {var}")
 
     if "JWT_SECRET=<REDACTED>" in content:
-        content = content.replace("JWT_SECRET=<REDACTED>", f"JWT_SECRET={generate_password(32)}")
+        content = content.replace("JWT_SECRET=<REDACTED>", f"JWT_SECRET={generate_password(64)}")
         print("  Generated: JWT_SECRET")
+
+    if "ENCRYPTION_KEY=<REDACTED>" in content:
+        # Generate a 64-character (256-bit) random string for encryption
+        content = content.replace("ENCRYPTION_KEY=<REDACTED>", f"ENCRYPTION_KEY={secrets.token_hex(32)}")
+        print("  Generated: ENCRYPTION_KEY")
 
     if active_profile:
         postgres_db = f"modbm_{active_profile}"
-        content = content.replace("POSTGRES_DB=custom_app", f"POSTGRES_DB={postgres_db}")
+        content = content.replace("POSTGRES_DB=herobm", f"POSTGRES_DB={postgres_db}")
         print(f"\n\033[32m=== Auto-Configured ===\n  POSTGRES_DB={postgres_db}\033[0m")
 
     typst_path = shutil.which("typst")

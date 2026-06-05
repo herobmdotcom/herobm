@@ -12,6 +12,7 @@ import {
   glSettings,
   organization,
   locations,
+  glAccounts,
 } from '../drizzle/modbm-core-schema';
 import {
   ExecuteSetupDto,
@@ -23,7 +24,7 @@ import { AppConfigService } from '../settings/app-config.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import { spawn } from 'child_process';
-import { eq, getTableColumns } from 'drizzle-orm';
+import { eq, getTableColumns, isNotNull } from 'drizzle-orm';
 import { Readable } from 'stream';
 import { parse } from 'csv-parse';
 import * as schema from '../drizzle/modbm-core-schema';
@@ -646,6 +647,10 @@ export class SetupService {
         envOverride.DEFAULT_TAX_CATEGORY_CODE = dto.defaultTaxCategoryCode;
       }
 
+      if (dto.enableCustomImports) {
+        envOverride.ENABLE_CUSTOM_IMPORTS = 'true';
+      }
+
       const isOdoo = dto.odooImport === true;
       const prefix = isOdoo ? 'ODOO_PG' : 'ABM_MSSQL';
 
@@ -713,6 +718,7 @@ export class SetupService {
         }
       }
 
+      await this.inferAndSaveGlMetadataSchema(jobId);
       this.log(jobId, 'DATA IMPORT COMPLETED SUCCESSFULLY');
       if (jobId && this.activeJobs[jobId]) {
         this.activeJobs[jobId].progress[0].status = 'done';
@@ -781,5 +787,53 @@ export class SetupService {
           : reject(new Error(`${cmd} failed with code ${code}`)),
       );
     });
+  }
+
+  private async inferAndSaveGlMetadataSchema(jobId?: string) {
+    this.log(jobId, 'Dynamically inferring GL metadata schema from imported accounts...');
+    try {
+      const accounts = await this.db
+        .select({ metadata: glAccounts.metadata })
+        .from(glAccounts)
+        .where(isNotNull(glAccounts.metadata));
+
+      const properties: Record<string, { type: string; title: string }> = {};
+      for (const acct of accounts) {
+        if (acct.metadata && typeof acct.metadata === 'object' && !Array.isArray(acct.metadata)) {
+          for (const [key, value] of Object.entries(acct.metadata)) {
+            if (!properties[key] && value !== null && value !== undefined) {
+              const type = typeof value;
+              const title = key
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/^./, (str) => str.toUpperCase());
+                
+              properties[key] = {
+                type: type === 'number' || type === 'boolean' ? type : 'string',
+                title,
+              };
+            }
+          }
+        }
+      }
+
+      if (Object.keys(properties).length > 0) {
+        const [existingGl] = await this.db.select().from(glSettings).limit(1);
+        if (existingGl) {
+          const existingSchema = (existingGl.accountMetadataSchema as any) || { type: 'object', properties: {} };
+          const mergedProperties = { ...(existingSchema.properties || {}), ...properties };
+          
+          await this.db
+            .update(glSettings)
+            .set({ accountMetadataSchema: { type: 'object', properties: mergedProperties } as any })
+            .where(eq(glSettings.settingsId, existingGl.settingsId));
+            
+          this.log(jobId, `Inferred schema with ${Object.keys(properties).length} properties.`);
+        }
+      } else {
+        this.log(jobId, 'No metadata found to infer schema.');
+      }
+    } catch (e: any) {
+      this.log(jobId, `Warning: Failed to infer metadata schema: ${e.message}`, 'error');
+    }
   }
 }

@@ -7,12 +7,12 @@
  */
 
 export interface UpdateReconciliationRuleDto {
+  glAccountIds?: string[];
+  conditionType?: string;
+  conditionValue?: string;
   typeCondition?: string;
   payeeConditionType?: string;
   payeeConditionValue?: string;
-  glAccountId?: string;
-  conditionType?: string;
-  conditionValue?: string;
   amountMin?: number;
   amountMax?: number;
   targetGlAccountId?: string;

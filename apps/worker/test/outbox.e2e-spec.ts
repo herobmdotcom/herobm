@@ -24,7 +24,7 @@ describe('Worker E2E - Outbox Integration', () => {
     const pgPass = process.env.POSTGRES_PASSWORD;
     const pgHost = process.env.POSTGRES_HOST || 'localhost';
     const pgPort = process.env.POSTGRES_PORT || '5432';
-    const pgDb = process.env.POSTGRES_DB || 'custom_app';
+    const pgDb = process.env.POSTGRES_DB || 'herobm';
 
     pgClient = postgres(`postgres://${pgUser}:${pgPass}@${pgHost}:${pgPort}/${pgDb}`);
     db = drizzle(pgClient, { schema: { modbmCore, outbox, accounts, webhooks } });

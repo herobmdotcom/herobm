@@ -29,7 +29,8 @@ export default function AdminImportPage() {
     extractionMode: 'full' as 'full' | 'resume' | 'skip',
     defaultLocationCode: '',
     baseCurrency: 'AUD',
-    defaultTaxCategoryCode: ''
+    defaultTaxCategoryCode: '',
+    enableCustomImports: false
   });
   
   const [logs, setLogs] = useState<string[]>([]);
@@ -138,6 +139,7 @@ export default function AdminImportPage() {
         defaultLocationCode: config.defaultLocationCode,
         baseCurrency: config.baseCurrency,
         defaultTaxCategoryCode: config.defaultTaxCategoryCode,
+        enableCustomImports: config.enableCustomImports,
       };
 
       setStep('executing');
@@ -393,6 +395,19 @@ export default function AdminImportPage() {
               <div>
                 <div className="font-bold text-slate-800">{t('options.fullExtractionTitle')}</div>
                 <div className="text-sm text-slate-500">{t('options.fullExtractionDesc')}</div>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50">
+              <input 
+                type="checkbox" 
+                checked={config.enableCustomImports}
+                onChange={(e) => setConfig({ ...config, enableCustomImports: e.target.checked })}
+                className="mt-1 text-[#006b5c] focus:ring-[#006b5c] rounded" 
+              />
+              <div>
+                <div className="font-bold text-slate-800">Enable custom imports</div>
+                <div className="text-sm text-slate-500">Executes any additional custom extract and transform scripts configured in the pipeline extensions directory.</div>
               </div>
             </label>
           </div>

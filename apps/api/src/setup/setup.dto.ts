@@ -111,6 +111,10 @@ export class ExecuteEltDto {
   @IsOptional()
   @IsString()
   defaultTaxCategoryCode?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  enableCustomImports?: boolean;
 }
 
 // ---------------------------------------------------------------------------
