@@ -14,6 +14,7 @@
 
 FROM node:22-alpine AS base
 RUN apk add --no-cache libc6-compat
+RUN npm install -g npm@11
 
 # --- Stage 1: Install dependencies -------------------------------------------
 FROM base AS deps
@@ -25,7 +26,7 @@ COPY packages/ ./packages/
 # Only copy package.json for the portal app right now to cache deps
 COPY apps/ops-portal/package*.json ./apps/ops-portal/
 
-RUN npm install
+RUN npm ci
 
 # --- Stage 2: Build ----------------------------------------------------------
 FROM base AS builder
