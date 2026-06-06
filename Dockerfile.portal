@@ -20,9 +20,6 @@
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 
-# Upgrade npm to 11 — fixes cross-platform optional dependency resolution
-RUN npm install -g npm@11
-
 # Copy workspace metadata for cacheable dependency installation
 COPY package.json package-lock.json ./
 COPY packages/ ./packages/
