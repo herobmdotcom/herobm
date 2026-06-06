@@ -31,6 +31,13 @@ COPY apps/ops-portal/package*.json ./apps/ops-portal/
 
 RUN npm ci
 
+# npm consistently fails to install @parcel/watcher's platform-specific binary
+# in monorepo workspace contexts (optional transitive deps are skipped).
+# Detect the current platform and install the correct binary package directly.
+RUN PLATFORM=$(node -p "process.platform + '-' + process.arch") && \
+    LIBC=$(node -p "require('fs').existsSync('/etc/alpine-release') ? '-musl' : '-glibc'") && \
+    npm install --no-save "@parcel/watcher-${PLATFORM}${LIBC}"
+
 # --- Stage 2: Build ----------------------------------------------------------
 FROM deps AS builder
 
