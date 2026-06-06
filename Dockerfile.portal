@@ -28,12 +28,21 @@ COPY apps/ops-portal/package*.json ./apps/ops-portal/
 
 RUN npm ci
 
-# npm consistently fails to install @parcel/watcher's platform-specific binary
-# in monorepo workspace contexts (optional transitive deps are skipped).
-# Detect the current platform and install the correct binary package directly.
-RUN PLATFORM=$(node -p "process.platform + '-' + process.arch") && \
-    LIBC=$(node -p "require('fs').existsSync('/etc/alpine-release') ? '-musl' : '-glibc'") && \
-    npm install --no-save "@parcel/watcher-${PLATFORM}${LIBC}"
+# npm ci in monorepo workspaces often skips platform-specific optional
+# native binaries. Explicitly install all required ones for the build
+# platform. Uses platform detection so the same Dockerfile works on
+# Linux (glibc/musl), macOS, and Windows.
+RUN set -e && \
+    OS=$(node -p process.platform) && \
+    ARCH=$(node -p process.arch) && \
+    if [ -f /etc/alpine-release ]; then LIBC=musl; PARCEL_LIBC=musl; \
+    else LIBC=gnu; PARCEL_LIBC=glibc; fi && \
+    npm install --no-save \
+      "@parcel/watcher-${OS}-${ARCH}-${PARCEL_LIBC}" \
+      "@swc/core-${OS}-${ARCH}-${LIBC}" \
+      "lightningcss-${OS}-${ARCH}-${LIBC}" \
+      "@tailwindcss/oxide-${OS}-${ARCH}-${LIBC}" \
+      "@unrs/resolver-binding-${OS}-${ARCH}-${LIBC}"
 
 # --- Stage 2: Build ----------------------------------------------------------
 FROM deps AS builder
@@ -70,7 +79,7 @@ ENV HOSTNAME=0.0.0.0
 COPY --from=builder /app/apps/ops-portal/.next/standalone ./
 COPY --from=builder /app/apps/ops-portal/.next/static ./apps/ops-portal/.next/static
 COPY --from=builder /app/apps/ops-portal/messages ./apps/ops-portal/messages
-# COPY --from=builder /app/apps/ops-portal/public ./public
+COPY --from=builder /app/apps/ops-portal/public ./apps/ops-portal/public
 
 EXPOSE 3000
 

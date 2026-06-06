@@ -267,15 +267,15 @@ export class DashboardService {
         COALESCE(so.order_number, po.order_number, a.name, s.name, gr.receipt_number, to_tbl.order_number, pe.payment_number, ie.entry_number, e.entity_id::text) as "entityDisplay", 
         e.actor, 
         e.created_on as "timestamp"
-      FROM dashboard_timeline e
-      LEFT JOIN sales_orders so ON e.entity_type = 'sales_order' AND e.entity_id = so.sales_order_id
-      LEFT JOIN purchase_orders po ON e.entity_type = 'purchase_order' AND e.entity_id = po.purchase_order_id
-      LEFT JOIN customers a ON e.entity_type = 'customer' AND e.entity_id = a.customer_id
-      LEFT JOIN suppliers s ON e.entity_type = 'supplier' AND e.entity_id = s.vendor_id
-      LEFT JOIN goods_received gr ON e.entity_type = 'goods_receipt' AND e.entity_id = gr.goods_received_id
-      LEFT JOIN transfer_orders to_tbl ON e.entity_type = 'transfer_order' AND e.entity_id = to_tbl.transfer_order_id
-      LEFT JOIN payment_entries pe ON e.entity_type = 'payment' AND e.entity_id = pe.payment_id
-      LEFT JOIN inventory_entries ie ON e.entity_type = 'inventory_ledger' AND e.event_type = 'entry_posted' AND e.entity_id = ie.entry_id
+      FROM modbm_core.dashboard_timeline e
+      LEFT JOIN modbm_core.sales_orders so ON e.entity_type = 'sales_order' AND e.entity_id = so.sales_order_id
+      LEFT JOIN modbm_core.purchase_orders po ON e.entity_type = 'purchase_order' AND e.entity_id = po.purchase_order_id
+      LEFT JOIN modbm_core.customers a ON e.entity_type = 'customer' AND e.entity_id = a.customer_id
+      LEFT JOIN modbm_core.suppliers s ON e.entity_type = 'supplier' AND e.entity_id = s.vendor_id
+      LEFT JOIN modbm_core.goods_received gr ON e.entity_type = 'goods_receipt' AND e.entity_id = gr.goods_received_id
+      LEFT JOIN modbm_core.transfer_orders to_tbl ON e.entity_type = 'transfer_order' AND e.entity_id = to_tbl.transfer_order_id
+      LEFT JOIN modbm_core.payment_entries pe ON e.entity_type = 'payment' AND e.entity_id = pe.payment_id
+      LEFT JOIN modbm_core.inventory_entries ie ON e.entity_type = 'inventory_ledger' AND e.event_type = 'entry_posted' AND e.entity_id = ie.entry_id
       WHERE ${whereClause}
       ORDER BY e.created_on DESC
       LIMIT ${limit}
