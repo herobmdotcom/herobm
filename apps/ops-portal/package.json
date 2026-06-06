@@ -18,6 +18,7 @@
   "dependencies": {
     "@modbm/sdk": "^0.1.0",
     "@modbm/shared": "*",
+    "@parcel/watcher": "^2.5.0",
     "ag-grid-community": "^33.2.5",
     "ag-grid-react": "^33.2.5",
     "i18n-iso-countries": "^7.14.0",

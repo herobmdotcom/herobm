@@ -25,7 +25,7 @@ COPY packages/ ./packages/
 # Only copy package.json for the portal app right now to cache deps
 COPY apps/ops-portal/package*.json ./apps/ops-portal/
 
-RUN npm ci
+RUN npm install
 
 # --- Stage 2: Build ----------------------------------------------------------
 FROM base AS builder
