@@ -33,7 +33,7 @@ describe('Permissions & RBAC (e2e)', () => {
 
     adminToken = await getTestTokenDirect(
       'admin',
-      process.env.DEV_ADMIN_PASSWORD || 'password',
+      process.env.ADMIN_PASSWORD || 'password',
     );
     viewerToken = await getTestTokenDirect(
       'viewer',

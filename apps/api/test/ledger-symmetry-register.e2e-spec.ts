@@ -688,7 +688,7 @@ describe('API E2E — Ledger Symmetry Register', () => {
     console.log('before adminLogin');
     const adminLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
+      .send({ username: 'admin', password: process.env.ADMIN_PASSWORD })
       .expect(201);
     const adminToken = adminLogin.body.access_token;
 

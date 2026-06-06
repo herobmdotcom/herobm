@@ -30,7 +30,7 @@ describe('API E2E — Sales Invoices', () => {
     // Login as admin
     const adminLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
+      .send({ username: 'admin', password: process.env.ADMIN_PASSWORD })
       .expect(201);
     adminToken = adminLogin.body.access_token;
     const locRes = await request(app.getHttpServer())

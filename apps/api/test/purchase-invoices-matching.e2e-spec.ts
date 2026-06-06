@@ -34,7 +34,7 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
       .post('/api/auth/login')
       .send({
         username: 'admin',
-        password: process.env.DEV_ADMIN_PASSWORD || 'password',
+        password: process.env.ADMIN_PASSWORD || 'password',
       });
 
     if (adminLogin.status !== 201) {
@@ -43,7 +43,7 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
         adminLogin.status,
         adminLogin.body,
         'PASSWORD USED:',
-        process.env.DEV_ADMIN_PASSWORD || 'password',
+        process.env.ADMIN_PASSWORD || 'password',
       );
     }
     expect(adminLogin.status).toBe(201);

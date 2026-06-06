@@ -42,7 +42,7 @@ describe('API E2E — Runtime Ledger Balancing', () => {
     // Login as admin
     const adminLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
+      .send({ username: 'admin', password: process.env.ADMIN_PASSWORD })
       .expect(201);
     adminToken = adminLogin.body.access_token;
 

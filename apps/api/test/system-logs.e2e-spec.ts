@@ -35,7 +35,7 @@ describe('System Logs E2E Verification', () => {
     // Obtain auth token
     const loginRes = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
+      .send({ username: 'admin', password: process.env.ADMIN_PASSWORD })
       .expect(201);
 
     if (loginRes.status !== 201) {

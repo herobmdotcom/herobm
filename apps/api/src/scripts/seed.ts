@@ -1194,7 +1194,7 @@ async function seedUsers(db: any, dryRun: boolean) {
     return;
   }
 
-  let adminPass = process.env.DEV_ADMIN_PASSWORD;
+  let adminPass = process.env.ADMIN_PASSWORD;
   let generated = false;
 
   if (!adminPass) {

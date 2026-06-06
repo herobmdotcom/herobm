@@ -14,10 +14,10 @@
 
 const API_BASE = process.env.MODBM_API_URL || 'http://localhost:3001';
 const LOGIN_USER = process.env.MODBM_SIM_USER || 'admin';
-const LOGIN_PASS = process.env.DEV_ADMIN_PASSWORD || '';
+const LOGIN_PASS = process.env.ADMIN_PASSWORD || '';
 
 if (!LOGIN_PASS) {
-  console.error('ERROR: Set DEV_ADMIN_PASSWORD in .env');
+  console.error('ERROR: Set ADMIN_PASSWORD in .env');
   process.exit(1);
 }
 

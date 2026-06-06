@@ -24,7 +24,7 @@ describe('Supplier Groups (e2e)', () => {
       .post('/api/auth/login')
       .send({
         username: 'admin',
-        password: process.env.DEV_ADMIN_PASSWORD || 'password',
+        password: process.env.ADMIN_PASSWORD || 'password',
       });
     if (adminRes.status !== 201) {
       throw new Error(

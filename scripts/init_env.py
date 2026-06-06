@@ -75,7 +75,7 @@ def main():
     generated_vars = [
         "REDIS_PASSWORD",
         "GRAFANA_PASSWORD",
-        "DEV_ADMIN_PASSWORD",
+        "ADMIN_PASSWORD",
         "DEV_VIEWER_PASSWORD",
         "DEV_SALES_PASSWORD",
         "DEV_WAREHOUSE_PASSWORD",
@@ -112,6 +112,20 @@ def main():
 
     with open(env_file_path, "w", encoding="utf-8", newline='\n') as f:
         f.write(content)
+
+    # Enforce restrictive permissions
+    try:
+        if os.name == 'posix':
+            os.chmod(env_file_path, 0o600)
+        elif os.name == 'nt':
+            import stat
+            import subprocess
+            os.chmod(env_file_path, stat.S_IREAD | stat.S_IWRITE)
+            username = os.environ.get('USERNAME')
+            if username:
+                subprocess.run(['icacls', env_file_path, '/inheritance:r', '/grant:r', f"{username}:(F)"], capture_output=True, text=True)
+    except Exception as e:
+        print(f"\033[33mWarning: Could not set restrictive permissions on {env_file_name}: {e}\033[0m")
 
     print(f"\n\033[32m=== {env_file_name} created at {env_file_path} ===\033[0m")
     print("Review it and fill in any remaining <REDACTED> values.\n")

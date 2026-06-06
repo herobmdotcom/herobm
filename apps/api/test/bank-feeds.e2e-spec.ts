@@ -29,7 +29,7 @@ describe('BankFeedsController (e2e)', () => {
       .post('/api/auth/login')
       .send({
         username: 'admin',
-        password: process.env.DEV_ADMIN_PASSWORD || 'password',
+        password: process.env.ADMIN_PASSWORD || 'password',
       });
 
     adminToken = adminRes.body.access_token;

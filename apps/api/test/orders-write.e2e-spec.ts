@@ -74,7 +74,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     // Login as admin (has orders:write)
     const adminLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
+      .send({ username: 'admin', password: process.env.ADMIN_PASSWORD })
       .expect(201);
     adminToken = adminLogin.body.access_token;
     const locRes = await request(app.getHttpServer())

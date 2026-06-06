@@ -32,7 +32,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
       .post('/api/auth/login')
       .send({
         username: 'admin',
-        password: process.env.DEV_ADMIN_PASSWORD || 'password',
+        password: process.env.ADMIN_PASSWORD || 'password',
       })
       .expect(201);
     if (loginRes.status !== 201) {

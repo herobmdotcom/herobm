@@ -78,7 +78,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-herobm}
       JWT_SECRET: ${JWT_SECRET}
-      DEV_ADMIN_PASSWORD: ${DEV_ADMIN_PASSWORD}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       DEV_VIEWER_PASSWORD: ${DEV_VIEWER_PASSWORD}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4300,http://localhost:4400,http://localhost:5000,http://localhost:8000}
       TYPST_BINARY_PATH: typst  # Override Windows host path — Alpine has typst on $PATH

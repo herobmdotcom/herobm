@@ -17,7 +17,7 @@ async function main() {
 
   const login = await request(app.getHttpServer())
     .post('/api/auth/login')
-    .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD });
+    .send({ username: 'admin', password: process.env.ADMIN_PASSWORD });
   const token = login.body.access_token;
 
   // Let's find an order that is picking! Or just make one

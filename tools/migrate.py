@@ -55,7 +55,7 @@ def psql_file(filepath: str, record_migration: str | None = None) -> bool:
 
     # Pass known env vars as psql variables for migration seeding
     for env_key in [
-        "DEV_ADMIN_PASSWORD", "DEV_SALES_PASSWORD",
+        "ADMIN_PASSWORD", "DEV_SALES_PASSWORD",
         "DEV_WAREHOUSE_PASSWORD", "DEV_PROCUREMENT_PASSWORD",
     ]:
         val = os.environ.get(env_key, "")

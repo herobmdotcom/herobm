@@ -29,7 +29,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .post('/api/auth/login')
       .send({
         username: 'admin',
-        password: process.env.DEV_ADMIN_PASSWORD || 'password',
+        password: process.env.ADMIN_PASSWORD || 'password',
       });
 
     expect(adminLogin.status).toBe(201);
