@@ -313,14 +313,18 @@ export class AccountsWriteService {
       .where(eq(coreAccounts.customerId, customerId))
       .returning();
 
+    let eventType: string = EventType.STATUS_CHANGED;
+    if (newState === CUSTOMER_STATE.ARCHIVED) {
+      eventType = EventType.ARCHIVED;
+    } else if (currentState === CUSTOMER_STATE.ARCHIVED) {
+      eventType = EventType.UNARCHIVED;
+    }
+
     if (tx) {
       await emitEvent(tx, {
         entityType: EntityType.CUSTOMER,
         entityId: customerId,
-        eventType:
-          newState === CUSTOMER_STATE.ARCHIVED
-            ? EventType.ARCHIVED
-            : EventType.STATUS_CHANGED,
+        eventType: eventType,
         payload: {
           from: currentState,
           to: newState,
@@ -331,10 +335,7 @@ export class AccountsWriteService {
       await emitEvent(this.db as any, {
         entityType: EntityType.CUSTOMER,
         entityId: customerId,
-        eventType:
-          newState === CUSTOMER_STATE.ARCHIVED
-            ? EventType.ARCHIVED
-            : EventType.STATUS_CHANGED,
+        eventType: eventType,
         payload: {
           from: currentState,
           to: newState,

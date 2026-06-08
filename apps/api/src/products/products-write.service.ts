@@ -231,13 +231,17 @@ export class ProductsWriteService {
       .returning();
 
     const targetTx = tx || this.db;
+    let eventType: string = EventType.STATUS_CHANGED;
+    if (newState === PRODUCT_STATE.ARCHIVED) {
+      eventType = EventType.ARCHIVED;
+    } else if (currentState === PRODUCT_STATE.ARCHIVED) {
+      eventType = EventType.UNARCHIVED;
+    }
+
     await emitEvent(targetTx as any, {
       entityType: EntityType.PRODUCT,
       entityId: productId,
-      eventType:
-        newState === PRODUCT_STATE.ARCHIVED
-          ? EventType.ARCHIVED
-          : EventType.STATUS_CHANGED,
+      eventType: eventType,
       payload: {
         from: currentState,
         to: newState,

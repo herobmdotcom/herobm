@@ -8,12 +8,17 @@ import { toast } from 'react-hot-toast';
 import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
 import { getErrorMessage } from '@modbm/shared';
 
+/** Local row type that flattens glAccountIds[0] → glAccountId for the inline table */
+interface RuleRow extends api.ReconciliationRuleResponseDto {
+  glAccountId: string;
+}
+
 export default function RulesEnginePage() {
   const t = useTranslations('gl.reconciliations');
   const tCommon = useTranslations('common');
   useDocumentTitle('Reconciliation Rules');
 
-  const [rules, setRules] = useState<api.ReconciliationRuleResponseDto[]>([]);
+  const [rules, setRules] = useState<RuleRow[]>([]);
   const [glAccounts, setGlAccounts] = useState<api.GlAccountResponseDto[]>([]);
   
   const [loading, setLoading] = useState(false);
@@ -28,7 +33,7 @@ export default function RulesEnginePage() {
       const accs = await api.glControllerGetAccounts();
       setGlAccounts(accs.data || []);
       const r = await api.bankFeedsControllerGetRules();
-      setRules((r.data || []).map((rule: any) => ({
+      setRules((r.data || []).map((rule) => ({
         ...rule,
         glAccountId: rule.glAccountIds?.[0] || ''
       })));
@@ -39,7 +44,7 @@ export default function RulesEnginePage() {
     }
   };
 
-  const handleSave = async (row: any, isNew: boolean) => {
+  const handleSave = async (row: RuleRow, isNew: boolean) => {
     if (!row.conditionValue || !row.targetGlAccountId) {
       throw new Error('Condition Value and Target Account are required');
     }
@@ -57,7 +62,7 @@ export default function RulesEnginePage() {
     await loadData();
   };
 
-  const handleDelete = async (row: any) => {
+  const handleDelete = async (row: RuleRow) => {
     if (!confirm('Are you sure you want to delete this rule?')) return;
     try {
       await api.bankFeedsControllerDeleteRule(row.ruleId);
@@ -79,7 +84,7 @@ export default function RulesEnginePage() {
         { value: '', label: t('allBankAccounts') },
         ...bankAccs.map(a => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` }))
       ],
-      render: (row: any) => {
+      render: (row: RuleRow) => {
         const bank = bankAccs.find(a => a.glAccountId === row.glAccountId);
         return <span>{bank ? bank.name : t('allAccounts')}</span>;
       }
@@ -93,7 +98,7 @@ export default function RulesEnginePage() {
         { value: 'starts_with', label: t('descriptionStartsWith') },
         { value: 'exact_match', label: t('descriptionExactMatch') }
       ],
-      render: (row: any) => (
+      render: (row: RuleRow) => (
         <span className="bg-[var(--bg-secondary)] border border-[var(--border)] px-2 py-0.5 rounded text-xs">
           {row.conditionType}
         </span>
@@ -103,7 +108,7 @@ export default function RulesEnginePage() {
       key: 'conditionValue',
       title: t('conditionValue'),
       type: 'text' as const,
-      validate: (v: any) => v ? null : 'Required'
+      validate: (v: string) => v ? null : 'Required'
     },
     {
       key: 'targetGlAccountId',
@@ -113,8 +118,8 @@ export default function RulesEnginePage() {
         { value: '', label: t('selectAccountPlaceholder') },
         ...glAccounts.map(a => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` }))
       ],
-      validate: (v: any) => v ? null : 'Required',
-      render: (row: any) => {
+      validate: (v: string) => v ? null : 'Required',
+      render: (row: RuleRow) => {
         const target = glAccounts.find(a => a.glAccountId === row.targetGlAccountId);
         return <span className="font-medium text-[var(--brand-blue)]">
           {target ? `${target.accountCode} - ${target.name}` : row.targetGlAccountId}
@@ -134,10 +139,10 @@ export default function RulesEnginePage() {
           <InlineSettingsTable
             title={t('reconciliationRules')}
             data={rules}
-            rowKey={(r: any) => r.ruleId}
+            rowKey={(r: RuleRow) => r.ruleId}
             onSave={handleSave}
             onDelete={handleDelete}
-            onAdd={() => ({ glAccountId: '', conditionType: 'contains', conditionValue: '', targetGlAccountId: '' })}
+            onAdd={() => ({ glAccountId: '', conditionType: 'contains', conditionValue: '', targetGlAccountId: '' }) as RuleRow}
             canEdit={() => false} // the API does not support updates for rules yet
             canDelete={() => true}
             addLabel={t('addRule')}

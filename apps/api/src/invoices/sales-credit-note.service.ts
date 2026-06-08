@@ -28,11 +28,13 @@ import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { OrganizationService } from '../settings/organization.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { EnrichmentService } from '../enrichment/enrichment.service';
+import { CreateSalesCreditNoteDto } from './sales-credit-notes.dto';
 import { computeLinePrice, computeReturnCreditSummary } from '@modbm/shared';
 import {
   SALES_CREDIT_NOTE_STATE,
   SALES_CREDIT_NOTE_TRANSITIONS,
   SALES_INVOICE_STATE,
+  RETURN_STATE,
   getErrorMessage,
   getValidStates,
 } from '@modbm/shared';
@@ -73,13 +75,21 @@ export class SalesCreditNoteService {
   }
 
   /**
-   * Create a credit note from a processed return.
-   * Posts the Revenue/AR/Tax GL reversal and creates the credit note document.
+   * Create a credit note (either from a return, or ad-hoc).
    */
-  async createCreditNote(returnId: string, actor: string, tx?: DrizzleDB) {
+  async createCreditNote(
+    dto: CreateSalesCreditNoteDto,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
     const queryDb = tx || this.db;
 
     return await queryDb.transaction(async (innerTx: DrizzleDB) => {
+      if (!dto.returnId) {
+        return this.createAdhocCreditNote(dto, actor, innerTx);
+      }
+
+      const returnId = dto.returnId;
       // 1. Load the return + order context
       const [ret] = await innerTx
         .select()
@@ -325,6 +335,7 @@ export class SalesCreditNoteService {
         .insert(salesCreditNotes)
         .values({
           creditNoteNumber,
+          customerId: order.customerId!,
           returnId,
           salesOrderId: ret.salesOrderId,
           invoiceId: latestInvoice?.invoiceId ?? null,
@@ -334,7 +345,7 @@ export class SalesCreditNoteService {
           outstandingAmount: netArCredit.toFixed(2),
           currencyCode: order.currencyCode,
           stateCode: SALES_CREDIT_NOTE_STATE.POSTED,
-          notes: `Credit note for return ${ret.returnNumber}`,
+          notes: dto.notes ?? `Credit note for return ${ret.returnNumber}`,
           createdBy: actor,
         })
         .returning();
@@ -489,6 +500,27 @@ export class SalesCreditNoteService {
         }
       }
 
+      // Mark the return as PROCESSED
+      await innerTx
+        .update(salesOrderReturns)
+        // eslint-disable-next-line no-restricted-syntax
+        .set({ stateCode: RETURN_STATE.PROCESSED, modifiedOn: new Date() })
+        .where(eq(salesOrderReturns.returnId, returnId));
+
+      await emitEvent(innerTx as any, {
+        entityType: EntityType.SALES_ORDER,
+        entityId: ret.salesOrderId,
+        eventType: EventType.STATUS_CHANGED,
+        payload: {
+          entity: 'return',
+          entityId: returnId,
+          from: ret.stateCode,
+          to: RETURN_STATE.PROCESSED,
+          returnNumber: ret.returnNumber,
+        },
+        actor,
+      });
+
       // 9. Outbox event
       await emitEvent(innerTx as any, {
         entityType: EntityType.SALES_ORDER,
@@ -517,6 +549,163 @@ export class SalesCreditNoteService {
 
       return creditNote;
     });
+  }
+
+  /**
+   * Find a single credit note by ID.
+   */
+  /**
+   * List all credit notes, optionally filtered.
+   */
+  async findAll(customerId?: string) {
+    let q = this.db.select().from(salesCreditNotes).$dynamic();
+    if (customerId) {
+      q = q.where(eq(salesCreditNotes.customerId, customerId));
+    }
+    const notes = await q.orderBy(desc(salesCreditNotes.createdOn));
+
+    const result = [];
+    for (const cn of notes) {
+      const lines = await this.db
+        .select()
+        .from(salesCreditNoteLines)
+        .where(eq(salesCreditNoteLines.creditNoteId, cn.creditNoteId));
+      result.push({ ...cn, lines });
+    }
+
+    return result;
+  }
+
+  private async createAdhocCreditNote(
+    dto: CreateSalesCreditNoteDto,
+    actor: string,
+    innerTx: DrizzleDB,
+  ) {
+    if (!dto.customerId)
+      throw new BadRequestException(
+        'customerId is required for ad-hoc credit notes',
+      );
+    if (!dto.lines || dto.lines.length === 0)
+      throw new BadRequestException(
+        'lines are required for ad-hoc credit notes',
+      );
+
+    const customerId = dto.customerId;
+
+    const [custInfo] = await innerTx
+      .select({
+        costCenterId: customerGroups.defaultCostCenterId,
+        activityId: customerGroups.defaultActivityId,
+        currencyCode: coreAccounts.currencyCode,
+      })
+      .from(coreAccounts)
+      .leftJoin(
+        customerGroups,
+        eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),
+      )
+      .where(eq(coreAccounts.customerId, customerId));
+
+    if (!custInfo) throw new NotFoundException('Customer not found');
+
+    const currencyCode = custInfo.currencyCode || this.appConfig.homeCurrency();
+
+    const settings = await this.glService.getSettings(innerTx);
+    if (!settings?.defaultArAccountId) {
+      throw new BadRequestException('GL setting defaultArAccountId is missing');
+    }
+
+    const [arAcct] = await innerTx
+      .select()
+      .from(glAccounts)
+      .where(eq(glAccounts.glAccountId, settings.defaultArAccountId));
+
+    if (!arAcct) throw new BadRequestException('AR account not found');
+
+    let totalCreditAmount = 0;
+    const glLines: any[] = [];
+    const cnLineValues: any[] = [];
+
+    for (const line of dto.lines) {
+      const amount = line.amount;
+      totalCreditAmount += amount;
+
+      cnLineValues.push({
+        description: line.description,
+        amount: amount.toFixed(2),
+        accountId: line.accountId,
+        taxCategoryId: line.taxCategoryId ?? null,
+        quantityCredited: '1',
+        pricePerUnit: amount.toFixed(2),
+      });
+
+      const [acct] = await innerTx
+        .select()
+        .from(glAccounts)
+        .where(eq(glAccounts.glAccountId, line.accountId));
+      if (!acct)
+        throw new BadRequestException(`Account ${line.accountId} not found`);
+
+      glLines.push({
+        accountCode: acct.accountCode,
+        debit: amount,
+        credit: 0,
+        memo: line.description,
+        costCenterId: custInfo.costCenterId || undefined,
+        activityId: custInfo.activityId || undefined,
+      });
+    }
+
+    glLines.push({
+      accountCode: arAcct.accountCode,
+      debit: 0,
+      credit: totalCreditAmount,
+      memo: dto.notes ?? 'Ad-hoc credit note',
+      partyType: 'customer',
+      partyId: customerId,
+      costCenterId: custInfo.costCenterId || undefined,
+      activityId: custInfo.activityId || undefined,
+    });
+
+    const creditNoteNumber = await this.generateCreditNoteNumber(innerTx);
+
+    const [creditNote] = await innerTx
+      .insert(salesCreditNotes)
+      .values({
+        creditNoteNumber,
+        customerId,
+        totalAmount: totalCreditAmount.toFixed(2),
+        taxAmount: '0.00',
+        feeAmount: '0.00',
+        outstandingAmount: totalCreditAmount.toFixed(2),
+        currencyCode,
+        stateCode: SALES_CREDIT_NOTE_STATE.POSTED,
+        notes: dto.notes ?? 'Ad-hoc credit note',
+        createdBy: actor,
+      })
+      .returning();
+
+    await innerTx.insert(salesCreditNoteLines).values(
+      cnLineValues.map((l) => ({
+        creditNoteId: creditNote.creditNoteId,
+        ...l,
+      })),
+    );
+
+    await this.glService.postJournalEntry(
+      glLines,
+      {
+        sourceType: 'sales_credit_note',
+        sourceId: creditNote.creditNoteId,
+        memo: dto.notes ?? `Ad-hoc credit note ${creditNoteNumber}`,
+        actor,
+      },
+      innerTx,
+    );
+
+    this.logger.log(
+      `Ad-hoc credit note ${creditNoteNumber} posted for customer ${customerId}: credit=${totalCreditAmount}`,
+    );
+    return creditNote;
   }
 
   /**

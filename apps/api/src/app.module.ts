@@ -41,6 +41,8 @@ import { RolesModule } from './roles/roles.module';
 import { BusinessReportsModule } from './business-reports/business-reports.module';
 import { UserSettingsModule } from './user-settings/user-settings.module';
 
+import { ReadOnlyGuard } from './common/guards/read-only.guard';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -88,6 +90,7 @@ import { UserSettingsModule } from './user-settings/user-settings.module';
   providers: [
     { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },
     { provide: APP_GUARD, useClass: ApiThrottlerGuard },
+    { provide: APP_GUARD, useClass: ReadOnlyGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: CasbinGuard },
   ],

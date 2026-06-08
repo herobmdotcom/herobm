@@ -1067,6 +1067,8 @@ async function seedCasbinPolicies(db: any, dryRun: boolean) {
   ];
 
   policies.push(
+    // sales-credit-notes: viewer=read, admin=read+invoice, finance=read+invoice
+    // Creating/posting credit notes is a financial action (GL reversal) → invoice only
     {
       ptype: 'p',
       v0: 'viewer',
@@ -1078,49 +1080,7 @@ async function seedCasbinPolicies(db: any, dryRun: boolean) {
       ptype: 'p',
       v0: 'admin',
       v1: SystemResource.SALES_CREDIT_NOTES,
-      v2: 'read',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'admin',
-      v1: SystemResource.SALES_CREDIT_NOTES,
-      v2: 'write',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'admin',
-      v1: SystemResource.SALES_CREDIT_NOTES,
-      v2: 'archive',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'admin',
-      v1: SystemResource.SALES_CREDIT_NOTES,
-      v2: 'handle',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'admin',
-      v1: SystemResource.SALES_CREDIT_NOTES,
       v2: 'invoice',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'finance',
-      v1: SystemResource.SALES_CREDIT_NOTES,
-      v2: 'read',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'finance',
-      v1: SystemResource.SALES_CREDIT_NOTES,
-      v2: 'write',
       v3: 'allow',
     },
     {
@@ -1130,6 +1090,7 @@ async function seedCasbinPolicies(db: any, dryRun: boolean) {
       v2: 'invoice',
       v3: 'allow',
     },
+    // purchase-debit-notes: finance read+write
     {
       ptype: 'p',
       v0: 'finance',
@@ -1142,27 +1103,6 @@ async function seedCasbinPolicies(db: any, dryRun: boolean) {
       v0: 'finance',
       v1: SystemResource.PURCHASE_DEBIT_NOTES,
       v2: 'write',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'sales',
-      v1: SystemResource.SALES_CREDIT_NOTES,
-      v2: 'read',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'sales',
-      v1: SystemResource.SALES_CREDIT_NOTES,
-      v2: 'write',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'sales',
-      v1: SystemResource.SALES_CREDIT_NOTES,
-      v2: 'invoice',
       v3: 'allow',
     },
   );
@@ -1194,7 +1134,7 @@ async function seedUsers(db: any, dryRun: boolean) {
     return;
   }
 
-  let adminPass = process.env.ADMIN_PASSWORD;
+  let adminPass = process.env.ADMIN_PASSWORD || process.env.DEV_ADMIN_PASSWORD;
   let generated = false;
 
   if (!adminPass) {
@@ -1763,7 +1703,7 @@ async function seedReports(db: any, dryRun: boolean) {
     const templateContent = readTemplate(r.filename);
     if (!templateContent) continue;
 
-    await db
+    const [upsertedTemplate] = await db
       .insert(pdfTemplates)
       .values({
         id: r.id,
@@ -1779,7 +1719,8 @@ async function seedReports(db: any, dryRun: boolean) {
           slug: r.slug,
           outputNamePattern: r.output_name_pattern,
         },
-      });
+      })
+      .returning({ id: pdfTemplates.id });
     seededCount++;
 
     if (r.hook) {
@@ -1788,12 +1729,12 @@ async function seedReports(db: any, dryRun: boolean) {
         .insert(pdfTemplateHooks)
         .values({
           hookSlug: r.hook,
-          reportId: r.id,
+          reportId: upsertedTemplate.id,
           contextSlug: ctx,
         })
         .onConflictDoUpdate({
           target: pdfTemplateHooks.hookSlug,
-          set: { reportId: r.id, contextSlug: ctx },
+          set: { reportId: upsertedTemplate.id, contextSlug: ctx },
         });
       hookCount++;
     }
@@ -1802,7 +1743,7 @@ async function seedReports(db: any, dryRun: boolean) {
       await db
         .insert(pdfTemplateContexts)
         .values({
-          templateId: r.id,
+          templateId: upsertedTemplate.id,
           context: r.context,
         })
         .onConflictDoNothing();

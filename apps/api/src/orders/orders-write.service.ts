@@ -861,10 +861,17 @@ export class OrdersWriteService {
         .where(eq(salesOrders.salesOrderId, id))
         .returning();
 
+      let eventType: string = EventType.STATUS_CHANGED;
+      if (newState === SALES_ORDER_STATE.ARCHIVED) {
+        eventType = EventType.ARCHIVED;
+      } else if (existing.stateCode === SALES_ORDER_STATE.ARCHIVED) {
+        eventType = EventType.UNARCHIVED;
+      }
+
       await emitEvent(tx, {
         entityType: EntityType.SALES_ORDER,
         entityId: id,
-        eventType: EventType.STATUS_CHANGED,
+        eventType: eventType,
         payload: {
           from: existing.stateCode,
           to: newState,

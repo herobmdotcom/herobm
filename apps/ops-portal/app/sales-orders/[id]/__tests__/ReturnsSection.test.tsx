@@ -18,12 +18,14 @@ const mockOrderReturnsControllerChangeReturnState = jest.fn().mockResolvedValue(
 const mockOrderReturnsControllerUpdateReturnLine = jest.fn().mockResolvedValue({});
 const mockOrderReturnsControllerRemoveReturnLine = jest.fn().mockResolvedValue({});
 const mockOrderReturnsControllerCreateReturn = jest.fn().mockResolvedValue({});
+const mockSalesCreditNotesControllerCreateCreditNote = jest.fn().mockResolvedValue({});
 jest.mock('@modbm/sdk', () => ({
     __esModule: true,
     orderReturnsControllerChangeReturnState: (...args: any[]) => mockOrderReturnsControllerChangeReturnState(...args),
     orderReturnsControllerUpdateReturnLine: (...args: any[]) => mockOrderReturnsControllerUpdateReturnLine(...args),
     orderReturnsControllerRemoveReturnLine: (...args: any[]) => mockOrderReturnsControllerRemoveReturnLine(...args),
     orderReturnsControllerCreateReturn: (...args: any[]) => mockOrderReturnsControllerCreateReturn(...args),
+    salesCreditNotesControllerCreateCreditNote: (...args: any[]) => mockSalesCreditNotesControllerCreateCreditNote(...args),
     pdfTemplatesControllerRunHook: jest.fn().mockResolvedValue({ data: new Blob(['pdf'], { type: 'application/pdf' }) })
 }));
 jest.mock('@/lib/api', () => ({

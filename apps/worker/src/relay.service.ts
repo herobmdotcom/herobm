@@ -81,7 +81,7 @@ export async function processEvent(job: Job, db: any) {
       .where(
         and(
           eq(webhooks.isActive, true),
-          sql`${webhooks.eventTypes} @> ${JSON.stringify([type])}::jsonb OR ${webhooks.eventTypes} @> '["*"]'::jsonb`
+          sql`${webhooks.eventTypes} @> ${JSON.stringify([type])}::text::jsonb OR ${webhooks.eventTypes} @> '["*"]'::jsonb`
         )
       );
 

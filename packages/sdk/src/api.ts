@@ -195,6 +195,8 @@ import type {
   JobProgressDto,
   JobResultDto,
   JournalEntryResponseDto,
+  LicenseControllerApplyLicenseBody,
+  LicenseStatusDto,
   LinkBinDto,
   LinkDemandToPoDto,
   LocationResponseDto,
@@ -275,6 +277,7 @@ import type {
   RoleDetailsDto,
   RunHookBodyDto,
   SalesCreditNoteResponseDto,
+  SalesCreditNotesControllerFindAllParams,
   SalesInvoiceResponseDto,
   SampleRecordDto,
   SampleReportDto,
@@ -5206,6 +5209,73 @@ export const activitiesControllerImport = async (createActivityDto: CreateActivi
 
 
 
+export type licenseControllerGetStatusResponse200 = {
+  data: LicenseStatusDto
+  status: 200
+}
+    
+export type licenseControllerGetStatusResponseSuccess = (licenseControllerGetStatusResponse200) & {
+  headers: Headers;
+};
+;
+
+export type licenseControllerGetStatusResponse = (licenseControllerGetStatusResponseSuccess)
+
+export const getLicenseControllerGetStatusUrl = () => {
+
+
+  
+
+  return `/settings/license-status`
+}
+
+export const licenseControllerGetStatus = async ( options?: RequestInit): Promise<licenseControllerGetStatusResponse> => {
+  
+  return customFetch<licenseControllerGetStatusResponse>(getLicenseControllerGetStatusUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+export type licenseControllerApplyLicenseResponse201 = {
+  data: LicenseStatusDto
+  status: 201
+}
+    
+export type licenseControllerApplyLicenseResponseSuccess = (licenseControllerApplyLicenseResponse201) & {
+  headers: Headers;
+};
+;
+
+export type licenseControllerApplyLicenseResponse = (licenseControllerApplyLicenseResponseSuccess)
+
+export const getLicenseControllerApplyLicenseUrl = () => {
+
+
+  
+
+  return `/settings/license`
+}
+
+export const licenseControllerApplyLicense = async (licenseControllerApplyLicenseBody: LicenseControllerApplyLicenseBody, options?: RequestInit): Promise<licenseControllerApplyLicenseResponse> => {
+  
+  return customFetch<licenseControllerApplyLicenseResponse>(getLicenseControllerApplyLicenseUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      licenseControllerApplyLicenseBody,)
+  }
+);}
+
+
+
 /**
  * Returns a list of available business reports
  * @summary List available business reports
@@ -9501,32 +9571,39 @@ export const externalSyncControllerClearEventsByType = async (params: ExternalSy
 
 
 /**
- * Retrieve a sales credit note by ID.
- * @summary Get Credit Note
+ * Retrieve a list of sales credit notes.
+ * @summary Find Credit Notes
  */
-export type salesCreditNotesControllerFindOneResponse200 = {
-  data: SalesCreditNoteResponseDto
+export type salesCreditNotesControllerFindAllResponse200 = {
+  data: void
   status: 200
 }
     
-export type salesCreditNotesControllerFindOneResponseSuccess = (salesCreditNotesControllerFindOneResponse200) & {
+export type salesCreditNotesControllerFindAllResponseSuccess = (salesCreditNotesControllerFindAllResponse200) & {
   headers: Headers;
 };
 ;
 
-export type salesCreditNotesControllerFindOneResponse = (salesCreditNotesControllerFindOneResponseSuccess)
+export type salesCreditNotesControllerFindAllResponse = (salesCreditNotesControllerFindAllResponseSuccess)
 
-export const getSalesCreditNotesControllerFindOneUrl = (id: string,) => {
+export const getSalesCreditNotesControllerFindAllUrl = (params: SalesCreditNotesControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/sales-credit-notes/${id}`
+  return stringifiedParams.length > 0 ? `/sales-credit-notes?${stringifiedParams}` : `/sales-credit-notes`
 }
 
-export const salesCreditNotesControllerFindOne = async (id: string, options?: RequestInit): Promise<salesCreditNotesControllerFindOneResponse> => {
+export const salesCreditNotesControllerFindAll = async (params: SalesCreditNotesControllerFindAllParams, options?: RequestInit): Promise<salesCreditNotesControllerFindAllResponse> => {
   
-  return customFetch<salesCreditNotesControllerFindOneResponse>(getSalesCreditNotesControllerFindOneUrl(id),
+  return customFetch<salesCreditNotesControllerFindAllResponse>(getSalesCreditNotesControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -9570,6 +9647,43 @@ export const salesCreditNotesControllerCreateCreditNote = async (createSalesCred
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createSalesCreditNoteDto,)
+  }
+);}
+
+
+
+/**
+ * Retrieve a sales credit note by ID.
+ * @summary Get Credit Note
+ */
+export type salesCreditNotesControllerFindOneResponse200 = {
+  data: SalesCreditNoteResponseDto
+  status: 200
+}
+    
+export type salesCreditNotesControllerFindOneResponseSuccess = (salesCreditNotesControllerFindOneResponse200) & {
+  headers: Headers;
+};
+;
+
+export type salesCreditNotesControllerFindOneResponse = (salesCreditNotesControllerFindOneResponseSuccess)
+
+export const getSalesCreditNotesControllerFindOneUrl = (id: string,) => {
+
+
+  
+
+  return `/sales-credit-notes/${id}`
+}
+
+export const salesCreditNotesControllerFindOne = async (id: string, options?: RequestInit): Promise<salesCreditNotesControllerFindOneResponse> => {
+  
+  return customFetch<salesCreditNotesControllerFindOneResponse>(getSalesCreditNotesControllerFindOneUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 

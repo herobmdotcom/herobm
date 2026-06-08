@@ -496,7 +496,7 @@ export default function ReturnsSection({
                 <div className="space-y-3">
                     {returns.map((ret) => {
                         let allowedRetTransitions = RETURN_TRANSITIONS[ret.stateCode] || [];
-                        allowedRetTransitions = allowedRetTransitions.filter((s: string) => s !== RETURN_STATE.RECEIVED && s !== RETURN_STATE.PARTIALLY_RECEIVED);
+                        allowedRetTransitions = allowedRetTransitions.filter((s: string) => s !== RETURN_STATE.RECEIVED && s !== RETURN_STATE.PARTIALLY_RECEIVED && s !== RETURN_STATE.PROCESSED);
                         const isRetEditable = ret.stateCode === RETURN_STATE.DRAFT;
                         return (
                             <div
@@ -524,9 +524,6 @@ export default function ReturnsSection({
                                                 key={s}
                                                 className={`btn btn-sm ${s === 'cancelled' ? 'btn-danger' : 'btn-primary'}`}
                                                 onClick={async () => {
-                                                    if (s === RETURN_STATE.PROCESSED) {
-                                                        if (!confirm(tConfirm('processReturn'))) return;
-                                                    }
                                                     try {
                                                         await api.orderReturnsControllerChangeReturnState(orderId, ret.returnId, {
                                                             stateCode: s
@@ -541,6 +538,23 @@ export default function ReturnsSection({
                                                 → <StateName state={s as ValidState} />
                                             </button>
                                         ))}
+                                        {ret.stateCode === RETURN_STATE.RECEIVED && (
+                                            <button
+                                                className="btn btn-primary btn-sm"
+                                                onClick={async () => {
+                                                    if (!confirm(tConfirm('processReturn'))) return;
+                                                    try {
+                                                        await api.salesCreditNotesControllerCreateCreditNote({ returnId: ret.returnId });
+                                                        await loadReturns();
+                                                        await loadOrder(undefined, false);
+                                                    } catch (err) {
+                                                        setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeReturnState'));
+                                                    }
+                                                }}
+                                            >
+                                                → {tSales('buttons.createCreditNote')}
+                                            </button>
+                                        )}
                                         <button
                                             className="btn btn-secondary btn-sm"
                                             onClick={async () => {

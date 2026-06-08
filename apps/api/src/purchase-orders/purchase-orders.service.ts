@@ -1179,10 +1179,17 @@ export class PurchaseOrdersService {
       .where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId))
       .returning();
 
+    let eventType: string = EventType.STATUS_CHANGED;
+    if (newState === PURCHASE_ORDER_STATE.ARCHIVED) {
+      eventType = EventType.ARCHIVED;
+    } else if (existing.stateCode === PURCHASE_ORDER_STATE.ARCHIVED) {
+      eventType = EventType.UNARCHIVED;
+    }
+
     await emitEvent(db as any, {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: purchaseOrderId,
-      eventType: EventType.STATUS_CHANGED,
+      eventType: eventType,
       payload: {
         entity: 'purchase_order',
         entityId: purchaseOrderId,

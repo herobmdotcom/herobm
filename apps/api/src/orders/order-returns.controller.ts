@@ -97,7 +97,7 @@ export class OrderReturnsController {
 
   @Patch(':id/returns/:returnId/state')
   @ApiOkResponse({ type: ReturnResponseDto })
-  @CasbinAction('invoice')
+  @CasbinAction('write')
   @ApiOperation({
     summary: 'Change Return State',
     description: 'Update the processing state of a sales return.',

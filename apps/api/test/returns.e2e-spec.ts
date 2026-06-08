@@ -16,7 +16,11 @@ import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
-import { RETURN_STATE, SALES_ORDER_STATE } from '@modbm/shared';
+import {
+  RETURN_STATE,
+  SALES_ORDER_STATE,
+  SALES_CREDIT_NOTE_STATE,
+} from '@modbm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
@@ -349,12 +353,19 @@ describe('API E2E — Sales Order Returns', () => {
         .expect(200);
 
       const res = await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${orderId}/returns/${returnId}/state`)
+        .post(`/api/sales-credit-notes`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: RETURN_STATE.PROCESSED, locationId: mainLocationId })
-        .expect(200);
+        .send({ returnId })
+        .expect(201);
 
-      expect(res.body.stateCode).toBe(RETURN_STATE.PROCESSED);
+      expect(res.body.stateCode).toBe(SALES_CREDIT_NOTE_STATE.POSTED);
+
+      // Verify return was marked PROCESSED automatically
+      const retRes = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${orderId}/returns/${returnId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      expect(retRes.body.stateCode).toBe(RETURN_STATE.PROCESSED);
     });
   });
 

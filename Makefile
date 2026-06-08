@@ -1,5 +1,46 @@
-.PHONY: up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e dev-docs-dbt dev-docs-schema dev-docs-api migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local prod-local verify-local
+.PHONY: help up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e dev-docs-dbt dev-docs-schema dev-docs-api migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local prod-local verify-local
 
+define HELP_TEXT
+ModBM Makefile Help:
+=========================================
+Environment:
+  make init-env       - Generate .env from .env.example
+  make dev-local      - Start hot-reloading dev environment
+  make prod-local     - Start production-like local environment
+
+Containers (Podman):
+  make up             - Start full stack (Portal + API + DB)
+  make down           - Stop full stack
+  make logs           - View container logs
+  make clean          - Stop containers and remove volumes
+  make nuke           - Complete teardown (containers, volumes, images)
+
+Database & Migrations:
+  make migrate        - Apply SQL migrations
+  make migrate-status - Show migration status
+  make seed           - Seed database with application data
+  make init           - Full DB initialization (schema, migrate, seed, ELT)
+
+Code Generation:
+  make dev-generate-sdk - Regenerate OpenAPI spec and TypeScript SDK client
+  make dev-db-generate NAME=name - Generate Drizzle SQL migration from schema
+
+Cleanup & Rebuild:
+  make clean-dev      - Wipe node_modules, caches, reinstall, and build shared
+  make clean-build    - Full deep clean, reinstall, and build all workspaces
+
+Verification & Testing:
+  make verify-fast    - Run linting, typechecks, structural tests, unit tests
+  make test-all       - Run all tests (unit, e2e, data, structural, heavy)
+  make test-heavy     - Run heavy/long-running tests
+  make test-api-e2e   - Run end-to-end API tests against real Postgres
+  make check-all      - Run typechecks and linting
+=========================================
+endef
+export HELP_TEXT
+
+help:
+	@node -e "console.log(process.env.HELP_TEXT)"
 # Environment Profile Resolution
 # 1. Command Line explicit (make ... PROFILE=staging)
 # 2. Directory context file (.active_profile)
@@ -73,19 +114,19 @@ endif
 
 # DB Backend Core (Local FE + API run path)
 up-db: check-postgres-logs
-	$(COMPOSE_CMD) up -d $(ARGS) postgres-custom redis-broker
+	$(COMPOSE_CMD) up -d $(ARGS) postgres-custom
 
 down-db:
-	$(COMPOSE_CMD) stop postgres-custom redis-broker
-	-podman rm -f postgres-custom redis-broker
+	$(COMPOSE_CMD) stop postgres-custom
+	-podman rm -f postgres-custom
 
 # Portal + API Core (The standard full-container app stack)
 up-portal-api: check-postgres-logs
-	$(COMPOSE_CMD) up -d $(ARGS) custom-api ops-portal postgres-custom redis-broker
+	$(COMPOSE_CMD) up -d $(ARGS) custom-api ops-portal postgres-custom
 
 down-portal-api:
-	$(COMPOSE_CMD) stop custom-api ops-portal postgres-custom redis-broker
-	-podman rm -f custom-api ops-portal postgres-custom redis-broker
+	$(COMPOSE_CMD) stop custom-api ops-portal postgres-custom
+	-podman rm -f custom-api ops-portal postgres-custom
 
 
 
@@ -93,10 +134,10 @@ down-portal-api:
 build-worker:
 	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
 
-up-queue: build-worker check-postgres-logs
+up-redis: build-worker check-postgres-logs
 	$(COMPOSE_CMD) --profile queue up -d outbox-worker
 
-down-queue:
+down-redis:
 	$(COMPOSE_CMD) stop outbox-worker
 	$(COMPOSE_CMD) rm -f outbox-worker
 
@@ -367,13 +408,13 @@ test-single:
 test-structural:
 	@powershell -ExecutionPolicy Bypass -Command "$$ErrorActionPreference = 'Stop'; Get-ChildItem -Path infra\tests\test_*.ps1 | ForEach-Object { Write-Host 'Running ' $$_.Name; & $$_.FullName; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE } }"
 
-test-db-setup:
+test-heavy:
 	@powershell -ExecutionPolicy Bypass -Command "$$ErrorActionPreference = 'Stop'; Get-ChildItem -Path infra\heavy_tests\test_*.ps1 | ForEach-Object { Write-Host 'Running ' $$_.Name; & $$_.FullName; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE } }"
 
 test-data:
 	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
 
-test-all: test-api-unit test-api-e2e test-deps test-structural test-db-setup test-data
+test-all: test-api-unit test-api-e2e test-deps test-structural test-heavy test-data
 
 build-all:
 	npm run build --workspaces --if-present

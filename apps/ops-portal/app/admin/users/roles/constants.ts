@@ -10,6 +10,7 @@ export const VALID_ACTIONS: Record<string, string[]> = {
   'inventory': ['read', 'write', 'archive', 'handle'],
   'sales-orders': ['read', 'write', 'archive', 'handle', 'invoice'],
   'sales-returns': ['read', 'write', 'archive', 'handle', 'invoice'],
+  'sales-credit-notes': ['read', 'invoice'],
   'purchase-orders': ['read', 'write', 'archive', 'handle', 'invoice'],
   'purchase-returns': ['read', 'write', 'archive', 'handle', 'invoice'],
   'purchase-debit-notes': ['read', 'write', 'archive', 'handle', 'invoice'],

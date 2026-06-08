@@ -90,7 +90,16 @@ async function main() {
     }
   }
 
-  console.error(`Registered ${mcpTools.length} tools from OpenAPI spec`);
+  mcpTools.push({
+    name: 'list_build_targets',
+    description: 'Lists all available Makefile build targets and their descriptions',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
+  });
+
+  console.error(`Registered ${mcpTools.length} tools from OpenAPI spec and 1 custom tool`);
 
   const server = new Server(
     { name: 'modbm-mcp-server', version: '0.1.0' },
@@ -103,6 +112,23 @@ async function main() {
 
   server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
     const { name, arguments: args } = request.params;
+    
+    if (name === 'list_build_targets') {
+      try {
+        const { execSync } = await import('child_process');
+        const repoRoot = path.resolve(__dirname, '../../../');
+        const output = execSync('make help', { cwd: repoRoot, encoding: 'utf-8' });
+        return {
+          content: [{ type: 'text', text: output }]
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Failed to run make help: ${err.message}` }]
+        };
+      }
+    }
+
     const meta = toolRegistry.get(name);
     
     if (!meta) {

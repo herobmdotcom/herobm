@@ -5,6 +5,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -14,6 +15,7 @@ import {
   Body,
   UseGuards,
   HttpCode,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { SalesCreditNoteService } from './sales-credit-note.service';
@@ -38,6 +40,18 @@ export class EmptyBodyDto {}
 export class SalesCreditNotesController {
   constructor(private readonly creditNoteService: SalesCreditNoteService) {}
 
+  @Get()
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find Credit Notes',
+    description: 'Retrieve a list of sales credit notes.',
+  })
+  @ApiQuery({ name: 'customerId', required: false })
+  @ApiOkResponse({ type: [SalesCreditNoteResponseDto] })
+  findAll(@Query('customerId') customerId?: string) {
+    return this.creditNoteService.findAll(customerId);
+  }
+
   @Get(':id')
   @CasbinAction('read')
   @ApiOperation({
@@ -54,7 +68,7 @@ export class SalesCreditNotesController {
 
   @Post()
   @ApiBody({ type: CreateSalesCreditNoteDto })
-  @CasbinAction('write')
+  @CasbinAction('invoice')
   @ApiOperation({
     summary: 'Create Credit Note',
     description: 'Create a credit note from a return.',
@@ -67,14 +81,11 @@ export class SalesCreditNotesController {
     @Body() body: CreateSalesCreditNoteDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.creditNoteService.createCreditNote(
-      body.returnId,
-      user.username,
-    );
+    return this.creditNoteService.createCreditNote(body, user.username);
   }
 
   @Post(':id/post')
-  @CasbinAction('write')
+  @CasbinAction('invoice')
   @ApiOperation({
     summary: 'Post Credit Note',
     description: 'Post an existing credit note.',

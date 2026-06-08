@@ -13,6 +13,8 @@ import { CostCentersController } from './cost-centers.controller';
 import { ActivitiesService } from './activities.service';
 import { ActivitiesController } from './activities.controller';
 import { AppConfigController } from './app-config.controller';
+import { LicenseService } from './license.service';
+import { LicenseController } from './license.controller';
 
 @Global()
 @Module({
@@ -24,6 +26,7 @@ import { AppConfigController } from './app-config.controller';
     TradingTermsController,
     CostCentersController,
     ActivitiesController,
+    LicenseController,
   ],
   providers: [
     UomDictionaryService,
@@ -33,6 +36,7 @@ import { AppConfigController } from './app-config.controller';
     TradingTermsService,
     CostCentersService,
     ActivitiesService,
+    LicenseService,
   ],
   exports: [
     UomDictionaryService,
@@ -42,6 +46,7 @@ import { AppConfigController } from './app-config.controller';
     TradingTermsService,
     CostCentersService,
     ActivitiesService,
+    LicenseService,
   ],
 })
 export class SettingsModule {}

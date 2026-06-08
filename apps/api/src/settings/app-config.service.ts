@@ -45,7 +45,19 @@ export class AppConfigService implements OnModuleInit {
     }
 
     try {
-      const [app] = await this.db.select().from(appSettings).limit(1);
+      let [app] = await this.db.select().from(appSettings).limit(1);
+
+      // Auto-generate systemIdentifier if it doesn't exist yet (backfill)
+      if (app && !app.systemIdentifier) {
+        const newId = globalThis.crypto.randomUUID();
+        const [updated] = await this.db
+          .update(appSettings)
+          .set({ systemIdentifier: newId })
+          .where(eq(appSettings.settingsId, app.settingsId))
+          .returning();
+        app = updated;
+      }
+
       this.appCache = app ?? null;
     } catch (err) {
       this.logger.error('Failed to load appSettings:', err);
@@ -194,7 +206,11 @@ export class AppConfigService implements OnModuleInit {
   }
 
   /** Update app settings. */
-  async update(dto: { defaultFulfillmentLocationId?: string }) {
+  async update(dto: {
+    defaultFulfillmentLocationId?: string;
+    activeLicenseKey?: string;
+    activeLicensePayload?: any;
+  }) {
     const settings = this.getAppSettingsRaw();
     if (!settings) {
       throw new Error('App Settings not configured.');

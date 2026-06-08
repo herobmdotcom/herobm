@@ -317,12 +317,13 @@ export const salesCreditNotes = modbmCore.table(
   {
     creditNoteId: uuid('credit_note_id').primaryKey().defaultRandom(),
     creditNoteNumber: text('credit_note_number').unique().notNull(),
-    returnId: uuid('return_id')
+    customerId: uuid('customer_id')
       .notNull()
-      .references(() => salesOrderReturns.returnId),
-    salesOrderId: uuid('sales_order_id')
-      .notNull()
-      .references(() => salesOrders.salesOrderId),
+      .references(() => customers.customerId),
+    returnId: uuid('return_id').references(() => salesOrderReturns.returnId),
+    salesOrderId: uuid('sales_order_id').references(
+      () => salesOrders.salesOrderId,
+    ),
     invoiceId: uuid('invoice_id').references(() => salesInvoices.invoiceId),
     totalAmount: numeric('total_amount').notNull(),
     taxAmount: numeric('tax_amount').default('0'),
@@ -350,9 +351,14 @@ export const salesCreditNoteLines = modbmCore.table('sales_credit_note_lines', {
   creditNoteId: uuid('credit_note_id')
     .notNull()
     .references(() => salesCreditNotes.creditNoteId),
-  salesOrderLineId: uuid('sales_order_line_id')
-    .notNull()
-    .references(() => salesOrderLineItems.salesOrderLineId),
+  salesOrderLineId: uuid('sales_order_line_id').references(
+    () => salesOrderLineItems.salesOrderLineId,
+  ),
+  description: text('description'),
+  accountId: uuid('account_id').references(() => glAccounts.glAccountId),
+  taxCategoryId: uuid('tax_category_id').references(
+    () => taxCategories.taxCategoryId,
+  ),
   quantityCredited: numeric('quantity_credited').notNull(),
   pricePerUnit: numeric('price_per_unit').notNull(),
   amount: numeric('amount').notNull(),
@@ -1974,6 +1980,9 @@ export const appSettings = modbmCore.table('app_settings', {
   creditLimitBehavior: text('credit_limit_behavior').notNull().default('soft'), // 'hard' (block creation) | 'soft' (allow draft, block dispatch)
   apiRateLimit: numeric('api_rate_limit').notNull().default('1000'),
   setupCompletedAt: timestamp('setup_completed_at', { withTimezone: true }),
+  systemIdentifier: text('system_identifier'), // UUID generated on first boot for hardware locking
+  activeLicenseKey: text('active_license_key'), // The raw JWT
+  activeLicensePayload: jsonb('active_license_payload'), // Decoded payload cache
   taxProviderMappings: jsonb('tax_provider_mappings').$type<
     Record<string, string>
   >(),

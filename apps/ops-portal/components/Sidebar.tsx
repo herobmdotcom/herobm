@@ -4,6 +4,7 @@ import SharedSidebar from '@/components/shared/Sidebar';
 import type { NavSection } from '@/components/shared/Sidebar';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/components/AuthGate';
+import { useLicense } from '@/components/LicenseProvider';
 
 export default function Sidebar() {
   const t = useTranslations('sidebar');
@@ -79,6 +80,15 @@ export default function Sidebar() {
     sections.push({
       label: t('groups.finance'),
       items: [
+        { 
+          href: '/sales-credit-notes', 
+          label: 'Credit Notes', 
+          icon: 'receipt_long',
+          subItems: [
+            { href: '/sales-credit-notes', label: 'Returns Queue' },
+            { href: '/sales-credit-notes/history', label: 'History' },
+          ]
+        },
         { 
           href: '/general-ledger', 
           label: t('items.generalLedger'), 
@@ -198,12 +208,23 @@ export default function Sidebar() {
     });
   }
 
+  const { status, isLoading } = useLicense();
+  let footerText = process.env.BUILD_TIME || 'Unknown Build';
+  
+  if (!isLoading && status) {
+    if (status.licenseHash) {
+      footerText = `License: ${status.licenseHash}`;
+    } else if (status.systemId) {
+      footerText = `SysID: ${status.systemId.substring(0, 8)}`;
+    }
+  }
+
   return (
     <SharedSidebar
       title={t('title')}
       subtitle={t('subtitle')}
       sections={sections}
-      footer={process.env.BUILD_TIME || 'Unknown Build'}
+      footer={footerText}
     />
   );
 }

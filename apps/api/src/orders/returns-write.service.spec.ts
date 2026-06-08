@@ -518,7 +518,6 @@ describe('ReturnsWriteService', () => {
       [RETURN_STATE.CONFIRMED, RETURN_STATE.RECEIVED],
       [RETURN_STATE.CONFIRMED, RETURN_STATE.CANCELLED],
       [RETURN_STATE.PARTIALLY_RECEIVED, RETURN_STATE.RECEIVED],
-      [RETURN_STATE.RECEIVED, RETURN_STATE.PROCESSED],
     ])('should allow transition %s → %s', async (from, to) => {
       await setupWithState(from as ReturnState);
       await expect(
@@ -541,6 +540,7 @@ describe('ReturnsWriteService', () => {
       [RETURN_STATE.PROCESSED, RETURN_STATE.CONFIRMED],
       [RETURN_STATE.CANCELLED, RETURN_STATE.DRAFT],
       [RETURN_STATE.CONFIRMED, RETURN_STATE.DRAFT],
+      [RETURN_STATE.RECEIVED, RETURN_STATE.PROCESSED],
       [RETURN_STATE.RECEIVED, RETURN_STATE.CONFIRMED],
     ])('should reject transition %s → %s', async (from, to) => {
       await setupWithState(from as ReturnState);
@@ -569,20 +569,6 @@ describe('ReturnsWriteService', () => {
         .from(salesOrderReturns)
         .where(eq(salesOrderReturns.returnId, returnId));
       expect(updated?.stateCode).toBe(RETURN_STATE.RECEIVED);
-    });
-
-    it('should emit event when transitioning to processed', async () => {
-      await setupWithState(RETURN_STATE.RECEIVED);
-      await service.changeReturnState(
-        returnId,
-        RETURN_STATE.PROCESSED,
-        'admin',
-      );
-      const [updated] = await pg.db
-        .select()
-        .from(salesOrderReturns)
-        .where(eq(salesOrderReturns.returnId, returnId));
-      expect(updated?.stateCode).toBe(RETURN_STATE.PROCESSED);
     });
   });
 
@@ -681,18 +667,6 @@ describe('ReturnsWriteService', () => {
       expect(
         mockInventoryService.recordInventoryMovement,
       ).toHaveBeenCalledTimes(1);
-    });
-
-    it('should call creditNoteService.createCreditNote on PROCESSED transition', async () => {
-      const { retId } = await setupGlTransitionTest(RETURN_STATE.RECEIVED);
-
-      await service.changeReturnState(retId, RETURN_STATE.PROCESSED, 'admin');
-
-      const [updated] = await pg.db
-        .select()
-        .from(salesOrderReturns)
-        .where(eq(salesOrderReturns.returnId, retId));
-      expect(updated?.stateCode).toBe(RETURN_STATE.PROCESSED);
     });
   });
 

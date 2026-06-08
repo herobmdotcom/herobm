@@ -2609,6 +2609,7 @@
       "createOrder": "+ Create Order",
       "createQuote": "Create Quote",
       "createReturn": "Create Return",
+      "createCreditNote": "Create Credit Note",
       "customLine": "+ Custom Line",
       "generate": "Generate",
       "generateInvoice": "Generate Invoice",

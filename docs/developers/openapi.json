@@ -4504,6 +4504,63 @@
         ]
       }
     },
+    "/settings/license-status": {
+      "get": {
+        "operationId": "LicenseController_getStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicenseStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "License"
+        ]
+      }
+    },
+    "/settings/license": {
+      "post": {
+        "operationId": "LicenseController_applyLicense",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "licenseKey": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicenseStatusDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "License"
+        ]
+      }
+    },
     "/business-reports": {
       "get": {
         "description": "Returns a list of available business reports",
@@ -8820,15 +8877,15 @@
         ]
       }
     },
-    "/sales-credit-notes/{id}": {
+    "/sales-credit-notes": {
       "get": {
-        "description": "Retrieve a sales credit note by ID.",
-        "operationId": "SalesCreditNotesController_findOne",
+        "description": "Retrieve a list of sales credit notes.",
+        "operationId": "SalesCreditNotesController_findAll",
         "parameters": [
           {
-            "name": "id",
-            "required": true,
-            "in": "path",
+            "name": "customerId",
+            "required": false,
+            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -8836,23 +8893,24 @@
         ],
         "responses": {
           "200": {
-            "description": "The requested credit note",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SalesCreditNoteResponseDto"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SalesCreditNoteResponseDto"
+                  }
                 }
               }
             }
           }
         },
-        "summary": "Get Credit Note",
+        "summary": "Find Credit Notes",
         "tags": [
           "SalesCreditNotes"
         ]
-      }
-    },
-    "/sales-credit-notes": {
+      },
       "post": {
         "description": "Create a credit note from a return.",
         "operationId": "SalesCreditNotesController_createCreditNote",
@@ -8880,6 +8938,38 @@
           }
         },
         "summary": "Create Credit Note",
+        "tags": [
+          "SalesCreditNotes"
+        ]
+      }
+    },
+    "/sales-credit-notes/{id}": {
+      "get": {
+        "description": "Retrieve a sales credit note by ID.",
+        "operationId": "SalesCreditNotesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The requested credit note",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesCreditNoteResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Credit Note",
         "tags": [
           "SalesCreditNotes"
         ]
@@ -16617,6 +16707,52 @@
           }
         }
       },
+      "LicenseStatusDto": {
+        "type": "object",
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "active",
+              "warning",
+              "read_only"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "trial",
+              "perpetual",
+              "none"
+            ]
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "warningMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "systemId": {
+            "type": "string",
+            "nullable": true
+          },
+          "licenseHash": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "state",
+          "type",
+          "expiresAt",
+          "warningMessage",
+          "systemId",
+          "licenseHash"
+        ]
+      },
       "Object": {
         "type": "object",
         "properties": {}
@@ -19003,17 +19139,51 @@
           "stateCode"
         ]
       },
+      "CreateSalesCreditNoteLineDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taxCategoryId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "description",
+          "amount",
+          "accountId"
+        ]
+      },
       "CreateSalesCreditNoteDto": {
         "type": "object",
         "properties": {
           "returnId": {
             "type": "string",
             "format": "uuid"
+          },
+          "customerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateSalesCreditNoteLineDto"
+            }
           }
-        },
-        "required": [
-          "returnId"
-        ]
+        }
       },
       "EnrichmentPayloadDto": {
         "type": "object",

@@ -322,12 +322,9 @@ export class ReturnsWriteService {
           .where(eq(salesOrderReturns.returnId, returnId))
           .returning();
 
-        // ── PROCESSED: Create Credit Note document + Revenue/AR GL ──
         if (newState === RETURN_STATE.PROCESSED) {
-          await this.creditNoteService.createCreditNote(
-            returnId,
-            actor,
-            innerTx,
+          throw new BadRequestException(
+            `Returns can only be moved to PROCESSED by creating a Credit Note.`,
           );
         }
 

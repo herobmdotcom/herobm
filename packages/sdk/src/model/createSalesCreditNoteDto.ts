@@ -5,7 +5,11 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { CreateSalesCreditNoteLineDto } from './createSalesCreditNoteLineDto';
 
 export interface CreateSalesCreditNoteDto {
-  returnId: string;
+  returnId?: string;
+  customerId?: string;
+  notes?: string;
+  lines?: CreateSalesCreditNoteLineDto[];
 }

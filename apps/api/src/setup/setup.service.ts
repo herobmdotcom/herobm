@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { getCountryCode } from '@modbm/shared';
+import { getCountryCode, getErrorMessage } from '@modbm/shared';
 import { sql } from 'drizzle-orm';
 import {
   appSettings,
@@ -723,10 +723,10 @@ export class SetupService {
       // Reload app config cache so API picks up the new settings
       try {
         await this.appConfig.reload();
-      } catch (e) {
+      } catch (e: unknown) {
         this.log(
           jobId,
-          `Warning: Failed to reload app config cache: ${e.message}`,
+          `Warning: Failed to reload app config cache: ${getErrorMessage(e)}`,
           'error',
         );
       }
@@ -865,10 +865,10 @@ export class SetupService {
       } else {
         this.log(jobId, 'No metadata found to infer schema.');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.log(
         jobId,
-        `Warning: Failed to infer metadata schema: ${e.message}`,
+        `Warning: Failed to infer metadata schema: ${getErrorMessage(e)}`,
         'error',
       );
     }

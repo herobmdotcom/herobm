@@ -211,6 +211,20 @@
       "when": 1780665629604,
       "tag": "0029_rule_tweaks_drop_old_field",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1780943420908,
+      "tag": "0030_oval_black_bolt",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1780945673804,
+      "tag": "0031_robust_harrier",
+      "breakpoints": true
     }
   ]
 }
