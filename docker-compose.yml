@@ -141,7 +141,7 @@ services:
       REDIS_HOST: redis-broker
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
-      - "${BIND_IP:-127.0.0.1}:9091:9091"
+      - "${BIND_IP:-127.0.0.1}:9092:9091"
     volumes:
       - ./logs:/app/logs
     depends_on:

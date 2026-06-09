@@ -55,7 +55,7 @@ $feCmd = $envInjection + "`$env:API_URL='http://localhost:$apiPort'; npm run dev
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", $feCmd
 
 # Start Worker in a new window
-$workerCmd = $envInjection + "`$env:PORT=9091; npm run dev -w apps/worker"
+$workerCmd = $envInjection + "`$env:PORT=9092; npm run dev -w apps/worker"
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", $workerCmd
 
 

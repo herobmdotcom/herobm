@@ -32,7 +32,7 @@ const PG_DB = process.env.POSTGRES_DB || 'herobm';
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
 const REDIS_PASSWORD = requireEnv('REDIS_PASSWORD');
 
-const PORT = 9091;
+const PORT = process.env.WORKER_PORT || process.env.PORT || 9092;
 
 // Setup DB
 const pgClient = postgres(`postgres://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${PG_DB}`);

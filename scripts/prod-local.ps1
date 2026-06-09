@@ -59,7 +59,7 @@ $feCmd = $envInjection + "npx cross-env API_URL='http://localhost:$apiPort' PORT
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", $feCmd
 
 # Start Worker in a new window
-$workerCmd = $envInjection + "`$env:PORT=9091; npm run start -w apps/worker"
+$workerCmd = $envInjection + "`$env:PORT=9092; npm run start -w apps/worker"
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", $workerCmd
 
 if ($enableMcp -eq 'true') {
