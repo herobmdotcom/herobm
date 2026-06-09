@@ -11,10 +11,12 @@ import { useSettings } from '@/components/SettingsProvider';
 import { formatAmount } from '@/lib/currency';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
-import { 
+import {
   PAYMENT_STATE, 
   SALES_INVOICE_STATE, 
-  PURCHASE_INVOICE_STATE 
+  PURCHASE_INVOICE_STATE,
+  SALES_CREDIT_NOTE_STATE,
+  PURCHASE_DEBIT_NOTE_STATE
 } from '@modbm/shared';
 
 import SupplierSelect from '@/components/shared/SupplierSelect';
@@ -76,8 +78,7 @@ interface Allocation {
 interface PaymentData {
   paymentId: string;
   paymentNumber: string;
-  paymentType: 'receive' | 'pay';
-  partyType: 'customer' | 'supplier';
+  paymentType: string;
   partyId: string;
   partyName?: string;
   paymentDate: string;
@@ -98,6 +99,7 @@ interface OutstandingInvoice {
   totalAmount: string;
   outstandingAmount: string;
   date: string;
+  referenceType: 'sales_invoice' | 'purchase_invoice' | 'sales_credit_note' | 'purchase_debit_note';
   // Local state for allocation editing
   pendingAllocation: number;
 }
@@ -117,8 +119,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
   
   // Creation Form State
   const [form, setForm] = useState({
-    paymentType: 'receive' as 'receive' | 'pay',
-    partyType: 'customer' as 'customer' | 'supplier' | 'gl_account',
+    paymentType: 'customer_receipt',
     partyId: '',
     paymentDate: new Date().toISOString().split('T')[0],
     modeOfPayment: 'EFT',
@@ -164,8 +165,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       setJournalEntry(null);
       setIsAllocating(false);
       setForm({
-        paymentType: 'receive',
-        partyType: 'customer',
+        paymentType: 'customer_receipt',
         partyId: '',
         paymentDate: new Date().toISOString().split('T')[0],
         modeOfPayment: 'EFT',
@@ -186,22 +186,52 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       setOutstandingInvoices([]);
       return;
     }
+
+    if (data.paymentType.startsWith('direct_')) {
+      setOutstandingInvoices([]);
+      return;
+    }
     
     setLoadingInvoices(true);
     try {
-      const queryParams = { [data.partyType === 'customer' ? 'customerId' : 'vendorId']: data.partyId };
-      const res = data.partyType === 'customer'
-        ? await api.invoiceDetailControllerGetSalesInvoicesGlobal({ ...(queryParams as unknown as api.InvoiceDetailControllerGetSalesInvoicesGlobalParams), balanceStatus: 'unpaid' })
-        : await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ ...(queryParams as unknown as api.InvoiceDetailControllerGetPurchaseInvoicesGlobalParams), balanceStatus: 'unpaid' });
+      const isCustomer = data.paymentType.startsWith('customer_');
+      const queryParams = { [isCustomer ? 'customerId' : 'vendorId']: data.partyId };
+      
+      let referenceType: 'sales_invoice' | 'purchase_invoice' | 'sales_credit_note' | 'purchase_debit_note' = 'sales_invoice';
+      let res: any;
+      if (data.paymentType === 'customer_receipt') {
+        res = await api.invoiceDetailControllerGetSalesInvoicesGlobal({ ...(queryParams as any), balanceStatus: 'unpaid' });
+        referenceType = 'sales_invoice';
+      } else if (data.paymentType === 'customer_refund') {
+        res = await api.salesCreditNotesControllerFindAll({ ...(queryParams as any), balanceStatus: 'unpaid' });
+        referenceType = 'sales_credit_note';
+      } else if (data.paymentType === 'supplier_payment') {
+        res = await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ ...(queryParams as any), balanceStatus: 'unpaid' });
+        referenceType = 'purchase_invoice';
+      } else if (data.paymentType === 'supplier_refund') {
+        res = await api.purchaseDebitNotesControllerFindAll({ ...(queryParams as any), balanceStatus: 'unpaid' });
+        referenceType = 'purchase_debit_note';
+      }
       
       const invoices = (res as any).data
-        .filter((inv: any) => inv.stateCode !== SALES_INVOICE_STATE.PAID && inv.stateCode !== PURCHASE_INVOICE_STATE.PAID && parseFloat(inv.outstandingAmount) > 0)
+        .filter((inv: any) => {
+          if (
+            inv.stateCode === SALES_INVOICE_STATE.PAID ||
+            inv.stateCode === PURCHASE_INVOICE_STATE.PAID ||
+            inv.stateCode === SALES_CREDIT_NOTE_STATE.POSTED ||
+            inv.stateCode === PURCHASE_DEBIT_NOTE_STATE.POSTED
+          ) {
+            return false;
+          }
+          return parseFloat(inv.outstandingAmount) > 0;
+        })
         .map((inv: any) => ({
-          id: inv.invoiceId,
-          invoiceNumber: inv.invoiceNumber,
+          id: inv.invoiceId || inv.creditNoteId || inv.debitNoteId,
+          invoiceNumber: inv.invoiceNumber || inv.creditNoteNumber || inv.debitNoteNumber,
           totalAmount: inv.totalAmount,
           outstandingAmount: inv.outstandingAmount,
           date: inv.invoiceDate || inv.createdOn,
+          referenceType,
           pendingAllocation: 0,
         }));
       
@@ -275,8 +305,10 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     try {
       const payload = {
         ...form,
+        paymentId: crypto.randomUUID(),
+        partyId: form.partyId || undefined,
         totalAmount: parseFloat(form.totalAmount),
-        lines: form.lines && form.lines.length > 0 ? form.lines.map(l => ({
+        lines: form.lines && form.lines.length > 0 && form.paymentType.startsWith('direct_') ? form.lines.map(l => ({
           accountId: l.accountId,
           amount: parseFloat(l.amount) || 0,
           memo: l.memo
@@ -376,7 +408,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     const allocations = outstandingInvoices
       .filter(inv => inv.pendingAllocation > 0)
       .map(inv => ({
-        referenceType: data?.partyType === 'customer' ? 'sales_invoice' : 'purchase_invoice',
+        referenceType: inv.referenceType,
         referenceId: inv.id,
         allocatedAmount: inv.pendingAllocation,
       }));
@@ -438,7 +470,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
             >
               {t('manager.buttons.reverse')}</button>
           )}
-          {(parseFloat(data?.unallocatedAmount || '0') > 0 || isAllocating) && (
+          {(!data?.paymentType?.startsWith('direct_') && (parseFloat(data?.unallocatedAmount || '0') > 0 || isAllocating)) && (
             <button 
               onClick={() => setIsAllocating(!isAllocating)}
               className={`btn btn-sm ${isAllocating ? 'btn-secondary' : 'btn-primary'}`}
@@ -485,7 +517,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       isOpen={true}
       onClose={onClose}
       title={paymentId ? (data?.paymentNumber || '...') : t('manager.newEntry')}
-      subtitle={paymentId && data ? `${new Date(data.paymentDate).toLocaleDateString()} · ${data.paymentType === 'receive' ? t('manager.options.customerReceipt') : t('manager.options.supplierPayment')}` : undefined}
+      subtitle={paymentId && data ? `${new Date(data.paymentDate).toLocaleDateString()} · ${t(('manager.options.' + data.paymentType.replace(/_([a-z])/g, g => g[1].toUpperCase())) as Parameters<typeof t>[0])}` : undefined}
       actions={paymentId ? actionsContent : undefined}
       width="max-w-3xl"
       footer={!paymentId ? (
@@ -493,7 +525,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
           <button type="button" className="btn btn-ghost" onClick={onClose} disabled={submitting}>
             {tCommon('cancel')}
           </button>
-          <button type="button" className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm" onClick={handleCreate} disabled={submitting}>
+          <button type="submit" form="create-payment-form" className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm" disabled={submitting}>
             {submitting ? (
               <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving')}</>
             ) : (
@@ -512,30 +544,32 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         ) : (
           <div className="space-y-4">
             {!paymentId ? (
-              <form onSubmit={e => e.preventDefault()} className="space-y-4">
+              <form id="create-payment-form" onSubmit={(e) => { e.preventDefault(); handleCreate(); }} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.type')}</label>
                     <select 
                       className="input w-full"
-                      value={`${form.paymentType}_${form.partyType}`}
+                      value={form.paymentType}
                       onChange={e => {
-                        const [payType, pType] = e.target.value.split('_') as [any, any];
+                        const payType = e.target.value;
                         setForm({
                           ...form, 
                           paymentType: payType,
-                          partyType: pType,
                           partyId: '', // Reset selected party when type changes
+                          lines: payType.startsWith('direct_') && form.lines.length === 0 
+                            ? [{ id: Math.random().toString(), accountId: '', amount: '', memo: '' }] 
+                            : form.lines
                         });
                       }}
                       required
                     >
-                      <option value="receive_customer">{t('manager.options.customerReceipt')}</option>
-                      <option value="pay_supplier">{t('manager.options.supplierPayment')}</option>
-                      <option value="pay_customer">{t('manager.options.customerRefund')}</option>
-                      <option value="receive_supplier">{t('manager.options.supplierRefund')}</option>
-                      <option value="receive_gl_account">{t('manager.options.directReceipt')}</option>
-                      <option value="pay_gl_account">{t('manager.options.directPayment')}</option>
+                      <option value="customer_receipt">{t('manager.options.customerReceipt')}</option>
+                      <option value="supplier_payment">{t('manager.options.supplierPayment')}</option>
+                      <option value="customer_refund">{t('manager.options.customerRefund')}</option>
+                      <option value="supplier_refund">{t('manager.options.supplierRefund')}</option>
+                      <option value="direct_receipt">{t('manager.options.directReceipt')}</option>
+                      <option value="direct_payment">{t('manager.options.directPayment')}</option>
                     </select>
                   </div>
                   <div>
@@ -554,6 +588,17 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                   </div>
                 </div>
                 
+                <div>
+                  <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.reference')}</label>
+                  <input 
+                    type="text"
+                    className="input w-full"
+                    value={form.referenceNumber}
+                    onChange={e => setForm({...form, referenceNumber: e.target.value})}
+                    placeholder={t('manager.placeholders.reference')}
+                  />
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.glBank')}</label>
                   <GLAccountSelect 
@@ -578,10 +623,12 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">
-                    {form.partyType === 'customer' ? t('customer') : form.partyType === 'supplier' ? t('supplier') : t('manager.labels.glAccount')}
-                  </label>
-                  {form.partyType === 'customer' ? (
+                  {!form.paymentType.startsWith('direct_') && (
+                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">
+                      {form.paymentType.startsWith('customer_') ? t('customer') : t('supplier')}
+                    </label>
+                  )}
+                  {form.paymentType.startsWith('customer_') ? (
                     <CustomerSelect 
                       value={form.partyId}
                       onChange={(acc) => setForm({
@@ -591,7 +638,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                       })}
                       required
                     />
-                  ) : form.partyType === 'supplier' ? (
+                  ) : form.paymentType.startsWith('supplier_') ? (
                     <SupplierSelect 
                       value={form.partyId}
                       onChange={(sup) => setForm({
@@ -603,76 +650,70 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     />
                   ) : (
                     <>
-                      <GLAccountSelect
-                        value={form.partyId}
-                        onChange={(val, acc) => setForm({
-                          ...form,
-                          partyId: val || '',
-                          currencyCode: form.glAccountBank ? form.currencyCode : (acc?.currencyCode || baseCurrency)
-                        })}
-                        bankAccountOnly={false}
-                        required={form.lines.length === 0}
-                      />
-                      
-                      <div className="mt-6 border border-[var(--border-color)] rounded-lg overflow-hidden bg-[var(--card-bg)]">
-                        <div className="bg-base-200 px-4 py-2 border-b border-[var(--border-color)] flex items-center justify-between">
-                          <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
-                            Split Payment Lines (Optional)
-                          </span>
-                          <button
-                            type="button"
-                            className="btn btn-xs btn-ghost text-[var(--accent)]"
-                            onClick={handleAddLine}
-                          >
-                            + Add Line
-                          </button>
-                        </div>
-                        {form.lines.length > 0 ? (
-                          <div className="p-2 space-y-2">
-                            {form.lines.map((line, index) => (
-                              <div key={line.id} className="flex items-center gap-2">
-                                <div className="flex-1">
+                      <div className="mt-6">
+                        <table className="table-lines w-full text-sm">
+                          <thead>
+                            <tr>
+                              <th>{t('manager.labels.glAccount')}</th>
+                              <th style={{ width: '140px' }}>{t('manager.labels.amount')}</th>
+                              <th>{t('manager.labels.memo')}</th>
+                              <th style={{ width: '40px' }}></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {form.lines.map((line) => (
+                              <tr key={line.id}>
+                                <td className="py-2 pr-2">
                                   <GLAccountSelect
                                     value={line.accountId}
                                     onChange={(val) => handleLineChange(line.id, 'accountId', val || '')}
                                     bankAccountOnly={false}
                                     required
                                   />
-                                </div>
-                                <div className="w-32">
+                                </td>
+                                <td className="py-2 pr-2">
                                   <input
-                                    type="text"
+                                    type="number"
+                                    step="0.01"
                                     className="input input-sm w-full"
-                                    placeholder="Amount"
                                     value={line.amount}
                                     onChange={(e) => handleLineChange(line.id, 'amount', e.target.value)}
                                     required
                                   />
-                                </div>
-                                <div className="flex-1">
+                                </td>
+                                <td className="py-2 pr-2">
                                   <input
                                     type="text"
                                     className="input input-sm w-full"
-                                    placeholder="Memo (Optional)"
                                     value={line.memo}
                                     onChange={(e) => handleLineChange(line.id, 'memo', e.target.value)}
                                   />
-                                </div>
-                                <button
-                                  type="button"
-                                  className="btn btn-xs btn-circle btn-ghost text-red-500"
-                                  onClick={() => handleRemoveLine(line.id)}
-                                >
-                                  ×
-                                </button>
-                              </div>
+                                </td>
+                                <td className="py-2 text-right">
+                                  <button
+                                    type="button"
+                                    className="btn btn-xs btn-circle btn-ghost text-[var(--text-muted)] hover:text-[var(--danger)]"
+                                    onClick={() => handleRemoveLine(line.id)}
+                                    disabled={form.lines.length === 1}
+                                    title={form.lines.length === 1 ? "At least one line is required" : "Remove Line"}
+                                  >
+                                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                                  </button>
+                                </td>
+                              </tr>
                             ))}
-                          </div>
-                        ) : (
-                          <div className="px-4 py-6 text-center text-sm text-[var(--text-muted)] italic">
-                            No split lines. Entire amount will hit the primary GL Account above.
-                          </div>
-                        )}
+                          </tbody>
+                        </table>
+                        <div className="mt-2 text-left">
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-ghost text-[var(--accent)]"
+                            onClick={handleAddLine}
+                          >
+                            {t('manager.buttons.addLine')}
+                          </button>
+                        </div>
                       </div>
                     </>
                   )}
@@ -680,7 +721,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.amount')}</label>
+                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.totalAmount')}</label>
                     <div className="relative">
                       <input 
                         type="number"
@@ -689,6 +730,8 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                         value={form.totalAmount}
                         onChange={e => setForm({...form, totalAmount: e.target.value})}
                         required
+                        readOnly={form.paymentType.startsWith('direct_')}
+                        title={form.paymentType.startsWith('direct_') ? "Total amount is calculated from the lines below" : undefined}
                         placeholder={t('manager.placeholders.amount')}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold opacity-40">
@@ -706,17 +749,6 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                       required
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.reference')}</label>
-                  <input 
-                    type="text"
-                    className="input w-full"
-                    value={form.referenceNumber}
-                    onChange={e => setForm({...form, referenceNumber: e.target.value})}
-                    placeholder={t('manager.placeholders.reference')}
-                  />
                 </div>
               </form>            ) : (
               <div className="space-y-6">
@@ -747,6 +779,34 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                         </div>
                       </div>
                     </div>
+
+                    {/* Direct Payment Lines */}
+                    {data?.paymentType?.startsWith('direct_') && data.lines && data.lines.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+                          <table className="w-full text-sm text-left">
+                            <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
+                              <tr>
+                                <th className="px-5 py-3">{t('manager.labels.glAccount')}</th>
+                                <th className="px-5 py-3 text-right">{t('manager.labels.amount')}</th>
+                                <th className="px-5 py-3">{t('manager.labels.memo')}</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {data.lines.map((l: any, idx: number) => (
+                                <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                                  <td className="px-5 py-3 font-semibold text-[#041627]">{l.accountName}</td>
+                                  <td className="px-5 py-3 text-right font-mono font-medium text-[#041627]">
+                                    {formatAmount(parseFloat(l.amount), data.currencyCode)}
+                                  </td>
+                                  <td className="px-5 py-3 text-gray-500 text-xs">{l.memo || '—'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Ledger Impact */}
                     {isSubmitted && (
@@ -826,11 +886,19 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                              {data.allocations.map((a) => (
+                              {data.allocations.map((a) => {
+                                const isSalesInv = a.referenceType as string === 'sales_invoice';
+                                const isCreditNote = a.referenceType as string === 'sales_credit_note';
+                                const isPurchInv = a.referenceType as string === 'purchase_invoice';
+                                const linkUrl = isSalesInv ? `/sales-invoices/${a.referenceId}` : 
+                                                isCreditNote ? `/sales-credit-notes/${a.referenceId}` :
+                                                isPurchInv ? `/supplier-invoices/${a.referenceId}` :
+                                                `/purchase-debit-notes/${a.referenceId}`; // fallback
+                                return (
                                 <tr key={a.allocationId} className="hover:bg-gray-50/50 transition-colors">
                                   <td className="px-5 py-3">
                                     <Link 
-                                      href={a.referenceType.includes('sales') ? `/sales-invoices/${a.referenceId}` : `/supplier-invoices/${a.referenceId}`}
+                                      href={linkUrl}
                                       className="font-semibold text-[var(--accent)] hover:underline"
                                     >
                                       {a.invoiceNumber || a.referenceId.slice(0, 8)}
@@ -838,14 +906,17 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                   </td>
                                   <td className="px-5 py-3">
                                     <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-gray-600 uppercase font-bold tracking-wider">
-                                      {a.referenceType.includes('sales') ? t('salesInv') : t('purchInv')}
+                                      {isSalesInv ? t('salesInv') : 
+                                       isCreditNote ? 'Credit Note' :
+                                       isPurchInv ? t('purchInv') : 
+                                       'Debit Note'}
                                     </span>
                                   </td>
                                   <td className="px-5 py-3 text-right font-mono font-medium text-[#041627]">
                                     {formatAmount(parseFloat(a.allocatedAmount), data.currencyCode)}
                                   </td>
                                 </tr>
-                              ))}
+                              )})}
                             </tbody>
                           </table>
                         </div>

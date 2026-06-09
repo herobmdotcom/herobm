@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 
-export type SalesCreditNotesControllerFindAllParams = {
-customerId?: string;
+export type PurchaseDebitNotesControllerFindAllParams = {
+vendorId?: string;
 balanceStatus?: string;
 };

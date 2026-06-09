@@ -293,7 +293,10 @@ export class SuppliersWriteService {
         supplierName: coreSuppliers.name,
       })
       .from(supplierExpiries)
-      .innerJoin(coreSuppliers, eq(coreSuppliers.vendorId, supplierExpiries.vendorId))
+      .innerJoin(
+        coreSuppliers,
+        eq(coreSuppliers.vendorId, supplierExpiries.vendorId),
+      )
       .where(
         sql`${supplierExpiries.expiryId} = ${expiryId} AND ${supplierExpiries.vendorId} = ${vendorId}`,
       );
@@ -330,7 +333,10 @@ export class SuppliersWriteService {
         supplierName: coreSuppliers.name,
       })
       .from(supplierExpiries)
-      .innerJoin(coreSuppliers, eq(coreSuppliers.vendorId, supplierExpiries.vendorId))
+      .innerJoin(
+        coreSuppliers,
+        eq(coreSuppliers.vendorId, supplierExpiries.vendorId),
+      )
       .where(
         sql`${supplierExpiries.expiryId} = ${expiryId} AND ${supplierExpiries.vendorId} = ${vendorId}`,
       );

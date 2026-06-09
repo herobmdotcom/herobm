@@ -8893,6 +8893,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "balanceStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -11358,6 +11366,47 @@
       }
     },
     "/purchase-debit-notes": {
+      "get": {
+        "description": "Retrieve a list of purchase debit notes.",
+        "operationId": "PurchaseDebitNotesController_findAll",
+        "parameters": [
+          {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "balanceStatus",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PurchaseDebitNoteResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Find Debit Notes",
+        "tags": [
+          "PurchaseDebitNotes"
+        ]
+      },
       "post": {
         "description": "Create a new purchase debit note.",
         "operationId": "PurchaseDebitNotesController_createDebitNote",
@@ -19458,6 +19507,25 @@
           "partyName"
         ]
       },
+      "PaymentLineDto": {
+        "type": "object",
+        "properties": {
+          "accountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "memo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "accountId",
+          "amount"
+        ]
+      },
       "CreatePaymentDto": {
         "type": "object",
         "properties": {
@@ -19466,9 +19534,6 @@
             "format": "uuid"
           },
           "paymentType": {
-            "type": "object"
-          },
-          "partyType": {
             "type": "object"
           },
           "partyId": {
@@ -19497,13 +19562,17 @@
           },
           "submitImmediately": {
             "type": "boolean"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentLineDto"
+            }
           }
         },
         "required": [
           "paymentId",
           "paymentType",
-          "partyType",
-          "partyId",
           "paymentDate",
           "modeOfPayment",
           "totalAmount",
@@ -20691,6 +20760,55 @@
           "stateCode"
         ]
       },
+      "PurchaseDebitNoteResponseDto": {
+        "type": "object",
+        "properties": {
+          "debitNoteId": {
+            "type": "string"
+          },
+          "debitNoteNumber": {
+            "type": "string"
+          },
+          "returnId": {
+            "type": "string"
+          },
+          "purchaseOrderId": {
+            "type": "string"
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "totalAmount": {
+            "type": "string"
+          },
+          "taxAmount": {
+            "type": "string"
+          },
+          "feeAmount": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "modifiedOn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "debitNoteId",
+          "debitNoteNumber",
+          "returnId",
+          "purchaseOrderId",
+          "stateCode",
+          "totalAmount",
+          "taxAmount",
+          "feeAmount"
+        ]
+      },
       "CreateDebitNoteLineDto": {
         "type": "object",
         "properties": {
@@ -20745,55 +20863,6 @@
         "required": [
           "returnId",
           "lines"
-        ]
-      },
-      "PurchaseDebitNoteResponseDto": {
-        "type": "object",
-        "properties": {
-          "debitNoteId": {
-            "type": "string"
-          },
-          "debitNoteNumber": {
-            "type": "string"
-          },
-          "returnId": {
-            "type": "string"
-          },
-          "purchaseOrderId": {
-            "type": "string"
-          },
-          "stateCode": {
-            "type": "string"
-          },
-          "totalAmount": {
-            "type": "string"
-          },
-          "taxAmount": {
-            "type": "string"
-          },
-          "feeAmount": {
-            "type": "string"
-          },
-          "createdOn": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "modifiedOn": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "debitNoteId",
-          "debitNoteNumber",
-          "returnId",
-          "purchaseOrderId",
-          "stateCode",
-          "totalAmount",
-          "taxAmount",
-          "feeAmount"
         ]
       },
       "DataSourceItemDto": {

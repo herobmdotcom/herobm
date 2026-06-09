@@ -1,4 +1,8 @@
 import { SystemResource } from '@modbm/shared';
+import { PgDatabase } from 'drizzle-orm/pg-core';
+import * as schema from '../drizzle/modbm-core-schema';
+
+export type SeedDB = PgDatabase<any, typeof schema, any>;
 
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
@@ -68,7 +72,7 @@ const GST_TYPE_MAP: Record<string, string> = {
 };
 
 // Generic seed utility that takes any drizzle DB (postgres or pglite)
-export async function runStandardSeeds(db: any, dryRun = false) {
+export async function runStandardSeeds(db: SeedDB, dryRun = false) {
   if (dryRun) {
     console.log('Dry run mode -- no data will be written.');
   }
@@ -85,7 +89,7 @@ export async function runStandardSeeds(db: any, dryRun = false) {
   console.log('\nDone.');
 }
 
-async function seedCasbinPolicies(db: any, dryRun: boolean) {
+async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
   if (dryRun) {
     console.log('  [DRY RUN] Would seed standard casbin policies');
     return;
@@ -1128,7 +1132,7 @@ async function seedCasbinPolicies(db: any, dryRun: boolean) {
   }
 }
 
-async function seedUsers(db: any, dryRun: boolean) {
+async function seedUsers(db: SeedDB, dryRun: boolean) {
   if (dryRun) {
     console.log('  [DRY RUN] Would seed user: admin');
     return;
@@ -1289,7 +1293,7 @@ async function seedUsers(db: any, dryRun: boolean) {
   }
 }
 
-async function seedProducts(db: any, dryRun: boolean) {
+async function seedProducts(db: SeedDB, dryRun: boolean) {
   if (dryRun) {
     console.log(
       "  [DRY RUN] Would seed UOM 'EA' and SYSTEM-CUSTOM-LINE product",
@@ -1311,21 +1315,21 @@ async function seedProducts(db: any, dryRun: boolean) {
       productId: '00000000-0000-0000-0000-000000000000',
       productNumber: 'SYSTEM-CUSTOM-LINE',
       name: 'Custom Line Product',
-      type: 'non-stock',
+      productType: 'non-stock',
     })
     .onConflictDoUpdate({
       target: products.productId,
       set: {
         productNumber: 'SYSTEM-CUSTOM-LINE',
         name: 'Custom Line Product',
-        type: 'non-stock',
+        productType: 'non-stock',
       },
     });
 
   console.log("  Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product");
 }
 
-async function seedFinancialDimensions(db: any, dryRun: boolean) {
+async function seedFinancialDimensions(db: SeedDB, dryRun: boolean) {
   if (dryRun) {
     console.log("  [DRY RUN] Would seed default '00' Cost Center and Activity");
     return;
@@ -1365,7 +1369,7 @@ async function seedFinancialDimensions(db: any, dryRun: boolean) {
   console.log("  Seeded default '00' dimensions (Cost Center, Activity)");
 }
 
-async function seedOrganization(db: any, dryRun: boolean) {
+async function seedOrganization(db: SeedDB, dryRun: boolean) {
   if (dryRun) {
     console.log('  [DRY RUN] Would seed fallback organization if none exists');
     return;
@@ -1391,7 +1395,7 @@ async function seedOrganization(db: any, dryRun: boolean) {
   console.log('  Seeded default organization (fallback)');
 }
 
-async function seedAppSettings(db: any, dryRun: boolean) {
+async function seedAppSettings(db: SeedDB, dryRun: boolean) {
   if (dryRun) {
     console.log('  [DRY RUN] Would seed default app_settings');
     return;
@@ -1428,7 +1432,7 @@ function loadCoaSettings(prefix = 'au_standard') {
   return JSON.parse(fs.readFileSync(p, 'utf-8'));
 }
 
-async function seedBaseGlSettings(db: any, dryRun: boolean) {
+async function seedBaseGlSettings(db: SeedDB, dryRun: boolean) {
   if (dryRun) {
     console.log('  [DRY RUN] Would seed base gl_settings');
     return;
@@ -1453,7 +1457,7 @@ async function seedBaseGlSettings(db: any, dryRun: boolean) {
 }
 
 export async function seedCoaAccounts(
-  db: any,
+  db: SeedDB,
   dryRun: boolean,
   prefix = 'au_standard',
 ) {
@@ -1547,7 +1551,7 @@ export async function seedCoaAccounts(
 }
 
 export async function seedCoaSettings(
-  db: any,
+  db: SeedDB,
   dryRun: boolean,
   prefix = 'au_standard',
 ) {
@@ -1667,7 +1671,7 @@ function loadReportConfig() {
   return JSON.parse(fs.readFileSync(p, 'utf-8')).reports || [];
 }
 
-async function seedReports(db: any, dryRun: boolean) {
+async function seedReports(db: SeedDB, dryRun: boolean) {
   const reportList = loadReportConfig();
 
   if (dryRun) {
@@ -1767,7 +1771,7 @@ async function main() {
     database: process.env.POSTGRES_DB || 'herobm',
   });
 
-  const db = drizzle(pool);
+  const db = drizzle(pool, { schema });
 
   try {
     await runStandardSeeds(db, dryRun);
@@ -1784,7 +1788,7 @@ if (require.main === module) {
   });
 }
 
-export async function seedAccounts(db: any, dryRun: boolean) {
+export async function seedAccounts(db: SeedDB, dryRun: boolean) {
   if (dryRun) {
     console.log('  [DRY RUN] Would seed default customer and vendor');
     return;

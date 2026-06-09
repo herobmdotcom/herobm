@@ -10,6 +10,8 @@ import {
   IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { PAYMENT_TYPE } from '@modbm/shared';
+import type { PaymentType } from '@modbm/shared';
 
 export const MODES_OF_PAYMENT = [
   'Cash',
@@ -37,11 +39,8 @@ export class CreatePaymentDto {
   @IsNotEmpty()
   paymentId: string;
 
-  @IsEnum(['receive', 'pay'])
-  paymentType: 'receive' | 'pay';
-
-  @IsEnum(['customer', 'supplier', 'gl_account'])
-  partyType: 'customer' | 'supplier' | 'gl_account';
+  @IsEnum(Object.values(PAYMENT_TYPE))
+  paymentType: PaymentType;
 
   @IsOptional()
   @IsUUID()
@@ -81,8 +80,17 @@ export class CreatePaymentDto {
 }
 
 export class AllocationDto {
-  @IsEnum(['sales_invoice', 'purchase_invoice'])
-  referenceType: 'sales_invoice' | 'purchase_invoice';
+  @IsEnum([
+    'sales_invoice',
+    'purchase_invoice',
+    'sales_credit_note',
+    'purchase_debit_note',
+  ])
+  referenceType:
+    | 'sales_invoice'
+    | 'purchase_invoice'
+    | 'sales_credit_note'
+    | 'purchase_debit_note';
 
   @IsUUID()
   referenceId: string;

@@ -359,7 +359,7 @@ export default function RulesEnginePage() {
             {/* eslint-disable-next-line i18next/no-literal-string */}
             <button type="button" className="btn btn-ghost" onClick={handleCloseModal}>Cancel</button>
             {/* eslint-disable-next-line i18next/no-literal-string */}
-            <button type="button" className="btn btn-primary" onClick={handleSaveModal}>Save</button>
+            <button type="submit" form="ruleForm" className="btn btn-primary">Save</button>
           </div>
         }
       >

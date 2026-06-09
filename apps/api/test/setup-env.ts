@@ -44,5 +44,9 @@ if (!process.env.SETUP_TOKEN) {
   process.env.SETUP_TOKEN = 'test-setup-token';
 }
 
+if (!process.env.ADMIN_PASSWORD) {
+  process.env.ADMIN_PASSWORD = process.env.DEV_ADMIN_PASSWORD || 'modbmadmin';
+}
+
 // Ensure NODE_ENV is test so throttlers use higher limits during tests
 process.env.NODE_ENV = 'test';

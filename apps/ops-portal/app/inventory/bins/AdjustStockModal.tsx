@@ -66,8 +66,8 @@ export default function AdjustStockModal({ isOpen, onClose, onSubmit, selectedLi
         {tCommon('cancel')}
       </button>
       <button
-        type="button"
-        onClick={handleSubmit}
+        type="submit"
+        form="adjust-stock-form"
         disabled={submitting}
         className="btn btn-primary font-bold"
       >
@@ -91,7 +91,7 @@ export default function AdjustStockModal({ isOpen, onClose, onSubmit, selectedLi
         {loading ? (
           <div className="text-sm text-[var(--text-muted)] text-center py-8">{tCommon('loading')}</div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <form id="adjust-stock-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="flex flex-col gap-6">
             
             <div className="flex flex-col gap-2">
               {/* eslint-disable-next-line i18next/no-literal-string */}

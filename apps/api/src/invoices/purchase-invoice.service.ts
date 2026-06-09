@@ -945,7 +945,10 @@ export class PurchaseInvoiceService {
         })
         .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
 
-      const [order] = await tx.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq(purchaseOrders.purchaseOrderId, poLine.purchaseOrderId));
+      const [order] = await tx
+        .select({ orderNumber: purchaseOrders.orderNumber })
+        .from(purchaseOrders)
+        .where(eq(purchaseOrders.purchaseOrderId, poLine.purchaseOrderId));
       await emitEvent(tx, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: poLine.purchaseOrderId,
@@ -1043,7 +1046,10 @@ export class PurchaseInvoiceService {
       await this.recalculateInvoiceTotals(invoiceId, tx);
 
       if (matchedCount > 0 || addedCount > 0) {
-        const [order] = await tx.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId));
+        const [order] = await tx
+          .select({ orderNumber: purchaseOrders.orderNumber })
+          .from(purchaseOrders)
+          .where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId));
         await emitEvent(tx, {
           entityType: EntityType.PURCHASE_ORDER,
           entityId: purchaseOrderId,
@@ -1100,7 +1106,10 @@ export class PurchaseInvoiceService {
         .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
 
       if (poId) {
-        const [order] = await tx.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq(purchaseOrders.purchaseOrderId, poId));
+        const [order] = await tx
+          .select({ orderNumber: purchaseOrders.orderNumber })
+          .from(purchaseOrders)
+          .where(eq(purchaseOrders.purchaseOrderId, poId));
         await emitEvent(tx, {
           entityType: EntityType.PURCHASE_ORDER,
           entityId: poId,

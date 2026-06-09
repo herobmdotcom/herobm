@@ -329,7 +329,10 @@ export class ProductsWriteService {
         throw new NotFoundException('Supplier mapping not found');
       }
 
-      const [product] = await tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, productId));
+      const [product] = await tx
+        .select({ name: coreProducts.name })
+        .from(coreProducts)
+        .where(eq(coreProducts.productId, productId));
 
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT_SUPPLIER,
@@ -417,7 +420,10 @@ export class ProductsWriteService {
         .delete(productUoms)
         .where(eq(productUoms.productUomId, productUomId));
 
-      const [product] = await tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, productId));
+      const [product] = await tx
+        .select({ name: coreProducts.name })
+        .from(coreProducts)
+        .where(eq(coreProducts.productId, productId));
 
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
@@ -521,7 +527,10 @@ export class ProductsWriteService {
         .delete(productDefaultBins)
         .where(eq(productDefaultBins.productDefaultBinId, productDefaultBinId));
 
-      const [product] = await tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, existing[0].productId));
+      const [product] = await tx
+        .select({ name: coreProducts.name })
+        .from(coreProducts)
+        .where(eq(coreProducts.productId, existing[0].productId));
 
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
@@ -556,7 +565,10 @@ export class ProductsWriteService {
   ) {
     // Validate parent exists and is a kit
     const [parent] = await this.db
-      .select({ structureType: coreProducts.structureType, name: coreProducts.name })
+      .select({
+        structureType: coreProducts.structureType,
+        name: coreProducts.name,
+      })
       .from(coreProducts)
       .where(eq(coreProducts.productId, productId))
       .limit(1);
@@ -678,7 +690,10 @@ export class ProductsWriteService {
         .where(eq(productComponents.componentId, componentId))
         .returning();
 
-      const [product] = await tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, productId));
+      const [product] = await tx
+        .select({ name: coreProducts.name })
+        .from(coreProducts)
+        .where(eq(coreProducts.productId, productId));
 
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
@@ -717,7 +732,10 @@ export class ProductsWriteService {
         .delete(productComponents)
         .where(eq(productComponents.componentId, componentId));
 
-      const [product] = await tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, productId));
+      const [product] = await tx
+        .select({ name: coreProducts.name })
+        .from(coreProducts)
+        .where(eq(coreProducts.productId, productId));
 
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,

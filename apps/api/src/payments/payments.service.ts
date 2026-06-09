@@ -19,6 +19,8 @@ import {
   supplierGroups,
   glAccounts,
   paymentLines,
+  salesCreditNotes,
+  purchaseDebitNotes,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -33,6 +35,8 @@ import {
   PAYMENT_TRANSITIONS,
   SALES_INVOICE_STATE,
   PURCHASE_INVOICE_STATE,
+  SALES_CREDIT_NOTE_STATE,
+  PURCHASE_DEBIT_NOTE_STATE,
   getValidStates,
 } from '@modbm/shared';
 import type { PaymentState } from '@modbm/shared';
@@ -99,7 +103,6 @@ export class PaymentsService {
         paymentId: paymentEntries.paymentId,
         paymentNumber: paymentEntries.paymentNumber,
         paymentType: paymentEntries.paymentType,
-        partyType: paymentEntries.partyType,
         partyId: paymentEntries.partyId,
         paymentDate: paymentEntries.paymentDate,
         modeOfPayment: paymentEntries.modeOfPayment,
@@ -125,7 +128,6 @@ export class PaymentsService {
         paymentId: paymentEntries.paymentId,
         paymentNumber: paymentEntries.paymentNumber,
         paymentType: paymentEntries.paymentType,
-        partyType: paymentEntries.partyType,
         partyId: paymentEntries.partyId,
         paymentDate: paymentEntries.paymentDate,
         modeOfPayment: paymentEntries.modeOfPayment,
@@ -196,7 +198,6 @@ export class PaymentsService {
           paymentId: dto.paymentId,
           paymentNumber,
           paymentType: dto.paymentType,
-          partyType: dto.partyType,
           partyId: dto.partyId || null,
           paymentDate: new Date(dto.paymentDate),
           modeOfPayment: dto.modeOfPayment,
@@ -266,10 +267,16 @@ export class PaymentsService {
         .where(eq(paymentLines.paymentId, paymentId));
 
       let controlAccountId: string | null = null;
+      let linePartyType: 'customer' | 'supplier' | null = null;
+
+      if (payment.paymentType.startsWith('customer_'))
+        linePartyType = 'customer';
+      if (payment.paymentType.startsWith('supplier_'))
+        linePartyType = 'supplier';
 
       if (payLines.length === 0) {
         // Fallback to existing single header-level offset logic
-        if (payment.partyType === 'customer') {
+        if (linePartyType === 'customer') {
           const [custRow] = await tx
             .select({
               defaultArAccountId: customerGroups.defaultArAccountId,
@@ -281,7 +288,7 @@ export class PaymentsService {
             )
             .where(eq(customers.customerId, payment.partyId!));
           controlAccountId = custRow?.defaultArAccountId || null;
-        } else if (payment.partyType === 'supplier') {
+        } else if (linePartyType === 'supplier') {
           const [suppRow] = await tx
             .select({
               defaultApAccountId: supplierGroups.defaultApAccountId,
@@ -293,22 +300,22 @@ export class PaymentsService {
             )
             .where(eq(suppliers.vendorId, payment.partyId!));
           controlAccountId = suppRow?.defaultApAccountId || null;
-        } else if (payment.partyType === 'gl_account') {
+        } else if (payment.paymentType.startsWith('direct_')) {
           controlAccountId = payment.partyId;
         }
 
         // Fallback to global settings if not found on group
-        if (!controlAccountId && payment.partyType !== 'gl_account') {
+        if (!controlAccountId && !payment.paymentType.startsWith('direct_')) {
           const settings = await this.glService.getSettings(tx);
           controlAccountId =
-            payment.partyType === 'customer'
+            linePartyType === 'customer'
               ? settings?.defaultArAccountId || null
               : settings?.defaultApAccountId || null;
         }
 
         if (!controlAccountId) {
           throw new BadRequestException(
-            `Could not resolve ${payment.partyType} control account. Please check Party Group or GL Settings.`,
+            `Could not resolve ${payment.paymentType} control account. Please check Party Group or GL Settings.`,
           );
         }
       }
@@ -317,14 +324,14 @@ export class PaymentsService {
       const amount = parseFloat(payment.totalAmount);
       const lines: any[] = [];
 
-      const linePartyType =
-        payment.partyType === 'gl_account'
-          ? null
-          : (payment.partyType as 'customer' | 'supplier');
-      const linePartyId =
-        payment.partyType === 'gl_account' ? null : payment.partyId;
+      const linePartyId = linePartyType ? payment.partyId : null;
+      const isReceipt = [
+        'customer_receipt',
+        'supplier_refund',
+        'direct_receipt',
+      ].includes(payment.paymentType);
 
-      if (payment.paymentType === 'receive') {
+      if (isReceipt) {
         // Receipt: Debit Bank, Credit Offset (AR / Direct)
         lines.push({
           accountId: payment.glAccountBank,
@@ -458,37 +465,70 @@ export class PaymentsService {
 
       // Process each allocation
       for (const alloc of dto.allocations) {
-        const targetTable =
-          alloc.referenceType === 'sales_invoice'
-            ? salesInvoices
-            : purchaseInvoices;
-        const targetIdCol =
-          alloc.referenceType === 'sales_invoice'
-            ? salesInvoices.invoiceId
-            : purchaseInvoices.invoiceId;
+        let targetTable: any;
+        let targetIdCol: any;
+        let targetIdLabel: string;
+        let draftState: string;
+        let cancelledState: string;
+        const targetStateCodeCol: string = 'stateCode';
 
-        // 2. Lock invoice
-        const [invoice] = await tx
+        switch (alloc.referenceType) {
+          case 'sales_invoice':
+            targetTable = salesInvoices;
+            targetIdCol = salesInvoices.invoiceId;
+            targetIdLabel = 'invoice';
+            draftState = SALES_INVOICE_STATE.DRAFT;
+            cancelledState = SALES_INVOICE_STATE.CANCELLED;
+            break;
+          case 'purchase_invoice':
+            targetTable = purchaseInvoices;
+            targetIdCol = purchaseInvoices.invoiceId;
+            targetIdLabel = 'invoice';
+            draftState = PURCHASE_INVOICE_STATE.DRAFT;
+            cancelledState = PURCHASE_INVOICE_STATE.CANCELLED;
+            break;
+          case 'sales_credit_note':
+            targetTable = salesCreditNotes;
+            targetIdCol = salesCreditNotes.creditNoteId;
+            targetIdLabel = 'credit note';
+            draftState = SALES_CREDIT_NOTE_STATE.DRAFT;
+            cancelledState = SALES_CREDIT_NOTE_STATE.CANCELLED;
+            break;
+          case 'purchase_debit_note':
+            targetTable = purchaseDebitNotes;
+            targetIdCol = purchaseDebitNotes.debitNoteId;
+            targetIdLabel = 'debit note';
+            draftState = PURCHASE_DEBIT_NOTE_STATE.DRAFT;
+            cancelledState = PURCHASE_DEBIT_NOTE_STATE.CANCELLED;
+            break;
+          default:
+            throw new BadRequestException(
+              `Unknown referenceType: ${String(alloc.referenceType)}`,
+            );
+        }
+
+        // 2. Lock invoice/note
+        const [doc] = await tx
           .select()
           .from(targetTable)
           .where(eq(targetIdCol, alloc.referenceId))
           .for('update');
 
-        if (!invoice)
-          throw new NotFoundException(`Invoice ${alloc.referenceId} not found`);
-        if (
-          invoice.stateCode === SALES_INVOICE_STATE.DRAFT ||
-          invoice.stateCode === SALES_INVOICE_STATE.CANCELLED
-        ) {
+        if (!doc)
+          throw new NotFoundException(
+            `${targetIdLabel} ${alloc.referenceId} not found`,
+          );
+
+        if (doc.stateCode === draftState || doc.stateCode === cancelledState) {
           throw new BadRequestException(
-            `Cannot allocate to invoice in state ${invoice.stateCode}`,
+            `Cannot allocate to ${targetIdLabel} in state ${doc.stateCode}`,
           );
         }
 
-        const outstanding = parseFloat(invoice.outstandingAmount);
+        const outstanding = parseFloat(doc.outstandingAmount);
         if (alloc.allocatedAmount > outstanding + 0.001) {
           throw new BadRequestException(
-            `Cannot allocate more than outstanding amount on invoice ${invoice.invoiceNumber}`,
+            `Cannot allocate more than outstanding amount on ${targetIdLabel}`,
           );
         }
 
@@ -506,7 +546,7 @@ export class PaymentsService {
         // 4. Decrement balances
         const newOutstanding = outstanding - alloc.allocatedAmount;
         await tx
-          .update(targetTable as any)
+          .update(targetTable)
           .set({
             outstandingAmount: newOutstanding.toString(),
             modifiedOn: new Date(),
@@ -515,14 +555,16 @@ export class PaymentsService {
 
         unallocatedAmount -= alloc.allocatedAmount;
 
-        // 5. Evaluate Invoice Lifecycle
-        await evaluateInvoiceLifecycleRules(
-          tx as any,
-          alloc.referenceType === 'sales_invoice' ? 'sales' : 'purchase',
-          alloc.referenceId,
-          { entity: 'payment', id: paymentId, action: 'allocated' },
-          actor,
-        );
+        // 5. Evaluate Invoice Lifecycle (only for invoices)
+        if (alloc.referenceType.endsWith('_invoice')) {
+          await evaluateInvoiceLifecycleRules(
+            tx as any,
+            alloc.referenceType === 'sales_invoice' ? 'sales' : 'purchase',
+            alloc.referenceId,
+            { entity: 'payment', id: paymentId, action: 'allocated' },
+            actor,
+          );
+        }
 
         // 6. Emit allocation event
         await emitEvent(tx as any, {
@@ -596,9 +638,15 @@ export class PaymentsService {
         .where(eq(paymentLines.paymentId, paymentId));
 
       let controlAccountId: string | null = null;
+      let linePartyType: 'customer' | 'supplier' | null = null;
+
+      if (payment.paymentType.startsWith('customer_'))
+        linePartyType = 'customer';
+      if (payment.paymentType.startsWith('supplier_'))
+        linePartyType = 'supplier';
 
       if (payLines.length === 0) {
-        if (payment.partyType === 'customer') {
+        if (linePartyType === 'customer') {
           const [custRow] = await tx
             .select({
               defaultArAccountId: customerGroups.defaultArAccountId,
@@ -610,7 +658,7 @@ export class PaymentsService {
             )
             .where(eq(customers.customerId, payment.partyId!));
           controlAccountId = custRow?.defaultArAccountId || null;
-        } else if (payment.partyType === 'supplier') {
+        } else if (linePartyType === 'supplier') {
           const [suppRow] = await tx
             .select({
               defaultApAccountId: supplierGroups.defaultApAccountId,
@@ -622,14 +670,14 @@ export class PaymentsService {
             )
             .where(eq(suppliers.vendorId, payment.partyId!));
           controlAccountId = suppRow?.defaultApAccountId || null;
-        } else if (payment.partyType === 'gl_account') {
+        } else if (payment.paymentType.startsWith('direct_')) {
           controlAccountId = payment.partyId;
         }
 
-        if (!controlAccountId && payment.partyType !== 'gl_account') {
+        if (!controlAccountId && !payment.paymentType.startsWith('direct_')) {
           const settings = await this.glService.getSettings(tx);
           controlAccountId =
-            payment.partyType === 'customer'
+            linePartyType === 'customer'
               ? settings?.defaultArAccountId || null
               : settings?.defaultApAccountId || null;
         }
@@ -643,14 +691,14 @@ export class PaymentsService {
 
       // Reverse: swap debit/credit from original
       const reversalLines: any[] = [];
-      const linePartyType =
-        payment.partyType === 'gl_account'
-          ? null
-          : (payment.partyType as 'customer' | 'supplier');
-      const linePartyId =
-        payment.partyType === 'gl_account' ? null : payment.partyId;
+      const linePartyId = linePartyType ? payment.partyId : null;
+      const isReceipt = [
+        'customer_receipt',
+        'supplier_refund',
+        'direct_receipt',
+      ].includes(payment.paymentType);
 
-      if (payment.paymentType === 'receive') {
+      if (isReceipt) {
         reversalLines.push({
           accountId: payment.glAccountBank,
           debit: 0,

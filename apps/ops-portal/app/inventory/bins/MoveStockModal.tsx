@@ -99,8 +99,8 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
         {tCommon('cancel')}
       </button>
       <button
-        type="button"
-        onClick={handleSubmit}
+        type="submit"
+        form="move-stock-form"
         disabled={submitting || loading || (bins.length > 0 && !targetBinId)}
         className="btn btn-primary font-bold"
       >
@@ -125,7 +125,7 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
         {loading ? (
           <div className="text-sm text-[var(--text-muted)] text-center py-8">{tCommon('loading')}</div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <form id="move-stock-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="flex flex-col gap-6">
             
             <div className="flex flex-col gap-2">
               {/* eslint-disable-next-line i18next/no-literal-string */}

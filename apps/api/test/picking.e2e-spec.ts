@@ -99,12 +99,19 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       .expect(200);
     validCustomerId = customers.body.data[0].customerId;
 
-    const products = await request(app.getHttpServer())
-      .get('/api/products?limit=2')
+    const p1 = await request(app.getHttpServer())
+      .post('/api/products')
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    validProductId = products.body.data[0].productId;
-    secondProductId = products.body.data[1]?.productId ?? validProductId;
+      .send({ productNumber: 'PICK-P1', name: 'Pick Test 1', baseUom: 'EA' })
+      .expect(201);
+    validProductId = p1.body.productId;
+
+    const p2 = await request(app.getHttpServer())
+      .post('/api/products')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ productNumber: 'PICK-P2', name: 'Pick Test 2', baseUom: 'EA' })
+      .expect(201);
+    secondProductId = p2.body.productId;
   }, 120_000);
 
   afterAll(async () => {
@@ -173,15 +180,11 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
     return { orderId, lineIds };
   }
 
-  /** Resolve a bin ID for the first available bin at the default location. */
+  /** Resolve the storage bin ID for picking. Always use the seeded MAIN-BIN-1
+   *  storage bin so we never accidentally pick FROM the SHIPPING staging bin
+   *  (which would create cancelling ledger entries). */
   async function getFirstBinId(): Promise<string> {
-    const summary = await request(app.getHttpServer())
-      .get('/api/inventory/bins')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    return (
-      summary.body.data[0]?.binId || '40000000-0000-0000-0000-000000000003'
-    );
+    return '40000000-0000-0000-0000-000000000003'; // MAIN-BIN-1 from test-seed.ts
   }
 
   /** Pick a line via the new POST endpoint. */

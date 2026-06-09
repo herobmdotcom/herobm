@@ -281,6 +281,17 @@ export const TRANSFER_ORDER_TRANSITIONS: Record<string, string[]> = {
   [TRANSFER_ORDER_STATE.CANCELLED]: [],
 };
 
+export const PAYMENT_TYPE = {
+  CUSTOMER_RECEIPT: 'customer_receipt',
+  SUPPLIER_PAYMENT: 'supplier_payment',
+  CUSTOMER_REFUND: 'customer_refund',
+  SUPPLIER_REFUND: 'supplier_refund',
+  DIRECT_RECEIPT: 'direct_receipt',
+  DIRECT_PAYMENT: 'direct_payment',
+} as const;
+
+export type PaymentType = typeof PAYMENT_TYPE[keyof typeof PAYMENT_TYPE];
+
 export const PAYMENT_STATE = {
   DRAFT: 'draft',
   EXPORTED: 'exported',

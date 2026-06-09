@@ -32,6 +32,7 @@ import {
   SALES_ORDER_PICK_STATE,
   PUTAWAY_STATUS,
 } from '@modbm/shared';
+import * as schema from '../drizzle/modbm-core-schema';
 import * as readline from 'readline';
 
 // Import standard setup functions
@@ -458,7 +459,7 @@ async function main() {
     database: process.env.POSTGRES_DB || 'herobm',
   });
 
-  const db = drizzle(pool);
+  const db = drizzle(pool, { schema });
 
   try {
     await wipeDatabase(db);

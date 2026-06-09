@@ -47,6 +47,7 @@ export {
   SUPPLIER_STATE,
   PRODUCT_STATE,
   RECEIPT_STATE,
+  PAYMENT_TYPE,
   // Lifecycle ordinals (for UI forward/backward styling)
   SALES_ORDER_LIFECYCLE,
   PURCHASE_ORDER_LIFECYCLE,
@@ -88,6 +89,7 @@ export type {
   BackorderState,
   TransferOrderState,
   PaymentState,
+  PaymentType,
   TransferOrderPickState,
   CustomerState,
   SupplierState,

@@ -371,7 +371,10 @@ export class TransferService {
       });
 
       const [order] = await tx
-        .select({ stateCode: transferOrders.stateCode, orderNumber: transferOrders.orderNumber })
+        .select({
+          stateCode: transferOrders.stateCode,
+          orderNumber: transferOrders.orderNumber,
+        })
         .from(transferOrders)
         .where(eq(transferOrders.transferOrderId, transferOrderId));
 
@@ -426,7 +429,10 @@ export class TransferService {
         tx,
       );
 
-      const [order] = await tx.select({ orderNumber: transferOrders.orderNumber }).from(transferOrders).where(eq(transferOrders.transferOrderId, transferOrderId));
+      const [order] = await tx
+        .select({ orderNumber: transferOrders.orderNumber })
+        .from(transferOrders)
+        .where(eq(transferOrders.transferOrderId, transferOrderId));
       await emitEvent(tx as any, {
         entityType: 'transfer_order' as any,
         entityId: transferOrderId,
@@ -966,7 +972,10 @@ export class TransferService {
     }
 
     const [order] = await tx
-      .select({ stateCode: transferOrders.stateCode, orderNumber: transferOrders.orderNumber })
+      .select({
+        stateCode: transferOrders.stateCode,
+        orderNumber: transferOrders.orderNumber,
+      })
       .from(transferOrders)
       .where(eq(transferOrders.transferOrderId, transferOrderId));
 
@@ -1046,7 +1055,10 @@ export class TransferService {
       .where(eq(transferOrderPicks.pickId, pickId));
 
     if (newState === TRANSFER_ORDER_PICK_STATE.CANCELLED) {
-      const [order] = await tx.select({ orderNumber: transferOrders.orderNumber }).from(transferOrders).where(eq(transferOrders.transferOrderId, existing.transferOrderId));
+      const [order] = await tx
+        .select({ orderNumber: transferOrders.orderNumber })
+        .from(transferOrders)
+        .where(eq(transferOrders.transferOrderId, existing.transferOrderId));
       await emitEvent(tx as any, {
         entityType: EntityType.WAREHOUSE,
         entityId: pickId,
@@ -1397,7 +1409,10 @@ export class TransferService {
   async cancelTransferOrder(id: string, actor: string) {
     return await this.db.transaction(async (tx) => {
       const [order] = await tx
-        .select({ stateCode: transferOrders.stateCode, orderNumber: transferOrders.orderNumber })
+        .select({
+          stateCode: transferOrders.stateCode,
+          orderNumber: transferOrders.orderNumber,
+        })
         .from(transferOrders)
         .where(eq(transferOrders.transferOrderId, id));
 

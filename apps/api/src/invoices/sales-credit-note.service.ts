@@ -559,11 +559,24 @@ export class SalesCreditNoteService {
   /**
    * List all credit notes, optionally filtered.
    */
-  async findAll(customerId?: string) {
+  async findAll(customerId?: string, balanceStatus?: string) {
     let q = this.db.select().from(salesCreditNotes).$dynamic();
+
+    const conditions = [];
     if (customerId) {
-      q = q.where(eq(salesCreditNotes.customerId, customerId));
+      conditions.push(eq(salesCreditNotes.customerId, customerId));
     }
+
+    if (balanceStatus === 'unpaid') {
+      conditions.push(
+        sql`CAST(${salesCreditNotes.outstandingAmount} AS numeric) > 0`,
+      );
+    }
+
+    if (conditions.length > 0) {
+      q = q.where(and(...conditions));
+    }
+
     const notes = await q.orderBy(desc(salesCreditNotes.createdOn));
 
     const result = [];

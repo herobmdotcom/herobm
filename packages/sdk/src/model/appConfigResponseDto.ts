@@ -13,4 +13,9 @@ export interface AppConfigResponseDto {
   apiRateLimit: string;
   taxProviderMappings?: AppConfigResponseDtoTaxProviderMappings;
   enrichmentProviderMappings?: AppConfigResponseDtoEnrichmentProviderMappings;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPass?: string;
+  smtpFromAddress?: string;
 }

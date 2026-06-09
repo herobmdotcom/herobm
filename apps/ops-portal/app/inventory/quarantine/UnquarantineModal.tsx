@@ -81,8 +81,8 @@ export default function UnquarantineModal({ isOpen, onClose, onSubmit, locationI
         {t('quarantine.cancel')}
       </button>
       <button
-        type="button"
-        onClick={handleSubmit}
+        type="submit"
+        form="unquarantine-form"
         disabled={submitting || loading || !binId}
         className="btn btn-primary font-bold"
       >
@@ -102,7 +102,7 @@ export default function UnquarantineModal({ isOpen, onClose, onSubmit, locationI
         {loading ? (
           <div className="text-sm text-[var(--text-muted)] text-center py-8">{tCommon('loading')}</div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form id="unquarantine-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
                 {t('quarantine.destinationBin')}

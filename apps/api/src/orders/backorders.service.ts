@@ -142,7 +142,10 @@ export class BackordersService {
       });
     }
 
-    const [order] = await tx.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, salesOrderId));
+    const [order] = await tx
+      .select({ orderNumber: salesOrders.orderNumber })
+      .from(salesOrders)
+      .where(eq(salesOrders.salesOrderId, salesOrderId));
 
     await emitEvent(tx, {
       entityType: EntityType.SALES_ORDER,
@@ -177,7 +180,10 @@ export class BackordersService {
       );
 
       if (current && current.purchaseOrderId) {
-        const [po] = await tx.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq(purchaseOrders.purchaseOrderId, current.purchaseOrderId));
+        const [po] = await tx
+          .select({ orderNumber: purchaseOrders.orderNumber })
+          .from(purchaseOrders)
+          .where(eq(purchaseOrders.purchaseOrderId, current.purchaseOrderId));
         // Emit event on PO side using the old PO ID
         await emitEvent(tx, {
           entityType: EntityType.PURCHASE_ORDER,
@@ -604,7 +610,13 @@ export class BackordersService {
           orderNumber: purchaseOrders.orderNumber,
         })
         .from(purchaseOrderLineItems)
-        .innerJoin(purchaseOrders, eq(purchaseOrders.purchaseOrderId, purchaseOrderLineItems.purchaseOrderId))
+        .innerJoin(
+          purchaseOrders,
+          eq(
+            purchaseOrders.purchaseOrderId,
+            purchaseOrderLineItems.purchaseOrderId,
+          ),
+        )
         .where(
           eq(purchaseOrderLineItems.purchaseOrderLineId, purchaseOrderLineId),
         );
@@ -701,7 +713,10 @@ export class BackordersService {
           orderNumber: salesOrders.orderNumber,
         })
         .from(backorders)
-        .innerJoin(salesOrders, eq(salesOrders.salesOrderId, backorders.salesOrderId))
+        .innerJoin(
+          salesOrders,
+          eq(salesOrders.salesOrderId, backorders.salesOrderId),
+        )
         .where(eq(backorders.backorderId, backorderId));
 
       if (!demand) {
@@ -733,7 +748,10 @@ export class BackordersService {
             },
           );
 
-          const [po] = await tx.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq(purchaseOrders.purchaseOrderId, ld.purchaseOrderId));
+          const [po] = await tx
+            .select({ orderNumber: purchaseOrders.orderNumber })
+            .from(purchaseOrders)
+            .where(eq(purchaseOrders.purchaseOrderId, ld.purchaseOrderId));
           await emitEvent(tx, {
             entityType: EntityType.PURCHASE_ORDER,
             entityId: ld.purchaseOrderId,
@@ -828,7 +846,10 @@ export class BackordersService {
       .where(eq(backorders.backorderId, backorderId))
       .returning();
 
-    const [order] = await db.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, existing.salesOrderId));
+    const [order] = await db
+      .select({ orderNumber: salesOrders.orderNumber })
+      .from(salesOrders)
+      .where(eq(salesOrders.salesOrderId, existing.salesOrderId));
 
     await emitEvent(db, {
       entityType: EntityType.SALES_ORDER,

@@ -120,6 +120,12 @@ import type {
   DiscountMatrixControllerListParams,
   DiscountMatrixControllerResolveParams,
   DiscountMatrixResponseDto,
+  EmailControllerDismissEmail201,
+  EmailControllerDismissEmailBody,
+  EmailControllerListEmails200Item,
+  EmailControllerListEmailsParams,
+  EmailControllerRetryEmail201,
+  EmailControllerRetryEmailBody,
   EmptyBodyDto,
   EnrichmentControllerGetConfig200,
   EnrichmentControllerGetConfigParams,
@@ -247,6 +253,7 @@ import type {
   ProductsControllerGetComponents200,
   PublishEventDto,
   PurchaseDebitNoteResponseDto,
+  PurchaseDebitNotesControllerFindAllParams,
   PurchaseInvoiceResponseDto,
   PurchaseOrderLineResponseDto,
   PurchaseOrderResponseDto,
@@ -5209,6 +5216,10 @@ export const activitiesControllerImport = async (createActivityDto: CreateActivi
 
 
 
+/**
+ * Get the current license status.
+ * @summary Get License Status
+ */
 export type licenseControllerGetStatusResponse200 = {
   data: LicenseStatusDto
   status: 200
@@ -5242,6 +5253,10 @@ export const licenseControllerGetStatus = async ( options?: RequestInit): Promis
 
 
 
+/**
+ * Apply a new license key.
+ * @summary Apply License
+ */
 export type licenseControllerApplyLicenseResponse201 = {
   data: LicenseStatusDto
   status: 201
@@ -9575,7 +9590,7 @@ export const externalSyncControllerClearEventsByType = async (params: ExternalSy
  * @summary Find Credit Notes
  */
 export type salesCreditNotesControllerFindAllResponse200 = {
-  data: void
+  data: SalesCreditNoteResponseDto[]
   status: 200
 }
     
@@ -9586,7 +9601,7 @@ export type salesCreditNotesControllerFindAllResponseSuccess = (salesCreditNotes
 
 export type salesCreditNotesControllerFindAllResponse = (salesCreditNotesControllerFindAllResponseSuccess)
 
-export const getSalesCreditNotesControllerFindAllUrl = (params: SalesCreditNotesControllerFindAllParams,) => {
+export const getSalesCreditNotesControllerFindAllUrl = (params?: SalesCreditNotesControllerFindAllParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -9601,7 +9616,7 @@ export const getSalesCreditNotesControllerFindAllUrl = (params: SalesCreditNotes
   return stringifiedParams.length > 0 ? `/sales-credit-notes?${stringifiedParams}` : `/sales-credit-notes`
 }
 
-export const salesCreditNotesControllerFindAll = async (params: SalesCreditNotesControllerFindAllParams, options?: RequestInit): Promise<salesCreditNotesControllerFindAllResponse> => {
+export const salesCreditNotesControllerFindAll = async (params?: SalesCreditNotesControllerFindAllParams, options?: RequestInit): Promise<salesCreditNotesControllerFindAllResponse> => {
   
   return customFetch<salesCreditNotesControllerFindAllResponse>(getSalesCreditNotesControllerFindAllUrl(params),
   {      
@@ -12100,6 +12115,50 @@ export const globalPurchaseReturnsControllerGetPurchaseReturnById = async (id: s
 
 
 /**
+ * Retrieve a list of purchase debit notes.
+ * @summary Find Debit Notes
+ */
+export type purchaseDebitNotesControllerFindAllResponse200 = {
+  data: PurchaseDebitNoteResponseDto[]
+  status: 200
+}
+    
+export type purchaseDebitNotesControllerFindAllResponseSuccess = (purchaseDebitNotesControllerFindAllResponse200) & {
+  headers: Headers;
+};
+;
+
+export type purchaseDebitNotesControllerFindAllResponse = (purchaseDebitNotesControllerFindAllResponseSuccess)
+
+export const getPurchaseDebitNotesControllerFindAllUrl = (params?: PurchaseDebitNotesControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/purchase-debit-notes?${stringifiedParams}` : `/purchase-debit-notes`
+}
+
+export const purchaseDebitNotesControllerFindAll = async (params?: PurchaseDebitNotesControllerFindAllParams, options?: RequestInit): Promise<purchaseDebitNotesControllerFindAllResponse> => {
+  
+  return customFetch<purchaseDebitNotesControllerFindAllResponse>(getPurchaseDebitNotesControllerFindAllUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
  * Create a new purchase debit note.
  * @summary Create Debit Note
  */
@@ -14261,6 +14320,128 @@ export const eventsControllerPublish = async (publishEventDto: PublishEventDto, 
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       publishEventDto,)
+  }
+);}
+
+
+
+/**
+ * List emails in the outbox queue.
+ * @summary List emails
+ */
+export type emailControllerListEmailsResponse200 = {
+  data: EmailControllerListEmails200Item[]
+  status: 200
+}
+    
+export type emailControllerListEmailsResponseSuccess = (emailControllerListEmailsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type emailControllerListEmailsResponse = (emailControllerListEmailsResponseSuccess)
+
+export const getEmailControllerListEmailsUrl = (params?: EmailControllerListEmailsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/emails?${stringifiedParams}` : `/emails`
+}
+
+export const emailControllerListEmails = async (params?: EmailControllerListEmailsParams, options?: RequestInit): Promise<emailControllerListEmailsResponse> => {
+  
+  return customFetch<emailControllerListEmailsResponse>(getEmailControllerListEmailsUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Retry sending a failed email.
+ * @summary Retry a failed email
+ */
+export type emailControllerRetryEmailResponse201 = {
+  data: EmailControllerRetryEmail201
+  status: 201
+}
+    
+export type emailControllerRetryEmailResponseSuccess = (emailControllerRetryEmailResponse201) & {
+  headers: Headers;
+};
+;
+
+export type emailControllerRetryEmailResponse = (emailControllerRetryEmailResponseSuccess)
+
+export const getEmailControllerRetryEmailUrl = (id: string,) => {
+
+
+  
+
+  return `/emails/${id}/retry`
+}
+
+export const emailControllerRetryEmail = async (id: string,
+    emailControllerRetryEmailBody?: EmailControllerRetryEmailBody, options?: RequestInit): Promise<emailControllerRetryEmailResponse> => {
+  
+  return customFetch<emailControllerRetryEmailResponse>(getEmailControllerRetryEmailUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emailControllerRetryEmailBody,)
+  }
+);}
+
+
+
+/**
+ * Dismiss a failed email so it is no longer shown as an error.
+ * @summary Dismiss a failed email
+ */
+export type emailControllerDismissEmailResponse201 = {
+  data: EmailControllerDismissEmail201
+  status: 201
+}
+    
+export type emailControllerDismissEmailResponseSuccess = (emailControllerDismissEmailResponse201) & {
+  headers: Headers;
+};
+;
+
+export type emailControllerDismissEmailResponse = (emailControllerDismissEmailResponseSuccess)
+
+export const getEmailControllerDismissEmailUrl = (id: string,) => {
+
+
+  
+
+  return `/emails/${id}/dismiss`
+}
+
+export const emailControllerDismissEmail = async (id: string,
+    emailControllerDismissEmailBody?: EmailControllerDismissEmailBody, options?: RequestInit): Promise<emailControllerDismissEmailResponse> => {
+  
+  return customFetch<emailControllerDismissEmailResponse>(getEmailControllerDismissEmailUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emailControllerDismissEmailBody,)
   }
 );}
 

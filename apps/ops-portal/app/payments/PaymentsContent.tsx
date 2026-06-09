@@ -17,7 +17,6 @@ interface UnifiedPayment {
   paymentId: string;
   paymentNumber: string;
   paymentType: string;
-  partyType: string;
   partyId: string;
   paymentDate: string;
   modeOfPayment: string;
@@ -72,9 +71,16 @@ export default function PaymentsContent() {
       checkboxSelection: true,
       headerCheckboxSelection: true,
     },
-    { field: 'paymentType', headerName: 'Type', width: 120, cellRenderer: (params: any) => params.value === 'receive' ? 'Receipt' : 'Payment' },
-    { field: 'partyType', headerName: 'Party Type', width: 120, cellRenderer: (params: any) => params.value === 'customer' ? 'Customer' : 'Supplier' },
-    { field: 'partyName', headerName: 'Party', width: 200 },
+    { 
+      field: 'paymentType', 
+      headerName: 'Type', 
+      width: 150, 
+      cellRenderer: (params: any) => {
+        if (!params.data || !params.data.paymentType) return '';
+        return t(('manager.options.' + params.data.paymentType.replace(/_([a-z])/g, (g: string) => g[1].toUpperCase())) as Parameters<typeof t>[0]);
+      } 
+    },
+    { field: 'partyName', headerName: 'Party', width: 200, valueFormatter: (params: any) => params.value || '—' },
     {
       field: 'stateCode',
       headerName: 'Status',

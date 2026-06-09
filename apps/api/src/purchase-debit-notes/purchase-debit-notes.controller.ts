@@ -5,6 +5,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -14,6 +15,7 @@ import {
   Body,
   UseGuards,
   HttpCode,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PurchaseDebitNotesService } from './purchase-debit-notes.service';
@@ -36,6 +38,22 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 @ApiTags('PurchaseDebitNotes')
 export class PurchaseDebitNotesController {
   constructor(private readonly debitNotesService: PurchaseDebitNotesService) {}
+
+  @Get()
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find Debit Notes',
+    description: 'Retrieve a list of purchase debit notes.',
+  })
+  @ApiQuery({ name: 'vendorId', required: false })
+  @ApiQuery({ name: 'balanceStatus', required: false })
+  @ApiOkResponse({ type: [PurchaseDebitNoteResponseDto] })
+  findAll(
+    @Query('vendorId') vendorId?: string,
+    @Query('balanceStatus') balanceStatus?: string,
+  ) {
+    return this.debitNotesService.findAll(vendorId, balanceStatus);
+  }
 
   @Post()
   @ApiBody({ type: CreateDebitNoteDto })

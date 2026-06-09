@@ -52,7 +52,10 @@ export const autoReceiveWhenFullyReceived: POLifecycleRule = {
       return null;
 
     const [order] = await db
-      .select({ stateCode: purchaseOrders.stateCode, orderNumber: purchaseOrders.orderNumber })
+      .select({
+        stateCode: purchaseOrders.stateCode,
+        orderNumber: purchaseOrders.orderNumber,
+      })
       .from(purchaseOrders)
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
@@ -127,7 +130,10 @@ export const autoPartiallyReceiveWhenSomeReceived: POLifecycleRule = {
       return null;
 
     const [order] = await db
-      .select({ stateCode: purchaseOrders.stateCode, orderNumber: purchaseOrders.orderNumber })
+      .select({
+        stateCode: purchaseOrders.stateCode,
+        orderNumber: purchaseOrders.orderNumber,
+      })
       .from(purchaseOrders)
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
@@ -207,7 +213,10 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
       return null;
 
     const [order] = await db
-      .select({ stateCode: purchaseOrders.stateCode, orderNumber: purchaseOrders.orderNumber })
+      .select({
+        stateCode: purchaseOrders.stateCode,
+        orderNumber: purchaseOrders.orderNumber,
+      })
       .from(purchaseOrders)
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
@@ -316,7 +325,10 @@ export const autoRevertToPartiallyReceivedOnReturn: POLifecycleRule = {
       return null;
 
     const [order] = await db
-      .select({ stateCode: purchaseOrders.stateCode, orderNumber: purchaseOrders.orderNumber })
+      .select({
+        stateCode: purchaseOrders.stateCode,
+        orderNumber: purchaseOrders.orderNumber,
+      })
       .from(purchaseOrders)
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 

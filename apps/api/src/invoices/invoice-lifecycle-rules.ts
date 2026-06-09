@@ -100,7 +100,7 @@ export const autoTransitionInvoiceBasedOnOutstandingAmount: InvoiceLifecycleRule
         entityType,
         entityId: invoiceId,
         eventType: EventType.STATUS_CHANGED,
-        entityDisplayName: invoice.invoiceNumber as string,
+        entityDisplayName: invoice.invoiceNumber,
         payload: {
           isAutomated: true,
           rule: 'auto-transition-invoice-outstanding-amount',

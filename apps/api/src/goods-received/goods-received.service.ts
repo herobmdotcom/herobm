@@ -688,7 +688,10 @@ export class GoodsReceivedService {
           tx,
         );
 
-        const [po] = await tx.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq(purchaseOrders.purchaseOrderId, poId));
+        const [po] = await tx
+          .select({ orderNumber: purchaseOrders.orderNumber })
+          .from(purchaseOrders)
+          .where(eq(purchaseOrders.purchaseOrderId, poId));
         await emitEvent(tx, {
           entityType: EntityType.PURCHASE_ORDER,
           entityId: poId,
@@ -1445,7 +1448,10 @@ export class GoodsReceivedService {
         tx,
       );
 
-      const [receipt] = await tx.select({ receiptNumber: goodsReceived.receiptNumber }).from(goodsReceived).where(eq(goodsReceived.goodsReceivedId, grLine.goodsReceivedId));
+      const [receipt] = await tx
+        .select({ receiptNumber: goodsReceived.receiptNumber })
+        .from(goodsReceived)
+        .where(eq(goodsReceived.goodsReceivedId, grLine.goodsReceivedId));
       await emitEvent(tx, {
         entityType: EntityType.SYSTEM,
         entityId: grLine.goodsReceivedId,
@@ -1595,7 +1601,10 @@ export class GoodsReceivedService {
       );
 
       // 4. Emit Event
-      const [receipt] = await tx.select({ receiptNumber: goodsReceived.receiptNumber }).from(goodsReceived).where(eq(goodsReceived.goodsReceivedId, grLine.goodsReceivedId));
+      const [receipt] = await tx
+        .select({ receiptNumber: goodsReceived.receiptNumber })
+        .from(goodsReceived)
+        .where(eq(goodsReceived.goodsReceivedId, grLine.goodsReceivedId));
       await emitEvent(tx, {
         entityType: EntityType.SYSTEM,
         entityId: grLine.goodsReceivedId,

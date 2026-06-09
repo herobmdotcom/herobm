@@ -125,12 +125,12 @@ app.get('/metrics', async (req, res) => {
   res.set('Content-Type', register.contentType);
   res.end(await register.metrics());
 });
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   logger.info({ port: PORT }, 'Worker running, metrics exposed');
 });
 
 // Start Polling
-setInterval(() => {
+const pollInterval = setInterval(() => {
   pollOutbox(db, syncQueue);
   pollEmailOutbox(db);
 }, 5000);
@@ -138,3 +138,31 @@ setInterval(() => {
 // Initial poll
 pollOutbox(db, syncQueue);
 pollEmailOutbox(db);
+
+// Graceful Shutdown
+let isShuttingDown = false;
+async function shutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  logger.info({ signal }, 'Shutting down worker gracefully...');
+  
+  clearInterval(pollInterval);
+  
+  try {
+    server.close();
+    await worker.close();
+    await maintenanceWorker.close();
+    await syncQueue.close();
+    await maintenanceQueue.close();
+    await pgClient.end();
+    logger.info('Graceful shutdown complete');
+    process.exit(0);
+  } catch (err) {
+    logger.error({ err }, 'Error during shutdown');
+    process.exit(1);
+  }
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGUSR2', () => shutdown('SIGUSR2'));

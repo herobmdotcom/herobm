@@ -294,6 +294,15 @@ export class PickingService {
       );
     }
 
+    // Guard: source bin must not be the SHIPPING bin itself — picking from
+    // SHIPPING to SHIPPING creates cancelling ledger entries (net zero).
+    // Cross-dock picks from RECEIVING are valid and intentionally allowed.
+    if (binId === shippingBin.binId) {
+      throw new BadRequestException(
+        `Cannot pick from the SHIPPING bin. Stock is already staged for dispatch.`,
+      );
+    }
+
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       // 1. Record physical inventory movement
       await this.inventoryService.recordInventoryMovement(tx, {
@@ -775,7 +784,10 @@ export class PickingService {
       .returning();
 
     if (newState === SALES_ORDER_PICK_STATE.CANCELLED) {
-      const [order] = await tx.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, pick.salesOrderId));
+      const [order] = await tx
+        .select({ orderNumber: salesOrders.orderNumber })
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, pick.salesOrderId));
       await emitEvent(tx as any, {
         entityType: EntityType.WAREHOUSE,
         entityId: pickId,

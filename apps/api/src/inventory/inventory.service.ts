@@ -1374,7 +1374,10 @@ export class InventoryService {
                   RETURN_STATE.RECEIVED,
                 );
 
-                const [order] = await tx.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, ret.salesOrderId));
+                const [order] = await tx
+                  .select({ orderNumber: salesOrders.orderNumber })
+                  .from(salesOrders)
+                  .where(eq(salesOrders.salesOrderId, ret.salesOrderId));
                 await emitEvent(tx, {
                   entityType: EntityType.SALES_ORDER,
                   entityId: ret.salesOrderId,

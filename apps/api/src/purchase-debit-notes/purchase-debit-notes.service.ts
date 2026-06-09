@@ -63,6 +63,38 @@ export class PurchaseDebitNotesService {
     return `${prefix}${String(seq).padStart(4, '0')}`;
   }
 
+  async findAll(vendorId?: string, balanceStatus?: string) {
+    let q = this.db.select().from(purchaseDebitNotes).$dynamic();
+
+    const conditions = [];
+    if (vendorId) {
+      conditions.push(eq(purchaseDebitNotes.vendorId, vendorId));
+    }
+
+    if (balanceStatus === 'unpaid') {
+      conditions.push(
+        sql`CAST(${purchaseDebitNotes.outstandingAmount} AS numeric) > 0`,
+      );
+    }
+
+    if (conditions.length > 0) {
+      q = q.where(and(...conditions));
+    }
+
+    const notes = await q.orderBy(desc(purchaseDebitNotes.createdOn));
+
+    const result = [];
+    for (const dn of notes) {
+      const lines = await this.db
+        .select()
+        .from(purchaseDebitNoteLines)
+        .where(eq(purchaseDebitNoteLines.debitNoteId, dn.debitNoteId));
+      result.push({ ...dn, lines });
+    }
+
+    return result;
+  }
+
   async createDebitNote(dto: CreateDebitNoteDto, actor: string) {
     const [ret] = await this.db
       .select()
@@ -323,7 +355,10 @@ export class PurchaseDebitNotesService {
       .where(eq(purchaseDebitNotes.debitNoteId, debitNoteId))
       .returning();
 
-    const [order] = await db.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq(purchaseOrders.purchaseOrderId, existing.purchaseOrderId));
+    const [order] = await db
+      .select({ orderNumber: purchaseOrders.orderNumber })
+      .from(purchaseOrders)
+      .where(eq(purchaseOrders.purchaseOrderId, existing.purchaseOrderId));
     await emitEvent(db as any, {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: existing.purchaseOrderId,

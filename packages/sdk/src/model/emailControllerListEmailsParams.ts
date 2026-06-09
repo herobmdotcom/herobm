@@ -6,7 +6,8 @@
  * OpenAPI spec version: 1.0
  */
 
-export type SalesCreditNotesControllerFindAllParams = {
-customerId?: string;
-balanceStatus?: string;
+export type EmailControllerListEmailsParams = {
+entityType?: string;
+entityId?: string;
+status?: string;
 };

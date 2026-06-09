@@ -6,14 +6,13 @@
  * OpenAPI spec version: 1.0
  */
 import type { CreatePaymentDtoPaymentType } from './createPaymentDtoPaymentType';
-import type { CreatePaymentDtoPartyType } from './createPaymentDtoPartyType';
 import type { CreatePaymentDtoModeOfPayment } from './createPaymentDtoModeOfPayment';
+import type { PaymentLineDto } from './paymentLineDto';
 
 export interface CreatePaymentDto {
   paymentId: string;
   paymentType: CreatePaymentDtoPaymentType;
-  partyType: CreatePaymentDtoPartyType;
-  partyId: string;
+  partyId?: string;
   paymentDate: string;
   modeOfPayment: CreatePaymentDtoModeOfPayment;
   /** @minimum 0.01 */
@@ -22,4 +21,5 @@ export interface CreatePaymentDto {
   referenceNumber?: string;
   currencyCode: string;
   submitImmediately?: boolean;
+  lines?: PaymentLineDto[];
 }

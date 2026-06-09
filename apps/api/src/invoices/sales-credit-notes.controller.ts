@@ -47,9 +47,13 @@ export class SalesCreditNotesController {
     description: 'Retrieve a list of sales credit notes.',
   })
   @ApiQuery({ name: 'customerId', required: false })
+  @ApiQuery({ name: 'balanceStatus', required: false })
   @ApiOkResponse({ type: [SalesCreditNoteResponseDto] })
-  findAll(@Query('customerId') customerId?: string) {
-    return this.creditNoteService.findAll(customerId);
+  findAll(
+    @Query('customerId') customerId?: string,
+    @Query('balanceStatus') balanceStatus?: string,
+  ) {
+    return this.creditNoteService.findAll(customerId, balanceStatus);
   }
 
   @Get(':id')

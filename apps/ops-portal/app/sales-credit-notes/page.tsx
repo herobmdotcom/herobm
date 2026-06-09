@@ -1,4 +1,4 @@
-/* eslint-disable i18next/no-literal-string, no-restricted-syntax */
+/* eslint-disable i18next/no-literal-string */
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';

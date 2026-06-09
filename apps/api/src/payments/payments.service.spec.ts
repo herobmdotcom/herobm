@@ -29,6 +29,7 @@ import {
 import { eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import {
+  PAYMENT_TYPE,
   PAYMENT_STATE,
   SALES_INVOICE_STATE,
   SALES_ORDER_STATE,
@@ -238,8 +239,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: '00000000-0000-0000-0000-000000000001',
-          paymentType: 'receive',
-          partyType: 'customer',
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',
@@ -260,8 +260,7 @@ describe('PaymentsService', () => {
       const p1 = await service.createPaymentEntry(
         {
           paymentId: '00000000-0000-0000-0000-000000000001',
-          paymentType: 'receive',
-          partyType: 'customer',
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'Cash',
@@ -275,8 +274,7 @@ describe('PaymentsService', () => {
       const p2 = await service.createPaymentEntry(
         {
           paymentId: '00000000-0000-0000-0000-000000000002',
-          paymentType: 'receive',
-          partyType: 'customer',
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'Cash',
@@ -302,8 +300,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: '00000000-0000-0000-0000-000000000001',
-          paymentType: 'receive',
-          partyType: 'customer',
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',
@@ -345,8 +342,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: '00000000-0000-0000-0000-000000000001',
-          paymentType: 'pay',
-          partyType: 'supplier',
+          paymentType: PAYMENT_TYPE.SUPPLIER_PAYMENT,
           partyId: supplierId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',
@@ -384,8 +380,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: '00000000-0000-0000-0000-000000000001',
-          paymentType: 'receive',
-          partyType: 'customer',
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'Cash',
@@ -419,8 +414,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: '00000000-0000-0000-0000-000000000001',
-          paymentType: 'receive',
-          partyType: 'customer',
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: ungroupedId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',
@@ -443,8 +437,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: randomUUID(),
-          paymentType: 'pay',
-          partyType: 'customer',
+          paymentType: PAYMENT_TYPE.CUSTOMER_REFUND,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',
@@ -475,8 +468,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: randomUUID(),
-          paymentType: 'receive',
-          partyType: 'supplier',
+          paymentType: PAYMENT_TYPE.SUPPLIER_REFUND,
           partyId: supplierId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',
@@ -519,8 +511,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: randomUUID(),
-          paymentType: 'pay',
-          partyType: 'gl_account',
+          paymentType: PAYMENT_TYPE.DIRECT_PAYMENT,
           partyId: expenseGlId, // offset account
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',
@@ -563,8 +554,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: randomUUID(),
-          paymentType: 'receive',
-          partyType: 'gl_account',
+          paymentType: PAYMENT_TYPE.DIRECT_RECEIPT,
           partyId: revenueGlId, // offset account
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',
@@ -619,8 +609,7 @@ describe('PaymentsService', () => {
       await service.createPaymentEntry(
         {
           paymentId,
-          paymentType: 'pay',
-          partyType: 'gl_account',
+          paymentType: PAYMENT_TYPE.DIRECT_PAYMENT,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',
           totalAmount: 500,
@@ -703,8 +692,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: '00000000-0000-0000-0000-000000000001',
-          paymentType: 'receive',
-          partyType: 'customer',
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',
@@ -852,8 +840,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: '00000000-0000-0000-0000-000000000001',
-          paymentType: 'receive',
-          partyType: 'customer',
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',
@@ -881,8 +868,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: '00000000-0000-0000-0000-000000000001',
-          paymentType: 'receive',
-          partyType: 'customer',
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'Cash',
@@ -925,8 +911,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: '00000000-0000-0000-0000-000000000001',
-          paymentType: 'receive',
-          partyType: 'customer',
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',
@@ -973,8 +958,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: randomUUID(),
-          paymentType: 'pay',
-          partyType: 'gl_account',
+          paymentType: PAYMENT_TYPE.DIRECT_PAYMENT,
           partyId: expenseGlId, // offset account
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',
@@ -1047,8 +1031,7 @@ describe('PaymentsService', () => {
       await service.createPaymentEntry(
         {
           paymentId: '00000000-0000-0000-0000-000000000001',
-          paymentType: 'receive',
-          partyType: 'customer',
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'Cash',
@@ -1068,8 +1051,7 @@ describe('PaymentsService', () => {
       await service.createPaymentEntry(
         {
           paymentId: '00000000-0000-0000-0000-000000000001',
-          paymentType: 'pay',
-          partyType: 'supplier',
+          paymentType: PAYMENT_TYPE.SUPPLIER_PAYMENT,
           partyId: supplierId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',
@@ -1117,8 +1099,7 @@ describe('PaymentsService', () => {
       const payment = await service.createPaymentEntry(
         {
           paymentId: '00000000-0000-0000-0000-000000000001',
-          paymentType: 'receive',
-          partyType: 'customer',
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
           modeOfPayment: 'EFT',

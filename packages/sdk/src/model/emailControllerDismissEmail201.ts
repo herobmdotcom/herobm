@@ -6,7 +6,4 @@
  * OpenAPI spec version: 1.0
  */
 
-export type SalesCreditNotesControllerFindAllParams = {
-customerId?: string;
-balanceStatus?: string;
-};
+export type EmailControllerDismissEmail201 = { [key: string]: unknown };

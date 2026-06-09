@@ -1789,8 +1789,16 @@ export const purchaseInvoiceReceipts = modbmCore.table(
 export const paymentEntries = modbmCore.table('payment_entries', {
   paymentId: uuid('payment_id').primaryKey().defaultRandom(),
   paymentNumber: text('payment_number').unique().notNull(),
-  paymentType: text('payment_type').notNull(), // 'receive' | 'pay'
-  partyType: text('party_type').notNull(), // 'customer' | 'supplier'
+  paymentType: text('payment_type', {
+    enum: [
+      'customer_receipt',
+      'supplier_payment',
+      'customer_refund',
+      'supplier_refund',
+      'direct_receipt',
+      'direct_payment',
+    ],
+  }).notNull(),
   partyId: uuid('party_id'), // Optional for multi-line split payments
   paymentDate: timestamp('payment_date', { withTimezone: true }).notNull(),
   modeOfPayment: text('mode_of_payment').notNull(), // 'Cash', 'Wire', 'Credit Card'

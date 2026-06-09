@@ -1929,6 +1929,7 @@
     "loadingEllipsis": "Loading...",
     "manager": {
       "buttons": {
+        "addLine": "+ Add Line",
         "nextPayment": "Next Payment",
         "previousPayment": "Previous Payment",
         "reverse": "Reverse",
@@ -1954,6 +1955,7 @@
         "date": "Date",
         "glAccount": "GL Account",
         "glBank": "GL Bank Account",
+        "memo": "Memo",
         "mode": "Mode",
         "party": "Party",
         "paymentUnallocated": "Payment Unallocated",
@@ -1961,6 +1963,7 @@
         "remainingToAllocate": "Remaining to Allocate",
         "settlementCurrency": "Settlement Currency",
         "status": "Status",
+        "totalAmount": "Total Amount",
         "totalOutstanding": "Total Outstanding",
         "type": "Type",
         "unallocatedAmount": "Unallocated Amount"

@@ -77,8 +77,8 @@ export default function QuarantineModal({ isOpen, onClose, onSubmit, locationId 
         {t('quarantine.cancel')}
       </button>
       <button
-        type="button"
-        onClick={handleSubmit}
+        type="submit"
+        form="quarantine-form"
         disabled={submitting || loading || (bins.length > 0 && !binId)}
         className="btn btn-primary font-bold"
       >
@@ -99,7 +99,7 @@ export default function QuarantineModal({ isOpen, onClose, onSubmit, locationId 
         {loading ? (
           <div className="text-sm text-[var(--text-muted)] text-center py-8">{tCommon('loading')}</div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form id="quarantine-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
                 {t('quarantine.destinationBin')}

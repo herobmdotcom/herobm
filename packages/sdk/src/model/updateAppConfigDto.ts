@@ -13,4 +13,9 @@ export interface UpdateAppConfigDto {
   apiRateLimit?: string;
   taxProviderMappings?: UpdateAppConfigDtoTaxProviderMappings;
   enrichmentProviderMappings?: UpdateAppConfigDtoEnrichmentProviderMappings;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPass?: string;
+  smtpFromAddress?: string;
 }

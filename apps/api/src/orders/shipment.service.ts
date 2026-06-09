@@ -1330,7 +1330,10 @@ export class ShipmentService {
       .where(eq(salesOrderPicks.pickId, pickId));
 
     if (newState === SALES_ORDER_PICK_STATE.CANCELLED) {
-      const [order] = await tx.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, existing.salesOrderId));
+      const [order] = await tx
+        .select({ orderNumber: salesOrders.orderNumber })
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, existing.salesOrderId));
       await emitEvent(tx, {
         entityType: EntityType.WAREHOUSE,
         entityId: pickId,
