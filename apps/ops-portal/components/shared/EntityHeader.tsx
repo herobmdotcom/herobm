@@ -39,7 +39,7 @@ export default function EntityHeader({
       <div className="flex flex-col lg:flex-row justify-between lg:items-start">
         {/* Mobile Action Bar / Desktop Actions Row */}
         <div className="order-1 lg:order-2 flex flex-col lg:flex-row items-stretch lg:items-center lg:justify-end -mx-4 lg:mx-0 px-4 lg:px-0 pb-3 lg:pb-0 border-b lg:border-none border-[rgba(196,198,205,0.2)] mb-3 lg:mb-0 shrink-0 gap-2 lg:gap-4">
-          {nav && <div className="hidden [@media(any-pointer:fine)]:lg:block">{nav}</div>}
+          {nav && <div className="hidden lg:block">{nav}</div>}
           <div className="flex items-center justify-between lg:justify-end w-full lg:w-auto">
             <div className="lg:hidden">
               {onBack && (
@@ -106,7 +106,7 @@ export default function EntityHeader({
       
       {/* Mobile Navigation */}
       {nav && (
-        <div className="mt-4 block [@media(any-pointer:fine)]:lg:hidden pb-1 overflow-x-auto w-full hide-scrollbar">
+        <div className="mt-4 block lg:hidden pb-1 overflow-x-auto w-full hide-scrollbar">
           {nav}
         </div>
       )}

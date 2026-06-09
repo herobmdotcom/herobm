@@ -33,6 +33,8 @@ Verification & Testing:
   make verify-fast    - Run linting, typechecks, structural tests, unit tests
   make test-all       - Run all tests (unit, e2e, data, structural, heavy)
   make test-heavy     - Run heavy/long-running tests
+  make test-structural- Run structural architecture and safety checks
+  make test-single TEST=name - Run a single test file
   make test-api-e2e   - Run end-to-end API tests against real Postgres
   make check-all      - Run typechecks and linting
 =========================================
@@ -114,7 +116,7 @@ endif
 
 # DB Backend Core (Local FE + API run path)
 up-db: check-postgres-logs
-	$(COMPOSE_CMD) up -d $(ARGS) postgres-custom
+	$(COMPOSE_CMD) up -d $(ARGS) postgres-custom redis-broker
 
 down-db:
 	$(COMPOSE_CMD) stop postgres-custom
@@ -122,11 +124,11 @@ down-db:
 
 # Portal + API Core (The standard full-container app stack)
 up-portal-api: check-postgres-logs
-	$(COMPOSE_CMD) up -d $(ARGS) custom-api ops-portal postgres-custom
+	$(COMPOSE_CMD) up -d $(ARGS) custom-api ops-portal postgres-custom redis-broker outbox-worker
 
 down-portal-api:
-	$(COMPOSE_CMD) stop custom-api ops-portal postgres-custom
-	-podman rm -f custom-api ops-portal postgres-custom
+	$(COMPOSE_CMD) stop custom-api ops-portal postgres-custom redis-broker outbox-worker
+	-podman rm -f custom-api ops-portal postgres-custom redis-broker outbox-worker
 
 
 
@@ -403,13 +405,14 @@ test-deps:
 	python infra/tests/test_dependency_completeness.py
 
 test-single:
-	@powershell -ExecutionPolicy Bypass -File infra/tests/$(TEST).ps1
+	@npx tsx infra/test-utils/run-single.ts $(TEST)
 
 test-structural:
-	@powershell -ExecutionPolicy Bypass -Command "$$ErrorActionPreference = 'Stop'; Get-ChildItem -Path infra\tests\test_*.ps1 | ForEach-Object { Write-Host 'Running ' $$_.Name; & $$_.FullName; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE } }"
+	@npx tsx infra/test-utils/run-structural.ts
 
 test-heavy:
-	@powershell -ExecutionPolicy Bypass -Command "$$ErrorActionPreference = 'Stop'; Get-ChildItem -Path infra\heavy_tests\test_*.ps1 | ForEach-Object { Write-Host 'Running ' $$_.Name; & $$_.FullName; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE } }"
+	@npm run test:e2e -w apps/ops-portal
+	@npx tsx infra/test-utils/run-heavy.ts
 
 test-data:
 	"$(VENV_PYTHON)" infra/tests/test_data_counts.py

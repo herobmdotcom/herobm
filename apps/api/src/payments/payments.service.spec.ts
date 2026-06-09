@@ -26,7 +26,7 @@ import {
   glJournalEntries,
   glJournalLines,
 } from '../drizzle/modbm-core-schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import {
   PAYMENT_STATE,
@@ -438,6 +438,228 @@ describe('PaymentsService', () => {
       );
       expect(submitted.stateCode).toBe(PAYMENT_STATE.SUBMITTED);
     });
+
+    it('should process Customer Refund (pay to customer) with correct GL subledger type', async () => {
+      const payment = await service.createPaymentEntry(
+        {
+          paymentId: randomUUID(),
+          paymentType: 'pay',
+          partyType: 'customer',
+          partyId: customerId,
+          paymentDate: new Date().toISOString(),
+          modeOfPayment: 'EFT',
+          totalAmount: 150,
+          glAccountBank: bankAccountId,
+          currencyCode: 'AUD',
+        },
+        'admin',
+      );
+      await service.submitPaymentEntry(payment.paymentId, 'admin');
+
+      const entries = await pg.db
+        .select()
+        .from(glJournalEntries)
+        .where(eq(glJournalEntries.sourceId, payment.paymentId));
+      const lines = await pg.db
+        .select()
+        .from(glJournalLines)
+        .where(eq(glJournalLines.journalEntryId, entries[0].journalEntryId));
+
+      const debitLine = lines.find((l) => parseFloat(l.debit) > 0); // Should debit AR
+      expect(debitLine?.glAccountId).toBe(arAccountId);
+      expect(debitLine?.partyType).toBe('customer'); // Verify it correctly applied the subledger type
+      expect(debitLine?.partyId).toBe(customerId);
+    });
+
+    it('should process Supplier Refund (receive from supplier) with correct GL subledger type', async () => {
+      const payment = await service.createPaymentEntry(
+        {
+          paymentId: randomUUID(),
+          paymentType: 'receive',
+          partyType: 'supplier',
+          partyId: supplierId,
+          paymentDate: new Date().toISOString(),
+          modeOfPayment: 'EFT',
+          totalAmount: 250,
+          glAccountBank: bankAccountId,
+          currencyCode: 'AUD',
+        },
+        'admin',
+      );
+      await service.submitPaymentEntry(payment.paymentId, 'admin');
+
+      const entries = await pg.db
+        .select()
+        .from(glJournalEntries)
+        .where(eq(glJournalEntries.sourceId, payment.paymentId));
+      const lines = await pg.db
+        .select()
+        .from(glJournalLines)
+        .where(eq(glJournalLines.journalEntryId, entries[0].journalEntryId));
+
+      const creditLine = lines.find((l) => parseFloat(l.credit) > 0); // Should credit AP
+      expect(creditLine?.glAccountId).toBe(apAccountId);
+      expect(creditLine?.partyType).toBe('supplier'); // Verify it correctly applied the subledger type
+      expect(creditLine?.partyId).toBe(supplierId);
+    });
+
+    it('should process Direct Payment (pay to gl_account) with no subledger type', async () => {
+      // Create a dummy expense account
+      const expenseGlId = randomUUID();
+      await pg.db.insert(glAccounts).values({
+        glAccountId: expenseGlId,
+        accountCode: '6000',
+        name: 'Direct Expense',
+        accountType: 'expense',
+        isGroup: false,
+        isActive: true,
+        currencyCode: 'AUD',
+      });
+
+      const payment = await service.createPaymentEntry(
+        {
+          paymentId: randomUUID(),
+          paymentType: 'pay',
+          partyType: 'gl_account',
+          partyId: expenseGlId, // offset account
+          paymentDate: new Date().toISOString(),
+          modeOfPayment: 'EFT',
+          totalAmount: 50,
+          glAccountBank: bankAccountId,
+          currencyCode: 'AUD',
+        },
+        'admin',
+      );
+      await service.submitPaymentEntry(payment.paymentId, 'admin');
+
+      const entries = await pg.db
+        .select()
+        .from(glJournalEntries)
+        .where(eq(glJournalEntries.sourceId, payment.paymentId));
+      const lines = await pg.db
+        .select()
+        .from(glJournalLines)
+        .where(eq(glJournalLines.journalEntryId, entries[0].journalEntryId));
+
+      const debitLine = lines.find((l) => parseFloat(l.debit) > 0); // Should debit expense account
+      expect(debitLine?.glAccountId).toBe(expenseGlId);
+      expect(debitLine?.partyType).toBeNull();
+      expect(debitLine?.partyId).toBeNull();
+    });
+
+    it('should process Direct Receipt (receive to gl_account) with no subledger type', async () => {
+      // Create a dummy revenue account
+      const revenueGlId = randomUUID();
+      await pg.db.insert(glAccounts).values({
+        glAccountId: revenueGlId,
+        accountCode: '4000',
+        name: 'Direct Revenue',
+        accountType: 'revenue',
+        isGroup: false,
+        isActive: true,
+        currencyCode: 'AUD',
+      });
+
+      const payment = await service.createPaymentEntry(
+        {
+          paymentId: randomUUID(),
+          paymentType: 'receive',
+          partyType: 'gl_account',
+          partyId: revenueGlId, // offset account
+          paymentDate: new Date().toISOString(),
+          modeOfPayment: 'EFT',
+          totalAmount: 75,
+          glAccountBank: bankAccountId,
+          currencyCode: 'AUD',
+        },
+        'admin',
+      );
+      await service.submitPaymentEntry(payment.paymentId, 'admin');
+
+      const entries = await pg.db
+        .select()
+        .from(glJournalEntries)
+        .where(eq(glJournalEntries.sourceId, payment.paymentId));
+      const lines = await pg.db
+        .select()
+        .from(glJournalLines)
+        .where(eq(glJournalLines.journalEntryId, entries[0].journalEntryId));
+
+      const creditLine = lines.find((l) => parseFloat(l.credit) > 0); // Should credit revenue account
+      expect(creditLine?.glAccountId).toBe(revenueGlId);
+      expect(creditLine?.partyType).toBeNull();
+      expect(creditLine?.partyId).toBeNull();
+    });
+
+    it('should process split Direct Payment across multiple GL accounts', async () => {
+      const expense1Id = randomUUID();
+      const expense2Id = randomUUID();
+      await pg.db.insert(glAccounts).values([
+        {
+          glAccountId: expense1Id,
+          accountCode: '6001',
+          name: 'Expense 1',
+          accountType: 'expense',
+          isGroup: false,
+          isActive: true,
+          currencyCode: 'AUD',
+        },
+        {
+          glAccountId: expense2Id,
+          accountCode: '6002',
+          name: 'Expense 2',
+          accountType: 'expense',
+          isGroup: false,
+          isActive: true,
+          currencyCode: 'AUD',
+        },
+      ]);
+
+      const paymentId = randomUUID();
+      await service.createPaymentEntry(
+        {
+          paymentId,
+          paymentType: 'pay',
+          partyType: 'gl_account',
+          paymentDate: new Date().toISOString(),
+          modeOfPayment: 'EFT',
+          totalAmount: 500,
+          glAccountBank: bankAccountId,
+          currencyCode: 'AUD',
+          lines: [
+            { accountId: expense1Id, amount: 545, memo: 'Gross Wages' },
+            { accountId: expense2Id, amount: -45, memo: 'PAYG Liability' },
+          ],
+        },
+        'admin',
+      );
+
+      await service.submitPaymentEntry(paymentId, 'admin');
+
+      const entries = await pg.db
+        .select()
+        .from(glJournalEntries)
+        .where(eq(glJournalEntries.sourceId, paymentId));
+      const lines = await pg.db
+        .select()
+        .from(glJournalLines)
+        .where(eq(glJournalLines.journalEntryId, entries[0].journalEntryId));
+
+      expect(lines.length).toBe(3); // 1 Bank, 2 Splits
+
+      const bankLine = lines.find((l) => l.glAccountId === bankAccountId);
+      expect(parseFloat(bankLine!.credit)).toBe(500);
+
+      const exp1Line = lines.find((l) => l.glAccountId === expense1Id);
+      expect(parseFloat(exp1Line!.debit)).toBe(545);
+      expect(parseFloat(exp1Line!.credit)).toBe(0);
+      expect(exp1Line!.memo).toBe('Gross Wages');
+
+      const exp2Line = lines.find((l) => l.glAccountId === expense2Id);
+      expect(parseFloat(exp2Line!.debit)).toBe(0);
+      expect(parseFloat(exp2Line!.credit)).toBe(45); // Negative line amount becomes a credit for a 'pay' transaction
+      expect(exp2Line!.memo).toBe('PAYG Liability');
+    });
   });
 
   // -----------------------------------------------------------------------
@@ -733,6 +955,86 @@ describe('PaymentsService', () => {
       await expect(
         service.cancelPayment(payment.paymentId, 'admin'),
       ).rejects.toThrow('Cannot cancel a payment that has allocations');
+    });
+
+    it('should successfully reverse a Direct Payment and net out to 0', async () => {
+      // Create a dummy expense account
+      const expenseGlId = randomUUID();
+      await pg.db.insert(glAccounts).values({
+        glAccountId: expenseGlId,
+        accountCode: '6001',
+        name: 'Direct Expense Reversal',
+        accountType: 'expense',
+        isGroup: false,
+        isActive: true,
+        currencyCode: 'AUD',
+      });
+
+      const payment = await service.createPaymentEntry(
+        {
+          paymentId: randomUUID(),
+          paymentType: 'pay',
+          partyType: 'gl_account',
+          partyId: expenseGlId, // offset account
+          paymentDate: new Date().toISOString(),
+          modeOfPayment: 'EFT',
+          totalAmount: 85,
+          glAccountBank: bankAccountId,
+          currencyCode: 'AUD',
+        },
+        'admin',
+      );
+      await service.submitPaymentEntry(payment.paymentId, 'admin');
+
+      // Forward GL verified
+      const beforeCancelEntries = await pg.db
+        .select()
+        .from(glJournalEntries)
+        .where(eq(glJournalEntries.sourceId, payment.paymentId));
+      expect(beforeCancelEntries).toHaveLength(1);
+
+      // Reverse it
+      await service.cancelPayment(payment.paymentId, 'admin');
+
+      // Check all GL lines for this payment to ensure net is 0 for both bank and offset
+      const allEntries = await pg.db
+        .select()
+        .from(glJournalEntries)
+        .where(eq(glJournalEntries.sourceId, payment.paymentId));
+      expect(allEntries).toHaveLength(2); // Original + Reversal
+
+      const allLines = await pg.db
+        .select()
+        .from(glJournalLines)
+        .where(
+          inArray(
+            glJournalLines.journalEntryId,
+            allEntries.map((e) => e.journalEntryId),
+          ),
+        );
+
+      // Sum by account
+      const netBalances = allLines.reduce(
+        (acc, line) => {
+          if (!acc[line.glAccountId]) acc[line.glAccountId] = 0;
+          acc[line.glAccountId] +=
+            parseFloat(line.debit) - parseFloat(line.credit);
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+
+      expect(netBalances[bankAccountId]).toBe(0);
+      expect(netBalances[expenseGlId]).toBe(0);
+
+      // Reversal lines should also have null partyType/partyId
+      const reversalLines = allLines.filter(
+        (l) => l.journalEntryId === allEntries[1].journalEntryId,
+      );
+      for (const line of reversalLines) {
+        expect(line.partyType).toBeNull();
+        expect(line.partyId).toBeNull();
+      }
     });
   });
 

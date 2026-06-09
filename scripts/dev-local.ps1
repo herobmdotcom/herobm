@@ -54,6 +54,10 @@ Start-Process pwsh -ArgumentList "-NoExit", "-Command", $apiCmd
 $feCmd = $envInjection + "`$env:API_URL='http://localhost:$apiPort'; npm run dev:local -w apps/ops-portal -- -p $fePort"
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", $feCmd
 
+# Start Worker in a new window
+$workerCmd = $envInjection + "`$env:PORT=9091; npm run dev -w apps/worker"
+Start-Process pwsh -ArgumentList "-NoExit", "-Command", $workerCmd
+
 
 
 if ($enableDbtDocs -eq 'true') {

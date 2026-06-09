@@ -59,7 +59,6 @@ export default function ReturnsQueuePage() {
                 endpoint={gridEndpoint} 
                 columns={gridColumns} 
                 gridKey="credit-notes-queue-list"
-                fetchAll
                 rowIdField="returnId"
                 onRowClicked={handleReturnClick}
                 pageTitle="Credit Notes Queue"

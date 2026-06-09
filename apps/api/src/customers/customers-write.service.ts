@@ -103,6 +103,7 @@ export class AccountsWriteService {
           entityType: EntityType.CUSTOMER,
           entityId: customer.customerId,
           eventType: 'created',
+          entityDisplayName: customer.name,
           payload: dto,
           actor,
         });
@@ -197,6 +198,7 @@ export class AccountsWriteService {
           entityType: EntityType.CUSTOMER,
           entityId: id,
           eventType: isStatusOnly ? 'status_changed' : 'updated',
+          entityDisplayName: updated.name,
           payload: isStatusOnly
             ? {
                 from: audit.previousValues.stateCode,
@@ -325,6 +327,7 @@ export class AccountsWriteService {
         entityType: EntityType.CUSTOMER,
         entityId: customerId,
         eventType: eventType,
+        entityDisplayName: existing[0].name,
         payload: {
           from: currentState,
           to: newState,
@@ -336,6 +339,7 @@ export class AccountsWriteService {
         entityType: EntityType.CUSTOMER,
         entityId: customerId,
         eventType: eventType,
+        entityDisplayName: existing[0].name,
         payload: {
           from: currentState,
           to: newState,

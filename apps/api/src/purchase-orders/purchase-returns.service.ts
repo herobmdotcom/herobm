@@ -146,6 +146,7 @@ export class PurchaseReturnsService {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: purchaseOrderId,
         eventType: EventType.RETURN_CREATED,
+        entityDisplayName: order.orderNumber,
         payload: { returnId: ret.returnId, returnNumber },
         actor,
       });
@@ -224,6 +225,7 @@ export class PurchaseReturnsService {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: po.purchaseOrderId,
         eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: po.orderNumber,
         payload: {
           entity: 'return',
           entityId: returnId,
@@ -275,6 +277,7 @@ export class PurchaseReturnsService {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: po.purchaseOrderId,
         eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: po.orderNumber,
         payload: {
           entity: 'return',
           entityId: returnId,
@@ -493,6 +496,7 @@ export class PurchaseReturnsService {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: po.purchaseOrderId,
         eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: po.orderNumber,
         payload: {
           entity: 'return',
           entityId: returnId,

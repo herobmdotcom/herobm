@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import { useSettings } from '@/components/SettingsProvider';
 import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
@@ -120,7 +121,7 @@ export default function GoodsReceivedListPage() {
     const tCommon = useTranslations('common');
     useDocumentTitle(t('title'));
     const { app } = useSettings();
-    const [days, setDays] = useState('90');
+    const [days, setDays, isReadyDays] = usePersistedFilter('receiving-days', '90');
     const [refreshKey, setRefreshKey] = useState(0);
 
     const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
@@ -205,7 +206,7 @@ export default function GoodsReceivedListPage() {
         }
     }, [selectedRows, triggerRefresh]);
 
-    const gridEndpoint = `/api/goods-received/lines?days=${days}&limit=0${selectedLocationId ? `&locationId=${selectedLocationId}` : ''}`;
+    const gridEndpoint = isReadyDays ? `/api/goods-received/lines?days=${days}&limit=0${selectedLocationId ? `&locationId=${selectedLocationId}` : ''}` : undefined;
 
     const gridColumns: any[] = useMemo(() => [
         {
@@ -281,7 +282,6 @@ export default function GoodsReceivedListPage() {
                     { colId: 'putawayStatus', sort: 'asc' },
                     { colId: 'createdOn', sort: 'desc' }
                 ]}
-                fetchAll
                 rowIdField="goodsReceivedLineId"
                 rowSelection="multiple"
                 onSelectionChanged={setSelectedRows}

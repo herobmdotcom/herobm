@@ -1366,6 +1366,11 @@
         },
         "general_ledger": {
           "entry_posted": "Journal entry posted"
+        },
+        "email": {
+          "queued": "Email queued",
+          "sent": "Email sent",
+          "failed": "Email failed"
         }
       }
     },
@@ -1947,6 +1952,7 @@
         "allocatedNow": "Allocated Now",
         "amount": "Amount",
         "date": "Date",
+        "glAccount": "GL Account",
         "glBank": "GL Bank Account",
         "mode": "Mode",
         "party": "Party",
@@ -1984,8 +1990,12 @@
         "cheque": "Cheque",
         "creditCard": "Credit Card",
         "customerReceipt": "Customer Receipt",
+        "customerRefund": "Customer Refund",
+        "directPayment": "Direct Payment",
+        "directReceipt": "Direct Receipt",
         "eft": "EFT / Wire",
-        "supplierPayment": "Supplier Payment"
+        "supplierPayment": "Supplier Payment",
+        "supplierRefund": "Supplier Refund"
       },
       "placeholders": {
         "amount": "0.00",

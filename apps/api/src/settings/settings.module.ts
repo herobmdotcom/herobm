@@ -15,6 +15,7 @@ import { ActivitiesController } from './activities.controller';
 import { AppConfigController } from './app-config.controller';
 import { LicenseService } from './license.service';
 import { LicenseController } from './license.controller';
+import { EncryptionService } from '../common/encryption.service';
 
 @Global()
 @Module({
@@ -37,6 +38,7 @@ import { LicenseController } from './license.controller';
     CostCentersService,
     ActivitiesService,
     LicenseService,
+    EncryptionService,
   ],
   exports: [
     UomDictionaryService,

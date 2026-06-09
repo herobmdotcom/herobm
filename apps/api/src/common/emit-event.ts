@@ -13,7 +13,17 @@ import {
   inventoryEvents,
   systemEvents,
   outbox,
+  salesOrders,
+  purchaseOrders,
+  customers,
+  suppliers,
+  products,
+  goodsReceived,
+  transferOrders,
+  paymentEntries,
+  inventoryEntries,
 } from '../drizzle/modbm-core-schema';
+import { eq } from 'drizzle-orm';
 
 // ---------------------------------------------------------------------------
 // Routing table: entityType → table
@@ -44,6 +54,7 @@ export interface EmitEventParams {
   entityType: EntityTypeValue;
   entityId: string;
   eventType: string;
+  entityDisplayName: string;
   payload: any;
   actor?: string;
 }
@@ -98,6 +109,7 @@ export async function emitEvent(
     entityType: params.entityType,
     entityId: params.entityId,
     eventType: params.eventType,
+    entityDisplayName: params.entityDisplayName,
     payload: params.payload,
     actor: params.actor,
   });
@@ -112,6 +124,7 @@ export async function emitEvent(
       entityType: outboxEntityType,
       entityId: params.entityId,
       eventType: finalEventForOutbox,
+      entityDisplayName: params.entityDisplayName,
       payload: params.payload,
     });
   }

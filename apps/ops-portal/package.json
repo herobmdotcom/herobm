@@ -13,6 +13,7 @@
     "lint": "eslint \"app/**/*.{ts,tsx}\" \"lib/**/*.{ts,tsx}\" \"components/**/*.{ts,tsx}\" && npm run lint:i18n",
     "lint:i18n": "node scripts/lint-i18n.js",
     "test": "jest",
+    "test:e2e": "playwright test",
     "generate-api": "npx openapi-typescript http://127.0.0.1:3001/api-docs-json -o lib/api-types.ts"
   },
   "dependencies": {
@@ -27,7 +28,8 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hot-toast": "^2.6.0",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "swr": "^2.4.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

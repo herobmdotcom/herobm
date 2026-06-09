@@ -1,7 +1,9 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
+
 import { useRouter } from 'next/navigation';
+import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
@@ -29,7 +31,7 @@ export default function SalesOrdersContent() {
   const tCommon = useTranslations('common');
   const tSales = useTranslations('salesOrders');
   const tStates = useTranslations('common.states');
-  const [days, setDays] = useState('90');
+  const [days, setDays, isReady] = usePersistedFilter('sales-orders-days', '90');
 
   const columns = useMemo<ColDef<UnifiedOrder>[]>(() => [
     { field: 'orderNumber', headerName: tCommon('columns.orderNumber'), width: 150, pinned: 'left' },
@@ -71,7 +73,7 @@ export default function SalesOrdersContent() {
       },
     },
     { field: 'createdBy', headerName: tCommon('columns.createdBy'), width: 120 },
-  ], [tCommon]);
+  ], [tCommon, baseCurrency, tStates]);
 
   const handleRowClicked = useCallback((order: UnifiedOrder) => {
     router.push(`/sales-orders/${order.id}`);
@@ -79,12 +81,11 @@ export default function SalesOrdersContent() {
 
   return (
     <DataGrid<UnifiedOrder>
-      endpoint={`/api/sales-orders?days=${days}`}
+      endpoint={isReady ? `/api/sales-orders?days=${days}` : undefined}
       columns={columns}
       gridKey="ops-orders"
       searchPlaceholder={tSales('placeholders.searchOrders')}
       exportFileName="orders"
-      fetchAll
       showArchivedToggle
       rowIdField="id"
       onRowClicked={handleRowClicked}

@@ -100,7 +100,7 @@ export default function OrderDetailReadView({
             <StateBadge state={order.stateCode} />
           </div>
           <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {order.name || tRV('untitledOrder')}
+            {order.name === order.orderNumber ? null : (order.name || tRV('untitledOrder'))}
           </p>
         </div>
         {headerActions && (

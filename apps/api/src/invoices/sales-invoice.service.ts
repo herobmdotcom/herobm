@@ -446,6 +446,7 @@ export class SalesInvoiceService {
         entityType: EntityType.SALES_ORDER,
         entityId: salesOrderId,
         eventType: EventType.SALES_INVOICED,
+        entityDisplayName: order.orderNumber,
         payload: outboxPayload,
         actor,
       });
@@ -958,6 +959,7 @@ export class SalesInvoiceService {
         entityType: EntityType.SALES_INVOICE,
         entityId: invoiceId,
         eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: existing.invoiceNumber,
         payload: {
           entity: 'sales_invoice',
           entityId: invoiceId,

@@ -69,7 +69,8 @@ describe('emitEvent', () => {
         entityType: EntityType.SALES_ORDER,
         entityId: 'so-001',
         eventType: EventType.CREATED,
-        payload: { orderNumber: 'ORD-001' },
+        entityDisplayName: 'Test Entity',
+      payload: { orderNumber: 'ORD-001' },
         actor: 'admin',
       });
 
@@ -78,7 +79,8 @@ describe('emitEvent', () => {
         entityType: EntityType.SALES_ORDER,
         entityId: 'so-001',
         eventType: 'created',
-        payload: { orderNumber: 'ORD-001' },
+        entityDisplayName: 'Test Entity',
+      payload: { orderNumber: 'ORD-001' },
         actor: 'admin',
       });
     });
@@ -89,7 +91,8 @@ describe('emitEvent', () => {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: 'po-001',
         eventType: EventType.CREATED,
-        payload: { receptionId: 'r-001' },
+        entityDisplayName: 'Test Entity',
+      payload: { receptionId: 'r-001' },
         actor: 'warehouse',
       });
 
@@ -103,7 +106,8 @@ describe('emitEvent', () => {
         entityType: EntityType.PRODUCT,
         entityId: 'prod-001',
         eventType: EventType.CREATED,
-        payload: {},
+        entityDisplayName: 'Test Entity',
+      payload: {},
         actor: 'admin',
       });
 
@@ -117,7 +121,8 @@ describe('emitEvent', () => {
         entityType: EntityType.CUSTOMER,
         entityId: 'acc-001',
         eventType: EventType.UPDATED,
-        payload: {},
+        entityDisplayName: 'Test Entity',
+      payload: {},
         actor: 'admin',
       });
 
@@ -131,7 +136,8 @@ describe('emitEvent', () => {
         entityType: EntityType.SUPPLIER,
         entityId: 'sup-001',
         eventType: EventType.ARCHIVED,
-        payload: {},
+        entityDisplayName: 'Test Entity',
+      payload: {},
         actor: 'admin',
       });
 
@@ -145,7 +151,8 @@ describe('emitEvent', () => {
         entityType: EntityType.PRODUCT_SUPPLIER,
         entityId: 'ps-001',
         eventType: EventType.LINKED,
-        payload: {},
+        entityDisplayName: 'Test Entity',
+      payload: {},
         actor: 'admin',
       });
 
@@ -163,7 +170,8 @@ describe('emitEvent', () => {
         entityType: EntityType.SYSTEM,
         entityId: 'je-001',
         eventType: EventType.GL_POSTED,
-        payload: { entryNumber: 'JE-001' },
+        entityDisplayName: 'Test Entity',
+      payload: { entryNumber: 'JE-001' },
         actor: 'system',
       });
 
@@ -183,7 +191,8 @@ describe('emitEvent', () => {
         entityType: EntityType.SALES_ORDER,
         entityId: 'so-001',
         eventType: EventType.CREATED,
-        payload: { orderNumber: 'ORD-001' },
+        entityDisplayName: 'Test Entity',
+      payload: { orderNumber: 'ORD-001' },
         actor: 'admin',
       });
 
@@ -195,7 +204,8 @@ describe('emitEvent', () => {
         entityType: 'sales_order',
         entityId: 'so-001',
         eventType: 'sales_order.created',
-        payload: { orderNumber: 'ORD-001' },
+        entityDisplayName: 'Test Entity',
+      payload: { orderNumber: 'ORD-001' },
       });
     });
 
@@ -205,7 +215,8 @@ describe('emitEvent', () => {
         entityType: EntityType.SALES_ORDER,
         entityId: 'so-001',
         eventType: EventType.LINE_ADDED,
-        payload: {},
+        entityDisplayName: 'Test Entity',
+      payload: {},
         actor: 'admin',
       });
 
@@ -233,7 +244,8 @@ describe('emitEvent', () => {
           entityType: EntityType.SALES_ORDER,
           entityId: 'so-001',
           eventType: EventType.CREATED,
-          payload: {},
+          entityDisplayName: 'Test Entity',
+      payload: {},
           actor: 'admin',
         }),
       ).rejects.toThrow('DB_INSERT_FAILED');
@@ -247,7 +259,8 @@ describe('emitEvent', () => {
           entityType: EntityType.SALES_ORDER,
           entityId: 'so-001',
           eventType: EventType.CREATED, // in OUTBOX_EVENT_TYPES
-          payload: {},
+          entityDisplayName: 'Test Entity',
+      payload: {},
           actor: 'admin',
         }),
       ).rejects.toThrow('DB_INSERT_FAILED');
@@ -261,7 +274,8 @@ describe('emitEvent', () => {
           entityType: EntityType.SYSTEM,
           entityId: 'je-001',
           eventType: EventType.GL_POSTED,
-          payload: {},
+          entityDisplayName: 'Test Entity',
+      payload: {},
           actor: 'system',
         }),
       ).rejects.toThrow('DB_INSERT_FAILED');
@@ -279,7 +293,8 @@ describe('emitEvent', () => {
           entityType: 'unknown_entity' as any,
           entityId: 'id-001',
           eventType: 'created',
-          payload: {},
+          entityDisplayName: 'Test Entity',
+      payload: {},
         }),
       ).rejects.toThrow("emitEvent: unknown entityType 'unknown_entity'");
     });

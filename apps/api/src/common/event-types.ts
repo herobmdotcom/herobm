@@ -21,6 +21,7 @@ export const EntityType = {
   SYSTEM: 'system', // the entire system (for system-wide events or generic stuff)
   WAREHOUSE: 'warehouse', // warehouse operations
   INVENTORY_LEDGER: 'inventory_ledger',
+  EMAIL: 'email',
 } as const;
 
 export type EntityTypeValue = (typeof EntityType)[keyof typeof EntityType];
@@ -94,6 +95,11 @@ export const EventType = {
   // ── System domain ───────────────────────────────────────────────────
   GL_POSTED: 'gl_posted',
   STOCK_ADJUSTED: 'stock_adjusted',
+
+  // ── Email domain ────────────────────────────────────────────────────
+  QUEUED: 'queued',
+  SENT: 'sent',
+  FAILED: 'failed',
 
   // ── Payment domain ──────────────────────────────────────────────────
   PAYMENT_SUBMITTED: 'payment_submitted',
@@ -169,4 +175,9 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'payment.allocated',
   'payment.cancelled',
   'general_ledger.entry_posted',
+
+  // System/Emails
+  'email.queued',
+  'email.sent',
+  'email.failed',
 ]);

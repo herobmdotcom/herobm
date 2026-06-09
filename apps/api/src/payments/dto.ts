@@ -20,6 +20,18 @@ export const MODES_OF_PAYMENT = [
 
 export type ModeOfPayment = (typeof MODES_OF_PAYMENT)[number];
 
+export class PaymentLineDto {
+  @IsUUID()
+  accountId: string;
+
+  @IsNumber()
+  amount: number;
+
+  @IsOptional()
+  @IsString()
+  memo?: string;
+}
+
 export class CreatePaymentDto {
   @IsUUID()
   @IsNotEmpty()
@@ -28,11 +40,12 @@ export class CreatePaymentDto {
   @IsEnum(['receive', 'pay'])
   paymentType: 'receive' | 'pay';
 
-  @IsEnum(['customer', 'supplier'])
-  partyType: 'customer' | 'supplier';
+  @IsEnum(['customer', 'supplier', 'gl_account'])
+  partyType: 'customer' | 'supplier' | 'gl_account';
 
+  @IsOptional()
   @IsUUID()
-  partyId: string;
+  partyId?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -59,6 +72,12 @@ export class CreatePaymentDto {
 
   @IsOptional()
   submitImmediately?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PaymentLineDto)
+  lines?: PaymentLineDto[];
 }
 
 export class AllocationDto {

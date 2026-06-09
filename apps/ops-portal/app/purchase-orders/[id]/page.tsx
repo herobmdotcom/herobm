@@ -320,7 +320,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         header={
           <EntityHeader
             title={order.orderNumber}
-            subtitle={order.name || tPurchase('untitledOrder')}
+            subtitle={order.name === order.orderNumber ? null : (order.name || tPurchase('untitledOrder'))}
             onBack={() => {
               if (window.history.length > 1) {
                 router.back();

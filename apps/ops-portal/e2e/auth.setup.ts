@@ -18,14 +18,15 @@ const authFile = path.join(__dirname, '..', '.playwright', '.auth', 'user.json')
 
 setup('authenticate', async ({ page }) => {
   // Navigate to any page — AuthGate will show the login form
-  await page.goto('/');
+  // We use a high timeout (120s) because Next.js dev server cold-compilation can be very slow
+  await page.goto('/', { timeout: 120000 });
   await page.waitForLoadState('networkidle');
 
   // Fill in the login form
   const username = process.env.E2E_USERNAME || 'admin';
-  const password = process.env.E2E_PASSWORD || process.env.ADMIN_PASSWORD;
+  const password = process.env.E2E_PASSWORD || process.env.ADMIN_PASSWORD || process.env.DEV_ADMIN_PASSWORD;
   if (!password) {
-    throw new Error('E2E_PASSWORD or ADMIN_PASSWORD must be defined for auth setup');
+    throw new Error('E2E_PASSWORD, ADMIN_PASSWORD or DEV_ADMIN_PASSWORD must be defined for auth setup');
   }
 
   console.log(`Attempting login for user: "${username}"`);

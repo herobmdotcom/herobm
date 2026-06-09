@@ -22,12 +22,12 @@ export default function PageNav({ sections }: PageNavProps) {
   
   return (
     <div
-        className="flex flex-col gap-1 items-start [@media(any-pointer:fine)]:lg:items-end self-center w-full [@media(any-pointer:fine)]:lg:w-auto relative"
+        className="flex flex-col gap-1 items-start lg:items-end self-center w-full lg:w-auto relative"
         onMouseLeave={() => setHoveredSubId(null)}
     >
         {/* Top Row: Sub-pages & Direct anchors */}
         <div 
-            className="flex items-center gap-1 [@media(any-pointer:fine)]:lg:gap-0.5 px-2 [@media(any-pointer:fine)]:lg:px-1.5 rounded-md overflow-x-auto transition-all w-full h-[40px] [@media(any-pointer:fine)]:lg:h-[32px]"
+            className="flex items-center gap-1 lg:gap-0.5 px-2 lg:px-1.5 rounded-md overflow-x-auto transition-all w-full h-[40px] lg:h-[32px]"
             style={{ border: '1px solid var(--accent)', msOverflowStyle: 'none', scrollbarWidth: 'none' }}
         >
             {visibleSections.map((section) => {
@@ -37,7 +37,7 @@ export default function PageNav({ sections }: PageNavProps) {
               return (
                   <button
                       key={section.id}
-                      className={`text-[13px] [@media(any-pointer:fine)]:lg:text-[11px] px-3 py-1.5 [@media(any-pointer:fine)]:lg:px-1.5 [@media(any-pointer:fine)]:lg:py-0.5 rounded transition-all whitespace-nowrap ${isSub ? 'font-bold' : ''} ${isActive ? 'bg-[rgba(0,107,92,0.1)] text-[var(--accent)]' : ''}`}
+                      className={`text-[13px] lg:text-[11px] px-3 py-1.5 lg:px-1.5 lg:py-0.5 rounded transition-all whitespace-nowrap ${isSub ? 'font-bold' : ''} ${isActive ? 'bg-[rgba(0,107,92,0.1)] text-[var(--accent)]' : ''}`}
                       style={{
                           background: isActive && isSub ? 'rgba(0,107,92,0.1)' : 'none',
                           border: 'none',
@@ -86,13 +86,13 @@ export default function PageNav({ sections }: PageNavProps) {
 
             return (
                 <div 
-                    className="flex items-center gap-1 [@media(any-pointer:fine)]:lg:gap-0.5 px-2 [@media(any-pointer:fine)]:lg:px-1.5 rounded-md overflow-x-auto transition-all min-h-[32px] [@media(any-pointer:fine)]:lg:min-h-[24px] w-full [@media(any-pointer:fine)]:lg:w-max [@media(any-pointer:fine)]:lg:max-w-none [@media(any-pointer:fine)]:lg:absolute [@media(any-pointer:fine)]:lg:top-[100%] [@media(any-pointer:fine)]:lg:right-0 [@media(any-pointer:fine)]:lg:mt-1 [@media(any-pointer:fine)]:lg:z-50"
+                    className="flex items-center gap-1 lg:gap-0.5 px-2 lg:px-1.5 rounded-md overflow-x-auto transition-all min-h-[32px] lg:min-h-[24px] w-full lg:w-max lg:max-w-none lg:absolute lg:top-[100%] lg:left-0 lg:mt-1 lg:z-50"
                     style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
                 >
                     {visibleSubtargets.map((sub) => (
                         <button
                           key={sub.id}
-                          className="text-[13px] [@media(any-pointer:fine)]:lg:text-[11px] px-3 py-1.5 [@media(any-pointer:fine)]:lg:px-1.5 [@media(any-pointer:fine)]:lg:py-0.5 rounded transition-colors whitespace-nowrap"
+                          className="text-[13px] lg:text-[11px] px-3 py-1.5 lg:px-1.5 lg:py-0.5 rounded transition-colors whitespace-nowrap"
                           style={{
                             background: 'none',
                             border: 'none',

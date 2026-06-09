@@ -79,7 +79,6 @@ export default function CustomersContent() {
       gridKey="ops-customers"
       searchPlaceholder={tAccounts('placeholders.searchAccounts')}
       exportFileName="customers"
-      fetchAll
       showArchivedToggle
       rowIdField="customerId"
       onRowClicked={handleRowClicked}

@@ -142,10 +142,13 @@ export class BackordersService {
       });
     }
 
+    const [order] = await tx.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, salesOrderId));
+
     await emitEvent(tx, {
       entityType: EntityType.SALES_ORDER,
       entityId: salesOrderId,
       eventType: EventType.BACKORDERS_ALLOCATED,
+      entityDisplayName: order.orderNumber,
       actor,
       payload: { reason: 'demand_generated' },
     });
@@ -174,11 +177,13 @@ export class BackordersService {
       );
 
       if (current && current.purchaseOrderId) {
+        const [po] = await tx.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq(purchaseOrders.purchaseOrderId, current.purchaseOrderId));
         // Emit event on PO side using the old PO ID
         await emitEvent(tx, {
           entityType: EntityType.PURCHASE_ORDER,
           entityId: current.purchaseOrderId,
           eventType: EventType.DEMAND_UNALLOCATED,
+          entityDisplayName: po.orderNumber,
           actor,
           payload: { backorderId },
         });
@@ -431,6 +436,7 @@ export class BackordersService {
           entityType: EntityType.PURCHASE_ORDER,
           entityId: po.purchaseOrderId,
           eventType: EventType.CREATED,
+          entityDisplayName: orderNumber,
           actor,
           payload: { reason: 'manual_requisition' },
         });
@@ -595,8 +601,10 @@ export class BackordersService {
           purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
           quantity: purchaseOrderLineItems.quantity,
           productId: purchaseOrderLineItems.productId,
+          orderNumber: purchaseOrders.orderNumber,
         })
         .from(purchaseOrderLineItems)
+        .innerJoin(purchaseOrders, eq(purchaseOrders.purchaseOrderId, purchaseOrderLineItems.purchaseOrderId))
         .where(
           eq(purchaseOrderLineItems.purchaseOrderLineId, purchaseOrderLineId),
         );
@@ -667,6 +675,7 @@ export class BackordersService {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: poLine.purchaseOrderId,
         eventType: EventType.DEMAND_ALLOCATED,
+        entityDisplayName: poLine.orderNumber,
         actor,
         payload: { backorderId: demandId, quantity: quantityToLink },
       });
@@ -689,8 +698,10 @@ export class BackordersService {
         .select({
           salesOrderId: backorders.salesOrderId,
           salesOrderLineId: backorders.salesOrderLineId,
+          orderNumber: salesOrders.orderNumber,
         })
         .from(backorders)
+        .innerJoin(salesOrders, eq(salesOrders.salesOrderId, backorders.salesOrderId))
         .where(eq(backorders.backorderId, backorderId));
 
       if (!demand) {
@@ -722,10 +733,12 @@ export class BackordersService {
             },
           );
 
+          const [po] = await tx.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq(purchaseOrders.purchaseOrderId, ld.purchaseOrderId));
           await emitEvent(tx, {
             entityType: EntityType.PURCHASE_ORDER,
             entityId: ld.purchaseOrderId,
             eventType: EventType.DEMAND_UNALLOCATED,
+            entityDisplayName: po.orderNumber,
             actor,
             payload: { backorderId: ld.backorderId },
           });
@@ -765,6 +778,7 @@ export class BackordersService {
         entityType: EntityType.SALES_ORDER,
         entityId: demand.salesOrderId,
         eventType: EventType.DEMAND_REALLOCATED,
+        entityDisplayName: demand.orderNumber,
         actor,
         payload: {
           lineId: demand.salesOrderLineId,
@@ -814,10 +828,13 @@ export class BackordersService {
       .where(eq(backorders.backorderId, backorderId))
       .returning();
 
+    const [order] = await db.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, existing.salesOrderId));
+
     await emitEvent(db, {
       entityType: EntityType.SALES_ORDER,
       entityId: existing.salesOrderId,
       eventType: EventType.STATUS_CHANGED,
+      entityDisplayName: order.orderNumber,
       actor,
       payload: {
         entity: 'backorder',

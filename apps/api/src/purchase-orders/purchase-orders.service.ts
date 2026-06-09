@@ -232,6 +232,7 @@ export class PurchaseOrdersService {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: order.purchaseOrderId,
         eventType: EventType.CREATED,
+        entityDisplayName: order.orderNumber,
         payload: {
           orderNumber: order.orderNumber,
           vendorId: createDto.vendorId,
@@ -695,6 +696,13 @@ export class PurchaseOrdersService {
 
   async addLine(orderId: string, lineDto: any, actor: string = 'system') {
     return await this.db.transaction(async (tx) => {
+      // Lock the order to prevent concurrent addLine races
+      await tx
+        .select({ id: purchaseOrders.purchaseOrderId })
+        .from(purchaseOrders)
+        .where(eq(purchaseOrders.purchaseOrderId, orderId))
+        .for('update');
+
       const existing = await this.findOne(orderId, tx);
       if (existing.stateCode !== PURCHASE_ORDER_STATE.DRAFT) {
         throw new BadRequestException(
@@ -741,6 +749,7 @@ export class PurchaseOrdersService {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: orderId,
         eventType: EventType.LINE_ADDED,
+        entityDisplayName: existing.orderNumber,
         payload: {
           productId: lineDto.productId,
           quantity: lineDto.quantity,
@@ -835,6 +844,7 @@ export class PurchaseOrdersService {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: orderId,
         eventType: EventType.LINE_UPDATED,
+        entityDisplayName: existing.orderNumber,
         payload: {
           lineId,
           changes: updateFields,
@@ -874,6 +884,7 @@ export class PurchaseOrdersService {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: orderId,
         eventType: EventType.LINE_REMOVED,
+        entityDisplayName: existing.orderNumber,
         payload: { lineId },
         actor,
       });
@@ -972,6 +983,7 @@ export class PurchaseOrdersService {
             entityType: EntityType.PURCHASE_ORDER,
             entityId: id,
             eventType: EventType.UPDATED,
+            entityDisplayName: existing.orderNumber,
             payload: {
               changes: audit.changes,
               previousValues: audit.previousValues,
@@ -1190,6 +1202,7 @@ export class PurchaseOrdersService {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: purchaseOrderId,
       eventType: eventType,
+      entityDisplayName: existing.orderNumber,
       payload: {
         entity: 'purchase_order',
         entityId: purchaseOrderId,

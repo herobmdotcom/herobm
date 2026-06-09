@@ -72,6 +72,7 @@ export class SalesQuoteService {
           entityType: EntityType.SALES_ORDER,
           entityId: orderId,
           eventType: 'quote_generated',
+          entityDisplayName: data.header.orderNumber,
           payload: { quoteIntroText: quoteIntroText },
           actor: options?.user ? (options.user as any).userId : undefined,
         });

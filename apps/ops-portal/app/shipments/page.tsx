@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 
@@ -12,7 +13,7 @@ export default function ShipmentsPage() {
   const tCommon = useTranslations('common');
   const tStates = useTranslations('common.states');
   const router = useRouter();
-  const [days, setDays] = useState('30');
+  const [days, setDays, isReady] = usePersistedFilter('shipments-days', '30');
 
   const columns = useMemo<ColDef[]>(() => [
     {
@@ -73,12 +74,11 @@ export default function ShipmentsPage() {
 
   return (
     <DataGrid
-      endpoint={`/api/shipments?days=${days}`}
+      endpoint={isReady ? `/api/shipments?days=${days}` : undefined}
       columns={columns}
       gridKey="ops-shipments"
       searchPlaceholder={t('placeholders.searchShipments')}
       exportFileName="shipments"
-      fetchAll
       rowIdField="shipmentId"
       onRowClicked={handleRowClicked}
       pageTitle={t('title')}

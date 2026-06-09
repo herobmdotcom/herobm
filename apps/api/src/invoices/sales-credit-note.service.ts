@@ -511,6 +511,7 @@ export class SalesCreditNoteService {
         entityType: EntityType.SALES_ORDER,
         entityId: ret.salesOrderId,
         eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: order.orderNumber,
         payload: {
           entity: 'return',
           entityId: returnId,
@@ -526,6 +527,7 @@ export class SalesCreditNoteService {
         entityType: EntityType.SALES_ORDER,
         entityId: ret.salesOrderId,
         eventType: EventType.CREDIT_NOTE_POSTED,
+        entityDisplayName: order.orderNumber,
         payload: {
           creditNoteId: creditNote.creditNoteId,
           creditNoteNumber,

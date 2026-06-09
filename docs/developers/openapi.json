@@ -4506,6 +4506,7 @@
     },
     "/settings/license-status": {
       "get": {
+        "description": "Get the current license status.",
         "operationId": "LicenseController_getStatus",
         "parameters": [],
         "responses": {
@@ -4520,13 +4521,15 @@
             }
           }
         },
+        "summary": "Get License Status",
         "tags": [
-          "License"
+          "System"
         ]
       }
     },
     "/settings/license": {
       "post": {
+        "description": "Apply a new license key.",
         "operationId": "LicenseController_applyLicense",
         "parameters": [],
         "requestBody": {
@@ -4556,8 +4559,9 @@
             }
           }
         },
+        "summary": "Apply License",
         "tags": [
-          "License"
+          "System"
         ]
       }
     },
@@ -13397,6 +13401,160 @@
         ]
       }
     },
+    "/emails": {
+      "get": {
+        "description": "List emails in the outbox queue.",
+        "operationId": "EmailController_listEmails",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of emails",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List emails",
+        "tags": [
+          "Emails"
+        ]
+      }
+    },
+    "/emails/{id}/retry": {
+      "post": {
+        "description": "Retry sending a failed email.",
+        "operationId": "EmailController_retryEmail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retry a failed email",
+        "tags": [
+          "Emails"
+        ]
+      }
+    },
+    "/emails/{id}/dismiss": {
+      "post": {
+        "description": "Dismiss a failed email so it is no longer shown as an error.",
+        "operationId": "EmailController_dismissEmail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email dismissed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dismiss a failed email",
+        "tags": [
+          "Emails"
+        ]
+      }
+    },
     "/user-settings": {
       "get": {
         "description": "Retrieves the settings for the currently authenticated user.",
@@ -13586,6 +13744,10 @@
     {
       "name": "SalesCreditNotes",
       "description": "Sales credit notes"
+    },
+    {
+      "name": "Emails",
+      "description": "System Emails"
     }
   ],
   "servers": [
@@ -16549,6 +16711,21 @@
           },
           "enrichmentProviderMappings": {
             "type": "object"
+          },
+          "smtpHost": {
+            "type": "string"
+          },
+          "smtpPort": {
+            "type": "number"
+          },
+          "smtpUser": {
+            "type": "string"
+          },
+          "smtpPass": {
+            "type": "string"
+          },
+          "smtpFromAddress": {
+            "type": "string"
           }
         },
         "required": [
@@ -16570,6 +16747,21 @@
           },
           "enrichmentProviderMappings": {
             "type": "object"
+          },
+          "smtpHost": {
+            "type": "string"
+          },
+          "smtpPort": {
+            "type": "number"
+          },
+          "smtpUser": {
+            "type": "string"
+          },
+          "smtpPass": {
+            "type": "string"
+          },
+          "smtpFromAddress": {
+            "type": "string"
           }
         }
       },

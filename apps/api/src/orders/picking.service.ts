@@ -341,6 +341,7 @@ export class PickingService {
         entityType: EntityType.WAREHOUSE,
         entityId: newPick.pickId,
         eventType: EventType.PICK_CREATED,
+        entityDisplayName: order.orderNumber,
         payload: {
           pickId: newPick.pickId,
           salesOrderId: orderId,
@@ -774,10 +775,12 @@ export class PickingService {
       .returning();
 
     if (newState === SALES_ORDER_PICK_STATE.CANCELLED) {
+      const [order] = await tx.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, pick.salesOrderId));
       await emitEvent(tx as any, {
         entityType: EntityType.WAREHOUSE,
         entityId: pickId,
         eventType: EventType.PICK_CANCELLED,
+        entityDisplayName: order.orderNumber,
         payload: {
           pickId,
           salesOrderId: pick.salesOrderId,

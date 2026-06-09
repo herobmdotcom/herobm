@@ -11,6 +11,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import postgres from 'postgres';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -99,7 +100,22 @@ async function main() {
     }
   });
 
-  console.error(`Registered ${mcpTools.length} tools from OpenAPI spec and 1 custom tool`);
+  mcpTools.push({
+    name: 'get_table_schema',
+    description: 'Returns the exact columns, types, and foreign key relationships for a given PostgreSQL table.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        table_name: {
+          type: 'string',
+          description: 'Name of the table to inspect'
+        }
+      },
+      required: ['table_name']
+    }
+  });
+
+  console.error(`Registered ${mcpTools.length} tools from OpenAPI spec and custom tools`);
 
   const server = new Server(
     { name: 'modbm-mcp-server', version: '0.1.0' },
@@ -113,6 +129,66 @@ async function main() {
   server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
     const { name, arguments: args } = request.params;
     
+    if (name === 'get_table_schema') {
+      try {
+        const tableName = args?.table_name;
+        if (!tableName) {
+          return { isError: true, content: [{ type: 'text', text: 'table_name is required' }] };
+        }
+        
+        const sql = postgres({
+          host: process.env.POSTGRES_HOST || 'localhost',
+          port: parseInt(process.env.POSTGRES_PORT || '5432'),
+          user: process.env.POSTGRES_USER || 'postgres',
+          password: process.env.POSTGRES_PASSWORD || '',
+          database: process.env.POSTGRES_DB || 'postgres'
+        });
+
+        const columns = await sql`
+          SELECT column_name, data_type, is_nullable, column_default
+          FROM information_schema.columns
+          WHERE table_schema = 'public' AND table_name = ${tableName}
+          ORDER BY ordinal_position;
+        `;
+
+        const foreignKeys = await sql`
+          SELECT
+              kcu.column_name,
+              ccu.table_name AS foreign_table_name,
+              ccu.column_name AS foreign_column_name
+          FROM 
+              information_schema.table_constraints AS tc 
+              JOIN information_schema.key_column_usage AS kcu
+                ON tc.constraint_name = kcu.constraint_name
+                AND tc.table_schema = kcu.table_schema
+              JOIN information_schema.constraint_column_usage AS ccu
+                ON ccu.constraint_name = tc.constraint_name
+                AND ccu.table_schema = tc.table_schema
+          WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_name = ${tableName};
+        `;
+
+        await sql.end();
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                table: tableName,
+                columns,
+                foreign_keys: foreignKeys
+              }, null, 2)
+            }
+          ]
+        };
+      } catch (err: any) {
+        return {
+          isError: true,
+          content: [{ type: 'text', text: `Database error: ${err.message}` }]
+        };
+      }
+    }
+
     if (name === 'list_build_targets') {
       try {
         const { execSync } = await import('child_process');

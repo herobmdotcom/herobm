@@ -1,0 +1,4 @@
+ALTER TABLE "modbm_core"."purchase_order_lines" DROP CONSTRAINT "unique_po_line_number";--> statement-breakpoint
+ALTER TABLE "modbm_core"."sales_order_lines" DROP CONSTRAINT "unique_so_line_number";--> statement-breakpoint
+CREATE UNIQUE INDEX "unique_po_line_number" ON "modbm_core"."purchase_order_lines" USING btree ("purchase_order_id","line_number") WHERE "modbm_core"."purchase_order_lines"."purchase_order_id" != '00000000-0000-0000-0000-000000000001';--> statement-breakpoint
+CREATE UNIQUE INDEX "unique_so_line_number" ON "modbm_core"."sales_order_lines" USING btree ("sales_order_id","line_number") WHERE "modbm_core"."sales_order_lines"."sales_order_id" != '00000000-0000-0000-0000-000000000001';

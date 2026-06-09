@@ -97,7 +97,6 @@ export default function SuppliersContent() {
       gridKey="suppliers"
       searchPlaceholder={tSuppliers('placeholders.searchSuppliers')}
       exportFileName="suppliers"
-      fetchAll
       showArchivedToggle
       rowIdField="vendorId"
       onRowClicked={(row) => router.push(`/suppliers/${encodeURIComponent(row.vendorId)}`)}

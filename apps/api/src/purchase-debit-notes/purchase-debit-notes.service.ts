@@ -133,6 +133,7 @@ export class PurchaseDebitNotesService {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: ret.purchaseOrderId,
         eventType: EventType.CREATED,
+        entityDisplayName: po.orderNumber,
         payload: {
           debitNoteId: dn.debitNoteId,
           debitNoteNumber,
@@ -322,10 +323,12 @@ export class PurchaseDebitNotesService {
       .where(eq(purchaseDebitNotes.debitNoteId, debitNoteId))
       .returning();
 
+    const [order] = await db.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq(purchaseOrders.purchaseOrderId, existing.purchaseOrderId));
     await emitEvent(db as any, {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: existing.purchaseOrderId,
       eventType: EventType.STATUS_CHANGED,
+      entityDisplayName: order.orderNumber,
       payload: {
         entity: 'debit_note',
         entityId: debitNoteId,

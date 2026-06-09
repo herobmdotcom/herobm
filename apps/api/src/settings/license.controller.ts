@@ -5,12 +5,27 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiProperty,
+  ApiTags,
+  ApiOperation,
 } from '@nestjs/swagger';
 import { LicenseService, LicenseStatus } from './license.service';
 import { SkipCasbin } from '../auth/casbin.guard';
 
 import { ThrottlerGuard } from '@nestjs/throttler';
 
+/**
+ * ============================================================================
+ * LEGAL & COMPLIANCE WARNING
+ * ============================================================================
+ * Modifying, bypassing, or removing this license validation code constitutes
+ * a direct breach of the End User License Agreement (EULA).
+ *
+ * Unauthorized circumvention of this technical protection measure is unethical,
+ * violates intellectual property rights, and may result in immediate revocation
+ * of your license, civil litigation, significant financial damages, and
+ * potential criminal penalties under applicable copyright laws (e.g., DMCA).
+ * ============================================================================
+ */
 export class LicenseStatusDto implements LicenseStatus {
   // eslint-disable-next-line no-restricted-syntax
   @ApiProperty({ enum: ['active', 'warning', 'read_only'] })
@@ -35,6 +50,7 @@ export class LicenseStatusDto implements LicenseStatus {
 // Allow anyone with a valid token to view or apply a license.
 // This is critical because if the system is read-only, an admin still needs
 // to be able to apply the license key to recover.
+@ApiTags('System')
 @Controller('settings')
 @UseGuards(AuthGuard(['jwt']), ThrottlerGuard)
 @SkipCasbin()
@@ -43,6 +59,10 @@ export class LicenseController {
 
   @Get('license-status')
   @SkipCasbin()
+  @ApiOperation({
+    summary: 'Get License Status',
+    description: 'Get the current license status.',
+  })
   @ApiOkResponse({ type: LicenseStatusDto })
   async getStatus(): Promise<LicenseStatus> {
     return this.licenseService.getStatus();
@@ -50,6 +70,10 @@ export class LicenseController {
 
   @Post('license')
   @SkipCasbin()
+  @ApiOperation({
+    summary: 'Apply License',
+    description: 'Apply a new license key.',
+  })
   @ApiCreatedResponse({ type: LicenseStatusDto })
   @ApiBody({
     schema: { type: 'object', properties: { licenseKey: { type: 'string' } } },

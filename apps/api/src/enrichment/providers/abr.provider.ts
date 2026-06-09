@@ -56,71 +56,57 @@ export class AbrProvider implements IEnrichmentProvider {
         ? payload.replace(/\s+/g, '')
         : String((payload as any)?.abn || '').replace(/\s+/g, '');
 
-    if (!config?.apiKey && !process.env.ABR_GUID) {
+    if (!config?.apiKey) {
       throw new Error(
         'ABR API key not configured. Please configure it in Settings > Integrations.',
       );
     }
 
-    // For now, this is a mock implementation.
-    // In the future, this will call https://abr.business.gov.au/json/AbnDetails.aspx
-    // using an API GUID configured in the environment.
-    this.logger.log(`[ABR] Sending mock lookup request for ABN: ${cleanAbn}`);
+    this.logger.log(`[ABR] Sending lookup request for ABN: ${cleanAbn}`);
 
-    // Simulate an API call delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const url = `https://abr.business.gov.au/json/AbnDetails.aspx?abn=${cleanAbn}&guid=${config.apiKey}&callback=callback`;
 
-    // Mock validation logic
-    if (cleanAbn === '51824753556') {
-      const data = {
-        name: 'AUSTRALIAN TAXATION OFFICE',
-        isTaxRegistered: true,
-      };
-      this.logger.log(
-        `[ABR] Received mock response for ABN: ${cleanAbn} | Data: ${JSON.stringify(data)}`,
-      );
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        this.logger.error(
+          `[ABR] HTTP Error: ${response.status} ${response.statusText}`,
+        );
+        return { isValid: false, data: {} };
+      }
+
+      const text = await response.text();
+
+      // Strip the JSONP callback wrapper: "callback({...})"
+      const jsonString = text.replace(/^callback\(/, '').replace(/\)$/, '');
+
+      const data = JSON.parse(jsonString);
+
+      if (data.Message) {
+        this.logger.error(`[ABR] API Error Message: ${data.Message}`);
+        return { isValid: false, data: {} };
+      }
+
+      const name =
+        data.EntityName ||
+        (data.BusinessName && data.BusinessName[0]) ||
+        'Unknown';
+      const isTaxRegistered = !!data.Gst;
+
+      this.logger.log(`[ABR] Successfully retrieved data for ABN: ${cleanAbn}`);
+
       return {
         isValid: true,
-        data,
+        data: {
+          name,
+          isTaxRegistered,
+        },
       };
-    }
-
-    if (cleanAbn === '11111111111') {
-      const data = {
-        name: 'UNREGISTERED HOBBYIST PTY LTD',
-        isTaxRegistered: false,
-      };
-      this.logger.log(
-        `[ABR] Received mock response for ABN: ${cleanAbn} | Data: ${JSON.stringify(data)}`,
+    } catch (error) {
+      this.logger.error(
+        `[ABR] Exception during lookup: ${(error as Error).message}`,
       );
-      return {
-        isValid: true,
-        data,
-      };
+      return { isValid: false, data: {} };
     }
-
-    // Default mock response for any 11-digit number
-    if (cleanAbn.length === 11 && /^\d+$/.test(cleanAbn)) {
-      const data = {
-        name: 'MOCK COMPANY PTY LTD',
-        isTaxRegistered: true,
-      };
-      this.logger.log(
-        `[ABR] Received mock response for ABN: ${cleanAbn} | Data: ${JSON.stringify(data)}`,
-      );
-      return {
-        isValid: true,
-        data,
-      };
-    }
-
-    // Invalid ABN
-    this.logger.log(
-      `[ABR] Received mock invalid response for ABN: ${cleanAbn}`,
-    );
-    return {
-      isValid: false,
-      data: {},
-    };
   }
 }

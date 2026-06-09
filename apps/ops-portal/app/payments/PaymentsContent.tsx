@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
 import * as api from '@modbm/sdk';
@@ -38,8 +39,9 @@ export default function PaymentsContent() {
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const [payments, setPayments] = useState<UnifiedPayment[]>([]);
   const [selectedPayments, setSelectedPayments] = useState<UnifiedPayment[]>([]);
-  const [days, setDays] = useState('90');
-  const [allocationFilter, setAllocationFilter] = useState('all');
+  const [days, setDays, isReadyDays] = usePersistedFilter('payments-days', '90');
+  const [allocationFilter, setAllocationFilter, isReadyAlloc] = usePersistedFilter('payments-allocation', 'all');
+  const isReady = isReadyDays && isReadyAlloc;
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const t = useTranslations('payments');
   const tCommon = useTranslations('common');
@@ -214,12 +216,11 @@ export default function PaymentsContent() {
   return (
     <>
     <DataGrid<UnifiedPayment>
-      endpoint={`/api/payments?days=${days}&allocation=${allocationFilter}`}
+      endpoint={isReady ? `/api/payments?days=${days}&allocation=${allocationFilter}` : undefined}
       columns={columns}
       gridKey="ops-payments"
       searchPlaceholder="Search payments..."
       exportFileName="payments"
-      fetchAll
       rowIdField="paymentId"
       rowSelection="multiple"
       onSelectionChanged={setSelectedPayments}

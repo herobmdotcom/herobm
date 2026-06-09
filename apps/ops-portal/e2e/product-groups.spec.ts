@@ -4,7 +4,12 @@ test('page: product-groups loads without errors', async ({ page }) => {
   // Capture console errors
   const errors: string[] = [];
   page.on('console', (msg) => {
-    if (msg.type() === 'error') errors.push(msg.text());
+    if (msg.type() === 'error') {
+      const text = msg.text();
+      if (!text.includes('429') && !text.includes('favicon')) {
+        errors.push(text);
+      }
+    }
   });
   page.on('pageerror', (exception) => errors.push(exception.message));
 

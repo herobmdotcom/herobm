@@ -18,6 +18,7 @@ import {
   suppliers,
   supplierGroups,
   glAccounts,
+  paymentLines,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -168,7 +169,21 @@ export class PaymentsService {
       )
       .where(eq(paymentAllocations.paymentId, paymentId));
 
-    return { ...payment, allocations };
+    const lines = await this.db
+      .select({
+        accountId: paymentLines.glAccountId,
+        amount: paymentLines.amount,
+        memo: paymentLines.memo,
+        accountName: glAccounts.name,
+      })
+      .from(paymentLines)
+      .leftJoin(
+        glAccounts,
+        eq(paymentLines.glAccountId, glAccounts.glAccountId),
+      )
+      .where(eq(paymentLines.paymentId, paymentId));
+
+    return { ...payment, allocations, lines };
   }
 
   async createPaymentEntry(dto: CreatePaymentDto, actor: string) {
@@ -182,7 +197,7 @@ export class PaymentsService {
           paymentNumber,
           paymentType: dto.paymentType,
           partyType: dto.partyType,
-          partyId: dto.partyId,
+          partyId: dto.partyId || null,
           paymentDate: new Date(dto.paymentDate),
           modeOfPayment: dto.modeOfPayment,
           totalAmount: dto.totalAmount.toString(),
@@ -194,6 +209,17 @@ export class PaymentsService {
           stateCode: PAYMENT_STATE.DRAFT,
         })
         .returning();
+
+      if (dto.lines && dto.lines.length > 0) {
+        await tx.insert(paymentLines).values(
+          dto.lines.map((line) => ({
+            paymentId: payment.paymentId,
+            glAccountId: line.accountId,
+            amount: line.amount.toString(),
+            memo: line.memo || null,
+          })),
+        );
+      }
 
       if (dto.submitImmediately) {
         return await this.submitPaymentEntry(
@@ -233,91 +259,137 @@ export class PaymentsService {
         );
       }
 
-      // 2. Resolve Control Customer (AR or AP)
-      // We look at the party's group to find the default control customer
+      // 2. Resolve Payment Lines (Split) vs Control Customer (AR/AP/Direct)
+      const payLines = await tx
+        .select()
+        .from(paymentLines)
+        .where(eq(paymentLines.paymentId, paymentId));
+
       let controlAccountId: string | null = null;
 
-      if (payment.partyType === 'customer') {
-        const [custRow] = await tx
-          .select({
-            defaultArAccountId: customerGroups.defaultArAccountId,
-          })
-          .from(customers)
-          .leftJoin(
-            customerGroups,
-            eq(customers.customerGroupId, customerGroups.customerGroupId),
-          )
-          .where(eq(customers.customerId, payment.partyId));
-        controlAccountId = custRow?.defaultArAccountId || null;
-      } else {
-        const [suppRow] = await tx
-          .select({
-            defaultApAccountId: supplierGroups.defaultApAccountId,
-          })
-          .from(suppliers)
-          .leftJoin(
-            supplierGroups,
-            eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
-          )
-          .where(eq(suppliers.vendorId, payment.partyId));
-        controlAccountId = suppRow?.defaultApAccountId || null;
-      }
+      if (payLines.length === 0) {
+        // Fallback to existing single header-level offset logic
+        if (payment.partyType === 'customer') {
+          const [custRow] = await tx
+            .select({
+              defaultArAccountId: customerGroups.defaultArAccountId,
+            })
+            .from(customers)
+            .leftJoin(
+              customerGroups,
+              eq(customers.customerGroupId, customerGroups.customerGroupId),
+            )
+            .where(eq(customers.customerId, payment.partyId!));
+          controlAccountId = custRow?.defaultArAccountId || null;
+        } else if (payment.partyType === 'supplier') {
+          const [suppRow] = await tx
+            .select({
+              defaultApAccountId: supplierGroups.defaultApAccountId,
+            })
+            .from(suppliers)
+            .leftJoin(
+              supplierGroups,
+              eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
+            )
+            .where(eq(suppliers.vendorId, payment.partyId!));
+          controlAccountId = suppRow?.defaultApAccountId || null;
+        } else if (payment.partyType === 'gl_account') {
+          controlAccountId = payment.partyId;
+        }
 
-      // Fallback to global settings if not found on group
-      if (!controlAccountId) {
-        const settings = await this.glService.getSettings(tx);
-        controlAccountId =
-          payment.partyType === 'customer'
-            ? settings?.defaultArAccountId || null
-            : settings?.defaultApAccountId || null;
-      }
+        // Fallback to global settings if not found on group
+        if (!controlAccountId && payment.partyType !== 'gl_account') {
+          const settings = await this.glService.getSettings(tx);
+          controlAccountId =
+            payment.partyType === 'customer'
+              ? settings?.defaultArAccountId || null
+              : settings?.defaultApAccountId || null;
+        }
 
-      if (!controlAccountId) {
-        throw new BadRequestException(
-          `Could not resolve ${payment.partyType === 'customer' ? 'Receivable' : 'Payable'} control customer. Please check Party Group or GL Settings.`,
-        );
+        if (!controlAccountId) {
+          throw new BadRequestException(
+            `Could not resolve ${payment.partyType} control account. Please check Party Group or GL Settings.`,
+          );
+        }
       }
 
       // 3. Post GL Journal Entry
       const amount = parseFloat(payment.totalAmount);
-      let lines = [];
+      const lines: any[] = [];
+
+      const linePartyType =
+        payment.partyType === 'gl_account'
+          ? null
+          : (payment.partyType as 'customer' | 'supplier');
+      const linePartyId =
+        payment.partyType === 'gl_account' ? null : payment.partyId;
 
       if (payment.paymentType === 'receive') {
-        // Receipt: Debit Bank, Credit AR
-        lines = [
-          {
-            accountId: payment.glAccountBank,
-            debit: amount,
-            credit: 0,
-            memo: `Payment ${payment.paymentNumber}`,
-          },
-          {
+        // Receipt: Debit Bank, Credit Offset (AR / Direct)
+        lines.push({
+          accountId: payment.glAccountBank,
+          debit: amount,
+          credit: 0,
+          memo: `Payment ${payment.paymentNumber}`,
+        });
+
+        if (payLines.length > 0) {
+          lines.push(
+            ...payLines.map((pl) => {
+              const plAmount = parseFloat(pl.amount);
+              return {
+                accountId: pl.glAccountId,
+                debit: plAmount < 0 ? Math.abs(plAmount) : 0, // Handle negative lines like PAYG
+                credit: plAmount > 0 ? plAmount : 0,
+                memo: pl.memo || `Payment ${payment.paymentNumber}`,
+                partyType: linePartyType,
+                partyId: linePartyId,
+              };
+            }),
+          );
+        } else {
+          lines.push({
             accountId: controlAccountId,
             debit: 0,
             credit: amount,
             memo: `Payment ${payment.paymentNumber}`,
-            partyType: 'customer' as const,
-            partyId: payment.partyId,
-          },
-        ];
+            partyType: linePartyType,
+            partyId: linePartyId,
+          });
+        }
       } else {
-        // Payment: Debit AP, Credit Bank
-        lines = [
-          {
+        // Payment: Credit Bank, Debit Offset (AP / Direct)
+        lines.push({
+          accountId: payment.glAccountBank,
+          debit: 0,
+          credit: amount,
+          memo: `Payment ${payment.paymentNumber}`,
+        });
+
+        if (payLines.length > 0) {
+          lines.push(
+            ...payLines.map((pl) => {
+              const plAmount = parseFloat(pl.amount);
+              return {
+                accountId: pl.glAccountId,
+                debit: plAmount > 0 ? plAmount : 0,
+                credit: plAmount < 0 ? Math.abs(plAmount) : 0, // Handle negative lines like PAYG
+                memo: pl.memo || `Payment ${payment.paymentNumber}`,
+                partyType: linePartyType,
+                partyId: linePartyId,
+              };
+            }),
+          );
+        } else {
+          lines.push({
             accountId: controlAccountId,
             debit: amount,
             credit: 0,
             memo: `Payment ${payment.paymentNumber}`,
-            partyType: 'supplier' as const,
-            partyId: payment.partyId,
-          },
-          {
-            accountId: payment.glAccountBank,
-            debit: 0,
-            credit: amount,
-            memo: `Payment ${payment.paymentNumber}`,
-          },
-        ];
+            partyType: linePartyType,
+            partyId: linePartyId,
+          });
+        }
       }
 
       await this.glService.postJournalEntry(
@@ -457,6 +529,7 @@ export class PaymentsService {
           entityType: EntityType.PAYMENT,
           entityId: paymentId,
           eventType: EventType.PAYMENT_ALLOCATED,
+          entityDisplayName: payment.paymentNumber,
           payload: {
             allocationId: allocationRecord.allocationId,
             referenceType: alloc.referenceType,
@@ -516,85 +589,131 @@ export class PaymentsService {
       // 3. Reverse the GL journal entry
       const amount = parseFloat(payment.totalAmount);
 
-      // Resolve control customer
+      // Resolve Payment Lines (Split) vs Control Customer (AR/AP/Direct)
+      const payLines = await tx
+        .select()
+        .from(paymentLines)
+        .where(eq(paymentLines.paymentId, paymentId));
+
       let controlAccountId: string | null = null;
 
-      if (payment.partyType === 'customer') {
-        const [custRow] = await tx
-          .select({
-            defaultArAccountId: customerGroups.defaultArAccountId,
-          })
-          .from(customers)
-          .leftJoin(
-            customerGroups,
-            eq(customers.customerGroupId, customerGroups.customerGroupId),
-          )
-          .where(eq(customers.customerId, payment.partyId));
-        controlAccountId = custRow?.defaultArAccountId || null;
-      } else {
-        const [suppRow] = await tx
-          .select({
-            defaultApAccountId: supplierGroups.defaultApAccountId,
-          })
-          .from(suppliers)
-          .leftJoin(
-            supplierGroups,
-            eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
-          )
-          .where(eq(suppliers.vendorId, payment.partyId));
-        controlAccountId = suppRow?.defaultApAccountId || null;
-      }
+      if (payLines.length === 0) {
+        if (payment.partyType === 'customer') {
+          const [custRow] = await tx
+            .select({
+              defaultArAccountId: customerGroups.defaultArAccountId,
+            })
+            .from(customers)
+            .leftJoin(
+              customerGroups,
+              eq(customers.customerGroupId, customerGroups.customerGroupId),
+            )
+            .where(eq(customers.customerId, payment.partyId!));
+          controlAccountId = custRow?.defaultArAccountId || null;
+        } else if (payment.partyType === 'supplier') {
+          const [suppRow] = await tx
+            .select({
+              defaultApAccountId: supplierGroups.defaultApAccountId,
+            })
+            .from(suppliers)
+            .leftJoin(
+              supplierGroups,
+              eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
+            )
+            .where(eq(suppliers.vendorId, payment.partyId!));
+          controlAccountId = suppRow?.defaultApAccountId || null;
+        } else if (payment.partyType === 'gl_account') {
+          controlAccountId = payment.partyId;
+        }
 
-      if (!controlAccountId) {
-        const settings = await this.glService.getSettings(tx);
-        controlAccountId =
-          payment.partyType === 'customer'
-            ? settings?.defaultArAccountId || null
-            : settings?.defaultApAccountId || null;
-      }
+        if (!controlAccountId && payment.partyType !== 'gl_account') {
+          const settings = await this.glService.getSettings(tx);
+          controlAccountId =
+            payment.partyType === 'customer'
+              ? settings?.defaultArAccountId || null
+              : settings?.defaultApAccountId || null;
+        }
 
-      if (!controlAccountId) {
-        throw new BadRequestException(
-          `Could not resolve control customer for reversal.`,
-        );
+        if (!controlAccountId) {
+          throw new BadRequestException(
+            `Could not resolve control account for reversal.`,
+          );
+        }
       }
 
       // Reverse: swap debit/credit from original
-      let reversalLines: any[];
+      const reversalLines: any[] = [];
+      const linePartyType =
+        payment.partyType === 'gl_account'
+          ? null
+          : (payment.partyType as 'customer' | 'supplier');
+      const linePartyId =
+        payment.partyType === 'gl_account' ? null : payment.partyId;
+
       if (payment.paymentType === 'receive') {
-        reversalLines = [
-          {
-            accountId: payment.glAccountBank,
-            debit: 0,
-            credit: amount,
-            memo: `Reversal: ${payment.paymentNumber}`,
-          },
-          {
+        reversalLines.push({
+          accountId: payment.glAccountBank,
+          debit: 0,
+          credit: amount,
+          memo: `Reversal: ${payment.paymentNumber}`,
+        });
+
+        if (payLines.length > 0) {
+          reversalLines.push(
+            ...payLines.map((pl) => {
+              const plAmount = parseFloat(pl.amount);
+              return {
+                accountId: pl.glAccountId,
+                debit: plAmount > 0 ? plAmount : 0,
+                credit: plAmount < 0 ? Math.abs(plAmount) : 0,
+                memo: `Reversal: ${pl.memo || payment.paymentNumber}`,
+                partyType: linePartyType,
+                partyId: linePartyId,
+              };
+            }),
+          );
+        } else {
+          reversalLines.push({
             accountId: controlAccountId,
             debit: amount,
             credit: 0,
             memo: `Reversal: ${payment.paymentNumber}`,
-            partyType: 'customer' as const,
-            partyId: payment.partyId,
-          },
-        ];
+            partyType: linePartyType,
+            partyId: linePartyId,
+          });
+        }
       } else {
-        reversalLines = [
-          {
+        reversalLines.push({
+          accountId: payment.glAccountBank,
+          debit: amount,
+          credit: 0,
+          memo: `Reversal: ${payment.paymentNumber}`,
+        });
+
+        if (payLines.length > 0) {
+          reversalLines.push(
+            ...payLines.map((pl) => {
+              const plAmount = parseFloat(pl.amount);
+              return {
+                accountId: pl.glAccountId,
+                debit: plAmount < 0 ? Math.abs(plAmount) : 0,
+                credit: plAmount > 0 ? plAmount : 0,
+                memo: `Reversal: ${pl.memo || payment.paymentNumber}`,
+                partyType: linePartyType,
+                partyId: linePartyId,
+              };
+            }),
+          );
+        } else {
+          reversalLines.push({
             accountId: controlAccountId,
             debit: 0,
             credit: amount,
             memo: `Reversal: ${payment.paymentNumber}`,
-            partyType: 'supplier' as const,
-            partyId: payment.partyId,
-          },
-          {
-            accountId: payment.glAccountBank,
-            debit: amount,
-            credit: 0,
-            memo: `Reversal: ${payment.paymentNumber}`,
-          },
-        ];
+            partyType: linePartyType,
+            partyId: linePartyId,
+          });
+        }
       }
 
       await this.glService.postJournalEntry(
@@ -908,6 +1027,7 @@ export class PaymentsService {
       entityType: EntityType.PAYMENT,
       entityId: paymentId,
       eventType: EventType.STATUS_CHANGED,
+      entityDisplayName: payment.paymentNumber,
       payload: {
         entity: 'payment',
         entityId: paymentId,

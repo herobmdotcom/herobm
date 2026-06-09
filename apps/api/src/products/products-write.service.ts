@@ -60,6 +60,7 @@ export class ProductsWriteService {
         entityType: EntityType.PRODUCT,
         entityId: product.productId,
         eventType: EventType.CREATED,
+        entityDisplayName: product.name,
         payload: dto,
         actor,
       });
@@ -117,6 +118,7 @@ export class ProductsWriteService {
             entityType: EntityType.PRODUCT,
             entityId: id,
             eventType: EventType.STATUS_CHANGED,
+            entityDisplayName: updated.name,
             payload: {
               from: existing[0].stateCode,
               to: audit.changes.stateCode,
@@ -128,6 +130,7 @@ export class ProductsWriteService {
             entityType: EntityType.PRODUCT,
             entityId: id,
             eventType: EventType.UPDATED,
+            entityDisplayName: updated.name,
             payload: {
               changes: audit.changes,
               previousValues: audit.previousValues,
@@ -242,6 +245,7 @@ export class ProductsWriteService {
       entityType: EntityType.PRODUCT,
       entityId: productId,
       eventType: eventType,
+      entityDisplayName: updated.name,
       payload: {
         from: currentState,
         to: newState,
@@ -258,7 +262,7 @@ export class ProductsWriteService {
   async addSupplier(productId: string, dto: AddSupplierDto, actor: string) {
     // Verify product exists
     const existingProduct = await this.db
-      .select({ id: coreProducts.productId })
+      .select({ id: coreProducts.productId, name: coreProducts.name })
       .from(coreProducts)
       .where(eq(coreProducts.productId, productId))
       .limit(1);
@@ -298,6 +302,7 @@ export class ProductsWriteService {
         entityType: EntityType.PRODUCT_SUPPLIER,
         entityId: mapping.productSupplierId,
         eventType: EventType.LINKED,
+        entityDisplayName: existingProduct[0].name,
         payload: dto,
         actor,
       });
@@ -324,10 +329,13 @@ export class ProductsWriteService {
         throw new NotFoundException('Supplier mapping not found');
       }
 
+      const [product] = await tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, productId));
+
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT_SUPPLIER,
         entityId: mapping.productSupplierId,
         eventType: EventType.UNLINKED,
+        entityDisplayName: product.name,
         payload: { stateCode: PRODUCT_STATE.ARCHIVED },
         actor,
       });
@@ -345,7 +353,7 @@ export class ProductsWriteService {
     actor: string,
   ) {
     const existing = await this.db
-      .select({ id: coreProducts.productId })
+      .select({ id: coreProducts.productId, name: coreProducts.name })
       .from(coreProducts)
       .where(eq(coreProducts.productId, productId))
       .limit(1);
@@ -376,6 +384,7 @@ export class ProductsWriteService {
         entityType: EntityType.PRODUCT,
         entityId: productId,
         eventType: 'uom_added',
+        entityDisplayName: existing[0].name,
         payload: { uomCode: dto.uomCode, ratio: dto.ratio },
         actor,
       });
@@ -408,10 +417,13 @@ export class ProductsWriteService {
         .delete(productUoms)
         .where(eq(productUoms.productUomId, productUomId));
 
+      const [product] = await tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, productId));
+
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
         entityId: productId,
         eventType: 'uom_removed',
+        entityDisplayName: product.name,
         payload: { uomCode: existing[0].uomCode, ratio: existing[0].ratio },
         actor,
       });
@@ -425,7 +437,7 @@ export class ProductsWriteService {
    */
   async linkDefaultBin(productId: string, dto: LinkBinDto, actor: string) {
     const existing = await this.db
-      .select({ id: coreProducts.productId })
+      .select({ id: coreProducts.productId, name: coreProducts.name })
       .from(coreProducts)
       .where(eq(coreProducts.productId, productId))
       .limit(1);
@@ -477,6 +489,7 @@ export class ProductsWriteService {
         entityType: EntityType.PRODUCT,
         entityId: productId,
         eventType: EventType.UPDATED,
+        entityDisplayName: existing[0].name,
         payload: {
           action: 'linked_default_bin',
           binId: dto.binId,
@@ -508,10 +521,13 @@ export class ProductsWriteService {
         .delete(productDefaultBins)
         .where(eq(productDefaultBins.productDefaultBinId, productDefaultBinId));
 
+      const [product] = await tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, existing[0].productId));
+
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
         entityId: existing[0].productId,
         eventType: EventType.UPDATED,
+        entityDisplayName: product.name,
         payload: { action: 'unlinked_default_bin', binId: existing[0].binId },
         actor,
       });
@@ -540,7 +556,7 @@ export class ProductsWriteService {
   ) {
     // Validate parent exists and is a kit
     const [parent] = await this.db
-      .select({ structureType: coreProducts.structureType })
+      .select({ structureType: coreProducts.structureType, name: coreProducts.name })
       .from(coreProducts)
       .where(eq(coreProducts.productId, productId))
       .limit(1);
@@ -604,6 +620,7 @@ export class ProductsWriteService {
         entityType: EntityType.PRODUCT,
         entityId: productId,
         eventType: EventType.UPDATED,
+        entityDisplayName: parent.name,
         payload: {
           action: 'component_added',
           componentId: component.componentId,
@@ -661,10 +678,13 @@ export class ProductsWriteService {
         .where(eq(productComponents.componentId, componentId))
         .returning();
 
+      const [product] = await tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, productId));
+
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
         entityId: productId,
         eventType: EventType.UPDATED,
+        entityDisplayName: product.name,
         payload: { action: 'component_updated', componentId },
         actor,
       });
@@ -697,10 +717,13 @@ export class ProductsWriteService {
         .delete(productComponents)
         .where(eq(productComponents.componentId, componentId));
 
+      const [product] = await tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, productId));
+
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
         entityId: productId,
         eventType: EventType.UPDATED,
+        entityDisplayName: product.name,
         payload: { action: 'component_removed', componentId },
         actor,
       });

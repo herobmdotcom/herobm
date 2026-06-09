@@ -332,6 +332,7 @@ export class PurchaseInvoiceService {
         entityType: EntityType.PURCHASE_INVOICE,
         entityId: invoice.invoiceId,
         eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: invoice.invoiceNumber,
         payload: {
           entity: 'purchase_invoice',
           entityId: invoice.invoiceId,
@@ -944,10 +945,12 @@ export class PurchaseInvoiceService {
         })
         .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
 
+      const [order] = await tx.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq(purchaseOrders.purchaseOrderId, poLine.purchaseOrderId));
       await emitEvent(tx, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: poLine.purchaseOrderId,
         eventType: EventType.INVOICE_MATCHED,
+        entityDisplayName: order.orderNumber,
         actor,
         payload: {
           invoiceLineId,
@@ -1040,10 +1043,12 @@ export class PurchaseInvoiceService {
       await this.recalculateInvoiceTotals(invoiceId, tx);
 
       if (matchedCount > 0 || addedCount > 0) {
+        const [order] = await tx.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId));
         await emitEvent(tx, {
           entityType: EntityType.PURCHASE_ORDER,
           entityId: purchaseOrderId,
           eventType: EventType.INVOICE_MATCHED,
+          entityDisplayName: order.orderNumber,
           actor,
           payload: {
             invoiceId,
@@ -1095,10 +1100,12 @@ export class PurchaseInvoiceService {
         .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
 
       if (poId) {
+        const [order] = await tx.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq(purchaseOrders.purchaseOrderId, poId));
         await emitEvent(tx, {
           entityType: EntityType.PURCHASE_ORDER,
           entityId: poId,
           eventType: EventType.INVOICE_UNMATCHED,
+          entityDisplayName: order.orderNumber,
           actor,
           payload: {
             invoiceLineId,
@@ -1273,6 +1280,7 @@ export class PurchaseInvoiceService {
         entityType: EntityType.PURCHASE_INVOICE,
         entityId: invoiceId,
         eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: existing.invoiceNumber,
         payload: {
           entity: 'purchase_invoice',
           entityId: invoiceId,

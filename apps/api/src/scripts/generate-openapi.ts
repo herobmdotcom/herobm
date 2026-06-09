@@ -53,6 +53,7 @@ async function generateDocs() {
     .addTag('Business Reports', 'Dynamic business reports')
     .addTag('Data Sources', 'Data Sources for reports and templates')
     .addTag('SalesCreditNotes', 'Sales credit notes')
+    .addTag('Emails', 'System Emails')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

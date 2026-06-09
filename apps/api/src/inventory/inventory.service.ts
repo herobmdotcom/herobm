@@ -1032,6 +1032,7 @@ export class InventoryService {
       entityType: EntityType.INVENTORY_LEDGER,
       entityId: entry.entryId,
       eventType: EventType.ENTRY_POSTED,
+      entityDisplayName: params.entryNumber,
       payload: { header: params, lines: ledgerPayload },
     });
   }
@@ -1314,6 +1315,7 @@ export class InventoryService {
           entityType: EntityType.WAREHOUSE,
           entityId: lineDto.lineId,
           eventType: EventType.PUTAWAY_COMPLETED,
+          entityDisplayName: referenceNumber,
           payload: {
             lineId: lineDto.lineId,
             sourceType: lineDto.sourceType,
@@ -1372,10 +1374,12 @@ export class InventoryService {
                   RETURN_STATE.RECEIVED,
                 );
 
+                const [order] = await tx.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, ret.salesOrderId));
                 await emitEvent(tx, {
                   entityType: EntityType.SALES_ORDER,
                   entityId: ret.salesOrderId,
                   eventType: EventType.STATUS_CHANGED,
+                  entityDisplayName: order.orderNumber,
                   payload: {
                     entity: 'return',
                     entityId: rl.returnId,
@@ -1676,6 +1680,7 @@ export class InventoryService {
         entityType: EntityType.WAREHOUSE,
         entityId: dto.sourceBinId,
         eventType: EventType.STOCK_MOVED,
+        entityDisplayName: reference,
         payload: {
           productId,
           sourceBinId: sourceBin.binId,
@@ -1801,8 +1806,9 @@ export class InventoryService {
       }
 
       if (movementLines.length > 0) {
+        const entryNumber = `MOVE-${randomUUID().substring(0, 8).toUpperCase()}`;
         await this.recordInventoryMovement(tx, {
-          entryNumber: `MOVE-${randomUUID().substring(0, 8).toUpperCase()}`,
+          entryNumber,
           sourceType: 'MANUAL',
           memo: dto.reason || 'N/A',
           userId,
@@ -1815,6 +1821,7 @@ export class InventoryService {
           entityType: EntityType.WAREHOUSE,
           entityId: dto.lines[0].sourceBinId, // Using first source bin as reference
           eventType: EventType.STOCK_MOVED,
+          entityDisplayName: entryNumber,
           payload: {
             reason: reasonStr,
             lines: dto.lines,
@@ -1874,8 +1881,9 @@ export class InventoryService {
       }
 
       if (movementLines.length > 0) {
+        const entryNumber = `ADJ-${randomUUID().substring(0, 8).toUpperCase()}`;
         await this.recordInventoryMovement(tx, {
-          entryNumber: `ADJ-${randomUUID().substring(0, 8).toUpperCase()}`,
+          entryNumber,
           sourceType: 'MANUAL_ADJUST',
           memo: reasonStr,
           userId,
@@ -1886,6 +1894,7 @@ export class InventoryService {
           entityType: EntityType.WAREHOUSE,
           entityId: dto.lines[0].binId,
           eventType: EventType.STOCK_MOVED,
+          entityDisplayName: entryNumber,
           payload: {
             reason: reasonStr,
             lines: movementLines,

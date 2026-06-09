@@ -221,6 +221,7 @@ export class ReturnsWriteService {
           entityType: EntityType.SALES_ORDER,
           entityId: salesOrderId,
           eventType: EventType.RETURN_CREATED,
+          entityDisplayName: order.orderNumber,
           payload: {
             returnId: ret.returnId,
             returnNumber,
@@ -270,10 +271,12 @@ export class ReturnsWriteService {
           .returning();
 
         if (audit.hasChanges) {
+          const [order] = await innerTx.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, existing.salesOrderId));
           await emitEvent(innerTx, {
             entityType: EntityType.SALES_ORDER,
             entityId: existing.salesOrderId,
             eventType: 'return_updated',
+            entityDisplayName: order.orderNumber,
             payload: {
               returnId,
               changes: audit.changes,
@@ -328,10 +331,12 @@ export class ReturnsWriteService {
           );
         }
 
+        const [order] = await innerTx.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, existing.salesOrderId));
         await emitEvent(innerTx, {
           entityType: EntityType.SALES_ORDER,
           entityId: existing.salesOrderId,
           eventType: EventType.STATUS_CHANGED,
+          entityDisplayName: order.orderNumber,
           payload: {
             entity: 'return',
             entityId: returnId,
@@ -423,10 +428,12 @@ export class ReturnsWriteService {
           .set({ modifiedOn: new Date() })
           .where(eq(salesOrderReturns.returnId, returnId));
 
+        const [order] = await innerTx.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, ret.salesOrderId));
         await emitEvent(innerTx, {
           entityType: EntityType.SALES_ORDER,
           entityId: ret.salesOrderId,
           eventType: 'return_line_added',
+          entityDisplayName: order.orderNumber,
           payload: {
             returnId,
             returnLineId: line.returnLineId,
@@ -757,10 +764,12 @@ export class ReturnsWriteService {
           .where(eq(salesOrderReturns.returnId, returnId));
 
         if (audit.hasChanges) {
+          const [order] = await innerTx.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, ret.salesOrderId));
           await emitEvent(innerTx, {
             entityType: EntityType.SALES_ORDER,
             entityId: ret.salesOrderId,
             eventType: 'return_line_updated',
+            entityDisplayName: order.orderNumber,
             payload: {
               returnId,
               returnLineId: lineId,
@@ -810,10 +819,12 @@ export class ReturnsWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrderReturns.returnId, returnId));
 
+      const [order] = await innerTx.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, ret.salesOrderId));
       await emitEvent(innerTx, {
         entityType: EntityType.SALES_ORDER,
         entityId: ret.salesOrderId,
         eventType: 'return_line_removed',
+        entityDisplayName: order.orderNumber,
         payload: {
           returnId,
           returnLineId: lineId,

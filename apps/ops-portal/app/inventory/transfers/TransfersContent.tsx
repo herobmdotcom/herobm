@@ -76,7 +76,6 @@ export default function TransfersContent() {
               gridKey="transfer-orders"
               searchPlaceholder={tTransfers('placeholders.searchTransfer')}
               exportFileName="transfer-orders"
-              fetchAll
               showArchivedToggle
               rowIdField="id"
               onRowClicked={handleRowClicked}

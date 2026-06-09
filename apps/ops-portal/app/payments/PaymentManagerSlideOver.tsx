@@ -89,6 +89,7 @@ interface PaymentData {
   glAccountBank: string;
   referenceNumber?: string;
   allocations: Allocation[];
+  lines?: { accountId: string; amount: string; memo: string; accountName: string }[];
 }
 
 interface OutstandingInvoice {
@@ -117,7 +118,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
   // Creation Form State
   const [form, setForm] = useState({
     paymentType: 'receive' as 'receive' | 'pay',
-    partyType: 'customer' as 'customer' | 'supplier',
+    partyType: 'customer' as 'customer' | 'supplier' | 'gl_account',
     partyId: '',
     paymentDate: new Date().toISOString().split('T')[0],
     modeOfPayment: 'EFT',
@@ -125,6 +126,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     glAccountBank: '',
     currencyCode: baseCurrency,
     referenceNumber: '',
+    lines: [] as { id: string; accountId: string; amount: string; memo: string }[],
   });
 
   // Allocation State
@@ -171,6 +173,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         glAccountBank: '',
         currencyCode: baseCurrency,
         referenceNumber: '',
+        lines: [],
       });
     }
   }, [paymentId, baseCurrency, loadPayment]);
@@ -273,6 +276,11 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       const payload = {
         ...form,
         totalAmount: parseFloat(form.totalAmount),
+        lines: form.lines && form.lines.length > 0 ? form.lines.map(l => ({
+          accountId: l.accountId,
+          amount: parseFloat(l.amount) || 0,
+          memo: l.memo
+        })) : undefined,
         submitImmediately: true,
       };
       await api.paymentsControllerCreate(payload as unknown as Parameters<typeof api.paymentsControllerCreate>[0]);
@@ -283,6 +291,39 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleAddLine = () => {
+    setForm({
+      ...form,
+      lines: [...form.lines, { id: Math.random().toString(), accountId: '', amount: '', memo: '' }]
+    });
+  };
+
+  const handleRemoveLine = (id: string) => {
+    setForm({
+      ...form,
+      lines: form.lines.filter(l => l.id !== id)
+    });
+  };
+
+  const handleLineChange = (id: string, field: string, value: string) => {
+    setForm(prev => {
+      const newLines = prev.lines.map(l => l.id === id ? { ...l, [field]: value } : l);
+      
+      // Auto-compute total if we're changing amounts
+      let newTotal = prev.totalAmount;
+      if (field === 'amount') {
+        const sum = newLines.reduce((acc, l) => acc + (parseFloat(l.amount) || 0), 0);
+        newTotal = sum > 0 ? sum.toFixed(2) : prev.totalAmount;
+      }
+      
+      return {
+        ...prev,
+        lines: newLines,
+        totalAmount: newTotal
+      };
+    });
   };
 
   const handleSubmitPayment = async () => {
@@ -477,20 +518,24 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.type')}</label>
                     <select 
                       className="input w-full"
-                      value={form.paymentType}
+                      value={`${form.paymentType}_${form.partyType}`}
                       onChange={e => {
-                        const type = e.target.value as 'receive' | 'pay';
+                        const [payType, pType] = e.target.value.split('_') as [any, any];
                         setForm({
                           ...form, 
-                          paymentType: type,
-                          partyType: type === 'receive' ? 'customer' : 'supplier',
+                          paymentType: payType,
+                          partyType: pType,
                           partyId: '', // Reset selected party when type changes
                         });
                       }}
                       required
                     >
-                      <option value="receive">{t('manager.options.customerReceipt')}</option>
-                      <option value="pay">{t('manager.options.supplierPayment')}</option>
+                      <option value="receive_customer">{t('manager.options.customerReceipt')}</option>
+                      <option value="pay_supplier">{t('manager.options.supplierPayment')}</option>
+                      <option value="pay_customer">{t('manager.options.customerRefund')}</option>
+                      <option value="receive_supplier">{t('manager.options.supplierRefund')}</option>
+                      <option value="receive_gl_account">{t('manager.options.directReceipt')}</option>
+                      <option value="pay_gl_account">{t('manager.options.directPayment')}</option>
                     </select>
                   </div>
                   <div>
@@ -534,9 +579,9 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
                 <div>
                   <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">
-                    {form.paymentType === 'receive' ? t('customer') : t('supplier')}
+                    {form.partyType === 'customer' ? t('customer') : form.partyType === 'supplier' ? t('supplier') : t('manager.labels.glAccount')}
                   </label>
-                  {form.paymentType === 'receive' ? (
+                  {form.partyType === 'customer' ? (
                     <CustomerSelect 
                       value={form.partyId}
                       onChange={(acc) => setForm({
@@ -546,7 +591,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                       })}
                       required
                     />
-                  ) : (
+                  ) : form.partyType === 'supplier' ? (
                     <SupplierSelect 
                       value={form.partyId}
                       onChange={(sup) => setForm({
@@ -556,6 +601,80 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                       })}
                       required
                     />
+                  ) : (
+                    <>
+                      <GLAccountSelect
+                        value={form.partyId}
+                        onChange={(val, acc) => setForm({
+                          ...form,
+                          partyId: val || '',
+                          currencyCode: form.glAccountBank ? form.currencyCode : (acc?.currencyCode || baseCurrency)
+                        })}
+                        bankAccountOnly={false}
+                        required={form.lines.length === 0}
+                      />
+                      
+                      <div className="mt-6 border border-[var(--border-color)] rounded-lg overflow-hidden bg-[var(--card-bg)]">
+                        <div className="bg-base-200 px-4 py-2 border-b border-[var(--border-color)] flex items-center justify-between">
+                          <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+                            Split Payment Lines (Optional)
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-ghost text-[var(--accent)]"
+                            onClick={handleAddLine}
+                          >
+                            + Add Line
+                          </button>
+                        </div>
+                        {form.lines.length > 0 ? (
+                          <div className="p-2 space-y-2">
+                            {form.lines.map((line, index) => (
+                              <div key={line.id} className="flex items-center gap-2">
+                                <div className="flex-1">
+                                  <GLAccountSelect
+                                    value={line.accountId}
+                                    onChange={(val) => handleLineChange(line.id, 'accountId', val || '')}
+                                    bankAccountOnly={false}
+                                    required
+                                  />
+                                </div>
+                                <div className="w-32">
+                                  <input
+                                    type="text"
+                                    className="input input-sm w-full"
+                                    placeholder="Amount"
+                                    value={line.amount}
+                                    onChange={(e) => handleLineChange(line.id, 'amount', e.target.value)}
+                                    required
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <input
+                                    type="text"
+                                    className="input input-sm w-full"
+                                    placeholder="Memo (Optional)"
+                                    value={line.memo}
+                                    onChange={(e) => handleLineChange(line.id, 'memo', e.target.value)}
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  className="btn btn-xs btn-circle btn-ghost text-red-500"
+                                  onClick={() => handleRemoveLine(line.id)}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="px-4 py-6 text-center text-sm text-[var(--text-muted)] italic">
+                            No split lines. Entire amount will hit the primary GL Account above.
+                          </div>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
 

@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
@@ -29,7 +30,7 @@ export default function PurchaseOrdersContent() {
   const tCommon = useTranslations('common');
   const tPurchase = useTranslations('purchaseOrders');
   const tStates = useTranslations('common.states');
-  const [days, setDays] = useState('90');
+  const [days, setDays, isReady] = usePersistedFilter('purchase-orders-days', '90');
 
   const columns = useMemo<ColDef<UnifiedPurchaseOrderRow>[]>(() => [
     {
@@ -83,12 +84,11 @@ export default function PurchaseOrdersContent() {
 
   return (
     <DataGrid<UnifiedPurchaseOrderRow>
-      endpoint={`/api/purchase-orders?days=${days}`}
+      endpoint={isReady ? `/api/purchase-orders?days=${days}` : undefined}
       columns={columns}
       gridKey="purchase-orders"
       searchPlaceholder={tPurchase('placeholders.searchOrders')}
       exportFileName="purchase-orders"
-      fetchAll
       showArchivedToggle
       rowIdField="id"
       onRowClicked={handleRowClicked}

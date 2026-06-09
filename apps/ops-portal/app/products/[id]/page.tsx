@@ -131,7 +131,7 @@ export default function ProductDetailPage() {
           const comps: any = (componentsData.data as any).data || componentsData.data;
           if (comps?.length) {
             setKitComponents(comps);
-            productIdsToFetch = comps.map((c: any) => c.id);
+            productIdsToFetch = [id as string, ...comps.map((c: any) => c.childProductId).filter(Boolean)];
           }
         } catch (e) {
           reportError(e, 'ProductDetailPage');

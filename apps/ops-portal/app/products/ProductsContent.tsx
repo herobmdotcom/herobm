@@ -73,7 +73,6 @@ export default function ProductsContent() {
       gridKey="ops-products"
       searchPlaceholder={tProducts('placeholders.searchProducts')}
       exportFileName="products"
-      fetchAll
       showArchivedToggle
       rowIdField="productId"
       onRowClicked={(row: any) => router.push(`/products/${row.productId}`)}

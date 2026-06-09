@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import DataGrid from '@/components/DataGrid';
+import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 
@@ -9,7 +10,7 @@ export default function MovementsView() {
   const tCommon = useTranslations('common');
   const tInventory = useTranslations('inventory');
   
-  const [days, setDays] = useState<number>(30);
+  const [days, setDays, isReady] = usePersistedFilter('movements-days', '30');
 
   const columns = useMemo<ColDef[]>(() => [
     { field: 'productNumber', headerName: tInventory('columns.productNumber'), width: 150, pinned: 'left' },
@@ -57,7 +58,7 @@ export default function MovementsView() {
   return (
     <>
       <DataGrid
-        endpoint={`/api/inventory/movements?days=${days}`}
+        endpoint={isReady ? `/api/inventory/movements?days=${days}` : undefined}
         columns={columns}
         gridKey="ops-inventory-movements"
         searchPlaceholder={tInventory('placeholders.searchMovements')}
@@ -67,7 +68,7 @@ export default function MovementsView() {
         headerFilters={
           <select
             value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
+            onChange={(e) => setDays(e.target.value)}
             className="input text-sm"
             style={{ minWidth: 150 }}
           >

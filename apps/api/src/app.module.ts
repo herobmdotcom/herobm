@@ -36,6 +36,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { ApiKeysModule } from './api-keys/api-keys.module';
 import { EventsModule } from './events/events.module';
 import { EnrichmentModule } from './enrichment/enrichment.module';
+import { EmailModule } from './email/email.module';
 
 import { RolesModule } from './roles/roles.module';
 import { BusinessReportsModule } from './business-reports/business-reports.module';
@@ -84,6 +85,7 @@ import { ReadOnlyGuard } from './common/guards/read-only.guard';
     ApiKeysModule,
     EventsModule,
     EnrichmentModule,
+    EmailModule,
     BusinessReportsModule,
     UserSettingsModule,
   ],

@@ -280,6 +280,7 @@ export class GlService implements OnModuleInit {
         entityType: EntityType.SYSTEM,
         entityId: entry.journalEntryId,
         eventType: EventType.GL_POSTED,
+        entityDisplayName: 'System',
         payload: {
           entryNumber,
           entryDate,

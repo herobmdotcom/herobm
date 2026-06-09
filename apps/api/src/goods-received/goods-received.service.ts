@@ -483,6 +483,7 @@ export class GoodsReceivedService {
         entityType: EntityType.WAREHOUSE,
         entityId: receipt.goodsReceivedId,
         eventType: EventType.RECEIPT_CREATED,
+        entityDisplayName: receipt.receiptNumber,
         payload: {
           goodsReceivedId: receipt.goodsReceivedId,
           receiptNumber: receipt.receiptNumber,
@@ -687,10 +688,12 @@ export class GoodsReceivedService {
           tx,
         );
 
+        const [po] = await tx.select({ orderNumber: purchaseOrders.orderNumber }).from(purchaseOrders).where(eq(purchaseOrders.purchaseOrderId, poId));
         await emitEvent(tx, {
           entityType: EntityType.PURCHASE_ORDER,
           entityId: poId,
           eventType: EventType.STATUS_CHANGED,
+          entityDisplayName: po.orderNumber,
           payload: {
             rule: 'cancel_receipt_revert',
             from: PURCHASE_ORDER_STATE.RECEIVED,
@@ -761,6 +764,7 @@ export class GoodsReceivedService {
       entityType: EntityType.WAREHOUSE,
       entityId: receiptId,
       eventType: EventType.RECEIPT_STATUS_CHANGED,
+      entityDisplayName: receipt.receiptNumber,
       payload: {
         entity: 'goods_receipt',
         entityId: receiptId,
@@ -1441,11 +1445,12 @@ export class GoodsReceivedService {
         tx,
       );
 
-      // Emit Event
+      const [receipt] = await tx.select({ receiptNumber: goodsReceived.receiptNumber }).from(goodsReceived).where(eq(goodsReceived.goodsReceivedId, grLine.goodsReceivedId));
       await emitEvent(tx, {
         entityType: EntityType.SYSTEM,
         entityId: grLine.goodsReceivedId,
         eventType: EventType.RECEIPT_MATCHED,
+        entityDisplayName: receipt.receiptNumber,
         payload: {
           goodsReceivedLineId,
           purchaseOrderLineId: poLine.poLineId,
@@ -1590,10 +1595,12 @@ export class GoodsReceivedService {
       );
 
       // 4. Emit Event
+      const [receipt] = await tx.select({ receiptNumber: goodsReceived.receiptNumber }).from(goodsReceived).where(eq(goodsReceived.goodsReceivedId, grLine.goodsReceivedId));
       await emitEvent(tx, {
         entityType: EntityType.SYSTEM,
         entityId: grLine.goodsReceivedId,
         eventType: EventType.RECEIPT_UNMATCHED,
+        entityDisplayName: receipt.receiptNumber,
         payload: {
           goodsReceivedLineId,
           previousPurchaseOrderLineId: poLine.poLineId,

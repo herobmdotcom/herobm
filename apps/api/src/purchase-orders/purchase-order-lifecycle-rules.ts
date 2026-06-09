@@ -52,7 +52,7 @@ export const autoReceiveWhenFullyReceived: POLifecycleRule = {
       return null;
 
     const [order] = await db
-      .select({ stateCode: purchaseOrders.stateCode })
+      .select({ stateCode: purchaseOrders.stateCode, orderNumber: purchaseOrders.orderNumber })
       .from(purchaseOrders)
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
@@ -94,6 +94,7 @@ export const autoReceiveWhenFullyReceived: POLifecycleRule = {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: poId,
       eventType: EventType.STATUS_CHANGED,
+      entityDisplayName: order.orderNumber,
       payload: {
         rule: 'auto-receive-when-fully-received',
         trigger,
@@ -126,7 +127,7 @@ export const autoPartiallyReceiveWhenSomeReceived: POLifecycleRule = {
       return null;
 
     const [order] = await db
-      .select({ stateCode: purchaseOrders.stateCode })
+      .select({ stateCode: purchaseOrders.stateCode, orderNumber: purchaseOrders.orderNumber })
       .from(purchaseOrders)
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
@@ -175,6 +176,7 @@ export const autoPartiallyReceiveWhenSomeReceived: POLifecycleRule = {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: poId,
       eventType: EventType.STATUS_CHANGED,
+      entityDisplayName: order.orderNumber,
       payload: {
         rule: 'auto-partially-receive-when-some-received',
         trigger,
@@ -205,7 +207,7 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
       return null;
 
     const [order] = await db
-      .select({ stateCode: purchaseOrders.stateCode })
+      .select({ stateCode: purchaseOrders.stateCode, orderNumber: purchaseOrders.orderNumber })
       .from(purchaseOrders)
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
@@ -284,6 +286,7 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: poId,
       eventType: EventType.STATUS_CHANGED,
+      entityDisplayName: order.orderNumber,
       payload: {
         rule: 'auto-invoice-when-fully-invoiced-and-received',
         trigger,
@@ -313,7 +316,7 @@ export const autoRevertToPartiallyReceivedOnReturn: POLifecycleRule = {
       return null;
 
     const [order] = await db
-      .select({ stateCode: purchaseOrders.stateCode })
+      .select({ stateCode: purchaseOrders.stateCode, orderNumber: purchaseOrders.orderNumber })
       .from(purchaseOrders)
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
@@ -379,6 +382,7 @@ export const autoRevertToPartiallyReceivedOnReturn: POLifecycleRule = {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: poId,
       eventType: EventType.STATUS_CHANGED,
+      entityDisplayName: order.orderNumber,
       payload: {
         rule: 'auto-revert-to-partially-received-on-return',
         trigger,

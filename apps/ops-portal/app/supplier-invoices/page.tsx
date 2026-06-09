@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
 import { useSettings } from '@/components/SettingsProvider';
@@ -17,7 +18,7 @@ export default function GlobalPurchaseInvoicesPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const invoiceFilter = searchParams.get('invoiceId') || '';
-    const [days, setDays] = useState('90');
+    const [days, setDays, isReady] = usePersistedFilter('supplier-invoices-days', '90');
 
     const handleRowClicked = useCallback((row: any) => {
         if (row.invoiceId) {
@@ -26,9 +27,9 @@ export default function GlobalPurchaseInvoicesPage() {
     }, [router]);
 
     // When filtering by specific invoiceId, pass it to the API (server skips date range)
-    const gridEndpoint = invoiceFilter
+    const gridEndpoint = !isReady ? undefined : (invoiceFilter
         ? `/api/purchase-invoices?invoiceId=${encodeURIComponent(invoiceFilter)}&limit=0`
-        : `/api/purchase-invoices?days=${days}&limit=0`;
+        : `/api/purchase-invoices?days=${days}&limit=0`);
 
     const gridColumns: any[] = [
         { field: 'invoiceId', headerName: 'ID', hide: true },
@@ -67,7 +68,6 @@ export default function GlobalPurchaseInvoicesPage() {
             endpoint={gridEndpoint} 
             columns={gridColumns} 
             gridKey="global-purchase-invoices"
-            fetchAll
             rowIdField="invoiceId"
             onRowClicked={handleRowClicked}
             pageTitle={t('supplierInvoicesCardHeading')}

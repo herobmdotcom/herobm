@@ -54,6 +54,7 @@ export const autoTransitionInvoiceBasedOnOutstandingAmount: InvoiceLifecycleRule
           stateCode: table.stateCode,
           totalAmount: table.totalAmount,
           outstandingAmount: table.outstandingAmount,
+          invoiceNumber: table.invoiceNumber,
         })
         .from(table)
         .where(eq(pkColumn, invoiceId));
@@ -99,6 +100,7 @@ export const autoTransitionInvoiceBasedOnOutstandingAmount: InvoiceLifecycleRule
         entityType,
         entityId: invoiceId,
         eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: invoice.invoiceNumber as string,
         payload: {
           isAutomated: true,
           rule: 'auto-transition-invoice-outstanding-amount',

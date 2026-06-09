@@ -1,3 +1,6 @@
+process.on('uncaughtException', (err) => { console.error('UNCAUGHT:', err); process.exit(1); });
+process.on('unhandledRejection', (err) => { console.error('UNHANDLED:', err); process.exit(1); });
+
 import 'dotenv/config';
 import { Queue, Worker, Job } from 'bullmq';
 import postgres from 'postgres';
@@ -75,6 +78,8 @@ const journalEntriesCounter = new Counter({
 export { eventsProcessedCounter, eventsFailedCounter, journalEntriesCounter };
 
 import { pollOutbox, processEvent } from './relay.service';
+import { pollEmailOutbox } from './email-relay';
+import { purgeOldEmails } from './purge-emails.service';
 
 // Start Worker
 const worker = new Worker('external-sync', (job) => processEvent(job, db), { connection, concurrency: 5 });
@@ -84,6 +89,34 @@ worker.on('failed', (job, err) => {
   if (job?.data?.type) {
     eventsFailedCounter.inc({ event_type: job.data.type });
   }
+});
+
+// Setup System Maintenance Queue and Worker
+const maintenanceQueue = new Queue('system-maintenance', { connection });
+maintenanceQueue.add(
+  'purge-emails',
+  {},
+  {
+    repeat: {
+      pattern: '0 0 * * *', // Every day at midnight
+    },
+  }
+).catch(err => {
+  console.error('Failed to schedule purge-emails job:', err);
+});
+
+const maintenanceWorker = new Worker(
+  'system-maintenance',
+  async (job) => {
+    if (job.name === 'purge-emails') {
+      return purgeOldEmails(job, db);
+    }
+  },
+  { connection, concurrency: 1 }
+);
+
+maintenanceWorker.on('failed', (job, err) => {
+  logger.error({ jobId: job?.id, err: err.message }, 'BullMQ maintenance job failed');
 });
 
 // Start Express for Metrics
@@ -97,5 +130,11 @@ app.listen(PORT, () => {
 });
 
 // Start Polling
-setInterval(() => pollOutbox(db, syncQueue), 5000);
-pollOutbox(db, syncQueue); // Initial poll
+setInterval(() => {
+  pollOutbox(db, syncQueue);
+  pollEmailOutbox(db);
+}, 5000);
+
+// Initial poll
+pollOutbox(db, syncQueue);
+pollEmailOutbox(db);

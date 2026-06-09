@@ -189,6 +189,18 @@ services:
     networks:
       - app-net
 
+  # --- Maildev (Local Dev Only) ---
+  maildev:
+    image: maildev/maildev
+    container_name: maildev
+    profiles:
+      - dev
+    ports:
+      - "127.0.0.1:1080:1080"
+      - "127.0.0.1:1025:1025"
+    networks:
+      - app-net
+
 volumes:
   postgres_data:
   redis_data:

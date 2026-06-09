@@ -162,6 +162,9 @@ export const salesOrders = modbmCore.table(
           .join(', ')})`,
       ),
     ),
+    customerIdx: index('idx_sales_orders_customer_id').on(t.customerId),
+    stateIdx: index('idx_sales_orders_state_code').on(t.stateCode),
+    createdOnIdx: index('idx_sales_orders_created_on').on(t.createdOn),
   }),
 );
 
@@ -196,10 +199,14 @@ export const salesOrderLineItems = modbmCore.table(
     parentLineId: uuid('parent_line_id'),
   },
   (t) => ({
+    uniqueSoLineNumber: uniqueIndex('unique_so_line_number')
+      .on(t.salesOrderId, t.lineNumber)
+      .where(sql`${t.salesOrderId} != '00000000-0000-0000-0000-000000000001'`),
     productLocationIdx: index('idx_sales_order_lines_product_location').on(
       t.productId,
       t.fulfillmentLocationId,
     ),
+    orderIdx: index('idx_sales_order_lines_order_id').on(t.salesOrderId),
     parentLineFk: foreignKey({
       columns: [t.parentLineId],
       foreignColumns: [t.salesOrderLineId],
@@ -489,6 +496,11 @@ export const purchaseOrderLineItems = modbmCore.table(
   },
   (t) => ({
     productIdx: index('idx_purchase_order_lines_product').on(t.productId),
+    uniquePoLineNumber: uniqueIndex('unique_po_line_number')
+      .on(t.purchaseOrderId, t.lineNumber)
+      .where(
+        sql`${t.purchaseOrderId} != '00000000-0000-0000-0000-000000000001'`,
+      ),
   }),
 );
 // ---------------------------------------------------------------------------
@@ -974,20 +986,26 @@ export const bins = modbmCore.table(
 // ---------------------------------------------------------------------------
 // inventory_entries (Header grouping for stock movements)
 // ---------------------------------------------------------------------------
-export const inventoryEntries = modbmCore.table('inventory_entries', {
-  entryId: uuid('entry_id').primaryKey().defaultRandom(),
-  entryNumber: text('entry_number').unique().notNull(), // e.g. STK-20260325-001
-  entryDate: timestamp('entry_date', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  memo: text('memo'),
-  sourceType: text('source_type').notNull(), // INITIAL_IMPORT, PO_RECEIPT, SO_SHIPMENT, RETURN, ADJUSTMENT, TRANSFER
-  sourceId: uuid('source_id'), // FK to originating document
-  isReversed: boolean('is_reversed').notNull().default(false),
-  reversedBy: uuid('reversed_by'), // self-ref to reversing entry
-  createdBy: text('created_by'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-});
+export const inventoryEntries = modbmCore.table(
+  'inventory_entries',
+  {
+    entryId: uuid('entry_id').primaryKey().defaultRandom(),
+    entryNumber: text('entry_number').unique().notNull(), // e.g. STK-20260325-001
+    entryDate: timestamp('entry_date', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    memo: text('memo'),
+    sourceType: text('source_type').notNull(), // INITIAL_IMPORT, PO_RECEIPT, SO_SHIPMENT, RETURN, ADJUSTMENT, TRANSFER
+    sourceId: uuid('source_id'), // FK to originating document
+    isReversed: boolean('is_reversed').notNull().default(false),
+    reversedBy: uuid('reversed_by'), // self-ref to reversing entry
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    dateIdx: index('idx_inventory_entries_entry_date').on(t.entryDate),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // inventory_ledger (Immutable double-entry ledger of all stock movement lines)
@@ -1018,6 +1036,7 @@ export const inventoryLedger = modbmCore.table(
       t.productId,
       t.locationId,
     ),
+    entryIdx: index('idx_inventory_ledger_entry_id').on(t.entryId),
   }),
 );
 
@@ -1039,6 +1058,7 @@ export const binContents = modbmCore.table(
   },
   (t) => ({
     unq: unique('bin_contents_bin_product_unq').on(t.binId, t.productId),
+    productIdx: index('idx_bin_contents_product_id').on(t.productId),
   }),
 );
 
@@ -1083,11 +1103,44 @@ export const outbox = modbmCore.table('outbox', {
   entityType: text('entity_type').notNull(),
   entityId: uuid('entity_id').notNull(),
   eventType: text('event_type').notNull(),
+  entityDisplayName: text('entity_display_name'),
   payload: jsonb('payload'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   processedAt: timestamp('processed_at', { withTimezone: true }),
   lockedUntil: timestamp('locked_until', { withTimezone: true }),
   lastError: text('last_error'),
+});
+
+export const emailStatusEnum = modbmCore.enum('email_status', [
+  'pending',
+  'sending',
+  'sent',
+  'failed',
+  'dismissed',
+]);
+
+// ---------------------------------------------------------------------------
+// email_outbox  (Transactional outbox for SMTP Emails)
+// ---------------------------------------------------------------------------
+export const emailOutbox = modbmCore.table('email_outbox', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  entityType: text('entity_type'),
+  entityId: uuid('entity_id'),
+  toAddress: text('to_address').notNull(),
+  replyTo: text('reply_to'),
+  subject: text('subject').notNull(),
+  htmlBody: text('html_body').notNull(),
+  attachments: jsonb('attachments')
+    .$type<{ filename: string; contentType: string; content?: string }[]>()
+    .default([]),
+  status: emailStatusEnum('status').notNull().default('pending'),
+  retries: integer('retries').notNull().default(0),
+  lastError: text('last_error'),
+  nextRetryAt: timestamp('next_retry_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  processedAt: timestamp('processed_at', { withTimezone: true }),
 });
 
 // ---------------------------------------------------------------------------
@@ -1612,6 +1665,7 @@ export const userEvents = modbmCore.table('user_events', {
     .notNull()
     .references(() => users.userId, { onDelete: 'cascade' }),
   eventType: text('event_type').notNull(),
+  entityDisplayName: text('entity_display_name'),
   payload: jsonb('payload'),
   actor: text('actor'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -1737,7 +1791,7 @@ export const paymentEntries = modbmCore.table('payment_entries', {
   paymentNumber: text('payment_number').unique().notNull(),
   paymentType: text('payment_type').notNull(), // 'receive' | 'pay'
   partyType: text('party_type').notNull(), // 'customer' | 'supplier'
-  partyId: uuid('party_id').notNull(), // Logic enforces reference to customers/suppliers
+  partyId: uuid('party_id'), // Optional for multi-line split payments
   paymentDate: timestamp('payment_date', { withTimezone: true }).notNull(),
   modeOfPayment: text('mode_of_payment').notNull(), // 'Cash', 'Wire', 'Credit Card'
   totalAmount: numeric('total_amount').notNull(),
@@ -1752,6 +1806,21 @@ export const paymentEntries = modbmCore.table('payment_entries', {
   abaExportedAt: timestamp('aba_exported_at', { withTimezone: true }),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// payment_lines  (Multi-line splits for cash flow)
+// ---------------------------------------------------------------------------
+export const paymentLines = modbmCore.table('payment_lines', {
+  paymentLineId: uuid('payment_line_id').primaryKey().defaultRandom(),
+  paymentId: uuid('payment_id')
+    .notNull()
+    .references(() => paymentEntries.paymentId),
+  glAccountId: uuid('gl_account_id')
+    .notNull()
+    .references(() => glAccounts.glAccountId),
+  amount: numeric('amount').notNull(),
+  memo: text('memo'),
 });
 
 // ---------------------------------------------------------------------------
@@ -1978,6 +2047,11 @@ export const appSettings = modbmCore.table('app_settings', {
     .notNull()
     .default('periodic'), // 'periodic' | 'perpetual'
   creditLimitBehavior: text('credit_limit_behavior').notNull().default('soft'), // 'hard' (block creation) | 'soft' (allow draft, block dispatch)
+  smtpHost: text('smtp_host'),
+  smtpPort: integer('smtp_port'),
+  smtpUser: text('smtp_user'),
+  smtpPassEncrypted: text('smtp_pass_encrypted'),
+  smtpFromAddress: text('smtp_from_address'),
   apiRateLimit: numeric('api_rate_limit').notNull().default('1000'),
   setupCompletedAt: timestamp('setup_completed_at', { withTimezone: true }),
   systemIdentifier: text('system_identifier'), // UUID generated on first boot for hardware locking
@@ -2059,6 +2133,7 @@ export const salesEvents = modbmCore.table('sales_events', {
   entityType: text('entity_type').notNull(),
   entityId: uuid('entity_id').notNull(),
   eventType: text('event_type').notNull(),
+  entityDisplayName: text('entity_display_name'),
   payload: jsonb('payload'),
   actor: text('actor'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -2072,6 +2147,7 @@ export const procurementEvents = modbmCore.table('procurement_events', {
   entityType: text('entity_type').notNull(),
   entityId: uuid('entity_id').notNull(),
   eventType: text('event_type').notNull(),
+  entityDisplayName: text('entity_display_name'),
   payload: jsonb('payload'),
   actor: text('actor'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -2085,6 +2161,7 @@ export const warehouseEvents = modbmCore.table('warehouse_events', {
   entityType: text('entity_type').notNull(),
   entityId: uuid('entity_id').notNull(),
   eventType: text('event_type').notNull(),
+  entityDisplayName: text('entity_display_name'),
   payload: jsonb('payload'),
   actor: text('actor'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -2098,6 +2175,7 @@ export const masterDataEvents = modbmCore.table('master_data_events', {
   entityType: text('entity_type').notNull(),
   entityId: uuid('entity_id').notNull(),
   eventType: text('event_type').notNull(),
+  entityDisplayName: text('entity_display_name'),
   payload: jsonb('payload'),
   actor: text('actor'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -2111,6 +2189,7 @@ export const financialEvents = modbmCore.table('financial_events', {
   entityType: text('entity_type').notNull(),
   entityId: uuid('entity_id').notNull(),
   eventType: text('event_type').notNull(),
+  entityDisplayName: text('entity_display_name'),
   payload: jsonb('payload'),
   actor: text('actor'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -2124,6 +2203,7 @@ export const inventoryEvents = modbmCore.table('inventory_events', {
   entityType: text('entity_type').notNull(),
   entityId: uuid('entity_id').notNull(),
   eventType: text('event_type').notNull(),
+  entityDisplayName: text('entity_display_name'),
   payload: jsonb('payload'),
   actor: text('actor'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -2137,6 +2217,7 @@ export const systemEvents = modbmCore.table('system_events', {
   entityType: text('entity_type').notNull(),
   entityId: uuid('entity_id').notNull(),
   eventType: text('event_type').notNull(),
+  entityDisplayName: text('entity_display_name'),
   payload: jsonb('payload'),
   actor: text('actor'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -2207,6 +2288,7 @@ export const dashboardTimeline = modbmCore
     entityType: text('entity_type'),
     entityId: uuid('entity_id'),
     eventType: text('event_type'),
+    entityDisplayName: text('entity_display_name'),
     payload: jsonb('payload'),
     actor: text('actor'),
     createdOn: timestamp('created_on', { withTimezone: true }),

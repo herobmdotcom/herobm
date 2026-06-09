@@ -57,6 +57,7 @@ export class SuppliersWriteService {
         entityType: EntityType.SUPPLIER,
         entityId: supplier.vendorId,
         eventType: EventType.CREATED,
+        entityDisplayName: supplier.name,
         payload: dto,
         actor,
       });
@@ -105,6 +106,7 @@ export class SuppliersWriteService {
             entityType: EntityType.SUPPLIER,
             entityId: id,
             eventType: EventType.STATUS_CHANGED,
+            entityDisplayName: updated.name,
             payload: {
               from: existing[0].stateCode,
               to: audit.changes.stateCode,
@@ -116,6 +118,7 @@ export class SuppliersWriteService {
             entityType: EntityType.SUPPLIER,
             entityId: id,
             eventType: EventType.UPDATED,
+            entityDisplayName: updated.name,
             payload: {
               changes: audit.changes,
               previousValues: audit.previousValues,
@@ -230,6 +233,7 @@ export class SuppliersWriteService {
       entityType: EntityType.SUPPLIER,
       entityId: vendorId,
       eventType: eventType,
+      entityDisplayName: updated.name,
       payload: {
         from: currentState,
         to: newState,
@@ -248,7 +252,7 @@ export class SuppliersWriteService {
     actor: string,
   ) {
     const existing = await this.db
-      .select({ id: coreSuppliers.vendorId })
+      .select({ id: coreSuppliers.vendorId, name: coreSuppliers.name })
       .from(coreSuppliers)
       .where(eq(coreSuppliers.vendorId, vendorId));
     if (existing.length === 0)
@@ -269,6 +273,7 @@ export class SuppliersWriteService {
       entityType: EntityType.SUPPLIER,
       entityId: vendorId,
       eventType: EventType.ADDED_EXPIRY,
+      entityDisplayName: existing[0].name,
       payload: { expiryType: dto.expiryType },
       actor,
     });
@@ -282,8 +287,13 @@ export class SuppliersWriteService {
     actor: string,
   ) {
     const existing = await this.db
-      .select()
+      .select({
+        expiryId: supplierExpiries.expiryId,
+        vendorId: supplierExpiries.vendorId,
+        supplierName: coreSuppliers.name,
+      })
       .from(supplierExpiries)
+      .innerJoin(coreSuppliers, eq(coreSuppliers.vendorId, supplierExpiries.vendorId))
       .where(
         sql`${supplierExpiries.expiryId} = ${expiryId} AND ${supplierExpiries.vendorId} = ${vendorId}`,
       );
@@ -306,6 +316,7 @@ export class SuppliersWriteService {
       entityType: EntityType.SUPPLIER,
       entityId: vendorId,
       eventType: EventType.UPDATED_EXPIRY,
+      entityDisplayName: existing[0].supplierName,
       payload: { expiryId },
       actor,
     });
@@ -314,8 +325,12 @@ export class SuppliersWriteService {
 
   async deleteExpiry(vendorId: string, expiryId: string, actor: string) {
     const existing = await this.db
-      .select()
+      .select({
+        expiryType: supplierExpiries.expiryType,
+        supplierName: coreSuppliers.name,
+      })
       .from(supplierExpiries)
+      .innerJoin(coreSuppliers, eq(coreSuppliers.vendorId, supplierExpiries.vendorId))
       .where(
         sql`${supplierExpiries.expiryId} = ${expiryId} AND ${supplierExpiries.vendorId} = ${vendorId}`,
       );
@@ -332,6 +347,7 @@ export class SuppliersWriteService {
       entityType: EntityType.SUPPLIER,
       entityId: vendorId,
       eventType: EventType.DELETED_EXPIRY,
+      entityDisplayName: existing[0].supplierName,
       payload: { type },
       actor,
     });

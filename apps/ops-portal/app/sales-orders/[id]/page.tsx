@@ -236,7 +236,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                 header={
                     <EntityHeader
                         title={order.orderNumber}
-                        subtitle={order.name || tSales('untitledOrder')}
+                        subtitle={order.name === order.orderNumber ? null : (order.name || tSales('untitledOrder'))}
                         onBack={() => {
                           if (window.history.length > 1) {
                             router.back();

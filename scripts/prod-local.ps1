@@ -58,6 +58,10 @@ Write-Host "Portal connecting to API at: http://localhost:$apiPort" -ForegroundC
 $feCmd = $envInjection + "npx cross-env API_URL='http://localhost:$apiPort' PORT=$fePort npm run start:prod -w apps/ops-portal"
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", $feCmd
 
+# Start Worker in a new window
+$workerCmd = $envInjection + "`$env:PORT=9091; npm run start -w apps/worker"
+Start-Process pwsh -ArgumentList "-NoExit", "-Command", $workerCmd
+
 if ($enableMcp -eq 'true') {
     Write-Host "MCP Server will start in prod mode" -ForegroundColor Cyan
     $mcpCmd = $envInjection + "npm run start -w apps/mcp-server"

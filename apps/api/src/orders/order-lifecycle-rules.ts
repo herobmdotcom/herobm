@@ -89,10 +89,13 @@ export const autoShipWhenFullyShipped: LifecycleRule = {
       .set({ stateCode: SALES_ORDER_STATE.SHIPPED, modifiedOn: new Date() })
       .where(eq(salesOrders.salesOrderId, salesOrderId));
 
+    const [{ orderNumber }] = await db.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, salesOrderId));
+
     await emitEvent(db as any, {
       entityType: EntityType.SALES_ORDER,
       entityId: salesOrderId,
       eventType: 'auto_status_changed',
+      entityDisplayName: orderNumber,
       payload: {
         rule: 'auto-ship-when-fully-shipped',
         trigger,
@@ -160,10 +163,13 @@ export const revertToPickingOnShipmentCancel: LifecycleRule = {
       .set({ stateCode: SALES_ORDER_STATE.PICKING, modifiedOn: new Date() })
       .where(eq(salesOrders.salesOrderId, salesOrderId));
 
+    const [{ orderNumber }] = await db.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, salesOrderId));
+
     await emitEvent(db as any, {
       entityType: EntityType.SALES_ORDER,
       entityId: salesOrderId,
       eventType: 'auto_status_changed',
+      entityDisplayName: orderNumber,
       payload: {
         rule: 'revert-to-picking-on-shipment-cancel',
         trigger,
@@ -242,10 +248,13 @@ export const autoInvoiceWhenFullyInvoiced: LifecycleRule = {
       .set({ stateCode: SALES_ORDER_STATE.INVOICED, modifiedOn: new Date() })
       .where(eq(salesOrders.salesOrderId, salesOrderId));
 
+    const [{ orderNumber }] = await db.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, salesOrderId));
+
     await emitEvent(db as any, {
       entityType: EntityType.SALES_ORDER,
       entityId: salesOrderId,
       eventType: 'auto_status_changed',
+      entityDisplayName: orderNumber,
       payload: {
         rule: 'auto-invoice-when-fully-invoiced',
         trigger,
@@ -286,10 +295,13 @@ export const startPickingOnFirstPick: LifecycleRule = {
       .set({ stateCode: SALES_ORDER_STATE.PICKING, modifiedOn: new Date() })
       .where(eq(salesOrders.salesOrderId, salesOrderId));
 
+    const [{ orderNumber }] = await db.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, salesOrderId));
+
     await emitEvent(db as any, {
       entityType: EntityType.SALES_ORDER,
       entityId: salesOrderId,
       eventType: 'auto_status_changed',
+      entityDisplayName: orderNumber,
       payload: {
         rule: 'start-picking-on-first-pick',
         trigger,

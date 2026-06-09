@@ -81,3 +81,9 @@ query_erpnext.js
 
 # Linting
 .eslintcache
+
+# Backups
+postgres*.tar.gz
+redis*.tar.gz
+*.tar.gz
+*.tar

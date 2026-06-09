@@ -233,6 +233,11 @@ export class AppConfigResponseDto {
     string,
     Record<string, string>
   >;
+  @ApiProperty({ required: false }) smtpHost?: string;
+  @ApiProperty({ required: false }) smtpPort?: number;
+  @ApiProperty({ required: false }) smtpUser?: string;
+  @ApiProperty({ required: false }) smtpPass?: string;
+  @ApiProperty({ required: false }) smtpFromAddress?: string;
 }
 export class UpdateAppConfigDto {
   @ApiProperty({ required: false })
@@ -252,6 +257,31 @@ export class UpdateAppConfigDto {
   @ApiProperty({ required: false })
   @IsOptional()
   enrichmentProviderMappings?: Record<string, Record<string, string>>;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  smtpHost?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  smtpPort?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  smtpUser?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  smtpPass?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  smtpFromAddress?: string;
 }
 export class TradingTermResponseDto {
   @ApiProperty() id!: string;

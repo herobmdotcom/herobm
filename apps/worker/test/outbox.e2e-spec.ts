@@ -55,6 +55,8 @@ describe('Worker E2E - Outbox Integration', () => {
 
     await db.insert(outbox).values({
       outboxId: pEventId,
+      entityType: 'sales_order',
+      entityId: randomUUID(),
       aggregateType: 'sales_order',
       aggregateId: randomUUID(),
       eventType: 'sales_order.created',
@@ -99,6 +101,8 @@ describe('Worker E2E - Outbox Integration', () => {
     // 2. Insert outbox event
     await db.insert(outbox).values({
       outboxId: testEventId,
+      entityType: 'sales_order',
+      entityId: randomUUID(),
       aggregateType: 'sales_order',
       aggregateId: randomUUID(),
       eventType: 'sales_order.created',

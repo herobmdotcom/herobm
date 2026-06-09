@@ -228,6 +228,7 @@ export class ShipmentService {
           entityType: EntityType.SHIPMENT,
           entityId: shipment.shipmentId,
           eventType: 'shipment_created',
+          entityDisplayName: shipmentNumber,
           payload: {
             shipmentId: shipment.shipmentId,
             shipmentNumber,
@@ -279,6 +280,7 @@ export class ShipmentService {
           entityType: EntityType.SHIPMENT,
           entityId: shipmentId,
           eventType: 'shipment_updated',
+          entityDisplayName: shipment.shipmentNumber,
           payload: {
             shipmentId,
             changes: dto,
@@ -337,6 +339,7 @@ export class ShipmentService {
           entityType: EntityType.SHIPMENT,
           entityId: shipmentId,
           eventType,
+          entityDisplayName: shipment.shipmentNumber,
           payload: {
             entity: 'shipment',
             entityId: shipmentId,
@@ -713,6 +716,7 @@ export class ShipmentService {
           entityType: EntityType.SHIPMENT,
           entityId: shipmentId,
           eventType: 'shipment_line_added',
+          entityDisplayName: shipment.shipmentNumber,
           payload: {
             shipmentId,
             shipmentLineId: line.shipmentLineId,
@@ -790,6 +794,7 @@ export class ShipmentService {
           entityType: EntityType.SHIPMENT,
           entityId: shipmentId,
           eventType: 'shipment_line_updated',
+          entityDisplayName: shipment.shipmentNumber,
           payload: {
             shipmentId,
             shipmentLineId: lineId,
@@ -838,6 +843,7 @@ export class ShipmentService {
         entityType: EntityType.SHIPMENT,
         entityId: shipmentId,
         eventType: 'shipment_line_removed',
+        entityDisplayName: shipment.shipmentNumber,
         payload: {
           shipmentId,
           shipmentLineId: lineId,
@@ -1283,6 +1289,7 @@ export class ShipmentService {
       entityType: EntityType.SHIPMENT,
       entityId: shipment.shipmentId,
       eventType: EventType.STOCK_DISPATCHED,
+      entityDisplayName: shipment.shipmentNumber,
       payload: {
         shipmentId: shipment.shipmentId,
         shipmentNumber: shipment.shipmentNumber,
@@ -1323,10 +1330,12 @@ export class ShipmentService {
       .where(eq(salesOrderPicks.pickId, pickId));
 
     if (newState === SALES_ORDER_PICK_STATE.CANCELLED) {
+      const [order] = await tx.select({ orderNumber: salesOrders.orderNumber }).from(salesOrders).where(eq(salesOrders.salesOrderId, existing.salesOrderId));
       await emitEvent(tx, {
         entityType: EntityType.WAREHOUSE,
         entityId: pickId,
         eventType: EventType.PICK_CANCELLED,
+        entityDisplayName: order.orderNumber,
         payload: {
           pickId,
           salesOrderId: existing.salesOrderId,

@@ -14,7 +14,7 @@ import {
   pdfTemplateContexts,
   organization,
 } from '../drizzle/modbm-core-schema';
-import { eq, like, or } from 'drizzle-orm';
+import { eq, like, or, inArray } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process';
@@ -109,19 +109,30 @@ export class PdfTemplatesService {
       .from(pdfTemplates)
       .orderBy(pdfTemplates.name);
 
-    // Enrich with contexts
-    const enriched = await Promise.all(
-      data.map(async (r) => {
-        const contexts = await this.db
-          .select({ context: pdfTemplateContexts.context })
-          .from(pdfTemplateContexts)
-          .where(eq(pdfTemplateContexts.templateId, r.id));
-        return {
-          ...r,
-          contexts: contexts.map((c) => c.context),
-        };
-      }),
-    );
+    if (data.length === 0) return [];
+
+    const templateIds = data.map((d) => d.id);
+    const allContexts = await this.db
+      .select({
+        templateId: pdfTemplateContexts.templateId,
+        context: pdfTemplateContexts.context,
+      })
+      .from(pdfTemplateContexts)
+      .where(inArray(pdfTemplateContexts.templateId, templateIds));
+
+    const contextMap = new Map<string, string[]>();
+    for (const row of allContexts) {
+      if (!contextMap.has(row.templateId)) {
+        contextMap.set(row.templateId, []);
+      }
+      contextMap.get(row.templateId)!.push(row.context);
+    }
+
+    const enriched = data.map((r) => ({
+      ...r,
+      contexts: contextMap.get(r.id) || [],
+    }));
+
     return enriched;
   }
 
@@ -158,13 +169,11 @@ export class PdfTemplatesService {
       .returning();
 
     if (contexts && contexts.length > 0) {
-      await Promise.all(
-        contexts.map((ctx) =>
-          this.db.insert(pdfTemplateContexts).values({
-            templateId: inserted.id,
-            context: ctx,
-          }),
-        ),
+      await this.db.insert(pdfTemplateContexts).values(
+        contexts.map((ctx) => ({
+          templateId: inserted.id,
+          context: ctx,
+        })),
       );
     }
 
@@ -201,13 +210,11 @@ export class PdfTemplatesService {
 
       // 2. Insert new contexts
       if (contexts.length > 0) {
-        await Promise.all(
-          contexts.map((ctx) =>
-            this.db.insert(pdfTemplateContexts).values({
-              templateId: id,
-              context: ctx,
-            }),
-          ),
+        await this.db.insert(pdfTemplateContexts).values(
+          contexts.map((ctx) => ({
+            templateId: id,
+            context: ctx,
+          })),
         );
       }
     }

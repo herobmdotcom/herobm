@@ -118,6 +118,7 @@ export default function WebhooksApiPage() {
             <li><strong className="text-[var(--text-primary)]">{t('entityTypes.warehouse')}</strong>: <code className="font-mono text-xs">warehouse</code> (covers receipts, shipments, picking, and putaway), <code className="font-mono text-xs">transfer_order</code></li>
             <li><strong className="text-[var(--text-primary)]">Inventory Ledger</strong>: <code className="font-mono text-xs">inventory_ledger</code> (via <code className="font-mono text-xs">system</code> entity)</li>
             <li><strong className="text-[var(--text-primary)]">{t('entityTypes.financials')}</strong>: <code className="font-mono text-xs">payment</code>, <code className="font-mono text-xs">general_ledger</code> (via <code className="font-mono text-xs">system</code> entity)</li>
+            <li><strong className="text-[var(--text-primary)]">System</strong>: <code className="font-mono text-xs">email</code></li>
           </ul>
           {/* eslint-enable i18next/no-literal-string */}
         </div>
@@ -148,6 +149,7 @@ export default function WebhooksApiPage() {
                 <tr><td className="font-mono font-medium text-xs text-[var(--brand-navy)]">supplier</td><td className="text-[var(--text-secondary)] font-mono text-xs">created, updated, archived, unarchived</td></tr>
                 <tr><td className="font-mono font-medium text-xs text-[var(--brand-navy)]">payment</td><td className="text-[var(--text-secondary)] font-mono text-xs">submitted, allocated, cancelled</td></tr>
                 <tr><td className="font-mono font-medium text-xs text-[var(--brand-navy)]">general_ledger</td><td className="text-[var(--text-secondary)] font-mono text-xs">entry_posted</td></tr>
+                <tr><td className="font-mono font-medium text-xs text-[var(--brand-navy)]">email</td><td className="text-[var(--text-secondary)] font-mono text-xs">queued, sent, failed</td></tr>
               </tbody>
             </table>
             {/* eslint-enable i18next/no-literal-string */}

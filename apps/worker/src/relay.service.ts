@@ -22,6 +22,7 @@ export async function pollOutbox(db: any, syncQueue: Queue) {
         entityId: outbox.entityId,
         entityType: outbox.entityType,
         createdOn: outbox.createdOn,
+        entityDisplayName: outbox.entityDisplayName,
         payload: outbox.payload, 
         type: outbox.eventType 
       })
@@ -44,6 +45,7 @@ export async function pollOutbox(db: any, syncQueue: Queue) {
           type: event.type, 
           entityId: event.entityId,
           entityType: event.entityType,
+          entityDisplayName: event.entityDisplayName,
           createdOn: event.createdOn,
           payload: event.payload 
         },
@@ -65,7 +67,7 @@ export async function pollOutbox(db: any, syncQueue: Queue) {
  * Maps outbox events to external payloads and posts them.
  */
 export async function processEvent(job: Job, db: any) {
-  const { eventId, type, entityId, entityType, createdOn, payload } = job.data;
+  const { eventId, type, entityId, entityType, entityDisplayName, createdOn, payload } = job.data;
   processingLogger.info({ eventId, eventType: type, entityId: entityId }, 'Processing event');
 
   // Removing early abort for HANDLED_EVENT_TYPES to allow webhooks to process everything
@@ -92,6 +94,7 @@ export async function processEvent(job: Job, db: any) {
         eventType: type, 
         entityId: entityId,
         entityType: entityType,
+        entityDisplayName: entityDisplayName,
         timestamp: createdOn,
         payload 
       });

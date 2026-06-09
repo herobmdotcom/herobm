@@ -668,6 +668,7 @@ export class OrdersWriteService {
         entityType: EntityType.SALES_ORDER,
         entityId: order.salesOrderId,
         eventType: EventType.CREATED,
+        entityDisplayName: orderNumber,
         payload: {
           orderNumber,
           customerId: dto.customerId,
@@ -717,6 +718,7 @@ export class OrdersWriteService {
           entityType: EntityType.SALES_ORDER,
           entityId: id,
           eventType: EventType.UPDATED,
+          entityDisplayName: existing.orderNumber,
           payload: {
             changes: audit.changes,
             previousValues: audit.previousValues,
@@ -872,6 +874,7 @@ export class OrdersWriteService {
         entityType: EntityType.SALES_ORDER,
         entityId: id,
         eventType: eventType,
+        entityDisplayName: existing.orderNumber,
         payload: {
           from: existing.stateCode,
           to: newState,
@@ -1067,6 +1070,7 @@ export class OrdersWriteService {
         entityType: EntityType.SALES_ORDER,
         entityId: id,
         eventType: 'TAX_CALCULATED' as any,
+        entityDisplayName: order.orderNumber,
         payload: { provider: taxProvider, totalTax: taxData.amount_to_collect },
         actor,
       });
@@ -1115,16 +1119,6 @@ export class OrdersWriteService {
       }
     }
 
-    // Get next line number
-    const maxLine = await this.db
-      .select({
-        max: sql<number>`COALESCE(MAX(${salesOrderLineItems.lineNumber}), 0)`,
-      })
-      .from(salesOrderLineItems)
-      .where(eq(salesOrderLineItems.salesOrderId, orderId));
-
-    let currentLineNumber = (maxLine[0]?.max ?? 0) + 1;
-
     // Resolve GST: product × customer intersection, with per-line override
     const lineTax = await this.resolveTaxForLine(
       order.customerId ?? '',
@@ -1138,6 +1132,23 @@ export class OrdersWriteService {
     const lineDiscount = dto.discountPercentage ?? '0';
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      // 1. Lock the order to prevent concurrent addLine races
+      await tx
+        .select({ id: salesOrders.salesOrderId })
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, orderId))
+        .for('update');
+
+      // 2. Get next line number safely within the transaction
+      const maxLine = await tx
+        .select({
+          max: sql<number>`COALESCE(MAX(${salesOrderLineItems.lineNumber}), 0)`,
+        })
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, orderId));
+
+      let currentLineNumber = (maxLine[0]?.max ?? 0) + 1;
+
       let isKit = false;
       const parentPrice = parseFloat(dto.pricePerUnit || '0');
       if (dto.productId) {
@@ -1267,6 +1278,7 @@ export class OrdersWriteService {
         entityType: EntityType.SALES_ORDER,
         entityId: orderId,
         eventType: EventType.LINE_ADDED,
+        entityDisplayName: order.orderNumber,
         payload: {
           lineId: parentLineId,
           productId: dto.productId,
@@ -1479,6 +1491,7 @@ export class OrdersWriteService {
         entityType: EntityType.SALES_ORDER,
         entityId: orderId,
         eventType: EventType.POST_CONFIRMATION_LINE_ADDED,
+        entityDisplayName: order.orderNumber,
         payload: {
           lineId: parentLineId,
           productId: dto.productId,
@@ -1630,6 +1643,7 @@ export class OrdersWriteService {
           entityType: EntityType.SALES_ORDER,
           entityId: orderId,
           eventType: EventType.LINE_UPDATED,
+          entityDisplayName: order.orderNumber,
           payload: {
             lineId,
             changes: audit.changes,
@@ -1721,6 +1735,7 @@ export class OrdersWriteService {
         entityType: EntityType.SALES_ORDER,
         entityId: orderId,
         eventType: EventType.LINE_REMOVED,
+        entityDisplayName: order.orderNumber,
         payload: {
           lineId,
           productId: existingLine.productId,

@@ -19,6 +19,7 @@ import {
   type ScrollState,
 } from "ag-grid-community";
 import * as api from '@modbm/sdk';
+import useSWR from 'swr';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -146,6 +147,8 @@ export interface DataGridProps<T> {
   defaultSortModel?: { colId: string; sort: 'asc' | 'desc' }[];
   /** Custom HTML string for the empty state */
   overlayNoRowsTemplate?: string;
+  /** Explicitly override the loading state (useful when managing fetching outside) */
+  loading?: boolean;
 }
 
 /** Format numbers: integers stay as integers, decimals get 2 places */
@@ -309,6 +312,7 @@ export default function DataGrid<T>({
   secondaryHeader,
   defaultSortModel,
   overlayNoRowsTemplate,
+  loading: externalLoading,
 }: DataGridProps<T>) {
   const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
@@ -355,7 +359,8 @@ export default function DataGrid<T>({
   }, [gridKey]);
 
   const [displayedRowCount, setDisplayedRowCount] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
+  const [internalLoading, setInternalLoading] = useState(true);
+  const loading = externalLoading !== undefined ? externalLoading : internalLoading;
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 1024 : false
   );
@@ -566,19 +571,8 @@ export default function DataGrid<T>({
     [],
   );
 
-  useEffect(() => {
-    if (!isRestored) return; // wait until we have read sessionStorage
-
-    if (rowData) {
-      setData(rowData);
-      setDisplayedRowCount(rowData.length);
-      setLoading(false);
-      return;
-    }
-
-    if (!endpoint) return;
-
-    setLoading(true);
+  const swrKey = useMemo(() => {
+    if (rowData || !endpoint || !isRestored) return null;
     const params = new URLSearchParams();
     if (cursor) {
       params.set("cursor", cursor);
@@ -587,21 +581,57 @@ export default function DataGrid<T>({
     params.set("limit", String(limit));
     if (search) params.set("q", search);
     if (includeArchived) params.set("includeArchived", "true");
-
+    
+    if (refreshTrigger || internalRefresh) {
+      params.set("_refresh", String((refreshTrigger || 0) + (internalRefresh || 0)));
+    }
+    
     const separator = endpoint.includes('?') ? '&' : '?';
-    api.customFetch(`${endpoint.replace('/api', '')}${separator}${params}`, { method: 'GET' })
-      .then((res: any) => {
-        const body = res.data as { data: T[], nextCursor?: string, prevCursor?: string };
-        const safeData = Array.isArray(body) ? body : (body?.data || []);
-        setData(safeData);
-        setNextCursor(body?.nextCursor ?? null);
-        setPrevCursor(body?.prevCursor ?? null);
-        setDisplayedRowCount(safeData.length);
-        onDataLoaded?.(safeData);
-      })
-      .catch((err) => onError?.(err, "DataGrid"))
-      .finally(() => setLoading(false));
-  }, [endpoint, rowData, search, includeArchived, cursor, direction, limit, onError, refreshTrigger, internalRefresh, onDataLoaded, isRestored]);
+    return `${endpoint.replace('/api', '')}${separator}${params}`;
+  }, [rowData, endpoint, isRestored, cursor, direction, limit, search, includeArchived, refreshTrigger, internalRefresh]);
+
+  const { data: swrResponse, error: swrError, isLoading: swrIsLoading } = useSWR(
+    swrKey,
+    (url: string) => {
+      const cleanUrl = url.replace(/([&?])_refresh=\d+&?/, '$1').replace(/&$/, '').replace(/\?$/, '');
+      return api.customFetch(cleanUrl, { method: 'GET' }).then((res: any) => res.data);
+    },
+    { revalidateOnFocus: false, keepPreviousData: true }
+  );
+
+  useEffect(() => {
+    if (!isRestored) return;
+
+    if (rowData) {
+      setData(rowData);
+      setDisplayedRowCount(rowData.length);
+      setInternalLoading(false);
+      return;
+    }
+
+    if (!endpoint) return;
+
+    if (swrError) {
+      if (onError) onError(swrError, 'DataGrid');
+      setInternalLoading(false);
+      return;
+    }
+
+    if (swrIsLoading && !swrResponse) {
+      setInternalLoading(true);
+      return;
+    }
+
+    if (swrResponse) {
+      const body = swrResponse as any;
+      const safeData = Array.isArray(body) ? body : (body?.data || []);
+      setData(safeData);
+      setNextCursor(body?.nextCursor ?? null);
+      setPrevCursor(body?.prevCursor ?? null);
+      setDisplayedRowCount(safeData.length);
+      setInternalLoading(false);
+    }
+  }, [isRestored, rowData, endpoint, swrResponse, swrIsLoading, swrError, onError]);
 
   // Restore scroll position on mobile after data loads
   useEffect(() => {
@@ -1103,6 +1133,7 @@ export default function DataGrid<T>({
           <AgGridReact<T>
             ref={gridRef}
             rowData={data}
+            loading={loading}
             columnDefs={enhancedColumns}
             defaultColDef={defaultColDef}
             animateRows

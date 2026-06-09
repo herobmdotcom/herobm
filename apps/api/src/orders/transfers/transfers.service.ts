@@ -167,6 +167,7 @@ export class TransferService {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,
         eventType: EventType.CREATED,
+        entityDisplayName: orderNumber,
         payload: {
           orderNumber,
           sourceLocationId,
@@ -231,27 +232,14 @@ export class TransferService {
       .leftJoin(bins, eq(transferOrderPicks.binId, bins.binId))
       .where(eq(transferOrderPicks.transferOrderId, transferOrderId));
 
-    // For each line, compute remaining and get available bins
-    const enrichedLines = await Promise.all(
-      lines.map(async (line: any) => {
-        const linePicks = picks.filter(
-          (p: any) =>
-            p.transferOrderLineId === line.transferOrderLineId &&
-            p.stateCode !== TRANSFER_ORDER_PICK_STATE.CANCELLED,
-        );
-        const pickedQty = linePicks.reduce(
-          (acc: number, p: any) => acc + parseFloat(p.quantity),
-          0,
-        );
-        const orderedQty = parseFloat(line.quantity as string);
-        const remaining = orderedQty - pickedQty;
-
-        let availableBins: any[] = [];
-        let totalOnHand = 0;
-
-        if (line.productType === 'inventory') {
-          const rawBins = await this.db
+    const productIds = Array.from(
+      new Set(lines.map((l: any) => l.productId).filter(Boolean) as string[]),
+    );
+    const binStock =
+      productIds.length > 0
+        ? await this.db
             .select({
+              productId: binContents.productId,
               binId: bins.binId,
               binName: bins.binNumber,
               onHand: binContents.actualQuantity,
@@ -261,32 +249,57 @@ export class TransferService {
             .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
             .where(
               and(
-                eq(binContents.productId, line.productId),
+                inArray(binContents.productId, productIds),
                 eq(zones.locationId, order.sourceLocationId),
                 isPickableBinCondition(bins),
               ),
-            );
+            )
+        : [];
 
-          availableBins = rawBins;
-          totalOnHand = availableBins.reduce(
-            (acc, b) => acc + parseFloat(b.onHand),
-            0,
-          );
-        }
+    // For each line, compute remaining and get available bins
+    const enrichedLines = lines.map((line: any) => {
+      const linePicks = picks.filter(
+        (p: any) =>
+          p.transferOrderLineId === line.transferOrderLineId &&
+          p.stateCode !== TRANSFER_ORDER_PICK_STATE.CANCELLED,
+      );
+      const pickedQty = linePicks.reduce(
+        (acc: number, p: any) => acc + parseFloat(p.quantity),
+        0,
+      );
+      const orderedQty = parseFloat(line.quantity as string);
+      const remaining = orderedQty - pickedQty;
 
-        return {
-          ...line,
-          locationName: sourceLoc?.name || 'Unknown',
-          availableBins,
-          quantityPicked: pickedQty.toString(),
-          remaining: remaining.toString(),
-          isFullyPicked: remaining <= 0,
-          isPhysical: line.productType === 'inventory',
-          onHand: totalOnHand.toString(),
-          hasAllocation: false, // Transfer orders don't have backorder allocations in the same way
-        };
-      }),
-    );
+      let availableBins: any[] = [];
+      let totalOnHand = 0;
+
+      if (line.productType === 'inventory') {
+        availableBins = binStock
+          .filter((b: any) => b.productId === line.productId)
+          .map((b: any) => ({
+            binId: b.binId,
+            binName: b.binName,
+            onHand: b.onHand,
+          }));
+
+        totalOnHand = availableBins.reduce(
+          (acc: number, b: any) => acc + parseFloat(b.onHand),
+          0,
+        );
+      }
+
+      return {
+        ...line,
+        locationName: sourceLoc?.name || 'Unknown',
+        availableBins,
+        quantityPicked: pickedQty.toString(),
+        remaining: remaining.toString(),
+        isFullyPicked: remaining <= 0,
+        isPhysical: line.productType === 'inventory',
+        onHand: totalOnHand.toString(),
+        hasAllocation: false, // Transfer orders don't have backorder allocations in the same way
+      };
+    });
 
     const isFullyPicked = enrichedLines.every((l: any) => l.isFullyPicked);
 
@@ -358,7 +371,7 @@ export class TransferService {
       });
 
       const [order] = await tx
-        .select({ stateCode: transferOrders.stateCode })
+        .select({ stateCode: transferOrders.stateCode, orderNumber: transferOrders.orderNumber })
         .from(transferOrders)
         .where(eq(transferOrders.transferOrderId, transferOrderId));
 
@@ -375,6 +388,7 @@ export class TransferService {
         entityType: EntityType.WAREHOUSE,
         entityId: lineId,
         eventType: EventType.PICK_CREATED,
+        entityDisplayName: `Pick for ${order?.orderNumber || transferOrderId}`,
         actor,
         payload: { pickId: lineId, transferOrderId, quantity, binId },
       });
@@ -412,10 +426,12 @@ export class TransferService {
         tx,
       );
 
+      const [order] = await tx.select({ orderNumber: transferOrders.orderNumber }).from(transferOrders).where(eq(transferOrders.transferOrderId, transferOrderId));
       await emitEvent(tx as any, {
         entityType: 'transfer_order' as any,
         entityId: transferOrderId,
         eventType: EventType.LINE_REMOVED,
+        entityDisplayName: order?.orderNumber || transferOrderId,
         actor,
         payload: { pickId },
       });
@@ -580,6 +596,7 @@ export class TransferService {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,
         eventType: EventType.STOCK_DISPATCHED,
+        entityDisplayName: order.orderNumber,
         payload: { shipmentNumber, itemCount: picks.length },
         actor,
       });
@@ -714,6 +731,7 @@ export class TransferService {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,
         eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: order!.orderNumber,
         actor,
         payload: {
           entity: 'transfer_order',
@@ -923,6 +941,7 @@ export class TransferService {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,
         eventType: EventType.UPDATED,
+        entityDisplayName: order.orderNumber,
         payload: { receiptNumber, totalReceived, action: 'stock_received' },
         actor,
       });
@@ -947,7 +966,7 @@ export class TransferService {
     }
 
     const [order] = await tx
-      .select({ stateCode: transferOrders.stateCode })
+      .select({ stateCode: transferOrders.stateCode, orderNumber: transferOrders.orderNumber })
       .from(transferOrders)
       .where(eq(transferOrders.transferOrderId, transferOrderId));
 
@@ -983,6 +1002,7 @@ export class TransferService {
       entityType: EntityType.TRANSFER_ORDER,
       entityId: transferOrderId,
       eventType: EventType.STATUS_CHANGED,
+      entityDisplayName: order.orderNumber,
       payload: {
         entity: 'transfer_order',
         entityId: transferOrderId,
@@ -1026,10 +1046,12 @@ export class TransferService {
       .where(eq(transferOrderPicks.pickId, pickId));
 
     if (newState === TRANSFER_ORDER_PICK_STATE.CANCELLED) {
+      const [order] = await tx.select({ orderNumber: transferOrders.orderNumber }).from(transferOrders).where(eq(transferOrders.transferOrderId, existing.transferOrderId));
       await emitEvent(tx as any, {
         entityType: EntityType.WAREHOUSE,
         entityId: pickId,
         eventType: EventType.PICK_CANCELLED,
+        entityDisplayName: order?.orderNumber || existing.transferOrderId,
         payload: {
           pickId,
           transferOrderId: existing.transferOrderId,
@@ -1262,6 +1284,7 @@ export class TransferService {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,
         eventType: EventType.UPDATED,
+        entityDisplayName: orderNumber,
         payload: { orderNumber },
         actor,
       });
@@ -1374,7 +1397,7 @@ export class TransferService {
   async cancelTransferOrder(id: string, actor: string) {
     return await this.db.transaction(async (tx) => {
       const [order] = await tx
-        .select({ stateCode: transferOrders.stateCode })
+        .select({ stateCode: transferOrders.stateCode, orderNumber: transferOrders.orderNumber })
         .from(transferOrders)
         .where(eq(transferOrders.transferOrderId, id));
 
@@ -1400,6 +1423,7 @@ export class TransferService {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: id,
         eventType: EventType.LINE_REMOVED,
+        entityDisplayName: order?.orderNumber || id,
         actor,
         payload: {
           entity: 'transfer_order',

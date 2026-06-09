@@ -43,3 +43,6 @@ if (!process.env.JWT_SECRET) {
 if (!process.env.SETUP_TOKEN) {
   process.env.SETUP_TOKEN = 'test-setup-token';
 }
+
+// Ensure NODE_ENV is test so throttlers use higher limits during tests
+process.env.NODE_ENV = 'test';

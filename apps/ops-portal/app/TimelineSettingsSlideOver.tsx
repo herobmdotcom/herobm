@@ -11,7 +11,8 @@ export const DEFAULT_ENABLED_EVENTS: EventType[] = [
   'purchase_order.created', 'purchase_order.status_changed', 'purchase_order.deleted',
   'warehouse.receipt_created', 'inventory_ledger.entry_posted', 'transfer_order.created',
   'payment.submitted',
-  'customer.created', 'supplier.created', 'stock_adjusted'
+  'customer.created', 'supplier.created', 'stock_adjusted',
+  'email.queued', 'email.sent', 'email.failed'
 ];
 
 interface Props {
@@ -110,6 +111,15 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
           <OptionRow event="payment.allocated" />
           <OptionRow event="payment.cancelled" />
           <OptionRow event="general_ledger.entry_posted" />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <div className="text-[11px] font-bold uppercase tracking-wider mb-2 opacity-50" style={{ color: 'var(--text-primary)' }}>
+            {tSidebar('admin')}
+          </div>
+          <OptionRow event="email.queued" />
+          <OptionRow event="email.sent" />
+          <OptionRow event="email.failed" />
         </div>
 
       </div>

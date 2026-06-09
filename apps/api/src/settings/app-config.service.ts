@@ -205,12 +205,7 @@ export class AppConfigService implements OnModuleInit {
     return this.appCache;
   }
 
-  /** Update app settings. */
-  async update(dto: {
-    defaultFulfillmentLocationId?: string;
-    activeLicenseKey?: string;
-    activeLicensePayload?: any;
-  }) {
+  async update(dto: Partial<typeof appSettings.$inferInsert>) {
     const settings = this.getAppSettingsRaw();
     if (!settings) {
       throw new Error('App Settings not configured.');

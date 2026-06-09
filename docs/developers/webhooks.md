@@ -42,6 +42,7 @@ The `entityType` field in the payload envelope indicates the domain object that 
 - **Warehouse**: `warehouse` (covers receipts, shipments, picking, and putaway), `transfer_order`
 - **Inventory Ledger**: `inventory_ledger` (via `system` entity)
 - **Financials**: `payment`, `general_ledger` (via `system` entity)
+- **System**: `email`
 
 ### Event Types
 
@@ -75,6 +76,7 @@ The `eventType` is formed by combining the `entityType` and the action (e.g., `s
 | `supplier` | `created`, `updated`, `archived`, `unarchived` |
 | `payment` | `submitted`, `allocated`, `cancelled` |
 | `general_ledger` | `entry_posted` |
+| `email` | `queued`, `sent`, `failed` |
 
 ### State Changes Reference
 

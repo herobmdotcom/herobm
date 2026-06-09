@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState, useEffect, Suspense } from 'react';
+import { useMemo, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
@@ -12,7 +13,7 @@ function LedgerViewContent() {
   const tInventory = useTranslations('inventory');
   
   const searchParams = useSearchParams();
-  const [days, setDays] = useState<number>(30);
+  const [days, setDays, isReady] = usePersistedFilter('ledger-days', '30');
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(searchParams.get('entryId'));
 
   const columns = useMemo<ColDef[]>(() => [
@@ -79,7 +80,7 @@ function LedgerViewContent() {
   return (
     <>
       <DataGrid
-        endpoint={`/api/inventory/ledger?days=${days}`}
+        endpoint={isReady ? `/api/inventory/ledger?days=${days}` : undefined}
         columns={columns}
         gridKey="ops-inventory-ledger"
         searchPlaceholder={tInventory('placeholders.searchLedger')}
@@ -89,7 +90,7 @@ function LedgerViewContent() {
         headerFilters={
           <select
             value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
+            onChange={(e) => setDays(e.target.value)}
             className="input text-sm"
             style={{ minWidth: 150 }}
           >
