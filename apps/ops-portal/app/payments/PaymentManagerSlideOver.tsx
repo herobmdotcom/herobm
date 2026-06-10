@@ -144,7 +144,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       if (res.stateCode === PAYMENT_STATE.SUBMITTED) {
         setLoadingJournal(true);
         api.glControllerGetJournalEntryBySource('payment_entry', paymentId)
-          .then(jrnl => setJournalEntry(jrnl))
+          .then(jrnl => setJournalEntry((jrnl as any).data))
           .catch(err => reportError(err, 'PaymentManagerSlideOver.loadLedgerImpact'))
           .finally(() => setLoadingJournal(false));
       } else {
@@ -773,10 +773,12 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                           <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('manager.labels.reference')}</span>
                           <span className="text-[#041627]">{data?.referenceNumber || '—'}</span>
                         </div>
-                        <div>
-                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('manager.labels.unallocatedAmount')}</span>
-                          <span className="text-[var(--accent)] font-bold">{formatAmount(parseFloat(data?.unallocatedAmount || '0'), data?.currencyCode || baseCurrency)}</span>
-                        </div>
+                        {!data?.paymentType?.startsWith('direct_') && (
+                          <div>
+                            <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('manager.labels.unallocatedAmount')}</span>
+                            <span className="text-[var(--accent)] font-bold">{formatAmount(parseFloat(data?.unallocatedAmount || '0'), data?.currencyCode || baseCurrency)}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -795,11 +797,13 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                             <tbody className="divide-y divide-gray-100">
                               {data.lines.map((l: any, idx: number) => (
                                 <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                                  <td className="px-5 py-3 font-semibold text-[#041627]">{l.accountName}</td>
-                                  <td className="px-5 py-3 text-right font-mono font-medium text-[#041627]">
+                                  <td className="px-5 py-3">
+                                    <div>{l.accountName}</div>
+                                  </td>
+                                  <td className="px-5 py-3 text-right">
                                     {formatAmount(parseFloat(l.amount), data.currencyCode)}
                                   </td>
-                                  <td className="px-5 py-3 text-gray-500 text-xs">{l.memo || '—'}</td>
+                                  <td className="px-5 py-3">{l.memo || '—'}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -830,29 +834,28 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                 {journalEntry.lines.map((l: any, idx: number) => (
                                   <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
                                     <td className="px-5 py-3">
-                                      <div className="font-mono text-xs text-gray-500 leading-none mb-1">{l.accountCode}</div>
-                                      <div className="font-semibold text-[#041627]">{l.accountName}</div>
+                                      <div>{l.accountCode} - {l.accountName}</div>
                                     </td>
-                                    <td className="px-5 py-3 text-right font-mono font-medium text-[#041627]">
+                                    <td className="px-5 py-3 text-right">
                                       {parseFloat(l.debit) > 0 ? formatAmount(parseFloat(l.debit), journalEntry.currencyCode) : '—'}
                                     </td>
-                                    <td className="px-5 py-3 text-right font-mono font-medium text-[#041627]">
+                                    <td className="px-5 py-3 text-right">
                                       {parseFloat(l.credit) > 0 ? formatAmount(parseFloat(l.credit), journalEntry.currencyCode) : '—'}
                                     </td>
-                                    <td className="px-5 py-3 text-gray-500 text-xs">
+                                    <td className="px-5 py-3">
                                       {l.memo || '—'}
                                     </td>
                                   </tr>
                                 ))}
                                 {/* Totals Row */}
                                 <tr className="bg-[#f8f9fa] border-t-2 border-gray-200">
-                                  <td className="px-5 py-3 text-right font-bold text-[#041627] text-xs uppercase tracking-wider">
+                                  <td className="px-5 py-3 text-right uppercase tracking-wider text-xs">
                                     {t('manager.messages.total')}
                                   </td>
-                                  <td className="px-5 py-3 text-right font-mono font-bold text-[#041627]">
+                                  <td className="px-5 py-3 text-right">
                                     {formatAmount(journalEntry.lines.reduce((s: number, l: any) => s + parseFloat(l.debit || '0'), 0), journalEntry.currencyCode)}
                                   </td>
-                                  <td className="px-5 py-3 text-right font-mono font-bold text-[#041627]">
+                                  <td className="px-5 py-3 text-right">
                                     {formatAmount(journalEntry.lines.reduce((s: number, l: any) => s + parseFloat(l.credit || '0'), 0), journalEntry.currencyCode)}
                                   </td>
                                   <td></td>

@@ -32,6 +32,7 @@ describe('DashboardService', () => {
         entity_type,
         entity_id,
         event_type,
+        entity_display_name,
         payload,
         actor,
         created_on
@@ -215,6 +216,7 @@ describe('DashboardService', () => {
       await pg.db.insert(systemEvents).values({
         entityType: 'customer',
         entityId: customerId,
+        entityDisplayName: 'Timeline Customer',
         eventType: 'created',
         actor: 'system',
         createdOn: new Date(),

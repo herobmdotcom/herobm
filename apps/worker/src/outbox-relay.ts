@@ -1,5 +1,3 @@
-process.on('uncaughtException', (err) => { console.error('UNCAUGHT:', err); process.exit(1); });
-process.on('unhandledRejection', (err) => { console.error('UNHANDLED:', err); process.exit(1); });
 
 import 'dotenv/config';
 import { Queue, Worker, Job } from 'bullmq';
@@ -10,6 +8,9 @@ import { eq, isNull, sql } from 'drizzle-orm';
 import express from 'express';
 import { collectDefaultMetrics, Registry, Counter } from 'prom-client';
 import { relayLogger as logger } from './logger';
+
+process.on('uncaughtException', (err) => { logger.error({ err }, 'UNCAUGHT EXCEPTION'); process.exit(1); });
+process.on('unhandledRejection', (err) => { logger.error({ err }, 'UNHANDLED REJECTION'); process.exit(1); });
 
 // Helpers
 function requireEnv(name: string): string {
@@ -102,7 +103,7 @@ maintenanceQueue.add(
     },
   }
 ).catch(err => {
-  console.error('Failed to schedule purge-emails job:', err);
+  logger.error({ err }, 'Failed to schedule purge-emails job');
 });
 
 const maintenanceWorker = new Worker(

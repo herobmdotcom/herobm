@@ -315,15 +315,14 @@ export default function PaymentsContent() {
         <PaymentManagerSlideOver
           paymentId={selectedPaymentId}
           onClose={() => setSlideOverOpen(false)}
+          onNext={(selectedPaymentId && payments.findIndex(p => p.paymentId === selectedPaymentId) < payments.length - 1) ? handleNext : undefined}
+          onPrev={(selectedPaymentId && payments.findIndex(p => p.paymentId === selectedPaymentId) > 0) ? handlePrev : undefined}
           onSaved={(close) => {
             if (close !== false) setSlideOverOpen(false);
             window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
           }}
-          onNext={handleNext}
-          onPrev={handlePrev}
         />
       )}
     </>
   );
 }
-

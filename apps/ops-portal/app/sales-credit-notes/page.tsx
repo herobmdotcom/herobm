@@ -1,4 +1,4 @@
-/* eslint-disable i18next/no-literal-string */
+
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
@@ -11,6 +11,7 @@ import ReturnCreditNoteSlideOver from './ReturnCreditNoteSlideOver';
 
 export default function ReturnsQueuePage() {
     const tCommon = useTranslations('common');
+    const tOrders = useTranslations('salesOrders');
     useDocumentTitle('Credit Notes Queue');
     const [refreshKey, setRefreshKey] = useState(0);
 
@@ -67,8 +68,9 @@ export default function ReturnsQueuePage() {
                         className="btn btn-primary shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5" 
                         onClick={() => setAdHocOpen(true)}
                     >
+                        {/* eslint-disable-next-line i18next/no-literal-string */}
                         <span className="material-symbols-outlined text-[1.1rem]">add</span>
-                        Credit Note
+                        {tOrders('returns.creditNote')}
                     </button>
                 }
             />
