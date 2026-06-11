@@ -195,21 +195,19 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     setLoadingInvoices(true);
     try {
       const isCustomer = data.paymentType.startsWith('customer_');
-      const queryParams = { [isCustomer ? 'customerId' : 'vendorId']: data.partyId };
-      
       let referenceType: 'sales_invoice' | 'purchase_invoice' | 'sales_credit_note' | 'purchase_debit_note' = 'sales_invoice';
       let res: any;
       if (data.paymentType === 'customer_receipt') {
-        res = await api.invoiceDetailControllerGetSalesInvoicesGlobal({ ...(queryParams as any), balanceStatus: 'unpaid' });
+        res = await api.invoiceDetailControllerGetSalesInvoicesGlobal({ customerId: data.partyId, balanceStatus: 'unpaid' });
         referenceType = 'sales_invoice';
       } else if (data.paymentType === 'customer_refund') {
-        res = await api.salesCreditNotesControllerFindAll({ ...(queryParams as any), balanceStatus: 'unpaid' });
+        res = await api.salesCreditNotesControllerFindAll({ customerId: data.partyId, balanceStatus: 'unpaid' });
         referenceType = 'sales_credit_note';
       } else if (data.paymentType === 'supplier_payment') {
-        res = await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ ...(queryParams as any), balanceStatus: 'unpaid' });
+        res = await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ vendorId: data.partyId, balanceStatus: 'unpaid' });
         referenceType = 'purchase_invoice';
       } else if (data.paymentType === 'supplier_refund') {
-        res = await api.purchaseDebitNotesControllerFindAll({ ...(queryParams as any), balanceStatus: 'unpaid' });
+        res = await api.purchaseDebitNotesControllerFindAll({ vendorId: data.partyId, balanceStatus: 'unpaid' });
         referenceType = 'purchase_debit_note';
       }
       

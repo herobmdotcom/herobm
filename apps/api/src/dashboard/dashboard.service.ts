@@ -226,6 +226,10 @@ export class DashboardService {
         conditions.push(
           sql`(e.entity_type = 'shipment' AND e.event_type = 'status_changed')`,
         );
+      } else if (t === 'stock_adjusted') {
+        conditions.push(
+          sql`(e.entity_type = 'system' AND e.event_type = 'stock_adjusted')`,
+        );
       } else if (t.startsWith('warehouse.')) {
         conditions.push(
           sql`(e.entity_type = 'warehouse' AND e.event_type = ${t.replace('warehouse.', '')})`,
@@ -270,7 +274,7 @@ export class DashboardService {
       FROM modbm_core.dashboard_timeline e
       WHERE ${whereClause}
       ORDER BY e.created_on DESC
-      LIMIT ${limit}
+      LIMIT ${sql.raw(Math.max(1, isNaN(limit) ? 50 : limit).toString())}
     `;
 
     const result = await this.db.execute(fullQuery);
