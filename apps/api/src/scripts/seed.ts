@@ -1604,7 +1604,8 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
   }
 
   const now = new Date();
-  const sid = `${crypto.randomUUID()}-${now.getTime().toString(16)}`;
+  const timeHex = now.getTime().toString(16).padStart(12, '0');
+  const sid = `${crypto.randomUUID()}-${timeHex}`;
 
   await db
     .insert(appSettings)

@@ -408,6 +408,7 @@ test-single:
 	@npx tsx infra/test-utils/run-single.ts $(TEST)
 
 test-structural:
+	@python infra/tests/test_docker_env_alignment.py
 	@npx tsx infra/test-utils/run-structural.ts
 
 test-heavy:

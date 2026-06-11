@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 // Define a maximum number of pages to crawl to prevent infinite loops or excessively long runs
-const MAX_PAGES_TO_CRAWL = 100;
+const MAX_PAGES_TO_CRAWL = 200;
 
 // Exclude patterns that might be external, actions, or unwanted routes
 const EXCLUDE_PATTERNS = [
@@ -53,8 +53,8 @@ test.describe('Automated App Crawler', () => {
       try {
         await page.goto(currentUrl, { waitUntil: 'networkidle' });
         
-        // Add a small delay to avoid hitting the backend API rate limits (429 Too Many Requests)
-        await page.waitForTimeout(500);
+        // Add a delay to avoid hitting the backend API rate limits (60 requests/min in dev mode)
+        await page.waitForTimeout(1500);
 
         // Assert 1: Check for generic Error Boundaries or Next.js error pages
         const errorBoundaryText = page.locator('text=Something went wrong').first();

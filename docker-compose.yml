@@ -79,7 +79,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-herobm}
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-      DEV_VIEWER_PASSWORD: ${DEV_VIEWER_PASSWORD}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4300,http://localhost:4400,http://localhost:5000,http://localhost:8000}
       TYPST_BINARY_PATH: typst  # Override Windows host path — Alpine has typst on $PATH
     ports:
@@ -159,35 +158,6 @@ services:
         max-file: "3"
 
 
-
-  # --- ELT Pipeline (on-demand, not started by 'podman compose up') ---
-  abm-extract:
-    build:
-      context: ./pipelines/abm_extract
-      dockerfile: Dockerfile
-    container_name: abm-extract
-    profiles:
-      - pipeline
-    # Credentials are passed explicitly via the environment block below.
-    # Do not use env_file — it double-loads variables and can mask misconfiguration.
-    environment:
-      ABM_MSSQL_HOST: ${ABM_MSSQL_HOST}
-      ABM_MSSQL_DATABASE: ${ABM_MSSQL_DATABASE:-mpgtrial}
-      ABM_MSSQL_USER: ${ABM_MSSQL_USER}
-      ABM_MSSQL_PASSWORD: ${ABM_MSSQL_PASSWORD}
-      POSTGRES_HOST: postgres-custom
-      POSTGRES_PORT: "5432"
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-herobm}
-      PIPELINE_LOG_DIR: /app/logs
-    volumes:
-      - ./logs:/app/logs
-    depends_on:
-      postgres-custom:
-        condition: service_healthy
-    networks:
-      - app-net
 
   # --- Maildev (Local Dev Only) ---
   maildev:

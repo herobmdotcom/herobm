@@ -51,8 +51,16 @@ import { ReadOnlyGuard } from './common/guards/read-only.guard';
       envFilePath: ['../../.env', '.env'],
     }),
     ThrottlerModule.forRoot([
-      { name: 'default', ttl: 60000, limit: 60 },
-      { name: 'api', ttl: 60000, limit: 1000 },
+      { 
+        name: 'default', 
+        ttl: 60000, 
+        limit: process.env.NODE_ENV === 'test' ? 10000 : 60 
+      },
+      { 
+        name: 'api', 
+        ttl: 60000, 
+        limit: process.env.NODE_ENV === 'test' ? 10000 : 1000 
+      },
     ]),
     DrizzleModule,
     AuthModule,

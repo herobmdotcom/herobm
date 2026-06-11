@@ -1,0 +1,191 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e7] [cursor=pointer]:
+    - img [ref=e8]
+  - alert [ref=e11]
+  - generic [ref=e12]:
+    - generic [ref=e13]:
+      - generic [ref=e14]: error
+      - generic [ref=e15]: "System Integrity Error: Configuration tampering detected. Re-initialization required."
+      - link "Manage License" [ref=e16] [cursor=pointer]:
+        - /url: /admin/settings/license
+    - generic [ref=e17]:
+      - complementary [ref=e19]:
+        - generic [ref=e20]:
+          - link "M herobm" [ref=e21] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e22]: M
+            - heading "herobm" [level=1] [ref=e23]
+          - paragraph [ref=e24]: Your business, your data
+        - navigation [ref=e25]:
+          - link "dashboard Dashboard" [ref=e28] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e29]: dashboard
+            - generic [ref=e30]: Dashboard
+          - generic [ref=e31]:
+            - paragraph [ref=e32]: Warehouse
+            - link "category Products" [ref=e34] [cursor=pointer]:
+              - /url: /products
+              - generic [ref=e35]: category
+              - generic [ref=e36]: Products
+            - link "inventory_2 Inventory expand_more" [ref=e38] [cursor=pointer]:
+              - /url: /inventory/bins
+              - generic [ref=e39]: inventory_2
+              - generic [ref=e40]: Inventory
+              - generic [ref=e41]: expand_more
+            - link "move_to_inbox Receiving expand_more" [ref=e43] [cursor=pointer]:
+              - /url: /receiving
+              - generic [ref=e44]: move_to_inbox
+              - generic [ref=e45]: Receiving
+              - generic [ref=e46]: expand_more
+            - link "pallet Putaway" [ref=e48] [cursor=pointer]:
+              - /url: /inventory/putaway
+              - generic [ref=e49]: pallet
+              - generic [ref=e50]: Putaway
+            - link "inventory Picking" [ref=e52] [cursor=pointer]:
+              - /url: /inventory/picking
+              - generic [ref=e53]: inventory
+              - generic [ref=e54]: Picking
+            - link "local_shipping Shipping expand_more" [ref=e56] [cursor=pointer]:
+              - /url: /inventory/shipping
+              - generic [ref=e57]: local_shipping
+              - generic [ref=e58]: Shipping
+              - generic [ref=e59]: expand_more
+          - generic [ref=e60]:
+            - paragraph [ref=e61]: Sales
+            - link "storefront Customers" [ref=e63] [cursor=pointer]:
+              - /url: /customers
+              - generic [ref=e64]: storefront
+              - generic [ref=e65]: Customers
+            - link "receipt_long Sales Orders" [ref=e67] [cursor=pointer]:
+              - /url: /sales-orders
+              - generic [ref=e68]: receipt_long
+              - generic [ref=e69]: Sales Orders
+            - link "local_post_office Shipments" [ref=e71] [cursor=pointer]:
+              - /url: /shipments
+              - generic [ref=e72]: local_post_office
+              - generic [ref=e73]: Shipments
+            - link "request_quote Sales Invoices" [ref=e75] [cursor=pointer]:
+              - /url: /sales-invoices
+              - generic [ref=e76]: request_quote
+              - generic [ref=e77]: Sales Invoices
+          - generic [ref=e78]:
+            - paragraph [ref=e79]: Purchasing
+            - link "factory Suppliers" [ref=e81] [cursor=pointer]:
+              - /url: /suppliers
+              - generic [ref=e82]: factory
+              - generic [ref=e83]: Suppliers
+            - link "list_alt Demand" [ref=e85] [cursor=pointer]:
+              - /url: /purchase-orders/demands
+              - generic [ref=e86]: list_alt
+              - generic [ref=e87]: Demand
+            - link "local_shipping Purchase Orders" [ref=e89] [cursor=pointer]:
+              - /url: /purchase-orders
+              - generic [ref=e90]: local_shipping
+              - generic [ref=e91]: Purchase Orders
+            - link "request_quote Supplier Invoices" [ref=e93] [cursor=pointer]:
+              - /url: /supplier-invoices
+              - generic [ref=e94]: request_quote
+              - generic [ref=e95]: Supplier Invoices
+          - generic [ref=e96]:
+            - paragraph [ref=e97]: Finance
+            - link "receipt_long Credit Notes expand_more" [ref=e99] [cursor=pointer]:
+              - /url: /sales-credit-notes
+              - generic [ref=e100]: receipt_long
+              - generic [ref=e101]: Credit Notes
+              - generic [ref=e102]: expand_more
+            - link "menu_book General Ledger expand_more" [ref=e104] [cursor=pointer]:
+              - /url: /general-ledger
+              - generic [ref=e105]: menu_book
+              - generic [ref=e106]: General Ledger
+              - generic [ref=e107]: expand_more
+            - link "account_balance_wallet Payments" [ref=e109] [cursor=pointer]:
+              - /url: /payments
+              - generic [ref=e110]: account_balance_wallet
+              - generic [ref=e111]: Payments
+            - link "compare_arrows Bank Rec'n expand_more" [ref=e113] [cursor=pointer]:
+              - /url: /reconciliations
+              - generic [ref=e114]: compare_arrows
+              - generic [ref=e115]: Bank Rec'n
+              - generic [ref=e116]: expand_more
+          - generic [ref=e117]:
+            - paragraph [ref=e118]: Reporting
+            - link "bar_chart Reports expand_more" [ref=e120] [cursor=pointer]:
+              - /url: /reporting
+              - generic [ref=e121]: bar_chart
+              - generic [ref=e122]: Reports
+              - generic [ref=e123]: expand_more
+          - generic [ref=e124]:
+            - paragraph [ref=e125]: Admin
+            - link "picture_as_pdf PDF Templates expand_more" [ref=e127] [cursor=pointer]:
+              - /url: /admin/pdf-templates
+              - generic [ref=e128]: picture_as_pdf
+              - generic [ref=e129]: PDF Templates
+              - generic [ref=e130]: expand_more
+            - generic [ref=e131]:
+              - link "folder_shared Groups expand_less" [ref=e132] [cursor=pointer]:
+                - /url: /admin/customer-groups
+                - generic [ref=e133]: folder_shared
+                - generic [ref=e134]: Groups
+                - generic [ref=e135]: expand_less
+              - generic [ref=e136]:
+                - link "Customer Groups" [ref=e137] [cursor=pointer]:
+                  - /url: /admin/customer-groups
+                - link "Supplier Groups" [ref=e138] [cursor=pointer]:
+                  - /url: /admin/supplier-groups
+                - link "Product Groups" [ref=e139] [cursor=pointer]:
+                  - /url: /admin/product-groups
+            - link "monitor_heart System Health expand_more" [ref=e141] [cursor=pointer]:
+              - /url: /admin/event-queue
+              - generic [ref=e142]: monitor_heart
+              - generic [ref=e143]: System Health
+              - generic [ref=e144]: expand_more
+            - link "settings Settings expand_more" [ref=e146] [cursor=pointer]:
+              - /url: /admin/settings/system
+              - generic [ref=e147]: settings
+              - generic [ref=e148]: Settings
+              - generic [ref=e149]: expand_more
+            - link "group Users expand_more" [ref=e151] [cursor=pointer]:
+              - /url: /admin/users
+              - generic [ref=e152]: group
+              - generic [ref=e153]: Users
+              - generic [ref=e154]: expand_more
+            - link "code Developers expand_more" [ref=e156] [cursor=pointer]:
+              - /url: /admin/developers
+              - generic [ref=e157]: code
+              - generic [ref=e158]: Developers
+              - generic [ref=e159]: expand_more
+            - link "cloud_upload Import expand_more" [ref=e161] [cursor=pointer]:
+              - /url: /admin/import/csv
+              - generic [ref=e162]: cloud_upload
+              - generic [ref=e163]: Import
+              - generic [ref=e164]: expand_more
+        - generic [ref=e165]:
+          - 'link "SysID: 09438943" [ref=e166] [cursor=pointer]':
+            - /url: /
+          - button "Sign Out" [ref=e167] [cursor=pointer]
+      - main [ref=e168]:
+        - generic [ref=e169]:
+          - generic [ref=e171]:
+            - heading "Product Groups" [level=1] [ref=e172]
+            - paragraph [ref=e173]: Manage group classifications for products and inventory
+          - generic [ref=e175]:
+            - generic [ref=e176]:
+              - generic [ref=e177]: Defined Groups
+              - button "New Group" [ref=e179] [cursor=pointer]
+            - table [ref=e180]:
+              - rowgroup [ref=e181]:
+                - row "Code Name Def. Expense Customer Def. Revenue Customer Def. Cost Center Def. Activity" [ref=e182]:
+                  - columnheader "Code" [ref=e183]
+                  - columnheader "Name" [ref=e184]
+                  - columnheader "Def. Expense Customer" [ref=e185]
+                  - columnheader "Def. Revenue Customer" [ref=e186]
+                  - columnheader "Def. Cost Center" [ref=e187]
+                  - columnheader "Def. Activity" [ref=e188]
+                  - columnheader [ref=e189]
+              - rowgroup [ref=e190]:
+                - row "No product groups defined." [ref=e191]:
+                  - cell "No product groups defined." [ref=e192]
+```
