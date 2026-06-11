@@ -51,7 +51,7 @@ export default tseslint.config(
         // Ignore strings that consist entirely of emoji / variation selectors
         ignore: ['^[\\p{Emoji}\\p{Emoji_Component}\\uFE0E\\uFE0F\\u200D\\s]+$'],
       }],
-      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-explicit-any': 'error',
       'no-restricted-imports': ['error', {
         paths: [{
           name: '@/lib/api',

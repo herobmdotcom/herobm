@@ -35,6 +35,7 @@ jest.mock('@/lib/currency', () => ({
 
 const mockCalcInvoiceable = jest.fn().mockReturnValue([]);
 jest.mock('@/lib/sales-order-utils', () => ({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     calculateInvoiceableQuantities: (...args: any[]) => mockCalcInvoiceable(...args),
 }));
 

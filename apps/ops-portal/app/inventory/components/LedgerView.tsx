@@ -22,7 +22,7 @@ function LedgerViewContent() {
       headerName: tCommon('columns.date'), 
       width: 160, 
       pinned: 'left',
-      valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleString() : ''
+      valueFormatter: (p: { value?: unknown }) => p.value ? new Date(p.value as string).toLocaleString() : ''
     },
     { 
       field: 'document', 
@@ -55,10 +55,11 @@ function LedgerViewContent() {
         const val = parseFloat(params.value || '0');
         if (val > 0) return { color: '#006b5c', fontWeight: 'bold' };
         if (val < 0) return { color: '#b45309', fontWeight: 'bold' };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return { fontWeight: '500' } as any;
       },
-      valueFormatter: (p: any) => {
-        const val = parseFloat(p.value || '0');
+      valueFormatter: (p: { value?: unknown }) => {
+        const val = parseFloat((p.value as string) || '0');
         return val > 0 ? `+${val.toLocaleString()}` : val.toLocaleString();
       }
     },
@@ -67,7 +68,7 @@ function LedgerViewContent() {
       headerName: tInventory('columns.onHand'),
       width: 140,
       type: 'numericColumn',
-      valueFormatter: (p: any) => p.value ? parseFloat(p.value).toLocaleString() : '0',
+      valueFormatter: (p: { value?: unknown }) => p.value ? parseFloat(p.value as string).toLocaleString() : '0',
       cellStyle: () => ({ fontWeight: 'bold', color: '#041627' })
     },
     { 

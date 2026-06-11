@@ -54,6 +54,7 @@ describe('GlService', () => {
   describe('postJournalEntry — balance invariant', () => {
     it('should reject null/undefined lines', async () => {
       await expect(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         service.postJournalEntry(null as any, { sourceType: 'manual' }),
       ).rejects.toThrow(BadRequestException);
     });
@@ -395,11 +396,13 @@ describe('GlService', () => {
       });
 
       const tb = await service.getTrialBalance();
-      const row = tb.find((r: any) => r.account_code === 'TB-1100');
+      const row = tb.find(
+        (r) => (r as Record<string, unknown>).account_code === 'TB-1100',
+      ) as Record<string, unknown>;
       expect(row).toBeDefined();
-      expect(parseFloat(row.total_debit)).toBe(500);
-      expect(parseFloat(row.total_credit)).toBe(200);
-      expect(parseFloat(row.balance)).toBe(300);
+      expect(parseFloat(row.total_debit as string)).toBe(500);
+      expect(parseFloat(row.total_credit as string)).toBe(200);
+      expect(parseFloat(row.balance as string)).toBe(300);
     });
   });
 

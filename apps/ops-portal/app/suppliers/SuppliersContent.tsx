@@ -53,10 +53,12 @@ export default function SuppliersContent() {
       field: 'stateCode',
       headerName: tCommon('columns.status'),
       width: 250,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       valueFormatter: (params: any) => {
         if (!params.value || !params.data) return '';
         
         const s = String(params.value).toLowerCase();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let stateText = tStates.has(s as any) ? tStates(s as any) : String(params.value);
         
         const blocks = [];

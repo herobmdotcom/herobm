@@ -48,7 +48,7 @@ export class OutboxEventDto {
   @ApiProperty() entityType!: string;
   @ApiProperty() entityId!: string;
   @ApiProperty() eventType!: string;
-  @ApiProperty() payload!: any;
+  @ApiProperty() payload!: unknown;
   @ApiProperty() createdOn!: Date;
   @ApiProperty({ required: false }) processedAt!: Date;
   @ApiProperty({ required: false }) lastError!: string;
@@ -61,7 +61,7 @@ export class SyncStatusResponseDto {
 }
 
 export class SyncEventsResponseDto {
-  @ApiProperty() data!: any[];
+  @ApiProperty() data!: unknown[];
 }
 
 export class DeleteEventsResponseDto {
@@ -69,7 +69,7 @@ export class DeleteEventsResponseDto {
   @ApiProperty() eventType!: string;
 }
 
-@ApiTags('Invoices')
+@ApiTags('System')
 @Controller('settings/external-sync')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)

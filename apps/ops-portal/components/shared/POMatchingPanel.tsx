@@ -87,6 +87,7 @@ export default function POMatchingPanel({
     api.purchaseOrdersControllerFindPendingLines({ vendorId } as Parameters<typeof api.purchaseOrdersControllerFindPendingLines>[0])
       .then((res) => {
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const lines = res.data as any;
         setRawLines(lines);
         // Auto-expand all POs if 3 or fewer, otherwise expand the first

@@ -42,6 +42,7 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
     }
   }, [open]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAddProduct = (product: any) => {
     // Check if product already exists
     const existingIndex = lines.findIndex(l => l.productId === product.productId);

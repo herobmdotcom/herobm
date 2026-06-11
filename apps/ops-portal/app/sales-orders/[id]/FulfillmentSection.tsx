@@ -121,7 +121,7 @@ export default function FulfillmentSection({ orderId, pickingSummary }: Props) {
                             { header: t('columns.readyToShip'), align: 'right' }
                         ]}
                         emptyMessage={t('noPhysicalLines')}
-                        renderCustomRow={(line: any, idx: number) => {
+                        renderCustomRow={(line: ShippingLine, idx: number) => {
                             const ordered = parseFloat(line.quantity);
                             const picked = parseFloat(line.quantityPicked);
                             const shipped = parseFloat(line.quantityShipped);
@@ -167,7 +167,7 @@ export default function FulfillmentSection({ orderId, pickingSummary }: Props) {
                                 </tr>
                             );
                         }}
-                        mobileCard={(line: any) => {
+                        mobileCard={(line: ShippingLine) => {
                             const ordered = parseFloat(line.quantity);
                             const picked = parseFloat(line.quantityPicked);
                             const shipped = parseFloat(line.quantityShipped);

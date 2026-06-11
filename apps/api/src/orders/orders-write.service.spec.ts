@@ -37,19 +37,29 @@ import { taxCategories } from '../drizzle/modbm-core-schema';
 import { getErrorMessage } from '@modbm/shared';
 
 // Default GST categories used across tests
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let TAX_DEFAULT: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let TAX_EXEMPT: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let TAX_ZERO: any;
 
 describe('OrdersWriteService', () => {
   const pg = setupPgliteSuite();
   let service: OrdersWriteService;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockPickingService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockInventoryService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockAccountsService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockProductsService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mocktaxService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockBackordersService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockCreditAssessmentService: any;
 
   beforeEach(async () => {
@@ -140,12 +150,16 @@ describe('OrdersWriteService', () => {
           .mockReturnValue('10000000-0000-0000-0000-000000000001'),
         creditLimitBehavior: jest.fn().mockReturnValue('soft'),
         taxProviderMappings: jest.fn().mockReturnValue({}),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockOrganizationService as any,
       {
         lookup: jest.fn(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
     );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (service as any).logger = {
       log: jest.fn(),
       warn: jest.fn(),
@@ -166,6 +180,7 @@ describe('OrdersWriteService', () => {
       disc: string,
       taxRate: number,
     ) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (OrdersWriteService.prototype as any).computeLineAmount.call(
         null,
         qty,
@@ -394,6 +409,7 @@ describe('OrdersWriteService', () => {
 
       // Mock generateOrderNumber to return the same number
       jest
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .spyOn(service as any, 'generateOrderNumber')
         .mockResolvedValue('DUPE-001');
 
@@ -402,6 +418,7 @@ describe('OrdersWriteService', () => {
         throw new Error('Should have thrown');
       } catch (e: unknown) {
         const msg =
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           getErrorMessage(e) + ' ' + ((e as any).cause?.message || '');
         expect(msg.toLowerCase()).toContain('duplicate');
       }
@@ -418,6 +435,7 @@ describe('OrdersWriteService', () => {
       const order = await createTestSalesOrder(pg.db, {
         customerId: customer.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         state: stateCode as any,
       });
       return { order };
@@ -480,6 +498,7 @@ describe('OrdersWriteService', () => {
       const order = await createTestSalesOrder(pg.db, {
         customerId: customer.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         state: currentState as any,
       });
       return { order };
@@ -602,6 +621,7 @@ describe('OrdersWriteService', () => {
       const order = await createTestSalesOrder(pg.db, {
         customerId: customer.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         state: stateCode as any,
       });
 
@@ -766,6 +786,7 @@ describe('OrdersWriteService', () => {
       const order = await createTestSalesOrder(pg.db, {
         customerId: customer.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         state: orderState as any,
       });
 
@@ -874,6 +895,7 @@ describe('OrdersWriteService', () => {
       const order = await createTestSalesOrder(pg.db, {
         customerId: customer.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         state: orderState as any,
       });
 
@@ -1061,14 +1083,19 @@ describe('OrdersWriteService', () => {
   // =========================================================================
 
   describe('Product Kits & BOM Explosion', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let kitProduct: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let comp1: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let comp2: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let customer: any;
 
     beforeEach(async () => {
       // Allow the service to resolve products from the actual DB instead of the generic mock
       mockProductsService.findOne.mockImplementation(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async (id: string, txArg?: any) => {
           const db = txArg || pg.db;
           const rows = await db
@@ -1135,6 +1162,7 @@ describe('OrdersWriteService', () => {
         ],
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await service.create(dto as any, 'admin');
 
       const lines = await pg.db
@@ -1181,6 +1209,7 @@ describe('OrdersWriteService', () => {
         ],
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await service.create(dto as any, 'admin');
 
       const lines = await pg.db
@@ -1219,6 +1248,7 @@ describe('OrdersWriteService', () => {
           },
         ],
       };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const order = await service.create(createDto as any, 'admin');
 
       let lines = await pg.db
@@ -1271,6 +1301,7 @@ describe('OrdersWriteService', () => {
           },
         ],
       };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const order = await service.create(createDto as any, 'admin');
 
       let lines = await pg.db

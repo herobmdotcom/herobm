@@ -141,6 +141,7 @@ export class TaxCategoriesService {
       return { deleted: true };
     } catch (err: unknown) {
       // Postgres foreign_key_violation
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((err as any)?.code === '23503') {
         throw new BadRequestException(
           'Cannot delete this tax category because it is assigned to one or more customers or products. Remove the assignments first.',

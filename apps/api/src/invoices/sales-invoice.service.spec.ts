@@ -28,7 +28,9 @@ jest.mock('../orders/order-lifecycle-rules', () => ({
 describe('SalesInvoiceService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: SalesInvoiceService;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockGlService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockAppConfigService: any;
 
   const CUSTOMER_ID = '00000000-0000-0000-0000-000000000001';
@@ -133,6 +135,7 @@ describe('SalesInvoiceService', () => {
       salesOrderId: ORDER_ID,
       orderNumber: 'ORD-1',
       customerId: CUSTOMER_ID,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       stateCode: stateCode as any,
       currencyCode: 'AUD',
       fulfillmentLocationId: LOCATION_ID,

@@ -13,7 +13,7 @@ export class SampleReportDto {
   isMockData!: boolean;
 
   @ApiProperty({ type: [Object] })
-  data!: any[];
+  data!: Record<string, unknown>[];
 }
 
 export class SampleRecordDto {
@@ -21,5 +21,5 @@ export class SampleRecordDto {
   isMockData!: boolean;
 
   @ApiProperty({ type: Object })
-  data!: any;
+  data!: Record<string, unknown>;
 }

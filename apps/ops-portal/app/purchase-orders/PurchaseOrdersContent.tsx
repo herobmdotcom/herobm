@@ -45,7 +45,7 @@ export default function PurchaseOrdersContent() {
       field: 'stateCode',
       headerName: tCommon('columns.status'),
       width: 120,
-      valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
+      valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<UnifiedPurchaseOrderRow>) => {
         if (!params.value) return '';
         const s = String(params.value).toLowerCase();
         return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(params.value);

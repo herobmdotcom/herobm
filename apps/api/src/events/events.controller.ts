@@ -19,7 +19,7 @@ import {
 import { PublishEventDto } from './dto';
 import * as crypto from 'crypto';
 
-@ApiTags('Events')
+@ApiTags('System')
 @ApiBearerAuth()
 @Controller('events')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)

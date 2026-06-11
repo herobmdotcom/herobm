@@ -16,6 +16,7 @@ export default function ReturnCreditNoteSlideOver({
 }: {
     isOpen: boolean;
     onClose: () => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     returnRecord: any | null;
     onSuccess: () => void;
 }) {
@@ -106,6 +107,7 @@ export default function ReturnCreditNoteSlideOver({
                             </tr>
                         </thead>
                         <tbody>
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                             {(returnRecord.lines || []).map((line: any) => (
                                 <tr key={line.returnLineId}>
                                     <td className="font-semibold">

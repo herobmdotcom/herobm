@@ -55,6 +55,7 @@ export default function NewProductPage() {
     setSubmitting(true);
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const payload: any = { ...dto };
       if (!payload.purchaseTaxCategoryId) delete payload.purchaseTaxCategoryId;
       if (!payload.salesTaxCategoryId) delete payload.salesTaxCategoryId;

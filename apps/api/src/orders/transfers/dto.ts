@@ -100,7 +100,7 @@ export class TransferLineResponseDto {
 export class TransferEventResponseDto {
   @ApiProperty() eventId!: string;
   @ApiProperty() eventType!: string;
-  @ApiPropertyOptional() payload?: any;
+  @ApiPropertyOptional() payload?: Record<string, unknown>;
   @ApiPropertyOptional() actor?: string;
   @ApiProperty() createdOn!: Date;
 }

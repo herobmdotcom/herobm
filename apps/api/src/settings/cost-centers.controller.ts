@@ -32,7 +32,7 @@ import {
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
-@ApiTags('System')
+@ApiTags('General Ledger')
 @Controller('settings/cost-centers')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)

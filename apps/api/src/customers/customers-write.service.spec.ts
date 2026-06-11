@@ -98,6 +98,7 @@ describe('AccountsWriteService', () => {
         });
         fail('Should have thrown unique violation');
       } catch (e: unknown) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const code = (e as any).code || (e as any).cause?.code;
         expect(code).toBe('23505');
       }
@@ -124,6 +125,7 @@ describe('AccountsWriteService', () => {
             limit: jest.fn().mockResolvedValueOnce([]),
           }),
         }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
 
       await expect(

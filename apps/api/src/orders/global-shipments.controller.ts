@@ -19,7 +19,7 @@ import { GlobalShipmentListResponseDto, ShipmentResponseDto } from './dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
-@ApiTags('Orders')
+@ApiTags('Warehouse')
 @Controller('shipments')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_ORDERS)

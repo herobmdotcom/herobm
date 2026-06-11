@@ -41,15 +41,15 @@ export default function RulesEnginePage() {
 
   const [rules, setRules] = useState<api.ReconciliationRuleResponseDto[]>([]);
   const [glAccounts, setGlAccounts] = useState<api.GlAccountResponseDto[]>([]);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [settings, setSettings] = useState<Record<string, any> | null>(null);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [costCenters, setCostCenters] = useState<Record<string, any>[]>([]);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [activities, setActivities] = useState<Record<string, any>[]>([]);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [customers, setCustomers] = useState<Record<string, any>[]>([]);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [suppliers, setSuppliers] = useState<Record<string, any>[]>([]);
   
   const [loading, setLoading] = useState(false);
@@ -81,9 +81,9 @@ export default function RulesEnginePage() {
       const custData = custRes.data as { items?: unknown[] } | unknown[];
       const suppData = suppRes.data as { items?: unknown[] } | unknown[];
       
-      // modbm-allow-record-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setCustomers((Array.isArray(custData) ? custData : custData?.items || []) as Record<string, any>[]);
-      // modbm-allow-record-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setSuppliers((Array.isArray(suppData) ? suppData : suppData?.items || []) as Record<string, any>[]);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -92,6 +92,7 @@ export default function RulesEnginePage() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSaveRule = async (row: any, isNew: boolean) => {
     if (!row.conditionValue || !row.targetGlAccountId) {
       throw new Error('Condition Value and Target Account are required');
@@ -113,6 +114,7 @@ export default function RulesEnginePage() {
         partyId: row.partyId || undefined,
         memo: row.memo || undefined,
         priority: 10
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
       toast.success(t('ruleCreated') || 'Rule created');
     } else {
@@ -132,12 +134,14 @@ export default function RulesEnginePage() {
         partyId: row.partyId || undefined,
         memo: row.memo || undefined,
         priority: 10
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
       toast.success(t('ruleUpdated') || 'Rule updated');
     }
     await loadData();
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDeleteRule = async (row: any) => {
     if (!confirm('Are you sure you want to delete this rule?')) return;
     try {
@@ -160,6 +164,7 @@ export default function RulesEnginePage() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bankAccs = glAccounts.filter(a => (a as any).isBankAccount);
 
   const handleOpenAdd = () => {
@@ -171,6 +176,7 @@ export default function RulesEnginePage() {
     setIsModalOpen(true);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleOpenEdit = (rule: any) => {
     setEditingRule({ 
       ...rule, 
@@ -197,10 +203,12 @@ export default function RulesEnginePage() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: DataTableColumn<any>[] = useMemo(() => [
     {
       id: 'matchingConditions',
       header: t('matchingConditions'),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       render: (r: any) => {
         let bankStr = t('allBankAccounts');
         if (r.glAccountIds && r.glAccountIds.length > 0) {
@@ -245,6 +253,7 @@ export default function RulesEnginePage() {
     {
       id: 'effect',
       header: t('effect'),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       render: (r: any) => {
         const targetAcc = glAccounts.find(a => a.glAccountId === r.targetGlAccountId);
         const cc = costCenters.find(c => c.costCenterId === r.costCenterId);
@@ -283,6 +292,7 @@ export default function RulesEnginePage() {
       header: '',
       align: 'right',
       width: '100px',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       render: (row: any) => (
         <div className="flex justify-end gap-1">
           <button className="btn btn-sm btn-ghost btn-circle" onClick={() => handleOpenEdit(row)}>
@@ -316,6 +326,7 @@ export default function RulesEnginePage() {
             <DataTable
               columns={columns}
               data={rules}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               keyExtractor={(r: any) => r.ruleId}
               emptyMessage={t('noRulesDefinedYet')}
             />

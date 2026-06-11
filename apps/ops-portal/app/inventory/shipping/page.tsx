@@ -92,6 +92,7 @@ export default function ShippingPage() {
     useEffect(() => {
         api.inventoryControllerFindAllLocations({} )
             .then((response) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const res = response.data as any;
                 const locs = Array.isArray(res) ? res : (res.data || []);
                 setLocations(locs);
@@ -107,6 +108,7 @@ export default function ShippingPage() {
 
     const loadOrders = useCallback(() => {
         setLoadingOrders(true);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const params: any = {};
         if (selectedLocationId) params.locationId = selectedLocationId;
 

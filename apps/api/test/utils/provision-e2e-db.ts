@@ -96,6 +96,7 @@ async function provision() {
       sql = sql.replace(/^\uFEFF/, ''); // strip BOM
       try {
         await e2eSql.unsafe(sql);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (e: any) {
         console.warn(`  Migration warning on ${file}: ${e.message}`);
       }
@@ -125,6 +126,7 @@ async function provision() {
       try {
         await e2eSql.unsafe(extSql);
         console.log('[E2E DB] Extensions applied.');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (e: any) {
         console.warn(`  Extensions warning: ${e.message}`);
       }

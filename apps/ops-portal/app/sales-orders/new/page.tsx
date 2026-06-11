@@ -211,6 +211,7 @@ export default function NewOrderPage() {
         unitOfMeasure: p.baseUom || 'EA',
         fulfillmentLocationId,
         baseUom: p.baseUom,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         productUoms: p.productUoms as any,
         productGroupId: p.productGroupId || null,
       },

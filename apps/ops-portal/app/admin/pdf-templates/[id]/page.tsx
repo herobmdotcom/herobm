@@ -13,14 +13,14 @@ export default function EditTemplatePage({ params: paramsPromise }: { params: Pr
   const t = useTranslations('admin.reporting');
   useDocumentTitle(t('title'));
   const params = use(paramsPromise);
-  const [initialData, setInitialData] = useState<any | null>(null);
+  const [initialData, setInitialData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     api.pdfTemplatesControllerGetReport(params.id)
       .then(res => {
-        setInitialData(res.data);
+        setInitialData(res.data as unknown as Record<string, unknown>);
       })
       .catch((e) => {
         reportError(e, 'EditTemplatePage');

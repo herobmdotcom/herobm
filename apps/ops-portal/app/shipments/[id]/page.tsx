@@ -54,11 +54,12 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
   const loadShipment = () => {
     setLoading(true);
     (api.globalShipmentsControllerFindOne(id) )
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((res: any) => {
         setShipment(res.data ? res.data : res);
         setLoading(false);
       })
-      .catch((err: any) => {
+      .catch((err: unknown) => {
         reportError(err, 'ShipmentDetailPage.loadShipment');
         setLoading(false);
       });

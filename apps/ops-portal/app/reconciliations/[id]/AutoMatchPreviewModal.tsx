@@ -22,9 +22,9 @@ export default function AutoMatchPreviewModal({
   onConfirmSuccess: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [ledgerLines, setLedgerLines] = useState<Record<string, any>[]>([]);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [accounts, setAccounts] = useState<Record<string, any>[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(false);
   const [ignoredLineIds, setIgnoredLineIds] = useState<string[]>([]);
@@ -64,6 +64,7 @@ export default function AutoMatchPreviewModal({
         dryRun: false,
         ignoredStatementLineIds: ignoredLineIds.length > 0 ? ignoredLineIds : undefined
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = res.data as any;
       if (data.autoMatchedCount > 0 || data.smartMatchedCount > 0) {
         const msgs = [];
@@ -159,6 +160,7 @@ export default function AutoMatchPreviewModal({
     </div>
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderLedgerTable = (lines: any[]) => (
     <div className="space-y-3">
       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('ledgerLines')}</h3>
@@ -230,6 +232,7 @@ export default function AutoMatchPreviewModal({
               <div className="flex flex-col gap-4">
                 {/* eslint-disable-next-line i18next/no-literal-string */}
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider border-b pb-2">Proposed Rule Matches</h3>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {previewData.proposedRuleMatches.map((m: any, i: number) => {
                   const isIgnored = ignoredLineIds.includes(m.bankLineId);
                   return (
@@ -263,6 +266,7 @@ export default function AutoMatchPreviewModal({
               <div className="flex flex-col gap-4 mt-4">
                 {/* eslint-disable-next-line i18next/no-literal-string */}
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider border-b pb-2">Proposed Smart Matches</h3>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {previewData.smartMatches.map((m: any, i: number) => {
                   const matchedLedgerLines = ledgerLines.filter(l => m.journalLineIds.includes(l.journalLineId));
                   const isIgnored = m.bankLineIds.some((id: string) => ignoredLineIds.includes(id));

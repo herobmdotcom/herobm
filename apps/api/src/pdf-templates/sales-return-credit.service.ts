@@ -31,6 +31,7 @@ export class SalesReturnCreditService {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async assembleData(returnId: string, source?: string): Promise<any> {
     const ret = await this.returnsWriteService.findOne(returnId);
     if (!ret) {
@@ -47,7 +48,9 @@ export class SalesReturnCreditService {
     const taxRateMap = await this.buildtaxRateMap();
 
     // Map order lines by id
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const orderLineMap = new Map<string, any>(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       orderDetail.lines.map((l: any) => [l.salesOrderLineId, l]),
     );
 
@@ -129,6 +132,7 @@ export class SalesReturnCreditService {
         ret.salesOrderId,
       );
       const matchingCn = creditNotes.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (cn: any) => cn.returnId === returnId,
       );
       if (matchingCn) {

@@ -28,16 +28,20 @@ interface SymmetryTestContext {
   apAccountId: string;
   arAccountId: string;
   bankAccountId: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
 interface LedgerSymmetryPair {
   name: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setup?: (app: INestApplication, context: SymmetryTestContext) => Promise<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   action: (app: INestApplication, context: SymmetryTestContext) => Promise<any>;
   inverseAction: (
     app: INestApplication,
     context: SymmetryTestContext,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ) => Promise<any>;
 }
 
@@ -210,6 +214,7 @@ describe('API E2E — Ledger Symmetry Register', () => {
           )
           .set('Authorization', `Bearer ${ctx.adminToken}`)
           .send({ stateCode: 'confirmed' })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .expect((res: any) => {
             if (res.status !== 200) console.error('Confirm Error:', res.body);
           })
@@ -698,7 +703,9 @@ describe('API E2E — Ledger Symmetry Register', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const leaves: any[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const walk = (nodes: any[]) => {
       for (const node of nodes) {
         if (!node.isGroup) leaves.push(node);

@@ -54,12 +54,14 @@ export default function JournalEntriesPage() {
       field: 'entryDate', 
       headerName: t('columns.date'), 
       width: 120,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : ''
     },
     {
       field: 'partyName',
       headerName: t('columns.party'),
       width: 200,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cellRenderer: (p: any) => {
         if (!p.value) return <span className="text-gray-400">{t('na')}</span>;
         const link = p.data.partyType === 'customer' 
@@ -80,12 +82,14 @@ export default function JournalEntriesPage() {
       field: 'sourceType', 
       headerName: t('columns.source'), 
       width: 150,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       valueFormatter: (p: any) => p.value ? sourceLabel(p.value) : ''
     },
     {
       field: 'sourceNumber',
       headerName: t('sourceDocument'),
       width: 160,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cellRenderer: (p: any) => {
         if (!p.value) return null;
         let link = '';

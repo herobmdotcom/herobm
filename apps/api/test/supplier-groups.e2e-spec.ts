@@ -64,6 +64,7 @@ describe('Supplier Groups (e2e)', () => {
     expect(listRes.status).toBe(200);
     expect(Array.isArray(listRes.body)).toBe(true);
     expect(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       listRes.body.find((g: any) => g.supplierGroupId === groupId),
     ).toBeDefined();
 
@@ -92,6 +93,7 @@ describe('Supplier Groups (e2e)', () => {
       .get('/api/suppliers?limit=1000&orderDirection=desc')
       .set('Authorization', `Bearer ${adminToken}`);
     const foundAcc = supplierListRes.body.data.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (a: any) => a.vendorId === createSupplierRes.body.vendorId,
     );
     expect(foundAcc).toBeDefined();

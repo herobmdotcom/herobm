@@ -87,6 +87,7 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
       const formData = new FormData();
       formData.append('file', file);
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const res = await apiFetch<any>('/api/gl/bank-feeds/parse', {
         method: 'POST',
         body: formData,
@@ -123,6 +124,7 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
       formData.append('glAccountId', glAccountId);
       formData.append('profileId', finalProfileId);
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const res = await apiFetch<any>('/api/gl/bank-feeds/import', {
         method: 'POST',
         body: formData,

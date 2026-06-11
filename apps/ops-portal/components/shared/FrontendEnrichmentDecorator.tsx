@@ -43,6 +43,7 @@ export function FrontendEnrichmentDecorator({
       try {
         setLoadingConfig(true);
         const res = await api.appConfigControllerGet();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const config = res.data as any;
         const mappings = config.enrichmentProviderMappings || {};
         const mappedProvider = mappings[field]?.[country];
@@ -94,6 +95,7 @@ export function FrontendEnrichmentDecorator({
             field,
             country,
             query: value,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           }) as any,
           new Promise((resolve) => setTimeout(resolve, 300)) // Ensure spinner is visible for at least 300ms
         ]);

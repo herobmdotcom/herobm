@@ -10,7 +10,7 @@ import {
   UserSettingsResponseDto,
 } from './user-settings.dto';
 
-@ApiTags('Users')
+@ApiTags('System')
 @Controller('user-settings')
 @UseGuards(AuthGuard(['jwt', 'api-key']), ThrottlerGuard) // Note: No CasbinGuard needed as users always can access their own settings
 @SkipCasbin()

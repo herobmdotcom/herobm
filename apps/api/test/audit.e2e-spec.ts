@@ -111,6 +111,7 @@ describe('Audit Events (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       const events = res.body.events;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updatedEvent = events.find((e: any) => e.eventType === 'updated');
 
       expect(updatedEvent).toBeDefined();
@@ -137,6 +138,7 @@ describe('Audit Events (e2e)', () => {
 
       // Filter for the SECOND update event (the one with the note)
       const noteEvent = res.body.events.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (e: any) =>
           e.eventType === 'updated' && e.payload.changes.notes === 'New Note',
       );
@@ -157,6 +159,7 @@ describe('Audit Events (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       const statusEvent = res.body.events.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (e: any) => e.eventType === 'status_changed',
       );
       expect(statusEvent).toBeDefined();
@@ -201,6 +204,7 @@ describe('Audit Events (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       const updatedEvent = res.body.events.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (e: any) => e.eventType === 'updated',
       );
       expect(updatedEvent).toBeDefined();
@@ -220,6 +224,7 @@ describe('Audit Events (e2e)', () => {
         .get('/api/sales-orders?limit=50')
         .set('Authorization', `Bearer ${adminToken}`);
       const invoicedOrder = orderRes.body.data.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (o: any) => o.stateCode === SALES_ORDER_STATE.INVOICED,
       );
 
@@ -251,6 +256,7 @@ describe('Audit Events (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       const returnEvent = res.body.events.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (e: any) =>
           e.eventType === 'return_updated' && e.payload.returnId === returnId,
       );
@@ -288,6 +294,7 @@ describe('Audit Events (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       const updatedEvent = res.body.events.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (e: any) => e.eventType === 'updated',
       );
       expect(updatedEvent).toBeDefined();
@@ -309,6 +316,7 @@ describe('Audit Events (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       const statusEvent = res.body.events.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (e: any) => e.eventType === 'status_changed',
       );
       expect(statusEvent).toBeDefined();

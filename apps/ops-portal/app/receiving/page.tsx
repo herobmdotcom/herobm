@@ -45,6 +45,7 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                         className="input text-sm w-48"
                     >
                         <option value="">{t('buttons.allLocations')}</option>
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                         {locations.map((loc: any) => (
                             <option key={loc.locationId} value={loc.locationId}>
                                 {loc.code} - {loc.name}
@@ -89,6 +90,7 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                                 className="input text-sm w-full"
                             >
                                 <option value="">{t('buttons.allLocations')}</option>
+                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                 {locations.map((loc: any) => (
                                     <option key={loc.locationId} value={loc.locationId}>
                                         {loc.code} - {loc.name}
@@ -142,7 +144,8 @@ export default function GoodsReceivedListPage() {
 
     const [slideOverOpen, setSlideOverOpen] = useState(false);
     const [quarantineModalOpen, setQuarantineModalOpen] = useState(false);
-    const [selectedRows, setSelectedRows] = useState<Record<string, unknown>[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [selectedRows, setSelectedRows] = useState<any[]>([]);
 
     const handleAllocate = useCallback(() => {
         if (selectedRows.length === 0) return;
@@ -208,6 +211,7 @@ export default function GoodsReceivedListPage() {
 
     const gridEndpoint = isReadyDays ? `/api/goods-received/lines?days=${days}&limit=0${selectedLocationId ? `&locationId=${selectedLocationId}` : ''}` : undefined;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const gridColumns: any[] = useMemo(() => [
         {
             field: 'receiptNumber',
@@ -221,6 +225,7 @@ export default function GoodsReceivedListPage() {
             field: 'putawayStatus',
             headerName: 'Putaway Status',
             width: 140,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => {
                 if (!p.value) return '';
                 if (p.data?.stateCode === GOODS_RECEIVED_STATE.CANCELLED) return 'Cancelled';
@@ -231,13 +236,16 @@ export default function GoodsReceivedListPage() {
                 return p.value;
             }
         },
-        { field: 'createdOn', headerName: tCommon('columns.date'), width: 110, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: tCommon('columns.date'), width: 110, 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
         { field: 'vendorName', headerName: t('columns.supplier'), width: 160 },
         { field: 'locationName', headerName: tCommon('columns.location'), width: 140 },
         { 
             field: 'productNumber', 
             headerName: tCommon('columns.product'), 
             width: 240,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             cellRenderer: (p: import("ag-grid-community").ICellRendererParams<any>) => {
                 if (!p.data) return null;
                 return (
@@ -259,6 +267,7 @@ export default function GoodsReceivedListPage() {
             field: 'orderNumber',
             headerName: 'PO Match',
             width: 220,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             cellRenderer: (p: import("ag-grid-community").ICellRendererParams<any>) => <POAllocationCell data={p.data} />
         },
 
@@ -269,7 +278,7 @@ export default function GoodsReceivedListPage() {
     // Count unmatched (and not quarantined) in selection — quarantined items cannot be matched
     const matchableCount = selectedRows.filter((r) => r.matchStatus !== MATCH_STATUS.MATCHED && r.putawayStatus !== PUTAWAY_STATUS.QUARANTINED).length;
     const hasQuarantinedSelected = selectedRows.some((r) => r.putawayStatus === PUTAWAY_STATUS.QUARANTINED);
-    const canQuarantine = selectedRows.filter(r => r.putawayStatus !== PUTAWAY_STATUS.COMPLETED).length > 0 && new Set(selectedRows.map(r => (r as any).locationId)).size <= 1;
+    const canQuarantine = selectedRows.filter(r => r.putawayStatus !== PUTAWAY_STATUS.COMPLETED).length > 0 && new Set(selectedRows.map(r => r.locationId as string)).size <= 1;
 
     return (
         <>
@@ -306,7 +315,7 @@ export default function GoodsReceivedListPage() {
                         <button
                             onClick={handleToggleQuarantine}
                             disabled={!canQuarantine}
-                            title={new Set(selectedRows.map(r => (r as any).locationId)).size > 1 ? 'Cannot quarantine items from different locations at once' : undefined}
+                            title={new Set(selectedRows.map(r => r.locationId as string)).size > 1 ? 'Cannot quarantine items from different locations at once' : undefined}
                             className="px-4 py-2 text-sm font-bold rounded-lg transition-all border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                         >
                             {t('buttons.quarantine')}
@@ -338,7 +347,7 @@ export default function GoodsReceivedListPage() {
                         <button
                             onClick={handleToggleQuarantine}
                             disabled={!canQuarantine}
-                            title={new Set(selectedRows.map(r => (r as any).locationId)).size > 1 ? 'Cannot quarantine items from different locations at once' : undefined}
+                            title={new Set(selectedRows.map(r => r.locationId as string)).size > 1 ? 'Cannot quarantine items from different locations at once' : undefined}
                             className="px-4 py-2 text-sm font-bold rounded-lg transition-all border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                         >
                             {t('buttons.quarantine')}
@@ -375,7 +384,7 @@ export default function GoodsReceivedListPage() {
                 isOpen={quarantineModalOpen}
                 onClose={() => setQuarantineModalOpen(false)}
                 onSubmit={handleQuarantineSubmit}
-                locationId={selectedLocationId || (selectedRows.length > 0 ? (selectedRows[0] as any).locationId : '')}
+                locationId={selectedLocationId || (selectedRows.length > 0 ? selectedRows[0].locationId as string : '')}
             />
         </>
     );

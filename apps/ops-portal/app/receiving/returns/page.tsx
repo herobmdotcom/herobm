@@ -16,7 +16,7 @@ export default function ReceivingReturnsPage() {
     const [slideOverOpen, setSlideOverOpen] = useState(false);
     const [selectedReturn, setSelectedReturn] = useState<Record<string, unknown> | null>(null);
 
-    const handleReceive = useCallback((returnRecord: any) => {
+    const handleReceive = useCallback((returnRecord: Record<string, unknown>) => {
         setSelectedReturn(returnRecord);
         setSlideOverOpen(true);
     }, []);
@@ -31,15 +31,15 @@ export default function ReceivingReturnsPage() {
     // Fetch confirmed and partially received returns globally
     const gridEndpoint = `/api/sales-returns?stateCode=${RETURN_STATE.CONFIRMED},${RETURN_STATE.PARTIALLY_RECEIVED}`;
 
-    const gridColumns: any[] = useMemo(() => [
+    const gridColumns: Record<string, unknown>[] = useMemo(() => [
         { field: 'returnNumber', headerName: 'Return No', width: 140 },
         { field: 'orderNumber', headerName: 'Order No', width: 140 },
-        { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
         { 
             field: 'lines', 
             headerName: 'Lines', 
             width: 100,
-            cellRenderer: (p: import("ag-grid-community").ICellRendererParams<any>) => {
+            cellRenderer: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => {
                 if (!p.value) return null;
                 return (
                     <span className="badge badge-sm badge-info">

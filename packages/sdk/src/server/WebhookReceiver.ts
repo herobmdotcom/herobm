@@ -1,6 +1,6 @@
 import * as crypto from 'crypto';
 
-export interface HeroEvent<T = any> {
+export interface HeroEvent<T = unknown> {
   eventId: string;
   eventType: string;
   entityId: string;
@@ -9,7 +9,7 @@ export interface HeroEvent<T = any> {
   payload: T;
 }
 
-type Handler<T = any> = (event: HeroEvent<T>) => Promise<void> | void;
+type Handler<T = unknown> = (event: HeroEvent<T>) => Promise<void> | void;
 
 export class WebhookReceiver {
   private secret: string;
@@ -22,11 +22,11 @@ export class WebhookReceiver {
   /**
    * Register a handler for a specific event type.
    */
-  public on<T = any>(eventType: string, handler: Handler<T>) {
+  public on<T = unknown>(eventType: string, handler: Handler<T>) {
     if (!this.handlers.has(eventType)) {
       this.handlers.set(eventType, []);
     }
-    this.handlers.get(eventType)!.push(handler);
+    this.handlers.get(eventType)!.push(handler as unknown as Handler<unknown>);
   }
 
   /**
@@ -49,7 +49,7 @@ export class WebhookReceiver {
    * so that `req.body` is a raw Buffer representing the exact HTTP payload.
    */
   public expressMiddleware() {
-    return async (req: any, res: any) => {
+    return async (req: { headers: Record<string, string | string[] | undefined>; body: Buffer | unknown }, res: { status: (code: number) => { json: (body: unknown) => void } }) => {
       try {
         const signature = req.headers['x-modbm-signature'];
         if (!signature || typeof signature !== 'string') {
@@ -80,8 +80,9 @@ export class WebhookReceiver {
         await Promise.all(allHandlers.map(h => h(parsedEvent)));
 
         return res.status(200).json({ received: true });
-      } catch (err: any) {
-        console.error('Webhook processing error:', err.message || err);
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error('Webhook processing error:', errorMsg);
         return res.status(500).json({ error: 'Internal Server Error' });
       }
     };

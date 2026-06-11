@@ -274,10 +274,11 @@ export class DashboardService {
       FROM modbm_core.dashboard_timeline e
       WHERE ${whereClause}
       ORDER BY e.created_on DESC
-      LIMIT ${sql.raw(Math.max(1, isNaN(limit) ? 50 : limit).toString())}
+      LIMIT ${limit}
     `;
 
     const result = await this.db.execute(fullQuery);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows = (result as any).rows ?? result;
     return { events: rows as unknown as TimelineEvent[] };
   }

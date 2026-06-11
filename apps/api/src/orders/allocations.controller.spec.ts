@@ -140,6 +140,7 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
     expect(Array.isArray(row.availableElsewhere)).toBe(true);
 
     // Both other locations show up — main is excluded
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const locIds = row.availableElsewhere.map((e: any) => e.locationId).sort();
     expect(locIds).toEqual([LOC_OTHER1, LOC_OTHER2].sort());
 
@@ -191,6 +192,7 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
     ]);
 
     const data = await controller.getOpenDemands();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ids = data[0].availableElsewhere.map((e: any) => e.locationId);
     expect(ids).not.toContain(LOC_MAIN);
     expect(ids).toContain(LOC_OTHER1);

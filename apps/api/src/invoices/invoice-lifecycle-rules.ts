@@ -87,6 +87,7 @@ export const autoTransitionInvoiceBasedOnOutstandingAmount: InvoiceLifecycleRule
 
       // 4. Execute transition
       await db
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .update(table as any)
         .set({ stateCode: targetState, modifiedOn: new Date() })
         .where(eq(pkColumn, invoiceId));
@@ -96,6 +97,7 @@ export const autoTransitionInvoiceBasedOnOutstandingAmount: InvoiceLifecycleRule
           ? EntityType.SALES_INVOICE
           : EntityType.PURCHASE_INVOICE;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(db as any, {
         entityType,
         entityId: invoiceId,

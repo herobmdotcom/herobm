@@ -6,10 +6,12 @@ export interface InlineTableColumn<T> {
   title: string;
   type?: 'text' | 'textarea' | 'select' | 'boolean' | 'custom' | 'number' | 'password' | 'date';
   options?: { value: string; label: string }[] | ((row: Partial<T>) => { value: string; label: string }[]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   render?: (row: T, isEditing: boolean, onChange?: (val: any) => void) => React.ReactNode;
   width?: string | number;
   disabled?: boolean; // if true, input is disabled during edit
   emptyLabel?: string | null; // override or hide the empty select option
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   validate?: (value: any, row: Partial<T>) => string | null;
 }
 
@@ -29,7 +31,7 @@ export interface InlineSettingsTableProps<T> {
   canDelete?: (row: T) => boolean;
 }
 
-// modbm-allow-record-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function InlineSettingsTable<T extends Record<string, any>>({
   columns,
   data,
@@ -177,6 +179,7 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                     if (col.render) {
                       return (
                         <td key={String(col.key)}>
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                           {col.render(isEditing ? editForm as T : row, isEditing, (val: any) => {
                             setEditForm({ ...editForm, [col.key as keyof T]: val });
                             if (errors[String(col.key)]) setErrors(prev => ({ ...prev, [String(col.key)]: '' }));
@@ -196,6 +199,7 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                                 className={`input ${errors[String(col.key)] ? 'border-red-500' : ''}`} 
                                 value={(value as string) || ''} 
                                 onChange={e => {
+                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                   setEditForm({ ...editForm, [col.key as keyof T]: e.target.value as any });
                                   if (errors[String(col.key)]) setErrors(prev => ({ ...prev, [String(col.key)]: '' }));
                                 }}
@@ -213,6 +217,7 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                               <input 
                                 type="checkbox" 
                                 checked={!!value} 
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 onChange={e => setEditForm({ ...editForm, [col.key as keyof T]: e.target.checked as any })} 
                                 disabled={col.disabled || saving}
                               />
@@ -225,6 +230,7 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                                 className={`input w-full ${errors[String(col.key)] ? 'border-red-500' : ''}`} 
                                 value={(value as string) || ''} 
                                 onChange={e => {
+                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                   setEditForm({ ...editForm, [col.key as keyof T]: e.target.value as any });
                                   if (errors[String(col.key)]) setErrors(prev => ({ ...prev, [String(col.key)]: '' }));
                                 }}

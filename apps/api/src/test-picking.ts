@@ -12,9 +12,6 @@ async function run() {
       partials.map((o) => ({
         orderNumber: o.orderNumber,
         status: o.pickabilityStatus,
-        _linesTotal: o._linesTotal,
-        _linesBlocked: o._linesBlocked,
-        _linesFullyPickable: o._linesFullyPickable,
       })),
       null,
       2,

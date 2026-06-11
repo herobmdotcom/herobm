@@ -74,6 +74,7 @@ describe('GlController', () => {
     });
 
     it('should return flat list for unknown format values', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await controller.getAccounts('whatever' as any);
       expect(glService.getAccountsList).toHaveBeenCalled();
       expect(glService.getChartOfAccounts).not.toHaveBeenCalled();
@@ -205,6 +206,7 @@ describe('GlController', () => {
         actor: 'admin',
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await controller.createManualJournalEntry(body as any);
 
       expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {
@@ -225,6 +227,7 @@ describe('GlController', () => {
         ],
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await controller.createManualJournalEntry(body as any);
 
       expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {
@@ -294,6 +297,7 @@ describe('GlController', () => {
 
   describe('POST /gl/seed', () => {
     it('should use default filename when not specified', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await controller.seedChartOfAccounts({} as any);
       expect(coaLoader.loadFromFile).toHaveBeenCalledWith('au_standard.json');
     });
@@ -309,6 +313,7 @@ describe('GlController', () => {
     });
 
     it('should return loader result', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await controller.seedChartOfAccounts({} as any);
       expect(result).toEqual({ created: 30, skipped: false });
     });

@@ -7,9 +7,9 @@ import { useTranslations } from 'next-intl';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  reportConfigs: Record<string, any[]>;
+  reportConfigs: Record<string, { id: string; name: string }[]>;
   pinnedReports: { slug: string; configId: string; name: string }[];
-  reports: any[];
+  reports: { slug: string; name: string }[];
   onChange: (pinnedReports: { slug: string; configId: string; name: string }[]) => void;
 }
 

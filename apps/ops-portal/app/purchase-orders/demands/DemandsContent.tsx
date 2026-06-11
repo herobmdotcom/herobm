@@ -72,6 +72,7 @@ export default function DemandsContent() {
       field: 'purchaseOrderState',
       headerName: 'Status',
       width: 160,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       valueFormatter: (params: any) => {
         if (!params.data?.purchaseOrderId) {
           return tPurchase('demandsContent.pendingSupply');

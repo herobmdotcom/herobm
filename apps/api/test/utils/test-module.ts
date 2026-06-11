@@ -58,6 +58,7 @@ export class MockGlService {
  * Helper to bootstrap a TestingModuleBuilder with standardized core mocks
  * to prevent cascading DI failures.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function setupTestModule(providers: any[] = []): TestingModuleBuilder {
   return Test.createTestingModule({
     providers: [

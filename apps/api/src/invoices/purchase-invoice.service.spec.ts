@@ -22,6 +22,7 @@ import { PURCHASE_ORDER_STATE } from '@modbm/shared';
 describe('PurchaseInvoiceService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: PurchaseInvoiceService;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockGlService: any;
 
   const VENDOR_ID = '00000000-0000-0000-0000-000000000001';
@@ -116,6 +117,7 @@ describe('PurchaseInvoiceService', () => {
       purchaseOrderId: PO_ID,
       orderNumber: 'PO-1',
       vendorId: VENDOR_ID,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       stateCode: stateCode as any,
       currencyCode: 'AUD',
       deliveryLocationId: LOCATION_ID,

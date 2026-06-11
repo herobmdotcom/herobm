@@ -36,7 +36,7 @@ import {
   BinResponseDto,
 } from './dto';
 
-@ApiTags('Locations')
+@ApiTags('Warehouse')
 @Controller('inventory')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)

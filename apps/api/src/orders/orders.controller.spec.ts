@@ -7,7 +7,9 @@ import { SALES_ORDER_STATE } from '@modbm/shared';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let readService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let writeService: any;
 
   const mockOrdersList = {
@@ -109,6 +111,7 @@ describe('OrdersController', () => {
         customerId: 'c0000000-0000-0000-0000-000000000001',
         lines: [{ productId: 'P001', quantity: '5', pricePerUnit: '10.00' }],
       };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await controller.create(body as any, mockUser);
       expect(result).toEqual(mockOrder);
       expect(writeService.create).toHaveBeenCalledWith(body, 'admin');
@@ -128,6 +131,7 @@ describe('OrdersController', () => {
     it('should call writeService.changeState with id, stateCode, and actor', async () => {
       const result = await controller.changeState(
         'uuid-1',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { stateCode: SALES_ORDER_STATE.QUOTED } as any,
         mockUser,
       );
@@ -145,6 +149,7 @@ describe('OrdersController', () => {
   describe('addLine', () => {
     it('should call writeService.addLine with orderId, body, and actor', async () => {
       const body = { productId: 'P001', quantity: '10', pricePerUnit: '25.00' };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await controller.addLine('uuid-1', body as any, mockUser);
       expect(result).toEqual(mockLine);
       expect(writeService.addLine).toHaveBeenCalledWith(

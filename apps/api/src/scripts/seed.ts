@@ -2,6 +2,7 @@ import { SystemResource } from '@modbm/shared';
 import { PgDatabase } from 'drizzle-orm/pg-core';
 import * as schema from '../drizzle/modbm-core-schema';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SeedDB = PgDatabase<any, typeof schema, any>;
 
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -1068,6 +1069,184 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
     { ptype: 'g', v0: 'procurement', v1: 'viewer' },
     { ptype: 'g', v0: 'agent', v1: 'viewer' },
     { ptype: 'g', v0: 'webhook', v1: 'viewer' },
+
+    // Agent read-only access globally
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.CUSTOMERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.PRODUCTS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.INVENTORY,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.SALES_ORDERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.SALES_RETURNS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.SALES_CREDIT_NOTES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.PURCHASE_ORDERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.PURCHASE_RETURNS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.PURCHASE_DEBIT_NOTES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.SUPPLIERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.RECEPTIONS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.GOODS_RECEIVED,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.DASHBOARD,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.TAX_CATEGORIES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.SETTINGS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.REPORT,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.BUSINESS_REPORT,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.EXTERNAL_API,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.PAYMENTS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.SYSTEM_LOGS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.IMPORT,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.API_KEYS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.WEBHOOKS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.ROLES,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'agent',
+      v1: SystemResource.USERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    { ptype: 'p', v0: 'agent', v1: SystemResource.GL, v2: 'read', v3: 'allow' },
   ];
 
   policies.push(
@@ -1111,6 +1290,7 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
     },
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const toInsert = policies.filter((p: any) => {
     const key = [
       p.ptype || '',
@@ -1156,11 +1336,13 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
     .values({
       username: 'admin',
       passwordHash: hash,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       role: 'admin' as any,
       isActive: true,
     })
     .onConflictDoUpdate({
       target: users.username,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       set: { passwordHash: hash, role: 'admin' as any, isActive: true },
     });
 
@@ -1169,11 +1351,13 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
     .values({
       username: 'viewer',
       passwordHash: viewerHash,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       role: 'viewer' as any,
       isActive: true,
     })
     .onConflictDoUpdate({
       target: users.username,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       set: { passwordHash: viewerHash, role: 'viewer' as any, isActive: true },
     });
 
@@ -1182,11 +1366,13 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
     .values({
       username: 'sales',
       passwordHash: salesHash,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       role: 'sales' as any,
       isActive: true,
     })
     .onConflictDoUpdate({
       target: users.username,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       set: { passwordHash: salesHash, role: 'sales' as any, isActive: true },
     });
 
@@ -1196,6 +1382,7 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
     .values({
       username: 'finance',
       passwordHash: financeHash,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       role: 'finance' as any,
       isActive: true,
     })
@@ -1203,6 +1390,7 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
       target: users.username,
       set: {
         passwordHash: financeHash,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         role: 'finance' as any,
         isActive: true,
       },
@@ -1214,6 +1402,7 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
     .values({
       username: 'warehouse',
       passwordHash: warehouseHash,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       role: 'warehouse' as any,
       isActive: true,
     })
@@ -1221,6 +1410,7 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
       target: users.username,
       set: {
         passwordHash: warehouseHash,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         role: 'warehouse' as any,
         isActive: true,
       },
@@ -1232,6 +1422,7 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
     .values({
       username: 'procurement',
       passwordHash: procurementHash,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       role: 'procurement' as any,
       isActive: true,
     })
@@ -1239,6 +1430,7 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
       target: users.username,
       set: {
         passwordHash: procurementHash,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         role: 'procurement' as any,
         isActive: true,
       },
@@ -1250,11 +1442,13 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
     .values({
       username: 'system',
       passwordHash: systemHash,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       role: 'system' as any,
       isActive: true,
     })
     .onConflictDoUpdate({
       target: users.username,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       set: { passwordHash: systemHash, role: 'system' as any, isActive: true },
     });
 
@@ -1264,6 +1458,7 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
     .values({
       username: 'restricted_user',
       passwordHash: restrictedHash,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       role: 'restricted_user' as any,
       isActive: true,
     })
@@ -1271,6 +1466,7 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
       target: users.username,
       set: {
         passwordHash: restrictedHash,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         role: 'restricted_user' as any,
         isActive: true,
       },
@@ -1407,13 +1603,17 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
     return;
   }
 
+  const now = new Date();
+  const sid = `${crypto.randomUUID()}-${now.getTime().toString(16)}`;
+
   await db
     .insert(appSettings)
     .values({
       inventoryValuationMethod: 'weighted_average',
       inventoryAccountingMode: 'perpetual',
       creditLimitBehavior: 'soft',
-      setupCompletedAt: new Date(),
+      setupCompletedAt: now,
+      systemIdentifier: sid,
     })
     .onConflictDoNothing();
 
@@ -1483,13 +1683,16 @@ export async function seedCoaAccounts(
   }
 
   let autoCode = 100;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const insertRows: any[] = [];
 
   function walk(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     nodes: any,
     parentCode: string | null,
     inheritedType: string | null,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const [name, node] of Object.entries<any>(nodes)) {
       const accountType =
         ROOT_TYPE_MAP[node.root_type || ''] || inheritedType || 'asset';
@@ -1622,6 +1825,7 @@ export async function seedCoaSettings(
   const fiscalMonth = settings.fiscal_year_start_month || 7;
   const defaults = settings.defaults || {};
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const glData: any = {
     settingsId: '4e185bce-d31a-4caa-8462-73c261864eff',
     baseCurrency,

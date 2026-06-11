@@ -20,11 +20,11 @@ interface InvoicesSectionProps {
 
     invoices: SalesInvoice[];
     taxCategories: TaxCategory[];
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pickingSummary: Record<string, any> | null;
     setError: (msg: string) => void;
     loadInvoices: () => Promise<void>;
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   loadOrder: (autoTransitions?: Record<string, any>[], showSpinner?: boolean) => Promise<void>;
 }
 
@@ -93,10 +93,12 @@ export default function InvoicesSection({
                     <span className="material-symbols-outlined">request_quote</span>
                     Invoices
                 </h3>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {['shipped', 'picking'].includes(order.stateCode as any) && !showCreateInvoice && (
                     <button
                         className="btn btn-secondary btn-sm"
                         disabled={(() => {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const totalShipped = pickingSummary?.lines?.reduce((sum: number, pl: any) => sum + parseFloat(pl.quantityShipped || '0'), 0) || 0;
                             return totalShipped === 0;
                         })()}
@@ -141,6 +143,7 @@ export default function InvoicesSection({
                         ]}
                         renderCustomRow={(nl, idx) => {
                             const origLine = order.lines.find(l => l.salesOrderLineId === nl.salesOrderLineId);
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === nl.salesOrderLineId);
                             const pickedQty = pLine && pLine.quantityPicked != null ? parseFloat(pLine.quantityPicked) : 0;
                             const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
@@ -179,6 +182,7 @@ export default function InvoicesSection({
                         }}
                         mobileCard={(nl, idx) => {
                             const origLine = order.lines.find(l => l.salesOrderLineId === nl.salesOrderLineId);
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === nl.salesOrderLineId);
                             const pickedQty = pLine && pLine.quantityPicked != null ? parseFloat(pLine.quantityPicked) : 0;
                             const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
@@ -419,6 +423,7 @@ export default function InvoicesSection({
                 {invoices.length === 0 && (
                     <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
                         {(() => {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const totalShipped = pickingSummary?.lines?.reduce((sum: number, pl: any) => sum + parseFloat(pl.quantityShipped || '0'), 0) || 0;
                             if (totalShipped === 0) {
                                 return tSales('noProductsShippedYet');

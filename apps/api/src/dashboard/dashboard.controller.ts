@@ -15,7 +15,7 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 
-@ApiTags('Dashboard')
+@ApiTags('System')
 @Controller('dashboard')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.DASHBOARD)

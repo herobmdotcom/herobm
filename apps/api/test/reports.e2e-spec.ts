@@ -204,6 +204,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(res.body.some((r: any) => r.id === testReportId)).toBe(true);
     });
 
@@ -303,6 +304,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
         .expect(200);
 
       const invoiceAssign = res.body.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (a: any) => a.hookSlug === 'sales-invoice',
       );
       expect(invoiceAssign.reportId).toBe(rid);
@@ -342,6 +344,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(res.body.some((h: any) => h.contextSlug === 'sales-order')).toBe(
         true,
       );

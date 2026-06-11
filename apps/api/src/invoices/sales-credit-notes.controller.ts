@@ -29,14 +29,13 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 import {
   CreateSalesCreditNoteDto,
   SalesCreditNoteResponseDto,
+  EmptyBodyDto,
 } from './sales-credit-notes.dto';
-
-export class EmptyBodyDto {}
 
 @Controller('sales-credit-notes')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_CREDIT_NOTES)
-@ApiTags('SalesCreditNotes')
+@ApiTags('Sales Returns')
 export class SalesCreditNotesController {
   constructor(private readonly creditNoteService: SalesCreditNoteService) {}
 

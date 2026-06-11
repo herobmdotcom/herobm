@@ -344,7 +344,7 @@ export class AccountResponseDto {
   customerGroupCreditLimit?: string;
   customerGroupIsOnCreditHold?: boolean;
   gstCategoryName?: string;
-  events?: any[];
+  events?: unknown[];
 }
 
 export class AccountGroupResponseDto {

@@ -104,6 +104,7 @@ describe('PerpetualAccountingStrategy', () => {
 });
 
 describe('PeriodicAccountingStrategy', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const strategy = getAccountingStrategy('periodic', {} as any);
   const ctx: GlPostingContext = {
     amount: 125.5,

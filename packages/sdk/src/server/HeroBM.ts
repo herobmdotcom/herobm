@@ -23,14 +23,14 @@ export class HeroBM {
     /**
      * Listen to an incoming webhook event.
      */
-    on: <T = any>(eventType: string, handler: (event: HeroEvent<T>) => Promise<void> | void) => {
+    on: <T = unknown>(eventType: string, handler: (event: HeroEvent<T>) => Promise<void> | void) => {
       this.webhooks.on(eventType, handler);
     },
 
     /**
      * Publishes an event to the backend message queue (via outbox).
      */
-    publish: async (type: string, payload: any) => {
+    publish: async (type: string, payload: unknown) => {
       if (!this.apiKey) {
         throw new Error('API Key is required to publish events.');
       }

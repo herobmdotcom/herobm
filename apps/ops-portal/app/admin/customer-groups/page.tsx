@@ -34,6 +34,7 @@ export default function AccountGroupsAdmin() {
         api.activitiesControllerFindAll().then(r => r.data || []),
         api.discountMatrixControllerList({ ownerType: 'account_group' }).then(r => r.data || [])
       ]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sorted = [...data].sort((a: any, b: any) => 
         a.name.localeCompare(b.name, undefined, { numeric: true })
       );
@@ -51,10 +52,14 @@ export default function AccountGroupsAdmin() {
 
   useEffect(() => { loadData(); }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const glAccountOptions = useMemo(() => glAccounts.map((a: any) => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` })), [glAccounts]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const costCenterOptions = useMemo(() => costCenters.map((c: any) => ({ value: c.costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activityOptions = useMemo(() => activities.map((a: any) => ({ value: a.activityId, label: `${a.code} - ${a.name}` })), [activities]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: InlineTableColumn<any>[] = useMemo(() => [
     { key: 'groupCode', title: tCommon('code'), type: 'text', placeholder: t('placeholders.code'), width: 100 },
     { key: 'name', title: tCommon('name'), type: 'text', placeholder: t('placeholders.name') },
@@ -72,6 +77,7 @@ export default function AccountGroupsAdmin() {
             onClick={() => setDiscountGroup(row)}
           >
             {t('manage')}
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {matrixRules.some((r: any) => r.customerGroupId === row.customerGroupId) && (
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 ml-2"></span>
             )}
@@ -85,6 +91,7 @@ export default function AccountGroupsAdmin() {
     { key: 'defaultActivityId', title: tCommon('defActivity'), type: 'select', options: activityOptions, emptyLabel: `-- ${tGlobalCommon('selectNone')} --`, width: 140 }
   ], [tCommon, t, tGlobalCommon, glAccountOptions, costCenterOptions, activityOptions, matrixRules]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSave = async (payload: any, isNew: boolean) => {
     if (!payload.groupCode || !payload.name) {
       toast.error('Code and Name are required');
@@ -113,10 +120,11 @@ export default function AccountGroupsAdmin() {
     }
   };
 
-  const handleDelete = async (payload: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleDelete = async (row: any) => {
     if(!confirm(tGlobalCommon('confirmDelete'))) return;
     try {
-      await api.accountGroupsControllerRemove(payload.customerGroupId);
+      await api.accountGroupsControllerRemove(row.customerGroupId);
       toast.success(t('toasts.deleted'));
       loadData();
     } catch (err: unknown) {

@@ -38,7 +38,7 @@ import {
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
-@ApiTags('DiscountMatrix')
+@ApiTags('System')
 @ApiBearerAuth()
 @Controller('discount-matrix')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)

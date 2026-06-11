@@ -184,6 +184,7 @@ describe('API E2E — Sales Order Returns', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const shipLines: any[] = [];
     for (const line of detail.body.lines) {
       await request(app.getHttpServer())
@@ -221,6 +222,7 @@ describe('API E2E — Sales Order Returns', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const lineIds = detailFinal.body.lines.map((l: any) => l.salesOrderLineId);
     return { orderId, lineIds };
   }

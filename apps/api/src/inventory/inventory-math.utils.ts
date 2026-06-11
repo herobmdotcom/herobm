@@ -1,5 +1,6 @@
 import { SQL, sql, inArray, eq, and } from 'drizzle-orm';
 import { BIN_TYPE } from '@modbm/shared';
+import { bins } from '../drizzle/modbm-core-schema';
 
 export const PICKABLE_BIN_TYPES = [
   BIN_TYPE.STORAGE,
@@ -62,7 +63,7 @@ export function calculatePickableOnHand<T extends BinState>(bins: T[]): number {
  * Drizzle condition for filtering pickable bins.
  * Expects the `bins` table object from the schema.
  */
-export function isPickableBinCondition(binTable: any) {
+export function isPickableBinCondition(binTable: typeof bins) {
   return and(
     inArray(binTable.binType, [...PICKABLE_BIN_TYPES]),
     eq(binTable.isUnavailable, false),
@@ -74,7 +75,7 @@ export function isPickableBinCondition(binTable: any) {
  * Drizzle condition for filtering quarantine bins.
  * Expects the `bins` table object from the schema.
  */
-export function isQuarantineBinCondition(binTable: any) {
+export function isQuarantineBinCondition(binTable: typeof bins) {
   return eq(binTable.binType, BIN_TYPE.QUARANTINE);
 }
 

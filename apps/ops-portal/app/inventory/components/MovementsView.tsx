@@ -20,14 +20,14 @@ export default function MovementsView() {
       headerName: tInventory('columns.stockIn'), 
       width: 140, 
       type: 'numericColumn',
-      valueFormatter: (p: any) => p.value ? parseFloat(p.value).toLocaleString() : '0'
+      valueFormatter: (p: { value?: unknown }) => p.value ? parseFloat(p.value as string).toLocaleString() : '0'
     },
     { 
       field: 'stockOut', 
       headerName: tInventory('columns.stockOut'), 
       width: 140, 
       type: 'numericColumn',
-      valueFormatter: (p: any) => p.value ? parseFloat(p.value).toLocaleString() : '0'
+      valueFormatter: (p: { value?: unknown }) => p.value ? parseFloat(p.value as string).toLocaleString() : '0'
     },
     { 
       field: 'netChange', 
@@ -40,8 +40,8 @@ export default function MovementsView() {
         if (val < 0) return { color: '#b45309', fontWeight: 'bold' };
         return undefined;
       },
-      valueFormatter: (p: any) => {
-        const val = parseFloat(p.value || '0');
+      valueFormatter: (p: { value?: unknown }) => {
+        const val = parseFloat((p.value as string) || '0');
         return val > 0 ? `+${val.toLocaleString()}` : val.toLocaleString();
       }
     },
@@ -50,7 +50,7 @@ export default function MovementsView() {
       headerName: tInventory('columns.onHand'),
       width: 140,
       type: 'numericColumn',
-      valueFormatter: (p: any) => p.value ? parseFloat(p.value).toLocaleString() : '0',
+      valueFormatter: (p: { value?: unknown }) => p.value ? parseFloat(p.value as string).toLocaleString() : '0',
       cellStyle: () => ({ fontWeight: 'bold', color: '#041627' })
     },
   ], [tCommon, tInventory]);

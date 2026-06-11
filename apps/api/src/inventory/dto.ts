@@ -171,7 +171,7 @@ export class InventoryLocationResponseDto {
   name!: string;
 
   @ApiProperty({ required: false })
-  zones?: any[];
+  zones?: Record<string, unknown>[];
 }
 
 export class InventoryMovementResponseDto {

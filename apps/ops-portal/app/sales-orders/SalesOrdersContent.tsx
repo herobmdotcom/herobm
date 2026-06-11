@@ -41,9 +41,10 @@ export default function SalesOrdersContent() {
       field: 'stateCode',
       headerName: tCommon('columns.status'),
       width: 110,
-      valueFormatter: (params: any) => {
+      valueFormatter: (params: { value?: unknown }) => {
         if (!params.value) return '';
         const s = String(params.value).toLowerCase();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return tStates.has(s as any) ? tStates(s as any) : String(params.value);
       },
     },

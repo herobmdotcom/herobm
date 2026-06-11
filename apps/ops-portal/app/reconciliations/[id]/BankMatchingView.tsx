@@ -31,16 +31,16 @@ export default function BankMatchingView({
   onImportClick,
   refreshTrigger
 }: { 
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   reconciliation: Record<string, any>, 
   onUpdate: () => void,
   onQuickAdjustment: () => void,
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSplitEntry: (line: Record<string, any>) => void,
   onImportClick: () => void,
   refreshTrigger?: number
 }) {
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [bankLines, setBankLines] = useState<Record<string, any>[]>([]);
   const [unreconciledLines, setUnreconciledLines] = useState<UnreconciledLine[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,15 +121,19 @@ export default function BankMatchingView({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onBankSelectionChanged = (rows: any[]) => {
     setSelectedBankLines(new Set(rows.map(r => r.lineId)));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onJournalSelectionChanged = (rows: any[]) => {
     setSelectedJournalLines(new Set(rows.map(r => r.journalLineId)));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isBankRowSelectable = (node: any) => !node.data.isReconciled;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isJournalRowSelectable = (node: any) => !node.data.isCleared;
 
   const bankColumns = useMemo<ColDef[]>(() => [
@@ -137,9 +141,11 @@ export default function BankMatchingView({
       field: 'date', 
       headerName: t('date'), 
       width: 140, 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       checkboxSelection: (params: any) => !params.data.isReconciled, 
       headerCheckboxSelection: true,
       cellClass: 'overflow-visible-cell',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cellRenderer: (params: any) => {
         if (params.data.isReconciled) {
           return (
@@ -158,6 +164,7 @@ export default function BankMatchingView({
       headerName: t('amount'), 
       width: 140, 
       type: 'numericColumn',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       valueFormatter: (p: any) => p.value ? formatCurrency(p.value) : '' 
     },
     { 
@@ -167,6 +174,7 @@ export default function BankMatchingView({
       wrapText: true,
       autoHeight: true,
       cellStyle: { lineHeight: '1.4', padding: '8px 16px' },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cellRenderer: (params: any) => {
         const line = params.data;
         return (
@@ -186,9 +194,11 @@ export default function BankMatchingView({
       field: 'entryDate', 
       headerName: t('date'), 
       width: 140, 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       checkboxSelection: (params: any) => !params.data.isCleared, 
       headerCheckboxSelection: true,
       cellClass: 'overflow-visible-cell',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cellRenderer: (params: any) => {
         if (params.data.isCleared) {
           return (
@@ -207,7 +217,9 @@ export default function BankMatchingView({
       headerName: t('amount'), 
       width: 140, 
       type: 'numericColumn',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       valueGetter: (params: any) => Number(params.data.debit) - Number(params.data.credit),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       valueFormatter: (p: any) => formatCurrency(p.value) 
     },
     { 
@@ -217,7 +229,9 @@ export default function BankMatchingView({
       wrapText: true,
       autoHeight: true,
       cellStyle: { lineHeight: '1.4', padding: '8px 16px' },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       valueGetter: (params: any) => params.data.memo || params.data.entryMemo || 'Journal Entry',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cellRenderer: (params: any) => {
         const line = params.data;
         return (

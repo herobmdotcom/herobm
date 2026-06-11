@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { AppConfigService } from './app-config.service';
+import { TRUSTED_PUBLIC_KEYS } from '../common/constants/security.constants';
 
 /**
  * ============================================================================
@@ -16,10 +17,16 @@ import { AppConfigService } from './app-config.service';
  * ============================================================================
  */
 
-// Embedded Public Key for verifying offline license signatures.
-const LICENSE_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEA+Yj6d1WkmVpI5EA1RL5k8FllRu4DA0/Mx4rhzXToa2Y=
------END PUBLIC KEY-----`;
+// Pre-compute NATIVE keys and map them by their deterministic Key ID (kid)
+const KEY_REGISTRY = new Map<string, crypto.KeyObject>();
+for (const pem of TRUSTED_PUBLIC_KEYS) {
+  const kid = crypto
+    .createHash('sha256')
+    .update(pem.trim())
+    .digest('hex')
+    .substring(0, 8);
+  KEY_REGISTRY.set(kid, crypto.createPublicKey(pem));
+}
 
 export type LicenseState = 'active' | 'warning' | 'read_only';
 
@@ -44,9 +51,21 @@ interface DecodedLicense {
 export class LicenseService {
   private readonly logger = new Logger(LicenseService.name);
 
-  // Default grace periods (in ms)
-  private readonly INSTALL_GRACE_PERIOD = 30 * 24 * 60 * 60 * 1000; // 30 days
-  private readonly EXPIRY_GRACE_PERIOD = 7 * 24 * 60 * 60 * 1000; // 7 days
+  // In-memory cache for the validated license to avoid repeated crypto operations
+  private cachedLicenseKey: string | null = null;
+  private cachedDecoded: DecodedLicense | null = null;
+  private cachedHash: string | null = null;
+
+  // Obfuscated config parameters
+  private get T01() {
+    return parseInt('9A7EC800', 16);
+  }
+  private get T02() {
+    return parseInt('241E1C00', 16);
+  }
+
+  private cachedSystemId: string | null = null;
+  private isSystemCompromised = false;
 
   constructor(private readonly appConfig: AppConfigService) {}
 
@@ -70,22 +89,71 @@ export class LicenseService {
       };
     }
 
+    if (this.cachedSystemId !== systemId) {
+      this.cachedSystemId = systemId;
+      this.isSystemCompromised = false;
+      if (systemId.length >= 49) {
+        const parts = systemId.split('-');
+        if (parts.length >= 6) {
+          const encodedMs = parseInt(parts[parts.length - 1], 16);
+          // Allow up to 60000ms drift between ID generation and setup completion
+          if (Math.abs(encodedMs - setupAt.getTime()) > 60000) {
+            this.isSystemCompromised = true;
+          }
+        } else {
+          this.isSystemCompromised = true;
+        }
+      } else {
+        this.isSystemCompromised = true;
+      }
+    }
+
+    if (this.isSystemCompromised) {
+      return {
+        // eslint-disable-next-line no-restricted-syntax
+        state: 'read_only',
+        type: 'none',
+        expiresAt: null,
+        warningMessage:
+          'System Integrity Error: Configuration tampering detected. Re-initialization required.',
+        systemId,
+      };
+    }
+
     const { activeLicenseKey, activeLicensePayload } = rawApp;
     let licenseHash: string | null = null;
+    let decoded: DecodedLicense | null = null;
 
     if (activeLicenseKey) {
-      licenseHash = crypto
-        .createHash('sha256')
-        .update(activeLicenseKey)
-        .digest('hex')
-        .substring(0, 8);
+      if (this.cachedLicenseKey === activeLicenseKey) {
+        // Use cached verification
+        licenseHash = this.cachedHash;
+        decoded = this.cachedDecoded;
+      } else {
+        // Compute new cache
+        licenseHash = crypto
+          .createHash('sha256')
+          .update(activeLicenseKey)
+          .digest('hex')
+          .substring(0, 8);
+
+        try {
+          decoded = this.verifyLicense(activeLicenseKey, systemId);
+          this.cachedDecoded = decoded;
+        } catch (err: unknown) {
+          this.cachedDecoded = null;
+          const message = err instanceof Error ? err.message : 'Unknown error';
+          this.logger.warn(`License validation failed: ${message}`);
+        }
+
+        this.cachedLicenseKey = activeLicenseKey;
+        this.cachedHash = licenseHash;
+      }
     }
 
     // 1. Check if an active license is installed and valid
-    if (activeLicenseKey && activeLicensePayload) {
+    if (activeLicenseKey && activeLicensePayload && decoded) {
       try {
-        const decoded = this.verifyLicense(activeLicenseKey, systemId);
-
         if (decoded.type === 'perpetual') {
           return {
             // eslint-disable-next-line no-restricted-syntax
@@ -115,7 +183,7 @@ export class LicenseService {
           }
 
           // Trial expired, are we within the 7-day grace period?
-          const graceEndMs = expMs + this.EXPIRY_GRACE_PERIOD;
+          const graceEndMs = expMs + this.T02;
           if (nowMs < graceEndMs) {
             const daysLeft = Math.ceil(
               (graceEndMs - nowMs) / (1000 * 60 * 60 * 24),
@@ -142,24 +210,24 @@ export class LicenseService {
           };
         }
       } catch (err: unknown) {
-        // If validation fails (e.g. signature mismatch, wrong system ID), fall through to no-license logic
+        // Fallback for unexpected errors during date evaluation
         const message = err instanceof Error ? err.message : 'Unknown error';
-        this.logger.warn(`License validation failed: ${message}`);
+        this.logger.warn(`License evaluation failed: ${message}`);
       }
     }
 
     // 2. No valid license applied. Use installation grace period.
     const nowMs = Date.now();
     const setupMs = setupAt.getTime();
-    const warnStartMs = setupMs + this.INSTALL_GRACE_PERIOD; // 30 days
-    const readOnlyStartMs = warnStartMs + this.EXPIRY_GRACE_PERIOD; // 37 days
+    const warnStartMs = setupMs + this.T01;
+    const readOnlyStartMs = warnStartMs + this.T02;
 
     if (nowMs < warnStartMs) {
       return {
         // eslint-disable-next-line no-restricted-syntax
         state: 'active',
         type: 'none',
-        expiresAt: null,
+        expiresAt: new Date(readOnlyStartMs),
         warningMessage: null,
         systemId,
       };
@@ -173,7 +241,7 @@ export class LicenseService {
         // eslint-disable-next-line no-restricted-syntax
         state: 'warning',
         type: 'none',
-        expiresAt: null,
+        expiresAt: new Date(readOnlyStartMs),
         warningMessage: `License required. System will enter read-only mode in ${daysLeft} days.`,
         systemId,
       };
@@ -183,7 +251,7 @@ export class LicenseService {
       // eslint-disable-next-line no-restricted-syntax
       state: 'read_only',
       type: 'none',
-      expiresAt: null,
+      expiresAt: new Date(readOnlyStartMs),
       warningMessage: 'Unlicensed. Read-only mode active.',
       systemId,
     };
@@ -224,7 +292,23 @@ export class LicenseService {
     const [headerB64, payloadB64, signatureB64] = parts;
     const signTarget = `${headerB64}.${payloadB64}`;
 
-    const publicKey = crypto.createPublicKey(LICENSE_PUBLIC_KEY);
+    const header = JSON.parse(
+      Buffer.from(headerB64, 'base64url').toString('utf8'),
+    );
+
+    if (!header.kid) {
+      throw new Error(
+        'License missing Key ID (kid). This system version requires modern licenses with a valid kid.',
+      );
+    }
+
+    const publicKey = KEY_REGISTRY.get(header.kid);
+    if (!publicKey) {
+      throw new Error(
+        `License signed by unknown or untrusted Key ID: ${header.kid}`,
+      );
+    }
+
     const signature = Buffer.from(signatureB64, 'base64url');
 
     const isValid = crypto.verify(

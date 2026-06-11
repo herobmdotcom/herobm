@@ -1,7 +1,7 @@
 export interface EnrichmentResult {
   isValid: boolean;
-  // modbm-allow-record-any
-  data: Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: Record<string, unknown>;
 }
 
 export interface IEnrichmentProvider {
@@ -27,34 +27,34 @@ export interface IEnrichmentProvider {
    * @returns EnrichmentResult
    */
   lookup(
-    // modbm-allow-record-any
-    payload: string | Record<string, any>,
-    // modbm-allow-record-any
-    config?: Record<string, any>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    payload: string | Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    config?: Record<string, unknown>,
   ): Promise<EnrichmentResult>;
 
   /**
    * Return the JSON schema defining the required configuration for this provider.
    */
-  getConfigSchema(): any;
+  getConfigSchema(): Record<string, unknown>;
 
   /**
    * Optional: Record a formal transaction to the provider (for stateful API engines like tax providers)
    */
   recordTransaction?(
-    // modbm-allow-record-any
-    payload: Record<string, any>,
-    // modbm-allow-record-any
-    config?: Record<string, any>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    payload: Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    config?: Record<string, unknown>,
   ): Promise<EnrichmentResult>;
 
   /**
    * Optional: Reverse a previously recorded formal transaction
    */
   recordRefund?(
-    // modbm-allow-record-any
-    payload: Record<string, any>,
-    // modbm-allow-record-any
-    config?: Record<string, any>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    payload: Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    config?: Record<string, unknown>,
   ): Promise<EnrichmentResult>;
 }

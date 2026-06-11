@@ -83,6 +83,7 @@ export class OrdersService implements OnModuleInit {
         SALES_ORDER_STATE.SHIPPED,
         SALES_ORDER_STATE.INVOICED,
         SALES_ORDER_STATE.LEGACY,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ] as any[]),
     );
     return conditions;
@@ -92,6 +93,7 @@ export class OrdersService implements OnModuleInit {
     const conditions = this.getSalesPerformanceConditions(filters);
     const drillDown = filters.drillDown as string | undefined;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const selectCols: any = {
       customerId: coreAccounts.customerId,
       customerName: coreAccounts.name,
@@ -99,6 +101,7 @@ export class OrdersService implements OnModuleInit {
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const groupCols: any[] = [coreAccounts.customerId, coreAccounts.name];
 
     if (drillDown === 'product') {
@@ -148,6 +151,7 @@ export class OrdersService implements OnModuleInit {
     const conditions = this.getSalesPerformanceConditions(filters);
     const drillDown = filters.drillDown as string | undefined;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const selectCols: any = {
       productId: products.productId,
       productNumber: products.productNumber,
@@ -156,6 +160,7 @@ export class OrdersService implements OnModuleInit {
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const groupCols: any[] = [
       products.productId,
       products.productNumber,
@@ -201,6 +206,7 @@ export class OrdersService implements OnModuleInit {
     const conditions = this.getSalesPerformanceConditions(filters);
     const drillDown = filters.drillDown as string | undefined;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const selectCols: any = {
       productGroupId: productGroups.productGroupId,
       productGroupName: productGroups.name,
@@ -208,6 +214,7 @@ export class OrdersService implements OnModuleInit {
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const groupCols: any[] = [productGroups.productGroupId, productGroups.name];
 
     if (drillDown === 'product') {
@@ -258,13 +265,17 @@ export class OrdersService implements OnModuleInit {
     const period = getAggregationPeriod(filters);
     const periodSql = getAggregationSql(salesOrders.createdOn, period);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const selectCols: any = {
       period: periodSql,
       orderCount: sql<number>`count(distinct ${salesOrders.salesOrderId})::integer`,
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
-    const groupCols: any[] = [periodSql];
+    const groupCols: (
+      | import('drizzle-orm').SQL
+      | import('drizzle-orm/pg-core').PgColumn
+    )[] = [periodSql];
 
     if (drillDown === 'product') {
       selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
@@ -318,14 +329,20 @@ export class OrdersService implements OnModuleInit {
     const conditions = this.getSalesPerformanceConditions(filters);
     const drillDown = filters.drillDown as string | undefined;
 
-    const selectCols: any = {
+    const selectCols: Record<
+      string,
+      import('drizzle-orm').SQL | import('drizzle-orm/pg-core').PgColumn
+    > = {
       createdBy: sql<string>`COALESCE(${salesOrders.createdBy}, 'System')`,
       source: salesOrders.source,
       orderCount: sql<number>`count(distinct ${salesOrders.salesOrderId})::integer`,
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
-    const groupCols: any[] = [
+    const groupCols: (
+      | import('drizzle-orm').SQL
+      | import('drizzle-orm/pg-core').PgColumn
+    )[] = [
       sql`COALESCE(${salesOrders.createdBy}, 'System')`,
       salesOrders.source,
     ];
@@ -419,9 +436,19 @@ export class OrdersService implements OnModuleInit {
 
     if (states && states.length > 0) {
       if (states.length === 1) {
-        conditions.push(eq(salesOrders.stateCode, states[0] as any));
+        conditions.push(
+          eq(
+            salesOrders.stateCode,
+            states[0] as NonNullable<typeof salesOrders.$inferInsert.stateCode>,
+          ),
+        );
       } else {
-        conditions.push(inArray(salesOrders.stateCode, states as any[]));
+        conditions.push(
+          inArray(
+            salesOrders.stateCode,
+            states as NonNullable<typeof salesOrders.$inferInsert.stateCode>[],
+          ),
+        );
       }
     }
 

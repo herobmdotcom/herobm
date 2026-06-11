@@ -75,19 +75,20 @@ export default function PaymentsContent() {
       field: 'paymentType', 
       headerName: 'Type', 
       width: 150, 
-      cellRenderer: (params: any) => {
+      cellRenderer: (params: { data?: UnifiedPayment }) => {
         if (!params.data || !params.data.paymentType) return '';
         return t(('manager.options.' + params.data.paymentType.replace(/_([a-z])/g, (g: string) => g[1].toUpperCase())) as Parameters<typeof t>[0]);
       } 
     },
-    { field: 'partyName', headerName: 'Party', width: 200, valueFormatter: (params: any) => params.value || '—' },
+    { field: 'partyName', headerName: 'Party', width: 200, valueFormatter: (params: { value?: unknown }) => (params.value as string) || '—' },
     {
       field: 'stateCode',
       headerName: 'Status',
       width: 110,
-      valueFormatter: (params: any) => {
+      valueFormatter: (params: { value?: unknown }) => {
         if (!params.value) return '';
         const s = String(params.value).toLowerCase();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return tStates.has(s as any) ? tStates(s as any) : String(params.value);
       },
     },
@@ -156,6 +157,7 @@ export default function PaymentsContent() {
       const response = await api.paymentsControllerExportAba({ paymentIds: selectedPayments.map(p => p.paymentId) });
       
       // Download the file
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const blob = new Blob([(response as any)?.fileContent], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -179,6 +181,7 @@ export default function PaymentsContent() {
     try {
       const response = await api.paymentsControllerExportNacha({ paymentIds: selectedPayments.map(p => p.paymentId) });
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const blob = new Blob([(response as any)?.fileContent], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');

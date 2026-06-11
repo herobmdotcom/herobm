@@ -5,6 +5,7 @@ import { RETURN_STATE } from '@modbm/shared';
 
 describe('OrderReturnsController', () => {
   let controller: OrderReturnsController;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let returnsService: any;
 
   const mockReturn = {
@@ -65,6 +66,7 @@ describe('OrderReturnsController', () => {
       };
       const result = await controller.createReturn(
         'uuid-1',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         body as any,
         mockUser,
       );
@@ -116,6 +118,7 @@ describe('OrderReturnsController', () => {
       const result = await controller.changeReturnState(
         'uuid-1',
         'ret-uuid-1',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         { stateCode: RETURN_STATE.CONFIRMED } as any,
         mockUser,
       );
@@ -139,6 +142,7 @@ describe('OrderReturnsController', () => {
       const result = await controller.addReturnLine(
         'uuid-1',
         'ret-uuid-1',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         body as any,
         mockUser,
       );

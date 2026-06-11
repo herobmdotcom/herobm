@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import JournalEntrySlideOver, { JournalEntry } from './journal-entries/JournalEntrySlideOver';
 import CodesModal from './CodesModal';
 import DataGrid from '@/components/DataGrid';
-import type { ColDef } from 'ag-grid-community';
+import type { ColDef, ValueFormatterParams, ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
 
 interface AccountOption {
   accountCode: string;
@@ -108,7 +108,7 @@ export default function GeneralLedgerContent() {
       field: 'entryDate', 
       headerName: t('columns.date'), 
       width: 120,
-      valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : ''
+      valueFormatter: (p: ValueFormatterParams<GlEntry>) => p.value ? new Date(p.value as string).toLocaleDateString() : ''
     },
     { 
       field: 'entryNumber', 
@@ -121,11 +121,11 @@ export default function GeneralLedgerContent() {
       field: 'accountCode',
       headerName: t('columns.glAccount'),
       width: 250,
-      cellRenderer: (p: any) => {
+      cellRenderer: (p: ICellRendererParams<GlEntry>) => {
         return (
           <span>
             <span className="font-mono text-gray-400 mr-2">{p.value}</span>
-            {p.data.accountName}
+            {p.data?.accountName}
           </span>
         );
       }
@@ -135,21 +135,21 @@ export default function GeneralLedgerContent() {
       headerName: t('columns.memo'), 
       flex: 1, 
       minWidth: 200,
-      valueGetter: (p: any) => p.data.lineMemo || p.data.entryMemo || ''
+      valueGetter: (p: ValueGetterParams<GlEntry>) => p.data?.lineMemo || p.data?.entryMemo || ''
     },
     { 
       field: 'debit', 
       headerName: t('columns.debit'), 
       width: 120,
       cellClass: 'text-right font-mono',
-      valueFormatter: (p: any) => fmt(p.value)
+      valueFormatter: (p: ValueFormatterParams<GlEntry>) => fmt(p.value as string | number)
     },
     { 
       field: 'credit', 
       headerName: t('columns.credit'), 
       width: 120,
       cellClass: 'text-right font-mono',
-      valueFormatter: (p: any) => fmt(p.value)
+      valueFormatter: (p: ValueFormatterParams<GlEntry>) => fmt(p.value as string | number)
     }
   ], [t, tCommon]);
 

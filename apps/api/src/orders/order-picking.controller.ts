@@ -36,7 +36,7 @@ import {
   PickingSummaryPickDto,
 } from './dto';
 
-@ApiTags('Orders')
+@ApiTags('Warehouse')
 @Controller('sales-orders')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_ORDERS)

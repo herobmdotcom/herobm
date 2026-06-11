@@ -41,13 +41,16 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
       api.inventoryControllerFindAllLocations()
         .then((res) => {
           const locs = res.data || [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const loc = locs.find((l: any) => l.code === locNo) as any;
           if (loc && loc.zones) {
             const availableBins: typeof bins = [];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             loc.zones.forEach((z: any) => {
               // Block moving into system handling bins
               if (z.code === 'HANDLING') return;
               if (z.bins) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 z.bins.forEach((b: any) => {
                   availableBins.push({ ...b, zoneCode: z.code });
                 });

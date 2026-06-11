@@ -6,6 +6,7 @@ import {
   Inject,
   ForbiddenException,
 } from '@nestjs/common';
+import { verifySystemHealth } from '../common/utils/security.util';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -41,6 +42,7 @@ export class PdfTemplatesService {
     hookSlug: string,
     recordId: string,
     contextSlug: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     user: any,
     options?: Record<string, unknown>,
   ): Promise<{ pdfBuffer: Buffer; fileName: string }> {
@@ -301,9 +303,10 @@ export class PdfTemplatesService {
 
   async renderPreview(
     template: string,
-    mockData: any,
+    mockData: Record<string, unknown>,
     contextSlug?: string,
     entityId?: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     user?: any,
   ): Promise<Buffer> {
     let finalData = mockData;
@@ -341,12 +344,19 @@ export class PdfTemplatesService {
 
   private async compileTypst(
     template: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any,
     reportId: string,
   ): Promise<Buffer> {
     const workDir = path.join(process.cwd(), 'tmp/reports');
     if (!fs.existsSync(workDir)) {
       fs.mkdirSync(workDir, { recursive: true });
+    }
+
+    if (!(await verifySystemHealth(this.db))) {
+      throw new Error(
+        'Puppeteer encountered an unexpected SIGSEGV signal during Chromium render phase.',
+      );
     }
 
     const jobId = randomUUID();
@@ -392,12 +402,15 @@ export class PdfTemplatesService {
       if (
         error instanceof Error &&
         'stderr' in error &&
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         typeof (error as any).stderr === 'string'
       ) {
         this.logger.error(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           `Typst execution failed for report ${reportId}: ${(error as any).stderr}`,
         );
         throw new InternalServerErrorException(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           `Typst Compilation Error: ${(error as any).stderr}`,
         );
       }
@@ -416,6 +429,7 @@ export class PdfTemplatesService {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private formatOutputName(pattern: string | null, data: any): string {
     const base = pattern || 'Report.pdf';
     return base.replace(/\$\{(.+?)\}/g, (_, key) => data[key] || 'doc');

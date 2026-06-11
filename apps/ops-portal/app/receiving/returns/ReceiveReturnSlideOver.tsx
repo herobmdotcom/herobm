@@ -14,6 +14,7 @@ export default function ReceiveReturnSlideOver({
 }: {
     isOpen: boolean;
     onClose: () => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     returnRecord: any | null;
     onRefresh: () => void;
 }) {
@@ -39,13 +40,15 @@ export default function ReceiveReturnSlideOver({
         setSaving(true);
         try {
             const linesToReceive = returnRecord.lines
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .map((line: any) => ({
                     returnLineId: line.returnLineId,
                     quantityReceived: lineQuantities[line.returnLineId] || '0',
                 }))
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .filter((l: any) => parseFloat(l.quantityReceived) > 0);
 
-            if ((linesToReceive as any[]).length > 0) {
+            if (linesToReceive.length > 0) {
                 await api.orderReturnsControllerReceiveReturn((returnRecord.salesOrderId as string), (returnRecord.returnId as string), {
                     locationId: (returnRecord.locationId as string),
                     lines: linesToReceive
@@ -62,6 +65,7 @@ export default function ReceiveReturnSlideOver({
         }
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const hasInvalidQuantities = (returnRecord.lines || []).some((l: any) => {
         const val = parseFloat(lineQuantities[l.returnLineId] || '0');
         const max = parseFloat(l.quantityReturned) - parseFloat(l.quantityReceived || '0');
@@ -113,6 +117,7 @@ export default function ReceiveReturnSlideOver({
                     </tr>
                 </thead>
                 <tbody>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     {(returnRecord.lines || []).map((line: any) => (
                         <tr key={line.returnLineId}>
                             <td className="text-sm font-semibold">

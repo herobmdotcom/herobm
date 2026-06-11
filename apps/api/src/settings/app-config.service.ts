@@ -49,7 +49,12 @@ export class AppConfigService implements OnModuleInit {
 
       // Auto-generate systemIdentifier if it doesn't exist yet (backfill)
       if (app && !app.systemIdentifier) {
-        const newId = globalThis.crypto.randomUUID();
+        const timeHex = (
+          app.setupCompletedAt ? app.setupCompletedAt.getTime() : Date.now()
+        )
+          .toString(16)
+          .padStart(12, '0');
+        const newId = `${globalThis.crypto.randomUUID()}-${timeHex}`;
         const [updated] = await this.db
           .update(appSettings)
           .set({ systemIdentifier: newId })

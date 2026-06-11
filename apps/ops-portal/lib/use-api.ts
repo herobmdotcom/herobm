@@ -8,8 +8,8 @@ import { reportError } from './api';
  * @param fetcher The SDK function returning a Promise with { data: T }
  * @param config Optional SWR configuration
  */
-export function useApi<T, E = any>(
-  key: string | any[] | null,
+export function useApi<T, E = unknown>(
+  key: string | unknown[] | null,
   fetcher: () => Promise<{ data: T }>,
   config?: SWRConfiguration<T, E>
 ): SWRResponse<T, E> {

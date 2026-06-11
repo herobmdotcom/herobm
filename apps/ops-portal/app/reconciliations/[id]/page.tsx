@@ -17,6 +17,7 @@ import { useTranslations } from 'next-intl';
 import BankMatchingView from './BankMatchingView';
 import { getErrorMessage } from '@modbm/shared';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ToggleCell = (p: any) => {
   const t = useTranslations('gl.reconciliations');
   const data = p.data;
@@ -70,7 +71,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
   const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [previewData, setPreviewData] = useState<api.AutoMatchResponseDto | null>(null);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedRow, setSelectedRow] = useState<Record<string, any> | null>(null);
 
   const fetchDetails = useCallback(async () => {
@@ -177,6 +178,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
         field: 'partyName', 
         headerName: t('columns.party'), 
         width: 150,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         valueGetter: (p: any) => p.data?.partyName || p.data?.partyId || ''
       },
       { field: 'memo', headerName: t('columns.memo'), flex: 1 },
@@ -248,6 +250,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
                         reconciliationId: reconciliation.reconciliationId,
                         dryRun: true,
                       });
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       const data = res.data as any;
                       if (data.autoMatchedCount > 0 || data.smartMatchedCount > 0) {
                         setPreviewData(data);

@@ -11,6 +11,7 @@ import { eq } from 'drizzle-orm';
 describe('Webhooks & API Keys (e2e)', () => {
   let app: INestApplication;
   let db: DrizzleDB;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let server: any;
   const rawKey = 'super-secret-test-key-' + Date.now();
 
@@ -101,6 +102,7 @@ describe('Webhooks & API Keys (e2e)', () => {
         .expect(200);
 
       expect(Array.isArray(res.body)).toBe(true);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(res.body.some((w: any) => w.webhookId === webhookId)).toBe(true);
     });
 

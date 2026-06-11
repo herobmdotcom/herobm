@@ -36,7 +36,7 @@ import {
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
-@ApiTags('Users')
+@ApiTags('System')
 @Controller('users')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.USERS)

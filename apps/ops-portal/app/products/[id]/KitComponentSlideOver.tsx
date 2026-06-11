@@ -12,7 +12,7 @@ interface KitComponentSlideOverProps {
   onClose: () => void;
   productId: string;
   componentId?: string;
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   existingData?: Record<string, any>;
   onSaved: () => void;
 }
@@ -51,7 +51,9 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
       } else {
         // Fetch existing components to determine next sequence number
         api.productsControllerGetComponents(productId)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .then((res: any) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const maxSeq = res.data?.reduce((max: number, c: any) => Math.max(max, c.sequenceNumber || 0), 0) || 0;
             setDto({
               childProductId: '',
@@ -90,6 +92,7 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
           parentQuantity: dto.parentQuantity,
           quantity: dto.quantity,
           sequenceNumber: parseInt(dto.sequenceNumber, 10),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           fractionalBehavior: dto.fractionalBehavior as any,
         } );
         toast.success(t('toast.componentUpdated'));
@@ -99,6 +102,7 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
           parentQuantity: dto.parentQuantity,
           quantity: dto.quantity,
           sequenceNumber: parseInt(dto.sequenceNumber, 10),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           fractionalBehavior: dto.fractionalBehavior as any,
         });
         toast.success(t('toast.componentAdded'));

@@ -47,7 +47,7 @@ import {
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
-@ApiTags('Inventory')
+@ApiTags('Warehouse')
 @Controller('inventory')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.INVENTORY)

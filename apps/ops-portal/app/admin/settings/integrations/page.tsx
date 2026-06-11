@@ -16,7 +16,7 @@ interface ProviderConfig {
   name: string;
   type?: 'enrichment' | 'tax_engine';
   supportedCountries?: string[] | 'global';
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   schema: Record<string, any>;
 }
 
@@ -34,7 +34,7 @@ export default function IntegrationsSettingsPage() {
   const [providers, setProviders] = useState<ProviderConfig[]>([]);
   
   const [expandedProvider, setExpandedProvider] = useState<string | null>(null);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [configData, setConfigData] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(false);
@@ -62,6 +62,7 @@ export default function IntegrationsSettingsPage() {
       ]);
       setProviders((provRes.data as unknown as ProviderConfig[]) || []);
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const config = configRes.data as any;
       setAppConfig(config);
       
@@ -97,7 +98,9 @@ export default function IntegrationsSettingsPage() {
     });
 
     return {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       taxProviderMappings: newTaxMappings as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       enrichmentProviderMappings: newEnrichmentMappings as any
     };
   };
@@ -172,7 +175,7 @@ export default function IntegrationsSettingsPage() {
     try {
       setLoadingConfig(true);
       const res = await api.enrichmentControllerGetConfig({ provider: provider.name });
-      // modbm-allow-record-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = (res.data as Record<string, any>) || {};
       setConfigData(data);
       if (data.testPayload) {
@@ -228,10 +231,12 @@ export default function IntegrationsSettingsPage() {
       if (isJson && typeof payload === 'object') {
         const res = await api.enrichmentControllerTestLookupPost({ payload }, { provider: providerName });
         // The API returns 200/201 but the payload might indicate a provider error via isValid
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const isSuccess = res.data?.isValid !== false && !(res.data?.data as any)?.error;
         setTestResult({ success: isSuccess, data: res.data });
       } else {
         const res = await api.enrichmentControllerTestLookup({ provider: providerName, query: testPayload });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const isSuccess = res.data?.isValid !== false && !(res.data?.data as any)?.error;
         setTestResult({ success: isSuccess, data: res.data });
       }
@@ -239,7 +244,7 @@ export default function IntegrationsSettingsPage() {
       if (testPayload.trim()) {
          try {
            const currentConfigRes = await api.enrichmentControllerGetConfig({ provider: providerName });
-           // modbm-allow-record-any
+           // eslint-disable-next-line @typescript-eslint/no-explicit-any
            const currentData = (currentConfigRes.data as Record<string, any>) || {};
            await api.enrichmentControllerUpdateConfig(
              { ...currentData, testPayload },
@@ -449,6 +454,7 @@ export default function IntegrationsSettingsPage() {
                                   const displaySchema = { ...p.schema };
                                   if (displaySchema.properties) {
                                     displaySchema.properties = { ...displaySchema.properties };
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     delete (displaySchema.properties as any).testPayload;
                                   }
                                   return (

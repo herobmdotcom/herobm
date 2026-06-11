@@ -2,6 +2,7 @@ import { withCursorPagination, encodeCursor } from './pagination';
 
 describe('withCursorPagination', () => {
   // Mock Drizzle QueryBuilder
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const createMockQb = (mockRows: any[]) => {
     return {
       limit: jest.fn().mockImplementation(function () {
@@ -12,6 +13,7 @@ describe('withCursorPagination', () => {
 
   const applyWhere = jest.fn((q) => q);
   const applyOrderBy = jest.fn((q) => q);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const encodeRow = (row: any) => ({ id: row.id });
 
   beforeEach(() => {

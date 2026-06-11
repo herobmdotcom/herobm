@@ -18,15 +18,18 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
   const [slideOverState, setSlideOverState] = useState<{
     isOpen: boolean;
     componentId?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     existingData?: any;
   }>({ isOpen: false });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: any[] = [
     { field: 'sequenceNumber', headerName: '#', width: 60 },
     { field: 'productNumber', headerName: t('columns.productNumber'), width: 150 },
     { field: 'name', headerName: t('columns.name'), flex: 1 },
     { field: 'parentQuantity', headerName: t('columns.parentQuantity'), type: 'numericColumn', width: 120 },
     { field: 'quantity', headerName: t('columns.quantity'), type: 'numericColumn', width: 120 },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     { field: 'fractionalBehavior', headerName: 'Fraction Rule', width: 150, valueFormatter: (p: any) => p.value?.replace('_', ' ') || '' },
     { field: 'baseUom', headerName: t('columns.baseUom'), width: 100 },
     ...(isEditable ? [{
@@ -35,6 +38,7 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
       width: 150,
       sortable: false,
       filter: false,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cellRenderer: (params: any) => params.data ? (
         <div className="flex gap-1 items-center h-full">
           <button className="btn btn-sm btn-ghost min-h-0 h-8 px-2 text-[#006b5c] hover:bg-[#006b5c]/10" onClick={() => handleEdit(params.data)} title={tCommon('edit')}>
@@ -50,6 +54,7 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
     }] : [])
   ];
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleEdit = (row: any) => {
     setSlideOverState({
       isOpen: true,
@@ -58,6 +63,7 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDelete = async (row: any) => {
     if (!window.confirm(t('confirmRemoveComponent'))) return;
     try {

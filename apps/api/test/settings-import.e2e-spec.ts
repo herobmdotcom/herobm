@@ -77,9 +77,11 @@ describe('Settings Import (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const cc1 = listRes.body.find((c: any) => c.code === 'E2E_CC1');
       expect(cc1.name).toBe('E2E CC1 Updated');
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const cc3 = listRes.body.find((c: any) => c.code === 'E2E_CC3');
       expect(cc3).toBeDefined();
     });
@@ -110,6 +112,7 @@ describe('Settings Import (e2e)', () => {
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const act1 = listRes.body.find((a: any) => a.code === 'E2E_ACT1');
       expect(act1.name).toBe('E2E ACT1 UPDATED');
     });

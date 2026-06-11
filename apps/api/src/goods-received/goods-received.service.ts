@@ -89,7 +89,10 @@ export class GoodsReceivedService {
    *
    * Auto-matches each line to open PO lines for the same supplier + product.
    */
-  async create(createDto: any, userId: string) {
+  async create(
+    createDto: import('./dto').CreateGoodsReceivedDto,
+    userId: string,
+  ) {
     return await this.db.transaction(async (tx) => {
       // 1. Validate vendor and fetch group dimensions
       const [vendor] = await tx
@@ -134,14 +137,16 @@ export class GoodsReceivedService {
           locationId: createDto.locationId,
           packingSlipNumber: createDto.packingSlipNumber,
           notes: createDto.notes,
-          stateCode: RECEIPT_STATE.RECEIVED as any,
+          stateCode: RECEIPT_STATE.RECEIVED as string,
           createdBy: userId,
         })
         .returning();
 
       // 4. Process lines with auto-matching
       if (createDto.lines && createDto.lines.length > 0) {
-        const lineValues = [];
+        const lineValues: (typeof goodsReceivedLines.$inferInsert & {
+          unitCost: string | null;
+        })[] = [];
 
         for (const line of createDto.lines) {
           // Validate product
@@ -213,12 +218,17 @@ export class GoodsReceivedService {
             purchaseOrderLineId: matchedPoLineId,
             purchaseOrderId: matchedPoId,
             unitCost: unitCost, // Use for valuation, filtered out during insert
-          } as any);
+          });
         }
 
         await tx
           .insert(goodsReceivedLines)
-          .values(lineValues.map(({ unitCost, ...rest }: any) => rest));
+          .values(
+            lineValues.map(
+              ({ unitCost, ...rest }) =>
+                rest as typeof goodsReceivedLines.$inferInsert,
+            ),
+          );
 
         // --- 5. Inventory Impact: Place items into RECEIVING bin ---
         // Find or create RECEIVING zone/bin
@@ -368,7 +378,7 @@ export class GoodsReceivedService {
 
         if (glResult) {
           await this.glService.postJournalEntry(
-            glResult.lines as any,
+            glResult.lines as Parameters<GlService['postJournalEntry']>[0],
             {
               actor: userId,
               entryDate: new Date().toISOString().slice(0, 10),
@@ -385,6 +395,8 @@ export class GoodsReceivedService {
           (l) => l.matchStatus === MATCH_STATUS.MATCHED,
         );
         for (const ml of matchedLines) {
+          if (!ml.purchaseOrderLineId) continue;
+
           await tx
             .update(purchaseOrderLineItems)
             .set({
@@ -461,7 +473,7 @@ export class GoodsReceivedService {
           // Trigger the lifecycle engine instead of hardcoded updates
           try {
             await evaluatePOLifecycleRules(
-              tx as any,
+              tx as Parameters<typeof emitEvent>[0],
               poId,
               {
                 entity: 'goods_receipt',
@@ -629,7 +641,7 @@ export class GoodsReceivedService {
           }));
 
           await this.glService.postJournalEntry(
-            reversedLines as any,
+            reversedLines as Parameters<GlService['postJournalEntry']>[0],
             {
               actor: userId,
               entryDate: new Date().toISOString().slice(0, 10),
@@ -763,7 +775,7 @@ export class GoodsReceivedService {
       .where(eq(goodsReceived.goodsReceivedId, receiptId))
       .returning();
 
-    await emitEvent(tx as any, {
+    await emitEvent(tx as Parameters<typeof emitEvent>[0], {
       entityType: EntityType.WAREHOUSE,
       entityId: receiptId,
       eventType: EventType.RECEIPT_STATUS_CHANGED,
@@ -854,7 +866,7 @@ export class GoodsReceivedService {
         );
       },
       encodeRow: (row) => ({
-        createdOn: row.receipt.createdOn.toISOString(),
+        createdOn: (row.receipt.createdOn || new Date()).toISOString(),
         id: row.receipt.goodsReceivedId,
       }),
     });
@@ -943,7 +955,14 @@ export class GoodsReceivedService {
 
     if (putawayStatus) {
       conditions.push(
-        eq(goodsReceivedLines.putawayStatus, putawayStatus as any),
+        eq(
+          goodsReceivedLines.putawayStatus,
+          putawayStatus as
+            | 'awaiting_matching'
+            | 'pending_putaway'
+            | 'quarantined'
+            | 'completed',
+        ),
       );
     }
 
@@ -1226,7 +1245,12 @@ export class GoodsReceivedService {
   /**
    * Get a single goods receipt with all lines.
    */
-  async findOne(id: string, tx: any = this.db) {
+  async findOne(
+    id: string,
+    tx:
+      | DrizzleDB
+      | Parameters<Parameters<DrizzleDB['transaction']>[0]>[0] = this.db,
+  ) {
     const receipt = await tx
       .select({
         receipt: goodsReceived,
@@ -1237,7 +1261,15 @@ export class GoodsReceivedService {
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
       .where(eq(goodsReceived.goodsReceivedId, id))
       .limit(1)
-      .then((res: any[]) => res[0]);
+      .then(
+        (
+          res: {
+            receipt: typeof goodsReceived.$inferSelect;
+            vendorName: string | null;
+            vendorNumber: string | null;
+          }[],
+        ) => res[0],
+      );
 
     if (!receipt) {
       throw new NotFoundException(`Goods receipt ${id} not found`);
@@ -1318,7 +1350,13 @@ export class GoodsReceivedService {
           PURCHASE_ORDER_STATE.INVOICED,
           PURCHASE_ORDER_STATE.CANCELLED,
           PURCHASE_ORDER_STATE.CLOSED_SHORT,
-        ].includes(poLine.stateCode as any)
+        ].includes(
+          poLine.stateCode as
+            | 'cancelled'
+            | 'invoiced'
+            | 'received'
+            | 'closed_short',
+        )
       ) {
         throw new BadRequestException(
           `Cannot match to a PO in '${poLine.stateCode}' state.`,
@@ -1443,7 +1481,14 @@ export class GoodsReceivedService {
 
       await this.purchaseOrdersService.changePurchaseOrderState(
         poLine.poId,
-        newState as any,
+        newState as
+          | 'cancelled'
+          | 'invoiced'
+          | 'received'
+          | 'closed_short'
+          | 'draft'
+          | 'ordered'
+          | 'partially_received',
         userId,
         tx,
       );
@@ -1595,7 +1640,14 @@ export class GoodsReceivedService {
 
       await this.purchaseOrdersService.changePurchaseOrderState(
         poLine.poId,
-        newState as any,
+        newState as
+          | 'cancelled'
+          | 'invoiced'
+          | 'received'
+          | 'closed_short'
+          | 'draft'
+          | 'ordered'
+          | 'partially_received',
         userId,
         tx,
       );

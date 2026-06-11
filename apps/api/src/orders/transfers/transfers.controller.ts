@@ -43,7 +43,7 @@ import type { JwtUser } from '../../auth/auth-user.decorator';
 
 import { ApiFieldMask } from '../../common/decorators/api-field-mask.decorator';
 
-@ApiTags('Orders')
+@ApiTags('Transfer Orders')
 @Controller('transfers')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_ORDERS)

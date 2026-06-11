@@ -46,7 +46,7 @@ import {
   RandomIdData,
 } from './dto';
 
-@ApiTags('Reports')
+@ApiTags('System')
 @Controller('pdf-templates')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.REPORT)
@@ -243,7 +243,8 @@ export class PdfTemplatesController {
   ) {
     const pdfBuffer = await this.pdfTemplatesService.renderPreview(
       body.template,
-      body.mockData,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      body.mockData as any,
       body.hookSlug,
       body.entityId,
       user,

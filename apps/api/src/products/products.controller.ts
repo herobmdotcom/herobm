@@ -189,6 +189,7 @@ export class ProductsController {
   ) {
     return this.productsWriteService.addUom(
       productId,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       dto as any,
       user.username,
     );
@@ -225,6 +226,7 @@ export class ProductsController {
   ) {
     return this.productsWriteService.linkDefaultBin(
       productId,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       dto as any,
       user.username,
     );
@@ -273,6 +275,7 @@ export class ProductsController {
   ) {
     return this.productsWriteService.addComponent(
       productId,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       dto as any,
       user.username,
     );
@@ -296,6 +299,7 @@ export class ProductsController {
     return this.productsWriteService.updateComponent(
       productId,
       componentId,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       dto as any,
       user.username,
     );

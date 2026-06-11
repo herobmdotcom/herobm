@@ -23,7 +23,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
   const [fields, setFields] = useState<FieldDef[]>([]);
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
   const [editingSnapshot, setEditingSnapshot] = useState<FieldDef | null>(null);
-  const lastEmittedSchema = React.useRef<any>(value);
+  const lastEmittedSchema = React.useRef<Record<string, unknown>>(value);
 
   // Parse incoming JSON schema on mount or when value changes externally
   useEffect(() => {
@@ -42,6 +42,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
     const properties = value.properties || {};
     const requiredList = Array.isArray(value.required) ? value.required : [];
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const newFields: FieldDef[] = Object.entries(properties).map(([k, schema]: [string, any]) => {
       let type: FieldDef['type'] = 'string';
       if (schema.enum) type = 'enum';
@@ -63,7 +64,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
   }, [value]);
 
   const updateSchema = (newFields: FieldDef[]) => {
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const properties: Record<string, any> = {};
     const required: string[] = [];
 

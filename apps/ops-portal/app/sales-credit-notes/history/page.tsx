@@ -13,22 +13,27 @@ export default function CreditNotesHistoryPage() {
     const tStates = useTranslations('common.states');
     useDocumentTitle('Credit Notes Ledger');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleRowClicked = useCallback((row: any) => {
         // Future feature: show credit note details
     }, []);
 
     const gridEndpoint = `/api/sales-credit-notes`;
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const gridColumns: any[] = [
         { field: 'creditNoteId', headerName: 'ID', hide: true },
         { field: 'creditNoteNumber', headerName: 'CN Number', width: 180 },
-        { field: 'createdOn', headerName: tCommon('columns.date'), width: 160, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { field: 'createdOn', headerName: tCommon('columns.date'), width: 160, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
         { field: 'notes', headerName: 'Notes', flex: 1, minWidth: 200 },
         { field: 'totalAmount', headerName: 'Total Credit', type: 'numericColumn', width: 150,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             valueGetter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
                 if (!params.data?.totalAmount) return null;
                 return parseFloat(params.data.totalAmount);
             },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
                 if (!params.value || params.value === 0) return '—';
                 return formatAmount(params.value, params.data?.currencyCode || baseCurrency);
@@ -38,9 +43,11 @@ export default function CreditNotesHistoryPage() {
             field: 'stateCode', 
             headerName: tCommon('columns.state'), 
             width: 140,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
                 if (!params.value) return '';
                 const s = String(params.value).toLowerCase();
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 return tStates.has(s as any) ? tStates(s as any) : String(params.value);
             }
         },

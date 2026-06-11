@@ -5,7 +5,7 @@ import { formatAmount } from '@/lib/currency';
 interface PartialAllocationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   invoice: Record<string, any> | null;
   currencyCode: string;
   maxAvailable: number; // The maximum amount that can be allocated (lesser of payment remaining or invoice outstanding)

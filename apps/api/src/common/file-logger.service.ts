@@ -1,6 +1,7 @@
 import { ConsoleLogger, Injectable } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as util from 'util';
 
 @Injectable()
 export class FileLoggerService extends ConsoleLogger {
@@ -20,20 +21,22 @@ export class FileLoggerService extends ConsoleLogger {
     this.logFilePath = path.join(logDir, filename);
   }
 
-  private appendLog(level: string, message: any, context?: string) {
+  private appendLog(level: string, message: unknown, context?: string) {
     const timestamp = new Date().toISOString();
     const ctx = context || this.context;
 
     // Attempt to stringify objects securely
     let msgStr = '';
-    if (typeof message === 'object') {
+    if (typeof message === 'string') {
+      msgStr = message;
+    } else if (message instanceof Error) {
+      msgStr = message.stack || message.message;
+    } else {
       try {
         msgStr = JSON.stringify(message);
       } catch {
-        msgStr = String(message);
+        msgStr = util.inspect(message);
       }
-    } else {
-      msgStr = String(message);
     }
 
     const logLine = `[${timestamp}] [${level.toUpperCase()}] [${ctx}] ${msgStr}\n`;
@@ -58,27 +61,29 @@ export class FileLoggerService extends ConsoleLogger {
     }
   }
 
-  log(message: any, context?: string) {
+  log(message: unknown, context?: string) {
     super.log(message, context);
     this.appendLog('log', message, context);
   }
 
-  error(message: any, stack?: string, context?: string) {
+  error(message: unknown, stack?: string, context?: string) {
     super.error(message, stack, context);
-    this.appendLog('error', `${message} ${stack || ''}`, context);
+    const errStr =
+      typeof message === 'string' ? message : util.inspect(message);
+    this.appendLog('error', `${errStr} ${stack || ''}`, context);
   }
 
-  warn(message: any, context?: string) {
+  warn(message: unknown, context?: string) {
     super.warn(message, context);
     this.appendLog('warn', message, context);
   }
 
-  debug(message: any, context?: string) {
+  debug(message: unknown, context?: string) {
     super.debug(message, context);
     this.appendLog('debug', message, context);
   }
 
-  verbose(message: any, context?: string) {
+  verbose(message: unknown, context?: string) {
     super.verbose(message, context);
     this.appendLog('verbose', message, context);
   }

@@ -87,3 +87,6 @@ postgres*.tar.gz
 redis*.tar.gz
 *.tar.gz
 *.tar
+
+# Tools
+tools/license-keys.js

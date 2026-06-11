@@ -82,8 +82,11 @@ const MOCK_RETURN_LINE = {
 describe('ReturnsWriteService', () => {
   const pg = setupPgliteSuite();
   let service: ReturnsWriteService;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockInventoryService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockGlService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mocktaxService: any;
 
   beforeEach(async () => {

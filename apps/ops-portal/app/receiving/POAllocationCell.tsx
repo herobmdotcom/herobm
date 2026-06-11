@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { MATCH_STATUS } from '@modbm/shared';
 
 interface POAllocationCellProps {
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: Record<string, any>;
 }
 

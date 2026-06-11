@@ -129,7 +129,9 @@ function ReceivingFlow() {
 
     try {
       const result = await api.goodsReceivedControllerCreate(payload);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const returnedLines = (result.data as any)?.lines || [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mapped: CompletedLine[] = returnedLines.map((l: any) => ({
         goodsReceivedLineId: l.goodsReceivedLineId,
         productId: l.productId,

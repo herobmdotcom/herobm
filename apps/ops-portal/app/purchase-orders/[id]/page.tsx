@@ -68,14 +68,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   };
   const visibleSections = Object.values(sections).filter(s => s.show);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const lineColumns: DataTableColumn<any>[] = useMemo(() => [
     {
         header: tPurchase('columns.lineNumber'), width: 40,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         render: (line: any) => <span className="text-slate-500 font-medium">#{line.lineNumber}</span>,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mobileCard: (line: any) => null
     },
     {
         header: tPurchase('columns.product'),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         render: (line: any) => (
             <div className="font-semibold text-sm">
                 {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
@@ -90,6 +94,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     },
     {
         header: tPurchase('columns.description'),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         render: (line: any) => (
             (!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') && isLinesEditable ? (
                 <input
@@ -110,6 +115,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     },
     {
         header: tPurchase('columns.qty'), width: 90, align: 'right',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         render: (line: any) => (
             isLinesEditable ? (
                 <input
@@ -127,12 +133,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 />
             ) : <span className="text-sm tabular-nums">{line.quantity}</span>
         ),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mobileCard: (line: any, defaultRender: any) => <MobileCardField label={tPurchase('columns.qty')} value={
             isLinesEditable ? defaultRender : <span className="text-sm">{line.quantity} {line.unitOfMeasure || line.baseUom || tCommon('ea')}</span>
         } />
     },
     {
         header: tPurchase('columns.uom'), width: 80, align: 'right',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         render: (line: any) => {
             if (!isLinesEditable) return <span className="text-sm tabular-nums">{line.unitOfMeasure || line.baseUom || tCommon('ea')}</span>;
             const uoms: ProductUom[] = line.productUoms || [];
@@ -168,6 +176,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     },
     {
         header: tPurchase('columns.unitPrice'), width: 110, align: 'right',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         render: (line: any) => (
             isLinesEditable ? (
                 <input
@@ -188,10 +197,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 />
             ) : <span className="text-sm tabular-nums">{formatAmount(parseFloat(line.pricePerUnit || '0'), order?.currencyCode || 'EUR')}</span>
         ),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mobileCard: (line: any, defaultRender: any) => <MobileCardField label={tPurchase('columns.unitPrice')} value={defaultRender} />
     },
     {
         header: tPurchase('columns.discountPct' ), width: 80, align: 'right',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         render: (line: any) => (
             isLinesEditable ? (
                 <input
@@ -210,6 +221,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 />
             ) : <span className="text-sm tabular-nums">{parseFloat(line.discountPercentage || '0').toFixed(1)}%</span>
         ),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mobileCard: (line: any, defaultRender: any) => (
             isLinesEditable ? (
                 <MobileCardField label={tPurchase('columns.discountPct')} value={defaultRender} />
@@ -218,6 +230,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     },
     {
         header: tPurchase('columns.tax'), width: 110, align: 'right',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         render: (line: any) => (
             isLinesEditable ? (
                 <select
@@ -252,21 +265,25 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 </span>
             )
         ),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mobileCard: (line: any, defaultRender: any) => <MobileCardField label={tPurchase('columns.tax')} value={defaultRender} />
     },
     {
         header: tPurchase('columns.amount'), width: 110, align: 'right',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         render: (line: any) => (
             <span className="font-bold tabular-nums">
                 {formatAmount(parseFloat(line.amount || '0'), order?.currencyCode || 'EUR')}
             </span>
         ),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mobileCard: (line: any, defaultRender: any) => <MobileCardField label={tPurchase('columns.amount')} value={
             <span className="font-bold text-[var(--accent)] text-base">{formatAmount(parseFloat(line.amount || '0'), order?.currencyCode || 'EUR')}</span>
         } />
     },
     ...(isLinesEditable ? [{
         header: '', width: 50,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         render: (line: any) => (
             <button
                 className="btn btn-danger btn-sm"
@@ -276,6 +293,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
             </button>
         ),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         mobileCard: (line: any) => (
             <div className="flex justify-end mt-2">
                 <button
@@ -582,7 +600,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               data={order.lines}
               keyExtractor={(line) => line.purchaseOrderLineId}
               columns={lineColumns}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               mobileCard={(line: any) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const isAmountCol = (colHeader: any) => colHeader === tPurchase('columns.amount');
                 const actionCol = lineColumns.length > 9 ? lineColumns[9].render?.(line, 0) : null;
                 return (
@@ -867,6 +887,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                           return sum + (alloc.purchaseOrderLineId === line.purchaseOrderLineId ? parseFloat(alloc.quantity) : 0);
                       }, 0);
                       const billed = invoices.reduce((sum, inv) => {
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           const invLine = inv.lines?.find((il: any) => il.purchaseOrderLineId === line.purchaseOrderLineId);
                           return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
                       }, 0);
@@ -893,6 +914,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                           return sum + (alloc.purchaseOrderLineId === line.purchaseOrderLineId ? parseFloat(alloc.quantity) : 0);
                       }, 0);
                       const billed = invoices.reduce((sum, inv) => {
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           const invLine = inv.lines?.find((il: any) => il.purchaseOrderLineId === line.purchaseOrderLineId);
                           return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
                       }, 0);

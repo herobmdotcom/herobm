@@ -24,6 +24,7 @@ interface SettingsContextType {
   app: AppSettings | null;
   loading: boolean;
   baseCurrency: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   organization: any | null;
 }
 
@@ -40,7 +41,8 @@ export const useSettings = () => useContext(SettingsContext);
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [gl, setGl] = useState<GlSettings | null>(null);
   const [app, setApp] = useState<AppSettings | null>(null);
-  const [organization, setOrganization] = useState<api.OrganizationResponseDto | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [organization, setOrganization] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,6 +55,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         setGl(glRes.data as unknown as GlSettings);
         setOrganization(orgRes.data);
       } catch (err: unknown) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const anyErr = err as any;
         if (anyErr.message !== 'Not authenticated' && anyErr.status !== 401 && anyErr.status !== 403) {
           reportError(err, 'SettingsProvider');

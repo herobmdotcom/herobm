@@ -94,6 +94,7 @@ export class CreditAssessmentService {
     `;
 
     const result = await db.execute(query);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows = (result as any).rows ?? result;
     const aggs = rows as unknown as {
       total_debits: string;

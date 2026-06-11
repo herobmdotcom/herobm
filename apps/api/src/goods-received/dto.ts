@@ -100,12 +100,12 @@ export class GoodsReceivedLineResponseDto {
 
 export class PaginatedGoodsReceivedDto {
   data!: GoodsReceivedResponseDto[];
-  meta!: any;
+  meta!: Record<string, unknown>;
 }
 
 export class PaginatedGoodsReceivedLineDto {
   data!: GoodsReceivedLineResponseDto[];
-  meta!: any;
+  meta!: Record<string, unknown>;
 }
 
 export class CancelReceptionResponseDto {
@@ -116,5 +116,5 @@ export class EmptyBodyDto {}
 
 export class ResolveAllocationResponseDto {
   success!: boolean;
-  splitLine?: any;
+  splitLine?: Record<string, unknown>;
 }

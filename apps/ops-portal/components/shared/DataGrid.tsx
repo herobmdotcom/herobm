@@ -594,6 +594,7 @@ export default function DataGrid<T>({
     swrKey,
     (url: string) => {
       const cleanUrl = url.replace(/([&?])_refresh=\d+&?/, '$1').replace(/&$/, '').replace(/\?$/, '');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return api.customFetch(cleanUrl, { method: 'GET' }).then((res: any) => res.data);
     },
     { revalidateOnFocus: false, keepPreviousData: true }
@@ -623,6 +624,7 @@ export default function DataGrid<T>({
     }
 
     if (swrResponse) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const body = swrResponse as any;
       const safeData = Array.isArray(body) ? body : (body?.data || []);
       setData(safeData);
@@ -1193,6 +1195,7 @@ export default function DataGrid<T>({
           return dataToMap.map((row, idx) => {
             const key = rowIdField ? String((row as Record<keyof T, unknown>)[rowIdField as keyof T]) : idx;
             const isSelected = selectedRowIds.has(String(key));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const isSelectable = isRowSelectable ? isRowSelectable({ data: row } as any) : true;
             return <GenericMobileCard 
               key={key} 

@@ -1,3 +1,4 @@
+import { Request } from 'express';
 import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-custom';
@@ -12,7 +13,7 @@ export class ApiKeyStrategy extends PassportStrategy(Strategy, 'api-key') {
     super();
   }
 
-  async validate(req: any): Promise<any> {
+  async validate(req: Request): Promise<unknown> {
     const apiKeyHeader = req.headers['x-api-key'];
 
     if (!apiKeyHeader || typeof apiKeyHeader !== 'string') {

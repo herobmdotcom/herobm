@@ -11,6 +11,7 @@ const request = require('supertest');
 
 describe('Suppliers (e2e)', () => {
   let app: INestApplication;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let db: any;
   let adminToken: string;
 
@@ -91,6 +92,7 @@ describe('Suppliers (e2e)', () => {
 
     expect(res.body.data).toBeDefined();
     expect(res.body.data.length).toBeGreaterThanOrEqual(1);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const found = res.body.data.find((s: any) =>
       s.vendorNumber.startsWith('E2E-V-'),
     );

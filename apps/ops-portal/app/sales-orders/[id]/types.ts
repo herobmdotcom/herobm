@@ -37,7 +37,7 @@ export function getTaxLabel(category: TaxCategory) {
 export interface OrderEvent {
     eventId: string;
     eventType: string;
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: Record<string, any>;
     actor: string;
     createdOn: string;
@@ -62,6 +62,7 @@ export interface OrderDetail {
     lines: OrderLine[];
     events: OrderEvent[];
     parentId?: string | null;
+    customFields?: Record<string, unknown>;
     backorders?: {
         productId?: string;
         productNumber?: string;

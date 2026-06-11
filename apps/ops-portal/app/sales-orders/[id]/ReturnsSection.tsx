@@ -44,9 +44,9 @@ interface ReturnsSectionProps {
     setShowCreateReturn: (v: boolean) => void;
     setError: (msg: string) => void;
     loadReturns: () => Promise<void>;
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   loadOrder: (autoTransitions?: Record<string, any>[], showSpinner?: boolean) => Promise<void>;
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pickingSummary?: Record<string, any> | null;
     taxCategories: TaxCategory[];
     locations: api.InventoryLocationResponseDto[];
@@ -132,6 +132,7 @@ export default function ReturnsSection({
                     SALES_ORDER_STATE.SHIPPED, 
                     SALES_ORDER_STATE.INVOICED, 
                     SALES_ORDER_STATE.LEGACY
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ].includes(order.stateCode as any) && (
                     <button
                         className="btn btn-secondary btn-sm"
@@ -171,6 +172,7 @@ export default function ReturnsSection({
 
                     <DataTable
                         data={order.lines}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         keyExtractor={(line: any) => line.salesOrderLineId}
                         columns={[
                             { header: tSales('columns.lineNumber'), width: 40 },
@@ -181,9 +183,11 @@ export default function ReturnsSection({
                             { header: tSales('columns.reason'), width: 180 },
                             { header: tSales('columns.fee'), width: 140, align: 'right' }
                         ]}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         renderCustomRow={(line: any, idx: number) => {
                             const rl = newReturnLines[idx];
                             if (!rl) return null;
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === line.salesOrderLineId);
                             const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
                             return (
@@ -280,9 +284,11 @@ export default function ReturnsSection({
                                 </tr>
                             );
                         }}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         mobileCard={(line: any, idx: number) => {
                             const rl = newReturnLines[idx];
                             if (!rl) return null;
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === line.salesOrderLineId);
                             const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
                             return (
@@ -609,6 +615,7 @@ export default function ReturnsSection({
 
                                 <DataTable
                                     data={ret.lines}
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     keyExtractor={(rl: any) => rl.returnLineId}
                                     columns={[
                                         { header: tSales('columns.product'), width: 150 },
@@ -622,6 +629,7 @@ export default function ReturnsSection({
                                         { header: tSales('columns.amount'), width: 100, align: 'right' },
                                         ...(isRetEditable ? [{ header: '', width: 50 }] : [])
                                     ]}
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     renderCustomRow={(rl: any) => {
                                         const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
                                         const disc = parseFloat(origLine?.discountPercentage || '0');
@@ -774,6 +782,7 @@ export default function ReturnsSection({
                                             </tr>
                                         );
                                     }}
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     mobileCard={(rl: any) => {
                                         const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
                                         const disc = parseFloat(origLine?.discountPercentage || '0');

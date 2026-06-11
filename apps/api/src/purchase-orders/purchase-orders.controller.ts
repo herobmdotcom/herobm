@@ -48,7 +48,7 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @Controller('purchase-orders')
 @CasbinResource(SystemResource.PURCHASE_ORDERS)
-@ApiTags('PurchaseOrders')
+@ApiTags('Purchase Orders')
 export class PurchaseOrdersController {
   constructor(private readonly purchaseOrdersService: PurchaseOrdersService) {}
 
@@ -162,6 +162,7 @@ export class PurchaseOrdersController {
   ) {
     return this.purchaseOrdersService.changePurchaseOrderState(
       id,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       body.stateCode as any,
       user.username,
     );

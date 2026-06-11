@@ -1,69 +1,5 @@
 import { IsOptional, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
-
-/**
- * Canonical pagination query parameters (ADV-041).
- *
- * Every list endpoint should accept this shape via `@Query()`.
- * Standardises the search param name (`q`) and pagination model (`page`/`limit`).
- *
- * Usage:
- *   @Get()
- *   findAll(@Query() query: PaginationQuery) { ... }
- *
- * Enforced by: infra/tests/test_pagination_conventions.ps1
- */
-export class PaginationQuery {
-  /** Full-text search term */
-  @IsOptional()
-  @IsString()
-  q?: string;
-
-  /** 1-based page number (default: 1) */
-  @IsOptional()
-  @Transform(({ value }) => (value ? Number(value) : undefined))
-  page?: number;
-
-  /** Base64 encoded cursor */
-  @IsOptional()
-  @IsString()
-  cursor?: string;
-
-  /** Pagination direction */
-  @IsOptional()
-  @IsString()
-  direction?: 'next' | 'prev';
-
-  /** Maximum results per page (default: 50, max: 100000) */
-  @IsOptional()
-  @Transform(({ value }) => (value ? Number(value) : undefined))
-  limit?: number;
-
-  /** Optional state filter */
-  @IsOptional()
-  @IsString()
-  state?: string;
-
-  /** Whether to include archived records */
-  @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
-  includeArchived?: boolean;
-
-  /** Optional filter by customer/customer ID */
-  @IsOptional()
-  @IsString()
-  customerId?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value ? Number(value) : undefined))
-  days?: number;
-
-  /** Optional filter by purchase order ID */
-  @IsOptional()
-  @IsString()
-  purchaseOrderId?: string;
-}
-
 import { applyDecorators, Type } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -72,6 +8,9 @@ import {
   ApiExtraModels,
   ApiHideProperty,
 } from '@nestjs/swagger';
+
+export * from './pagination.dto';
+import { PaginationQuery } from './pagination.dto';
 
 /**
  * Canonical paginated response.
@@ -92,7 +31,9 @@ export class PaginatedResponse<T> {
   prevCursor?: string;
 }
 
-export function ApiPaginatedResponse<TModel extends Type<any>>(model: TModel) {
+export function ApiPaginatedResponse<TModel extends Type<unknown>>(
+  model: TModel,
+) {
   return applyDecorators(
     ApiExtraModels(PaginatedResponse, model),
     ApiOkResponse({
@@ -141,11 +82,11 @@ export function parsePagination(query?: PaginationQuery) {
   };
 }
 
-export function encodeCursor(payload: any): string {
+export function encodeCursor(payload: unknown): string {
   return Buffer.from(JSON.stringify(payload)).toString('base64');
 }
 
-export function decodeCursor<T = any>(cursor: string): T | null {
+export function decodeCursor<T = unknown>(cursor: string): T | null {
   try {
     return JSON.parse(Buffer.from(cursor, 'base64').toString('utf8'));
   } catch (e) {
@@ -209,7 +150,11 @@ export function paginate<T>(
  * });
  * ```
  */
-export async function withCursorPagination<T = any>({
+export async function withCursorPagination<
+  TQuery extends { limit: (l: number) => unknown },
+  TCursor,
+  T = TQuery extends PromiseLike<(infer U)[]> ? U : unknown,
+>({
   qb,
   limit,
   cursorObj,
@@ -218,13 +163,17 @@ export async function withCursorPagination<T = any>({
   applyOrderBy,
   encodeRow,
 }: {
-  qb: any;
+  qb: TQuery;
   limit: number;
-  cursorObj: any;
+  cursorObj: TCursor;
   direction: 'next' | 'prev';
-  applyWhere: (q: any, cursor: any, dir: 'next' | 'prev') => any;
-  applyOrderBy: (q: any, dir: 'next' | 'prev') => any;
-  encodeRow: (row: T) => any;
+  applyWhere: (
+    q: TQuery,
+    cursor: NonNullable<TCursor>,
+    dir: 'next' | 'prev',
+  ) => TQuery;
+  applyOrderBy: (q: TQuery, dir: 'next' | 'prev') => TQuery;
+  encodeRow: (row: T) => Record<string, unknown>;
 }): Promise<{ data: T[]; nextCursor?: string; prevCursor?: string }> {
   let query = qb;
 
@@ -233,9 +182,8 @@ export async function withCursorPagination<T = any>({
   }
 
   query = applyOrderBy(query, direction);
-  query = query.limit(limit + 1);
-
-  const rawRows = await query;
+  const finalQuery = query.limit(limit + 1);
+  const rawRows = (await finalQuery) as T[];
   const hasMore = rawRows.length > limit;
   const rows = hasMore ? rawRows.slice(0, limit) : rawRows;
 

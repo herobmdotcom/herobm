@@ -181,6 +181,7 @@ function ReturnCard({
                         const priceWarning = relatedEvents.find(e => e.eventType === 'price_discrepancy_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
                         
                         if (priceWarning) {
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           const payload = priceWarning.payload as any;
                           return (
                             <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }} title="Price discrepancy warning">
@@ -256,6 +257,7 @@ function ReturnCard({
                   {
                     label: tPurchase('columns.unitPrice'),
                     value: priceWarning ? (() => {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       const payload = priceWarning.payload as any;
                       return (
                       <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: 6 }} title="Price discrepancy warning">
@@ -317,10 +319,12 @@ export default function ReturnsSection({
       try {
         setLoading(true);
         const listData = await api.purchaseReturnsControllerFindReturns(orderId) ;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const fetchedReturns: any[] = Array.isArray(listData) ? listData : (listData as { data?: any[] })?.data || [];
         
         // Fetch full data including lines for each setup
         const detailedReturns = await Promise.all(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           fetchedReturns.map((rec: any) => 
             api.purchaseReturnsControllerFindReturn(orderId, rec.returnId)
           )
@@ -343,8 +347,10 @@ export default function ReturnsSection({
   const refreshReturns = () => {
     setLoading(true);
     api.purchaseReturnsControllerFindReturns(orderId).then(async (listData: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const fetchedReturns: any[] = (listData as { data?: any[] })?.data || (Array.isArray(listData) ? listData : []);
       const detailedReturns = await Promise.all(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         fetchedReturns.map((rec: any) => 
           api.purchaseReturnsControllerFindReturn(orderId, rec.returnId)
         )

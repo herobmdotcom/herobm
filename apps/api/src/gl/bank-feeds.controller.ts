@@ -43,7 +43,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 
-@ApiTags('GL')
+@ApiTags('General Ledger')
 @Controller('gl/bank-feeds')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.GL)

@@ -107,6 +107,7 @@ describe('BankFeedsController (e2e)', () => {
       .expect(200);
 
     expect(Array.isArray(res.body)).toBe(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(res.body.find((p: any) => p.profileId === profileId)).toBeDefined();
   });
 
@@ -150,6 +151,7 @@ describe('BankFeedsController (e2e)', () => {
       .expect(200);
 
     expect(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       res.body.find((p: any) => p.profileId === tempProfileId),
     ).toBeUndefined();
   });

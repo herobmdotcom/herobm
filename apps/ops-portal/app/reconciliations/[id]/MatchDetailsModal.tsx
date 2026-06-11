@@ -21,11 +21,11 @@ export default function MatchDetailsModal({
   onClose: () => void;
   onUnmatchSuccess: () => void;
 }) {
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [bankLines, setBankLines] = useState<Record<string, any>[]>([]);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [ledgerLines, setLedgerLines] = useState<Record<string, any>[]>([]);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [matchMetadata, setMatchMetadata] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
   const [unmatching, setUnmatching] = useState(false);

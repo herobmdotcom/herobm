@@ -75,7 +75,7 @@ export default function NewAccountPage() {
     }
   };
 
-  const updateField = (field: string, value: any) => {
+  const updateField = (field: string, value: unknown) => {
     setDto((prev) => ({ ...prev, [field]: value }));
   };
 

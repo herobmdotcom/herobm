@@ -162,6 +162,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .expect(200);
 
     const backorder = openDemandsRes.body.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (d: any) => d.salesOrderId === salesOrderId && d.productId === productId,
     );
     expect(backorder).toBeDefined();
@@ -231,6 +232,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .expect(200);
 
     const finalBackorder = finalAllocRes.body.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (d: any) => d.id === backorderId,
     );
 
@@ -296,6 +298,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .expect(200);
 
     const backorder = openDemandsRes.body.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (d: any) => d.productId === pProductId,
     );
     const backorderId = backorder.id;
@@ -350,9 +353,11 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .expect(200);
 
     const receivedPart = finalAllocRes.body.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (d: any) => d.stateCode === 'received_reserved',
     );
     const awaitingPart = finalAllocRes.body.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (d: any) => d.stateCode === 'awaiting_receipt',
     );
 

@@ -92,7 +92,10 @@ export class PaymentsController {
     description: 'Create a new payment entry.',
   })
   @ApiCreatedResponse({ type: PaymentResponseDto })
-  async create(@Body() dto: CreatePaymentDto, @AuthUser() user: any) {
+  async create(
+    @Body() dto: CreatePaymentDto,
+    @AuthUser() user: { username: string },
+  ) {
     return this.paymentsService.createPaymentEntry(dto, user.username);
   }
 
@@ -107,7 +110,7 @@ export class PaymentsController {
   async submit(
     @Param('id') id: string,
     @Body() body: EmptyBodyDto,
-    @AuthUser() user: any,
+    @AuthUser() user: { username: string },
   ) {
     return this.paymentsService.submitPaymentEntry(id, user.username);
   }
@@ -123,7 +126,7 @@ export class PaymentsController {
   async allocate(
     @Param('id') id: string,
     @Body() dto: AllocatePaymentDto,
-    @AuthUser() user: any,
+    @AuthUser() user: { username: string },
   ) {
     return this.paymentsService.allocatePayment(id, dto, user.username);
   }
@@ -139,7 +142,7 @@ export class PaymentsController {
   async cancel(
     @Param('id') id: string,
     @Body() body: EmptyBodyDto,
-    @AuthUser() user: any,
+    @AuthUser() user: { username: string },
   ) {
     return this.paymentsService.cancelPayment(id, user.username);
   }
@@ -152,7 +155,10 @@ export class PaymentsController {
     description: 'Export selected payments into an ABA file format.',
   })
   @ApiCreatedResponse({ type: ExportAbaResponseDto }) // Uses same response DTO
-  async exportAba(@Body() dto: BatchPaymentActionDto, @AuthUser() user: any) {
+  async exportAba(
+    @Body() dto: BatchPaymentActionDto,
+    @AuthUser() user: { username: string },
+  ) {
     const fileContent = await this.paymentsService.exportAba(
       dto.paymentIds,
       user.username,
@@ -168,7 +174,10 @@ export class PaymentsController {
     description: 'Export selected payments into a NACHA ACH file format.',
   })
   @ApiCreatedResponse({ type: ExportAbaResponseDto }) // Uses same response DTO { fileContent: string }
-  async exportNacha(@Body() dto: BatchPaymentActionDto, @AuthUser() user: any) {
+  async exportNacha(
+    @Body() dto: BatchPaymentActionDto,
+    @AuthUser() user: { username: string },
+  ) {
     const fileContent = await this.paymentsService.exportNacha(
       dto.paymentIds,
       user.username,
@@ -186,7 +195,7 @@ export class PaymentsController {
   @ApiCreatedResponse({ type: ConfirmRejectResponseDto })
   async confirmExported(
     @Body() dto: BatchPaymentActionDto,
-    @AuthUser() user: any,
+    @AuthUser() user: { username: string },
   ) {
     return this.paymentsService.confirmExported(dto.paymentIds, user.username);
   }
@@ -201,7 +210,7 @@ export class PaymentsController {
   @ApiCreatedResponse({ type: ConfirmRejectResponseDto })
   async rejectExported(
     @Body() dto: BatchPaymentActionDto,
-    @AuthUser() user: any,
+    @AuthUser() user: { username: string },
   ) {
     return this.paymentsService.rejectExported(dto.paymentIds, user.username);
   }

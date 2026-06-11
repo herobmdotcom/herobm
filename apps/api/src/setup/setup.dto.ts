@@ -230,7 +230,7 @@ export class TestConnectionResultDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  preview?: any;
+  preview?: Record<string, unknown>;
 }
 
 export class ResumeStateDto {
@@ -288,7 +288,7 @@ export class JobProgressDto {
 
   @ApiProperty({ type: [Object], required: false })
   @IsArray()
-  progress: any[];
+  progress: Record<string, unknown>[];
 
   @ApiProperty({ type: [String] })
   @IsArray()

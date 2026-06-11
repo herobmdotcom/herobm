@@ -42,6 +42,7 @@ export class ActivitiesService {
         .returning();
       return rows[0];
     } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((err as any)?.code === '23505') {
         throw new BadRequestException(
           `Activity code '${dto.code}' already exists`,
@@ -77,6 +78,7 @@ export class ActivitiesService {
       await this.db.delete(activities).where(eq(activities.activityId, id));
       return { deleted: true };
     } catch (err: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((err as any)?.code === '23503') {
         throw new BadRequestException(
           `Cannot delete activity '${existing.code}' because it is in use by journal entries.`,

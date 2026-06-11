@@ -185,7 +185,9 @@ export class InventoryService {
   async getPickableBins(
     productId: string,
     locationId?: string,
-    txClient?: any,
+    txClient?:
+      | Parameters<Parameters<DrizzleDB['transaction']>[0]>[0]
+      | DrizzleDB,
   ) {
     const client = txClient || this.db;
 
@@ -370,7 +372,19 @@ export class InventoryService {
     }
 
     if (query?.binType) {
-      filters.push(eq(bins.binType, query.binType as any));
+      filters.push(
+        eq(
+          bins.binType,
+          query.binType as
+            | 'storage'
+            | 'pick'
+            | 'bulk'
+            | 'receiving'
+            | 'staging'
+            | 'quarantine'
+            | 'in_transit',
+        ),
+      );
     }
 
     filters.push(sql`${binContents.actualQuantity}::numeric > 0`);
@@ -435,7 +449,7 @@ export class InventoryService {
 
     const productIds = Array.from(new Set(rows.map((r) => r.productId)));
 
-    let allUoms: any[] = [];
+    let allUoms: (typeof productUoms.$inferSelect)[] = [];
     if (productIds.length > 0) {
       allUoms = await this.db
         .select()
@@ -588,16 +602,22 @@ export class InventoryService {
       .orderBy(bins.binNumber);
 
     // Assemble the tree in-memory
-    const zonesByLocation = new Map<string, any[]>();
+    const zonesByLocation = new Map<
+      string,
+      ({
+        zoneId: string;
+        bins: Record<string, unknown>[];
+      } & (typeof zoneRows)[0])[]
+    >();
     for (const z of zoneRows) {
       const arr = zonesByLocation.get(z.locationId) ?? [];
-      arr.push({ ...z, bins: [] as any[] });
+      arr.push({ ...z, bins: [] as Record<string, unknown>[] });
       zonesByLocation.set(z.locationId, arr);
     }
 
     for (const b of binRows) {
       for (const [, zArr] of zonesByLocation) {
-        const zone = zArr.find((z: any) => z.zoneId === b.zoneId);
+        const zone = zArr.find((z) => z.zoneId === b.zoneId);
         if (zone) {
           zone.bins.push(b);
           break;
@@ -651,7 +671,9 @@ export class InventoryService {
     `;
 
     const result = await this.db.execute(query);
-    const rows = (result as any).rows ?? result;
+    const rows = Array.isArray(result)
+      ? result
+      : (result as { rows: unknown[] }).rows;
     return { data: rows };
   }
 
@@ -688,7 +710,9 @@ export class InventoryService {
     `;
 
     const result = await this.db.execute(query);
-    const rows = (result as any).rows ?? result;
+    const rows = Array.isArray(result)
+      ? result
+      : (result as { rows: unknown[] }).rows;
     return { data: rows };
   }
 
@@ -821,7 +845,9 @@ export class InventoryService {
       ORDER BY p.name ASC
     `;
     const linesResult = await this.db.execute(linesQuery);
-    const lines = (linesResult as any).rows ?? linesResult;
+    const lines = Array.isArray(linesResult)
+      ? linesResult
+      : (linesResult as { rows: unknown[] }).rows;
 
     return {
       ...entry,
@@ -839,7 +865,7 @@ export class InventoryService {
    * updates the cache (bin_contents), and emits an outbox event.
    */
   async recordInventoryMovement(
-    tx: any,
+    tx: Parameters<Parameters<DrizzleDB['transaction']>[0]>[0] | DrizzleDB,
     params: {
       entryNumber: string;
       sourceType: string;
@@ -887,8 +913,11 @@ export class InventoryService {
       .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
       .where(inArray(bins.binId, binIds));
 
-    const binMap = new Map<string, any>(
-      resolvedBins.map((row: any) => {
+    const binMap = new Map<
+      string,
+      { binId: string; locationId: string | null; zoneId: string | null }
+    >(
+      resolvedBins.map((row) => {
         const b = row.bins;
         const z = row.zones;
         return [b.binId, { ...b, locationId: z.locationId }];
@@ -903,8 +932,8 @@ export class InventoryService {
         entryId: entry.entryId,
         productId: l.productId,
         binId: l.binId,
-        locationId: b.locationId,
-        zoneId: b.zoneId,
+        locationId: b.locationId as string,
+        zoneId: b.zoneId as string,
         quantity: l.absoluteQuantity.toString(),
       };
     });
@@ -962,7 +991,7 @@ export class InventoryService {
             standardCost: string | null;
             weightedAverageCost: string | null;
           }
-        >(productRows.map((p: any) => [p.productId, p]));
+        >(productRows.map((p) => [p.productId, p]));
         const valuationStrategy = getValuationStrategy(
           this.appConfig.valuationMethod(),
         );
@@ -1011,7 +1040,9 @@ export class InventoryService {
 
           if (adjustmentGl) {
             await this.glService.postJournalEntry(
-              adjustmentGl.lines as any,
+              adjustmentGl.lines as Parameters<
+                GlService['postJournalEntry']
+              >[0],
               {
                 actor: params.userId || 'system',
                 entryDate: new Date().toISOString().slice(0, 10),
@@ -1252,7 +1283,12 @@ export class InventoryService {
 
         const qty = parseFloat(lineDto.quantity);
 
-        const movements: any[] = [
+        const movements: {
+          productId: string;
+          binId: string;
+          quantity: number;
+          uomCode?: string;
+        }[] = [
           { productId, binId: sourceBin.binId, quantity: -qty },
           { productId, binId: lineDto.destinationBinId, quantity: qty },
         ];
@@ -1311,7 +1347,7 @@ export class InventoryService {
             .where(eq(salesOrderReturnLines.returnLineId, lineDto.lineId));
         }
 
-        await emitEvent(tx as any, {
+        await emitEvent(tx as Parameters<typeof emitEvent>[0], {
           entityType: EntityType.WAREHOUSE,
           entityId: lineDto.lineId,
           eventType: EventType.PUTAWAY_COMPLETED,
@@ -1679,7 +1715,7 @@ export class InventoryService {
         ],
       });
 
-      await emitEvent(tx as any, {
+      await emitEvent(tx as Parameters<typeof emitEvent>[0], {
         entityType: EntityType.WAREHOUSE,
         entityId: dto.sourceBinId,
         eventType: EventType.STOCK_MOVED,
@@ -1720,7 +1756,12 @@ export class InventoryService {
 
   async moveStock(dto: import('./dto').MoveStockDto, userId: string) {
     return await this.db.transaction(async (tx) => {
-      const movementLines: any[] = [];
+      const movementLines: {
+        productId: string;
+        binId: string;
+        quantity: number;
+        uomCode?: string;
+      }[] = [];
       const reasonStr = dto.reason || 'Manual stock move';
 
       for (const line of dto.lines) {
@@ -1820,7 +1861,7 @@ export class InventoryService {
 
         // Emit general inventory moved event
         // Note: For advanced integration, we could emit individual events per line, but for this workflow one bulk event is often simpler.
-        await emitEvent(tx as any, {
+        await emitEvent(tx as Parameters<typeof emitEvent>[0], {
           entityType: EntityType.WAREHOUSE,
           entityId: dto.lines[0].sourceBinId, // Using first source bin as reference
           eventType: EventType.STOCK_MOVED,
@@ -1893,7 +1934,7 @@ export class InventoryService {
           lines: movementLines,
         });
 
-        await emitEvent(tx as any, {
+        await emitEvent(tx as Parameters<typeof emitEvent>[0], {
           entityType: EntityType.WAREHOUSE,
           entityId: dto.lines[0].binId,
           eventType: EventType.STOCK_MOVED,

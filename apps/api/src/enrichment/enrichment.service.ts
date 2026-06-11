@@ -43,7 +43,7 @@ export class EnrichmentService {
   async getConfig(
     providerName: string,
     tx?: DrizzleDB,
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<Record<string, any>> {
     const db = tx || this.db;
     const [integration] = await db
@@ -57,12 +57,12 @@ export class EnrichmentService {
     }
 
     return this.encryptionService.decryptConfig(
-      // modbm-allow-record-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       integration.config as Record<string, any>,
     );
   }
 
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async updateConfig(providerName: string, config: Record<string, any>) {
     if (!this.providers.has(providerName)) {
       throw new NotFoundException(`Provider '${providerName}' not found`);
@@ -95,7 +95,7 @@ export class EnrichmentService {
   async lookupByField(
     field: string,
     country: string,
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: string | Record<string, any>,
   ): Promise<EnrichmentResult> {
     const mappings = this.appConfig.enrichmentProviderMappings() || {};
@@ -110,7 +110,7 @@ export class EnrichmentService {
 
   async lookup(
     providerName: string,
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: string | Record<string, any>,
   ): Promise<EnrichmentResult> {
     const provider = this.providers.get(providerName);
@@ -126,7 +126,7 @@ export class EnrichmentService {
 
   async recordTransaction(
     providerName: string,
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: Record<string, any>,
     tx?: DrizzleDB,
   ): Promise<EnrichmentResult> {
@@ -148,7 +148,7 @@ export class EnrichmentService {
 
   async recordRefund(
     providerName: string,
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: Record<string, any>,
     tx?: DrizzleDB,
   ): Promise<EnrichmentResult> {

@@ -111,6 +111,7 @@ export default function ShippingStatusSection({ orderId }: Props) {
             {/* Lines Table */}
             <DataTable
                 data={physicalLines}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 keyExtractor={(line: any) => line.salesOrderLineId}
                 columns={[
                     { header: tShipping('columns.product') },
@@ -121,6 +122,7 @@ export default function ShippingStatusSection({ orderId }: Props) {
                     { header: tCommon('columns.status'), align: 'center' }
                 ]}
                 emptyMessage={tShipping('noPhysicalLines')}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 renderCustomRow={(line: any) => {
                     const shipped = parseFloat(line.quantityShipped);
                     const available = parseFloat(line.availableToShip);
@@ -174,6 +176,7 @@ export default function ShippingStatusSection({ orderId }: Props) {
                         </tr>
                     );
                 }}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 mobileCard={(line: any) => {
                     const shipped = parseFloat(line.quantityShipped);
                     const available = parseFloat(line.availableToShip);

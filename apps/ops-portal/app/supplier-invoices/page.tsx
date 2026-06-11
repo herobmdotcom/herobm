@@ -20,6 +20,7 @@ export default function GlobalPurchaseInvoicesPage() {
     const invoiceFilter = searchParams.get('invoiceId') || '';
     const [days, setDays, isReady] = usePersistedFilter('supplier-invoices-days', '90');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleRowClicked = useCallback((row: any) => {
         if (row.invoiceId) {
             router.push(`/supplier-invoices/${row.invoiceId}`);
@@ -31,22 +32,27 @@ export default function GlobalPurchaseInvoicesPage() {
         ? `/api/purchase-invoices?invoiceId=${encodeURIComponent(invoiceFilter)}&limit=0`
         : `/api/purchase-invoices?days=${days}&limit=0`);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const gridColumns: any[] = [
         { field: 'invoiceId', headerName: 'ID', hide: true },
         { field: 'invoiceNumber', headerName: t('columns.invoiceNumber'), width: 180 },
         { field: 'supplierInvoiceNumber', headerName: t('columns.supplierInvoiceNumber'), width: 220 },
         { field: 'vendorName', headerName: t('columns.vendor'), width: 250 },
-        { field: 'createdOn', headerName: t('columns.date'), width: 200, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { field: 'createdOn', headerName: t('columns.date'), width: 200, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
         { 
             field: 'totalAmount', 
             headerName: t('columns.amount'), 
             type: 'numericColumn', 
             width: 150,
-            valueGetter: (params: any) => {
+             
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            valueGetter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
                 if (!params.data?.totalAmount) return null;
                 return parseFloat(params.data.totalAmount);
             },
-            valueFormatter: (params: any) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
                 if (!params.value || params.value === 0) return '—';
                 return formatAmount(params.value, params.data?.currencyCode || baseCurrency);
             },
@@ -55,9 +61,11 @@ export default function GlobalPurchaseInvoicesPage() {
             field: 'stateCode', 
             headerName: t('columns.state'), 
             width: 140,
-            valueFormatter: (params: any) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
                 if (!params.value) return '';
                 const s = String(params.value).toLowerCase();
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 return tStates.has(s as any) ? tStates(s as any) : String(params.value);
             }
         },

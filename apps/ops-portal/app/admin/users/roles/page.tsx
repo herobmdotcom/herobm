@@ -124,8 +124,10 @@ export default function RolesPage() {
 
     try {
       await api.rolesControllerSetPermissions(targetRole, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         permissions: permissionsToSave as any,
         inherits: formInherits,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any);
       toast.success(isCreating ? 'Role created' : 'Permissions updated');
       cancel();
@@ -243,6 +245,7 @@ export default function RolesPage() {
                         <select 
                           className="input !py-0.5 !px-1 text-xs h-7 w-[80px] text-center"
                           value={localVal}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           onChange={(e) => handlePermissionChange(res, act, e.target.value as any)}
                         >
                           <option value="">{t('unset')}</option>

@@ -125,6 +125,7 @@ describe('API E2E — Data Pipeline Verification', () => {
             })
             .onConflictDoNothing();
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         console.error(
           'FAILED TO INSERT E2E MOCK DATA:',
@@ -487,13 +488,16 @@ describe('API E2E — Data Pipeline Verification', () => {
       );
       const systemBins = Array.isArray(systemBinsRaw)
         ? systemBinsRaw
-        : (systemBinsRaw as any).rows || [];
+        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (systemBinsRaw as any).rows || [];
 
       // Verify that the system-defined staging bins are present
       expect(systemBins.length).toBeGreaterThanOrEqual(2);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(systemBins.some((b: any) => b.bin_number === 'SHIPPING')).toBe(
         true,
       );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(systemBins.some((b: any) => b.bin_number === 'RECEIVING')).toBe(
         true,
       );
@@ -506,7 +510,8 @@ describe('API E2E — Data Pipeline Verification', () => {
       );
       const magicProducts = Array.isArray(magicProductsRaw)
         ? magicProductsRaw
-        : (magicProductsRaw as any).rows || [];
+        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (magicProductsRaw as any).rows || [];
 
       expect(magicProducts.length).toBe(1);
       expect(magicProducts[0].product_number).toBe('SYSTEM-CUSTOM-LINE');

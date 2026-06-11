@@ -35,6 +35,7 @@ export class AppConfigController {
     const settings = this.appConfigService.getAppSettingsRaw();
     if (!settings) return {};
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response: any = { ...settings };
     if (response.smtpPassEncrypted) {
       response.smtpPass = '********';
@@ -53,6 +54,7 @@ export class AppConfigController {
     @Body()
     dto: UpdateAppConfigDto,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updatePayload: any = { ...dto };
     if (updatePayload.smtpPass) {
       updatePayload.smtpPassEncrypted = this.encryptionService.encrypt(
@@ -62,6 +64,7 @@ export class AppConfigController {
     }
 
     const updated = await this.appConfigService.update(updatePayload);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response: any = { ...updated };
     if (response.smtpPassEncrypted) {
       response.smtpPass = '********';

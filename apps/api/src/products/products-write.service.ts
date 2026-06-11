@@ -56,6 +56,7 @@ export class ProductsWriteService {
         })
         .returning();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
         entityId: product.productId,
@@ -114,6 +115,7 @@ export class ProductsWriteService {
           audit.changes.stateCode !== undefined &&
           Object.keys(audit.changes).length === 1
         ) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await emitEvent(tx as any, {
             entityType: EntityType.PRODUCT,
             entityId: id,
@@ -126,6 +128,7 @@ export class ProductsWriteService {
             actor,
           });
         } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await emitEvent(tx as any, {
             entityType: EntityType.PRODUCT,
             entityId: id,
@@ -229,6 +232,7 @@ export class ProductsWriteService {
 
     const [updated] = await db
       .update(coreProducts)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .set({ stateCode: newState as any, modifiedOn: new Date() })
       .where(eq(coreProducts.productId, productId))
       .returning();
@@ -241,6 +245,7 @@ export class ProductsWriteService {
       eventType = EventType.UNARCHIVED;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await emitEvent(targetTx as any, {
       entityType: EntityType.PRODUCT,
       entityId: productId,
@@ -298,6 +303,7 @@ export class ProductsWriteService {
         })
         .returning();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT_SUPPLIER,
         entityId: mapping.productSupplierId,
@@ -334,6 +340,7 @@ export class ProductsWriteService {
         .from(coreProducts)
         .where(eq(coreProducts.productId, productId));
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT_SUPPLIER,
         entityId: mapping.productSupplierId,
@@ -383,6 +390,7 @@ export class ProductsWriteService {
         })
         .returning();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
         entityId: productId,
@@ -425,6 +433,7 @@ export class ProductsWriteService {
         .from(coreProducts)
         .where(eq(coreProducts.productId, productId));
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
         entityId: productId,
@@ -491,6 +500,7 @@ export class ProductsWriteService {
         })
         .returning();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
         entityId: productId,
@@ -532,6 +542,7 @@ export class ProductsWriteService {
         .from(coreProducts)
         .where(eq(coreProducts.productId, existing[0].productId));
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
         entityId: existing[0].productId,
@@ -628,6 +639,7 @@ export class ProductsWriteService {
         })
         .returning();
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
         entityId: productId,
@@ -695,6 +707,7 @@ export class ProductsWriteService {
         .from(coreProducts)
         .where(eq(coreProducts.productId, productId));
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
         entityId: productId,
@@ -737,6 +750,7 @@ export class ProductsWriteService {
         .from(coreProducts)
         .where(eq(coreProducts.productId, productId));
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
         entityId: productId,

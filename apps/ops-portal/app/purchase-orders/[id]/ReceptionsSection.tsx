@@ -128,7 +128,7 @@ export default function ReceptionsSection({ orderId }: { orderId: string }) {
               )
             }
           ]}
-          mobileCard={(rec: any) => (
+          mobileCard={(rec: ReceptionLine) => (
             <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
               <div className="font-semibold text-sm text-[var(--accent)] mb-1 flex justify-between">
                 <Link href={`/receiving/${rec.goodsReceivedId}`} className="hover:underline">

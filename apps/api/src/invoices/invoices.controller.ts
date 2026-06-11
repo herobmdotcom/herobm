@@ -33,6 +33,7 @@ import {
   CreateStandaloneInvoiceDto,
   ChangeInvoiceStateDto,
   UpdateInvoiceLineDto,
+  UpdatePurchaseInvoiceDto,
   ResolveInvoiceLineDto,
   AutoMatchPurchaseOrderDto,
   PurchaseInvoiceResponseDto,
@@ -50,7 +51,7 @@ export class EmptyBodyDto {}
 @Controller('sales-orders')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_ORDERS)
-@ApiTags('Invoices')
+@ApiTags('Sales Invoices')
 export class SalesInvoiceController {
   constructor(private readonly salesInvoiceService: SalesInvoiceService) {}
 
@@ -64,6 +65,7 @@ export class SalesInvoiceController {
   async createSalesInvoice(
     @Param('id') id: string,
     @Body() dto: CreateSalesInvoiceDto,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
@@ -89,7 +91,7 @@ export class SalesInvoiceController {
 @Controller('purchase-orders')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.PURCHASE_ORDERS)
-@ApiTags('Invoices')
+@ApiTags('Purchase Invoices')
 export class PurchaseInvoiceController {
   constructor(
     private readonly purchaseInvoiceService: PurchaseInvoiceService,
@@ -112,13 +114,14 @@ export class PurchaseInvoiceController {
  */
 @Controller()
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
-@ApiTags('Invoices')
+@ApiTags('Sales Invoices')
 export class InvoiceDetailController {
   constructor(
     private readonly salesInvoiceService: SalesInvoiceService,
     private readonly purchaseInvoiceService: PurchaseInvoiceService,
   ) {}
 
+  @ApiTags('Sales Invoices')
   @Get('sales-invoices/:id')
   @CasbinResource(SystemResource.SALES_ORDERS)
   @CasbinAction('read')
@@ -131,6 +134,7 @@ export class InvoiceDetailController {
     return this.salesInvoiceService.findOne(id);
   }
 
+  @ApiTags('Sales Invoices')
   @Patch('sales-invoices/:id/state')
   @CasbinResource(SystemResource.SALES_ORDERS)
   @CasbinAction('invoice')
@@ -142,6 +146,7 @@ export class InvoiceDetailController {
   async changeSalesInvoiceState(
     @Param('id') id: string,
     @Body() dto: ChangeInvoiceStateDto,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
@@ -152,6 +157,7 @@ export class InvoiceDetailController {
     );
   }
 
+  @ApiTags('Sales Invoices')
   @Get('sales-invoices')
   @CasbinResource(SystemResource.SALES_ORDERS)
   @CasbinAction('read')
@@ -182,6 +188,7 @@ export class InvoiceDetailController {
     return data;
   }
 
+  @ApiTags('Purchase Invoices')
   @Get('purchase-invoices')
   @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('read')
@@ -212,6 +219,7 @@ export class InvoiceDetailController {
     return data;
   }
 
+  @ApiTags('Purchase Invoices')
   @Get('purchase-invoices/:id')
   @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('read')
@@ -224,6 +232,7 @@ export class InvoiceDetailController {
     return this.purchaseInvoiceService.findOne(id);
   }
 
+  @ApiTags('Purchase Invoices')
   @Post('purchase-invoices')
   @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
@@ -234,12 +243,14 @@ export class InvoiceDetailController {
   @ApiCreatedResponse({ type: PurchaseInvoiceResponseDto })
   async createDraftInvoice(
     @Body() dto: CreateStandaloneInvoiceDto,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.createDraftInvoice(dto, actor);
   }
 
+  @ApiTags('Purchase Invoices')
   @Post('purchase-invoices/:id/post')
   @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
@@ -250,11 +261,13 @@ export class InvoiceDetailController {
   })
   @ApiBody({ type: EmptyBodyDto })
   @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async postInvoice(@Param('id') id: string, @Request() req: any) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.postInvoice(id, actor);
   }
 
+  @ApiTags('Purchase Invoices')
   @Patch('purchase-invoices/:id/state')
   @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
@@ -266,6 +279,7 @@ export class InvoiceDetailController {
   async changeInvoiceState(
     @Param('id') id: string,
     @Body() dto: ChangeInvoiceStateDto,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
@@ -277,6 +291,7 @@ export class InvoiceDetailController {
     );
   }
 
+  @ApiTags('Purchase Invoices')
   @Patch('purchase-invoices/:id')
   @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
@@ -287,13 +302,15 @@ export class InvoiceDetailController {
   @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async updateInvoice(
     @Param('id') id: string,
-    @Body() dto: UpdateInvoiceLineDto,
+    @Body() dto: UpdatePurchaseInvoiceDto,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.updateInvoice(id, dto, actor);
   }
 
+  @ApiTags('Purchase Invoices')
   @Patch('purchase-invoices/:id/lines/:lineId')
   @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
@@ -306,6 +323,7 @@ export class InvoiceDetailController {
     @Param('id') invoiceId: string,
     @Param('lineId') lineId: string,
     @Body() dto: UpdateInvoiceLineDto,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
@@ -317,6 +335,7 @@ export class InvoiceDetailController {
     );
   }
 
+  @ApiTags('Purchase Invoices')
   @Delete('purchase-invoices/:id/lines/:lineId')
   @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
@@ -328,12 +347,14 @@ export class InvoiceDetailController {
   async removeInvoiceLine(
     @Param('id') invoiceId: string,
     @Param('lineId') lineId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.removeLine(invoiceId, lineId, actor);
   }
 
+  @ApiTags('Purchase Invoices')
   @Post('purchase-invoices/:id/lines')
   @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
@@ -345,12 +366,14 @@ export class InvoiceDetailController {
   async addInvoiceLine(
     @Param('id') invoiceId: string,
     @Body() dto: UpdateInvoiceLineDto,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.addLine(invoiceId, dto, actor);
   }
 
+  @ApiTags('Purchase Invoices')
   @Post('purchase-invoices/lines/:lineId/resolve')
   @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
@@ -363,6 +386,7 @@ export class InvoiceDetailController {
   async resolveInvoiceLine(
     @Param('lineId') lineId: string,
     @Body() dto: ResolveInvoiceLineDto,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
@@ -373,6 +397,7 @@ export class InvoiceDetailController {
     );
   }
 
+  @ApiTags('Purchase Invoices')
   @Post('purchase-invoices/lines/:lineId/unresolve')
   @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
@@ -385,12 +410,14 @@ export class InvoiceDetailController {
   @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async unresolveInvoiceLine(
     @Param('lineId') lineId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.unresolveInvoiceLine(lineId, actor);
   }
 
+  @ApiTags('Purchase Invoices')
   @Post('purchase-invoices/:id/auto-match')
   @CasbinResource(SystemResource.PURCHASE_ORDERS)
   @CasbinAction('invoice')
@@ -403,6 +430,7 @@ export class InvoiceDetailController {
   async autoMatchPurchaseOrder(
     @Param('id') invoiceId: string,
     @Body() dto: AutoMatchPurchaseOrderDto,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';

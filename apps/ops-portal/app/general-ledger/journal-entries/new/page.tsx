@@ -105,6 +105,7 @@ export default function NewJournalEntryPage() {
 
     const payloadLines = lines.map(line => ({
       accountCode: line.accountCode,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       partyType: line.partyType === 'none' ? undefined : (line.partyType as any),
       partyId: line.partyId || undefined,
       debit: parseFloat(line.debit) || 0,

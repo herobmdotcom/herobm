@@ -161,7 +161,7 @@ export class PurchaseDebitNotesService {
         await tx.insert(purchaseDebitNoteLines).values(lineValues);
       }
 
-      await emitEvent(tx as any, {
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: ret.purchaseOrderId,
         eventType: EventType.CREATED,
@@ -283,7 +283,8 @@ export class PurchaseDebitNotesService {
         ];
 
         await this.glService.postJournalEntry(
-          glLines as any,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          glLines as any[],
           {
             actor,
             entryDate: new Date().toISOString().slice(0, 10),
@@ -348,7 +349,7 @@ export class PurchaseDebitNotesService {
     const [updated] = await db
       .update(purchaseDebitNotes)
       .set({
-        // eslint-disable-next-line no-restricted-syntax
+        // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-explicit-any
         stateCode: newState as any,
         modifiedOn: new Date(),
       })
@@ -359,7 +360,7 @@ export class PurchaseDebitNotesService {
       .select({ orderNumber: purchaseOrders.orderNumber })
       .from(purchaseOrders)
       .where(eq(purchaseOrders.purchaseOrderId, existing.purchaseOrderId));
-    await emitEvent(db as any, {
+    await emitEvent(db as unknown as DrizzleDB, {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: existing.purchaseOrderId,
       eventType: EventType.STATUS_CHANGED,

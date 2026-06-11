@@ -72,7 +72,9 @@ export default function NewPurchaseInvoicePage() {
         }
         setCurrencyCode(order.currencyCode || baseCurrency || '');
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const invoices = ((invoicesRes as any).data || []) ;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const linesToInvoice = calculatePurchaseInvoiceableQuantities(order.lines as any[], invoices);
         
         const prefilledLines: LineItem[] = linesToInvoice.map(lti => {
@@ -80,6 +82,7 @@ export default function NewPurchaseInvoicePage() {
           return {
             key: ++lineKey,
             productId: poLine?.productId || '',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             productNumber: poLine ? (poLine as any).productNumber || poLine?.productId?.substring(0,8) : '',
             productDescription: poLine?.productDescription || '',
             quantityInvoiced: lti.defaultQty,

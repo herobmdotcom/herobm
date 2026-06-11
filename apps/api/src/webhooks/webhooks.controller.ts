@@ -31,14 +31,17 @@ import {
   CasbinGuard,
   CasbinResource,
   CasbinAction,
+  SkipCasbin,
 } from '../auth/casbin.guard';
 import { CreateWebhookDto, UpdateWebhookDto, WebhookResponseDto } from './dto';
 import { OUTBOX_EVENT_TYPES } from '../common/event-types';
 
-@ApiTags('Webhooks')
+import { ThrottlerGuard } from '@nestjs/throttler';
+
+@ApiTags('System')
 @ApiBearerAuth()
 @Controller('webhooks')
-@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard, ThrottlerGuard)
 @CasbinResource(SystemResource.WEBHOOKS)
 export class WebhooksController {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
@@ -55,7 +58,7 @@ export class WebhooksController {
   }
 
   @Get('events')
-  @CasbinAction('read')
+  @SkipCasbin()
   @ApiOperation({
     summary: 'List Available Events',
     description:

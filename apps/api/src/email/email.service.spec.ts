@@ -18,6 +18,7 @@ describe('EmailService', () => {
     const mockReturning = jest.fn().mockResolvedValue([{ id: 'mock-id' }]);
     const mockValues = jest.fn().mockReturnValue({ returning: mockReturning });
     const mockInsert = jest.fn().mockReturnValue({ values: mockValues });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mockTx = { insert: mockInsert } as any;
 
     await service.queueEmail(mockTx, {

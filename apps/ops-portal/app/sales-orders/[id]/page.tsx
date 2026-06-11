@@ -25,7 +25,7 @@ import QuoteGenerationDialog from './QuoteGenerationDialog';
 import { formatLocationDisplay } from '@/lib/formatters';
 import OrderDetailsCard from './OrderDetailsCard';
 
-import type { TaxCategory } from './types';
+import type { TaxCategory, OrderLine } from './types';
 import { getTaxLabel } from './types';
 import { useOrder } from './useOrder';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -87,6 +87,7 @@ function EventIcon({ type }: { type: string }) {
         return_line_updated: '✏️',
         return_line_removed: '🗑️',
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return <span className="mr-2" style={{ fontSize: '1.2rem', lineHeight: 1 }} title={t(type as any)}>{icons[type] || '📌'}</span>;
 }
 
@@ -223,6 +224,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
         order.lines, 
         inventoryData.map(inv => ({ 
             productId: inv.productId, 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             locationId: inv.locationId as any, 
             quantityAvailable: inv.quantityAvailable 
         })), 
@@ -245,6 +247,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                           }
                         }}
                         isSaving={saving}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         badges={order.stateCode ? <StateBadge state={order.stateCode as any} /> : ''}
                         nav={<PageNav sections={visibleSections} />}
                         actions={
@@ -320,6 +323,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         editNotes={editNotes}
                         setEditNotes={setEditNotes}
                         saveHeader={saveHeader}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         locations={locations as any}
                         copyOrder={copyOrder}
                         copying={copying}
@@ -415,14 +419,15 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     </div>
 
                     {activeTab === 'lines' ? (() => {
-                        const hasActionColumn = isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable) || isPostConfirmationAddingEnabled;
+                        const hasActionColumn = isOrderLinesEditable || (order.lines || []).some((l: OrderLine) => l.isPostConfirmation && isOrderDetailsEditable) || isPostConfirmationAddingEnabled;
 
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         const lineColumns: any[] = [
                             {
                                 id: 'lineNumber',
                                 header: tSales('columns.lineNumber'),
                                 width: 40,
-                                render: (line: any) => (
+                                render: (line: OrderLine) => (
                                     <span style={{ color: 'var(--text-muted)', fontWeight: 400, position: 'relative' }}>
                                         {line.lineNumber}
                                     </span>
@@ -431,7 +436,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                             {
                                 id: 'product',
                                 header: tSales('columns.product'),
-                                render: (line: any) => (
+                                render: (line: OrderLine) => (
                                     <span style={{ fontWeight: 600, fontSize: 12 }}>
                                         {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
                                             <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
@@ -451,7 +456,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                             {
                                 id: 'description',
                                 header: tSales('columns.description'),
-                                render: (line: any) => {
+                                render: (line: OrderLine) => {
                                     const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                                     return (!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') && isEditable ? (
                                         <input
@@ -476,7 +481,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 header: tSales('columns.qty'),
                                 width: 90,
                                 align: 'right',
-                                render: (line: any) => {
+                                render: (line: OrderLine) => {
                                     const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                                     const hasGap = gapMap.has(line.salesOrderLineId);
                                     const warningIcon = hasGap ? (
@@ -526,7 +531,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 header: tSales('columns.uom'),
                                 width: 80,
                                 align: 'right',
-                                render: (line: any) => {
+                                render: (line: OrderLine) => {
                                     const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                                     if (isEditable) {
                                         const uoms: ProductUom[] = line.productUoms || [];
@@ -541,8 +546,10 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     const newVal = e.target.value;
                                                     const oldVal = line.unitOfMeasure || defaultUom;
                                                     if (newVal !== oldVal) {
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         const oldO = selectOptions.find((o: any) => o.uomCode === oldVal);
                                                         const oldRatio = typeof oldO?.ratio === 'string' ? parseFloat(oldO.ratio) : (oldO?.ratio || 1);
+                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                         const newO = selectOptions.find((o: any) => o.uomCode === newVal);
                                                         const newRatio = typeof newO?.ratio === 'string' ? parseFloat(newO.ratio) : (newO?.ratio || 1);
                                                         const newPrice = calculateUomPriceAdjustment(line.pricePerUnit || 0, oldRatio, newRatio);
@@ -553,6 +560,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     }
                                                 }}
                                             >
+                                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                                 {selectOptions.map((o: any) => (
                                                     <option key={o.uomCode} value={o.uomCode}>{o.uomCode}</option>
                                                 ))}
@@ -568,7 +576,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 header: tSales('columns.unitPrice'),
                                 width: 110,
                                 align: 'right',
-                                render: (line: any) => {
+                                render: (line: OrderLine) => {
                                     const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                                     if (isEditable) {
                                         return (
@@ -599,7 +607,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 header: tSales('columns.discountPct'),
                                 width: 80,
                                 align: 'right',
-                                render: (line: any) => {
+                                render: (line: OrderLine) => {
                                     const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                                     if (isEditable) {
                                         return (
@@ -644,16 +652,16 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 ),
                                 width: 110,
                                 align: 'right',
-                                render: (line: any) => {
+                                render: (line: OrderLine) => {
                                     const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
-                                    const isExternalTax = !!(order as any).taxProvider && (order as any).taxProvider !== 'internal';
+                                    const isExternalTax = !!order.taxProvider && order.taxProvider !== 'internal';
 
                                     if (isExternalTax) {
-                                        const isStale = (order as any)?.customFields?.taxIsStale === true || (order as any)?.customFields?.taxIsStale === 'true';
+                                        const isStale = order?.customFields?.taxIsStale === true || order?.customFields?.taxIsStale === 'true';
                                         if (isStale) {
-                                            return <span className="badge badge-warning" title={tSales('taxNeedsToBeCalculated', { provider: (order as any).taxProvider })}>{tCommon('pending')}</span>;
+                                            return <span className="badge badge-warning" title={tSales('taxNeedsToBeCalculated', { provider: order.taxProvider || '' })}>{tCommon('pending')}</span>;
                                         }
-                                        return <span title={`Calculated by ${(order as any).taxProvider}`} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>
+                                        return <span title={`Calculated by ${order.taxProvider}`} style={{ cursor: 'help', borderBottom: '1px dotted var(--text-muted)' }}>
                                             {formatAmount(parseFloat(line.tax || '0'), order.currencyCode || 'EUR')}
                                         </span>;
                                     }
@@ -703,7 +711,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 header: tSales('columns.amount'),
                                 width: 110,
                                 align: 'right',
-                                render: (line: any) => {
+                                render: (line: OrderLine) => {
                                     const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                                     return (
                                         <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums', color: isEditable ? 'var(--text-primary)' : undefined }}>
@@ -720,7 +728,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 header: '',
                                 width: 50,
                                 align: 'right',
-                                render: (line: any) => {
+                                render: (line: OrderLine) => {
                                     const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                                     if (!isEditable) return null;
                                     return (
@@ -739,10 +747,10 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         return (
                             <DataTable
                                 data={order.lines}
-                                keyExtractor={(line: any, idx: number) => line.salesOrderLineId || idx}
+                                keyExtractor={(line: OrderLine, idx: number) => line.salesOrderLineId || idx}
                                 columns={lineColumns}
                                 emptyMessage={tSales('noLineItems')}
-                                mobileCard={(line: any) => {
+                                mobileCard={(line: OrderLine) => {
                                     const actionCol = lineColumns.find(c => c.id === 'actions')?.render?.(line, 0);
                                     return (
                                         <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
@@ -778,8 +786,8 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 }}
                             footer={
                                 (order.lines || []).length > 0 ? (() => {
-                                    const isExternalTax = !!(order as any).taxProvider && (order as any).taxProvider !== 'internal';
-                                    const isStale = isExternalTax && ((order as any)?.customFields?.taxIsStale === true || (order as any)?.customFields?.taxIsStale === 'true');
+                                    const isExternalTax = !!order.taxProvider && order.taxProvider !== 'internal';
+                                    const isStale = isExternalTax && (order?.customFields?.taxIsStale === true || order?.customFields?.taxIsStale === 'true');
                                     const taxPct = subtotal > 0 && !isStale ? (totalTax / subtotal) * 100 : 0;
                                     return (
                                         <>
@@ -790,6 +798,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                                                     {formatAmount(subtotal, order.currencyCode || 'EUR')}
                                                 </td>
+                                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                                 {(isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
                                             </tr>
                                             <tr className="hidden lg:table-row">
@@ -799,6 +808,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                                                     {isStale ? <span className="badge badge-warning text-xs font-normal" style={{ marginLeft: 'auto' }}>{tCommon('pending')}</span> : formatAmount(totalTax, order.currencyCode || 'EUR')}
                                                 </td>
+                                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                                 {(isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
                                             </tr>
                                             <tr className="hidden lg:table-row" style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
@@ -808,6 +818,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
                                                     {isStale ? <span className="badge badge-warning text-xs font-normal" style={{ marginLeft: 'auto' }}>{tCommon('pending')}</span> : formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}
                                                 </td>
+                                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                                 {(isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
                                             </tr>
                                             {/* button moved to header */}
@@ -838,7 +849,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         ) : (
                             <DataTable
                                 data={order.lines}
-                                keyExtractor={(line: any, idx: number) => line.salesOrderLineId || idx}
+                                keyExtractor={(line: OrderLine, idx: number) => line.salesOrderLineId || idx}
                                 columns={[
                                     { header: tSales('columns.lineNumber'), width: 40 },
                                     { header: tSales('columns.product') },
@@ -852,11 +863,13 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     { header: tSales('columns.available'), width: 90, align: 'right' },
                                     { header: tSales('columns.status'), width: 70, align: 'center' }
                                 ]}
-                                renderCustomRow={(line: any, idx: number) => {
+                                renderCustomRow={(line: OrderLine, idx: number) => {
                                     const lineInventory = inventoryData.filter(
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         (inv: any) => inv.productId === line.productId && line.productId !== '00000000-0000-0000-0000-000000000000',
                                     );
                                     const totalAvail = lineInventory.reduce(
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         (sum: number, inv: any) => sum + parseFloat(inv.quantityAvailable || '0'), 0,
                                     );
                                     const gap = gapMap.get(line.salesOrderLineId);
@@ -907,6 +920,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     </td>
                                                     <td style={{ textAlign: 'center' }}>❌</td>
                                                 </tr>
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             ) : lineInventory.map((inv: any, idx: number) => (
                                                 <tr key={`${line.salesOrderLineId}-${inv.locationId}`}>
                                                     {idx === 0 && (
@@ -953,11 +967,13 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         </Fragment>
                                     );
                                 }}
-                                mobileCard={(line: any) => {
+                                mobileCard={(line: OrderLine) => {
                                     const lineInventory = inventoryData.filter(
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         (inv: any) => inv.productId === line.productId && line.productId !== '00000000-0000-0000-0000-000000000000',
                                     );
                                     const totalAvail = lineInventory.reduce(
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                         (sum: number, inv: any) => sum + parseFloat(inv.quantityAvailable || '0'), 0,
                                     );
                                     const gap = gapMap.get(line.salesOrderLineId);
@@ -997,11 +1013,12 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     
                                                     <div className="mt-3 flex flex-col gap-2">
                                                         <span className="text-xs font-medium text-slate-500">{tSales('columns.location')}:</span>
+                                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                                         {lineInventory.map((inv: any) => (
                                                             <div key={inv.locationId} className="bg-slate-50 rounded p-2 text-xs flex flex-col gap-1 border border-slate-100">
                                                                 <div className="flex justify-between font-medium">
                                                                     <span className={inv.locationId === order.fulfillmentLocationId ? 'text-[var(--accent)]' : ''}>{inv.locationName}</span>
-                                                                    <span className={parseFloat(inv.quantityAvailable) >= line.quantity ? 'text-emerald-600' : 'text-rose-600'}>{parseFloat(inv.quantityAvailable)} {tSales('availabilityTable.avail')}</span>
+                                                                    <span className={parseFloat(inv.quantityAvailable) >= parseFloat(line.quantity as string) ? 'text-emerald-600' : 'text-rose-600'}>{parseFloat(inv.quantityAvailable)} {tSales('availabilityTable.avail')}</span>
                                                                 </div>
                                                                 <div className="flex justify-between text-slate-500">
                                                                     <span>{parseFloat(inv.quantityOnHand)} {tSales('availabilityTable.onHand')}</span>
@@ -1022,6 +1039,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         <div>
                             <DataTable
                                 data={order.backorders || []}
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 keyExtractor={(bo: any, idx: number) => bo.salesOrderLineId || bo.purchaseOrderId || idx}
                                 emptyMessage={tSales('noBackordersFound')}
                                 columns={[
@@ -1031,6 +1049,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     { header: tSales('columns.status') },
                                     { header: tSales('columns.demandDate') },
                                 ]}
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 renderCustomRow={(bo: any, bo_idx: number) => {
                                     const isPo = !!bo.purchaseOrderId;
                                     const displayOrderNumber = isPo ? bo.purchaseOrderNumber || '—' : '—';
@@ -1068,6 +1087,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         </tr>
                                     );
                                 }}
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 mobileCard={(bo: any) => {
                                     const isPo = !!bo.purchaseOrderId;
                                     const displayOrderNumber = isPo ? bo.purchaseOrderNumber || '—' : '—';
@@ -1192,6 +1212,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     <tbody className="divide-y divide-gray-200 bg-white">
                                         {order.lines
                                             .filter(l => gapMap.has(l.salesOrderLineId))
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             .map((line: any) => {
                                                 const gap = gapMap.get(line.salesOrderLineId);
                                                 return (

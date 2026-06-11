@@ -52,6 +52,8 @@ export class CreateSalesCreditNoteDto {
   lines?: CreateSalesCreditNoteLineDto[];
 }
 
+export class EmptyBodyDto {}
+
 export class SalesCreditNoteResponseDto {
   @ApiProperty()
   creditNoteId!: string;

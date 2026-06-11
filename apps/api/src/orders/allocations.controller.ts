@@ -60,7 +60,7 @@ import {
 } from '../drizzle/modbm-core-schema';
 import { sql, eq, and, inArray } from 'drizzle-orm';
 
-@ApiTags('Orders')
+@ApiTags('Warehouse')
 @Controller('allocations')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.PURCHASE_ORDERS)

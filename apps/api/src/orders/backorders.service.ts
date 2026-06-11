@@ -95,8 +95,8 @@ export class BackordersService {
       await this.inventoryService.findByProductIds(productIds);
 
     const gaps = calculateInventoryGaps(
-      lines as any,
-      levels as any,
+      lines as unknown as Parameters<typeof calculateInventoryGaps>[0],
+      levels as unknown as Parameters<typeof calculateInventoryGaps>[1],
       header?.fulfillmentLocationId,
     );
 
@@ -363,7 +363,23 @@ export class BackordersService {
     });
   }
 
-  async generatePOsFromDemands(payload: any, actor: string) {
+  async generatePOsFromDemands(
+    payload: {
+      pos: {
+        vendorId: string;
+        currencyCode?: string;
+        soNumbers?: string[];
+        deliveryLocationId?: string;
+        lines: {
+          productId: string;
+          quantity: string | number;
+          pricePerUnit: string | number;
+          backorderIds?: string[];
+        }[];
+      }[];
+    },
+    actor: string,
+  ) {
     this.logger.log(
       `Manual PO Generation triggered by ${actor} for ${payload.pos?.length || 0} POs`,
     );
@@ -415,7 +431,8 @@ export class BackordersService {
           const locs = await tx.execute(
             sql`SELECT location_id FROM modbm_core.locations LIMIT 1`,
           );
-          deliveryLocationId = (locs as any)[0]?.location_id;
+          deliveryLocationId = (locs as unknown as { location_id: string }[])[0]
+            ?.location_id;
         }
         if (!deliveryLocationId) {
           throw new HttpException(
@@ -489,7 +506,10 @@ export class BackordersService {
     });
   }
 
-  async generateTransfersFromDemands(payload: any, actor: string) {
+  async generateTransfersFromDemands(
+    payload: { transfers?: Record<string, unknown>[] },
+    actor: string,
+  ) {
     this.logger.warn(
       `generateTransfersFromDemands called by ${actor} but not fully implemented yet`,
     );
@@ -839,7 +859,7 @@ export class BackordersService {
     const [updated] = await db
       .update(backorders)
       .set({
-        stateCode: newState as any,
+        stateCode: newState as typeof backorders.$inferInsert.stateCode,
         modifiedOn: new Date(),
         ...additionalFields,
       })

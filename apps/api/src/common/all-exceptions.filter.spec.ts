@@ -6,7 +6,9 @@ describe('AllExceptionsFilter', () => {
   let filter: AllExceptionsFilter;
   let errorSpy: jest.SpyInstance;
   let warnSpy: jest.SpyInstance;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockResponse: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockRequest: any;
   let mockHost: ArgumentsHost;
 
@@ -28,6 +30,7 @@ describe('AllExceptionsFilter', () => {
         getRequest: () => mockRequest,
         getResponse: () => mockResponse,
       }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
   });
 

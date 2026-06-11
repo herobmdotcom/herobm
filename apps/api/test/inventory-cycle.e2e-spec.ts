@@ -173,6 +173,7 @@ describe('Inventory Cycle (e2e)', () => {
       .expect(200);
 
     const physicalStock = inventoryRes.body.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (d: any) => d.productId === productId && d.locationId === locationId,
     );
     expect(parseFloat(physicalStock?.quantityOnHand || '0')).toBe(0);
@@ -182,6 +183,7 @@ describe('Inventory Cycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     const stockAfter = invResAfter.body.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (d: any) => d.productId === productId && d.locationId === locationId,
     );
     // QOH is 0 because the received goods are in the RECEIVING bin, which is excluded from availability
@@ -230,6 +232,7 @@ describe('Inventory Cycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     const binData = binsRes.body.data.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (b: any) => b.productId === productId,
     );
     const binId = binData?.binId;
@@ -276,6 +279,7 @@ describe('Inventory Cycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     const stockAfter = invResAfter.body.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (d: any) => d.productId === productId && d.locationId === locationId,
     );
     // The picking occurred from the RECEIVING bin (excluded) into the SHIPPING bin (excluded),
@@ -340,6 +344,7 @@ describe('Inventory Cycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     const stockAfter = invResAfter.body.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (d: any) => d.productId === productId && d.locationId === locationId,
     );
     // QOH remains 0 because returns are received into the RECEIVING dock bin
@@ -360,6 +365,7 @@ describe('Inventory Cycle (e2e)', () => {
     // After all operations, the available stock across all locations is 0.
     // The physical 12 items (10 received + 2 returned) are in the receiving dock, and 4 in shipping, none in storage.
     const totalQoh = invRes.body.reduce(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (sum: number, row: any) => sum + parseFloat(row.quantityOnHand || '0'),
       0,
     );

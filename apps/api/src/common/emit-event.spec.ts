@@ -6,7 +6,9 @@ import { EntityType, EventType, OUTBOX_EVENT_TYPES } from './event-types';
 // ---------------------------------------------------------------------------
 
 interface InsertCall {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   table: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   values: any;
 }
 
@@ -14,7 +16,9 @@ function createMockTx() {
   const calls: InsertCall[] = [];
 
   const tx = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     insert: (table: any) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       values: (vals: any) => {
         calls.push({ table, values: vals });
         return Promise.resolve();
@@ -25,9 +29,12 @@ function createMockTx() {
   return { tx, calls };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function createFailingTx(failOnTable?: any) {
   const tx = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     insert: (table: any) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       values: (_vals: any) => {
         if (!failOnTable || table === failOnTable) {
           return Promise.reject(new Error('DB_INSERT_FAILED'));
@@ -290,6 +297,7 @@ describe('emitEvent', () => {
 
       await expect(
         emitEvent(tx, {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           entityType: 'unknown_entity' as any,
           entityId: 'id-001',
           eventType: 'created',

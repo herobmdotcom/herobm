@@ -5,7 +5,9 @@ import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
 
 describe('Print DB', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let app: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let db: any;
 
   beforeAll(async () => {

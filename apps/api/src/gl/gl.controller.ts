@@ -51,7 +51,7 @@ import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 import { ApiPaginatedResponse } from '../common/pagination';
 
-@ApiTags('GL')
+@ApiTags('General Ledger')
 @Controller('gl')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.GL)
@@ -105,6 +105,7 @@ export class GlController {
     @Body()
     body: CreateAccountRequestDto,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return this.glService.createAccount(body as any);
   }
 

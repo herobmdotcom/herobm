@@ -125,6 +125,7 @@ describe('Permissions & RBAC (e2e)', () => {
 
     // Remove webhooks write
     const restoredPermissions = getRes.body.permissions.filter(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (p: any) => !(p.resource === 'webhooks' && p.action === 'write'),
     );
 
@@ -156,6 +157,7 @@ describe('Permissions & RBAC (e2e)', () => {
       .expect(200);
 
     expect(Array.isArray(res.body)).toBe(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const viewerRole = res.body.find((r: any) => r.role === 'viewer');
     expect(viewerRole).toBeDefined();
     expect(Array.isArray(viewerRole.permissions)).toBe(true);

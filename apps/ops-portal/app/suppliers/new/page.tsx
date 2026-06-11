@@ -53,7 +53,7 @@ export default function NewSupplierPage() {
       const res = await api.suppliersControllerCreate(dto as api.CreateSupplierDto);
       const supplier = res.data;
       toast.success(tCommon('toast.supplierCreated'));
-      router.push(`/suppliers/${(supplier as any).vendorId || supplier.id}`);
+      router.push(`/suppliers/${(supplier as { vendorId?: string; id?: string }).vendorId || (supplier as { vendorId?: string; id?: string }).id}`);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -61,7 +61,7 @@ export default function NewSupplierPage() {
     }
   };
 
-  const updateField = (field: string, value: any) => {
+  const updateField = (field: string, value: unknown) => {
     setDto((prev) => ({ ...prev, [field]: value }));
   };
 

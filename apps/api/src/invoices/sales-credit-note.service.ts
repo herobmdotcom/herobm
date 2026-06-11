@@ -251,6 +251,7 @@ export class SalesCreditNoteService {
           )
           .where(eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId))
           .limit(1)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .then((r: any[]) => r[0]);
 
         if (!orderLine) continue;
@@ -361,6 +362,7 @@ export class SalesCreditNoteService {
       }
 
       // 8. Post the GL journal entry (reverse of sales invoice)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const glLines: any[] = [
         {
           accountCode: revCode,
@@ -416,6 +418,7 @@ export class SalesCreditNoteService {
       );
 
       // Record Refund in External Engine if applicable
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const orderTaxProvider = (order as any).taxProvider;
       if (
         orderTaxProvider &&
@@ -457,6 +460,7 @@ export class SalesCreditNoteService {
           to_city: address1City,
           to_street: address1Line1,
           line_items: taxableLines.map((l) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const payloadLine: any = {
               id: l.salesOrderLineId,
               product_identifier: l.productNumber,
@@ -482,8 +486,15 @@ export class SalesCreditNoteService {
             innerTx,
           );
           if (!enrichRes.isValid) {
+            const errObj = enrichRes.data?.error;
+            const errMsg =
+              errObj instanceof Error
+                ? errObj.message
+                : typeof errObj === 'string'
+                  ? errObj
+                  : JSON.stringify(errObj);
             throw new BadRequestException(
-              `Tax provider rejected refund: ${enrichRes.data?.error}`,
+              `Tax provider rejected refund: ${errMsg}`,
             );
           }
           this.logger.log(
@@ -507,6 +518,7 @@ export class SalesCreditNoteService {
         .set({ stateCode: RETURN_STATE.PROCESSED, modifiedOn: new Date() })
         .where(eq(salesOrderReturns.returnId, returnId));
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(innerTx as any, {
         entityType: EntityType.SALES_ORDER,
         entityId: ret.salesOrderId,
@@ -523,6 +535,7 @@ export class SalesCreditNoteService {
       });
 
       // 9. Outbox event
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(innerTx as any, {
         entityType: EntityType.SALES_ORDER,
         entityId: ret.salesOrderId,
@@ -637,7 +650,9 @@ export class SalesCreditNoteService {
     if (!arAcct) throw new BadRequestException('AR account not found');
 
     let totalCreditAmount = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const glLines: any[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cnLineValues: any[] = [];
 
     for (const line of dto.lines) {
@@ -658,6 +673,7 @@ export class SalesCreditNoteService {
         .from(glAccounts)
         .where(eq(glAccounts.glAccountId, line.accountId));
       if (!acct)
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new BadRequestException(`Account ${line.accountId} not found`);
 
       glLines.push({

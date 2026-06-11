@@ -135,9 +135,13 @@ async function seed() {
     for (const seedData of SEEDS) {
       // 1. Read the Typst file
       let typstContent = '';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ('templateString' in seedData && (seedData as any).templateString) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         typstContent = (seedData as any).templateString;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } else if ('templatePath' in seedData && (seedData as any).templatePath) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const absolutePath = join(__dirname, (seedData as any).templatePath);
         try {
           typstContent = readFileSync(absolutePath, 'utf8');
@@ -179,9 +183,12 @@ async function seed() {
 
       // 5. Seed report contexts
       if (
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (seedData as any).contexts &&
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Array.isArray((seedData as any).contexts)
       ) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         for (const ctx of (seedData as any).contexts) {
           await db
             .insert(pdfTemplateContexts)

@@ -43,7 +43,7 @@ import {
 } from './dto/bank-statement.dto';
 import { MatchConfirmedResponseDto } from './dto';
 
-@ApiTags('BankFeeds')
+@ApiTags('General Ledger')
 @ApiBearerAuth()
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.GL)

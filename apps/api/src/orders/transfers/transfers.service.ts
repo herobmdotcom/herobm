@@ -163,7 +163,7 @@ export class TransferService {
           .where(eq(backorders.backorderId, line.backorderId));
       }
 
-      await emitEvent(tx as any, {
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,
         eventType: EventType.CREATED,
@@ -233,7 +233,11 @@ export class TransferService {
       .where(eq(transferOrderPicks.transferOrderId, transferOrderId));
 
     const productIds = Array.from(
-      new Set(lines.map((l: any) => l.productId).filter(Boolean) as string[]),
+      new Set(
+        lines
+          .map((l: Record<string, unknown>) => l.productId)
+          .filter(Boolean) as string[],
+      ),
     );
     const binStock =
       productIds.length > 0
@@ -257,33 +261,37 @@ export class TransferService {
         : [];
 
     // For each line, compute remaining and get available bins
-    const enrichedLines = lines.map((line: any) => {
+    const enrichedLines = lines.map((line: Record<string, unknown>) => {
       const linePicks = picks.filter(
-        (p: any) =>
+        (p: Record<string, unknown>) =>
           p.transferOrderLineId === line.transferOrderLineId &&
           p.stateCode !== TRANSFER_ORDER_PICK_STATE.CANCELLED,
       );
       const pickedQty = linePicks.reduce(
-        (acc: number, p: any) => acc + parseFloat(p.quantity),
+        (acc: number, p: Record<string, unknown>) =>
+          acc + parseFloat(p.quantity as string),
         0,
       );
       const orderedQty = parseFloat(line.quantity as string);
       const remaining = orderedQty - pickedQty;
 
-      let availableBins: any[] = [];
+      let availableBins: Record<string, unknown>[] = [];
       let totalOnHand = 0;
 
       if (line.productType === 'inventory') {
         availableBins = binStock
-          .filter((b: any) => b.productId === line.productId)
-          .map((b: any) => ({
+          .filter(
+            (b: Record<string, unknown>) => b.productId === line.productId,
+          )
+          .map((b: Record<string, unknown>) => ({
             binId: b.binId,
             binName: b.binName,
             onHand: b.onHand,
           }));
 
         totalOnHand = availableBins.reduce(
-          (acc: number, b: any) => acc + parseFloat(b.onHand),
+          (acc: number, b: Record<string, unknown>) =>
+            acc + parseFloat(b.onHand as string),
           0,
         );
       }
@@ -301,12 +309,15 @@ export class TransferService {
       };
     });
 
-    const isFullyPicked = enrichedLines.every((l: any) => l.isFullyPicked);
+    const isFullyPicked = enrichedLines.every(
+      (l: Record<string, unknown>) => l.isFullyPicked,
+    );
 
     return {
       totalLines: lines.length,
-      fullyPickedLines: enrichedLines.filter((l: any) => l.isFullyPicked)
-        .length,
+      fullyPickedLines: enrichedLines.filter(
+        (l: Record<string, unknown>) => l.isFullyPicked,
+      ).length,
       isFullyPicked,
       lines: enrichedLines,
       picks,
@@ -351,7 +362,9 @@ export class TransferService {
 
     const availableBins = rawBins;
 
-    const bin = availableBins.find((b: any) => b.binId === binId);
+    const bin = availableBins.find(
+      (b: Record<string, unknown>) => b.binId === binId,
+    );
     if (!bin) {
       throw new BadRequestException('Bin not found or not pickable');
     }
@@ -387,7 +400,7 @@ export class TransferService {
         );
       }
 
-      await emitEvent(tx as any, {
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.WAREHOUSE,
         entityId: lineId,
         eventType: EventType.PICK_CREATED,
@@ -433,7 +446,8 @@ export class TransferService {
         .select({ orderNumber: transferOrders.orderNumber })
         .from(transferOrders)
         .where(eq(transferOrders.transferOrderId, transferOrderId));
-      await emitEvent(tx as any, {
+      await emitEvent(tx as unknown as DrizzleDB, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         entityType: 'transfer_order' as any,
         entityId: transferOrderId,
         eventType: EventType.LINE_REMOVED,
@@ -561,7 +575,7 @@ export class TransferService {
         await tx
           .update(transferOrderPicks)
           // eslint-disable-next-line no-restricted-syntax
-          .set({ stateCode: TRANSFER_ORDER_PICK_STATE.SHIPPED as any })
+          .set({ stateCode: TRANSFER_ORDER_PICK_STATE.SHIPPED as string })
           .where(eq(transferOrderPicks.pickId, pick.pickId));
 
         // E. Update shipped quantity on order line
@@ -598,7 +612,7 @@ export class TransferService {
         tx,
       );
 
-      await emitEvent(tx as any, {
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,
         eventType: EventType.STOCK_DISPATCHED,
@@ -733,7 +747,7 @@ export class TransferService {
       );
 
       // Emit Event
-      await emitEvent(tx as any, {
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,
         eventType: EventType.STATUS_CHANGED,
@@ -758,7 +772,7 @@ export class TransferService {
         eq(transferOrderShipments.transferOrderId, transferOrderId),
         eq(
           transferOrderShipments.stateCode,
-          TRANSFER_ORDER_STATE.SHIPPED as any,
+          TRANSFER_ORDER_STATE.SHIPPED as string,
         ),
       ),
     });
@@ -943,7 +957,7 @@ export class TransferService {
         tx,
       );
 
-      await emitEvent(tx as any, {
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,
         eventType: EventType.UPDATED,
@@ -1007,7 +1021,7 @@ export class TransferService {
       .where(eq(transferOrders.transferOrderId, transferOrderId))
       .returning();
 
-    await emitEvent(tx as any, {
+    await emitEvent(tx as unknown as DrizzleDB, {
       entityType: EntityType.TRANSFER_ORDER,
       entityId: transferOrderId,
       eventType: EventType.STATUS_CHANGED,
@@ -1051,7 +1065,7 @@ export class TransferService {
 
     await tx
       .update(transferOrderPicks)
-      .set({ stateCode: newState as any, modifiedOn: new Date() })
+      .set({ stateCode: newState as string, modifiedOn: new Date() })
       .where(eq(transferOrderPicks.pickId, pickId));
 
     if (newState === TRANSFER_ORDER_PICK_STATE.CANCELLED) {
@@ -1059,7 +1073,7 @@ export class TransferService {
         .select({ orderNumber: transferOrders.orderNumber })
         .from(transferOrders)
         .where(eq(transferOrders.transferOrderId, existing.transferOrderId));
-      await emitEvent(tx as any, {
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.WAREHOUSE,
         entityId: pickId,
         eventType: EventType.PICK_CANCELLED,
@@ -1094,9 +1108,9 @@ export class TransferService {
 
     if (states && states.length > 0) {
       if (states.length === 1) {
-        conditions.push(eq(transferOrders.stateCode, states[0] as any));
+        conditions.push(eq(transferOrders.stateCode, states[0]));
       } else {
-        conditions.push(inArray(transferOrders.stateCode, states as any[]));
+        conditions.push(inArray(transferOrders.stateCode, states));
       }
     }
 
@@ -1164,7 +1178,7 @@ export class TransferService {
         );
       },
       encodeRow: (row) => ({
-        createdOn: row.createdOn.toISOString(),
+        createdOn: (row.createdOn || new Date()).toISOString(),
         id: row.id,
       }),
     });
@@ -1292,7 +1306,7 @@ export class TransferService {
         await tx.insert(transferOrderLines).values(linesInsert);
       }
 
-      await emitEvent(tx as any, {
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,
         eventType: EventType.UPDATED,
@@ -1319,7 +1333,7 @@ export class TransferService {
       );
     }
 
-    const updates: any = { modifiedOn: new Date() };
+    const updates: Record<string, unknown> = { modifiedOn: new Date() };
     if (dto.sourceLocationId) updates.sourceLocationId = dto.sourceLocationId;
     if (dto.destinationLocationId)
       updates.destinationLocationId = dto.destinationLocationId;
@@ -1434,7 +1448,7 @@ export class TransferService {
         })
         .where(eq(backorders.transferOrderId, id));
 
-      await emitEvent(tx as any, {
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: id,
         eventType: EventType.LINE_REMOVED,

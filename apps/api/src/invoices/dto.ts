@@ -46,7 +46,7 @@ export class PurchaseInvoiceResponseDto {
   lines!: InvoiceLineResponseDto[];
 
   @ApiPropertyOptional({ type: () => [Object] })
-  allocations?: any[];
+  allocations?: Record<string, unknown>[];
 }
 
 export class PurchaseInvoiceListResponseDto {
@@ -73,7 +73,7 @@ export class SalesInvoiceResponseDto {
   lines!: InvoiceLineResponseDto[];
 
   @ApiPropertyOptional({ type: () => [Object] })
-  allocations?: any[];
+  allocations?: Record<string, unknown>[];
 }
 
 export class SalesInvoiceListResponseDto {
@@ -199,4 +199,36 @@ export class UpdateInvoiceLineDto {
   @IsOptional()
   @IsNumber()
   pricePerUnit?: number;
+}
+
+export class UpdatePurchaseInvoiceDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  supplierInvoiceNumber?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  receiptFilename?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  taxAmount?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  currencyCode?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  vendorId?: string;
 }

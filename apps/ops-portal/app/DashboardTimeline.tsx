@@ -52,6 +52,7 @@ function getEventStyle(eventType: string) {
   return EVENT_ICONS[eventType] || { icon: 'event', color: 'var(--text-primary)', bg: 'var(--bg-hover)', path: '#' };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatRelativeTime(dateString: string, t: any) {
   const d = new Date(dateString);
   const now = new Date();

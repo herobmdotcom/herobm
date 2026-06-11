@@ -24,6 +24,7 @@ import { getErrorMessage } from '@modbm/shared';
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface TaxCategory {
+  [key: string]: unknown;
   taxCategoryId: string;
   code: string;
   title: string;
@@ -33,6 +34,7 @@ interface TaxCategory {
 }
 
 interface ExchangeRate {
+  [key: string]: unknown;
   exchangeRateId: string;
   currencyCode: string;
   currencyName: string;
@@ -43,6 +45,7 @@ interface ExchangeRate {
 }
 
 interface CostCenter {
+  [key: string]: unknown;
   costCenterId: string;
   code: string;
   name: string;
@@ -51,6 +54,7 @@ interface CostCenter {
 }
 
 interface Activity {
+  [key: string]: unknown;
   activityId: string;
   code: string;
   name: string;
@@ -58,7 +62,7 @@ interface Activity {
   isActive: boolean;
 }
 
-const TAX_TYPES = (t: any) => [
+const TAX_TYPES = (t: (key: string) => string) => [
   { value: 'tax_applies', label: t('admin.settings.taxTypes.tax_applies') },
   { value: 'zero_rated', label: t('admin.settings.taxTypes.zero_rated') },
   { value: 'exempt', label: t('admin.settings.taxTypes.exempt') },
@@ -72,7 +76,7 @@ export default function FinancialSettingsPage() {
   const tCommon = useTranslations('admin.common');
   const t = useTranslations();
   useDocumentTitle(tSettings('title'));
-  const taxTypes = useMemo(() => TAX_TYPES(t), [t]);
+  const taxTypes = useMemo(() => TAX_TYPES(t as unknown as (key: string) => string), [t]);
   const router = useRouter();
 
   // ── Tax state ──────────────────────────────────────────────────────────────
@@ -105,46 +109,50 @@ export default function FinancialSettingsPage() {
   const [activityCreating, setActivityCreating] = useState(false);
 
   // ── GL Settings state ────────────────────────────────────────────────────────
-  const [glSettings, setGlSettings] = useState<any | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [glSettings, setGlSettings] = useState<Record<string, any> | null>(null);
 
   const ratesWithBase = useMemo(() => {
     if (!glSettings?.baseCurrency) return rates;
     const baseRow = {
       isSystemBase: true,
-      currencyCode: glSettings.baseCurrency,
-      currencyName: getCurrency(glSettings.baseCurrency).name || glSettings.baseCurrency,
+      currencyCode: String(glSettings.baseCurrency),
+      currencyName: getCurrency(String(glSettings.baseCurrency)).name || String(glSettings.baseCurrency),
       effectiveDate: new Date().toISOString(),
-      buyRate: 1.0,
-      sellRate: 1.0
+      buyRate: '1.0',
+      sellRate: '1.0'
     };
     return [baseRow, ...rates];
   }, [glSettings, rates]);
 
   const [glAccounts, setGlAccounts] = useState<api.GlAccountResponseDto[]>([]);
   const [glLoading, setGlLoading] = useState(true);
-  // modbm-allow-record-any
+   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [schemaObj, setSchemaObj] = useState<Record<string, any>>({ type: 'object', properties: {} });
   const [schemaEditorOpen, setSchemaEditorOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [viewMetadataObj, setViewMetadataObj] = useState<any | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [viewMetadataObj, setViewMetadataObj] = useState<Record<string, any> | null>(null);
 
   // ── CoA state ──────────────────────────────────────────────────────────────
-  // modbm-allow-record-any
+   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [coaForm, setCoaForm] = useState<Record<string, any>>({});
   const [coaCreating, setCoaCreating] = useState(false);
   const [coaEditingId, setCoaEditingId] = useState<string | null>(null);
   const [importCoaModalOpen, setImportCoaModalOpen] = useState(false);
 
   const coaTree = useMemo(() => {
-    const map = new Map<string | null, any[]>();
+    const map = new Map<string | null, CoaData[]>();
     for (const acct of glAccounts) {
       const parentId = acct.parentAccountId || null;
       if (!map.has(parentId)) map.set(parentId, []);
       map.get(parentId)!.push(acct);
     }
-    const build = (parentId: string | null, depth: number = 0): any[] => {
+    const build = (parentId: string | null, depth: number = 0): CoaData[] => {
       const children = map.get(parentId) || [];
-      const result: any[] = [];
+      const result: CoaData[] = [];
       for (const acct of children) {
         result.push({ ...acct, depth });
         if (acct.isGroup) {
@@ -173,9 +181,11 @@ export default function FinancialSettingsPage() {
         api.glControllerGetSettings(),
         api.glControllerGetAccounts({} as Record<string, never>)
       ]);
-      setGlSettings(settingsRes.data);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setGlSettings(settingsRes.data as unknown as Record<string, any>);
       setGlAccounts(accountsRes.data);
-      // modbm-allow-record-any
+       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setSchemaObj((settingsRes.data as unknown as { accountMetadataSchema?: Record<string, any> }).accountMetadataSchema || { type: 'object', properties: {} });
     } catch (err: unknown) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.gl }) + ': ' + getErrorMessage(err));
@@ -219,7 +229,7 @@ export default function FinancialSettingsPage() {
   const coaSave = async () => {
     if (!coaForm.accountCode || !coaForm.name || !coaForm.accountType) { toast.error(tCommon('errors.typeAndDateRequired') || 'Required fields missing'); return; }
     try {
-      const payload: any = { ...coaForm };
+      const payload = { ...coaForm } as unknown as api.CreateAccountRequestDto;
       if (coaEditingId) {
         await api.glControllerUpdateAccount(coaEditingId, payload);
         toast.success('Saved');
@@ -251,7 +261,7 @@ export default function FinancialSettingsPage() {
 
   const taxSave = async () => {
     try {
-      const payload: any = { ...taxForm };
+      const payload = { ...taxForm } as unknown as api.CreateTaxCategoryDto;
       if (taxEditingId) {
         await api.taxCategoriesControllerUpdate(taxEditingId, payload);
         toast.success(tSettings('toasts.taxUpdated'));
@@ -363,10 +373,11 @@ export default function FinancialSettingsPage() {
     catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
-  const handleImportCc = async (data: any[]) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleImportCc = async (data: Record<string, any>[]) => {
     setIsImporting(true);
     try {
-      const res = await api.costCentersControllerImport(data);
+      const res = await api.costCentersControllerImport(data as unknown as api.CreateCostCenterDto[]);
       const responseData = res.data;
       toast.success(tSettings('toasts.importSuccess', { count: responseData.count }));
       loadCcs();
@@ -424,10 +435,11 @@ export default function FinancialSettingsPage() {
     catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
-  const handleImportActivity = async (data: any[]) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleImportActivity = async (data: Record<string, any>[]) => {
     setIsImporting(true);
     try {
-      const res = await api.activitiesControllerImport(data);
+      const res = await api.activitiesControllerImport(data as unknown as api.CreateActivityDto[]);
       const responseData = res.data;
       toast.success(tSettings('toasts.importSuccess', { count: responseData.count }));
       loadActivities();
@@ -483,7 +495,9 @@ export default function FinancialSettingsPage() {
     );
   };
 
-  const renderCoaRow = (isEdit: boolean, data: any, key: string) => (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<string, any>; isSystem?: boolean; isBankAccount?: boolean; currencyCode?: string; isActive?: boolean; accountType?: string };
+  const renderCoaRow = (isEdit: boolean, data: Partial<CoaData>, key: string) => (
     <Fragment key={key}>
       <tr style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
         <td style={{ paddingLeft: `${(data.depth || 0) * 20 + 8}px` }}>
@@ -589,12 +603,13 @@ export default function FinancialSettingsPage() {
           )}
         </td>
       </tr>
-      {isEdit && glSettings?.accountMetadataSchema?.type === 'object' && (
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      {isEdit && (glSettings?.accountMetadataSchema as Record<string, any>)?.type === 'object' && (
         <tr style={{ background: 'var(--bg-secondary)' }}>
           <td colSpan={6} style={{ padding: '16px 24px', borderTop: 'none' }}>
             <div className="card bg-[var(--bg-primary)] p-4 shadow-sm border border-[var(--border)]">
               <DynamicForm 
-                schema={glSettings.accountMetadataSchema} 
+                schema={glSettings!.accountMetadataSchema as Record<string, unknown>} 
                 data={coaForm.metadata || {}} 
                 onChange={(data) => setCoaForm({...coaForm, metadata: data})} 
               />
@@ -605,7 +620,7 @@ export default function FinancialSettingsPage() {
     </Fragment>
   );
 
-  const renderTaxRow = (isEdit: boolean, data: any, key: string) => (
+  const renderTaxRow = (isEdit: boolean, data: TaxCategory, key: string) => (
     <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
       <td>
         {isEdit
@@ -658,7 +673,7 @@ export default function FinancialSettingsPage() {
     </tr>
   );
 
-  const renderRateRow = (isEdit: boolean, data: any, key: string) => (
+  const renderRateRow = (isEdit: boolean, data: ExchangeRate & { isSystemBase?: boolean }, key: string) => (
     <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
       <td>
         {isEdit && rateCreating
@@ -701,7 +716,7 @@ export default function FinancialSettingsPage() {
     </tr>
   );
 
-  const renderCcRow = (isEdit: boolean, data: any, key: string) => (
+  const renderCcRow = (isEdit: boolean, data: CostCenter, key: string) => (
     <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
       <td>
         {isEdit && ccCreating
@@ -747,7 +762,7 @@ export default function FinancialSettingsPage() {
     </tr>
   );
 
-  const renderActivityRow = (isEdit: boolean, data: any, key: string) => (
+  const renderActivityRow = (isEdit: boolean, data: Activity, key: string) => (
     <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
       <td>
         {isEdit && activityCreating
@@ -837,61 +852,61 @@ export default function FinancialSettingsPage() {
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultAr')}
                   </label>
-                  {renderGlAccountSelect('defaultArAccountId', glSettings?.defaultArAccountId)}
+                  {renderGlAccountSelect('defaultArAccountId', glSettings?.defaultArAccountId as string | undefined)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultRevenue')}
                   </label>
-                  {renderGlAccountSelect('defaultRevenueAccountId', glSettings?.defaultRevenueAccountId)}
+                  {renderGlAccountSelect('defaultRevenueAccountId', glSettings?.defaultRevenueAccountId as string | undefined)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultAp')}
                   </label>
-                  {renderGlAccountSelect('defaultApAccountId', glSettings?.defaultApAccountId)}
+                  {renderGlAccountSelect('defaultApAccountId', glSettings?.defaultApAccountId as string | undefined)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultTax')}
                   </label>
-                  {renderGlAccountSelect('defaultTaxAccountId', glSettings?.defaultTaxAccountId)}
+                  {renderGlAccountSelect('defaultTaxAccountId', glSettings?.defaultTaxAccountId as string | undefined)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultCogs')}
                   </label>
-                  {renderGlAccountSelect('defaultCogsAccountId', glSettings?.defaultCogsAccountId)}
+                  {renderGlAccountSelect('defaultCogsAccountId', glSettings?.defaultCogsAccountId as string | undefined)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultExpense')}
                   </label>
-                  {renderGlAccountSelect('defaultExpenseAccountId', glSettings?.defaultExpenseAccountId)}
+                  {renderGlAccountSelect('defaultExpenseAccountId', glSettings?.defaultExpenseAccountId as string | undefined)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultInventory')}
                   </label>
-                  {renderGlAccountSelect('defaultInventoryAccountId', glSettings?.defaultInventoryAccountId)}
+                  {renderGlAccountSelect('defaultInventoryAccountId', glSettings?.defaultInventoryAccountId as string | undefined)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultGrni')}
                   </label>
-                  {renderGlAccountSelect('defaultGrniAccountId', glSettings?.defaultGrniAccountId)}
+                  {renderGlAccountSelect('defaultGrniAccountId', glSettings?.defaultGrniAccountId as string | undefined)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultShrinkage')}
                   </label>
-                  {renderGlAccountSelect('defaultShrinkageAccountId', glSettings?.defaultShrinkageAccountId)}
+                  {renderGlAccountSelect('defaultShrinkageAccountId', glSettings?.defaultShrinkageAccountId as string | undefined)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultFeeRevenue')}
                   </label>
-                  {renderGlAccountSelect('defaultFeeRevenueAccountId', glSettings?.defaultFeeRevenueAccountId)}
+                  {renderGlAccountSelect('defaultFeeRevenueAccountId', glSettings?.defaultFeeRevenueAccountId as string | undefined)}
                 </div>
               </div>
               
@@ -902,7 +917,7 @@ export default function FinancialSettingsPage() {
                   </label>
                   <select 
                     className="input max-w-sm" 
-                    value={glSettings?.baseCurrency || ''} 
+                    value={(glSettings?.baseCurrency as string) || ''} 
                     onChange={(e) => updateGlSetting('baseCurrency', e.target.value)}
                   >
                     <option value="">{tCommon('notConfigured')}</option>
@@ -917,7 +932,7 @@ export default function FinancialSettingsPage() {
                   </label>
                   <select 
                     className="input max-w-sm" 
-                    value={glSettings?.revenueRoutingPrecedence || ''} 
+                    value={(glSettings?.revenueRoutingPrecedence as string) || ''} 
                     onChange={(e) => updateGlSetting('revenueRoutingPrecedence', e.target.value)}
                   >
                     <option value="customer_first">{tSettings('gl.customerFirst')}</option>
@@ -930,7 +945,7 @@ export default function FinancialSettingsPage() {
                   </label>
                   <select 
                     className="input max-w-sm" 
-                    value={glSettings?.expenseRoutingPrecedence || ''} 
+                    value={(glSettings?.expenseRoutingPrecedence as string) || ''} 
                     onChange={(e) => updateGlSetting('expenseRoutingPrecedence', e.target.value)}
                   >
                     <option value="supplier_first">{tSettings('gl.supplierFirst')}</option>
@@ -1001,18 +1016,19 @@ export default function FinancialSettingsPage() {
               </button>
             }
             data={categories || []}
-            rowKey={(r: any) => r.taxCategoryId}
-            onSave={async (row: any, isNew: boolean) => {
+            rowKey={(r: TaxCategory) => r.taxCategoryId}
+            onSave={async (row: TaxCategory, isNew: boolean) => {
               if (!row.code || !row.title || !row.type || row.rate === undefined || row.rate === '') {
                 throw new Error(tCommon('errors.typeAndDateRequired'));
               }
               const payload = {
                 code: row.code.toUpperCase(),
                 title: row.title,
-                type: row.type,
-                rate: row.rate,
-                isDefault: row.isDefault,
-                exemptionReason: row.exemptionReason
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                type: String(row.type) as any,
+                rate: String(row.rate),
+                isDefault: Boolean(row.isDefault),
+                exemptionReason: row.exemptionReason ? String(row.exemptionReason) : undefined
               };
               if (isNew) {
                 await api.taxCategoriesControllerCreate(payload);
@@ -1023,7 +1039,7 @@ export default function FinancialSettingsPage() {
               }
               loadTax();
             }}
-            onDelete={async (row: any) => {
+            onDelete={async (row: TaxCategory) => {
               if (!confirm(tSettings('confirmations.deleteTax', { title: row.title }) || 'Are you sure you want to delete this tax?')) return;
               await api.taxCategoriesControllerRemove(row.taxCategoryId);
               toast.success(tSettings('toasts.taxDeleted') || 'Tax deleted');
@@ -1040,13 +1056,13 @@ export default function FinancialSettingsPage() {
                 title: tSettings('labels.code'),
                 type: 'text',
                 width: 120,
-                validate: (v: any) => v ? null : 'Required'
+                validate: (v: unknown) => v ? null : 'Required'
               },
               {
                 key: 'title',
                 title: tSettings('labels.title'),
                 type: 'text',
-                validate: (v: any) => v ? null : 'Required'
+                validate: (v: unknown) => v ? null : 'Required'
               },
               {
                 key: 'type',
@@ -1058,7 +1074,7 @@ export default function FinancialSettingsPage() {
                   { value: 'fixed', label: tSettings('tax.fixed') || 'Fixed' },
                   { value: 'exempt', label: tSettings('tax.exempt') || 'Exempt' }
                 ],
-                render: (row: any, isEditing: boolean) => {
+                render: (row: TaxCategory, isEditing: boolean) => {
                   if (isEditing) return null; // handled by component
                   return <span className="bg-[var(--bg-secondary)] border border-[var(--border)] px-2 py-0.5 rounded text-xs">{row.type}</span>;
                 }
@@ -1068,7 +1084,7 @@ export default function FinancialSettingsPage() {
                 title: tSettings('labels.rate'),
                 type: 'text',
                 width: 100,
-                validate: (v: any) => (v !== '' && v !== null && v !== undefined) ? null : 'Required'
+                validate: (v: unknown) => (v !== '' && v !== null && v !== undefined) ? null : 'Required'
               },
               {
                 key: 'isDefault',
@@ -1090,9 +1106,9 @@ export default function FinancialSettingsPage() {
                 {tSettings('sections.rates')}
               </h3>
             }
-            data={ratesWithBase}
-            rowKey={(r: any) => r.exchangeRateId || r.currencyCode}
-            onSave={async (row: any, isNew: boolean) => {
+            data={ratesWithBase as (ExchangeRate & { isSystemBase?: boolean })[]}
+            rowKey={(r: ExchangeRate) => r.exchangeRateId || r.currencyCode}
+            onSave={async (row: ExchangeRate, isNew: boolean) => {
               if (!row.currencyCode || !row.effectiveDate || !row.buyRate || !row.sellRate) {
                 throw new Error(tCommon('errors.typeAndDateRequired'));
               }
@@ -1100,8 +1116,8 @@ export default function FinancialSettingsPage() {
                 currencyCode: row.currencyCode.toUpperCase(),
                 currencyName: row.currencyName || row.currencyCode.toUpperCase(),
                 effectiveDate: row.effectiveDate,
-                buyRate: row.buyRate,
-                sellRate: row.sellRate
+                buyRate: String(row.buyRate),
+                sellRate: String(row.sellRate)
               };
               if (isNew) {
                 await api.exchangeRatesControllerCreate(payload);
@@ -1112,15 +1128,15 @@ export default function FinancialSettingsPage() {
               }
               loadRates();
             }}
-            onDelete={async (row: any) => {
+            onDelete={async (row: ExchangeRate) => {
               if (!confirm(tSettings('confirmations.deleteRate') || 'Are you sure you want to delete this rate?')) return;
               await api.exchangeRatesControllerRemove(row.exchangeRateId);
               toast.success(tSettings('toasts.rateDeleted') || 'Rate deleted');
               loadRates();
             }}
             onAdd={() => ({ currencyCode: '', currencyName: '', effectiveDate: new Date().toISOString().split('T')[0], buyRate: 1.0, sellRate: 1.0 } as unknown as ExchangeRate)}
-            canEdit={(row: any) => !row.isSystemBase}
-            canDelete={(row: any) => !row.isSystemBase}
+            canEdit={(row: ExchangeRate & { isSystemBase?: boolean }) => !row.isSystemBase}
+            canDelete={(row: ExchangeRate & { isSystemBase?: boolean }) => !row.isSystemBase}
             addLabel={tSettings('actions.create')}
             emptyLabel={tSettings('rates.empty')}
             columns={[
@@ -1129,8 +1145,8 @@ export default function FinancialSettingsPage() {
                 title: tSettings('labels.currencyCode'),
                 type: 'text',
                 width: 100,
-                validate: (v: any) => v ? null : 'Required',
-                render: (row: any, isEditing: boolean) => {
+                validate: (v: unknown) => v ? null : 'Required',
+                render: (row: ExchangeRate & { isSystemBase?: boolean }, isEditing: boolean) => {
                   if (isEditing) return null;
                   return (
                     <div className="flex flex-col gap-0.5">
@@ -1144,18 +1160,18 @@ export default function FinancialSettingsPage() {
                 key: 'currencyName',
                 title: tSettings('labels.currencyName'),
                 type: 'text',
-                validate: (v: any) => v ? null : 'Required'
+                validate: (v: unknown) => v ? null : 'Required'
               },
               {
                 key: 'effectiveDate',
                 title: tSettings('labels.effectiveDate'),
                 type: 'text',
                 width: 150,
-                validate: (v: any) => v ? null : 'Required',
-                render: (row: any, isEditing: boolean) => {
+                validate: (v: unknown) => v ? null : 'Required',
+                render: (row: ExchangeRate & { isSystemBase?: boolean }, isEditing: boolean) => {
                   if (isEditing) return null;
                   if (row.isSystemBase) return <span className="text-xs italic text-muted">{tSettings('labels.systemBase')}</span>;
-                  return <span>{new Date(row.effectiveDate).toLocaleDateString()}</span>;
+                  return <span>{new Date(row.effectiveDate as string).toLocaleDateString()}</span>;
                 }
               },
               {
@@ -1163,14 +1179,14 @@ export default function FinancialSettingsPage() {
                 title: tSettings('labels.buyRate'),
                 type: 'text',
                 width: 110,
-                validate: (v: any) => (v !== '' && v !== null && v !== undefined) ? null : 'Required'
+                validate: (v: unknown) => (v !== '' && v !== null && v !== undefined) ? null : 'Required'
               },
               {
                 key: 'sellRate',
                 title: tSettings('labels.sellRate'),
                 type: 'text',
                 width: 110,
-                validate: (v: any) => (v !== '' && v !== null && v !== undefined) ? null : 'Required'
+                validate: (v: unknown) => (v !== '' && v !== null && v !== undefined) ? null : 'Required'
               }
             ]}
           />
@@ -1199,7 +1215,7 @@ export default function FinancialSettingsPage() {
               </tr>
             </thead>
             <tbody>
-              {ccCreating && renderCcRow(true, ccForm, 'new-cc')}
+              {ccCreating && renderCcRow(true, ccForm as CostCenter, 'new-cc')}
               {!ccLoading && ccs.length === 0 && !ccCreating && (
                 <tr><td colSpan={4} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{tSettings('costCenters.empty')}</td></tr>
               )}
@@ -1236,7 +1252,7 @@ export default function FinancialSettingsPage() {
               </tr>
             </thead>
             <tbody>
-              {activityCreating && renderActivityRow(true, activityForm, 'new-activity')}
+              {activityCreating && renderActivityRow(true, activityForm as Activity, 'new-activity')}
               {!activityLoading && activitiesData.length === 0 && !activityCreating && (
                 <tr><td colSpan={4} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{tSettings('activities.empty')}</td></tr>
               )}

@@ -9,7 +9,7 @@ import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@modbm/shared';
 import JsonBrowserModal from '@/components/shared/JsonBrowserModal';
 
-// modbm-allow-record-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function TemplateForm({ initialData, isNew }: { initialData?: Record<string, any>, isNew?: boolean }) {
   const t = useTranslations('admin.reporting.form');
   const [formData, setFormData] = useState({
@@ -97,6 +97,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
     if (!previewVars.hookSlug) return;
     try {
       const res = await api.pdfTemplatesControllerGetRandomId(previewVars.hookSlug);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((res as any).data?.id || (res as any).id) {
         setPreviewVars(p => ({ ...p, entityId: (res.data as unknown as { id: string }).id as string }));
       }
@@ -110,6 +111,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
     if (newHookSlug) {
       // Automatically fetch a random ID when changing hooks
       api.pdfTemplatesControllerGetRandomId(newHookSlug)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((res: any) => {
           const newId = res.data?.id || res.id;
           if (newId) setPreviewVars(p => ({ ...p, hookSlug: newHookSlug, entityId: newId as string }));

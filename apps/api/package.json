@@ -143,6 +143,7 @@
     "moduleNameMapper": {
       "^@modbm/shared(.*)$": "<rootDir>/../../../packages/shared/src$1",
       "^uuid$": "<rootDir>/../test/utils/uuid-mock.js"
-    }
+    },
+    "setupFiles": ["<rootDir>/test-setup.ts"]
   }
 }

@@ -75,7 +75,7 @@ export class BankFeedsService {
   }
 
   async updateMappingProfile(profileId: string, dto: UpdateMappingProfileDto) {
-    const values: any = {};
+    const values: Partial<typeof csvMappingProfiles.$inferInsert> = {};
     if (dto.name !== undefined) values.name = dto.name;
     if (dto.dateColumn !== undefined) values.dateColumn = dto.dateColumn;
     if (dto.amountColumn !== undefined)
@@ -147,7 +147,7 @@ export class BankFeedsService {
     ruleId: string,
     dto: UpdateReconciliationRuleDto,
   ) {
-    const values: any = {};
+    const values: Partial<typeof reconciliationRules.$inferInsert> = {};
     if (dto.glAccountIds !== undefined)
       values.glAccountIds = dto.glAccountIds?.length ? dto.glAccountIds : null;
     if (dto.conditionType !== undefined)
@@ -426,10 +426,10 @@ export class BankFeedsService {
           if (!matchesDesc || !matchesType || !matchesPayee) continue;
 
           if (rule.amountMin !== null && rule.amountMin !== undefined) {
-            if (amount < parseFloat(rule.amountMin as any)) continue;
+            if (amount < parseFloat(String(rule.amountMin))) continue;
           }
           if (rule.amountMax !== null && rule.amountMax !== undefined) {
-            if (amount > parseFloat(rule.amountMax as any)) continue;
+            if (amount > parseFloat(String(rule.amountMax))) continue;
           }
 
           matchedRule = rule;

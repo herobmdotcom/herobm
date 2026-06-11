@@ -197,7 +197,7 @@ export function resolveEffectiveDiscount(
   rules: DiscountRule[],
   productGroupId: string | null,
 ): string {
-  const parse = (val: any): number => {
+  const parse = (val: unknown): number => {
     if (val == null || val === '') return 0;
     const parsed = Number(val);
     return isNaN(parsed) ? 0 : parsed;

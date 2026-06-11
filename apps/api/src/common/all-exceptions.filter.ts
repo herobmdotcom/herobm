@@ -31,9 +31,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
     // Native DB Constraint Mapping (ADV-030 enhancement)
-    const pgCode = (exception as any)?.code || (exception as any)?.cause?.code;
+    const pgCode =
+      (exception as Record<string, unknown>)?.code ||
+      ((exception as Record<string, unknown>)?.cause as Record<string, unknown>)
+        ?.code;
     const pgDetail =
-      (exception as any)?.detail || (exception as any)?.cause?.detail;
+      (exception as Record<string, unknown>)?.detail ||
+      ((exception as Record<string, unknown>)?.cause as Record<string, unknown>)
+        ?.detail;
 
     if (pgCode === '23505') {
       statusCode = HttpStatus.CONFLICT;
@@ -45,13 +50,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     let message =
       exception instanceof HttpException
-        ? (exception.getResponse() as any).message || exception.message
+        ? (exception.getResponse() as Record<string, unknown>).message ||
+          exception.message
         : exception instanceof Error
           ? exception.message
           : String(exception);
 
     if (pgCode && pgDetail) {
-      message = `${message} (DB Detail: ${pgDetail})`;
+      message = `${message as string} (DB Detail: ${pgDetail as string})`;
     }
 
     const stack = exception instanceof Error ? exception.stack : undefined;

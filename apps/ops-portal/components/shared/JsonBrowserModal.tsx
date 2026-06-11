@@ -28,6 +28,7 @@ export default function JsonBrowserModal({ isOpen, onClose, hookSlug, type }: Js
         : api.dataSourcesControllerGetSampleReport(hookSlug);
 
       fetchPromise
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((res: any) => {
           setData(res.data?.data || res.data || res);
           setIsMockData(res.data?.isMockData === true || res.isMockData === true);

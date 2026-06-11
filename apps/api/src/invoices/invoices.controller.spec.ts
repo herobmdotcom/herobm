@@ -12,7 +12,9 @@ describe('Invoices Controllers', () => {
   let purchaseController: PurchaseInvoiceController;
   let detailController: InvoiceDetailController;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockSalesService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockPurchaseService: any;
 
   beforeEach(async () => {
@@ -53,6 +55,7 @@ describe('Invoices Controllers', () => {
 
   describe('SalesInvoiceController', () => {
     it('should create a sales invoice', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const dto: any = { lines: [] };
       const req = { user: { username: 'test-user' } };
 
@@ -73,6 +76,7 @@ describe('Invoices Controllers', () => {
     it('should create a sales invoice with fallback actor if user missing', async () => {
       const result = await salesController.createSalesInvoice(
         'order-1',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         {},
       );

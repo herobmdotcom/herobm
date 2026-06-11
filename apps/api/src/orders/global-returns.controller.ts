@@ -17,7 +17,7 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 
-@ApiTags('Orders')
+@ApiTags('Sales Returns')
 @Controller('sales-returns')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_RETURNS)

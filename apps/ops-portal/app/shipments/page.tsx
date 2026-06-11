@@ -21,7 +21,7 @@ export default function ShipmentsPage() {
       headerName: t('columns.shipmentNumber'),
       width: 150,
       pinned: 'left',
-      cellRenderer: (params: any) => (
+      cellRenderer: (params: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => (
         <span className="font-semibold text-[var(--text-primary)]">
           {params.value}
         </span>
@@ -54,9 +54,10 @@ export default function ShipmentsPage() {
       field: 'stateCode',
       headerName: t('columns.status'),
       width: 120,
-      valueFormatter: (params: any) => {
+      valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<Record<string, unknown>>) => {
         if (!params.value) return '';
         const s = String(params.value).toLowerCase();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return tStates.has(s as any) ? tStates(s as any) : String(params.value);
       },
     },
@@ -68,7 +69,7 @@ export default function ShipmentsPage() {
     },
   ], [t]);
 
-  const handleRowClicked = useCallback((data: any) => {
+  const handleRowClicked = useCallback((data: Record<string, unknown>) => {
     router.push(`/shipments/${data.shipmentId}`);
   }, [router]);
 

@@ -113,7 +113,7 @@ export function getAggregationPeriod(
 }
 
 export function getAggregationSql(
-  dateField: any,
+  dateField: unknown,
   period: 'day' | 'week' | 'month',
 ) {
   if (period === 'day') return sql<string>`to_char(${dateField}, 'YYYY-MM-DD')`;

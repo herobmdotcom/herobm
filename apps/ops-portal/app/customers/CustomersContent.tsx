@@ -34,9 +34,10 @@ export default function CustomersContent() {
       field: 'stateCode',
       headerName: tCommon('columns.status'),
       width: 120,
-      valueFormatter: (params: any) => {
+      valueFormatter: (params: { value?: unknown }) => {
         if (!params.value) return '';
         const s = String(params.value).toLowerCase();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return tStates.has(s as any) ? tStates(s as any) : String(params.value);
       }
     },
@@ -47,7 +48,7 @@ export default function CustomersContent() {
       headerName: tCommon('columns.created'),
       width: 110,
       hide: true,
-      valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '—',
+      valueFormatter: (p: { value?: string | number | Date }) => p.value ? new Date(p.value).toLocaleDateString() : '—',
     },
     { field: 'deliveryAddressCount', headerName: tCommon('columns.deliveryAddrs'), width: 120, type: 'numericColumn', hide: true },
     { field: 'priceScale', headerName: tCommon('columns.priceScale'), width: 100, type: 'numericColumn', hide: true },
@@ -57,18 +58,18 @@ export default function CustomersContent() {
       width: 110,
       type: 'numericColumn',
       hide: true,
-      valueFormatter: (p: any) => p.value != null ? `${parseFloat(p.value).toFixed(1)}%` : '—',
+      valueFormatter: (p: { value?: string | number }) => p.value != null ? `${parseFloat(String(p.value)).toFixed(1)}%` : '—',
     },
     {
       field: 'customerDiscount',
       headerName: tCommon('columns.disc'),
       width: 110,
       type: 'numericColumn',
-      valueFormatter: (p: any) => p.value != null ? `${parseFloat(p.value).toFixed(1)}%` : '—',
+      valueFormatter: (p: { value?: string | number }) => p.value != null ? `${parseFloat(String(p.value)).toFixed(1)}%` : '—',
     },
   ], [tCommon, tAccounts]);
 
-  const handleRowClicked = useCallback((row: any) => {
+  const handleRowClicked = useCallback((row: { customerId: string }) => {
     router.push(`/customers/${row.customerId}`);
   }, [router]);
 

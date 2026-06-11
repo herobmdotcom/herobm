@@ -25,11 +25,12 @@ export default function ReportViewer() {
 
   const [reports, setReports] = useState<Record<string, unknown>[]>([]);
   const [reportData, setReportData] = useState<Record<string, unknown> | null>(null);
+   
   const [filteredChartData, setFilteredChartData] = useState<any[] | null>(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'chart'>('grid');
 
-  // modbm-allow-record-any
+   
   const [userSettings, setUserSettings] = useState<Record<string, any> | null>(null);
   const [isSavingView, setIsSavingView] = useState(false);
   const [newViewName, setNewViewName] = useState('');
@@ -62,6 +63,7 @@ export default function ReportViewer() {
     let updatedDashboard = userSettings?.dashboardConfig || {};
     if (pinToDashboard) {
       const pinned = updatedDashboard.pinnedReports || [];
+       
       if (!pinned.some((p: any) => p.configId === newConfig.id)) {
         updatedDashboard = {
           ...updatedDashboard,
@@ -90,14 +92,17 @@ export default function ReportViewer() {
     
     const updatedConfigs = {
       ...currentReportConfigs,
+       
       [slug]: reportSaves.filter((c: any) => c.id !== idToUnsave)
     };
 
     let updatedDashboard = userSettings?.dashboardConfig || {};
     const pinned = updatedDashboard.pinnedReports || [];
+     
     if (pinned.some((p: any) => p.configId === idToUnsave)) {
       updatedDashboard = {
         ...updatedDashboard,
+         
         pinnedReports: pinned.filter((p: any) => p.configId !== idToUnsave)
       };
     }
@@ -122,6 +127,7 @@ export default function ReportViewer() {
 
   const syncGridDataToChart = useCallback(() => {
     if (gridRef.current?.api) {
+       
       const currentData: any[] = [];
       gridRef.current.api.forEachNodeAfterFilterAndSort((node) => {
         if (node.data) currentData.push(node.data);
@@ -136,6 +142,7 @@ export default function ReportViewer() {
       .catch(console.error);
   }, []);
 
+   
   const report = reports?.find((r: any) => r.slug === slug);
 
   const fetchReportData = useCallback((overrideFilters?: Record<string, unknown>) => {
@@ -157,6 +164,7 @@ export default function ReportViewer() {
       
       if (configId) {
         const reportSaves = userSettings?.reportConfigs?.[slug] || [];
+         
         const config = reportSaves.find((c: any) => c.id === configId);
         if (config) {
           setFilters(config.filters || {});
@@ -177,6 +185,7 @@ export default function ReportViewer() {
     resizable: true,
   }), []);
 
+   
   const uiConfig = (report?.uiConfig as any) || {};
   const drillDownOptions = uiConfig.drillDownOptions || [];
   const selectedDrillDownId = filters['drillDown'];
@@ -184,6 +193,7 @@ export default function ReportViewer() {
   const dynamicColumns = useMemo(() => {
     let cols = [...(uiConfig.columns || [])];
     if (selectedDrillDownId) {
+       
       const ddOpt = drillDownOptions.find((o: any) => o.id === selectedDrillDownId);
       if (ddOpt) {
         // Insert after the first column
@@ -253,9 +263,11 @@ export default function ReportViewer() {
                 {Object.entries(userSettings?.reportConfigs || {}).map(([rSlug, configs]) => {
                   const r = reports?.find(rep => rep.slug === rSlug);
                   const rName = r ? r.name : rSlug;
+                   
                   if (!configs || (configs as any[]).length === 0) return null;
                   return (
                     <optgroup key={rSlug} label={rName}>
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       {(configs as any[]).map((c) => (
                         <option key={c.id} value={`${rSlug}|${c.id}`}>{c.name}</option>
                       ))}
@@ -319,14 +331,17 @@ export default function ReportViewer() {
         <div className="flex flex-wrap items-end gap-4 p-4 border-b border-[rgba(196,198,205,0.4)] bg-[#f2f4f6]">
           {uiConfig.filters && uiConfig.filters.length > 0 && (
             <>
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               {uiConfig.filters.some((f: any) => f.name === 'fromDate') && uiConfig.filters.some((f: any) => f.name === 'toDate') && (
                 <div className="flex flex-col">
                   <DateRangeFilter 
+                     
                     value={(filters._dateRange || { mode: 'absolute', from: filters.fromDate, to: filters.toDate }) as any}
                     onChange={(val) => setFilters({ ...filters, _dateRange: val, fromDate: undefined, toDate: undefined })}
                   />
                 </div>
               )}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               {uiConfig.filters.filter((f: any) => f.name !== 'fromDate' && f.name !== 'toDate').map((f: any) => (
                 <div key={f.name} className="flex flex-col">
                   <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--text-muted)' }}>{f.label}</label>
@@ -353,6 +368,7 @@ export default function ReportViewer() {
                 }}
               >
                 <option value="">None</option>
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 {drillDownOptions.map((opt: any) => (
                   <option key={opt.id} value={opt.id}>{opt.label}</option>
                 ))}
@@ -419,6 +435,7 @@ export default function ReportViewer() {
               <ReportChartViewer 
                 data={filteredChartData || (Array.isArray(reportData) ? reportData : reportData?.data || [])}
                 config={uiConfig.chartConfig}
+                 
                 activeDrillDown={drillDownOptions.find((o: any) => o.id === selectedDrillDownId)}
               />
             </div>

@@ -10,7 +10,7 @@ import { getErrorMessage } from '@modbm/shared';
 import JsonBrowserModal from '@/components/shared/JsonBrowserModal';
 
 interface ReportConfigFormProps {
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   initialData?: Record<string, any>;
 }
 
@@ -88,6 +88,7 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
       } else {
         const res = await api.businessReportsControllerCreateReport(payload);
         toast.success(t('toasts.created'));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         router.push(`/reporting/config/${(res as any).data?.id || (res as any).id}`);
         return;
       }

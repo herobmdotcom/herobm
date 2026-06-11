@@ -66,7 +66,9 @@ export default function AddSupplierModal({
   const fetchSuppliers = async (q: string) => {
     setLoading(true);
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const res = await api.suppliersControllerFindAll({ q, limit: 15 } as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setSuppliers((res.data as any)?.data || res.data || []);
       setLastSearchQuery(q);
     } catch (err: unknown) {
@@ -84,6 +86,7 @@ export default function AddSupplierModal({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const selectSupplier = (s: any) => {
     setVendorId(s.vendorId);
     setSearch(s.name);

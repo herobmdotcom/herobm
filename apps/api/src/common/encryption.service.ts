@@ -72,9 +72,9 @@ export class EncryptionService {
   /**
    * Utility to encrypt all string values in an object at the top level
    */
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   encryptConfig(config: Record<string, any>): Record<string, any> {
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const encrypted: Record<string, any> = {};
     for (const [key, value] of Object.entries(config)) {
       if (typeof value === 'string' && value.length > 0) {
@@ -89,9 +89,9 @@ export class EncryptionService {
   /**
    * Utility to decrypt all string values in an object at the top level
    */
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   decryptConfig(config: Record<string, any>): Record<string, any> {
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const decrypted: Record<string, any> = {};
     for (const [key, value] of Object.entries(config)) {
       if (typeof value === 'string' && value.includes(':')) {

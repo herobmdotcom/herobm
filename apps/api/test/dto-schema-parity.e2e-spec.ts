@@ -6,6 +6,7 @@ import * as schema from '../src/drizzle/modbm-core-schema';
 
 describe('DTO-Schema Reflection Parity (e2e)', () => {
   let app: INestApplication;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let document: any;
 
   beforeAll(async () => {
@@ -55,15 +56,18 @@ describe('DTO-Schema Reflection Parity (e2e)', () => {
 
     // pluralize
     let table = base.endsWith('s') ? base : base + 's';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((schema as any)[table]) return table;
 
     // try 'es'
     table = base + 'es';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((schema as any)[table]) return table;
 
     // try 'ies'
     if (base.endsWith('y')) {
       table = base.slice(0, -1) + 'ies';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((schema as any)[table]) return table;
     }
 
@@ -76,12 +80,14 @@ describe('DTO-Schema Reflection Parity (e2e)', () => {
     let checkedCount = 0;
     let checkedDtos = 0;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const [dtoName, dtoSchema] of Object.entries<any>(schemas)) {
       if (!dtoName.endsWith('Dto')) continue;
 
       const tableName = guessTableName(dtoName);
       if (!tableName) continue;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const tableDef = (schema as any)[tableName];
       if (!tableDef || !tableDef._ || !tableDef._.columns) continue;
 
@@ -89,6 +95,7 @@ describe('DTO-Schema Reflection Parity (e2e)', () => {
       const columns = tableDef._.columns;
       const properties = dtoSchema.properties || {};
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       for (const [propName, propDef] of Object.entries<any>(properties)) {
         // Skip relations (arrays or objects)
         if (
@@ -109,6 +116,7 @@ describe('DTO-Schema Reflection Parity (e2e)', () => {
           exists = true;
         } else {
           // fallback check if any column has the exact same name
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           for (const col of Object.values<any>(columns)) {
             if (col.name === propName || col.key === propName) {
               exists = true;

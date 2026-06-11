@@ -32,7 +32,7 @@ import {
 } from './dto';
 import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 
-@ApiTags('GL')
+@ApiTags('General Ledger')
 @Controller('gl/reconciliations')
 @CasbinResource(SystemResource.GL)
 export class ReconciliationController {

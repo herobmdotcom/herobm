@@ -83,6 +83,7 @@ export class PaymentsService {
   }
 
   async findAll(days?: string, allocation?: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClauses: any[] = [];
 
     if (days && days !== '0') {
@@ -190,6 +191,7 @@ export class PaymentsService {
 
   async createPaymentEntry(dto: CreatePaymentDto, actor: string) {
     return await this.db.transaction(async (tx) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const paymentNumber = await this.generatePaymentNumber(tx as any);
 
       const [payment] = await tx
@@ -226,6 +228,7 @@ export class PaymentsService {
         return await this.submitPaymentEntry(
           payment.paymentId,
           actor,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           tx as any,
         );
       }
@@ -322,6 +325,7 @@ export class PaymentsService {
 
       // 3. Post GL Journal Entry
       const amount = parseFloat(payment.totalAmount);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const lines: any[] = [];
 
       const linePartyId = linePartyType ? payment.partyId : null;
@@ -465,7 +469,9 @@ export class PaymentsService {
 
       // Process each allocation
       for (const alloc of dto.allocations) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let targetTable: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let targetIdCol: any;
         let targetIdLabel: string;
         let draftState: string;
@@ -558,6 +564,7 @@ export class PaymentsService {
         // 5. Evaluate Invoice Lifecycle (only for invoices)
         if (alloc.referenceType.endsWith('_invoice')) {
           await evaluateInvoiceLifecycleRules(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             tx as any,
             alloc.referenceType === 'sales_invoice' ? 'sales' : 'purchase',
             alloc.referenceId,
@@ -567,6 +574,7 @@ export class PaymentsService {
         }
 
         // 6. Emit allocation event
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await emitEvent(tx as any, {
           entityType: EntityType.PAYMENT,
           entityId: paymentId,
@@ -690,6 +698,7 @@ export class PaymentsService {
       }
 
       // Reverse: swap debit/credit from original
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const reversalLines: any[] = [];
       const linePartyId = linePartyType ? payment.partyId : null;
       const isReceipt = [
@@ -834,6 +843,7 @@ export class PaymentsService {
 
       if (!bankGl) throw new NotFoundException('GL Account Bank not found');
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const meta = (bankGl.metadata || {}) as any;
       if (!meta.abaUserName || !meta.abaUserId || !meta.bankName) {
         throw new BadRequestException(
@@ -887,6 +897,7 @@ export class PaymentsService {
           p.paymentId,
           PAYMENT_STATE.EXPORTED,
           actor,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           tx as any,
         );
 
@@ -950,6 +961,7 @@ export class PaymentsService {
 
       if (!bankGl) throw new NotFoundException('GL Account Bank not found');
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const meta = (bankGl.metadata || {}) as any;
       if (
         !meta.companyId ||
@@ -1000,6 +1012,7 @@ export class PaymentsService {
           p.paymentId,
           PAYMENT_STATE.EXPORTED,
           actor,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           tx as any,
         );
 
@@ -1071,6 +1084,7 @@ export class PaymentsService {
       .where(eq(paymentEntries.paymentId, paymentId))
       .returning();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await emitEvent(tx as any, {
       entityType: EntityType.PAYMENT,
       entityId: paymentId,

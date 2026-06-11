@@ -41,7 +41,7 @@ export default function OdooImportPage() {
   const [importSummary, setImportSummary] = useState<{products: number, customers: number, orders: number} | null>(null);
   
   const jobIdRef = useRef<string | null>(null);
-  const pollTimerRef = useRef<any>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isAutoScrollRef = useRef<boolean>(true);
@@ -173,11 +173,11 @@ export default function OdooImportPage() {
           }
         }
       } catch (err: unknown) {
-        if ((err as any)?.status === 404 || getErrorMessage(err)?.includes('not found') || getErrorMessage(err)?.toLowerCase().includes('job not found')) {
+        if ((err as { status?: number })?.status === 404 || getErrorMessage(err)?.includes('not found') || getErrorMessage(err)?.toLowerCase().includes('job not found')) {
           setStatus('failed');
           setErrorMsg('Job not found. The server might have restarted.');
           clearInterval(pollTimerRef.current);
-        } else if ((err as any)?.status === 409) {
+        } else if ((err as { status?: number })?.status === 409) {
           reportError(err, 'Polling error');
         }
       }

@@ -52,7 +52,9 @@ describe('API E2E — Runtime Ledger Balancing', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const leaves: any[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const walk = (nodes: any[]) => {
       for (const node of nodes) {
         if (!node.isGroup) leaves.push(node);
@@ -141,6 +143,7 @@ describe('API E2E — Runtime Ledger Balancing', () => {
         .expect(200);
 
       const originalJe = glRes.body.data.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (j: any) => j.sourceId === invoiceId,
       );
       expect(originalJe).toBeDefined();
@@ -152,6 +155,7 @@ describe('API E2E — Runtime Ledger Balancing', () => {
         .expect(200);
 
       const apBalBefore = tbResBefore.body.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (a: any) => a.glAccountId === apAccountId,
       );
 
@@ -168,6 +172,7 @@ describe('API E2E — Runtime Ledger Balancing', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const revJe = glRev.body.data.find((j: any) => j.sourceId === invoiceId);
       expect(revJe).toBeDefined();
 
@@ -178,6 +183,7 @@ describe('API E2E — Runtime Ledger Balancing', () => {
         .expect(200);
 
       const apBalAfter = tbResAfter.body.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (a: any) => a.glAccountId === apAccountId,
       );
 
@@ -266,6 +272,7 @@ describe('API E2E — Runtime Ledger Balancing', () => {
         .expect(200);
 
       const originalJe = glRes.body.data.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (j: any) => j.sourceId === invoiceId,
       );
       expect(originalJe).toBeDefined();
@@ -283,6 +290,7 @@ describe('API E2E — Runtime Ledger Balancing', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const revJe = glRev.body.data.find((j: any) => j.sourceId === invoiceId);
       expect(revJe).toBeDefined();
     });

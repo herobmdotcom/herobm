@@ -13,6 +13,7 @@ import { Reflector } from '@nestjs/core';
 @Injectable()
 export class ApiThrottlerGuard extends ThrottlerGuard {
   constructor(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @InjectThrottlerOptions() options: any,
     @InjectThrottlerStorage() storageService: ThrottlerStorage,
     reflector: Reflector,
@@ -21,6 +22,7 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
     super(options, storageService, reflector);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected async handleRequest(requestProps: any): Promise<boolean> {
     const { context, throttler } = requestProps;
     const req = context.switchToHttp().getRequest();

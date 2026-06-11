@@ -35,7 +35,7 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 @Controller('purchase-debit-notes')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.PURCHASE_DEBIT_NOTES)
-@ApiTags('PurchaseDebitNotes')
+@ApiTags('Purchase Invoices')
 export class PurchaseDebitNotesController {
   constructor(private readonly debitNotesService: PurchaseDebitNotesService) {}
 

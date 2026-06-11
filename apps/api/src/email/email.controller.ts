@@ -29,7 +29,7 @@ import {
 } from '../auth/casbin.guard';
 import { SystemResource } from '@modbm/shared';
 
-@ApiTags('Emails')
+@ApiTags('System')
 @ApiBearerAuth()
 @Controller('emails')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
@@ -58,6 +58,7 @@ export class EmailController {
     const conditions = [];
     if (entityType) conditions.push(eq(emailOutbox.entityType, entityType));
     if (entityId) conditions.push(eq(emailOutbox.entityId, entityId));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (status) conditions.push(eq(emailOutbox.status, status as any));
 
     return this.db

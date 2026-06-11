@@ -70,7 +70,9 @@ export default function SupplierSelect({
       return; 
     }
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const res = await api.suppliersControllerFindAll({ q: term, limit: 10 } as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setFilteredSuppliers(((res.data as any)?.data || res.data || []) );
     } catch { 
       setFilteredSuppliers([]); 

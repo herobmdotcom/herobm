@@ -84,6 +84,7 @@ function ReturnsFlow() {
       if (data.length > 0) {
         selectLine(data[0] as unknown as ReturnableLine);
       } else if (poId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const matches = (data as any[]).filter((x) => x.purchaseOrderId === poId);
         if (matches.length > 0) {
              selectLine(matches[0] as unknown as ReturnableLine);

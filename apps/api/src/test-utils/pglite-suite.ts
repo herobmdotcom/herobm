@@ -72,7 +72,9 @@ export function setupPgliteSuite(opts?: {
     jest.setTimeout(30000);
   }
   const context = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     _db: null as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     _client: null as any,
     get db() {
       if (!this._db)
@@ -91,6 +93,7 @@ export function setupPgliteSuite(opts?: {
   // Suites that skip seeds need fresh DBs per-test since they insert
   // their own reference data (uom_dictionary, tax_categories, etc.)
   if (opts?.skipSeeds) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let suiteSnapshot: any;
 
     beforeAll(async () => {

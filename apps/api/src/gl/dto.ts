@@ -189,16 +189,16 @@ export class MatchConfirmedResponseDto {
 
 export class PaginatedJournalEntriesDto {
   data!: JournalEntryResponseDto[];
-  meta!: any;
+  meta!: Record<string, unknown>;
 }
 
 export class PaginatedGeneralLedgerDto {
   data!: GeneralLedgerResponseDto[];
-  meta!: any;
+  meta!: Record<string, unknown>;
 }
 
 export class UpdateGLSettingsDto {
-  @IsOptional() @IsObject() accountMetadataSchema?: any;
+  @IsOptional() @IsObject() accountMetadataSchema?: Record<string, unknown>;
   @IsOptional() @IsNumber() fiscalYearStartMonth?: number;
   @IsOptional() @IsString() defaultArAccountId?: string | null;
   @IsOptional() @IsString() defaultApAccountId?: string | null;

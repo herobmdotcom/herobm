@@ -79,10 +79,13 @@ export class AccountsWriteService {
       'notes',
     ];
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sanitizedDto: any = {};
     for (const key of allowedKeys) {
-      if (key in dto && dto[key] !== undefined) {
-        sanitizedDto[key] = dto[key];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (key in dto && (dto as any)[key] !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        sanitizedDto[key] = (dto as any)[key];
       }
     }
 
@@ -96,9 +99,10 @@ export class AccountsWriteService {
             currencyCode:
               sanitizedDto.currencyCode || this.appConfig.homeCurrency(),
             createdBy: actor,
-          })
+          } as typeof coreAccounts.$inferInsert)
           .returning();
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await emitEvent(tx as any, {
           entityType: EntityType.CUSTOMER,
           entityId: customer.customerId,
@@ -111,6 +115,7 @@ export class AccountsWriteService {
         return customer;
       });
     } catch (e: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pgCode = (e as any).code || (e as any).cause?.code;
       if (pgCode === '23505') {
         throw new ConflictException(
@@ -164,10 +169,13 @@ export class AccountsWriteService {
       'notes',
     ];
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sanitizedDto: any = {};
     for (const key of allowedKeys) {
-      if (key in dto && dto[key] !== undefined) {
-        sanitizedDto[key] = dto[key];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (key in dto && (dto as any)[key] !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        sanitizedDto[key] = (dto as any)[key];
       }
     }
 
@@ -184,7 +192,7 @@ export class AccountsWriteService {
         .set({
           ...audit.changes,
           modifiedOn: new Date(),
-        })
+        } as typeof coreAccounts.$inferInsert)
         .where(eq(coreAccounts.customerId, id))
         .returning();
 
@@ -194,6 +202,7 @@ export class AccountsWriteService {
         const isStatusOnly =
           changedKeys.length === 1 && changedKeys[0] === 'stateCode';
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await emitEvent(tx as any, {
           entityType: EntityType.CUSTOMER,
           entityId: id,
@@ -309,6 +318,7 @@ export class AccountsWriteService {
     const [updated] = await db
       .update(coreAccounts)
       .set({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         stateCode: newState as any, // eslint-disable-line
         modifiedOn: new Date(),
       })
@@ -335,6 +345,7 @@ export class AccountsWriteService {
         actor,
       });
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(this.db as any, {
         entityType: EntityType.CUSTOMER,
         entityId: customerId,

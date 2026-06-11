@@ -36,6 +36,7 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
     if (!activeDrillDown || activeDrillDown.field === config.xAxisField) {
       const isTimeAxis = config.xAxisField === 'period' || config.xAxisField === 'yearMonth' || config.xAxisField.toLowerCase().includes('date') || config.xAxisField.toLowerCase().includes('month');
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let sortedData = [...chartData].sort((a: any, b: any) => {
         if (isTimeAxis) {
           return String(a[config.xAxisField] || '').localeCompare(String(b[config.xAxisField] || ''));
@@ -49,7 +50,9 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
           const topItems = sortedData.slice(0, MAX_ITEMS);
           const otherItems = sortedData.slice(MAX_ITEMS);
           
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const otherRow: any = { [config.xAxisField]: 'Other' };
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           otherRow[config.yAxisField] = otherItems.reduce((acc: number, row: any) => acc + (Number(row[config.yAxisField]) || 0), 0);
           
           sortedData = [...topItems, otherRow];
@@ -63,9 +66,11 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
     const primaryAxis = isTimeDrillDown ? activeDrillDown.field : config.xAxisField;
     const seriesAxis = isTimeDrillDown ? config.xAxisField : activeDrillDown.field;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const grouped = new Map<string, any>();
     const seriesKeys = new Set<string>();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     chartData.forEach((row: any) => {
       const pVal = String(row[primaryAxis] || 'Unknown');
       const sVal = String(row[seriesAxis] || 'Unknown');
@@ -100,8 +105,10 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
         const topItems = data.slice(0, MAX_ITEMS);
         const otherItems = data.slice(MAX_ITEMS);
         
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const otherRow: any = { [primaryAxis]: 'Other' };
         seriesKeysArray.forEach(k => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           otherRow[k] = otherItems.reduce((acc: number, row: any) => acc + (Number(row[k]) || 0), 0);
         });
         

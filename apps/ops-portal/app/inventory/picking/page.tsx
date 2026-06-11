@@ -94,6 +94,7 @@ export default function PickingPage() {
     // Fetch Locations
     useEffect(() => {
         api.inventoryControllerFindAllLocations().then((response) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const res = response.data as any;
                 const locs = Array.isArray(res) ? res : (res.data || []);
                 setLocations(locs);
@@ -108,6 +109,7 @@ export default function PickingPage() {
     // Fetch Pending Orders
     const loadOrders = useCallback(() => {
         setLoadingOrders(true);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const params: any = {};
         if (selectedLocationId) params.locationId = selectedLocationId;
 
@@ -154,6 +156,7 @@ export default function PickingPage() {
                 
                 // Initialize default quantities (what's remaining and fits in a bin)
                 const defaultInputs: Record<string, { quantity: string, binId: string }> = {};
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ((data as any).lines || []).forEach((line: PickingLine) => {
                     if (line.isPhysical && !line.isFullyPicked && parseFloat(line.remaining) > 0) {
                         const bestBin = line.availableBins[0];

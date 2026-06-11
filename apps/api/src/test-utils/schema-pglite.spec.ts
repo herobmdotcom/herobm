@@ -7,7 +7,9 @@ describe('Schema PGLite Test', () => {
     const result = await pg.client.query(
       'SELECT count(*) as count FROM modbm_core.tax_categories',
     );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     console.log('Tax categories count:', (result.rows[0] as any).count);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(Number((result.rows[0] as any).count)).toBeGreaterThan(0);
   });
 
@@ -16,6 +18,7 @@ describe('Schema PGLite Test', () => {
       const result = await pg.client.query(
         'SELECT count(*) as count FROM modbm_core.tax_categories',
       );
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(Number((result.rows[0] as any).count)).toBeGreaterThan(0);
     }
   });

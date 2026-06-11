@@ -44,17 +44,19 @@ export class AbrProvider implements IEnrichmentProvider {
     };
   }
 
-  // modbm-allow-record-any
   async lookup(
-    // modbm-allow-record-any
-    payload: string | Record<string, any>,
-    // modbm-allow-record-any
-    config?: Record<string, any>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    payload: string | Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    config?: Record<string, unknown>,
   ): Promise<EnrichmentResult> {
     const cleanAbn =
       typeof payload === 'string'
         ? payload.replace(/\s+/g, '')
-        : String((payload as any)?.abn || '').replace(/\s+/g, '');
+        : String((payload as Record<string, string>)?.abn || '').replace(
+            /\s+/g,
+            '',
+          );
 
     if (!config?.apiKey) {
       throw new Error(
@@ -64,7 +66,7 @@ export class AbrProvider implements IEnrichmentProvider {
 
     this.logger.log(`[ABR] Sending lookup request for ABN: ${cleanAbn}`);
 
-    const url = `https://abr.business.gov.au/json/AbnDetails.aspx?abn=${cleanAbn}&guid=${config.apiKey}&callback=callback`;
+    const url = `https://abr.business.gov.au/json/AbnDetails.aspx?abn=${cleanAbn}&guid=${config.apiKey as string}&callback=callback`;
 
     try {
       const response = await fetch(url);

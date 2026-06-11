@@ -74,11 +74,15 @@ export default function CustomerSelect({
       return; 
     }
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const res = await api.accountsControllerFindAll({ q: term, limit: 10 } as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const dataArray = (res.data as any)?.data || res.data || [];
       if (excludeId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setFilteredAccounts(dataArray.filter((c: any) => c.customerId !== excludeId));
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setFilteredAccounts(dataArray as any);
       }
     } catch { 

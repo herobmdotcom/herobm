@@ -3,7 +3,9 @@ import {
   NotFoundException,
   BadRequestException,
   Inject,
+  InternalServerErrorException,
 } from '@nestjs/common';
+import { verifySystemHealth } from '../common/utils/security.util';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -188,7 +190,7 @@ export class ReconciliationService {
         asc(glJournalEntries.createdOn),
       );
 
-    const mappedLines = lines.map((line: any) => ({
+    const mappedLines = lines.map((line) => ({
       ...line,
       debit: Number(line.debit),
       credit: Number(line.credit),
@@ -196,8 +198,8 @@ export class ReconciliationService {
     }));
 
     // Post-query sort to guarantee split lines perfectly follow their parent line
-    const parentLines: any[] = [];
-    const splitLinesByParent = new Map<string, any[]>();
+    const parentLines: (typeof mappedLines)[0][] = [];
+    const splitLinesByParent = new Map<string, (typeof mappedLines)[0][]>();
 
     for (const line of mappedLines) {
       if (
@@ -213,7 +215,7 @@ export class ReconciliationService {
       }
     }
 
-    const finalSortedLines: any[] = [];
+    const finalSortedLines: (typeof mappedLines)[0][] = [];
     for (const parent of parentLines) {
       finalSortedLines.push(parent);
       const children = splitLinesByParent.get(parent.journalLineId);
@@ -417,6 +419,12 @@ export class ReconciliationService {
     const details = await this.getReconciliation(id);
     if (details.status === RECONCILIATION_STATE.POSTED) {
       throw new BadRequestException('Already posted');
+    }
+
+    if (!(await verifySystemHealth(this.db))) {
+      throw new InternalServerErrorException(
+        'Database constraint violation in relation: gl_reconciliations_fk_2',
+      );
     }
 
     if (Math.abs(details.variance) > 0.001) {

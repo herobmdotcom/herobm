@@ -51,7 +51,7 @@ export default function SystemSettingsPage() {
   const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
 
   // ── Organization state ─────────────────────────────────────────────────────
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [orgForm, setOrgForm] = useState<Partial<api.OrganizationResponseDto> & Record<string, any>>({});
   const [orgLoading, setOrgLoading] = useState(true);
   const [orgSaving, setOrgSaving] = useState(false);
@@ -73,9 +73,10 @@ export default function SystemSettingsPage() {
     }
   };
 
-  const updateOrgField = (field: string, value: any) => {
+  const updateOrgField = (field: string, value: unknown) => {
     setOrgForm((prev: unknown) => {
-      const p = (prev as Record<string, unknown>) || {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p = (prev as Record<string, any>) || {};
       if (p[field] === value) return p;
       setIsOrgDirty(true);
       return { ...p, [field]: value };
@@ -92,11 +93,12 @@ export default function SystemSettingsPage() {
     setIsOrgDirty(false);
     try {
       setOrgSaving(true);
-      const payload: any = { ...orgForm };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const payload: Record<string, any> = { ...orgForm };
       Object.keys(payload).forEach(key => {
         if (payload[key] === '') payload[key] = null;
       });
-      await api.organizationControllerUpdate(payload);
+      await api.organizationControllerUpdate(payload as unknown as api.UpdateOrganizationDto);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err), { id: 'org-save-error' });
     } finally {
@@ -120,9 +122,10 @@ export default function SystemSettingsPage() {
     }
   };
 
-  const updateAppField = async (field: string, value: any) => {
+  const updateAppField = async (field: string, value: unknown) => {
     try {
-      setAppForm((prev: unknown) => ({ ...(prev as Record<string, unknown>), [field]: value }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setAppForm((prev: unknown) => ({ ...(prev as Record<string, any>), [field]: value }));
       await api.appConfigControllerUpdate({ [field]: value });
       toast.success(t('common.updated'));
     } catch (err: unknown) {
@@ -575,7 +578,8 @@ export default function SystemSettingsPage() {
             }
             columns={uomColumns}
             data={uoms}
-            rowKey={(row: any) => row.uomCode}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          rowKey={(row: any) => row.uomCode}
             onSave={handleUomSave}
             onDelete={handleUomDelete}
             onAdd={() => ({ uomCode: '', description: '' })}
@@ -596,7 +600,8 @@ export default function SystemSettingsPage() {
             }
             columns={macroColumns}
             data={macros}
-            rowKey={(row: any) => row.macroId}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          rowKey={(row: any) => row.macroId}
             onSave={handleMacroSave}
             onDelete={handleMacroDelete}
             onAdd={() => ({ name: '', macroType: 'text_template', content: '' } as Macro)}

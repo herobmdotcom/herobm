@@ -61,6 +61,7 @@ describe('Product Groups (e2e)', () => {
     expect(listRes.status).toBe(200);
     expect(Array.isArray(listRes.body)).toBe(true);
     expect(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       listRes.body.find((g: any) => g.productGroupId === groupId),
     ).toBeDefined();
 

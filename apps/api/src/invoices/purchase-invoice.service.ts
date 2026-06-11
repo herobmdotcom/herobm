@@ -257,7 +257,7 @@ export class PurchaseInvoiceService {
           )})`,
         );
 
-      const groupedLines = new Map<string, any[]>();
+      const groupedLines = new Map<string, (typeof allLines)[0][]>();
       for (const line of allLines) {
         if (!groupedLines.has(line.invoiceId)) {
           groupedLines.set(line.invoiceId, []);
@@ -279,7 +279,7 @@ export class PurchaseInvoiceService {
   async createDraftInvoice(
     dto: CreateStandaloneInvoiceDto,
     actor: string,
-  ): Promise<any> {
+  ): Promise<typeof purchaseInvoices.$inferSelect> {
     const internalBillNumber = await this.generateBillNumber();
 
     return this.db.transaction(async (tx: DrizzleDB) => {
@@ -302,9 +302,9 @@ export class PurchaseInvoiceService {
         .returning();
 
       if (dto.lines && dto.lines.length > 0) {
-        const linesToInsert = dto.lines.map((l: any) => {
-          const qty = parseFloat(l.quantityInvoiced || '0');
-          const price = parseFloat(l.pricePerUnit || '0');
+        const linesToInsert = dto.lines.map((l) => {
+          const qty = parseFloat(String(l.quantityInvoiced || '0'));
+          const price = parseFloat(String(l.pricePerUnit || '0'));
           const pricing = computeLinePriceForStorage({
             quantity: qty,
             pricePerUnit: price,
@@ -328,7 +328,7 @@ export class PurchaseInvoiceService {
         await tx.insert(purchaseInvoiceLines).values(linesToInsert);
       }
 
-      await emitEvent(tx as any, {
+      await emitEvent(tx, {
         entityType: EntityType.PURCHASE_INVOICE,
         entityId: invoice.invoiceId,
         eventType: EventType.STATUS_CHANGED,
@@ -346,7 +346,7 @@ export class PurchaseInvoiceService {
     });
   }
 
-  private async recalculateInvoiceTotals(invoiceId: string, tx: any) {
+  private async recalculateInvoiceTotals(invoiceId: string, tx: DrizzleDB) {
     const lines = await tx
       .select({ amount: purchaseInvoiceLines.amount })
       .from(purchaseInvoiceLines)
@@ -374,7 +374,18 @@ export class PurchaseInvoiceService {
       .where(eq(purchaseInvoices.invoiceId, invoiceId));
   }
 
-  async updateInvoice(invoiceId: string, dto: any, actor: string) {
+  async updateInvoice(
+    invoiceId: string,
+    dto: {
+      supplierInvoiceNumber?: string;
+      receiptFilename?: string;
+      notes?: string;
+      taxAmount?: string;
+      currencyCode?: string;
+      vendorId?: string;
+    },
+    actor: string,
+  ) {
     return this.db.transaction(async (tx) => {
       const [invoice] = await tx
         .select()
@@ -384,7 +395,7 @@ export class PurchaseInvoiceService {
       if (invoice.stateCode !== PURCHASE_INVOICE_STATE.DRAFT)
         throw new BadRequestException('Only draft invoices can be updated');
 
-      const updateData: any = {};
+      const updateData: Partial<typeof purchaseInvoices.$inferInsert> = {};
       if (dto.supplierInvoiceNumber !== undefined)
         updateData.supplierInvoiceNumber = dto.supplierInvoiceNumber;
       if (dto.receiptFilename !== undefined)
@@ -410,7 +421,18 @@ export class PurchaseInvoiceService {
     });
   }
 
-  async updateLine(invoiceId: string, lineId: string, dto: any, actor: string) {
+  async updateLine(
+    invoiceId: string,
+    lineId: string,
+    dto: {
+      description?: string;
+      glAccountId?: string;
+      productId?: string;
+      quantityInvoiced?: string | number;
+      pricePerUnit?: string | number;
+    },
+    actor: string,
+  ) {
     return this.db.transaction(async (tx) => {
       const [invoice] = await tx
         .select()
@@ -428,7 +450,7 @@ export class PurchaseInvoiceService {
         .where(eq(purchaseInvoiceLines.invoiceLineId, lineId));
       if (!line) throw new NotFoundException('Line not found');
 
-      const updateData: any = {};
+      const updateData: Partial<typeof purchaseInvoiceLines.$inferInsert> = {};
       if (dto.description !== undefined)
         updateData.description = dto.description;
       if (dto.glAccountId !== undefined)
@@ -440,11 +462,11 @@ export class PurchaseInvoiceService {
 
       if (dto.quantityInvoiced !== undefined) {
         updateData.quantityInvoiced = String(dto.quantityInvoiced);
-        qty = parseFloat(dto.quantityInvoiced);
+        qty = parseFloat(String(dto.quantityInvoiced));
       }
       if (dto.pricePerUnit !== undefined) {
         updateData.pricePerUnit = String(dto.pricePerUnit);
-        price = parseFloat(dto.pricePerUnit);
+        price = parseFloat(String(dto.pricePerUnit));
       }
 
       if (
@@ -493,7 +515,17 @@ export class PurchaseInvoiceService {
     });
   }
 
-  async addLine(invoiceId: string, dto: any, actor: string) {
+  async addLine(
+    invoiceId: string,
+    dto: {
+      description?: string;
+      glAccountId?: string;
+      productId?: string;
+      quantityInvoiced?: string | number;
+      pricePerUnit?: string | number;
+    },
+    actor: string,
+  ) {
     return this.db.transaction(async (tx) => {
       const [invoice] = await tx
         .select()
@@ -503,8 +535,8 @@ export class PurchaseInvoiceService {
       if (invoice.stateCode !== PURCHASE_INVOICE_STATE.DRAFT)
         throw new BadRequestException('Only draft invoice lines can be added');
 
-      const qty = parseFloat(dto.quantityInvoiced || '1');
-      const price = parseFloat(dto.pricePerUnit || '0');
+      const qty = parseFloat(String(dto.quantityInvoiced || '1'));
+      const price = parseFloat(String(dto.pricePerUnit || '0'));
       const pricing = computeLinePriceForStorage({
         quantity: qty,
         pricePerUnit: price,
@@ -549,7 +581,7 @@ export class PurchaseInvoiceService {
   /**
    * Posts a draft invoice, validates totals, and creates the GL entries.
    */
-  async postInvoice(invoiceId: string, actor: string): Promise<any> {
+  async postInvoice(invoiceId: string, actor: string) {
     const [invoice] = await this.db
       .select()
       .from(purchaseInvoices)
@@ -689,7 +721,7 @@ export class PurchaseInvoiceService {
             : null;
 
           if (apCode) {
-            const glLines: any[] = [];
+            const glLines: Parameters<GlService['postJournalEntry']>[0] = [];
 
             if (defaultExpense > 0 && fallbackExpCode) {
               glLines.push({
@@ -788,8 +820,11 @@ export class PurchaseInvoiceService {
     // Trigger lifecycle rules for affected POs (non-fatal side effect)
     const affectedPoIds = [
       ...new Set(
-        ((invoice as any).lines || [])
-          .map((l: any) => l.purchaseOrderId)
+        (
+          (invoice as unknown as { lines?: { purchaseOrderId?: string }[] })
+            .lines || []
+        )
+          .map((l) => l.purchaseOrderId)
           .filter(Boolean),
       ),
     ] as string[];
@@ -831,7 +866,8 @@ export class PurchaseInvoiceService {
   ) {
     const fullInvoice = await this.findOne(invoiceId, tx);
     if (!fullInvoice) throw new NotFoundException('Invoice not found');
-    const invoice = fullInvoice as any; // Full invoice with lines
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const invoice = fullInvoice as typeof fullInvoice & { lines: any[] }; // We use any[] for lines here due to union complexity, but it's isolated
 
     const allowed = PURCHASE_INVOICE_TRANSITIONS[invoice.stateCode] || [];
     if (!allowed.includes(newState)) {
@@ -846,8 +882,8 @@ export class PurchaseInvoiceService {
       newState !== PURCHASE_INVOICE_STATE.DRAFT &&
       newState !== PURCHASE_INVOICE_STATE.CANCELLED
     ) {
-      const discrepancies: any[] = [];
-      invoice.lines.forEach((line: any, idx: number) => {
+      const discrepancies: { type: string; message: string }[] = [];
+      invoice.lines.forEach((line, idx: number) => {
         if (
           line.matchStatus !== MATCH_STATUS.MATCHED &&
           !line.purchaseOrderLineId &&
@@ -1146,7 +1182,7 @@ export class PurchaseInvoiceService {
       limit = 100,
     } = query;
 
-    const conditions: any[] = [];
+    const conditions: import('drizzle-orm').SQL[] = [];
 
     // When filtering by specific invoiceId, skip the date range filter
     if (invoiceId) {
@@ -1162,7 +1198,7 @@ export class PurchaseInvoiceService {
         or(
           eq(purchaseInvoices.vendorId, vendorId),
           eq(suppliers.externalId, vendorId),
-        ),
+        ) as import('drizzle-orm').SQL,
       );
     }
 
@@ -1262,7 +1298,7 @@ export class PurchaseInvoiceService {
           }));
 
           await this.glService.postJournalEntry(
-            reversedLines as any,
+            reversedLines as Parameters<GlService['postJournalEntry']>[0],
             {
               sourceId: invoiceId,
               sourceType: 'purchase_invoice_reversal',
@@ -1279,13 +1315,13 @@ export class PurchaseInvoiceService {
         .update(purchaseInvoices)
         .set({
           // eslint-disable-next-line no-restricted-syntax
-          stateCode: newState as any,
+          stateCode: newState as typeof purchaseInvoices.$inferInsert.stateCode,
           modifiedOn: new Date(),
         })
         .where(eq(purchaseInvoices.invoiceId, invoiceId))
         .returning();
 
-      await emitEvent(db as any, {
+      await emitEvent(db, {
         entityType: EntityType.PURCHASE_INVOICE,
         entityId: invoiceId,
         eventType: EventType.STATUS_CHANGED,

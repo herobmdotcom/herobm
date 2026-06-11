@@ -16,6 +16,7 @@ export class PdfTemplatesModule implements OnModuleInit {
 
   onModuleInit() {
     this.dataSourcesRegistry.register('theme', {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       resolveData: async (id: string, user: any) => {
         // Return dummy organization data or empty for now.
         // Usually would fetch the active tenant's org info from the DB.

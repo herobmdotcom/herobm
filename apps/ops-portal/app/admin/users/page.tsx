@@ -132,6 +132,7 @@ export default function UsersPage() {
 
   const save = async () => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const payload: any = {
         role: form.role,
         displayName: form.displayName || null,
@@ -183,6 +184,7 @@ export default function UsersPage() {
 
   const isSelf = (userId: string) => currentUserId === userId;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderRow = (isEdit: boolean, data: any, key: string) => (
     <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
       {/* Username */}

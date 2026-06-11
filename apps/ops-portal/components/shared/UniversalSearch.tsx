@@ -54,6 +54,7 @@ export default function UniversalSearch() {
     }
     try {
       const res = await api.dashboardControllerSearch({ q: term });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const payload = res.data as Record<string, unknown> | any[];
       setResults((Array.isArray(payload) ? payload : (payload.results as SearchResult[])) || []);
     } catch {

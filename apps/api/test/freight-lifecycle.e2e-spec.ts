@@ -204,6 +204,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
       .expect(200);
 
     const freightLine = summaryRes.body.lines.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (l: any) => l.productId === freightProductId,
     );
     expect(freightLine).toBeDefined();
@@ -228,6 +229,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
 
     // Pick only the physical line
     const physicalLine = detail.body.lines.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (l: any) => l.productId === physicalProductId,
     );
     await request(app.getHttpServer())
@@ -239,6 +241,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
       .expect(201);
 
     // Create shipment with all lines (physical + freight)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const shipLines = detail.body.lines.map((l: any) => ({
       salesOrderLineId: l.salesOrderLineId,
       quantityShipped: l.quantity,

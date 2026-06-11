@@ -20,11 +20,11 @@ interface PinnedReportWidgetProps {
 
 export default function PinnedReportWidget({ slug, configId, name }: PinnedReportWidgetProps) {
   const t = useTranslations('dashboard');
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [reportConfig, setReportConfig] = useState<Record<string, any> | null>(null);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [reportData, setReportData] = useState<Record<string, any>[]>([]);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [uiConfig, setUiConfig] = useState<Record<string, any> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -33,7 +33,9 @@ export default function PinnedReportWidget({ slug, configId, name }: PinnedRepor
       try {
         setIsLoading(true);
         // Load report definition for uiConfig
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const reports: any = await businessReportsControllerGetReports();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const report = (reports.data || reports).find((r: any) => r.slug === slug);
         if (!report) throw new Error('Report not found');
         setUiConfig(report.uiConfig);
@@ -48,6 +50,7 @@ export default function PinnedReportWidget({ slug, configId, name }: PinnedRepor
         setReportConfig(config);
 
         // Fetch data
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const dataRes: any = await businessReportsControllerRunReport(slug, config.filters || {});
         setReportData(dataRes.data || dataRes);
       } catch (err) {
@@ -98,7 +101,7 @@ export default function PinnedReportWidget({ slug, configId, name }: PinnedRepor
             <ReportChartViewer 
               data={reportData}
               config={uiConfig.chartConfig}
-              activeDrillDown={uiConfig.drillDownOptions?.find((o: any) => o.id === reportConfig.filters?.drillDown)}
+              activeDrillDown={uiConfig.drillDownOptions?.find((o: { id: string }) => o.id === reportConfig.filters?.drillDown)}
             />
           </div>
         ) : (

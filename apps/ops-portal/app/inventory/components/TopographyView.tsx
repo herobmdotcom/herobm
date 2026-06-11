@@ -447,6 +447,7 @@ export default function TopographyView() {
                                             {bin.binNumber}
                                           </td>
                                           <td className="px-4 py-2" style={{ color: 'var(--text-secondary)' }}>
+                                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                             {bin.binType ? tLoc(`binTypes.${bin.binType}` as any) : '—'}
                                           </td>
                                           <td className="px-4 py-2 text-center">

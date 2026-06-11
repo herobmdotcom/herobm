@@ -149,6 +149,7 @@ export class ReturnsWriteService {
         const order = await this.findOrder(salesOrderId, innerTx);
         if (
           !ReturnsWriteService.RETURNABLE_ORDER_STATES.includes(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             order.stateCode as any,
           )
         ) {
@@ -324,6 +325,7 @@ export class ReturnsWriteService {
       async (innerTx: DrizzleDB) => {
         const [updated] = await innerTx
           .update(salesOrderReturns)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .set({ stateCode: newState as any, modifiedOn: new Date() })
           .where(eq(salesOrderReturns.returnId, returnId))
           .returning();
@@ -523,6 +525,7 @@ export class ReturnsWriteService {
                 eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId),
               )
               .limit(1)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               .then((r: any[]) => r[0]);
 
             if (orderLine) {
@@ -636,7 +639,8 @@ export class ReturnsWriteService {
 
           if (returnGlWithDims) {
             await this.glService.postJournalEntry(
-              returnGlWithDims.lines as any,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              returnGlWithDims.lines as any[],
               {
                 actor,
                 entryDate: new Date().toISOString().slice(0, 10),
@@ -909,8 +913,10 @@ export class ReturnsWriteService {
     if (stateCode) {
       const states = stateCode.split(',');
       if (states.length === 1) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         q = q.where(eq(salesOrderReturns.stateCode, stateCode as any));
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         q = q.where(inArray(salesOrderReturns.stateCode, states as any[]));
       }
     }

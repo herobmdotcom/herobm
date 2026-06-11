@@ -56,6 +56,7 @@ function randomDate(start: Date, end: Date) {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function wipeDatabase(db: any) {
   console.log('Wiping existing database tables (CASCADE)...');
   await db.execute(
@@ -88,6 +89,7 @@ interface MasterData {
   prods: { id: string; number: string; name: string; price: number }[];
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function seedMasterData(db: any): Promise<MasterData> {
   console.log(
     'Seeding Master Data (Locations, Suppliers, Customers, Products)...',
@@ -236,6 +238,7 @@ async function seedMasterData(db: any): Promise<MasterData> {
   return { locs, sups, custs, prods };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function generateTransactions(db: any, data: MasterData) {
   console.log('Generating historical transactions (12 months)...');
   const now = new Date();
@@ -311,6 +314,7 @@ async function generateTransactions(db: any, data: MasterData) {
           zoneId: location.zoneId,
           quantity: qty.toString(),
         })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .catch((e: any) => console.error('Ledger error:', e.message));
 
       // Update binContents
@@ -332,6 +336,7 @@ async function generateTransactions(db: any, data: MasterData) {
             productId: prod.id,
             actualQuantity: qty.toString(),
           })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .catch((e: any) => console.error('Bin contents error:', e.message));
       }
     }

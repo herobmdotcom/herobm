@@ -17,7 +17,10 @@ export class DrizzleAdapter implements Adapter {
     }
   }
 
-  private loadPolicyLine(line: any, model: Model): void {
+  private loadPolicyLine(
+    line: Record<string, string | null>,
+    model: Model,
+  ): void {
     const lineText = [
       line.ptype,
       line.v0,
@@ -62,7 +65,10 @@ export class DrizzleAdapter implements Adapter {
     await this.db.insert(casbinRule).values(line);
   }
 
-  private getPolicyLine(ptype: string, rule: string[]): any {
+  private getPolicyLine(
+    ptype: string,
+    rule: string[],
+  ): typeof casbinRule.$inferInsert {
     return {
       ptype,
       v0: rule[0] || null,

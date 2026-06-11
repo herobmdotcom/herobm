@@ -58,6 +58,7 @@ export function useOrder(id: string) {
     useEffect(() => {
         api.inventoryControllerFindAllLocations()
             .then((res) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const payload = (res as any).data;
                 const arr = Array.isArray(payload) ? payload : (payload?.data || []);
                 setLocations(arr as api.InventoryLocationResponseDto[]);
@@ -92,12 +93,14 @@ export function useOrder(id: string) {
     const [invoices, setInvoices] = useState<SalesInvoice[]>([]);
     const [invoicing, setInvoicing] = useState(false);
     const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [pickingSummary, setPickingSummary] = useState<any | null>(null);
     const [newInvoiceNotes, setNewInvoiceNotes] = useState('');
     const [newInvoiceLines, setNewInvoiceLines] = useState<NewInvoiceLine[]>([]);
 
     /* ── Data loaders ────────────────────────────────────────────── */
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const loadOrder = async (autoTransitions?: any[], showSpinner = true) => {
         if (showSpinner) setLoading(true);
         try {
@@ -185,6 +188,7 @@ export function useOrder(id: string) {
         setInventoryLoading(true);
         api.inventoryControllerFindByProductIdsBulk({ productIds })
             .then((res: unknown) => setInventoryData(((res as { data: unknown[] }).data) as InventoryLevel[]))
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .catch((err: any) => reportError(err, 'OrderDetailPage'))
             .finally(() => setInventoryLoading(false));
     }, [activeTab, order]);
@@ -230,6 +234,7 @@ export function useOrder(id: string) {
             toast(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as Parameters<typeof tCommon>[0]) }), { icon: '🔄' });
             await loadOrder(undefined, false);
         } catch (err: unknown) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const anyErr = err as any;
             const isApiError = anyErr && (anyErr.status === 409 || anyErr.name === 'ApiError');
             if (isApiError && anyErr.data?.message === 'INVENTORY_GAP') {
@@ -323,7 +328,7 @@ export function useOrder(id: string) {
         }
     };
 
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateLineFields = async (lineId: string, payload: Record<string, any>) => {
         setSaving(true);
         try {
@@ -350,7 +355,7 @@ export function useOrder(id: string) {
         }
     };
 
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const addLineFromProduct = async (p: Record<string, any>) => {
         if (!order) return;
         const exists = order.lines.some((l) => l.productId === p.productId);

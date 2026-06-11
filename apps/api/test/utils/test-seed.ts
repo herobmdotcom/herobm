@@ -5,6 +5,7 @@ import {
   appSettings,
 } from '../../src/drizzle/modbm-core-schema';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function seedTestLocations(db: any, dryRun = false) {
   if (dryRun) {
     console.log('  [DRY RUN] Would seed test location: MAIN');

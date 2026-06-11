@@ -23,7 +23,9 @@ export class UomService {
   async calculateAbsoluteBaseQuantity(
     productId: string,
     lines: UomInputLine[],
-    txClient?: any,
+    txClient?:
+      | Parameters<Parameters<DrizzleDB['transaction']>[0]>[0]
+      | DrizzleDB,
   ): Promise<number> {
     const dbClient = txClient || this.db;
 

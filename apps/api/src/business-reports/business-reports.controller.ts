@@ -32,7 +32,7 @@ import {
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { BusinessReportsService } from './business-reports.service';
 
-@ApiTags('Business Reports')
+@ApiTags('System')
 @Controller('business-reports')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.BUSINESS_REPORT)
@@ -73,7 +73,7 @@ export class BusinessReportsController {
   @ApiOkResponse({ type: [Object] }) // BYPASS-TYPING-TEST
   async runReport(
     @Param('slug') slug: string,
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @Body() filters: Record<string, unknown>,
     @AuthUser() user: JwtUser,
   ) {

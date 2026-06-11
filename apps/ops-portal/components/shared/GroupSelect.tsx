@@ -34,16 +34,18 @@ export default function GroupSelect({
     let active = true;
     setLoading(true);
     
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fetchMap: Record<string, any> = {
       customer: api.accountGroupsControllerFindAll,
       product: api.productGroupsControllerFindAll,
       supplier: api.supplierGroupsControllerFindAll,
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     fetchMap[type]().then((data: any) => {
         if (active) setGroups(data.data);
       })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .catch((err: any) => reportError(`Failed to fetch ${type} groups:`, err))
       .finally(() => {
         if (active) setLoading(false);

@@ -70,7 +70,7 @@ interface Supplier {
   createdBy?: string | null;
   createdOn?: string | null;
   modifiedOn?: string | null;
-  events?: any[];
+  events?: unknown[];
 }
 
 export default function SupplierDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
@@ -123,6 +123,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const loadSupplier = async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const dataRes: any = await Promise.all([
         api.suppliersControllerFindOne(params.id),
         api.tradingTermsControllerFindAll().catch(() => ({ data: [] })),
@@ -169,7 +170,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   }, [params.id]);
 
   /** Save a single field on blur if it changed */
-  const saveField = async (field: string, value: any, original: any) => {
+  const saveField = async (field: string, value: unknown, original: unknown) => {
     if (value === original) return;
     if (value === '' && original === null) return;
     setSaving(true);
@@ -228,20 +229,20 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     }
   };
 
-  const productColumns: any[] = useMemo(() => [
+  const productColumns: Record<string, unknown>[] = useMemo(() => [
     { field: 'productNumber', headerName: t('products.columns.productNo'), width: 140 },
     { field: 'productName', headerName: t('products.columns.name'), flex: 1, minWidth: 160 },
     { field: 'supplierPartNumber', headerName: t('products.columns.partNo'), width: 150 },
-    { field: 'costPrice', headerName: t('products.columns.costPrice'), type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
-    { field: 'discountPercent', headerName: t('products.columns.discount'), type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `${parseFloat(p.value)}%` : '—' },
+    { field: 'costPrice', headerName: t('products.columns.costPrice'), type: 'numericColumn', width: 120, valueFormatter: (p: { value: unknown }) => p.value ? `$${parseFloat(String(p.value)).toFixed(2)}` : '—' },
+    { field: 'discountPercent', headerName: t('products.columns.discount'), type: 'numericColumn', width: 120, valueFormatter: (p: { value: unknown }) => p.value ? `${parseFloat(String(p.value))}%` : '—' },
     { 
       field: 'productStateCode', 
       headerName: t('products.columns.status'), 
       width: 110, 
-      valueFormatter: (p: any) => {
+      valueFormatter: (p: { value: unknown }) => {
         if (!p.value) return '';
         const s = String(p.value).toLowerCase();
-        return tStates.has(s as any) ? tStates(s as any) : String(p.value);
+        return tStates.has(s as never) ? tStates(s as never) : String(p.value);
       } 
     },
   ], [t]);
@@ -347,7 +348,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 columns={productColumns}
                 gridKey="supplier-products"
                 fetchAll
-                onRowClicked={(row: any) => router.push(`/products/${row.productId}`)}
+                onRowClicked={(row: { productId?: string }) => router.push(`/products/${row.productId}`)}
                 renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
                   <div className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-4 flex-1">
@@ -603,7 +604,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   country={supplier.address1Country || ''}
                   value={editBusinessNumber}
                   isSaving={saving}
-                  // modbm-allow-record-any
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onEnrich={(data: Record<string, any>) => {
                     if (data.name && data.name !== editName) {
                       setEditName(data.name);
@@ -794,7 +795,8 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         {/* Activity Timeline — full width */}
         {/* Activity Timeline — full width */}
         <div id="activity-section" className="card">
-          <ActivityTimeline events={supplier.events || []} />
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        <ActivityTimeline events={(supplier as any).events || []} />
         </div>
 
         <div className="flex justify-end pt-2">

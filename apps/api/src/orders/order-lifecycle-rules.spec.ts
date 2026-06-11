@@ -62,6 +62,7 @@ describe('Order Lifecycle Rules', () => {
     jest.clearAllMocks();
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async function seedOrder(state: any) {
     await pg.db.insert(salesOrders).values({
       salesOrderId: ORDER_ID,

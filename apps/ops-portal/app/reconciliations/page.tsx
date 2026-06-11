@@ -29,6 +29,7 @@ export default function ReconciliationsPage() {
       field: 'status', 
       headerName: t('columns.status'), 
       width: 120,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       valueFormatter: (params: any) => {
         if (!params.value) return '';
         const isPosted = params.value === 'posted';
@@ -44,6 +45,7 @@ export default function ReconciliationsPage() {
           endpoint="/api/gl/reconciliations"
           columns={columns}
           fetchAll={true}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           onRowClicked={(row: any) => router.push(`/reconciliations/${row.reconciliationId}`)}
           pageTitle={t('title')}
           headerActions={

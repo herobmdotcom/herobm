@@ -1639,15 +1639,15 @@ export const userSettings = modbmCore.table('user_settings', {
   userId: uuid('user_id')
     .primaryKey()
     .references(() => users.userId, { onDelete: 'cascade' }),
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   dashboardConfig: jsonb('dashboard_config')
     .$type<Record<string, unknown>>()
     .default({}),
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   reportConfigs: jsonb('report_configs')
     .$type<Record<string, unknown>>()
     .default({}),
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   preferences: jsonb('preferences')
     .$type<Record<string, unknown>>()
     .default({}),
@@ -1892,8 +1892,8 @@ export const glAccounts = modbmCore.table(
     isSystem: boolean('is_system').notNull().default(false), // prevents deletion
     isBankAccount: boolean('is_bank_account').notNull().default(false), // determines if it appears in payment/recon modules
     currencyCode: text('currency_code').notNull(), // GL customers can have different currencies
-    // modbm-allow-record-any
-    metadata: jsonb('metadata').$type<Record<string, any>>().default({}), // stores bank numbers, BSBs, routing, SWIFT, etc.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}), // stores bank numbers, BSBs, routing, SWIFT, etc.
     isActive: boolean('is_active').notNull().default(true),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   },
@@ -1992,7 +1992,7 @@ export const organization = modbmCore.table('organization', {
 export const glSettings = modbmCore.table('gl_settings', {
   settingsId: uuid('settings_id').primaryKey().defaultRandom(),
   accountMetadataSchema: jsonb('account_metadata_schema')
-    .$type<any[]>()
+    .$type<unknown[]>()
     .default([]),
   fiscalYearStartMonth: integer('fiscal_year_start_month').notNull(), // Sourced from settings JSON
   bankMatchDateToleranceDays: integer('bank_match_date_tolerance_days')
@@ -2083,8 +2083,8 @@ export const pdfTemplates = modbmCore.table('pdf_templates', {
   name: text('name').notNull(),
   description: text('description'),
   template: text('template').notNull(),
-  // modbm-allow-record-any
-  mockData: jsonb('mock_data').$type<Record<string, any>>(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  mockData: jsonb('mock_data').$type<Record<string, unknown>>(),
   contextResolver: text('context_resolver'),
   outputNamePattern: text('output_name_pattern').default('Report.pdf'),
   createdAt: timestamp('created_at', { withTimezone: true })
@@ -2122,7 +2122,7 @@ export const businessReports = modbmCore.table('business_reports', {
   name: text('name').notNull(),
   description: text('description'),
   dataSourceHook: text('data_source_hook').notNull(),
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   uiConfig: jsonb('ui_config')
     .$type<Record<string, unknown>>()
     .notNull()

@@ -146,6 +146,7 @@ describe('API E2E — Purchase Order Returns', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const lineIds = detail.body.lines.map((l: any) => l.purchaseOrderLineId);
 
     // Receive the items to ensure they are returnable

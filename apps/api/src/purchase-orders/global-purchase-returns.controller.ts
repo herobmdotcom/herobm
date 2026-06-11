@@ -58,7 +58,7 @@ export class GlobalPurchaseReturnsListDto {
 @Controller('purchase-returns')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.PURCHASE_RETURNS)
-@ApiTags('PurchaseReturns')
+@ApiTags('Purchase Returns')
 export class GlobalPurchaseReturnsController {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
@@ -94,11 +94,15 @@ export class GlobalPurchaseReturnsController {
 
     if (stateCodeStr) {
       const states = stateCodeStr.split(',');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       query = query.where(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         inArray(purchaseOrderReturns.stateCode, states as any[]),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ) as any;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     query = query.orderBy(desc(purchaseOrderReturns.createdOn)) as any;
 
     const data = await query;

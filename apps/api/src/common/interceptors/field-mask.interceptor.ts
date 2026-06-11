@@ -13,7 +13,7 @@ import { map } from 'rxjs/operators';
  */
 @Injectable()
 export class FieldMaskInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest();
     const fieldsQuery = request.query.fields;
 
@@ -32,7 +32,7 @@ export class FieldMaskInterceptor implements NestInterceptor {
     );
   }
 
-  private filterFields(data: any, fields: Set<string>): any {
+  private filterFields(data: unknown, fields: Set<string>): unknown {
     if (data === null || data === undefined) {
       return data;
     }
@@ -43,15 +43,20 @@ export class FieldMaskInterceptor implements NestInterceptor {
 
     if (typeof data === 'object') {
       // If the response wraps data in pagination or data objects, traverse down
-      if ('data' in data && Array.isArray(data.data)) {
+      if (
+        'data' in data &&
+        Array.isArray((data as Record<string, unknown>).data)
+      ) {
         return {
           ...data,
-          data: data.data.map((item: any) => this.filterFields(item, fields)),
+          data: ((data as Record<string, unknown>).data as unknown[]).map(
+            (item: unknown) => this.filterFields(item, fields),
+          ),
         };
       }
 
-      // modbm-allow-record-any
-      const filtered: Record<string, any> = {};
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const filtered: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(data)) {
         if (fields.has(key)) {
           filtered[key] = value;

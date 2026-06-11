@@ -34,7 +34,7 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @Controller('settings/exchange-rates')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
-@ApiTags('System')
+@ApiTags('General Ledger')
 export class ExchangeRatesController {
   constructor(private readonly exchangeService: ExchangeRatesService) {}
 

@@ -222,6 +222,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
       // Verify line amount was computed correctly
       const lineA = res.body.lines.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (l: any) => l.productDescription === 'Test Product A',
       );
       expect(lineA).toBeDefined();
@@ -317,6 +318,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
           .set('Authorization', `Bearer ${adminToken}`)
           .expect(200);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const shipLines: any[] = [];
         for (const line of detail.body.lines) {
           await request(app.getHttpServer())
@@ -363,6 +365,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const eventTypes = res.body.events.map((e: any) => e.eventType);
       expect(eventTypes).toContain('created');
       expect(eventTypes).toContain('updated');
@@ -373,6 +376,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
       // Should have status_changed + auto_status_changed events covering full lifecycle
       const statusChanges = res.body.events.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (e: any) =>
           e.eventType === 'status_changed' ||
           e.eventType === 'auto_status_changed',
@@ -509,6 +513,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
             .set('Authorization', `Bearer ${adminToken}`)
             .expect(200);
 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const shipLines: any[] = [];
           for (const line of detail.body.lines) {
             await request(app.getHttpServer())
@@ -647,6 +652,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       // We created orders in previous tests, should have at least 1
       expect(res.body.data.length).toBeGreaterThan(0);
       // Verify the listing contains our app-created orders
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const appOrders = res.body.data.filter((o: any) =>
         o.orderNumber?.startsWith('ORD-'),
       );

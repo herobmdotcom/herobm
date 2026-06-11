@@ -120,10 +120,12 @@ describe('Locations & Topography (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     const myLoc = inventoryRes.body.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (l: any) => l.locationId === locationId,
     );
     if (!myLoc) throw new Error('Location not found in full list');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handlingZone = myLoc.zones.find((z: any) => z.code === 'HANDLING');
     if (handlingZone) {
       // 10.1 Delete auto-bins

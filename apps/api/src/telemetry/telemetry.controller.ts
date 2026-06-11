@@ -41,7 +41,7 @@ import { ClientErrorDto, EmptyBodyDto } from './dto';
  *
  * See ADV-032 for the security analysis of this endpoint.
  */
-@ApiTags('Telemetry')
+@ApiTags('System')
 @Controller('telemetry')
 @SkipCasbin()
 @UseGuards(ThrottlerGuard)

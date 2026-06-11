@@ -261,6 +261,7 @@ describe('API E2E — Sales Invoices', () => {
       expect(res.body.length).toBeGreaterThan(0);
 
       const found = res.body.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (inv: any) => inv.invoiceId === createdInvoiceId,
       );
       expect(found).toBeDefined();
@@ -279,6 +280,7 @@ describe('API E2E — Sales Invoices', () => {
 
       expect(Array.isArray(res.body)).toBe(true);
       expect(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         res.body.every((inv: any) => inv.customerId === validCustomerId),
       ).toBe(true);
     });
@@ -303,6 +305,7 @@ describe('API E2E — Sales Invoices', () => {
         .expect(200);
 
       const je = glRes.body.data.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (j: any) => j.sourceId === createdInvoiceId,
       );
       if (!je) {
@@ -321,6 +324,7 @@ describe('API E2E — Sales Invoices', () => {
       const lines = detailRes.body.lines;
       expect(lines.length).toBeGreaterThanOrEqual(2);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const arLine = lines.find((l: any) => l.partyId === validCustomerId);
       expect(arLine).toBeDefined();
       expect(arLine.partyType).toBe('customer');

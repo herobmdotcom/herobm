@@ -105,7 +105,7 @@ export class OrdersModule implements OnModuleInit {
       requiredPermissions: [{ resource: 'sales_order', action: 'read' }],
       resolveData: async (
         id: string,
-        user: any,
+        user: Record<string, unknown>,
         options?: Record<string, unknown>,
       ) => {
         return (await this.salesQuoteService.assembleData(id, 'app', {
@@ -125,7 +125,7 @@ export class OrdersModule implements OnModuleInit {
 
     this.dataSourcesRegistry.register('picking-slip', {
       requiredPermissions: [{ resource: 'sales_order', action: 'read' }],
-      resolveData: async (id: string, user: any) => {
+      resolveData: async (id: string, user: Record<string, unknown>) => {
         return (await this.pickingSlipService.assembleData(
           id,
         )) as unknown as Record<string, unknown>;
@@ -150,7 +150,7 @@ export class OrdersModule implements OnModuleInit {
 
     this.dataSourcesRegistry.register('sales-invoice', {
       requiredPermissions: [{ resource: 'sales_invoice', action: 'read' }],
-      resolveData: async (id: string, user: any) => {
+      resolveData: async (id: string, user: Record<string, unknown>) => {
         // Find corresponding orderId for the specified invoiceId
         const [inv] = await this.db
           .select({ orderId: salesInvoices.salesOrderId })
@@ -176,7 +176,7 @@ export class OrdersModule implements OnModuleInit {
 
     this.dataSourcesRegistry.register('sales-return', {
       requiredPermissions: [{ resource: 'sales_return', action: 'read' }],
-      resolveData: async (id: string, user: any) => {
+      resolveData: async (id: string, user: Record<string, unknown>) => {
         return (await this.reportSalesReturnCreditService.assembleData(
           id,
           'app',
@@ -189,7 +189,7 @@ export class OrdersModule implements OnModuleInit {
 
     this.dataSourcesRegistry.register('shipment', {
       requiredPermissions: [{ resource: 'shipment', action: 'read' }],
-      resolveData: async (id: string, user: any) => {
+      resolveData: async (id: string, user: Record<string, unknown>) => {
         return (await this.shippingDocketService.assembleData(
           id,
         )) as unknown as Record<string, unknown>;

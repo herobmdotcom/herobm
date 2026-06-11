@@ -17,7 +17,7 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 import { ApiOkResponse, ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
-@ApiTags('Enrichment')
+@ApiTags('System')
 @Controller('enrichment')
 @UseGuards(CasbinGuard)
 export class EnrichmentController {
@@ -132,7 +132,7 @@ export class EnrichmentController {
   @ApiBody({ type: Object }) // BYPASS-TYPING-TEST
   async updateConfig(
     @Query('provider') provider: string,
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @Body() config: Record<string, any>,
   ) {
     return this.enrichmentService.updateConfig(provider, config);

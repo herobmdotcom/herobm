@@ -25,7 +25,7 @@ export default function BinContentsView() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocationCode, setSelectedLocationCode] = useState<string | null>(null);
   const [locationsLoaded, setLocationsLoaded] = useState(false);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedRows, setSelectedRows] = useState<Record<string, any>[]>([]);
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
@@ -81,6 +81,7 @@ export default function BinContentsView() {
     { field: 'binType', headerName: tBins('columns.binType'), width: 90 },
   ], [tCommon, tBins]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSelectionChanged = (rows: any[]) => {
     setSelectedRows(rows);
   };
@@ -92,6 +93,7 @@ export default function BinContentsView() {
 
   const canMove = selectedRows.length > 0 && selectedRows.every(r => r.locationNo === selectedLocationId);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleMoveSubmit = async (lines: any[], reason: string) => {
     try {
       await api.inventoryControllerMoveStock({
@@ -107,6 +109,7 @@ export default function BinContentsView() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAdjustSubmit = async (lines: any[], reason: string) => {
     try {
       await api.inventoryControllerAdjustStock({

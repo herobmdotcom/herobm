@@ -31,6 +31,7 @@ export default function SupplierGroupsAdmin() {
         api.costCentersControllerFindAll().then(r => r.data || []),
         api.activitiesControllerFindAll().then(r => r.data || [])
       ]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sorted = [...data].sort((a: any, b: any) => 
         a.name.localeCompare(b.name, undefined, { numeric: true })
       );
@@ -56,10 +57,14 @@ export default function SupplierGroupsAdmin() {
     }));
   }, [rawGroups]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const glAccountOptions = useMemo(() => glAccounts.map((a: any) => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` })), [glAccounts]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const costCenterOptions = useMemo(() => costCenters.map((c: any) => ({ value: c.costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activityOptions = useMemo(() => activities.map((a: any) => ({ value: a.activityId, label: `${a.code} - ${a.name}` })), [activities]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: InlineTableColumn<any>[] = useMemo(() => [
     { key: 'groupCode', title: tc('code'), type: 'text', placeholder: t('placeholders.code'), width: 100 },
     { key: 'name', title: tc('name'), type: 'text', placeholder: t('placeholders.name') },
@@ -71,6 +76,7 @@ export default function SupplierGroupsAdmin() {
     { key: 'isActivePayment', title: t('payment'), type: 'boolean', width: 80 }
   ], [tc, t, t_gen, glAccountOptions, costCenterOptions, activityOptions]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSave = async (payload: any, isNew: boolean) => {
     if (!payload.groupCode || !payload.name) {
       toast.error(t('toasts.requiredFields'));
@@ -103,6 +109,7 @@ export default function SupplierGroupsAdmin() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDelete = async (payload: any) => {
     if(!confirm(t('confirmDelete'))) return;
     try {
@@ -131,6 +138,7 @@ export default function SupplierGroupsAdmin() {
           title={<span style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>{t('definedGroups')}</span>}
           columns={columns}
           data={groups}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           rowKey={(row: any) => row.supplierGroupId}
           onSave={handleSave}
           onDelete={handleDelete}

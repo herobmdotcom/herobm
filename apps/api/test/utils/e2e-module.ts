@@ -28,6 +28,7 @@ export async function createE2eModule(): Promise<TestingModuleBuilder> {
 
     const client = new PGlite({ loadDataDir: suiteSnapshot });
     await client.waitReady;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = drizzlePglite({ client, schema, casing: 'snake_case' } as any);
 
     builder = builder

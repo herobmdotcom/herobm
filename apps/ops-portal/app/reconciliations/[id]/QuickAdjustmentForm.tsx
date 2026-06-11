@@ -12,7 +12,7 @@ import { getErrorMessage } from '@modbm/shared';
 interface QuickAdjustmentFormProps {
   reconciliationId: string;
   onSuccess: (journalLineId?: string) => void;
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   bankLine?: Record<string, any>;
 }
 
@@ -60,10 +60,12 @@ export default function QuickAdjustmentForm({
       const res = await api.reconciliationControllerCreateAdjustment(reconciliationId, {
         date,
         amount: Number(amount),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         type: type as any,
         offsetAccountId,
         memo
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       onSuccess((res.data as any)?.journalLineId);
       // Reset form if not prefilled
       if (!bankLine) {

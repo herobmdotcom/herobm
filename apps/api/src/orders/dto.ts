@@ -385,7 +385,7 @@ export class GeneratePOsDto {
 export class GenerateTransfersDto {
   @IsOptional()
   @IsArray()
-  transfers?: any[];
+  transfers?: Record<string, unknown>[];
 }
 
 export class PickOrderLineDto {

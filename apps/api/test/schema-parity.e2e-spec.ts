@@ -11,6 +11,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 describe('Database Schema Parity (e2e)', () => {
   let app: INestApplication;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let db: NodePgDatabase<any>;
 
   beforeAll(async () => {
@@ -30,6 +31,7 @@ describe('Database Schema Parity (e2e)', () => {
   it('should successfully select from all declared schema entities to ensure Postgres schema parity', async () => {
     // Drizzle table/view instances store internal configuration in `_` with a name
     const entities = Object.entries(schema)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map(([key, value]) => ({ key, entity: value as any }))
       .filter(({ entity }) => {
         return entity && (is(entity, PgTable) || is(entity, PgView));
@@ -42,6 +44,7 @@ describe('Database Schema Parity (e2e)', () => {
     for (const { key, entity } of entities) {
       try {
         await db.select().from(entity).limit(1);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         // Collect errors instead of failing immediately to provide a comprehensive report
         errors.push(

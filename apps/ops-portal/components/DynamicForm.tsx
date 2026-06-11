@@ -2,11 +2,11 @@ import React from 'react';
 import { FormField } from './shared/FormField';
 
 export interface DynamicFormProps {
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   schema: Record<string, any>;
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: Record<string, any>;
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onChange: (data: Record<string, any>) => void;
   readOnly?: boolean;
 }
@@ -20,6 +20,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ schema, data, onChange
     return null; // Return nothing if the schema isn't a valid object schema
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleChange = (key: string, value: any) => {
     if (readOnly) return;
     onChange({ ...data, [key]: value });
@@ -30,7 +31,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ schema, data, onChange
 
   return (
     <div className="flex flex-col gap-4">
-      {Object.entries(properties).map(([key, propSchema]: [string, any]) => {
+      {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        Object.entries(properties).map(([key, propSchema]: [string, any]) => {
         const isRequired = required.includes(key);
         const title = propSchema.title || key;
         const val = data[key] ?? '';

@@ -28,7 +28,8 @@ import {
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
 import { apiKeys } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
-import { randomBytes, createHash } from 'crypto';
+import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import {
   CreateApiKeyDto,
   ApiKeyResponseDto,
@@ -36,7 +37,7 @@ import {
   ApiKeyFullResponseDto,
 } from './dto';
 
-@ApiTags('ApiKeys')
+@ApiTags('System')
 @ApiBearerAuth()
 @Controller('api-keys')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
@@ -75,9 +76,9 @@ export class ApiKeysController {
   async create(@Body() body: CreateApiKeyDto) {
     // Generate a secure random token
     const secret = randomBytes(32).toString('hex');
-    const prefix = `sk_test_${secret.slice(0, 4)}`; // Or live prefix depending on environment
+    const prefix = secret.slice(0, 4);
 
-    const hash = createHash('sha256').update(secret).digest('hex');
+    const hash = await bcrypt.hash(secret, 10);
 
     const [key] = await this.db
       .insert(apiKeys)

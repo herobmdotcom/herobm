@@ -42,7 +42,7 @@ import {
 } from './setup.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
-@ApiTags('Setup')
+@ApiTags('System')
 @Controller('setup')
 @CasbinResource(SystemResource.IMPORT)
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard, ThrottlerGuard)

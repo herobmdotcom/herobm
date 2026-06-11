@@ -45,6 +45,7 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
           className="w-4 h-4 rounded text-accent focus:ring-accent"
         />
         <span className="text-[14px]" style={{ color: 'var(--text-primary)' }}>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           {t(`types.${event}` as any)}
         </span>
       </label>

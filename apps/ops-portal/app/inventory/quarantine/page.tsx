@@ -40,6 +40,7 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                         className="input text-sm w-48"
                     >
                         <option value="">{t('buttons.allLocations')}</option>
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                         {locations.map((loc: any) => (
                             <option key={loc.locationId} value={loc.locationId}>
                                 {loc.code} - {loc.name}
@@ -70,6 +71,7 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                                 className="input text-sm w-full"
                             >
                                 <option value="">{t('buttons.allLocations')}</option>
+                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                 {locations.map((loc: any) => (
                                     <option key={loc.locationId} value={loc.locationId}>
                                         {loc.code} - {loc.name}
@@ -140,6 +142,7 @@ export default function QuarantineListPage() {
                     quantity: (row.actualQuantity || '0') as string,
                     reason,
                     targetBinId,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     sourceType: 'manual' as any
                 });
                 toast.success('Line unquarantined successfully');
@@ -156,6 +159,7 @@ export default function QuarantineListPage() {
 
     const gridEndpoint = `/api/inventory/bins?binType=quarantine&limit=0${selectedLocationNo ? `&locationNo=${selectedLocationNo}` : ''}`;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const gridColumns: any[] = useMemo(() => [
         { field: 'binContentId', headerName: tCommon('columns.id'), hide: true },
         { 
@@ -174,6 +178,7 @@ export default function QuarantineListPage() {
             headerName: tCommon('columns.quantity'), 
             width: 120,
             cellStyle: { textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => {
                 return `${p.value} ${p.data?.baseUom || ''}`;
             }

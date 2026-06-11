@@ -22,10 +22,12 @@ export default function BusinessReportsConfigPage() {
       field: 'isSystem',
       headerName: 'System Core',
       width: 150,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       valueFormatter: (p: any) => p.value ? 'Yes' : 'No',
     }
   ], []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleRowClicked = useCallback((row: any) => {
     router.push(`/reporting/config/${row.id}`);
   }, [router]);

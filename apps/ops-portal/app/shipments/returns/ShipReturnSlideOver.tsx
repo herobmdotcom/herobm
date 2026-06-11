@@ -10,7 +10,7 @@ import { getErrorMessage } from '@modbm/shared';
 interface ShipReturnSlideOverProps {
   isOpen: boolean;
   onClose: () => void;
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   returnRecord: Record<string, any>;
   onRefresh: () => void;
 }
@@ -21,6 +21,7 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
   const tShipments = useTranslations('shipments');
   
   const [loading, setLoading] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [returnDetails, setReturnDetails] = useState<any | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,11 +31,12 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
       setLoading(true);
       setError(null);
       api.purchaseReturnsControllerFindReturn(returnRecord.purchaseOrderId, returnRecord.returnId)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((res: any) => {
           setReturnDetails(res.data ? res.data : res);
           setLoading(false);
         })
-        .catch((err: any) => {
+        .catch((err: unknown) => {
           setError(getErrorMessage(err));
           setLoading(false);
         });
@@ -122,6 +124,7 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
                   </tr>
                 </thead>
                 <tbody>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {returnDetails.lines.map((line: any) => (
                     <tr key={line.returnLineId}>
                       <td>{tShipments('returns.lineNum', { id: line.purchaseOrderLineId.substring(0, 8) })}</td>

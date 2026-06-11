@@ -100,6 +100,7 @@ export function usePurchaseOrder(id: string) {
   const visibleTransitions = useMemo(() => {
     if (!order) return [];
     const anyReceived = order.lines.some(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (l: any) => parseFloat(l.quantityReceived || '0') > 0,
     );
     return [...allowedTransitions]
@@ -136,6 +137,7 @@ export function usePurchaseOrder(id: string) {
 
   /* ── Data loaders ───────────────────────────────────────────── */
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const loadOrder = async (autoTransitions?: any[], showSpinner = true) => {
     if (showSpinner) setLoading(true);
     try {

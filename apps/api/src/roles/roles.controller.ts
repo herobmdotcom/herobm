@@ -26,7 +26,7 @@ import {
   ApiOperation,
 } from '@nestjs/swagger';
 
-@ApiTags('Roles')
+@ApiTags('System')
 @UseGuards(CasbinGuard)
 @CasbinResource(SystemResource.ROLES)
 @Controller('roles')

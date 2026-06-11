@@ -5,7 +5,9 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 
 describe('BankFeedsService', () => {
   let service: BankFeedsService;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let dbMock: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let glServiceMock: any;
 
   beforeEach(async () => {
@@ -69,6 +71,7 @@ describe('BankFeedsService', () => {
       dbMock.from.mockReturnThis();
       dbMock.where.mockReturnThis();
       dbMock.orderBy.mockReturnThis();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       dbMock.transaction.mockImplementation(async (cb: any) => {
         return cb(dbMock);
       });
@@ -279,18 +282,23 @@ describe('BankFeedsService', () => {
       dbMock.where.mockReturnThis();
       dbMock.orderBy.mockReturnThis();
       dbMock.limit.mockReturnThis();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       dbMock.transaction.mockImplementation(async (cb: any) => {
         return cb(dbMock);
       });
     });
 
     const setupMocks = (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       rules: any[],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       lines: any[],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       settings: any = { bankMatchDateToleranceDays: 7 },
     ) => {
       jest
         .spyOn(service, 'getReconciliationRules')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .mockResolvedValue(rules as any);
       dbMock.limit.mockResolvedValueOnce([settings]);
       dbMock.where.mockResolvedValueOnce([{ code: '1000-BANK' }]);

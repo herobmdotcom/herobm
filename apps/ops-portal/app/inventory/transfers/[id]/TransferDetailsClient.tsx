@@ -6,11 +6,12 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import StateBadge from '@/components/StateBadge';
-import ActivityTimeline from '@/components/shared/ActivityTimeline';
+import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import { ValidState } from '@/types/states';
 import { useTransferOrder } from './useTransferOrder';
 import { TRANSFER_ORDER_STATE } from '@modbm/shared';
-import ProductSearchInput from '@/components/shared/ProductSearchInput';
+import { TransferLineResponseDto } from '@modbm/sdk';
+import ProductSearchInput, { Product } from '@/components/shared/ProductSearchInput';
 import { MobileCardField } from '@/components/shared/DataTable';
 
 export default function TransferDetailsClient({ id }: { id: string }) {
@@ -59,10 +60,10 @@ export default function TransferDetailsClient({ id }: { id: string }) {
   }
 
   const isEditable = order.stateCode === TRANSFER_ORDER_STATE.CONFIRMED;
-  const canCancelOrder = [
+  const canCancelOrder = ([
     TRANSFER_ORDER_STATE.CONFIRMED,
     TRANSFER_ORDER_STATE.PICKING,
-  ].includes(order.stateCode as any);
+  ] as string[]).includes(order.stateCode);
   const canCancelShipment = order.stateCode === TRANSFER_ORDER_STATE.SHIPPED;
   const headerDirty = order.notes !== editNotes;
 
@@ -185,7 +186,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
             </h3>
             {isEditable && (
               <ProductSearchInput
-                onSelect={(p: any) => addLine(p.productId, 1)}
+                onSelect={(p: Product) => addLine(p.productId, 1)}
                 placeholder={tTransfers('placeholders.searchProduct')}
                 style={{ width: 240 }}
               />
@@ -205,7 +206,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
               </tr>
             </thead>
             <tbody>
-              {order.lines?.map((line: any) => (
+              {order.lines?.map((line: TransferLineResponseDto) => (
                 <tr key={line.transferOrderLineId}>
                   <td style={{ fontWeight: 600, fontSize: 12 }}>
                     {line.productNumber || '—'}
@@ -266,7 +267,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
           </table>
           </div>
           <div className="lg:hidden flex flex-col gap-3 w-full">
-            {order.lines?.map((line: any, idx: number) => (
+            {order.lines?.map((line: TransferLineResponseDto, idx: number) => (
               <div key={line.transferOrderLineId} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
                 <div className="flex justify-between items-start gap-2 mb-2">
                   <div className="font-semibold text-sm text-[var(--accent)]">
@@ -322,7 +323,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
 
         {/* Activity Timeline */}
         <div className="card">
-          <ActivityTimeline events={(order.events || []) as any[]} />
+          <ActivityTimeline events={(order.events || []) as unknown as TimelineEvent[]} />
         </div>
       </div>
     </DetailsLayout>

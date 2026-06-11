@@ -66,6 +66,7 @@ export default function AdHocCreditNoteSlideOver({
                 customerId,
                 notes,
                 lines: formattedLines,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any); // using any for quick SDK type bypass just in case
 
             toast.success('Credit note issued successfully');

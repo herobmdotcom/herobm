@@ -39,7 +39,7 @@ function resolveCasbinAsset(filename: string): string {
  * Helper to build a mock ExecutionContext with configurable metadata and request.
  */
 function createMockContext(opts: {
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>;
   user?: { userId: string; username: string; role: string } | null;
 }): ExecutionContext {
@@ -59,9 +59,11 @@ function createMockContext(opts: {
     __handler: handler,
     __classRef: classRef,
   } as unknown as ExecutionContext & {
-    // modbm-allow-record-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     __metadata: Record<string, any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     __handler: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     __classRef: any;
   };
 }
@@ -69,6 +71,7 @@ function createMockContext(opts: {
 describe('CasbinGuard', () => {
   let guard: CasbinGuard;
   let reflector: Reflector;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let enforcer: any;
 
   beforeAll(async () => {
@@ -93,6 +96,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -111,6 +115,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -126,6 +131,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -141,6 +147,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -161,6 +168,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -183,6 +191,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -202,6 +211,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -220,6 +230,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -239,6 +250,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -258,6 +270,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -278,6 +291,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -297,6 +311,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -315,6 +330,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -334,6 +350,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -353,6 +370,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return (ctx as any).__metadata[key];
         });
 
@@ -372,6 +390,7 @@ describe('CasbinGuard', () => {
         jest
           .spyOn(reflector, 'getAllAndOverride')
           .mockImplementation((key: string) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return (ctx as any).__metadata[key];
           });
 
@@ -397,6 +416,7 @@ describe('CasbinGuard', () => {
         jest
           .spyOn(reflector, 'getAllAndOverride')
           .mockImplementation((key: string) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return (ctx as any).__metadata[key];
           });
 
@@ -421,6 +441,7 @@ describe('CasbinGuard', () => {
         jest
           .spyOn(reflector, 'getAllAndOverride')
           .mockImplementation((key: string) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return (ctx as any).__metadata[key];
           });
 

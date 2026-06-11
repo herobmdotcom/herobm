@@ -31,7 +31,7 @@ import { MacroResponseDto } from './dto/macro-response.dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
-@ApiTags('Macros')
+@ApiTags('System')
 @Controller('macros')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)

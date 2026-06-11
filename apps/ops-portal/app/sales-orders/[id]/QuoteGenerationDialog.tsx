@@ -47,6 +47,7 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
     try {
       const res = await api.macrosControllerFindAll({ macroType: 'text_template' } );
       const data = res.data;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const textMacros = data.filter((m: any) => m.macroType === 'text_template');
       setMacros(textMacros);
     } catch (err: unknown) {

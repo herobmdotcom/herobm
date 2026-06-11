@@ -1,0 +1,5 @@
+export const TRUSTED_PUBLIC_KEYS = [
+  `-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEA4RWIcYUAcA9maxxJuDMSFhhSShjr8JGRO0viUJvD8DU=
+-----END PUBLIC KEY-----`,
+];

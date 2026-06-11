@@ -15,10 +15,10 @@ export default function ShipmentsReturnsPage() {
     const [refreshKey, setRefreshKey] = useState(0);
 
     const [slideOverOpen, setSlideOverOpen] = useState(false);
-    // modbm-allow-record-any
-  const [selectedReturn, setSelectedReturn] = useState<Record<string, any> | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [selectedReturn, setSelectedReturn] = useState<Record<string, any> | null>(null);
 
-    const handleShip = useCallback((returnRecord: any) => {
+    const handleShip = useCallback((returnRecord: Record<string, unknown>) => {
         setSelectedReturn(returnRecord);
         setSlideOverOpen(true);
     }, []);
@@ -33,24 +33,24 @@ export default function ShipmentsReturnsPage() {
     // Fetch DRAFT and STAGED returns globally
     const gridEndpoint = `/api/purchase-returns?stateCode=${PURCHASE_RETURN_STATE.DRAFT},${PURCHASE_RETURN_STATE.STAGED}`;
 
-    const gridColumns: any[] = useMemo(() => [
+    const gridColumns: Record<string, unknown>[] = useMemo(() => [
         { field: 'returnNumber', headerName: 'Return No', width: 140 },
         { field: 'orderNumber', headerName: 'PO No', width: 140 },
         { field: 'vendorName', headerName: 'Supplier', flex: 1 },
-        { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
         { 
             field: 'stateCode', 
             headerName: 'Status', 
             width: 120,
-            cellRenderer: (p: any) => {
+            cellRenderer: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => {
                 if (!p.value) return null;
-                const stateColors: any = {
+                const stateColors: Record<string, string> = {
                     [PURCHASE_RETURN_STATE.DRAFT]: 'badge-warning',
                     [PURCHASE_RETURN_STATE.STAGED]: 'badge-info',
                 };
                 return (
-                    <span className={`badge badge-sm ${stateColors[p.value] || 'badge-neutral'}`}>
-                        {p.value.toUpperCase()}
+                    <span className={`badge badge-sm ${stateColors[p.value as string] || 'badge-neutral'}`}>
+                        {(p.value as string).toUpperCase()}
                     </span>
                 );
             }
@@ -75,7 +75,7 @@ export default function ShipmentsReturnsPage() {
               <ShipReturnSlideOver 
                   isOpen={slideOverOpen} 
                   onClose={handleSlideOverClose} 
-                  returnRecord={selectedReturn as any} 
+                  returnRecord={selectedReturn as Record<string, unknown>} 
                   onRefresh={triggerRefresh} 
               />
             )}

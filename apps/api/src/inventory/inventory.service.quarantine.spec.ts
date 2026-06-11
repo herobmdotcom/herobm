@@ -96,6 +96,7 @@ describe('InventoryService - Quarantine', () => {
     });
 
     // Seed initial stock in receiving bin via a manual entry
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await service['recordInventoryMovement'](pg.db as any, {
       entryNumber: 'INIT',
       sourceType: 'MANUAL',

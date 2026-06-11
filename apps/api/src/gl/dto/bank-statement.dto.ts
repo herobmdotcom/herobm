@@ -231,8 +231,8 @@ export class BankStatementMatchGroupResponseDto {
   createdOn: Date;
 
   @ApiProperty({ type: [Object], required: false })
-  bankLines?: any[];
+  bankLines?: Record<string, unknown>[];
 
   @ApiProperty({ type: [Object], required: false })
-  ledgerLines?: any[];
+  ledgerLines?: Record<string, unknown>[];
 }

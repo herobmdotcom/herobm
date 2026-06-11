@@ -20,7 +20,7 @@ import { SkipCasbin } from './casbin.guard';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { LoginDto, LoginResponseDto, MeResponseDto } from './dto';
 
-@ApiTags('Auth')
+@ApiTags('System')
 @Controller('auth')
 @SkipCasbin()
 export class AuthController {
@@ -55,6 +55,7 @@ export class AuthController {
     description:
       'Returns the identity and role of the currently authenticated user.',
   })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   me(@Request() req: any) {
     return {
       username: req.user.username,

@@ -97,7 +97,9 @@ export function useSupplierInvoice(id: string) {
   const loadInvoice = () => {
     setLoading(true);
     api.invoiceDetailControllerGetPurchaseBillDetails(id)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((res: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const data = (res as any).data ? (res as any).data : res;
         setInvoice(data);
         setEditSupplierInvoiceNumber(data.supplierInvoiceNumber || '');
@@ -131,7 +133,7 @@ export function useSupplierInvoice(id: string) {
     setHeaderDirty(changed);
   }, [editSupplierInvoiceNumber, editReceiptFilename, editCurrencyCode, editTaxAmount, editNotes, editVendorId, invoice]);
 
-  const saveHeader = async (overrideVendorId?: string | any) => {
+  const saveHeader = async (overrideVendorId?: string | unknown) => {
     const newVendorId = typeof overrideVendorId === 'string' ? overrideVendorId : null;
     if (!headerDirty && !newVendorId) return;
     if (!invoice) return;

@@ -13,7 +13,7 @@ import { getErrorMessage } from '@modbm/shared';
 interface AllocationSlideOverProps {
   isOpen: boolean;
   onClose: () => void;
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   grLines: Record<string, any>[];
   onRefresh: () => void;
 }
@@ -22,6 +22,7 @@ interface AllocationSlideOverProps {
  * Per-line state: tracks the fetched PO candidates and which POs are expanded.
  */
 interface LineState {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pendingLines: any[];
   loading: boolean;
   expandedPOs: Set<string>;
@@ -32,7 +33,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
   const t = useTranslations('goodsReceived');
   const [lineStates, setLineStates] = useState<Map<string, LineState>>(new Map());
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [localLines, setLocalLines] = useState<Record<string, any>[]>([]);
   // Track which line IDs have already been fetched to avoid the stale-closure race condition
   const fetchedRef = useRef<Set<string>>(new Set());
@@ -84,8 +85,10 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
         productId: line.productId, 
         vendorId: line.vendorId 
       })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((data: any) => {
           const lines = Array.isArray(data) ? data : data.data || [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const poIds = [...new Set(lines.map((l: any) => l.purchaseOrderId))] as string[];
 
           setLineStates((prev) => {
@@ -99,7 +102,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
             return next;
           });
         })
-        .catch((err: any) => {
+        .catch((err: unknown) => {
           reportError(err, 'AllocationSlideOver.pendingPOs');
           setLineStates((prev) => {
             const next = new Map(prev);
@@ -128,6 +131,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
     });
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markAllocated = useCallback((lineId: string, allocatedQty: string, splitLine?: any) => {
     setLineStates((prev) => {
       const next = new Map(prev);
@@ -165,6 +169,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
     });
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAllocate = useCallback(async (grLine: any, poLine: any, qtyStr: string) => {
     const originalQuantity = parseFloat(grLine.quantityReceived || '0');
     const qty = parseFloat(qtyStr);
@@ -350,15 +355,18 @@ function POCandidatesList({
   toggleExpand,
   handleAllocate
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   grLine: any;
-  state: any;
+  state: LineState;
   toggleExpand: (lineId: string, poId: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handleAllocate: (grLine: any, poLine: any, qtyStr: string) => void;
 }) {
   const t = useTranslations('goodsReceived');
   const originalQuantity = parseFloat(grLine.quantityReceived || '0');
 
   // Group pending lines by PO
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const poGroups = new Map<string, any>();
   for (const line of state.pendingLines) {
     if (!poGroups.has(line.purchaseOrderId)) {
@@ -433,6 +441,7 @@ function POCandidatesList({
                       </tr>
                     </thead>
                     <tbody>
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                       {group.lines.map((poLine: any) => (
                         <POLineRow
                           key={poLine.purchaseOrderLineId}
@@ -445,6 +454,7 @@ function POCandidatesList({
                   </table>
                 </div>
                 <div className="lg:hidden flex flex-col w-full divide-y divide-[var(--border)]">
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   {group.lines.map((poLine: any) => (
                     <POLineMobileCard
                       key={poLine.purchaseOrderLineId}
@@ -463,6 +473,7 @@ function POCandidatesList({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function POLineRow({ line, originalQuantity, onAllocate }: { line: any; originalQuantity: number; onAllocate: (qty: string) => void }) {
   const t = useTranslations('goodsReceived');
   const ordered = parseFloat(line.quantity || '0');
@@ -508,6 +519,7 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: any; original
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function POLineMobileCard({ line, originalQuantity, onAllocate }: { line: any; originalQuantity: number; onAllocate: (qty: string) => void }) {
   const t = useTranslations('goodsReceived');
   const ordered = parseFloat(line.quantity || '0');

@@ -18,6 +18,7 @@ export async function resolveOrderDetail(
   _ordersService: unknown,
   orderId: string,
   _source?: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
   return ordersWriteService.findOne(orderId);
 }

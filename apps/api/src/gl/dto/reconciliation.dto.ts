@@ -58,7 +58,7 @@ export class CreateAdjustmentDto {
 }
 
 export class ReconciliationListResponseDto {
-  data!: any[];
+  data!: Record<string, unknown>[];
 }
 
 export class CreateReconciliationResponseDto {
@@ -78,7 +78,7 @@ export class ReconciliationDetailResponseDto {
 }
 
 export class UnreconciledLinesResponseDto {
-  data!: any[];
+  data!: Record<string, unknown>[];
 }
 
 export class ToggleLineResponseDto {

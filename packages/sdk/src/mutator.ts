@@ -5,9 +5,9 @@ import { getSdkConfig } from './config';
  */
 export class SdkApiError extends Error {
   public status: number;
-  public data: any;
+  public data: unknown;
 
-  constructor(message: string, status: number, data?: any) {
+  constructor(message: string, status: number, data?: unknown) {
     super(message);
     this.status = status;
     this.data = data;
@@ -71,7 +71,7 @@ export const customFetch = async <T>(
   const contentLength = response.headers.get('content-length');
   const isEmpty = response.status === 204 || contentLength === '0';
   
-  let data: any = undefined;
+  let data: unknown = undefined;
   if (!isEmpty) {
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('application/pdf') || contentType.includes('application/octet-stream') || contentType.includes('image/') || contentType.includes('application/zip')) {

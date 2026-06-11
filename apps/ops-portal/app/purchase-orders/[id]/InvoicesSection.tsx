@@ -72,11 +72,11 @@ export default function InvoicesSection({
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex flex-col gap-1">
                                 <strong style={{ fontSize: 13 }}>{inv.invoiceNumber}</strong>
-                                {(inv as any).supplierInvoiceNumber && (
-                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('ref')} {(inv as any).supplierInvoiceNumber}</span>
+                                {(inv as unknown as Record<string, string>).supplierInvoiceNumber && (
+                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('ref')} {(inv as unknown as Record<string, string>).supplierInvoiceNumber}</span>
                                 )}
-                                {(inv as any).receiptFilename && (
-                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('file')} {(inv as any).receiptFilename}</span>
+                                {(inv as unknown as Record<string, string>).receiptFilename && (
+                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('file')} {(inv as unknown as Record<string, string>).receiptFilename}</span>
                                 )}
                             </div>
                         </div>
@@ -130,7 +130,7 @@ export default function InvoicesSection({
                                     <tbody>
                                         {linePricing.map(({ il, orderLine, disc, taxRate, pricing }) => (
                                                 <tr 
-                                                    key={il.invoiceLineId || (il as any).lineId || il.purchaseOrderLineId}
+                                                    key={il.invoiceLineId || (il as unknown as Record<string, string>).lineId || il.purchaseOrderLineId}
                                                     style={{ opacity: orderLine ? 1 : 0.7 }}
                                                 >
                                                     <td style={{ fontWeight: 600, fontSize: 12 }}>
@@ -160,9 +160,9 @@ export default function InvoicesSection({
                                                         {taxRate.toFixed(1)}%
                                                     </td>
                                                     <td style={{ fontSize: 10, color: 'var(--text-muted)' }}>
-                                                        {il.goodsReceivedLineId ? (
-                                                            receiptLines.find(r => (r as any).line.goodsReceivedLineId === il.goodsReceivedLineId) ? (receiptLines.find(r => (r as any).line.goodsReceivedLineId === il.goodsReceivedLineId) as any).receiptNumber : 'Receipt'
-                                                        ) : '—'}
+                                                          {il.goodsReceivedLineId ? (
+                                                              receiptLines.find(r => (r as unknown as Record<string, Record<string, string>>).line?.goodsReceivedLineId === il.goodsReceivedLineId) ? (receiptLines.find(r => (r as unknown as Record<string, Record<string, string>>).line?.goodsReceivedLineId === il.goodsReceivedLineId) as Record<string, string>).receiptNumber : 'Receipt'
+                                                          ) : '—'}
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
                                                         {formatAmount(pricing.amount, cc)}

@@ -142,6 +142,7 @@ export class PurchaseReturnsService {
         await tx.insert(purchaseOrderReturnLines).values(lineValues);
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(tx as any, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: purchaseOrderId,
@@ -221,6 +222,7 @@ export class PurchaseReturnsService {
         tx,
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(tx as any, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: po.purchaseOrderId,
@@ -273,6 +275,7 @@ export class PurchaseReturnsService {
         tx,
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(tx as any, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: po.purchaseOrderId,
@@ -467,6 +470,7 @@ export class PurchaseReturnsService {
 
         if (glResult) {
           await this.glService.postJournalEntry(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             glResult.lines as any,
             {
               actor,
@@ -475,6 +479,7 @@ export class PurchaseReturnsService {
               sourceId: returnId,
               memo: `Supplier Return ${ret.returnNumber}`,
             },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             tx as any,
           );
         }
@@ -482,6 +487,7 @@ export class PurchaseReturnsService {
 
       // 5. Evaluate PO Lifecycle Engine for Reversal
       await evaluatePOLifecycleRules(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         tx as any,
         po.purchaseOrderId,
         {
@@ -492,6 +498,7 @@ export class PurchaseReturnsService {
         actor,
       );
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(tx as any, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: po.purchaseOrderId,
@@ -545,6 +552,7 @@ export class PurchaseReturnsService {
 
     const [updated] = await db
       .update(purchaseOrderReturns)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .set({ stateCode: newState as any, modifiedOn: new Date() })
       .where(eq(purchaseOrderReturns.returnId, returnId))
       .returning();

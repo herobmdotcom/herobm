@@ -61,6 +61,7 @@ describe('Account Groups (e2e)', () => {
     expect(listRes.status).toBe(200);
     expect(Array.isArray(listRes.body)).toBe(true);
     expect(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       listRes.body.find((g: any) => g.customerGroupId === groupId),
     ).toBeDefined();
 
@@ -89,6 +90,7 @@ describe('Account Groups (e2e)', () => {
       .get('/api/customers?limit=1000&orderDirection=desc')
       .set('Authorization', `Bearer ${adminToken}`);
     const foundAcc = accountListRes.body.data.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (a: any) => a.customerId === createCustomerRes.body.customerId,
     );
     expect(foundAcc).toBeDefined();

@@ -36,8 +36,11 @@ jest.mock('../purchase-orders/purchase-order-lifecycle-rules', () => ({
 describe('GoodsReceivedService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: GoodsReceivedService;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockInventoryService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockGlService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockAppConfig: any;
 
   const VENDOR_ID = '00000000-0000-0000-0000-000000000001';

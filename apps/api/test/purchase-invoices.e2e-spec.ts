@@ -41,7 +41,9 @@ describe('API E2E — Purchase Invoices', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const leaves: any[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const walk = (nodes: any[]) => {
       for (const node of nodes) {
         if (!node.isGroup) leaves.push(node);
@@ -205,6 +207,7 @@ describe('API E2E — Purchase Invoices', () => {
         .expect(200);
 
       const je = glRes.body.data.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (j: any) => j.sourceId === createdInvoiceId,
       );
       expect(je).toBeDefined();
@@ -219,6 +222,7 @@ describe('API E2E — Purchase Invoices', () => {
 
       // AP Line should be the credit line for the supplier
       const apLine = lines.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (l: any) => l.partyId === validVendorId && parseFloat(l.credit) > 0,
       );
       expect(apLine).toBeDefined();
@@ -235,6 +239,7 @@ describe('API E2E — Purchase Invoices', () => {
 
       const eventsList = dbRes.body.events || [];
       const glEvent = eventsList.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (evt: any) =>
           evt.eventType === 'general_ledger.entry_posted' &&
           evt.entityId === je.journalEntryId,
@@ -257,6 +262,7 @@ describe('API E2E — Purchase Invoices', () => {
         .expect(200);
 
       const je = glRes.body.data.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (j: any) => j.sourceId === createdInvoiceId,
       );
       expect(je).toBeDefined();
@@ -271,6 +277,7 @@ describe('API E2E — Purchase Invoices', () => {
 
       // Reversal AP Line should be the DEBIT line for the supplier
       const apReversalLine = lines.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (l: any) => l.partyId === validVendorId && parseFloat(l.debit) > 0,
       );
       expect(apReversalLine).toBeDefined();

@@ -10,7 +10,7 @@ export interface SdkConfig {
   /** A callback triggered when a 401 Unauthorized response is encountered. */
   onUnauthorized: () => void;
   /** A callback triggered on non-401 API errors. */
-  onError: (error: any) => void;
+  onError: (error: unknown) => void;
 }
 
 let config: SdkConfig = {

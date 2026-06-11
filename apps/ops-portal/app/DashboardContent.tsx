@@ -19,13 +19,12 @@ export default function DashboardContent() {
   const [isReportSettingsOpen, setIsReportSettingsOpen] = useState(false);
   const [enabledEvents, setEnabledEvents] = useState<EventType[]>(DEFAULT_ENABLED_EVENTS);
   const [isLoaded, setIsLoaded] = useState(false);
-  // modbm-allow-record-any
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [dashboardConfig, setDashboardConfig] = useState<Record<string, any> | null>(null);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [userSettings, setUserSettings] = useState<Record<string, any> | null>(null);
-  // modbm-allow-record-any
-  const [reports, setReports] = useState<Record<string, any>[]>([]);
+   
+  const [reports, setReports] = useState<{ slug: string; name: string }[]>([]);
 
   useEffect(() => {
     Promise.all([
@@ -40,8 +39,8 @@ export default function DashboardContent() {
       } else {
         setEnabledEvents(DEFAULT_ENABLED_EVENTS);
       }
-      // modbm-allow-record-any
-      setReports(((reportsRes as unknown as Record<string, any>).data as Record<string, any>[]) || (reportsRes as unknown as Record<string, any>[]));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setReports(((reportsRes as unknown as Record<string, any>).data as { slug: string; name: string }[]) || (reportsRes as unknown as { slug: string; name: string }[]));
       setIsLoaded(true);
     }).catch((err: unknown) => {
       reportError(err, 'DashboardContent');
@@ -60,7 +59,7 @@ export default function DashboardContent() {
     }
   };
 
-  const handlePinnedReportsChange = (newPinnedReports: any[]) => {
+  const handlePinnedReportsChange = (newPinnedReports: { slug: string; configId: string; name?: string }[]) => {
     const updatedConfig = { ...dashboardConfig, pinnedReports: newPinnedReports };
     setDashboardConfig(updatedConfig);
     try {
@@ -105,7 +104,7 @@ export default function DashboardContent() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {dashboardConfig?.pinnedReports?.map((report: any, idx: number) => (
+                    {dashboardConfig?.pinnedReports?.map((report: { slug: string; configId: string; name?: string }, idx: number) => (
                       <PinnedReportWidget key={idx} slug={report.slug} configId={report.configId} name={report.name} />
                     ))}
                   </div>

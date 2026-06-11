@@ -16,8 +16,10 @@
  *                   capitalised.
  * @param values   – optional ICU interpolation values (e.g. `{ actor: "Bob" }`)
  */
+ 
 export function tDynamic(
-  t: { has: (key: any) => boolean } & ((...args: any[]) => string),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: any,
   key: string,
   fallback?: string,
   values?: Record<string, string>,

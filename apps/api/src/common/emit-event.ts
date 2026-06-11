@@ -55,7 +55,7 @@ export interface EmitEventParams {
   entityId: string;
   eventType: string;
   entityDisplayName: string;
-  payload: any;
+  payload: unknown;
   actor?: string;
 }
 
@@ -71,6 +71,7 @@ export interface EmitEventParams {
  * This is the ONLY function that should write to the outbox table.
  */
 export async function emitEvent(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tx: any,
   params: EmitEventParams,
 ): Promise<void> {

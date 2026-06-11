@@ -8,6 +8,6 @@ export class EnrichmentPayloadDto {
   })
   @IsOptional()
   @IsObject()
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload?: Record<string, any>;
 }

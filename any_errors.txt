@@ -1,0 +1,7 @@
+File: C:/Users/Marcel/volz/modbm/modbm/apps/ops-portal/app/receiving/page.tsx:48
+Reason: Explicit 'any' detected in Function parameter typing.
+Line: {locations.map((loc: any) => (
+
+File: C:/Users/Marcel/volz/modbm/modbm/apps/ops-portal/app/receiving/page.tsx:92
+Reason: Dead or redundant suppression comment detected. No 'any' or 'Record<' found on the associated line.
+Line: {/* modbm-allow-explicit-any */}

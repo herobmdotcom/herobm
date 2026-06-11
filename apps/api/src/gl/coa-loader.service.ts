@@ -243,7 +243,24 @@ export class CoaLoaderService {
         'au_standard_settings.json',
       );
       let baseCurrency = 'EUR';
-      let settings: any = {};
+      let settings: {
+        base_currency?: string;
+        fiscal_year_start_month?: number;
+        defaults?: {
+          ar_account_code?: string;
+          ap_account_code?: string;
+          revenue_account_code?: string;
+          cogs_account_code?: string;
+          tax_account_code?: string;
+          expense_account_code?: string;
+        };
+        trading_terms?: {
+          code: string;
+          description: string;
+          days: number;
+          type: string;
+        }[];
+      } = {};
       if (fs.existsSync(settingsPath)) {
         settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
         if (settings.base_currency) baseCurrency = settings.base_currency;

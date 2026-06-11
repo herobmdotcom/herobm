@@ -193,6 +193,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
 
       // Each row should have match count fields
       const row = res.body.data.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (d: any) => d.goodsReceivedId === goodsReceivedId,
       );
       expect(row).toBeDefined();
@@ -306,7 +307,9 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         .expect(200);
 
       const beforeQoh = beforeRes.body.data
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter((r: any) => r.productId === appProductId)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .reduce((sum: number, r: any) => sum + parseFloat(r.quantityOnHand), 0);
 
       // Create another goods receipt
@@ -329,7 +332,9 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         .expect(200);
 
       const afterQoh = afterRes.body.data
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter((r: any) => r.productId === appProductId)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .reduce((sum: number, r: any) => sum + parseFloat(r.quantityOnHand), 0);
 
       // Available QOH should be unchanged — goods are in RECEIVING (excluded from availability)
@@ -356,6 +361,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
 
       // Find the line created in the previous 'Inventory Impact' test (which received 100 units)
       const targetLine = res.body.data.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (l: any) =>
           l.productId === appProductId &&
           parseFloat(l.quantityReceived) === 100,
@@ -379,6 +385,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
       expect(res.body.availableBins.length).toBeGreaterThan(0);
 
       // Pick a valid storage bin (must be visible to inventory_levels, e.g. storage, bulk, pick)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const validBin = res.body.availableBins.find((b: any) =>
         ['storage', 'pick', 'bulk'].includes(b.binType),
       );
@@ -418,6 +425,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         .expect(200);
 
       const productStock = res.body.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (p: any) => p.productId === appProductId,
       );
       expect(productStock).toBeDefined();
@@ -435,6 +443,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         .expect(200);
 
       const targetLine = res.body.data.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (l: any) => l.goodsReceivedLineId === putawayGoodsReceivedLineId,
       );
       expect(targetLine).toBeUndefined();
@@ -461,6 +470,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         .expect(200);
 
       const targetLine = linesRes.body.data.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (l: any) => l.goodsReceivedId === grRes.body.goodsReceivedId,
       );
       expect(targetLine).toBeDefined();
@@ -492,11 +502,13 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         .expect(200);
 
       const productStock = finalRes.body.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (p: any) => p.productId === appProductId,
       );
       expect(productStock).toBeDefined();
 
       const binBalance = productStock.binBalances.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (b: any) => b.binId === destinationBinId,
       );
       expect(binBalance).toBeDefined();

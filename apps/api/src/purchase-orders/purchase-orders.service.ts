@@ -80,6 +80,7 @@ export class PurchaseOrdersService {
   private readonly logger = new Logger(PurchaseOrdersService.name);
 
   private async resolveTaxForLine(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tx: any,
     productId?: string,
     taxCategoryIdOverride?: string,
@@ -144,6 +145,7 @@ export class PurchaseOrdersService {
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async create(createDto: any, userId: string) {
     return await this.db.transaction(async (tx) => {
       if (!createDto.deliveryLocationId) {
@@ -193,6 +195,7 @@ export class PurchaseOrdersService {
 
       // Create lines if any
       if (createDto.lines && createDto.lines.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const lineValues: any[] = [];
         let index = 0;
         for (const line of createDto.lines) {
@@ -283,8 +286,10 @@ export class PurchaseOrdersService {
 
     if (states && states.length > 0) {
       if (states.length === 1) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         conditions.push(eq(purchaseOrders.stateCode, states[0] as any));
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         conditions.push(inArray(purchaseOrders.stateCode, states as any[]));
       }
     }
@@ -419,6 +424,7 @@ export class PurchaseOrdersService {
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async findOne(id: string, tx: any = this.db) {
     const rawOrder = await tx
       .select()
@@ -433,6 +439,7 @@ export class PurchaseOrdersService {
       )
       .where(eq(purchaseOrders.purchaseOrderId, id))
       .limit(1)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((res: any[]) => res[0]);
 
     if (!rawOrder) {
@@ -462,6 +469,7 @@ export class PurchaseOrdersService {
       .where(eq(purchaseOrderLineItems.purchaseOrderId, id))
       .orderBy(purchaseOrderLineItems.lineNumber);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const lines = rawLines.map((r: any) => {
       const lineEntity = r.purchase_order_lines || r;
       return {
@@ -474,14 +482,17 @@ export class PurchaseOrdersService {
     const productIds: string[] = Array.from(
       new Set(
         lines
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .map((l: any) => l.productId as string | null)
           .filter(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (id: any): id is string =>
               id !== null && id !== '00000000-0000-0000-0000-000000000000',
           ),
       ),
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let allUoms: any[] = [];
     if (productIds.length > 0) {
       allUoms = await tx
@@ -490,6 +501,7 @@ export class PurchaseOrdersService {
         .where(inArray(productUoms.productId, productIds));
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const linesWithUoms = lines.map((line: any) => {
       return {
         ...line,
@@ -510,6 +522,7 @@ export class PurchaseOrdersService {
       ...order,
       salesOrderId: order.purchaseOrderId,
       source: 'app' as const,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       lines: linesWithUoms.map((l: any) => ({
         ...l,
         salesOrderLineId: l.purchaseOrderLineId,
@@ -566,6 +579,7 @@ export class PurchaseOrdersService {
 
     if (stateCode === PURCHASE_ORDER_STATE.CANCELLED) {
       const anyReceived = existing.lines.some(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (l: any) => parseFloat(l.quantityReceived || '0') > 0,
       );
       if (anyReceived) {
@@ -594,6 +608,7 @@ export class PurchaseOrdersService {
           const [{ totalInvoiced }] = await db
             .select({
               totalInvoiced:
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
             })
             .from(purchaseInvoiceLines)
@@ -694,6 +709,7 @@ export class PurchaseOrdersService {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async addLine(orderId: string, lineDto: any, actor: string = 'system') {
     return await this.db.transaction(async (tx) => {
       // Lock the order to prevent concurrent addLine races
@@ -711,6 +727,7 @@ export class PurchaseOrdersService {
       }
 
       const maxLine = existing.lines.reduce(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (max: number, l: any) => Math.max(max, l.lineNumber || 0),
         0,
       );
@@ -765,6 +782,7 @@ export class PurchaseOrdersService {
   async updateLine(
     orderId: string,
     lineId: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     lineDto: any,
     actor: string = 'system',
   ) {
@@ -776,6 +794,7 @@ export class PurchaseOrdersService {
         );
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updateFields: any = {};
       if (lineDto.quantity !== undefined)
         updateFields.quantity = lineDto.quantity.toString();
@@ -798,6 +817,7 @@ export class PurchaseOrdersService {
         lineDto.taxCategoryId !== undefined
       ) {
         const line = existing.lines.find(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (l: any) => l.purchaseOrderLineId === lineId,
         );
         const qty = parseFloat(
@@ -893,6 +913,7 @@ export class PurchaseOrdersService {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async update(id: string, updateDto: any, userId: string) {
     return await this.db.transaction(async (tx) => {
       const existing = await this.findOne(id, tx);
@@ -943,6 +964,7 @@ export class PurchaseOrdersService {
           .where(eq(purchaseOrderLineItems.purchaseOrderId, id));
 
         if (updateDto.lines.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const lineValues: any[] = [];
           let index = 0;
           for (const line of updateDto.lines) {
@@ -979,6 +1001,7 @@ export class PurchaseOrdersService {
 
         const audit = calculateAuditTrail(updateDto, existing, AuditMode.DIFF);
         if (audit.hasChanges) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await emitEvent(tx as any, {
             entityType: EntityType.PURCHASE_ORDER,
             entityId: id,
@@ -1184,7 +1207,7 @@ export class PurchaseOrdersService {
     const [updated] = await db
       .update(purchaseOrders)
       .set({
-        // eslint-disable-next-line no-restricted-syntax
+        // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-explicit-any
         stateCode: newState as any,
         modifiedOn: new Date(),
       })
@@ -1198,6 +1221,7 @@ export class PurchaseOrdersService {
       eventType = EventType.UNARCHIVED;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await emitEvent(db as any, {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: purchaseOrderId,

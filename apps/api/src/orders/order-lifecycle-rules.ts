@@ -94,7 +94,7 @@ export const autoShipWhenFullyShipped: LifecycleRule = {
       .from(salesOrders)
       .where(eq(salesOrders.salesOrderId, salesOrderId));
 
-    await emitEvent(db as any, {
+    await emitEvent(db, {
       entityType: EntityType.SALES_ORDER,
       entityId: salesOrderId,
       eventType: 'auto_status_changed',
@@ -128,7 +128,9 @@ export const revertToPickingOnShipmentCancel: LifecycleRule = {
     if (
       trigger.entity !== EntityType.SHIPMENT ||
       ![SHIPMENT_STATE.CANCELLED, SHIPMENT_STATE.DRAFT].includes(
-        trigger.action as any,
+        trigger.action as
+          | typeof SHIPMENT_STATE.CANCELLED
+          | typeof SHIPMENT_STATE.DRAFT,
       )
     ) {
       return null;
@@ -171,7 +173,7 @@ export const revertToPickingOnShipmentCancel: LifecycleRule = {
       .from(salesOrders)
       .where(eq(salesOrders.salesOrderId, salesOrderId));
 
-    await emitEvent(db as any, {
+    await emitEvent(db, {
       entityType: EntityType.SALES_ORDER,
       entityId: salesOrderId,
       eventType: 'auto_status_changed',
@@ -227,8 +229,7 @@ export const autoInvoiceWhenFullyInvoiced: LifecycleRule = {
     for (const line of lines) {
       const [{ totalInvoiced }] = await db
         .select({
-          totalInvoiced:
-            sql<string>`COALESCE(SUM(CAST(${salesInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
+          totalInvoiced: sql<string>`COALESCE(SUM(CAST(${salesInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text`,
         })
         .from(salesInvoiceLines)
         .innerJoin(
@@ -259,7 +260,7 @@ export const autoInvoiceWhenFullyInvoiced: LifecycleRule = {
       .from(salesOrders)
       .where(eq(salesOrders.salesOrderId, salesOrderId));
 
-    await emitEvent(db as any, {
+    await emitEvent(db, {
       entityType: EntityType.SALES_ORDER,
       entityId: salesOrderId,
       eventType: 'auto_status_changed',
@@ -309,7 +310,7 @@ export const startPickingOnFirstPick: LifecycleRule = {
       .from(salesOrders)
       .where(eq(salesOrders.salesOrderId, salesOrderId));
 
-    await emitEvent(db as any, {
+    await emitEvent(db, {
       entityType: EntityType.SALES_ORDER,
       entityId: salesOrderId,
       eventType: 'auto_status_changed',

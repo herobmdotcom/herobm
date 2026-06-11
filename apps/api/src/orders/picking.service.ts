@@ -183,13 +183,13 @@ export class PickingService {
           s.locationId === line.fulfillmentLocationId,
       );
 
-      const availableBins = filterPickableBins(productLocationBins as any[])
+      const availableBins = filterPickableBins(productLocationBins)
         .sort(
           (a, b) =>
             parseFloat(String(b.onHand || 0)) -
             parseFloat(String(a.onHand || 0)),
         )
-        .map((b: any) => ({
+        .map((b) => ({
           binId: b.binId,
           binName: `${b.zoneCode}.${b.binNumber}`,
           onHand: String(b.onHand || 0),
@@ -209,7 +209,7 @@ export class PickingService {
         remaining: String(ordered - picked),
         isFullyPicked: picked >= ordered,
         isPhysical,
-        onHand: String(calculatePickableOnHand(productLocationBins as any[])),
+        onHand: String(calculatePickableOnHand(productLocationBins)),
         availableBins,
         hasAllocation: (allocationMap.get(line.salesOrderLineId) ?? 0) > 0,
       };
@@ -557,7 +557,26 @@ export class PickingService {
       ...rawTransferLines,
     ];
 
-    const orderMap = new Map<string, any>();
+    const orderMap = new Map<
+      string,
+      Record<string, unknown> & {
+        id: string;
+        orderNumber: string;
+        name: string | null;
+        customerName: string | null;
+        customerOrderNumber: string | null;
+        stateCode: string;
+        createdOn: Date | null;
+        createdBy: string | null;
+        totalPrice: string | null;
+        currencyCode: string | null;
+        type: string;
+        _hasAllocation?: boolean;
+        _linesUnfulfilled?: number;
+        _linesFullyPickable?: number;
+        _linesPartiallyPickable?: number;
+      }
+    >();
 
     for (const row of allLines) {
       if (!orderMap.has(row.id)) {
@@ -582,6 +601,8 @@ export class PickingService {
       }
 
       const order = orderMap.get(row.id);
+      if (!order) continue;
+
       if (row.hasAllocation) {
         order._hasAllocation = true;
       }
@@ -591,13 +612,14 @@ export class PickingService {
         const remaining = required - picked;
 
         if (remaining > 0) {
-          order._linesUnfulfilled += 1;
+          order._linesUnfulfilled = (order._linesUnfulfilled || 0) + 1;
           const onHand = parseFloat(row.onHand?.toString() ?? '0');
 
           if (onHand >= remaining) {
-            order._linesFullyPickable += 1;
+            order._linesFullyPickable = (order._linesFullyPickable || 0) + 1;
           } else if (onHand > 0) {
-            order._linesPartiallyPickable += 1;
+            order._linesPartiallyPickable =
+              (order._linesPartiallyPickable || 0) + 1;
           }
           // else: blocked (no on-hand) — counted implicitly
         }
@@ -605,15 +627,15 @@ export class PickingService {
     }
 
     const queue = Array.from(orderMap.values())
-      .filter((order) => order._linesUnfulfilled > 0)
+      .filter((order) => (order._linesUnfulfilled || 0) > 0)
       .map((order) => {
         let pickabilityStatus: 'ready' | 'partial' | 'blocked';
 
         if (order._linesFullyPickable === order._linesUnfulfilled) {
           pickabilityStatus = 'ready';
         } else if (
-          order._linesFullyPickable > 0 ||
-          order._linesPartiallyPickable > 0
+          (order._linesFullyPickable || 0) > 0 ||
+          (order._linesPartiallyPickable || 0) > 0
         ) {
           pickabilityStatus = 'partial';
         } else {
@@ -779,7 +801,10 @@ export class PickingService {
 
     const [updated] = await tx
       .update(salesOrderPicks)
-      .set({ stateCode: newState as any, modifiedOn: new Date() })
+      .set({
+        stateCode: newState as typeof salesOrderPicks.$inferInsert.stateCode,
+        modifiedOn: new Date(),
+      })
       .where(eq(salesOrderPicks.pickId, pickId))
       .returning();
 
@@ -788,7 +813,7 @@ export class PickingService {
         .select({ orderNumber: salesOrders.orderNumber })
         .from(salesOrders)
         .where(eq(salesOrders.salesOrderId, pick.salesOrderId));
-      await emitEvent(tx as any, {
+      await emitEvent(tx, {
         entityType: EntityType.WAREHOUSE,
         entityId: pickId,
         eventType: EventType.PICK_CANCELLED,
@@ -868,7 +893,23 @@ export class PickingService {
       )
       .orderBy(salesOrders.createdOn);
 
-    const orderMap = new Map<string, any>();
+    const orderMap = new Map<
+      string,
+      Record<string, unknown> & {
+        id: string;
+        orderNumber: string;
+        name: string | null;
+        customerName: string | null;
+        customerOrderNumber: string | null;
+        stateCode: string;
+        createdOn: Date | null;
+        createdBy: string | null;
+        currencyCode: string | null;
+        _totalPhysicalLines?: number;
+        _fullyPickedLines?: number;
+        _shippableLines?: number;
+      }
+    >();
 
     for (const row of rawLines) {
       if (!orderMap.has(row.id)) {
@@ -890,30 +931,32 @@ export class PickingService {
       }
 
       const order = orderMap.get(row.id);
+      if (!order) continue;
+
       if (row.isPhysical) {
-        order._totalPhysicalLines += 1;
+        order._totalPhysicalLines = (order._totalPhysicalLines || 0) + 1;
         const ordered = parseFloat(row.lineQuantity ?? '0');
         const picked = parseFloat(row.pickedQty?.toString() ?? '0');
         const shipped = parseFloat(row.shippedQty?.toString() ?? '0');
         const availableToShip = picked - shipped;
 
         if (picked >= ordered) {
-          order._fullyPickedLines += 1;
+          order._fullyPickedLines = (order._fullyPickedLines || 0) + 1;
         }
 
         if (availableToShip > 0) {
-          order._shippableLines += 1;
+          order._shippableLines = (order._shippableLines || 0) + 1;
         }
       }
     }
 
     const queue = Array.from(orderMap.values())
-      .filter((order) => order._shippableLines > 0)
+      .filter((order) => (order._shippableLines || 0) > 0)
       .map((order) => {
         let shippabilityStatus: 'ready' | 'partial';
 
         if (
-          order._totalPhysicalLines > 0 &&
+          (order._totalPhysicalLines || 0) > 0 &&
           order._fullyPickedLines === order._totalPhysicalLines
         ) {
           shippabilityStatus = 'ready';
@@ -921,8 +964,8 @@ export class PickingService {
           shippabilityStatus = 'partial';
         }
 
-        const totalShippableLines = order._shippableLines;
-        const totalLines = order._totalPhysicalLines;
+        const totalShippableLines = order._shippableLines || 0;
+        const totalLines = order._totalPhysicalLines || 0;
         delete order._totalPhysicalLines;
         delete order._fullyPickedLines;
         delete order._shippableLines;

@@ -71,6 +71,7 @@ const MOCK_SHIPMENT_LINE = {
 describe('ShipmentService', () => {
   const pg = setupPgliteSuite();
   let service: ShipmentService;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockInventoryService: any;
 
   beforeEach(async () => {
@@ -406,6 +407,7 @@ describe('ShipmentService', () => {
     async function setupWithState(currentState: string) {
       await pg.db
         .update(salesOrderShipments)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .set({ stateCode: currentState as any })
         .where(
           eq(

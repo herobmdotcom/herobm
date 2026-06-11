@@ -33,6 +33,7 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
     try {
       setLoading(true);
       const data = await api.suppliersControllerFindSupplierExpiries(vendorId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let payload = (data as any)?.data || data || [];
       if (payload && !Array.isArray(payload) && Array.isArray(payload.data)) {
         payload = payload.data;

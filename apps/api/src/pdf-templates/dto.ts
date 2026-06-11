@@ -59,7 +59,7 @@ export class UpdateReportDto {
 
 export class PreviewReportDto {
   @ApiProperty() template!: string;
-  @ApiProperty({ required: false }) mockData?: any;
+  @ApiProperty({ required: false }) mockData?: Record<string, unknown>;
   @ApiProperty({ required: false }) hookSlug?: string;
   @ApiProperty({ required: false }) entityId?: string;
 }
@@ -75,5 +75,5 @@ export class UpdateHookAssignmentDto {
 }
 
 export class RunHookBodyDto {
-  [key: string]: any;
+  [key: string]: unknown;
 }

@@ -93,7 +93,7 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
               )
             }
           ]}
-          mobileCard={(alloc: any) => {
+          mobileCard={(alloc: Allocation) => {
              return (
                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                   <div className="font-semibold text-sm text-[var(--accent)] mb-1">

@@ -9,7 +9,7 @@ import {
   SampleRecordDto,
 } from './data-sources.dto';
 
-@ApiTags('Data Sources')
+@ApiTags('System')
 @CasbinResource(SystemResource.BUSINESS_REPORT)
 @Controller('data-sources')
 export class DataSourcesController {

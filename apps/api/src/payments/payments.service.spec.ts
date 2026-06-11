@@ -672,6 +672,7 @@ describe('PaymentsService', () => {
         customerId,
         currencyCode: 'AUD',
         fulfillmentLocationId: locationId,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         stateCode: SALES_ORDER_STATE.SHIPPED as any,
       });
 
@@ -893,6 +894,7 @@ describe('PaymentsService', () => {
         customerId,
         currencyCode: 'AUD',
         fulfillmentLocationId: locationId,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         stateCode: SALES_ORDER_STATE.SHIPPED as any,
       });
 
@@ -1081,6 +1083,7 @@ describe('PaymentsService', () => {
         customerId,
         currencyCode: 'AUD',
         fulfillmentLocationId: locationId,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         stateCode: SALES_ORDER_STATE.SHIPPED as any,
       });
 

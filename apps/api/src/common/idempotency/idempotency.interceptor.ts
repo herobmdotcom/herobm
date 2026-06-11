@@ -25,7 +25,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
     private reflector: Reflector,
   ) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const config = this.reflector.get<IdempotentConfig>(
       IDEMPOTENT_KEY,
       context.getHandler(),
@@ -77,8 +77,9 @@ export class IdempotencyInterceptor implements NestInterceptor {
   private async fetchExistingRecord(
     config: IdempotentConfig,
     id: string,
-  ): Promise<any> {
+  ): Promise<unknown> {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const table = (schema as any)[config.queryKey];
       if (!table) {
         this.logger.error(
@@ -95,6 +96,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
       }
 
       // Perform a dynamic relational query
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await (this.db.query as any)[config.queryKey].findFirst({
         where: eq(column, id),
       });

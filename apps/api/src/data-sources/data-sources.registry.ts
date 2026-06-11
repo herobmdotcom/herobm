@@ -2,18 +2,21 @@ import { Injectable, Logger } from '@nestjs/common';
 
 export interface DataSourceProvider {
   // Used by Business Reports (Ag-Grid / Recharts)
-  fetchData?(filters: Record<string, unknown>, user?: any): Promise<any[]>;
+  fetchData?(
+    filters: Record<string, unknown>,
+    user?: { role?: string },
+  ): Promise<Record<string, unknown>[]>;
 
   // Used by PDF Templates (Typst)
   resolveData?(
     id: string,
-    user: any,
+    user: { role?: string },
     options?: Record<string, unknown>,
   ): Promise<Record<string, unknown>>;
   getRandomId?(): Promise<string | undefined>;
 
   // Fallback: Called if DB is empty to provide structure
-  generateMockData?(): Record<string, unknown> | any[];
+  generateMockData?(): Record<string, unknown> | Record<string, unknown>[];
 
   requiredPermissions?: { resource: string; action: string }[];
 }

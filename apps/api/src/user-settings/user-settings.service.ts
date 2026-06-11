@@ -27,9 +27,9 @@ export class UserSettingsService {
   async updateSettings(
     userId: string,
     data: Partial<{
-      dashboardConfig: any;
-      reportConfigs: any;
-      preferences: any;
+      dashboardConfig: Record<string, unknown>;
+      reportConfigs: Record<string, unknown>;
+      preferences: Record<string, unknown>;
     }>,
   ) {
     // Ensure record exists

@@ -64,7 +64,9 @@ export default function ProductSearchInput({
     const term = rawTerm.trim();
     if (!term || term.length < 2) { setResults([]); return; }
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const res = await api.productsControllerFindAll({ q: term, limit: 10 } as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setResults(((res.data as any)?.data || res.data || []) );
     } catch { setResults([]); }
   }, []);

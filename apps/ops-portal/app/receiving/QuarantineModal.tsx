@@ -30,12 +30,15 @@ export default function QuarantineModal({ isOpen, onClose, onSubmit, locationId 
       api.inventoryControllerFindAllLocations()
         .then((res) => {
           const locs = res.data || [];
-          const loc = locs.find((l: any) => l.locationId === locationId) as any;
+          interface BinData { binId: string; binNumber: string; binType: string; }
+          interface ZoneData { bins?: BinData[]; }
+          interface LocationData { locationId: string; zones?: ZoneData[]; }
+          const loc = locs.find((l: LocationData) => l.locationId === locationId) as LocationData | undefined;
           if (loc && loc.zones) {
             const quarantineBins: { binId: string; binNumber: string }[] = [];
-            loc.zones.forEach((z: any) => {
+            loc.zones.forEach((z: ZoneData) => {
               if (z.bins) {
-                z.bins.forEach((b: any) => {
+                z.bins.forEach((b: BinData) => {
                   if (b.binType === BIN_TYPE.QUARANTINE) {
                     quarantineBins.push(b);
                   }

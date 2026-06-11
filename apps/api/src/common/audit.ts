@@ -4,9 +4,9 @@ export enum AuditMode {
 }
 
 export interface AuditTrail {
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   changes: Record<string, any>;
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   previousValues: Record<string, any>;
   hasChanges: boolean;
 }
@@ -19,15 +19,15 @@ export interface AuditTrail {
  * @param mode AuditMode.DIFF (only log actual changes) or AuditMode.FULL (log everything in DTO)
  */
 export function calculateAuditTrail(
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   dto: Record<string, any>,
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   existing: Record<string, any>,
   mode: AuditMode = AuditMode.DIFF,
 ): AuditTrail {
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const changes: Record<string, any> = {};
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const previousValues: Record<string, any> = {};
   let hasChanges = false;
 

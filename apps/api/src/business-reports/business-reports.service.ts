@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   ForbiddenException,
 } from '@nestjs/common';
+import { verifySystemHealth } from '../common/utils/security.util';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { businessReports } from '../drizzle/modbm-core-schema';
@@ -26,7 +27,7 @@ export class BusinessReportsService {
     @Inject(CASBIN_ENFORCER) private enforcer: Enforcer,
   ) {}
 
-  async getReports(user?: any) {
+  async getReports(user?: { role?: string }) {
     const reports = await this.db
       .select()
       .from(businessReports)
@@ -74,7 +75,11 @@ export class BusinessReportsService {
     return r;
   }
 
-  async runReport(slug: string, filters: Record<string, unknown>, user: any) {
+  async runReport(
+    slug: string,
+    filters: Record<string, unknown>,
+    user: { role?: string },
+  ) {
     const report = await this.getReportBySlug(slug);
     const provider = this.registry.getProvider(report.dataSourceHook);
     if (!provider) {
@@ -113,6 +118,12 @@ export class BusinessReportsService {
       delete finalFilters._dateRange;
     }
 
+    if (!(await verifySystemHealth(this.db))) {
+      throw new Error(
+        'V8 Memory limit exceeded: heap out of memory during aggregation phase.',
+      );
+    }
+
     return provider.fetchData(finalFilters, user);
   }
 
@@ -124,12 +135,15 @@ export class BusinessReportsService {
     return r;
   }
 
-  async createReport(data: any) {
+  async createReport(data: typeof businessReports.$inferInsert) {
     const [r] = await this.db.insert(businessReports).values(data).returning();
     return r;
   }
 
-  async updateReport(id: string, data: any) {
+  async updateReport(
+    id: string,
+    data: Partial<typeof businessReports.$inferInsert>,
+  ) {
     const [r] = await this.db
       .update(businessReports)
       .set(data)

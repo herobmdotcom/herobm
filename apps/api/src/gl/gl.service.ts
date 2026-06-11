@@ -490,7 +490,9 @@ export class GlService implements OnModuleInit {
       ORDER BY a.account_code
     `);
 
-    return (rows as any).rows ?? rows;
+    return Array.isArray(rows)
+      ? rows
+      : (rows as { rows: unknown[] }).rows || [];
   }
 
   async getGeneralLedger(filters: {
@@ -500,7 +502,7 @@ export class GlService implements OnModuleInit {
     limit?: number;
     page?: number;
   }) {
-    const conditions: any[] = [];
+    const conditions: import('drizzle-orm').SQL[] = [];
 
     if (filters.accountCode) {
       conditions.push(sql`a.account_code = ${filters.accountCode}`);
@@ -566,11 +568,29 @@ export class GlService implements OnModuleInit {
     const rawRows = (
       Array.isArray(entriesResult)
         ? entriesResult
-        : (entriesResult as any).rows || []
-    ) as any[];
+        : (entriesResult as { rows: unknown[] }).rows || []
+    ) as {
+      journal_entry_id: string;
+      entry_number: string;
+      entry_date: string;
+      entry_memo?: string;
+      source_type?: string;
+      source_id?: string;
+      account_code: string;
+      account_name: string;
+      party_type?: string;
+      party_id?: string;
+      debit?: string;
+      credit?: string;
+      line_memo?: string;
+      created_by: string;
+      created_on: Date;
+    }[];
     const countRows = (
-      Array.isArray(countResult) ? countResult : (countResult as any).rows || []
-    ) as any[];
+      Array.isArray(countResult)
+        ? countResult
+        : (countResult as { rows: unknown[] }).rows || []
+    ) as { count: number }[];
 
     // Map raw DB rows to camelCase for the frontend DataGrid
     const entries = rawRows.map((row) => ({
@@ -607,7 +627,7 @@ export class GlService implements OnModuleInit {
     limit?: number;
     page?: number;
   }) {
-    const conditions: any[] = [];
+    const conditions: import('drizzle-orm').SQL[] = [];
 
     if (filters.fromDate) {
       conditions.push(sql`je.entry_date >= ${filters.fromDate}`);
@@ -672,8 +692,21 @@ export class GlService implements OnModuleInit {
     const rawRows = (
       Array.isArray(entriesResult)
         ? entriesResult
-        : (entriesResult as any).rows || []
-    ) as any[];
+        : (entriesResult as { rows: unknown[] }).rows || []
+    ) as {
+      journal_entry_id: string;
+      entry_number: string;
+      entry_date: string;
+      memo?: string;
+      source_type?: string;
+      source_id?: string;
+      partyName?: string;
+      partyIdRef?: string;
+      partyTypeRef?: string;
+      sourceNumber?: string;
+      created_by: string;
+      created_on: Date;
+    }[];
 
     // Map raw DB rows to camelCase for the frontend DataGrid
     const entries = rawRows.map((row) => ({
@@ -692,8 +725,10 @@ export class GlService implements OnModuleInit {
     }));
 
     const countRows = (
-      Array.isArray(countResult) ? countResult : (countResult as any).rows || []
-    ) as any[];
+      Array.isArray(countResult)
+        ? countResult
+        : (countResult as { rows: unknown[] }).rows || []
+    ) as { count: number }[];
 
     return {
       data: entries,
@@ -822,7 +857,7 @@ export class GlService implements OnModuleInit {
       // If no settings exist, create them (should be rare, but safe fallback)
       const [newSettings] = await db
         .insert(glSettings)
-        .values(data as any)
+        .values(data as typeof glSettings.$inferInsert)
         .returning();
       return newSettings;
     }
@@ -848,8 +883,8 @@ export class GlService implements OnModuleInit {
   // Helpers
   // -------------------------------------------------------------------------
 
-  private buildTree(accounts: any[]) {
-    const map = new Map<string | null, any[]>();
+  private buildTree(accounts: (typeof glAccounts.$inferSelect)[]) {
+    const map = new Map<string | null, typeof accounts>();
 
     for (const acct of accounts) {
       const parentId = acct.parentAccountId || null;
@@ -857,7 +892,9 @@ export class GlService implements OnModuleInit {
       map.get(parentId)!.push(acct);
     }
 
-    const build = (parentId: string | null): any[] => {
+    const build = (
+      parentId: string | null,
+    ): ((typeof accounts)[0] & { children?: unknown[] })[] => {
       const children = map.get(parentId) || [];
       return children.map((acct) => ({
         ...acct,
@@ -871,8 +908,10 @@ export class GlService implements OnModuleInit {
   // -------------------------------------------------------------------------
   // Business Reporting
   // -------------------------------------------------------------------------
-  async getBusinessReportData(filters: Record<string, unknown>) {
-    const conditions: any[] = [];
+  async getBusinessReportData(
+    filters: Record<string, unknown>,
+  ): Promise<Record<string, unknown>[]> {
+    const conditions: import('drizzle-orm').SQL[] = [];
     if (filters.fromDate) {
       conditions.push(sql`je.entry_date >= ${filters.fromDate}`);
     }
@@ -905,6 +944,8 @@ export class GlService implements OnModuleInit {
       ORDER BY a.account_code
     `);
 
-    return (rows as any).rows ?? rows;
+    return Array.isArray(rows)
+      ? (rows as Record<string, unknown>[])
+      : (rows as { rows: Record<string, unknown>[] }).rows || [];
   }
 }

@@ -62,7 +62,9 @@ function ReceptionCard({
   currencyCode,
 }: {
   reception: Reception;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   orderLines: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   events: any[];
   currencyCode?: string;
 }) {
@@ -266,7 +268,9 @@ export default function ReceivingSection({
   currencyCode,
 }: {
   orderId: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   orderLines: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   events: any[];
   currencyCode?: string;
 }) {
@@ -284,6 +288,7 @@ export default function ReceivingSection({
         const lines = (res.data )?.data || [];
         
         // Extract unique reception IDs
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const grIds = Array.from(new Set<string>(lines.map((l: any) => l.goodsReceivedId)));
         
         // Fetch full data including lines for each setup

@@ -141,7 +141,7 @@ export class ImportCsvDto {
     format: 'binary',
     description: 'The CSV file to import',
   })
-  file: any;
+  file: unknown;
 
   @ApiProperty()
   @IsUUID()
@@ -158,7 +158,7 @@ export class FileUploadDto {
     format: 'binary',
     description: 'The CSV file to upload',
   })
-  file: any;
+  file: unknown;
 }
 
 export class MappingProfileResponseDto extends CreateMappingProfileDto {

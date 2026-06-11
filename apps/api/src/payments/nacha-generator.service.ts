@@ -47,6 +47,7 @@ export class NachaGeneratorService {
       transactionTypes: ServiceClass.CreditDebit,
       originCompanyName: context.companyName,
       originIdentification: context.companyId,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       code: batchCodeFromString('PPD') as any, // Prearranged Payment and Deposit
       description: context.description,
       effectiveEntryDate: context.processDate,

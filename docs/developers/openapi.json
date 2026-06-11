@@ -30,7 +30,7 @@
         },
         "summary": "Login User",
         "tags": [
-          "Auth"
+          "System"
         ]
       }
     },
@@ -53,7 +53,7 @@
         },
         "summary": "Get Current User",
         "tags": [
-          "Auth"
+          "System"
         ]
       }
     },
@@ -79,7 +79,7 @@
         },
         "summary": "Find all roles",
         "tags": [
-          "Roles"
+          "System"
         ]
       }
     },
@@ -111,7 +111,7 @@
         },
         "summary": "Get role details",
         "tags": [
-          "Roles"
+          "System"
         ]
       },
       "post": {
@@ -151,7 +151,7 @@
         },
         "summary": "Set role permissions",
         "tags": [
-          "Roles"
+          "System"
         ]
       },
       "delete": {
@@ -181,7 +181,7 @@
         },
         "summary": "Delete role",
         "tags": [
-          "Roles"
+          "System"
         ]
       }
     },
@@ -190,6 +190,86 @@
         "description": "Retrieve a paginated list of customers.",
         "operationId": "AccountsController_findAll",
         "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "fields",
             "required": false,
@@ -460,7 +540,7 @@
         },
         "summary": "List Customer Groups",
         "tags": [
-          "Setup"
+          "Customers"
         ]
       },
       "post": {
@@ -491,7 +571,7 @@
         },
         "summary": "Create Customer Group",
         "tags": [
-          "Setup"
+          "Customers"
         ]
       }
     },
@@ -532,7 +612,7 @@
         },
         "summary": "Get Customer Group",
         "tags": [
-          "Setup"
+          "Customers"
         ]
       },
       "patch": {
@@ -572,7 +652,7 @@
         },
         "summary": "Update Customer Group",
         "tags": [
-          "Setup"
+          "Customers"
         ]
       },
       "delete": {
@@ -607,7 +687,7 @@
         },
         "summary": "Delete Customer Group",
         "tags": [
-          "Setup"
+          "Customers"
         ]
       }
     },
@@ -616,6 +696,86 @@
         "description": "Retrieve a paginated list of all products in the catalog.",
         "operationId": "ProductsController_findAll",
         "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "fields",
             "required": false,
@@ -1317,7 +1477,7 @@
         },
         "summary": "List Product Groups",
         "tags": [
-          "Setup"
+          "Products"
         ]
       },
       "post": {
@@ -1348,7 +1508,7 @@
         },
         "summary": "Create Product Group",
         "tags": [
-          "Setup"
+          "Products"
         ]
       }
     },
@@ -1389,7 +1549,7 @@
         },
         "summary": "Get Product Group",
         "tags": [
-          "Setup"
+          "Products"
         ]
       },
       "patch": {
@@ -1429,7 +1589,7 @@
         },
         "summary": "Update Product Group",
         "tags": [
-          "Setup"
+          "Products"
         ]
       },
       "delete": {
@@ -1459,7 +1619,7 @@
         },
         "summary": "Delete Product Group",
         "tags": [
-          "Setup"
+          "Products"
         ]
       }
     },
@@ -1468,6 +1628,86 @@
         "description": "Retrieve a paginated list of inventory levels.",
         "operationId": "InventoryController_findAll",
         "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "locationNo",
             "required": false,
@@ -1514,7 +1754,7 @@
         },
         "summary": "List Inventory",
         "tags": [
-          "Inventory"
+          "Warehouse"
         ]
       }
     },
@@ -1557,7 +1797,7 @@
         },
         "summary": "Get By Products",
         "tags": [
-          "Inventory"
+          "Warehouse"
         ]
       }
     },
@@ -1593,7 +1833,7 @@
         },
         "summary": "Bulk Get By Products",
         "tags": [
-          "Inventory"
+          "Warehouse"
         ]
       }
     },
@@ -1602,6 +1842,86 @@
         "description": "Retrieve a paginated list of inventory bins.",
         "operationId": "InventoryController_findBins",
         "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "locationNo",
             "required": false,
@@ -1647,7 +1967,7 @@
         },
         "summary": "List Inventory Bins",
         "tags": [
-          "Inventory"
+          "Warehouse"
         ]
       },
       "post": {
@@ -1678,7 +1998,7 @@
         },
         "summary": "Create Bin",
         "tags": [
-          "Locations"
+          "Warehouse"
         ]
       }
     },
@@ -1718,7 +2038,7 @@
         },
         "summary": "Get Putaway Context",
         "tags": [
-          "Inventory"
+          "Warehouse"
         ]
       }
     },
@@ -1753,7 +2073,7 @@
         },
         "summary": "List Locations",
         "tags": [
-          "Inventory"
+          "Warehouse"
         ]
       },
       "post": {
@@ -1784,7 +2104,7 @@
         },
         "summary": "Create Location",
         "tags": [
-          "Locations"
+          "Warehouse"
         ]
       }
     },
@@ -1819,7 +2139,7 @@
         },
         "summary": "List Movements",
         "tags": [
-          "Inventory"
+          "Warehouse"
         ]
       }
     },
@@ -1854,7 +2174,7 @@
         },
         "summary": "List Ledger Entries",
         "tags": [
-          "Inventory"
+          "Warehouse"
         ]
       }
     },
@@ -1886,7 +2206,7 @@
         },
         "summary": "Get Entry Details",
         "tags": [
-          "Inventory"
+          "Warehouse"
         ]
       }
     },
@@ -1921,7 +2241,7 @@
         },
         "summary": "List Pending Putaways",
         "tags": [
-          "Inventory"
+          "Warehouse"
         ]
       }
     },
@@ -1954,7 +2274,7 @@
         },
         "summary": "Process Putaways",
         "tags": [
-          "Inventory"
+          "Warehouse"
         ]
       }
     },
@@ -1987,7 +2307,7 @@
         },
         "summary": "Move to/from Quarantine",
         "tags": [
-          "Inventory"
+          "Warehouse"
         ]
       }
     },
@@ -2020,7 +2340,7 @@
         },
         "summary": "Move Stock manually",
         "tags": [
-          "Inventory"
+          "Warehouse"
         ]
       }
     },
@@ -2053,7 +2373,7 @@
         },
         "summary": "Adjust Stock manually",
         "tags": [
-          "Inventory"
+          "Warehouse"
         ]
       }
     },
@@ -2100,7 +2420,7 @@
         },
         "summary": "Get Accounts",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       },
       "post": {
@@ -2131,7 +2451,7 @@
         },
         "summary": "Create Account",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2173,7 +2493,7 @@
         },
         "summary": "Update Account",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2245,7 +2565,7 @@
         },
         "summary": "Get Journal Entries",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       },
       "post": {
@@ -2276,7 +2596,7 @@
         },
         "summary": "Create Manual Entry",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2308,7 +2628,7 @@
         },
         "summary": "Get Journal Entry",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2348,7 +2668,7 @@
         },
         "summary": "Get Source Entry",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2383,7 +2703,7 @@
         },
         "summary": "Get Trial Balance",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2461,7 +2781,7 @@
         },
         "summary": "Get General Ledger",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2484,7 +2804,7 @@
         },
         "summary": "Get Settings",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       },
       "patch": {
@@ -2516,7 +2836,7 @@
         },
         "summary": "Update Settings",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2549,7 +2869,7 @@
         },
         "summary": "Reload Settings",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2575,7 +2895,7 @@
         },
         "summary": "List Charts",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2608,7 +2928,7 @@
         },
         "summary": "Seed Chart of Accounts",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2634,7 +2954,7 @@
         },
         "summary": "List Tax Settings",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2667,7 +2987,7 @@
         },
         "summary": "Seed Tax Settings",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2693,7 +3013,7 @@
         },
         "summary": "Get Reconciliations",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       },
       "post": {
@@ -2724,7 +3044,7 @@
         },
         "summary": "Create Reconciliation",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2756,7 +3076,7 @@
         },
         "summary": "Get Reconciliation",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       },
       "delete": {
@@ -2786,7 +3106,7 @@
         },
         "summary": "Discard Reconciliation",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2821,7 +3141,7 @@
         },
         "summary": "Get Unreconciled Lines",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2871,7 +3191,7 @@
         },
         "summary": "Toggle Line Status",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2913,7 +3233,7 @@
         },
         "summary": "Post Reconciliation",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2955,7 +3275,7 @@
         },
         "summary": "Create Adjustment",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -2988,7 +3308,7 @@
         },
         "summary": "Parse CSV",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -3021,7 +3341,7 @@
         },
         "summary": "Import CSV",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -3047,7 +3367,7 @@
         },
         "summary": "Get Mapping Profiles",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       },
       "post": {
@@ -3078,7 +3398,7 @@
         },
         "summary": "Create Mapping Profile",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -3120,7 +3440,7 @@
         },
         "summary": "Update Mapping Profile",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       },
       "delete": {
@@ -3150,7 +3470,7 @@
         },
         "summary": "Delete Mapping Profile",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -3176,7 +3496,7 @@
         },
         "summary": "Get Rules",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       },
       "post": {
@@ -3207,7 +3527,7 @@
         },
         "summary": "Create Rule",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -3249,7 +3569,7 @@
         },
         "summary": "Update Rule",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       },
       "delete": {
@@ -3279,7 +3599,7 @@
         },
         "summary": "Delete Rule",
         "tags": [
-          "GL"
+          "General Ledger"
         ]
       }
     },
@@ -3327,7 +3647,7 @@
         ],
         "summary": "Get bank statement lines",
         "tags": [
-          "BankFeeds"
+          "General Ledger"
         ]
       }
     },
@@ -3374,7 +3694,7 @@
         ],
         "summary": "Confirm a smart match",
         "tags": [
-          "BankFeeds"
+          "General Ledger"
         ]
       }
     },
@@ -3421,7 +3741,7 @@
         ],
         "summary": "Manually match a line",
         "tags": [
-          "BankFeeds"
+          "General Ledger"
         ]
       }
     },
@@ -3462,7 +3782,7 @@
         ],
         "summary": "Create bank statement lines in bulk",
         "tags": [
-          "BankFeeds"
+          "General Ledger"
         ]
       }
     },
@@ -3500,7 +3820,7 @@
         ],
         "summary": "Bulk match bank statement lines and journal lines",
         "tags": [
-          "BankFeeds"
+          "General Ledger"
         ]
       }
     },
@@ -3538,7 +3858,7 @@
         ],
         "summary": "Auto match bank statement lines",
         "tags": [
-          "BankFeeds"
+          "General Ledger"
         ]
       }
     },
@@ -3576,7 +3896,7 @@
         ],
         "summary": "Unmatch items",
         "tags": [
-          "BankFeeds"
+          "General Ledger"
         ]
       }
     },
@@ -3613,7 +3933,7 @@
         ],
         "summary": "Delete bank statement line",
         "tags": [
-          "BankFeeds"
+          "General Ledger"
         ]
       }
     },
@@ -3650,7 +3970,7 @@
         ],
         "summary": "Get match group",
         "tags": [
-          "BankFeeds"
+          "General Ledger"
         ]
       }
     },
@@ -3864,7 +4184,7 @@
         },
         "summary": "findAll",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       },
       "post": {
@@ -3895,7 +4215,7 @@
         },
         "summary": "create",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       }
     },
@@ -3936,7 +4256,7 @@
         },
         "summary": "findOne",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       },
       "patch": {
@@ -3976,7 +4296,7 @@
         },
         "summary": "update",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       },
       "delete": {
@@ -4006,7 +4326,7 @@
         },
         "summary": "remove",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       }
     },
@@ -4186,7 +4506,7 @@
         },
         "summary": "List all cost centers",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       },
       "post": {
@@ -4217,7 +4537,7 @@
         },
         "summary": "Create a new cost center",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       }
     },
@@ -4259,7 +4579,7 @@
         },
         "summary": "Update a cost center",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       },
       "delete": {
@@ -4289,7 +4609,7 @@
         },
         "summary": "Delete a cost center",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       }
     },
@@ -4325,7 +4645,7 @@
         },
         "summary": "Bulk import cost centers",
         "tags": [
-          "System"
+          "General Ledger"
         ]
       }
     },
@@ -4587,7 +4907,7 @@
         },
         "summary": "List available business reports",
         "tags": [
-          "Business Reports"
+          "System"
         ]
       },
       "post": {
@@ -4618,7 +4938,7 @@
         },
         "summary": "Create a business report",
         "tags": [
-          "Business Reports"
+          "System"
         ]
       }
     },
@@ -4644,7 +4964,7 @@
         },
         "summary": "List available data source hooks",
         "tags": [
-          "Business Reports"
+          "System"
         ]
       }
     },
@@ -4689,7 +5009,7 @@
         },
         "summary": "Fetch data for a business report",
         "tags": [
-          "Business Reports"
+          "System"
         ]
       }
     },
@@ -4721,7 +5041,7 @@
         },
         "summary": "Get a business report by ID",
         "tags": [
-          "Business Reports"
+          "System"
         ]
       },
       "put": {
@@ -4761,7 +5081,7 @@
         },
         "summary": "Update a business report",
         "tags": [
-          "Business Reports"
+          "System"
         ]
       },
       "delete": {
@@ -4791,7 +5111,7 @@
         },
         "summary": "Delete a business report",
         "tags": [
-          "Business Reports"
+          "System"
         ]
       }
     },
@@ -4826,7 +5146,7 @@
         },
         "summary": "Get Picking Queue",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -4858,7 +5178,7 @@
         },
         "summary": "Get Picking Summary",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -4908,7 +5228,7 @@
         },
         "summary": "Pick Order Line",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -4948,7 +5268,7 @@
         },
         "summary": "Cancel Pick",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -4983,7 +5303,7 @@
         },
         "summary": "Get Shipping Queue",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -5015,7 +5335,7 @@
         },
         "summary": "Get Shipping Context",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -5024,6 +5344,86 @@
         "description": "Retrieve a paginated list of sales orders globally.",
         "operationId": "OrdersController_findAll",
         "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "fields",
             "required": false,
@@ -5062,7 +5462,7 @@
         },
         "summary": "Find All Orders",
         "tags": [
-          "Orders"
+          "Sales Orders"
         ]
       },
       "post": {
@@ -5093,7 +5493,7 @@
         },
         "summary": "Create Order",
         "tags": [
-          "Orders"
+          "Sales Orders"
         ]
       }
     },
@@ -5134,7 +5534,7 @@
         },
         "summary": "Find Order",
         "tags": [
-          "Orders"
+          "Sales Orders"
         ]
       },
       "patch": {
@@ -5174,7 +5574,7 @@
         },
         "summary": "Update Order",
         "tags": [
-          "Orders"
+          "Sales Orders"
         ]
       }
     },
@@ -5216,7 +5616,7 @@
         },
         "summary": "Calculate Taxes",
         "tags": [
-          "Orders"
+          "Sales Orders"
         ]
       }
     },
@@ -5258,7 +5658,7 @@
         },
         "summary": "Change Order State",
         "tags": [
-          "Orders"
+          "Sales Orders"
         ]
       }
     },
@@ -5300,7 +5700,7 @@
         },
         "summary": "Archive Order",
         "tags": [
-          "Orders"
+          "Sales Orders"
         ]
       }
     },
@@ -5342,7 +5742,7 @@
         },
         "summary": "Unarchive Order",
         "tags": [
-          "Orders"
+          "Sales Orders"
         ]
       }
     },
@@ -5384,7 +5784,7 @@
         },
         "summary": "Add Order Line",
         "tags": [
-          "Orders"
+          "Sales Orders"
         ]
       }
     },
@@ -5434,7 +5834,7 @@
         },
         "summary": "Update Order Line",
         "tags": [
-          "Orders"
+          "Sales Orders"
         ]
       },
       "delete": {
@@ -5472,7 +5872,7 @@
         },
         "summary": "Remove Order Line",
         "tags": [
-          "Orders"
+          "Sales Orders"
         ]
       }
     },
@@ -5514,7 +5914,7 @@
         },
         "summary": "Add Post-Confirmation Line",
         "tags": [
-          "Orders"
+          "Sales Orders"
         ]
       }
     },
@@ -5556,7 +5956,7 @@
         },
         "summary": "Create Return",
         "tags": [
-          "Orders"
+          "Sales Returns"
         ]
       },
       "get": {
@@ -5586,7 +5986,7 @@
         },
         "summary": "Find Order Returns",
         "tags": [
-          "Orders"
+          "Sales Returns"
         ]
       }
     },
@@ -5626,7 +6026,7 @@
         },
         "summary": "Find Return",
         "tags": [
-          "Orders"
+          "Sales Returns"
         ]
       },
       "patch": {
@@ -5674,7 +6074,7 @@
         },
         "summary": "Update Return",
         "tags": [
-          "Orders"
+          "Sales Returns"
         ]
       }
     },
@@ -5724,7 +6124,7 @@
         },
         "summary": "Change Return State",
         "tags": [
-          "Orders"
+          "Sales Returns"
         ]
       }
     },
@@ -5774,7 +6174,7 @@
         },
         "summary": "Add Return Line",
         "tags": [
-          "Orders"
+          "Sales Returns"
         ]
       }
     },
@@ -5832,7 +6232,7 @@
         },
         "summary": "Update Return Line",
         "tags": [
-          "Orders"
+          "Sales Returns"
         ]
       },
       "delete": {
@@ -5878,7 +6278,7 @@
         },
         "summary": "Remove Return Line",
         "tags": [
-          "Orders"
+          "Sales Returns"
         ]
       }
     },
@@ -5928,7 +6328,7 @@
         },
         "summary": "Receive Return",
         "tags": [
-          "Orders"
+          "Sales Returns"
         ]
       }
     },
@@ -5970,7 +6370,7 @@
         },
         "summary": "Create Shipment",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       },
       "get": {
@@ -6003,7 +6403,7 @@
         },
         "summary": "Find Order Shipments",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6043,7 +6443,7 @@
         },
         "summary": "Find Shipment",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       },
       "patch": {
@@ -6091,7 +6491,7 @@
         },
         "summary": "Update Shipment",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6141,7 +6541,7 @@
         },
         "summary": "Change Shipment State",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6191,7 +6591,7 @@
         },
         "summary": "Cancel Shipment",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6241,7 +6641,7 @@
         },
         "summary": "Add Shipment Line",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6299,7 +6699,7 @@
         },
         "summary": "Update Shipment Line",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       },
       "delete": {
@@ -6345,7 +6745,7 @@
         },
         "summary": "Remove Shipment Line",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6405,7 +6805,7 @@
         },
         "summary": "Find All Shipments",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6446,7 +6846,7 @@
         },
         "summary": "Find Shipment",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6478,7 +6878,7 @@
         },
         "summary": "Find Global Returns",
         "tags": [
-          "Orders"
+          "Sales Returns"
         ]
       }
     },
@@ -6504,7 +6904,7 @@
         },
         "summary": "Get Open Demands",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6539,7 +6939,7 @@
         },
         "summary": "Get PO Allocations",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6574,7 +6974,7 @@
         },
         "summary": "Get Available PO Lines",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6607,7 +7007,7 @@
         },
         "summary": "Link Demand To PO",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6640,7 +7040,7 @@
         },
         "summary": "Resolve Open Demands",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6682,7 +7082,7 @@
         },
         "summary": "Unlink Demand",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6724,7 +7124,7 @@
         },
         "summary": "Reallocate Demand",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6757,7 +7157,7 @@
         },
         "summary": "Generate POs",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6790,7 +7190,7 @@
         },
         "summary": "Generate Transfers",
         "tags": [
-          "Orders"
+          "Warehouse"
         ]
       }
     },
@@ -6823,7 +7223,7 @@
         },
         "summary": "Create From Demands",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       }
     },
@@ -6858,7 +7258,7 @@
         },
         "summary": "Find Events",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       }
     },
@@ -6893,7 +7293,7 @@
         },
         "summary": "Get Picking Summary",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       }
     },
@@ -6943,7 +7343,7 @@
         },
         "summary": "Pick Transfer Line",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       }
     },
@@ -6983,7 +7383,7 @@
         },
         "summary": "Cancel Transfer Pick",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       }
     },
@@ -7025,7 +7425,7 @@
         },
         "summary": "Ship Transfer Order",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       }
     },
@@ -7067,7 +7467,7 @@
         },
         "summary": "Receive Transfer Order",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       }
     },
@@ -7109,7 +7509,7 @@
         },
         "summary": "Cancel Transfer Order",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       }
     },
@@ -7151,7 +7551,7 @@
         },
         "summary": "Cancel Transfer Order Shipment",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       }
     },
@@ -7160,6 +7560,86 @@
         "description": "Retrieve a paginated list of transfer orders.",
         "operationId": "TransfersController_findAll",
         "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "fields",
             "required": false,
@@ -7198,7 +7678,7 @@
         },
         "summary": "Find All Transfers",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       },
       "post": {
@@ -7229,7 +7709,7 @@
         },
         "summary": "Create Transfer Order",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       }
     },
@@ -7270,7 +7750,7 @@
         },
         "summary": "Find Transfer",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       },
       "patch": {
@@ -7310,7 +7790,7 @@
         },
         "summary": "Update Transfer Order",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       }
     },
@@ -7352,7 +7832,7 @@
         },
         "summary": "Add Transfer Line",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       }
     },
@@ -7402,7 +7882,7 @@
         },
         "summary": "Update Transfer Line",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       },
       "delete": {
@@ -7440,7 +7920,7 @@
         },
         "summary": "Remove Transfer Line",
         "tags": [
-          "Orders"
+          "Transfer Orders"
         ]
       }
     },
@@ -7476,7 +7956,7 @@
         },
         "summary": "List Tax Categories",
         "tags": [
-          "Tax"
+          "System"
         ]
       },
       "post": {
@@ -7507,7 +7987,7 @@
         },
         "summary": "Create Tax Category",
         "tags": [
-          "Tax"
+          "System"
         ]
       }
     },
@@ -7548,7 +8028,7 @@
         },
         "summary": "Get Tax Category",
         "tags": [
-          "Tax"
+          "System"
         ]
       },
       "patch": {
@@ -7588,7 +8068,7 @@
         },
         "summary": "Update Tax Category",
         "tags": [
-          "Tax"
+          "System"
         ]
       },
       "delete": {
@@ -7618,7 +8098,7 @@
         },
         "summary": "Delete Tax Category",
         "tags": [
-          "Tax"
+          "System"
         ]
       }
     },
@@ -7677,7 +8157,7 @@
         },
         "summary": "Run Hook",
         "tags": [
-          "Reports"
+          "System"
         ]
       }
     },
@@ -7703,7 +8183,7 @@
         },
         "summary": "Get Hooks",
         "tags": [
-          "Reports"
+          "System"
         ]
       }
     },
@@ -7729,7 +8209,7 @@
         },
         "summary": "Get Hook Assignments",
         "tags": [
-          "Reports"
+          "System"
         ]
       }
     },
@@ -7771,7 +8251,7 @@
         },
         "summary": "Update Hook Assignment",
         "tags": [
-          "Reports"
+          "System"
         ]
       }
     },
@@ -7803,7 +8283,7 @@
         },
         "summary": "Get Random ID",
         "tags": [
-          "Reports"
+          "System"
         ]
       }
     },
@@ -7829,7 +8309,7 @@
         },
         "summary": "Get All Reports",
         "tags": [
-          "Reports"
+          "System"
         ]
       },
       "post": {
@@ -7860,7 +8340,7 @@
         },
         "summary": "Create Report",
         "tags": [
-          "Reports"
+          "System"
         ]
       }
     },
@@ -7892,7 +8372,7 @@
         },
         "summary": "Get Report",
         "tags": [
-          "Reports"
+          "System"
         ]
       },
       "patch": {
@@ -7932,7 +8412,7 @@
         },
         "summary": "Update Report",
         "tags": [
-          "Reports"
+          "System"
         ]
       },
       "delete": {
@@ -7962,7 +8442,7 @@
         },
         "summary": "Delete Report",
         "tags": [
-          "Reports"
+          "System"
         ]
       }
     },
@@ -7996,7 +8476,7 @@
         },
         "summary": "Preview Report",
         "tags": [
-          "Reports"
+          "System"
         ]
       }
     },
@@ -8038,7 +8518,7 @@
         },
         "summary": "Create Sales Invoice",
         "tags": [
-          "Invoices"
+          "Sales Invoices"
         ]
       }
     },
@@ -8073,7 +8553,7 @@
         },
         "summary": "Get Sales Invoices",
         "tags": [
-          "Invoices"
+          "Sales Invoices"
         ]
       }
     },
@@ -8108,7 +8588,7 @@
         },
         "summary": "Get Purchase Bills",
         "tags": [
-          "Invoices"
+          "Purchase Invoices"
         ]
       }
     },
@@ -8140,7 +8620,8 @@
         },
         "summary": "Get Sales Invoice Details",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Sales Invoices"
         ]
       }
     },
@@ -8182,7 +8663,8 @@
         },
         "summary": "Change Sales Invoice State",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Sales Invoices"
         ]
       }
     },
@@ -8249,7 +8731,8 @@
         },
         "summary": "Get All Sales Invoices",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Sales Invoices"
         ]
       }
     },
@@ -8316,7 +8799,8 @@
         },
         "summary": "Get All Purchase Invoices",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Purchase Invoices"
         ]
       },
       "post": {
@@ -8347,7 +8831,8 @@
         },
         "summary": "Create Draft Invoice",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Purchase Invoices"
         ]
       }
     },
@@ -8379,7 +8864,8 @@
         },
         "summary": "Get Purchase Invoice Details",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Purchase Invoices"
         ]
       },
       "patch": {
@@ -8400,7 +8886,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateInvoiceLineDto"
+                "$ref": "#/components/schemas/UpdatePurchaseInvoiceDto"
               }
             }
           }
@@ -8419,7 +8905,8 @@
         },
         "summary": "Update Invoice",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Purchase Invoices"
         ]
       }
     },
@@ -8461,7 +8948,8 @@
         },
         "summary": "Post Invoice",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Purchase Invoices"
         ]
       }
     },
@@ -8503,7 +8991,8 @@
         },
         "summary": "Change Invoice State",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Purchase Invoices"
         ]
       }
     },
@@ -8553,7 +9042,8 @@
         },
         "summary": "Update Invoice Line",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Purchase Invoices"
         ]
       },
       "delete": {
@@ -8591,7 +9081,8 @@
         },
         "summary": "Remove Invoice Line",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Purchase Invoices"
         ]
       }
     },
@@ -8633,7 +9124,8 @@
         },
         "summary": "Add Invoice Line",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Purchase Invoices"
         ]
       }
     },
@@ -8675,7 +9167,8 @@
         },
         "summary": "Resolve Invoice Line",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Purchase Invoices"
         ]
       }
     },
@@ -8717,7 +9210,8 @@
         },
         "summary": "Unresolve Invoice Line",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Purchase Invoices"
         ]
       }
     },
@@ -8759,7 +9253,8 @@
         },
         "summary": "Auto-Match Purchase Order",
         "tags": [
-          "Invoices"
+          "Sales Invoices",
+          "Purchase Invoices"
         ]
       }
     },
@@ -8791,7 +9286,7 @@
         },
         "summary": "Get Sync Status",
         "tags": [
-          "Invoices"
+          "System"
         ]
       }
     },
@@ -8839,7 +9334,7 @@
         },
         "summary": "Get Events By Type",
         "tags": [
-          "Invoices"
+          "System"
         ]
       },
       "delete": {
@@ -8877,7 +9372,7 @@
         },
         "summary": "Clear Events By Type",
         "tags": [
-          "Invoices"
+          "System"
         ]
       }
     },
@@ -8920,7 +9415,7 @@
         },
         "summary": "Find Credit Notes",
         "tags": [
-          "SalesCreditNotes"
+          "Sales Returns"
         ]
       },
       "post": {
@@ -8951,7 +9446,7 @@
         },
         "summary": "Create Credit Note",
         "tags": [
-          "SalesCreditNotes"
+          "Sales Returns"
         ]
       }
     },
@@ -8983,7 +9478,7 @@
         },
         "summary": "Get Credit Note",
         "tags": [
-          "SalesCreditNotes"
+          "Sales Returns"
         ]
       }
     },
@@ -9025,7 +9520,7 @@
         },
         "summary": "Post Credit Note",
         "tags": [
-          "SalesCreditNotes"
+          "Sales Returns"
         ]
       }
     },
@@ -9073,7 +9568,7 @@
         },
         "summary": "Lookup data",
         "tags": [
-          "Enrichment"
+          "System"
         ]
       },
       "post": {
@@ -9131,7 +9626,7 @@
         },
         "summary": "Lookup data (POST)",
         "tags": [
-          "Enrichment"
+          "System"
         ]
       }
     },
@@ -9171,7 +9666,7 @@
         },
         "summary": "Test provider",
         "tags": [
-          "Enrichment"
+          "System"
         ]
       },
       "post": {
@@ -9221,7 +9716,7 @@
         },
         "summary": "Test provider (POST)",
         "tags": [
-          "Enrichment"
+          "System"
         ]
       }
     },
@@ -9247,7 +9742,7 @@
         },
         "summary": "Get providers",
         "tags": [
-          "Enrichment"
+          "System"
         ]
       }
     },
@@ -9279,7 +9774,7 @@
         },
         "summary": "Get config",
         "tags": [
-          "Enrichment"
+          "System"
         ]
       },
       "put": {
@@ -9319,7 +9814,7 @@
         },
         "summary": "Update config",
         "tags": [
-          "Enrichment"
+          "System"
         ]
       }
     },
@@ -9735,7 +10230,7 @@
         },
         "summary": "Get Summary",
         "tags": [
-          "Dashboard"
+          "System"
         ]
       }
     },
@@ -9770,7 +10265,7 @@
         },
         "summary": "Universal Search",
         "tags": [
-          "Dashboard"
+          "System"
         ]
       }
     },
@@ -9813,7 +10308,7 @@
         },
         "summary": "Get Timeline",
         "tags": [
-          "Dashboard"
+          "System"
         ]
       }
     },
@@ -9849,7 +10344,7 @@
         },
         "summary": "Report Client Error",
         "tags": [
-          "Telemetry"
+          "System"
         ]
       }
     },
@@ -9858,6 +10353,86 @@
         "description": "Retrieve a paginated list of all suppliers.",
         "operationId": "SuppliersController_findAll",
         "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "fields",
             "required": false,
@@ -9940,6 +10515,86 @@
             "name": "productId",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -10070,6 +10725,86 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -10197,6 +10932,86 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -10394,7 +11209,7 @@
         },
         "summary": "List Supplier Groups",
         "tags": [
-          "Setup"
+          "Suppliers"
         ]
       },
       "post": {
@@ -10425,7 +11240,7 @@
         },
         "summary": "Create Supplier Group",
         "tags": [
-          "Setup"
+          "Suppliers"
         ]
       }
     },
@@ -10466,7 +11281,7 @@
         },
         "summary": "Get Supplier Group",
         "tags": [
-          "Setup"
+          "Suppliers"
         ]
       },
       "patch": {
@@ -10506,7 +11321,7 @@
         },
         "summary": "Update Supplier Group",
         "tags": [
-          "Setup"
+          "Suppliers"
         ]
       },
       "delete": {
@@ -10536,7 +11351,7 @@
         },
         "summary": "Delete Supplier Group",
         "tags": [
-          "Setup"
+          "Suppliers"
         ]
       }
     },
@@ -10569,13 +11384,93 @@
         },
         "summary": "Create Purchase Order",
         "tags": [
-          "PurchaseOrders"
+          "Purchase Orders"
         ]
       },
       "get": {
         "description": "Retrieve a paginated list of purchase orders.",
         "operationId": "PurchaseOrdersController_findAll",
         "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "fields",
             "required": false,
@@ -10614,7 +11509,7 @@
         },
         "summary": "List Purchase Orders",
         "tags": [
-          "PurchaseOrders"
+          "Purchase Orders"
         ]
       }
     },
@@ -10657,7 +11552,7 @@
         },
         "summary": "List Pending Lines",
         "tags": [
-          "PurchaseOrders"
+          "Purchase Orders"
         ]
       }
     },
@@ -10692,7 +11587,7 @@
         },
         "summary": "List Returnable Lines",
         "tags": [
-          "PurchaseOrders"
+          "Purchase Orders"
         ]
       }
     },
@@ -10733,7 +11628,7 @@
         },
         "summary": "Get Purchase Order",
         "tags": [
-          "PurchaseOrders"
+          "Purchase Orders"
         ]
       },
       "patch": {
@@ -10773,7 +11668,7 @@
         },
         "summary": "Update Purchase Order",
         "tags": [
-          "PurchaseOrders"
+          "Purchase Orders"
         ]
       }
     },
@@ -10815,7 +11710,7 @@
         },
         "summary": "Change Order State",
         "tags": [
-          "PurchaseOrders"
+          "Purchase Orders"
         ]
       }
     },
@@ -10857,7 +11752,7 @@
         },
         "summary": "Archive Purchase Order",
         "tags": [
-          "PurchaseOrders"
+          "Purchase Orders"
         ]
       }
     },
@@ -10899,7 +11794,7 @@
         },
         "summary": "Unarchive Purchase Order",
         "tags": [
-          "PurchaseOrders"
+          "Purchase Orders"
         ]
       }
     },
@@ -10941,7 +11836,7 @@
         },
         "summary": "Add Order Line",
         "tags": [
-          "PurchaseOrders"
+          "Purchase Orders"
         ]
       }
     },
@@ -10991,7 +11886,7 @@
         },
         "summary": "Update Order Line",
         "tags": [
-          "PurchaseOrders"
+          "Purchase Orders"
         ]
       },
       "delete": {
@@ -11029,7 +11924,7 @@
         },
         "summary": "Remove Order Line",
         "tags": [
-          "PurchaseOrders"
+          "Purchase Orders"
         ]
       }
     },
@@ -11071,7 +11966,7 @@
         },
         "summary": "Create Purchase Return",
         "tags": [
-          "PurchaseReturns"
+          "Purchase Returns"
         ]
       },
       "get": {
@@ -11104,7 +11999,7 @@
         },
         "summary": "List Purchase Returns",
         "tags": [
-          "PurchaseReturns"
+          "Purchase Returns"
         ]
       }
     },
@@ -11144,7 +12039,7 @@
         },
         "summary": "Get Purchase Return",
         "tags": [
-          "PurchaseReturns"
+          "Purchase Returns"
         ]
       }
     },
@@ -11194,7 +12089,7 @@
         },
         "summary": "Stage Purchase Return",
         "tags": [
-          "PurchaseReturns"
+          "Purchase Returns"
         ]
       }
     },
@@ -11244,7 +12139,7 @@
         },
         "summary": "Ship Purchase Return",
         "tags": [
-          "PurchaseReturns"
+          "Purchase Returns"
         ]
       }
     },
@@ -11294,7 +12189,7 @@
         },
         "summary": "Cancel Purchase Return",
         "tags": [
-          "PurchaseReturns"
+          "Purchase Returns"
         ]
       }
     },
@@ -11329,7 +12224,7 @@
         },
         "summary": "List Purchase Returns",
         "tags": [
-          "PurchaseReturns"
+          "Purchase Returns"
         ]
       }
     },
@@ -11361,7 +12256,7 @@
         },
         "summary": "Get Purchase Return",
         "tags": [
-          "PurchaseReturns"
+          "Purchase Returns"
         ]
       }
     },
@@ -11404,7 +12299,7 @@
         },
         "summary": "Find Debit Notes",
         "tags": [
-          "PurchaseDebitNotes"
+          "Purchase Invoices"
         ]
       },
       "post": {
@@ -11435,7 +12330,7 @@
         },
         "summary": "Create Debit Note",
         "tags": [
-          "PurchaseDebitNotes"
+          "Purchase Invoices"
         ]
       }
     },
@@ -11477,7 +12372,7 @@
         },
         "summary": "Post Debit Note",
         "tags": [
-          "PurchaseDebitNotes"
+          "Purchase Invoices"
         ]
       }
     },
@@ -11503,7 +12398,7 @@
         },
         "summary": "List all registered data sources",
         "tags": [
-          "Data Sources"
+          "System"
         ]
       }
     },
@@ -11535,7 +12430,7 @@
         },
         "summary": "Get sample data for Business Reports (fetchData format)",
         "tags": [
-          "Data Sources"
+          "System"
         ]
       }
     },
@@ -11567,7 +12462,7 @@
         },
         "summary": "Get sample data for PDF Templates (resolveData format)",
         "tags": [
-          "Data Sources"
+          "System"
         ]
       }
     },
@@ -11649,7 +12544,7 @@
         },
         "summary": "Update Location",
         "tags": [
-          "Locations"
+          "Warehouse"
         ]
       },
       "delete": {
@@ -11679,7 +12574,7 @@
         },
         "summary": "Delete Location",
         "tags": [
-          "Locations"
+          "Warehouse"
         ]
       }
     },
@@ -11712,7 +12607,7 @@
         },
         "summary": "Create Zone",
         "tags": [
-          "Locations"
+          "Warehouse"
         ]
       }
     },
@@ -11754,7 +12649,7 @@
         },
         "summary": "Update Zone",
         "tags": [
-          "Locations"
+          "Warehouse"
         ]
       },
       "delete": {
@@ -11784,7 +12679,7 @@
         },
         "summary": "Delete Zone",
         "tags": [
-          "Locations"
+          "Warehouse"
         ]
       }
     },
@@ -11826,7 +12721,7 @@
         },
         "summary": "Update Bin",
         "tags": [
-          "Locations"
+          "Warehouse"
         ]
       },
       "delete": {
@@ -11856,7 +12751,7 @@
         },
         "summary": "Delete Bin",
         "tags": [
-          "Locations"
+          "Warehouse"
         ]
       }
     },
@@ -11889,7 +12784,7 @@
         },
         "summary": "Test ABM Connection",
         "tags": [
-          "Setup"
+          "System"
         ]
       }
     },
@@ -11922,7 +12817,7 @@
         },
         "summary": "Test Odoo Connection",
         "tags": [
-          "Setup"
+          "System"
         ]
       }
     },
@@ -11945,7 +12840,7 @@
         },
         "summary": "Get Resume State",
         "tags": [
-          "Setup"
+          "System"
         ]
       }
     },
@@ -11968,7 +12863,7 @@
         },
         "summary": "Get Odoo Resume State",
         "tags": [
-          "Setup"
+          "System"
         ]
       }
     },
@@ -12001,7 +12896,7 @@
         },
         "summary": "Execute ELT Job",
         "tags": [
-          "Setup"
+          "System"
         ]
       }
     },
@@ -12033,7 +12928,7 @@
         },
         "summary": "Get Job Progress",
         "tags": [
-          "Setup"
+          "System"
         ]
       }
     },
@@ -12056,7 +12951,7 @@
         },
         "summary": "Get Validation State",
         "tags": [
-          "Setup"
+          "System"
         ]
       }
     },
@@ -12079,7 +12974,7 @@
         },
         "summary": "Get Import Summary",
         "tags": [
-          "Setup"
+          "System"
         ]
       }
     },
@@ -12105,7 +13000,7 @@
         },
         "summary": "Get CSV Metadata",
         "tags": [
-          "Setup"
+          "System"
         ]
       }
     },
@@ -12155,7 +13050,7 @@
         },
         "summary": "Execute CSV Import",
         "tags": [
-          "Setup"
+          "System"
         ]
       }
     },
@@ -12188,13 +13083,93 @@
         },
         "summary": "Create Goods Receipt",
         "tags": [
-          "GoodsReceived"
+          "Warehouse"
         ]
       },
       "get": {
         "description": "Retrieve a paginated list of goods receipts.",
         "operationId": "GoodsReceivedController_findAll",
         "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "fields",
             "required": false,
@@ -12219,7 +13194,7 @@
         },
         "summary": "List Goods Receipts",
         "tags": [
-          "GoodsReceived"
+          "Warehouse"
         ]
       }
     },
@@ -12228,6 +13203,78 @@
         "description": "Retrieve a paginated list of received goods lines.",
         "operationId": "GoodsReceivedController_findAllLines",
         "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
           {
             "name": "purchaseOrderId",
             "required": false,
@@ -12267,7 +13314,7 @@
         },
         "summary": "List Received Lines",
         "tags": [
-          "GoodsReceived"
+          "Warehouse"
         ]
       }
     },
@@ -12308,7 +13355,7 @@
         },
         "summary": "Get Goods Receipt",
         "tags": [
-          "GoodsReceived"
+          "Warehouse"
         ]
       }
     },
@@ -12365,7 +13412,7 @@
         },
         "summary": "Cancel Goods Receipt",
         "tags": [
-          "GoodsReceived"
+          "Warehouse"
         ]
       }
     },
@@ -12417,7 +13464,7 @@
         },
         "summary": "Resolve Allocation",
         "tags": [
-          "GoodsReceived"
+          "Warehouse"
         ]
       }
     },
@@ -12469,7 +13516,7 @@
         },
         "summary": "Unresolve Allocation",
         "tags": [
-          "GoodsReceived"
+          "Warehouse"
         ]
       }
     },
@@ -12502,7 +13549,7 @@
         },
         "summary": "Create Macro",
         "tags": [
-          "Macros"
+          "System"
         ]
       },
       "get": {
@@ -12544,7 +13591,7 @@
         },
         "summary": "List Macros",
         "tags": [
-          "Macros"
+          "System"
         ]
       }
     },
@@ -12585,7 +13632,7 @@
         },
         "summary": "Get Macro",
         "tags": [
-          "Macros"
+          "System"
         ]
       },
       "patch": {
@@ -12625,7 +13672,7 @@
         },
         "summary": "Update Macro",
         "tags": [
-          "Macros"
+          "System"
         ]
       },
       "delete": {
@@ -12655,7 +13702,7 @@
         },
         "summary": "Delete Macro",
         "tags": [
-          "Macros"
+          "System"
         ]
       }
     },
@@ -12691,7 +13738,7 @@
         },
         "summary": "List Users",
         "tags": [
-          "Users"
+          "System"
         ]
       },
       "post": {
@@ -12722,7 +13769,7 @@
         },
         "summary": "Create User",
         "tags": [
-          "Users"
+          "System"
         ]
       }
     },
@@ -12763,7 +13810,7 @@
         },
         "summary": "Get User",
         "tags": [
-          "Users"
+          "System"
         ]
       },
       "patch": {
@@ -12803,7 +13850,7 @@
         },
         "summary": "Update User",
         "tags": [
-          "Users"
+          "System"
         ]
       },
       "delete": {
@@ -12833,7 +13880,7 @@
         },
         "summary": "Delete User",
         "tags": [
-          "Users"
+          "System"
         ]
       }
     },
@@ -12875,7 +13922,7 @@
         },
         "summary": "Toggle User Status",
         "tags": [
-          "Users"
+          "System"
         ]
       }
     },
@@ -12940,7 +13987,7 @@
         ],
         "summary": "List Rules",
         "tags": [
-          "DiscountMatrix"
+          "System"
         ]
       },
       "post": {
@@ -12976,7 +14023,7 @@
         ],
         "summary": "Create Rule",
         "tags": [
-          "DiscountMatrix"
+          "System"
         ]
       }
     },
@@ -13024,7 +14071,7 @@
         ],
         "summary": "Resolve Rules",
         "tags": [
-          "DiscountMatrix"
+          "System"
         ]
       }
     },
@@ -13071,7 +14118,7 @@
         ],
         "summary": "Update Rule",
         "tags": [
-          "DiscountMatrix"
+          "System"
         ]
       },
       "delete": {
@@ -13111,7 +14158,7 @@
         ],
         "summary": "Delete Rule",
         "tags": [
-          "DiscountMatrix"
+          "System"
         ]
       }
     },
@@ -13142,7 +14189,7 @@
         ],
         "summary": "List Webhooks",
         "tags": [
-          "Webhooks"
+          "System"
         ]
       },
       "post": {
@@ -13178,7 +14225,7 @@
         ],
         "summary": "Create Webhook",
         "tags": [
-          "Webhooks"
+          "System"
         ]
       }
     },
@@ -13209,7 +14256,7 @@
         ],
         "summary": "List Available Events",
         "tags": [
-          "Webhooks"
+          "System"
         ]
       }
     },
@@ -13256,7 +14303,7 @@
         ],
         "summary": "Update Webhook",
         "tags": [
-          "Webhooks"
+          "System"
         ]
       },
       "delete": {
@@ -13296,7 +14343,7 @@
         ],
         "summary": "Delete Webhook",
         "tags": [
-          "Webhooks"
+          "System"
         ]
       }
     },
@@ -13327,7 +14374,7 @@
         ],
         "summary": "List API Keys",
         "tags": [
-          "ApiKeys"
+          "System"
         ]
       },
       "post": {
@@ -13363,7 +14410,7 @@
         ],
         "summary": "Create API Key",
         "tags": [
-          "ApiKeys"
+          "System"
         ]
       }
     },
@@ -13400,7 +14447,7 @@
         ],
         "summary": "Revoke API Key",
         "tags": [
-          "ApiKeys"
+          "System"
         ]
       }
     },
@@ -13446,7 +14493,7 @@
         ],
         "summary": "Publish Event",
         "tags": [
-          "Events"
+          "System"
         ]
       }
     },
@@ -13502,7 +14549,7 @@
         ],
         "summary": "List emails",
         "tags": [
-          "Emails"
+          "System"
         ]
       }
     },
@@ -13551,7 +14598,7 @@
         ],
         "summary": "Retry a failed email",
         "tags": [
-          "Emails"
+          "System"
         ]
       }
     },
@@ -13600,7 +14647,7 @@
         ],
         "summary": "Dismiss a failed email",
         "tags": [
-          "Emails"
+          "System"
         ]
       }
     },
@@ -13623,7 +14670,7 @@
         },
         "summary": "Get user settings",
         "tags": [
-          "Users"
+          "System"
         ]
       },
       "patch": {
@@ -13654,7 +14701,7 @@
         },
         "summary": "Update user settings",
         "tags": [
-          "Users"
+          "System"
         ]
       }
     }
@@ -13667,136 +14714,60 @@
   },
   "tags": [
     {
-      "name": "Auth",
-      "description": "Authentication and Authorization"
-    },
-    {
-      "name": "Users",
-      "description": "User management"
-    },
-    {
-      "name": "Roles",
-      "description": "Role management"
-    },
-    {
       "name": "System",
-      "description": "System configuration"
-    },
-    {
-      "name": "Telemetry",
-      "description": "Client-side telemetry"
-    },
-    {
-      "name": "Dashboard",
-      "description": "Dashboard statistics and timeline"
-    },
-    {
-      "name": "Products",
-      "description": "Product catalog"
+      "description": "System configuration, webhooks, auth, and setup"
     },
     {
       "name": "Customers",
-      "description": "Customer management"
+      "description": "Customer management and CRM"
+    },
+    {
+      "name": "Products",
+      "description": "Product catalog and master data"
     },
     {
       "name": "Suppliers",
-      "description": "Supplier management"
+      "description": "Supplier and vendor management"
     },
     {
-      "name": "Locations",
-      "description": "Warehouse locations"
+      "name": "Sales Orders",
+      "description": "Sales order processing"
     },
     {
-      "name": "Tax",
-      "description": "Tax configuration"
+      "name": "Sales Returns",
+      "description": "Customer returns (RMA)"
     },
     {
-      "name": "Orders",
-      "description": "Sales orders"
+      "name": "Sales Invoices",
+      "description": "Accounts Receivable invoices"
     },
     {
-      "name": "PurchaseOrders",
-      "description": "Purchase orders"
+      "name": "Purchase Orders",
+      "description": "Purchase order processing"
     },
     {
-      "name": "PurchaseReturns",
-      "description": "Purchase returns (RTV)"
+      "name": "Purchase Returns",
+      "description": "Return to vendor (RTV)"
     },
     {
-      "name": "PurchaseDebitNotes",
-      "description": "Supplier debit notes"
+      "name": "Purchase Invoices",
+      "description": "Accounts Payable invoices"
     },
     {
-      "name": "Inventory",
-      "description": "Inventory levels and movements"
+      "name": "Transfer Orders",
+      "description": "Multi-location inventory transfers"
     },
     {
-      "name": "Invoices",
-      "description": "Sales invoices"
+      "name": "Warehouse",
+      "description": "Inventory, receiving, and fulfillment"
     },
     {
       "name": "Payments",
-      "description": "Payment reconciliation"
+      "description": "Payment processing and reconciliation"
     },
     {
-      "name": "GL",
-      "description": "General Ledger"
-    },
-    {
-      "name": "BankFeeds",
-      "description": "Bank statement feeds"
-    },
-    {
-      "name": "Enrichment",
-      "description": "External data enrichment"
-    },
-    {
-      "name": "DiscountMatrix",
-      "description": "Pricing logic and discounts"
-    },
-    {
-      "name": "Webhooks",
-      "description": "Outbound webhooks"
-    },
-    {
-      "name": "ApiKeys",
-      "description": "Service API keys"
-    },
-    {
-      "name": "Setup",
-      "description": "System setup and data import"
-    },
-    {
-      "name": "Macros",
-      "description": "Automated macros"
-    },
-    {
-      "name": "GoodsReceived",
-      "description": "Goods Receipt Notes (GRNI)"
-    },
-    {
-      "name": "Reports",
-      "description": "Reporting hooks"
-    },
-    {
-      "name": "Events",
-      "description": "System events"
-    },
-    {
-      "name": "Business Reports",
-      "description": "Dynamic business reports"
-    },
-    {
-      "name": "Data Sources",
-      "description": "Data Sources for reports and templates"
-    },
-    {
-      "name": "SalesCreditNotes",
-      "description": "Sales credit notes"
-    },
-    {
-      "name": "Emails",
-      "description": "System Emails"
+      "name": "General Ledger",
+      "description": "Accounting, charts, and journals"
     }
   ],
   "servers": [
@@ -14096,6 +15067,10 @@
           "stateCode",
           "source"
         ]
+      },
+      "Object": {
+        "type": "object",
+        "properties": {}
       },
       "CreateAccountDto": {
         "type": "object",
@@ -16994,10 +17969,6 @@
           "licenseHash"
         ]
       },
-      "Object": {
-        "type": "object",
-        "properties": {}
-      },
       "CreateBusinessReportDto": {
         "type": "object",
         "properties": {
@@ -19175,6 +20146,29 @@
           "totalAmount",
           "taxAmount"
         ]
+      },
+      "UpdatePurchaseInvoiceDto": {
+        "type": "object",
+        "properties": {
+          "supplierInvoiceNumber": {
+            "type": "string"
+          },
+          "receiptFilename": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "taxAmount": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "vendorId": {
+            "type": "string"
+          }
+        }
       },
       "UpdateInvoiceLineDto": {
         "type": "object",

@@ -11,7 +11,7 @@ import { getErrorMessage } from '@modbm/shared';
 interface LinkToPOSlideOverProps {
   isOpen: boolean;
   onClose: () => void;
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   demands: Record<string, any>[];
   onRefresh: () => void;
 }
@@ -20,6 +20,7 @@ interface LinkToPOSlideOverProps {
  * Per-line state: tracks the fetched PO candidates and which POs are expanded.
  */
 interface DemandState {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pendingLines: any[];
   loading: boolean;
   expandedPOs: Set<string>;
@@ -30,7 +31,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
   const t = useTranslations('purchaseOrders');
   const [demandStates, setDemandStates] = useState<Map<string, DemandState>>(new Map());
   const [activeDemandId, setActiveDemandId] = useState<string | null>(null);
-  // modbm-allow-record-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [localDemands, setLocalDemands] = useState<Record<string, any>[]>([]);
   // Track which demand IDs have already been fetched to avoid the stale-closure race condition
   const fetchedRef = useRef<Set<string>>(new Set());
@@ -75,7 +76,9 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
 
       api.allocationsControllerGetAvailablePoLines({ productId: demand.productId })
         .then((res) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const lines = (res.data as any)?.data || [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const poIds = [...new Set(lines.map((l: any) => l.purchaseOrderId))] as string[];
 
           setDemandStates((prev) => {
@@ -118,6 +121,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
     });
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markAllocated = useCallback((demandId: string, splitDemand?: any) => {
     setDemandStates((prev) => {
       const next = new Map(prev);
@@ -152,6 +156,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
     });
   }, []);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAllocate = useCallback(async (demand: any, poLine: any, qtyStr: string) => {
     const originalQuantity = parseFloat(demand.quantity || '0');
     const qty = parseFloat(qtyStr);
@@ -245,6 +250,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
           const originalQuantity = parseFloat(demand.quantity || '0');
 
           // Group pending lines by PO
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const poGroups = new Map<string, any>();
           for (const line of state.pendingLines) {
             if (!poGroups.has(line.purchaseOrderId)) {
@@ -332,6 +338,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                                 </tr>
                               </thead>
                               <tbody>
+                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                 {group.lines.map((poLine: any) => (
                                   <POLineRow
                                     key={poLine.purchaseOrderLineId}
@@ -358,6 +365,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function POLineRow({ line, originalQuantity, onAllocate }: { line: any; originalQuantity: number; onAllocate: (qty: string) => void }) {
   const t = useTranslations('purchaseOrders');
   const ordered = parseFloat(line.quantity || '0');

@@ -32,6 +32,7 @@ export class BankStatementService {
       conditions = and(
         conditions,
         eq(bankStatementLines.isReconciled, isReconciled),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ) as any;
     }
 

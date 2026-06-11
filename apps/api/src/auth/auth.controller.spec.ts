@@ -15,6 +15,7 @@ import { AuthService } from './auth.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let service: any;
 
   // eslint-disable-next-line no-restricted-syntax

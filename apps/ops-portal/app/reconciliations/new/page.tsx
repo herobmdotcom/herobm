@@ -65,7 +65,7 @@ export default function NewReconciliationPage() {
         formData.append('glAccountId', glAccountId);
         formData.append('profileId', selectedProfileId);
         
-        await apiFetch<any>('/api/gl/bank-feeds/import', {
+        await apiFetch<unknown>('/api/gl/bank-feeds/import', {
           method: 'POST',
           body: formData,
         });

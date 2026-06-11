@@ -6,6 +6,7 @@ import type { Response } from 'express';
 
 describe('PdfTemplatesController', () => {
   let controller: PdfTemplatesController;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockPdfTemplatesService: any;
   let mockRes: Partial<Response>;
 
@@ -45,6 +46,7 @@ describe('PdfTemplatesController', () => {
         'hook1',
         '123',
         'sales',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         mockRes as Response,
       );
@@ -71,12 +73,14 @@ describe('PdfTemplatesController', () => {
           'hook1',
           '',
           'sales',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           {} as any,
           mockRes as Response,
         ),
       ).rejects.toThrow(UnauthorizedException);
 
       await expect(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         controller.runHook('hook1', '123', '', {} as any, mockRes as Response),
       ).rejects.toThrow(UnauthorizedException);
     });
@@ -122,6 +126,7 @@ describe('PdfTemplatesController', () => {
     it('should generate preview pdf buffer and send', async () => {
       await controller.preview(
         { template: 't', mockData: {} },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {} as any,
         mockRes as Response,
       );

@@ -63,7 +63,7 @@ export function useAccount(id: string) {
   /* ── Field helpers ──────────────────────────────────────────── */
 
   /** Update a field in the local DTO (no network call). */
-  const updateField = (field: keyof Customer, value: any) => {
+  const updateField = (field: keyof Customer, value: unknown) => {
     setDto((prev) => ({ ...prev, [field]: value }));
     setIsDirty(true);
   };
@@ -95,9 +95,10 @@ export function useAccount(id: string) {
    * Save a single field on blur. This is the standard onBlur pattern:
    * update the local DTO then persist if the value actually changed.
    */
-  const saveField = async (field: keyof Customer, value: any) => {
+  const saveField = async (field: keyof Customer, value: unknown) => {
     // Only persist if the value actually changed vs the server state
-    const serverValue = customer ? (customer as any)[field] : undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const serverValue = customer ? (customer as Record<string, any>)[field as string] : undefined;
     if (value === serverValue || (value === '' && serverValue === null)) return;
 
     // Optimistically update DTO
