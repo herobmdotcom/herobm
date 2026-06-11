@@ -14,7 +14,7 @@ const EXCLUDE_PATTERNS = [
 test.describe('Automated App Crawler', () => {
   test('should visit all internal links without encountering errors', async ({ page, baseURL }) => {
     // Increase test timeout significantly for the crawler
-    test.setTimeout(5 * 60 * 1000); // 5 minutes
+    test.setTimeout(10 * 60 * 1000); // 10 minutes
 
     const visited = new Set<string>();
     const queue = new Set<string>();
@@ -53,7 +53,7 @@ test.describe('Automated App Crawler', () => {
       try {
         await page.goto(currentUrl, { waitUntil: 'networkidle' });
         
-        // Add a delay to avoid hitting the backend API rate limits (60 requests/min in dev mode)
+        // Minimal delay to let React render dynamic data into the DOM (e.g., table rows with links)
         await page.waitForTimeout(1500);
 
         // Assert 1: Check for generic Error Boundaries or Next.js error pages

@@ -46,6 +46,25 @@ Write-Host "Starting local Dev Environment..." -ForegroundColor Green
 Write-Host "API will start on port $apiPort" -ForegroundColor Cyan
 Write-Host "Portal will start on port $fePort" -ForegroundColor Cyan
 
+function Kill-Port {
+    param([int]$Port)
+    $netstat = netstat -ano | findstr ":$Port "
+    if ($netstat) {
+        $lines = $netstat -split "`n"
+        foreach ($line in $lines) {
+            if ($line -match "LISTENING\s+(\d+)") {
+                $pidToKill = $matches[1]
+                Write-Host "Freeing up port $Port (Killing orphaned PID $pidToKill)..." -ForegroundColor Yellow
+                Stop-Process -Id $pidToKill -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+}
+
+Kill-Port $apiPort
+Kill-Port $fePort
+Kill-Port 9092
+
 # Start API in a new window
 $apiCmd = $envInjection + "`$env:PORT=$apiPort; `$env:PIPELINE_LOG_DIR='$PSScriptRoot\..\logs'; npm run start:dev -w apps/api"
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", $apiCmd

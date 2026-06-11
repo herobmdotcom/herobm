@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "ts-node src/outbox-relay.ts",
-    "dev": "nodemon -w src -e ts --exec \"npm run start\"",
+    "dev": "nodemon -w src -e ts --exec ts-node src/outbox-relay.ts",
     "test": "vitest run",
     "test:e2e": "vitest run test/"
   },

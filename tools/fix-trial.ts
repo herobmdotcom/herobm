@@ -25,7 +25,9 @@ async function main() {
   await sql`
     UPDATE modbm_core.app_settings 
     SET setup_completed_at = ${now}, 
-        system_identifier = ${sid}
+        system_identifier = ${sid},
+        active_license_key = null,
+        active_license_payload = null
   `;
   await sql.end();
 

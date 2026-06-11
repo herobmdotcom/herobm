@@ -10,7 +10,11 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ENV_FILE = PROJECT_ROOT / ".env"
-DBT_DIR = PROJECT_ROOT / "pipelines" / "abm_transform"
+source = os.environ.get("SOURCE")
+if not source:
+    print("Error: SOURCE environment variable is required (e.g. SOURCE=abm)")
+    sys.exit(1)
+DBT_DIR = PROJECT_ROOT / "pipelines" / f"{source}_transform"
 DBT_EXE = PROJECT_ROOT / ".venv" / "Scripts" / "dbt"
 
 # Load .env

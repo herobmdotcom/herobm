@@ -197,6 +197,10 @@ export async function pollEmailOutbox(db: any) {
         }
       }
     }
+
+    // Close the connection pool to prevent leaks and libuv assertion failures on exit
+    transporter.close();
+
   } catch (err: any) {
     logger.error({ err: err.message }, 'Error in email outbox poller');
   }

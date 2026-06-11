@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 import { SkipCasbin } from '../auth/casbin.guard';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
+import { RATE_LIMITS } from '../common/config/throttler.config';
 
 // Maximum field lengths (truncated silently to prevent log injection / disk exhaustion)
 const MAX_MESSAGE_LEN = 500;
@@ -45,7 +46,7 @@ import { ClientErrorDto, EmptyBodyDto } from './dto';
 @Controller('telemetry')
 @SkipCasbin()
 @UseGuards(ThrottlerGuard)
-@Throttle({ default: { limit: 10, ttl: 60000 } })
+@Throttle({ default: RATE_LIMITS.TELEMETRY })
 export class TelemetryController {
   private readonly logger = new Logger('ClientTelemetry');
 

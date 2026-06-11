@@ -25,9 +25,9 @@ try:
 except ImportError:
     test_data_counts = None
 
-def get_db_metrics():
-    # Read pipeline metrics from raw_abm._pipeline_metrics
-    sql = "SELECT run_ts, duration_s, table_count, status, error_msg FROM raw_abm._pipeline_metrics ORDER BY run_id DESC LIMIT 1;"
+def get_db_metrics(source):
+    # Read pipeline metrics from raw_{source}._pipeline_metrics
+    sql = f"SELECT run_ts, duration_s, table_count, status, error_msg FROM raw_{source}._pipeline_metrics ORDER BY run_id DESC LIMIT 1;"
     cmd = [
         "podman", "exec", "-i", "postgres-custom",
         "psql", "-U", os.environ.get("POSTGRES_USER", "postgres"), "-d", os.environ.get("POSTGRES_DB", "herobm"),
@@ -46,8 +46,8 @@ def get_db_metrics():
             }
     return None
 
-def get_dbt_results():
-    path = os.path.join(os.path.dirname(__file__), '..', 'pipelines', 'abm_transform', 'target', 'run_results.json')
+def get_dbt_results(source):
+    path = os.path.join(os.path.dirname(__file__), '..', 'pipelines', f'{source}_transform', 'target', 'run_results.json')
     if not os.path.exists(path):
         return None
     with open(path, 'r', encoding='utf-8') as f:
@@ -70,6 +70,7 @@ def get_dbt_results():
 def main():
     parser = argparse.ArgumentParser(description="ELT Pipeline Summary Report")
     parser.add_argument("--profile", type=str, help="Environment profile to use (e.g. volzsg)", default=None)
+    parser.add_argument("--source", type=str, required=True, help="Data source pipeline (e.g. abm, odoo)")
     args = parser.parse_args()
 
     # Load environment variables for the specified profile before anything else
@@ -79,7 +80,7 @@ def main():
     print(f" ELT PIPELINE SUMMARY REPORT - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("="*70)
     
-    metrics = get_db_metrics()
+    metrics = get_db_metrics(args.source)
     if metrics:
         print("\n[ EXTRACTION PHASE ]")
         print(f"  Status    : {metrics['status']}")
@@ -91,7 +92,7 @@ def main():
         print("\n[ EXTRACTION PHASE ]")
         print("  Status    : Unknown / No metrics found in DB.")
         
-    dbt_res = get_dbt_results()
+    dbt_res = get_dbt_results(args.source)
     if dbt_res:
         print("\n[ TRANSFORMATION PHASE (DBT) ]")
         print(f"  Models Built : {dbt_res['passed']} / {dbt_res['total']}")

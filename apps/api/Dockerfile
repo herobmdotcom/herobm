@@ -13,6 +13,8 @@ WORKDIR /app/apps/api
 COPY apps/api/package*.json ./
 RUN npm ci
 
+ENV NODE_ENV=production
+
 COPY apps/api ./
 RUN npm test
 RUN npm run build

@@ -18,6 +18,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { SkipCasbin } from './casbin.guard';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
+import { RATE_LIMITS } from '../common/config/throttler.config';
 import { LoginDto, LoginResponseDto, MeResponseDto } from './dto';
 
 @ApiTags('System')
@@ -32,7 +33,7 @@ export class AuthController {
   @SkipCasbin()
   @UseGuards(ThrottlerGuard)
   @Throttle({
-    default: { limit: process.env.NODE_ENV === 'test' ? 100 : 5, ttl: 60000 },
+    default: RATE_LIMITS.AUTH_LOGIN,
   })
   @ApiOperation({
     summary: 'Login User',
@@ -48,7 +49,7 @@ export class AuthController {
   @SkipCasbin()
   @UseGuards(ThrottlerGuard, AuthGuard(['jwt', 'api-key']))
   @Throttle({
-    default: { limit: process.env.NODE_ENV === 'test' ? 100 : 30, ttl: 60000 },
+    default: RATE_LIMITS.AUTH_ME,
   })
   @ApiOperation({
     summary: 'Get Current User',

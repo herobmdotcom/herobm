@@ -133,7 +133,7 @@ export default function AdminImportPage() {
           password: config.password,
           port: parseInt(config.port, 10)
         },
-        abmImport: true,
+        source: 'abm',
         resumeExtraction: config.extractionMode === 'resume',
         skipExtraction: config.extractionMode === 'skip',
         defaultLocationCode: config.defaultLocationCode,

@@ -5,6 +5,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { ApiThrottlerGuard } from './auth/api-throttler.guard';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ConfigModule } from '@nestjs/config';
+import { RATE_LIMITS } from './common/config/throttler.config';
 import { DrizzleModule } from './drizzle/drizzle.module';
 import { AuthModule } from './auth/auth.module';
 import { AccountsModule } from './customers/customers.module';
@@ -53,13 +54,13 @@ import { ReadOnlyGuard } from './common/guards/read-only.guard';
     ThrottlerModule.forRoot([
       { 
         name: 'default', 
-        ttl: 60000, 
-        limit: process.env.NODE_ENV === 'test' ? 10000 : 60 
+        ttl: RATE_LIMITS.DEFAULT.ttl, 
+        limit: RATE_LIMITS.DEFAULT.limit 
       },
       { 
         name: 'api', 
-        ttl: 60000, 
-        limit: process.env.NODE_ENV === 'test' ? 10000 : 1000 
+        ttl: RATE_LIMITS.API.ttl, 
+        limit: RATE_LIMITS.API.limit 
       },
     ]),
     DrizzleModule,

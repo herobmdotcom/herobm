@@ -87,10 +87,9 @@ export class ExecuteEltDto {
   dbConfig?: DbConfigDto;
 
   @IsOptional()
-  abmImport?: boolean;
-
-  @IsOptional()
-  odooImport?: boolean;
+  @IsString()
+  @IsIn(['abm', 'odoo'])
+  source?: 'abm' | 'odoo';
 
   @IsOptional()
   @IsBoolean()
@@ -193,10 +192,12 @@ export class ExecuteSetupDto {
   @IsString()
   taxNumber?: string;
 
-  // --- ABM import ---
-  /** If true, run the ABM extraction + import pipeline */
+  // --- Import Source ---
+  /** Source pipeline to run for initial setup */
   @IsOptional()
-  abmImport?: boolean;
+  @IsString()
+  @IsIn(['abm', 'odoo'])
+  source?: 'abm' | 'odoo';
 
   /** If true, skips data extraction for tables that completed gracefully on a previous attempt */
   @IsOptional()

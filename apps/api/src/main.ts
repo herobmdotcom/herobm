@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+// Force reload 1
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { collectDefaultMetrics, register } from 'prom-client';
@@ -9,6 +10,17 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   // Prometheus default metrics (CPU, memory, event loop)
   collectDefaultMetrics();
+
+  // --- Safeguard: Prevent Dev Mode in Production ---
+  if (
+    process.env.DEPLOYMENT_TIER === 'production' &&
+    process.env.NODE_ENV !== 'production'
+  ) {
+    Logger.error(
+      'FATAL: Attempted to boot in development mode on a production deployment tier. Crashing to prevent security vulnerabilities.',
+    );
+    process.exit(1);
+  }
 
   const fileLogger = new FileLoggerService();
   const app = await NestFactory.create(AppModule, {

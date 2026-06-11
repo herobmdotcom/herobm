@@ -78,11 +78,11 @@ export class SetupService {
       (resolve) => {
         const envOverride: Record<string, string> = {
           ...process.env,
-          ABM_MSSQL_HOST: dto.host,
-          ABM_MSSQL_DATABASE: dto.database,
-          ABM_MSSQL_USER: dto.username,
-          ABM_MSSQL_PASSWORD: dto.password,
-          ABM_MSSQL_PORT: dto.port ? dto.port.toString() : '1433',
+          SOURCE_DB_HOST: dto.host,
+          SOURCE_DB_DATABASE: dto.database,
+          SOURCE_DB_USER: dto.username,
+          SOURCE_DB_PASSWORD: dto.password,
+          SOURCE_DB_PORT: dto.port ? dto.port.toString() : '1433',
         };
 
         const rootDir = this.getWorkspaceRoot();
@@ -144,11 +144,11 @@ export class SetupService {
       (resolve) => {
         const envOverride: Record<string, string> = {
           ...process.env,
-          ODOO_PG_HOST: dto.host,
-          ODOO_PG_DATABASE: dto.database,
-          ODOO_PG_USER: dto.username,
-          ODOO_PG_PASSWORD: dto.password,
-          ODOO_PG_PORT: dto.port ? dto.port.toString() : '5432',
+          SOURCE_DB_HOST: dto.host,
+          SOURCE_DB_DATABASE: dto.database,
+          SOURCE_DB_USER: dto.username,
+          SOURCE_DB_PASSWORD: dto.password,
+          SOURCE_DB_PORT: dto.port ? dto.port.toString() : '5432',
         };
 
         const rootDir = this.getWorkspaceRoot();
@@ -656,23 +656,25 @@ export class SetupService {
         envOverride.ENABLE_CUSTOM_IMPORTS = 'true';
       }
 
-      const isOdoo = dto.odooImport === true;
-      const prefix = isOdoo ? 'ODOO_PG' : 'ABM_MSSQL';
+      const source = dto.source;
+      if (!source) {
+        throw new BadRequestException('Import source is required');
+      }
 
       if (dto.dbConfig) {
         if (dto.dbConfig.host)
-          envOverride[`${prefix}_HOST`] = dto.dbConfig.host;
+          envOverride[`SOURCE_DB_HOST`] = dto.dbConfig.host;
         if (dto.dbConfig.database)
-          envOverride[`${prefix}_DATABASE`] = dto.dbConfig.database;
+          envOverride[`SOURCE_DB_DATABASE`] = dto.dbConfig.database;
         if (dto.dbConfig.username)
-          envOverride[`${prefix}_USER`] = dto.dbConfig.username;
+          envOverride[`SOURCE_DB_USER`] = dto.dbConfig.username;
         if (dto.dbConfig.password)
-          envOverride[`${prefix}_PASSWORD`] = dto.dbConfig.password;
+          envOverride[`SOURCE_DB_PASSWORD`] = dto.dbConfig.password;
         if (dto.dbConfig.port)
-          envOverride[`${prefix}_PORT`] = dto.dbConfig.port.toString();
+          envOverride[`SOURCE_DB_PORT`] = dto.dbConfig.port.toString();
       }
 
-      envOverride[isOdoo ? 'ODOO_RESUME' : 'ABM_RESUME'] = dto.resumeExtraction
+      envOverride['SOURCE_RESUME'] = dto.resumeExtraction
         ? 'true'
         : 'false';
 
@@ -683,23 +685,23 @@ export class SetupService {
             : '".venv/bin/python"';
         this.log(
           jobId,
-          `Running ${isOdoo ? 'Odoo' : 'ABM'} Extraction (bypassing make to preserve passwords)...`,
+          `Running ${source.toUpperCase()} Extraction (bypassing make to preserve passwords)...`,
         );
         await this.runCommandStream(
           jobId,
           venvPython,
-          [`pipelines/${isOdoo ? 'odoo' : 'abm'}_extract/pipeline.py`],
+          [`pipelines/${source}_extract/pipeline.py`],
           envOverride,
         );
       } else {
-        this.log(jobId, `Skipping ${isOdoo ? 'Odoo' : 'ABM'} Extraction...`);
+        this.log(jobId, `Skipping ${source.toUpperCase()} Extraction...`);
       }
 
       this.log(jobId, 'Running Transformations & Report...');
       await this.runCommandStream(
         jobId,
         'make',
-        [isOdoo ? 'elt-odoo-no-extract' : 'elt-no-extract'],
+        ['elt-no-extract', `SOURCE=${source}`],
         envOverride,
       );
 

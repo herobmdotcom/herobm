@@ -129,7 +129,7 @@ export default function OdooImportPage() {
           password: config.password,
           port: parseInt(config.port, 10)
         },
-        odooImport: true,
+        source: 'odoo',
         resumeExtraction: config.resumeExtraction,
         defaultLocationCode: config.defaultLocationCode,
         baseCurrency: config.baseCurrency,

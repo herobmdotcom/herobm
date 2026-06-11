@@ -94,8 +94,7 @@ export
 export PYTHONUTF8=1
 export ENV_FILE
 
-DBT_DIR = pipelines/abm_transform
-DBT_ODOO_DIR = pipelines/odoo_transform
+DBT_DIR = pipelines/$(SOURCE)_transform
 
 # --- Container Stack (Podman) ---
 
@@ -188,63 +187,49 @@ init-env:
 # --- ELT Pipeline ---
 
 extract:
-	"$(VENV_PYTHON)" pipelines/abm_extract/pipeline.py
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract SOURCE=abm|odoo))
+	"$(VENV_PYTHON)" pipelines/$(SOURCE)_extract/pipeline.py
 
 extract-dry:
-	"$(VENV_PYTHON)" pipelines/abm_extract/pipeline.py --dry-run
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-dry SOURCE=abm|odoo))
+	"$(VENV_PYTHON)" pipelines/$(SOURCE)_extract/pipeline.py --dry-run
 
-extract-odoo:
-	"$(VENV_PYTHON)" pipelines/odoo_extract/pipeline.py
-
-extract-odoo-dry:
-	"$(VENV_PYTHON)" pipelines/odoo_extract/pipeline.py --dry-run
-
-# Extract a single ABM table: make extract-table TABLE=SGROUPS
+# Extract a single table: make extract-table SOURCE=abm TABLE=SGROUPS
 extract-table:
-	"$(VENV_PYTHON)" pipelines/abm_extract/pipeline.py --table $(TABLE)
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-table SOURCE=abm|odoo TABLE=name))
+	"$(VENV_PYTHON)" pipelines/$(SOURCE)_extract/pipeline.py --table $(TABLE)
 
 transform:
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform SOURCE=abm|odoo))
 	"$(DBT)" run --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 test-transform:
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make test-transform SOURCE=abm|odoo))
 	"$(DBT)" test --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
-transform-odoo:
-	"$(DBT)" run --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
-
-test-transform-odoo:
-	"$(DBT)" test --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
-
-# Rebuild a single model: make transform-select MODEL=import_accounts
+# Rebuild a single model: make transform-select SOURCE=abm MODEL=import_accounts
 transform-select:
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-select SOURCE=abm|odoo MODEL=name))
 	"$(DBT)" run --select $(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 transform-refresh:
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-refresh SOURCE=abm|odoo MODEL=name))
 	"$(DBT)" run --select $(MODEL) --full-refresh --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 elt: extract transform import-legacy dev-docs-schema
-	"$(VENV_PYTHON)" tools/elt_report.py
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt SOURCE=abm|odoo))
+	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE)
 
 elt-no-extract: transform import-legacy dev-docs-schema
-	"$(VENV_PYTHON)" tools/elt_report.py
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make elt-no-extract SOURCE=abm|odoo))
+	"$(VENV_PYTHON)" tools/elt_report.py --source $(SOURCE)
 
 import-legacy:
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make import-legacy SOURCE=abm|odoo))
 	"$(DBT)" run --select tag:import --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_sales_quotes --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_sales_quote_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_purchase_order_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
-
-elt-odoo: extract-odoo transform-odoo import-legacy-odoo dev-docs-schema
-	"$(VENV_PYTHON)" tools/elt_report.py
-
-elt-odoo-no-extract: transform-odoo import-legacy-odoo dev-docs-schema
-	"$(VENV_PYTHON)" tools/elt_report.py
-
-import-legacy-odoo:
-	"$(DBT)" run --select tag:import --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
-	"$(DBT)" run-operation sync_sales_quotes --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
-	"$(DBT)" run-operation sync_sales_quote_lines --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
-	"$(DBT)" run-operation sync_purchase_order_lines --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
 
 # --- Schema Reference & Docs ---
 
@@ -270,10 +255,12 @@ dev-db-generate:
 # --- ELT Pipeline (Container) ---
 
 extract-docker:
-	$(COMPOSE_CMD) --profile pipeline run --rm abm-extract
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-docker SOURCE=abm|odoo))
+	$(COMPOSE_CMD) --profile pipeline run --rm $(SOURCE)-extract
 
 extract-docker-dry:
-	$(COMPOSE_CMD) --profile pipeline run --rm abm-extract --dry-run
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-docker-dry SOURCE=abm|odoo))
+	$(COMPOSE_CMD) --profile pipeline run --rm $(SOURCE)-extract --dry-run
 
 # --- Local Development ---
 # Hot-reloads FE and API natively, assuming database containers are running.
@@ -440,13 +427,12 @@ cli-help:
 	@echo "HeroBM CLI Installation Sequence:"
 	@echo "  1. make cli-install-prereqs  - Install OS-level tools"
 	@echo "  2. make cli-init-env         - Create .env and secrets"
-	@echo "  3. make cli-setup-python     - Create .venv and install pip deps"
-	@echo "  4. make cli-install-npm       - Install npm dependencies"
-	@echo "  5. make cli-up-db            - Start containers"
-	@echo "  6. make cli-init-db          - Initialize schemas (waits for PG)"
-	@echo "  7. make cli-migrate          - Apply SQL migrations"
-	@echo "  8. make cli-bootstrap        - Seed data & verify"
-	@echo "  9. make up                   - Start FE and API containers"
+	@echo "  3. make cli-install-npm       - Install npm dependencies"
+	@echo "  4. make cli-up-db            - Start containers"
+	@echo "  5. make cli-init-db          - Initialize schemas (waits for PG)"
+	@echo "  6. make cli-migrate          - Apply SQL migrations"
+	@echo "  7. make cli-bootstrap        - Seed data & verify"
+	@echo "  8. make up                   - Start FE and API containers"
 
 cli-install-prereqs:
 ifeq ($(OS),Windows_NT)
@@ -458,12 +444,13 @@ endif
 cli-init-env: init-env
 
 cli-setup-python:
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make cli-setup-python SOURCE=abm|odoo))
 ifeq ($(OS),Windows_NT)
 	if not exist .venv python -m venv .venv
-	.venv\Scripts\pip install -r pipelines/abm_extract/requirements.txt
+	.venv\Scripts\pip install -r pipelines\$(SOURCE)_extract\requirements.txt
 else
 	[ ! -d .venv ] && python3 -m venv .venv || true
-	.venv/bin/pip install -r pipelines/abm_extract/requirements.txt
+	.venv/bin/pip install -r pipelines/$(SOURCE)_extract/requirements.txt
 endif
 
 cli-install-npm:

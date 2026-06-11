@@ -6,7 +6,7 @@
       "localStorage": [
         {
           "name": "modbm_token",
-          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3NDFhODU5MS02MWU4LTRhZGYtYWYyNi02OTVlYTY4OWI1ZGYiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzgxMTgxNzE2LCJleHAiOjE3ODEyMTA1MTZ9.K8hs0OcAtC3gb80rSLBfF1D__0rDpUTI0Wq26INSybU"
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3NDFhODU5MS02MWU4LTRhZGYtYWYyNi02OTVlYTY4OWI1ZGYiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzgxMTg2NTc2LCJleHAiOjE3ODEyMTUzNzZ9.VNMUOR2VweDYx60asdP75PcrlBQRU7fbgmeB0xfZVOE"
         },
         {
           "name": "modbm_role",
