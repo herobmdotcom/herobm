@@ -56,7 +56,7 @@ RUN npm run build -w packages/shared
 RUN npm run build -w packages/sdk
 
 # Typecheck (quality gate — catches type errors before build)
-RUN cd apps/ops-portal && npx tsc --noEmit
+RUN cd apps/ops-portal && npm run prebuild
 
 # Build the Next.js standalone bundle.
 # API_URL must be set at build time because next.config.ts rewrites are baked
