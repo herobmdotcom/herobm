@@ -50,6 +50,7 @@ FROM deps AS builder
 # Copy workspace source files needed for build
 COPY packages/ ./packages/
 COPY apps/ops-portal/ ./apps/ops-portal/
+COPY docs/ ./docs/
 
 # Build workspace packages first (dist is excluded by .dockerignore)
 RUN npm run build -w packages/shared
