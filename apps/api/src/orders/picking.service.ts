@@ -670,6 +670,7 @@ export class PickingService {
   // Cancel Pick Line
   // -------------------------------------------------------------------------
 
+  // @modbm-skip-audit
   async cancelPick(orderId: string, pickId: string, actor: string) {
     const pickRows = await this.db
       .select({

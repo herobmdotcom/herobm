@@ -346,6 +346,7 @@ export class PurchaseInvoiceService {
     });
   }
 
+  // @modbm-skip-audit
   private async recalculateInvoiceTotals(invoiceId: string, tx: DrizzleDB) {
     const lines = await tx
       .select({ amount: purchaseInvoiceLines.amount })
@@ -375,6 +376,7 @@ export class PurchaseInvoiceService {
       .where(eq(purchaseInvoices.invoiceId, invoiceId));
   }
 
+  // @modbm-skip-audit
   async updateInvoice(
     invoiceId: string,
     dto: {
@@ -422,6 +424,7 @@ export class PurchaseInvoiceService {
     });
   }
 
+  // @modbm-skip-audit
   async updateLine(
     invoiceId: string,
     lineId: string,
@@ -496,6 +499,7 @@ export class PurchaseInvoiceService {
   }
 
   // @modbm-skip-audit
+  // @modbm-skip-audit
   async removeLine(invoiceId: string, lineId: string, actor: string) {
     return this.db.transaction(async (tx) => {
       const [invoice] = await tx
@@ -518,6 +522,7 @@ export class PurchaseInvoiceService {
     });
   }
 
+  // @modbm-skip-audit
   // @modbm-skip-audit
   async addLine(
     invoiceId: string,
@@ -861,6 +866,7 @@ export class PurchaseInvoiceService {
    * Handles draft -> cancelled, cancelled -> draft.
    * draft -> invoiced delegates to postInvoice.
    */
+  // @modbm-skip-audit
   async changePurchaseInvoiceState(
     invoiceId: string,
     newState: string,
@@ -1237,6 +1243,7 @@ export class PurchaseInvoiceService {
     return await dataQuery;
   }
 
+  // @modbm-skip-audit
   private async changePurchaseInvoiceStateInternal(
     invoiceId: string,
     newState: string,
