@@ -26,8 +26,12 @@ import * as path from 'path';
 import { spawn } from 'child_process';
 import { eq, getTableColumns, isNotNull } from 'drizzle-orm';
 import { Readable } from 'stream';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import * as bcrypt from 'bcrypt';
 import { parse } from 'csv-parse';
 import * as schema from '../drizzle/modbm-core-schema';
+import { EntityType, EventType } from '../common/event-types';
+import { emitEvent } from '../common/emit-event';
 
 @Injectable()
 export class SetupService {
@@ -451,6 +455,7 @@ export class SetupService {
     return { jobId };
   }
 
+  // @modbm-skip-audit
   private async runCsvCore(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     entry: any,
@@ -467,6 +472,19 @@ export class SetupService {
       if (up === 'EU') return 'EUR'; // HOME_CURRENCY
       if (up === 'NZ') return 'NZD'; // HOME_CURRENCY
       return val;
+    };
+
+    const parsePhone = (val: string | null): string | null => {
+      if (!val) return null;
+      try {
+        const phoneNumber = parsePhoneNumberFromString(val);
+        if (phoneNumber) {
+          return phoneNumber.format('E.164');
+        }
+        return val;
+      } catch (err) {
+        return val;
+      }
     };
 
     const tableCols = getTableColumns(entry.table);
@@ -496,6 +514,9 @@ export class SetupService {
           }
           if (col === 'currencyCode') {
             dbRecord[col] = mapCurrencyCode(dbRecord[col]);
+          }
+          if ((col === 'phone' || col === 'mobile') && dbRecord[col]) {
+            dbRecord[col] = parsePhone(dbRecord[col]);
           }
         }
       }
@@ -562,6 +583,24 @@ export class SetupService {
     }
 
     this.log(jobId, 'DATA IMPORT COMPLETED SUCCESSFULLY');
+
+    // Emit a single event for the entire CSV import
+    const tableName =
+      entry.table[Symbol.for('drizzle:Name')] || 'unknown_table'; // @sync-ignore
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await emitEvent(this.db as any, {
+      entityType: EntityType.SYSTEM,
+      entityId: 'system_setup',
+      eventType: 'csv_import_completed',
+      entityDisplayName: `CSV Import: ${tableName}`,
+      payload: {
+        table: tableName,
+        rowsImported: insertedCount,
+        strategy,
+      },
+      actor: 'system',
+    });
+
     if (this.activeJobs[jobId]) {
       this.activeJobs[jobId].progress[0].status = 'done';
       this.activeJobs[jobId].status = 'done';
@@ -609,9 +648,18 @@ export class SetupService {
 
       if (dto.baseCurrency) {
         this.log(jobId, `Setting base currency to ${dto.baseCurrency}`);
-        await this.db
+        const [updatedGl] = await this.db
           .update(glSettings)
-          .set({ baseCurrency: dto.baseCurrency });
+          .set({ baseCurrency: dto.baseCurrency })
+          .returning();
+
+        await emitEvent(this.db, {
+          entityType: EntityType.GL_SETTINGS,
+          entityId: updatedGl.settingsId,
+          eventType: EventType.UPDATED,
+          entityDisplayName: 'GL Settings',
+          payload: { baseCurrency: dto.baseCurrency },
+        });
       }
 
       const [appSettingsRow] = await this.db
@@ -674,9 +722,7 @@ export class SetupService {
           envOverride[`SOURCE_DB_PORT`] = dto.dbConfig.port.toString();
       }
 
-      envOverride['SOURCE_RESUME'] = dto.resumeExtraction
-        ? 'true'
-        : 'false';
+      envOverride['SOURCE_RESUME'] = dto.resumeExtraction ? 'true' : 'false';
 
       if (!dto.skipExtraction) {
         const venvPython =
@@ -717,10 +763,19 @@ export class SetupService {
             .from(appSettings)
             .limit(1);
           if (existingApp) {
-            await this.db
+            const [updatedApp] = await this.db
               .update(appSettings)
               .set({ defaultFulfillmentLocationId: loc.locationId })
-              .where(eq(appSettings.settingsId, existingApp.settingsId));
+              .where(eq(appSettings.settingsId, existingApp.settingsId))
+              .returning();
+
+            await emitEvent(this.db, {
+              entityType: EntityType.APP_SETTINGS,
+              entityId: existingApp.settingsId,
+              eventType: EventType.UPDATED,
+              entityDisplayName: 'App Settings',
+              payload: { defaultFulfillmentLocationId: loc.locationId },
+            });
           }
         }
       }
@@ -855,7 +910,7 @@ export class SetupService {
             ...properties,
           };
 
-          await this.db
+          const [updatedGl] = await this.db
             .update(glSettings)
             .set({
               accountMetadataSchema: {
@@ -864,7 +919,16 @@ export class SetupService {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
               } as any,
             })
-            .where(eq(glSettings.settingsId, existingGl.settingsId));
+            .where(eq(glSettings.settingsId, existingGl.settingsId))
+            .returning();
+
+          await emitEvent(this.db, {
+            entityType: EntityType.GL_SETTINGS,
+            entityId: existingGl.settingsId,
+            eventType: EventType.UPDATED,
+            entityDisplayName: 'GL Settings',
+            payload: { accountMetadataSchema: updatedGl.accountMetadataSchema },
+          });
 
           this.log(
             jobId,

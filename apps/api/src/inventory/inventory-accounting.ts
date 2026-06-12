@@ -38,7 +38,7 @@ export interface GlPostingContext {
  * A single line in a journal entry, ready to pass to GlService.postJournalEntry.
  */
 export interface InventoryGlLine {
-  customerId: string;
+  accountId: string;
   debit: number;
   credit: number;
   memo: string;
@@ -157,7 +157,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
   private requireAccount(id: string | null, label: string): string {
     if (!id) {
       throw new BadRequestException(
-        `Perpetual inventory requires the default ${label} customer to be configured.`,
+        `Perpetual inventory requires the default ${label} account to be configured.`,
       );
     }
     return id;
@@ -174,7 +174,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
       sourceType: 'inventory_receipt',
       lines: [
         {
-          customerId: inv,
+          accountId: inv,
           debit: ctx.amount,
           credit: 0,
           memo: ctx.memo,
@@ -182,7 +182,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
           activityId: ctx.activityId,
         },
         {
-          customerId: grni,
+          accountId: grni,
           debit: 0,
           credit: ctx.amount,
           memo: ctx.memo,
@@ -206,7 +206,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
       sourceType: 'inventory_dispatch',
       lines: [
         {
-          customerId: cogs,
+          accountId: cogs,
           debit: ctx.amount,
           credit: 0,
           memo: ctx.memo,
@@ -214,7 +214,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
           activityId: ctx.activityId,
         },
         {
-          customerId: inv,
+          accountId: inv,
           debit: 0,
           credit: ctx.amount,
           memo: ctx.memo,
@@ -236,7 +236,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
       sourceType: 'inventory_dispatch',
       lines: [
         {
-          customerId: inv,
+          accountId: inv,
           debit: ctx.amount,
           credit: 0,
           memo: ctx.memo,
@@ -244,7 +244,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
           activityId: ctx.activityId,
         },
         {
-          customerId: cogs,
+          accountId: cogs,
           debit: 0,
           credit: ctx.amount,
           memo: ctx.memo,
@@ -275,7 +275,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
         sourceType: 'inventory_adjustment',
         lines: [
           {
-            customerId: shrink,
+            accountId: shrink,
             debit: ctx.amount,
             credit: 0,
             memo: ctx.memo,
@@ -283,7 +283,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
             activityId: ctx.activityId,
           },
           {
-            customerId: inv,
+            accountId: inv,
             debit: 0,
             credit: ctx.amount,
             memo: ctx.memo,
@@ -298,7 +298,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
         sourceType: 'inventory_adjustment',
         lines: [
           {
-            customerId: inv,
+            accountId: inv,
             debit: ctx.amount,
             credit: 0,
             memo: ctx.memo,
@@ -306,7 +306,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
             activityId: ctx.activityId,
           },
           {
-            customerId: shrink,
+            accountId: shrink,
             debit: 0,
             credit: ctx.amount,
             memo: ctx.memo,
@@ -330,7 +330,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
       sourceType: 'inventory_adjustment',
       lines: [
         {
-          customerId: inv,
+          accountId: inv,
           debit: ctx.amount,
           credit: 0,
           memo: ctx.memo,
@@ -338,7 +338,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
           activityId: ctx.activityId,
         },
         {
-          customerId: cogs,
+          accountId: cogs,
           debit: 0,
           credit: ctx.amount,
           memo: ctx.memo,
@@ -361,7 +361,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
       sourceType: 'inventory_receipt',
       lines: [
         {
-          customerId: grni,
+          accountId: grni,
           debit: ctx.amount,
           credit: 0,
           memo: ctx.memo,
@@ -371,7 +371,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
           activityId: ctx.activityId,
         },
         {
-          customerId: inv,
+          accountId: inv,
           debit: 0,
           credit: ctx.amount,
           memo: ctx.memo,
@@ -394,7 +394,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
       sourceType: 'inventory_receipt', // Alternatively 'supplier_debit_note' if defined, but keeping consistent with sourceType types
       lines: [
         {
-          customerId: ap,
+          accountId: ap,
           debit: ctx.amount,
           credit: 0,
           memo: ctx.memo,
@@ -404,7 +404,7 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
           activityId: ctx.activityId,
         },
         {
-          customerId: grni,
+          accountId: grni,
           debit: 0,
           credit: ctx.amount,
           memo: ctx.memo,

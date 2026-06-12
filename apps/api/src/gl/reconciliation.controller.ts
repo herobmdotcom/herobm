@@ -1,4 +1,6 @@
 import { SystemResource } from '@modbm/shared';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
 import {
   ApiTags,
   ApiOperation,
@@ -109,8 +111,8 @@ export class ReconciliationController {
     summary: 'Post Reconciliation',
     description: 'Finalize and post the completed bank reconciliation.',
   })
-  async postReconciliation(@Param('id') id: string) {
-    return this.service.postReconciliation(id);
+  async postReconciliation(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.service.postReconciliation(id, user.userId);
   }
 
   @Delete(':id')
@@ -120,8 +122,11 @@ export class ReconciliationController {
     summary: 'Discard Reconciliation',
     description: 'Cancel and delete an in-progress bank reconciliation.',
   })
-  async discardReconciliation(@Param('id') id: string) {
-    return this.service.discardReconciliation(id);
+  async discardReconciliation(
+    @Param('id') id: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.service.discardReconciliation(id, user.userId);
   }
 
   @Post(':id/adjustments')

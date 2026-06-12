@@ -23,6 +23,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { GlService, JournalMeta } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
 import {
@@ -104,9 +105,10 @@ export class GlController {
   async createAccount(
     @Body()
     body: CreateAccountRequestDto,
+    @AuthUser() user: JwtUser,
   ) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this.glService.createAccount(body as any);
+    return this.glService.createAccount(body as any, user?.userId);
   }
 
   @Patch('accounts/:id')
@@ -121,8 +123,9 @@ export class GlController {
     @Param('id') id: string,
     @Body()
     body: UpdateAccountRequestDto,
+    @AuthUser() user: JwtUser,
   ) {
-    return this.glService.updateAccount(id, body);
+    return this.glService.updateAccount(id, body, user?.userId);
   }
 
   // -------------------------------------------------------------------------

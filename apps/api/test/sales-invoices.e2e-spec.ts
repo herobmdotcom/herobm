@@ -47,7 +47,7 @@ describe('API E2E — Sales Invoices', () => {
     validCustomerId = customers.body.data[0].customerId;
 
     const products = await request(app.getHttpServer())
-      .get('/api/products?limit=2')
+      .get('/api/products?productType=inventory&limit=2')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validProductId1 = products.body.data[0].productId;
@@ -225,13 +225,14 @@ describe('API E2E — Sales Invoices', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
+      const validBin2 = binsRes2.body.data.find(
+        (b: { binNumber: string; binId: string }) => b.binNumber !== 'SHIPPING',
+      );
       await request(app.getHttpServer())
         .post(`/api/sales-orders/${testOrderId}/picking/lines/${testLineId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          binId:
-            binsRes2.body.data[0]?.binId ||
-            '40000000-0000-0000-0000-000000000003',
+          binId: validBin2?.binId || '40000000-0000-0000-0000-000000000003',
           quantity: '4',
         })
         .expect(201);

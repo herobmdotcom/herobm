@@ -22,6 +22,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { TaxCategoriesService } from './tax-categories.service';
 import {
   CreateTaxCategoryDto,
@@ -70,8 +71,8 @@ export class TaxCategoriesController {
     description: 'Add a new tax category to the system.',
   })
   @ApiCreatedResponse({ type: TaxCategoryResponseDto })
-  create(@Body() dto: CreateTaxCategoryDto) {
-    return this.taxService.create(dto);
+  create(@Body() dto: CreateTaxCategoryDto, @AuthUser() user: JwtUser) {
+    return this.taxService.create(dto, user?.userId);
   }
 
   @Patch(':id')
@@ -82,8 +83,12 @@ export class TaxCategoriesController {
     description: 'Modify the details of an existing tax category.',
   })
   @ApiOkResponse({ type: TaxCategoryResponseDto })
-  update(@Param('id') id: string, @Body() dto: UpdateTaxCategoryDto) {
-    return this.taxService.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateTaxCategoryDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.taxService.update(id, dto, user?.userId);
   }
 
   @Delete(':id')
@@ -93,7 +98,7 @@ export class TaxCategoriesController {
     description: 'Remove a tax category from the system.',
   })
   @ApiOkResponse({ type: TaxCategoryResponseDto })
-  remove(@Param('id') id: string) {
-    return this.taxService.delete(id);
+  remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.taxService.delete(id, user?.userId);
   }
 }

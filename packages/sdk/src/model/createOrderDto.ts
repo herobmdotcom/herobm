@@ -14,5 +14,14 @@ export interface CreateOrderDto {
   customerOrderNumber?: string;
   notes?: string;
   fulfillmentLocationId?: string;
+  shippingNotes?: string;
+  deliveryName?: string;
+  deliveryPhone?: string;
+  deliveryAddressLine1?: string;
+  deliveryAddressLine2?: string;
+  deliveryCity?: string;
+  deliveryState?: string;
+  deliveryPostalCode?: string;
+  deliveryCountry?: string;
   lines: CreateOrderLineDto[];
 }

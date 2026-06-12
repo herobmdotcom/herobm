@@ -32,24 +32,13 @@ export default function NewAccountPage() {
     name: '',
     emailAddress1: '',
     telephone1: '',
-    primaryContactName: '',
-    primaryContactEmail: '',
-    primaryContactPhone: '',
-    address1Line1: '',
-    address1Line2: '',
-    address1City: '',
-    address1StateOrProvince: '',
-    address1PostalCode: '',
-    address1Country: defaultCountry,
+    billingAddressCountry: defaultCountry,
     customerGroupId: '',
     taxCategoryId: '',
     currencyCode: defaultCurrency,
     customerDiscount: '0',
     notes: '',
     parentCustomerId: '',
-    bankAccountName: '',
-    bankBsb: '',
-    bankAccountNumber: '',
     businessNumber: '',
     isTaxRegistered: false,
   });
@@ -180,10 +169,10 @@ export default function NewAccountPage() {
                     </label>
                     <select
                       className="input"
-                      value={dto.address1Country}
+                      value={dto.billingAddressCountry}
                       onChange={(e) => {
                         const val = e.target.value;
-                        updateField('address1Country', val);
+                        updateField('billingAddressCountry', val);
                         const newCurrency = getCurrencyForCountry(val);
                         if (newCurrency) {
                           updateField('currencyCode', newCurrency);
@@ -279,7 +268,7 @@ export default function NewAccountPage() {
                     {t('customers.fields.businessNumber')}
                     <FrontendEnrichmentDecorator
                       field="customer.business_number"
-                      country={dto.address1Country || ''}
+                      country={dto.billingAddressCountry || ''}
                       value={dto.businessNumber}
                       isSaving={submitting}
                       onEnrich={(data) => {
@@ -343,196 +332,6 @@ export default function NewAccountPage() {
                       {dto.isTaxRegistered ? tCommon('yes') : tCommon('no')}
                     </span>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Address Card */}
-            <div className="card">
-              <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined">location_on</span>
-                {t('customers.company')}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.email')}
-                  </label>
-                  <input
-                    type="email"
-                    className="input"
-                    value={dto.emailAddress1}
-                    onChange={(e) => updateField('emailAddress1', e.target.value)}
-                    placeholder="customers@acme.com"
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.phone')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.telephone1}
-                    onChange={(e) => updateField('telephone1', e.target.value)}
-                    placeholder="+1 234 567 890"
-                    disabled={submitting}
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.address')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.address1Line1}
-                    onChange={(e) => updateField('address1Line1', e.target.value)}
-                    placeholder="123 Main St"
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.city')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.address1City}
-                    onChange={(e) => updateField('address1City', e.target.value)}
-                    placeholder="City"
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.state')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.address1StateOrProvince}
-                    onChange={(e) => updateField('address1StateOrProvince', e.target.value)}
-                    placeholder="State"
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.postalCode')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.address1PostalCode}
-                    onChange={(e) => updateField('address1PostalCode', e.target.value)}
-                    placeholder="12345"
-                    disabled={submitting}
-                  />
-                </div>
-
-              </div>
-            </div>
-
-            {/* Primary Contact Card */}
-            <div className="card">
-              <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined">person</span>
-                {t('common.columns.contact')}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.contactName')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.primaryContactName}
-                    onChange={(e) => updateField('primaryContactName', e.target.value)}
-                    placeholder="John Smith"
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.contactEmail')}
-                  </label>
-                  <input
-                    type="email"
-                    className="input"
-                    value={dto.primaryContactEmail}
-                    onChange={(e) => updateField('primaryContactEmail', e.target.value)}
-                    placeholder="john@acme.com"
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.contactPhone')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.primaryContactPhone}
-                    onChange={(e) => updateField('primaryContactPhone', e.target.value)}
-                    placeholder="+1 234 567 890"
-                    disabled={submitting}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Bank Details Card */}
-            <div className="card">
-              <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined">account_balance</span>
-                Bank Details
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('customers.fields.bankAccountName')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input w-full"
-                    value={dto.bankAccountName}
-                    onChange={(e) => updateField('bankAccountName', e.target.value)}
-                    placeholder="e.g. John Doe Pty Ltd"
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    BSB
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.bankBsb}
-                    onChange={(e) => updateField('bankBsb', e.target.value)}
-                    placeholder="e.g. 062-000"
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('customers.fields.accountNumber')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.bankAccountNumber}
-                    onChange={(e) => updateField('bankAccountNumber', e.target.value)}
-                    placeholder="e.g. 12345678"
-                    disabled={submitting}
-                  />
                 </div>
               </div>
             </div>

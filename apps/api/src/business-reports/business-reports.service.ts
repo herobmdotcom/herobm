@@ -18,6 +18,8 @@ import {
   resolveDateRangeFilter,
   type DateRangeConfig,
 } from '../common/utils/date-range.util';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class BusinessReportsService {
@@ -136,29 +138,56 @@ export class BusinessReportsService {
   }
 
   async createReport(data: typeof businessReports.$inferInsert) {
-    const [r] = await this.db.insert(businessReports).values(data).returning();
-    return r;
+    return this.db.transaction(async (tx) => {
+      const [r] = await tx.insert(businessReports).values(data).returning();
+      await emitEvent(tx, {
+        entityType: EntityType.BUSINESS_REPORT,
+        entityId: r.id,
+        eventType: EventType.CREATED,
+        entityDisplayName: r.name,
+        payload: r,
+      });
+      return r;
+    });
   }
 
   async updateReport(
     id: string,
     data: Partial<typeof businessReports.$inferInsert>,
   ) {
-    const [r] = await this.db
-      .update(businessReports)
-      .set(data)
-      .where(eq(businessReports.id, id))
-      .returning();
-    if (!r) throw new NotFoundException('Business Report not found');
-    return r;
+    return this.db.transaction(async (tx) => {
+      const [r] = await tx
+        .update(businessReports)
+        .set(data)
+        .where(eq(businessReports.id, id))
+        .returning();
+      if (!r) throw new NotFoundException('Business Report not found');
+      await emitEvent(tx, {
+        entityType: EntityType.BUSINESS_REPORT,
+        entityId: r.id,
+        eventType: EventType.UPDATED,
+        entityDisplayName: r.name,
+        payload: data,
+      });
+      return r;
+    });
   }
 
   async deleteReport(id: string) {
-    const [r] = await this.db
-      .delete(businessReports)
-      .where(eq(businessReports.id, id))
-      .returning();
-    if (!r) throw new NotFoundException('Business Report not found');
-    return r;
+    return this.db.transaction(async (tx) => {
+      const [r] = await tx
+        .delete(businessReports)
+        .where(eq(businessReports.id, id))
+        .returning();
+      if (!r) throw new NotFoundException('Business Report not found');
+      await emitEvent(tx, {
+        entityType: EntityType.BUSINESS_REPORT,
+        entityId: r.id,
+        eventType: EventType.DELETED,
+        entityDisplayName: r.name,
+        payload: { id },
+      });
+      return r;
+    });
   }
 }

@@ -51,12 +51,15 @@ async function run() {
   const allCustomers = await db.select().from(customers);
   let updatedCustomers = 0;
   for (const c of allCustomers) {
-    const newCountry = mapCountryCode(c.address1Country);
+    const newCountry = mapCountryCode(c.billingAddressCountry);
     const newCurrency = mapCurrencyCode(c.currencyCode);
-    if (newCountry !== c.address1Country || newCurrency !== c.currencyCode) {
+    if (
+      newCountry !== c.billingAddressCountry ||
+      newCurrency !== c.currencyCode
+    ) {
       await db
         .update(customers)
-        .set({ address1Country: newCountry, currencyCode: newCurrency })
+        .set({ billingAddressCountry: newCountry, currencyCode: newCurrency })
         .where(eq(customers.customerId, c.customerId));
       updatedCustomers++;
     }

@@ -59,18 +59,15 @@ export class AccountsWriteService {
     const allowedKeys: (keyof CreateAccountDto)[] = [
       'customerNumber',
       'name',
-      'address1Line1',
-      'address1Line2',
-      'address1City',
-      'address1StateOrProvince',
-      'address1PostalCode',
-      'address1Country',
+      'billingAddressLine1',
+      'billingAddressLine2',
+      'billingAddressCity',
+      'billingAddressStateOrProvince',
+      'billingAddressPostalCode',
+      'billingAddressCountry',
       'telephone1',
       'fax',
       'emailAddress1',
-      'primaryContactName',
-      'primaryContactEmail',
-      'primaryContactPhone',
       'customerGroupId',
       'taxCategoryId',
       'currencyCode',
@@ -106,7 +103,7 @@ export class AccountsWriteService {
         await emitEvent(tx as any, {
           entityType: EntityType.CUSTOMER,
           entityId: customer.customerId,
-          eventType: 'created',
+          eventType: EventType.CREATED,
           entityDisplayName: customer.name,
           payload: dto,
           actor,
@@ -148,18 +145,15 @@ export class AccountsWriteService {
 
     const allowedKeys: (keyof UpdateAccountDto)[] = [
       'name',
-      'address1Line1',
-      'address1Line2',
-      'address1City',
-      'address1StateOrProvince',
-      'address1PostalCode',
-      'address1Country',
+      'billingAddressLine1',
+      'billingAddressLine2',
+      'billingAddressCity',
+      'billingAddressStateOrProvince',
+      'billingAddressPostalCode',
+      'billingAddressCountry',
       'telephone1',
       'fax',
       'emailAddress1',
-      'primaryContactName',
-      'primaryContactEmail',
-      'primaryContactPhone',
       'customerGroupId',
       'stateCode',
       'taxCategoryId',
@@ -202,23 +196,33 @@ export class AccountsWriteService {
         const isStatusOnly =
           changedKeys.length === 1 && changedKeys[0] === 'stateCode';
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await emitEvent(tx as any, {
-          entityType: EntityType.CUSTOMER,
-          entityId: id,
-          eventType: isStatusOnly ? 'status_changed' : 'updated',
-          entityDisplayName: updated.name,
-          payload: isStatusOnly
-            ? {
-                from: audit.previousValues.stateCode,
-                to: audit.changes.stateCode,
-              }
-            : {
-                changes: audit.changes,
-                previousValues: audit.previousValues,
-              },
-          actor,
-        });
+        if (isStatusOnly) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await emitEvent(tx as any, {
+            entityType: EntityType.CUSTOMER,
+            entityId: id,
+            eventType: EventType.STATUS_CHANGED,
+            entityDisplayName: updated.name,
+            payload: {
+              from: audit.previousValues.stateCode,
+              to: audit.changes.stateCode,
+            },
+            actor,
+          });
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await emitEvent(tx as any, {
+            entityType: EntityType.CUSTOMER,
+            entityId: id,
+            eventType: EventType.UPDATED,
+            entityDisplayName: updated.name,
+            payload: {
+              changes: audit.changes,
+              previousValues: audit.previousValues,
+            },
+            actor,
+          });
+        }
       }
 
       return updated;
@@ -325,36 +329,35 @@ export class AccountsWriteService {
       .where(eq(coreAccounts.customerId, customerId))
       .returning();
 
-    let eventType: string = EventType.STATUS_CHANGED;
-    if (newState === CUSTOMER_STATE.ARCHIVED) {
-      eventType = EventType.ARCHIVED;
-    } else if (currentState === CUSTOMER_STATE.ARCHIVED) {
-      eventType = EventType.UNARCHIVED;
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const targetTx = tx || (this.db as any);
+    const eventPayload = { from: currentState, to: newState };
 
-    if (tx) {
-      await emitEvent(tx, {
+    if (newState === CUSTOMER_STATE.ARCHIVED) {
+      await emitEvent(targetTx, {
         entityType: EntityType.CUSTOMER,
         entityId: customerId,
-        eventType: eventType,
+        eventType: EventType.ARCHIVED,
         entityDisplayName: existing[0].name,
-        payload: {
-          from: currentState,
-          to: newState,
-        },
+        payload: eventPayload,
+        actor,
+      });
+    } else if (currentState === CUSTOMER_STATE.ARCHIVED) {
+      await emitEvent(targetTx, {
+        entityType: EntityType.CUSTOMER,
+        entityId: customerId,
+        eventType: EventType.UNARCHIVED,
+        entityDisplayName: existing[0].name,
+        payload: eventPayload,
         actor,
       });
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await emitEvent(this.db as any, {
+      await emitEvent(targetTx, {
         entityType: EntityType.CUSTOMER,
         entityId: customerId,
-        eventType: eventType,
+        eventType: EventType.STATUS_CHANGED,
         entityDisplayName: existing[0].name,
-        payload: {
-          from: currentState,
-          to: newState,
-        },
+        payload: eventPayload,
         actor,
       });
     }

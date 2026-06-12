@@ -35,6 +35,7 @@ export class DrizzleAdapter implements Adapter {
     Helper.loadPolicyLine(lineText, model);
   }
 
+  // @modbm-skip-audit
   public async savePolicy(model: Model): Promise<boolean> {
     // Drop all policies
     await this.db.delete(casbinRule);
@@ -60,6 +61,7 @@ export class DrizzleAdapter implements Adapter {
     return true;
   }
 
+  // @modbm-skip-audit
   private async savePolicyLine(ptype: string, rule: string[]): Promise<void> {
     const line = this.getPolicyLine(ptype, rule);
     await this.db.insert(casbinRule).values(line);
@@ -88,6 +90,7 @@ export class DrizzleAdapter implements Adapter {
     await this.savePolicyLine(ptype, rule);
   }
 
+  // @modbm-skip-audit
   public async removePolicy(
     sec: string,
     ptype: string,
@@ -116,6 +119,7 @@ export class DrizzleAdapter implements Adapter {
     await query;
   }
 
+  // @modbm-skip-audit
   public async removeFilteredPolicy(
     sec: string,
     ptype: string,

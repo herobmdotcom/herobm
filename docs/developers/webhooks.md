@@ -40,8 +40,8 @@ The `entityType` field in the payload envelope indicates the domain object that 
 - **Procurement**: `purchase_order`, `purchase_invoice`, `purchase_return`
 - **Master Data**: `product`, `customer`, `supplier`
 - **Warehouse**: `warehouse` (covers receipts, shipments, picking, and putaway), `transfer_order`
-- **Inventory Ledger**: `inventory_ledger` (via `system` entity)
-- **Financials**: `payment`, `general_ledger` (via `system` entity)
+- **Inventory Ledger**: `inventory_ledger`
+- **Financials**: `payment`, `general_ledger`
 - **System**: `email`
 
 ### Event Types
@@ -62,21 +62,48 @@ The `eventType` is formed by combining the `entityType` and the action (e.g., `s
 
 | Entity Type | Supported Event Actions |
 |-------------|--------------------------|
-| `sales_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted` |
+| `sales_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted`, `auto_status_changed`, `backorders_allocated`, `credit_note_posted`, `demand_allocated`, `demand_reallocated`, `line_added`, `line_removed`, `line_updated`, `post_confirmation_line_added`, `quote_generated`, `return_created`, `return_line_added`, `return_line_removed`, `return_line_updated`, `return_updated`, `sales_invoiced`, `tax_calculated`, `updated` |
 | `sales_invoice` | `created`, `status_changed`, `deleted` |
 | `sales_return` | `created`, `status_changed`, `processed` |
-| `purchase_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted` |
-| `purchase_invoice` | `created`, `status_changed`, `deleted` |
+| `purchase_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted`, `demand_allocated`, `demand_unallocated`, `invoice_matched`, `invoice_unmatched`, `line_added`, `line_removed`, `line_updated`, `return_created`, `updated` |
+| `purchase_invoice` | `created`, `status_changed`, `deleted`, `order_linked`, `order_unlinked`, `updated` |
 | `purchase_return` | `created`, `status_changed`, `processed` |
 | `warehouse` | `receipt_created`, `receipt_status_changed`, `shipment_created`, `shipment_status_changed`, `shipment_dispatched`, `pick_created`, `pick_cancelled`, `putaway_completed`, `stock_moved` |
-| `transfer_order` | `created`, `status_changed`, `deleted` |
+| `transfer_order` | `created`, `status_changed`, `deleted`, `line_removed`, `stock_dispatched`, `updated` |
 | `inventory_ledger` | `entry_posted` |
-| `product` | `created`, `updated`, `deleted`, `archived`, `unarchived` |
-| `customer` | `created`, `updated`, `archived`, `unarchived` |
-| `supplier` | `created`, `updated`, `archived`, `unarchived` |
-| `payment` | `submitted`, `allocated`, `cancelled` |
+| `product` | `created`, `updated`, `deleted`, `archived`, `unarchived`, `status_changed`, `uom_added`, `uom_removed` |
+| `product_group` | `created`, `updated`, `deleted` |
+| `customer` | `created`, `updated`, `archived`, `unarchived`, `status_changed` |
+| `customer_group` | `created`, `updated`, `deleted` |
+| `supplier` | `created`, `updated`, `archived`, `unarchived`, `added_expiry`, `deleted_expiry`, `status_changed`, `updated_expiry` |
+| `supplier_group` | `created`, `updated`, `deleted` |
+| `payment` | `submitted`, `allocated`, `cancelled`, `payment_allocated`, `status_changed`, `created`, `updated` |
 | `general_ledger` | `entry_posted` |
+| `gl_reconciliation` | `created`, `updated`, `deleted` |
+| `gl_match_group` | `created`, `deleted` |
+| `bank_statement_line` | `created`, `updated`, `deleted` |
+| `reconciliation_rule` | `created`, `updated`, `deleted` |
+| `location` | `created`, `updated`, `deleted` |
+| `tax_category` | `created`, `updated`, `deleted` |
+| `exchange_rate` | `created`, `updated`, `deleted` |
+| `cost_center` | `created`, `updated`, `deleted` |
+| `activity` | `created`, `updated`, `deleted` |
+| `user` | `created`, `updated`, `deleted`, `status_changed` |
+| `webhook` | `created`, `updated`, `deleted` |
+| `app_settings` | `updated` |
+| `gl_settings` | `updated` |
 | `email` | `queued`, `sent`, `failed` |
+| `api_key` | `created`, `deleted` |
+| `bin` | `created`, `deleted`, `updated` |
+| `gl_account` | `created`, `updated` |
+| `product_supplier` | `linked`, `unlinked` |
+| `shipment` | `shipment_created`, `shipment_line_added`, `shipment_line_removed`, `shipment_line_updated`, `shipment_updated` |
+| `system` | `receipt_matched`, `receipt_unmatched`, `updated` |
+| `zone` | `created`, `deleted`, `updated` |
+| `business_report` | `created`, `deleted`, `updated` |
+| `csv_mapping_profile` | `created`, `deleted`, `updated` |
+| `integration` | `updated` |
+| `macro` | `created`, `deleted`, `updated` |
 
 ### State Changes Reference
 

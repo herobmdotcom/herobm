@@ -103,7 +103,7 @@ describe('PickingService', () => {
       name: 'Acme Corp',
       currencyCode: 'AUD',
       stateCode: CUSTOMER_STATE.ACTIVE,
-      address1Country: 'AU',
+      billingAddressCountry: 'AU',
       source: 'app',
     });
     await pg.db.insert(products).values({

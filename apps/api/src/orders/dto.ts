@@ -124,6 +124,42 @@ export class CreateOrderDto {
   @IsString() // We can use @IsUUID() but string is safer for compatibility/stubs
   fulfillmentLocationId?: string;
 
+  @IsOptional()
+  @IsString()
+  shippingNotes?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryName?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryAddressLine1?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryAddressLine2?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryCity?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryState?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryPostalCode?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryCountry?: string;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateOrderLineDto)
@@ -146,6 +182,42 @@ export class UpdateOrderDto {
   @IsOptional()
   @IsString()
   fulfillmentLocationId?: string;
+
+  @IsOptional()
+  @IsString()
+  shippingNotes?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryName?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryAddressLine1?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryAddressLine2?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryCity?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryState?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryPostalCode?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryCountry?: string;
 }
 
 // ── Return DTOs ──
@@ -427,6 +499,15 @@ export class ShipmentResponseDto {
   carrierId?: string;
   notes?: string;
   createdOn?: Date;
+  deliveryName?: string;
+  deliveryPhone?: string;
+  deliveryAddressLine1?: string;
+  deliveryAddressLine2?: string;
+  deliveryCity?: string;
+  deliveryState?: string;
+  deliveryPostalCode?: string;
+  deliveryCountry?: string;
+  shippingNotes?: string;
   @ApiProperty({
     type: () => ShipmentLineResponseDto,
     isArray: true,

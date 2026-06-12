@@ -227,7 +227,7 @@ export class ShipmentService {
         await emitEvent(innerTx, {
           entityType: EntityType.SHIPMENT,
           entityId: shipment.shipmentId,
-          eventType: 'shipment_created',
+          eventType: EventType.SHIPMENT_CREATED,
           entityDisplayName: shipmentNumber,
           payload: {
             shipmentId: shipment.shipmentId,
@@ -279,7 +279,7 @@ export class ShipmentService {
         await emitEvent(innerTx, {
           entityType: EntityType.SHIPMENT,
           entityId: shipmentId,
-          eventType: 'shipment_updated',
+          eventType: EventType.SHIPMENT_UPDATED,
           entityDisplayName: shipment.shipmentNumber,
           payload: {
             shipmentId,
@@ -334,12 +334,10 @@ export class ShipmentService {
           .where(eq(salesOrderShipments.shipmentId, shipmentId))
           .returning();
 
-        const eventType = EventType.STATUS_CHANGED;
-
         await emitEvent(innerTx, {
           entityType: EntityType.SHIPMENT,
           entityId: shipmentId,
-          eventType,
+          eventType: EventType.STATUS_CHANGED,
           entityDisplayName: shipment.shipmentNumber,
           payload: {
             entity: 'shipment',
@@ -718,7 +716,7 @@ export class ShipmentService {
         await emitEvent(innerTx, {
           entityType: EntityType.SHIPMENT,
           entityId: shipmentId,
-          eventType: 'shipment_line_added',
+          eventType: EventType.SHIPMENT_LINE_ADDED,
           entityDisplayName: shipment.shipmentNumber,
           payload: {
             shipmentId,
@@ -796,7 +794,7 @@ export class ShipmentService {
         await emitEvent(innerTx, {
           entityType: EntityType.SHIPMENT,
           entityId: shipmentId,
-          eventType: 'shipment_line_updated',
+          eventType: EventType.SHIPMENT_LINE_UPDATED,
           entityDisplayName: shipment.shipmentNumber,
           payload: {
             shipmentId,
@@ -845,7 +843,7 @@ export class ShipmentService {
       await emitEvent(innerTx, {
         entityType: EntityType.SHIPMENT,
         entityId: shipmentId,
-        eventType: 'shipment_line_removed',
+        eventType: EventType.SHIPMENT_LINE_REMOVED,
         entityDisplayName: shipment.shipmentNumber,
         payload: {
           shipmentId,
@@ -877,6 +875,15 @@ export class ShipmentService {
         createdBy: salesOrderShipments.createdBy,
         createdOn: salesOrderShipments.createdOn,
         modifiedOn: salesOrderShipments.modifiedOn,
+        deliveryName: salesOrders.deliveryName,
+        deliveryPhone: salesOrders.deliveryPhone,
+        deliveryAddressLine1: salesOrders.deliveryAddressLine1,
+        deliveryAddressLine2: salesOrders.deliveryAddressLine2,
+        deliveryCity: salesOrders.deliveryCity,
+        deliveryState: salesOrders.deliveryState,
+        deliveryPostalCode: salesOrders.deliveryPostalCode,
+        deliveryCountry: salesOrders.deliveryCountry,
+        shippingNotes: salesOrders.shippingNotes,
       })
       .from(salesOrderShipments)
       .innerJoin(

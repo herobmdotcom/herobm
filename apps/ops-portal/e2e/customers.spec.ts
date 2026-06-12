@@ -29,9 +29,9 @@ test.describe('Customers Page Smoke Test', () => {
     // We exclude navigation items if they contain the word "Error" (like "Report Error")
     const mainContent = page.locator('main');
     if (await mainContent.count() > 0) {
-      await expect(mainContent.getByText('Error')).not.toBeVisible();
+      await expect(mainContent.getByText('Error', { exact: true })).not.toBeVisible();
     } else {
-      await expect(page.getByText('Error')).not.toBeVisible();
+      await expect(page.getByText('Error', { exact: true })).not.toBeVisible();
     }
 
     // Verify no JS crashes

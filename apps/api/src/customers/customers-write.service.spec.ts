@@ -45,7 +45,7 @@ describe('AccountsWriteService', () => {
           customerNumber: 'TEST001',
           name: 'Test',
           currencyCode: 'EUR',
-          address1Country: 'AU',
+          billingAddressCountry: 'AU',
         },
         'actor',
       );
@@ -64,7 +64,7 @@ describe('AccountsWriteService', () => {
         customerNumber: 'TEST001',
         name: 'Existing',
         currencyCode: 'EUR',
-        address1Country: 'AU',
+        billingAddressCountry: 'AU',
       });
 
       await expect(
@@ -73,7 +73,7 @@ describe('AccountsWriteService', () => {
             customerNumber: 'TEST001',
             name: 'Test',
             currencyCode: 'EUR',
-            address1Country: 'AU',
+            billingAddressCountry: 'AU',
           },
           'actor',
         ),
@@ -85,7 +85,7 @@ describe('AccountsWriteService', () => {
         customerNumber: 'UNQ-001',
         name: 'First',
         currencyCode: 'EUR',
-        address1Country: 'AU',
+        billingAddressCountry: 'AU',
       });
 
       // Directly call DB to bypass service's manual existence check
@@ -94,7 +94,7 @@ describe('AccountsWriteService', () => {
           customerNumber: 'UNQ-001',
           name: 'Duplicate',
           currencyCode: 'EUR',
-          address1Country: 'AU',
+          billingAddressCountry: 'AU',
         });
         fail('Should have thrown unique violation');
       } catch (e: unknown) {
@@ -109,7 +109,7 @@ describe('AccountsWriteService', () => {
         customerNumber: 'CONFLICT-001',
         name: 'First',
         currencyCode: 'EUR',
-        address1Country: 'AU',
+        billingAddressCountry: 'AU',
       });
 
       // Bypass manual check by mocking the select? No, just rely on race condition potential.
@@ -134,7 +134,7 @@ describe('AccountsWriteService', () => {
             customerNumber: 'CONFLICT-001',
             name: 'Duplicate',
             currencyCode: 'EUR',
-            address1Country: 'AU',
+            billingAddressCountry: 'AU',
           },
           'actor',
         ),
@@ -150,7 +150,7 @@ describe('AccountsWriteService', () => {
           customerNumber: 'TEST001',
           name: 'Old',
           currencyCode: 'EUR',
-          address1Country: 'AU',
+          billingAddressCountry: 'AU',
         })
         .returning();
 

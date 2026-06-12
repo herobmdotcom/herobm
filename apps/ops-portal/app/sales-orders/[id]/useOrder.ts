@@ -74,6 +74,19 @@ export function useOrder(id: string) {
     const [headerDirty, setHeaderDirty] = useState(false);
     const [discrepanciesAcknowledged, setDiscrepanciesAcknowledged] = useState(false);
 
+    /* ── Delivery Addresses & Shipping Notes ─────────────────────── */
+    const [customerDeliveryAddresses, setCustomerDeliveryAddresses] = useState<api.DeliveryAddressResponseDto[]>([]);
+    const [customerCountry, setCustomerCountry] = useState<string | undefined>(undefined);
+    const [editShippingNotes, setEditShippingNotes] = useState('');
+    const [editDeliveryName, setEditDeliveryName] = useState('');
+    const [editDeliveryPhone, setEditDeliveryPhone] = useState('');
+    const [editDeliveryAddressLine1, setEditDeliveryAddressLine1] = useState('');
+    const [editDeliveryAddressLine2, setEditDeliveryAddressLine2] = useState('');
+    const [editDeliveryCity, setEditDeliveryCity] = useState('');
+    const [editDeliveryState, setEditDeliveryState] = useState('');
+    const [editDeliveryPostalCode, setEditDeliveryPostalCode] = useState('');
+    const [editDeliveryCountry, setEditDeliveryCountry] = useState('');
+
     /* ── GST categories ──────────────────────────────────────────── */
     const [taxCategories, setTaxCategories] = useState<TaxCategory[]>([]);
 
@@ -117,9 +130,32 @@ export function useOrder(id: string) {
             setEditPO(orderData?.customerOrderNumber || '');
             setEditNotes(orderData?.notes || '');
             setEditFulfillmentLocationId(orderData?.fulfillmentLocationId || '');
+            setEditShippingNotes(orderData?.shippingNotes || '');
+            setEditDeliveryName(orderData?.deliveryName || '');
+            setEditDeliveryPhone(orderData?.deliveryPhone || '');
+            setEditDeliveryAddressLine1(orderData?.deliveryAddressLine1 || '');
+            setEditDeliveryAddressLine2(orderData?.deliveryAddressLine2 || '');
+            setEditDeliveryCity(orderData?.deliveryCity || '');
+            setEditDeliveryState(orderData?.deliveryState || '');
+            setEditDeliveryPostalCode(orderData?.deliveryPostalCode || '');
+            setEditDeliveryCountry(orderData?.deliveryCountry || '');
             setDiscrepanciesAcknowledged(orderData?.discrepanciesAcknowledged || false);
             setPickingSummary(pData?.data);
             setHeaderDirty(false);
+
+            if (orderData?.customerId) {
+                api.accountsControllerFindOne(orderData.customerId)
+                    .then((res: unknown) => {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const customer = (res as any).data;
+                        setCustomerDeliveryAddresses(customer.deliveryAddresses || []);
+                        setCustomerCountry(customer.billingAddressCountry || undefined);
+                    })
+                    .catch(() => {
+                        setCustomerDeliveryAddresses([]);
+                        setCustomerCountry(undefined);
+                    });
+            }
 
             if (autoTransitions && autoTransitions.length > 0) {
                 const tr = autoTransitions[0];
@@ -200,21 +236,47 @@ export function useOrder(id: string) {
             editName !== (order.name || '') ||
             editPO !== (order.customerOrderNumber || '') ||
             editNotes !== (order.notes || '') ||
-            editFulfillmentLocationId !== (order.fulfillmentLocationId || '');
+            editFulfillmentLocationId !== (order.fulfillmentLocationId || '') ||
+            editShippingNotes !== (order.shippingNotes || '') ||
+            editDeliveryName !== (order.deliveryName || '') ||
+            editDeliveryPhone !== (order.deliveryPhone || '') ||
+            editDeliveryAddressLine1 !== (order.deliveryAddressLine1 || '') ||
+            editDeliveryAddressLine2 !== (order.deliveryAddressLine2 || '') ||
+            editDeliveryCity !== (order.deliveryCity || '') ||
+            editDeliveryState !== (order.deliveryState || '') ||
+            editDeliveryPostalCode !== (order.deliveryPostalCode || '') ||
+            editDeliveryCountry !== (order.deliveryCountry || '');
         setHeaderDirty(changed);
-    }, [editName, editPO, editNotes, editFulfillmentLocationId, order]);
+    }, [
+        editName, editPO, editNotes, editFulfillmentLocationId,
+        editShippingNotes, editDeliveryName, editDeliveryPhone,
+        editDeliveryAddressLine1, editDeliveryAddressLine2,
+        editDeliveryCity, editDeliveryState, editDeliveryPostalCode, editDeliveryCountry,
+        order
+    ]);
 
     /* ── Mutations ───────────────────────────────────────────────── */
 
-    const saveHeader = async () => {
-        if (!headerDirty) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const saveHeader = async (overrides?: any) => {
+        if (!headerDirty && !overrides) return;
         setSaving(true);
         try {
             await api.ordersControllerUpdate(id, {
-                name: editName || undefined,
-                customerOrderNumber: editPO || undefined,
-                notes: editNotes || undefined,
-                fulfillmentLocationId: editFulfillmentLocationId || undefined,
+                name: editName ?? undefined,
+                customerOrderNumber: editPO ?? undefined,
+                notes: editNotes ?? undefined,
+                fulfillmentLocationId: editFulfillmentLocationId || undefined, // keep || for UUID to prevent "" errors
+                shippingNotes: editShippingNotes ?? undefined,
+                deliveryName: editDeliveryName ?? undefined,
+                deliveryPhone: editDeliveryPhone ?? undefined,
+                deliveryAddressLine1: editDeliveryAddressLine1 ?? undefined,
+                deliveryAddressLine2: editDeliveryAddressLine2 ?? undefined,
+                deliveryCity: editDeliveryCity ?? undefined,
+                deliveryState: editDeliveryState ?? undefined,
+                deliveryPostalCode: editDeliveryPostalCode ?? undefined,
+                deliveryCountry: editDeliveryCountry ?? undefined,
+                ...(overrides || {})
             });
             await loadOrder(undefined, false);
         } catch (err) {
@@ -484,6 +546,17 @@ export function useOrder(id: string) {
         updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
         loadOrder, loadReturns, loadInvoices,
         editFulfillmentLocationId, setEditFulfillmentLocationId,
+        customerDeliveryAddresses,
+        customerCountry,
+        editShippingNotes, setEditShippingNotes,
+        editDeliveryName, setEditDeliveryName,
+        editDeliveryPhone, setEditDeliveryPhone,
+        editDeliveryAddressLine1, setEditDeliveryAddressLine1,
+        editDeliveryAddressLine2, setEditDeliveryAddressLine2,
+        editDeliveryCity, setEditDeliveryCity,
+        editDeliveryState, setEditDeliveryState,
+        editDeliveryPostalCode, setEditDeliveryPostalCode,
+        editDeliveryCountry, setEditDeliveryCountry,
         discrepanciesAcknowledged, setDiscrepanciesAcknowledged
     };
 }

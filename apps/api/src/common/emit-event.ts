@@ -12,6 +12,9 @@ import {
   financialEvents,
   inventoryEvents,
   systemEvents,
+  userEvents,
+  reconciliationEvents,
+  groupEvents,
   outbox,
   salesOrders,
   purchaseOrders,
@@ -22,8 +25,11 @@ import {
   transferOrders,
   paymentEntries,
   inventoryEntries,
+  emailEvents,
+  businessReportEvents,
+  integrationEvents,
 } from '../drizzle/modbm-core-schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 // ---------------------------------------------------------------------------
 // Routing table: entityType → table
@@ -32,8 +38,10 @@ import { eq } from 'drizzle-orm';
 const EVENT_TABLE_MAP: Record<string, unknown> = {
   [EntityType.SALES_ORDER]: salesEvents,
   [EntityType.SALES_INVOICE]: salesEvents,
+  [EntityType.SALES_RETURN]: salesEvents,
   [EntityType.PURCHASE_ORDER]: procurementEvents,
   [EntityType.PURCHASE_INVOICE]: procurementEvents,
+  [EntityType.PURCHASE_RETURN]: procurementEvents,
   [EntityType.PRODUCT]: masterDataEvents,
   [EntityType.CUSTOMER]: masterDataEvents,
   [EntityType.SUPPLIER]: masterDataEvents,
@@ -44,6 +52,37 @@ const EVENT_TABLE_MAP: Record<string, unknown> = {
   [EntityType.PAYMENT]: financialEvents,
   [EntityType.SYSTEM]: systemEvents, // or financialEvents if GL_POSTED, see domain mapping
   [EntityType.INVENTORY_LEDGER]: inventoryEvents,
+  [EntityType.EMAIL]: emailEvents,
+  [EntityType.BUSINESS_REPORT]: businessReportEvents,
+  [EntityType.INTEGRATION]: integrationEvents,
+
+  // Configuration / Auxiliary Mappings
+  [EntityType.USER]: userEvents,
+  [EntityType.API_KEY]: systemEvents,
+  [EntityType.WEBHOOK]: systemEvents,
+  [EntityType.APP_SETTINGS]: systemEvents,
+  [EntityType.GL_SETTINGS]: systemEvents,
+  [EntityType.MACRO]: systemEvents,
+
+  [EntityType.RECONCILIATION_RULE]: reconciliationEvents,
+  [EntityType.BANK_STATEMENT_LINE]: reconciliationEvents,
+  [EntityType.GL_MATCH_GROUP]: reconciliationEvents,
+  [EntityType.GL_RECONCILIATION]: reconciliationEvents,
+  [EntityType.CSV_MAPPING_PROFILE]: financialEvents,
+
+  [EntityType.PRODUCT_GROUP]: groupEvents,
+  [EntityType.CUSTOMER_GROUP]: groupEvents,
+  [EntityType.SUPPLIER_GROUP]: groupEvents,
+
+  [EntityType.TAX_CATEGORY]: financialEvents,
+  [EntityType.EXCHANGE_RATE]: financialEvents,
+  [EntityType.COST_CENTER]: financialEvents,
+  [EntityType.ACTIVITY]: financialEvents,
+  [EntityType.GL_ACCOUNT]: financialEvents,
+
+  [EntityType.LOCATION]: warehouseEvents,
+  [EntityType.ZONE]: warehouseEvents,
+  [EntityType.BIN]: warehouseEvents,
 };
 
 // ---------------------------------------------------------------------------
@@ -113,6 +152,7 @@ export async function emitEvent(
     entityDisplayName: params.entityDisplayName,
     payload: params.payload,
     actor: params.actor,
+    createdOn: sql`clock_timestamp()`,
   });
 
   // 2. Conditionally enqueue for integration relay

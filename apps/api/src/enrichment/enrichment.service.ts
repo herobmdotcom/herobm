@@ -10,6 +10,8 @@ import { integrations } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
 import { EncryptionService } from '../common/encryption.service';
 import { AppConfigService } from '../settings/app-config.service';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class EnrichmentService {
@@ -70,24 +72,40 @@ export class EnrichmentService {
 
     const encryptedConfig = this.encryptionService.encryptConfig(config);
 
-    const [existing] = await this.db
-      .select()
-      .from(integrations)
-      .where(eq(integrations.provider, providerName))
-      .limit(1);
+    await this.db.transaction(async (tx) => {
+      let intgId: string;
+      const [existing] = await tx
+        .select()
+        .from(integrations)
+        .where(eq(integrations.provider, providerName))
+        .limit(1);
 
-    if (existing) {
-      await this.db
-        .update(integrations)
-        .set({ config: encryptedConfig })
-        .where(eq(integrations.provider, providerName));
-    } else {
-      await this.db.insert(integrations).values({
-        provider: providerName,
-        config: encryptedConfig,
-        isActive: true,
+      if (existing) {
+        intgId = existing.integrationId;
+        await tx
+          .update(integrations)
+          .set({ config: encryptedConfig })
+          .where(eq(integrations.provider, providerName));
+      } else {
+        const [inserted] = await tx
+          .insert(integrations)
+          .values({
+            provider: providerName,
+            config: encryptedConfig,
+            isActive: true,
+          })
+          .returning({ integrationId: integrations.integrationId });
+        intgId = inserted.integrationId;
+      }
+
+      await emitEvent(tx, {
+        entityType: EntityType.INTEGRATION,
+        entityId: intgId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: providerName,
+        payload: { providerName },
       });
-    }
+    });
 
     return this.getConfig(providerName);
   }

@@ -242,6 +242,7 @@ export class BackordersService {
           vendorId: purchaseOrders.vendorId,
           deliveryLocationId: purchaseOrders.deliveryLocationId,
           pricePerUnit: purchaseOrderLineItems.pricePerUnit,
+          orderNumber: purchaseOrders.orderNumber,
         })
         .from(purchaseOrderLineItems)
         .innerJoin(
@@ -340,6 +341,30 @@ export class BackordersService {
               },
             );
           }
+
+          // Emit DEMAND_ALLOCATED on both sides!
+          await emitEvent(tx, {
+            entityType: EntityType.SALES_ORDER,
+            entityId: demand.salesOrderId,
+            eventType: EventType.DEMAND_ALLOCATED,
+            entityDisplayName: demand.orderNumber,
+            actor,
+            payload: {
+              allocatedQty: allocQty,
+              purchaseOrderId: line.purchaseOrderId,
+            },
+          });
+          await emitEvent(tx, {
+            entityType: EntityType.PURCHASE_ORDER,
+            entityId: line.purchaseOrderId,
+            eventType: EventType.DEMAND_ALLOCATED,
+            entityDisplayName: line.orderNumber,
+            actor,
+            payload: {
+              allocatedQty: allocQty,
+              salesOrderId: demand.salesOrderId,
+            },
+          });
         }
 
         if (remainingQty > 0) {

@@ -6,6 +6,7 @@ import { reportError } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
+import { ExecuteEltDtoSource } from '@modbm/sdk';
 import { CURRENCIES, getCurrencyByAbmCode } from '@/lib/currency';
 import { getErrorMessage } from '@modbm/shared';
 
@@ -129,7 +130,7 @@ export default function OdooImportPage() {
           password: config.password,
           port: parseInt(config.port, 10)
         },
-        source: 'odoo',
+        source: ExecuteEltDtoSource.odoo,
         resumeExtraction: config.resumeExtraction,
         defaultLocationCode: config.defaultLocationCode,
         baseCurrency: config.baseCurrency,

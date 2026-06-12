@@ -19,6 +19,8 @@ import {
   appSettings,
 } from '../drizzle/modbm-core-schema';
 import { CreateLocationDto, CreateZoneDto, CreateBinDto } from './dto';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class LocationsService {
@@ -40,26 +42,51 @@ export class LocationsService {
       const [settings] = await tx.select().from(appSettings).limit(1);
       if (settings && !settings.defaultFulfillmentLocationId) {
         await tx
-          .update(appSettings)
+          .update(appSettings) // @modbm-skip-audit
           .set({ defaultFulfillmentLocationId: row.locationId })
           .where(eq(appSettings.settingsId, settings.settingsId));
       }
+
+      await emitEvent(tx, {
+        entityType: EntityType.LOCATION,
+        entityId: row.locationId,
+        eventType: EventType.CREATED,
+        entityDisplayName: row.name,
+        payload: dto,
+        actor: userId,
+      });
 
       return row;
     });
   }
 
-  async updateLocation(id: string, dto: Partial<CreateLocationDto>) {
-    const [row] = await this.db
-      .update(locations)
-      .set({ ...dto, modifiedOn: new Date() })
-      .where(eq(locations.locationId, id))
-      .returning();
-    if (!row) throw new NotFoundException(`Location ${id} not found`);
-    return row;
+  async updateLocation(
+    id: string,
+    dto: Partial<CreateLocationDto>,
+    userId?: string,
+  ) {
+    return await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(locations)
+        .set({ ...dto, modifiedOn: new Date() })
+        .where(eq(locations.locationId, id))
+        .returning();
+      if (!row) throw new NotFoundException(`Location ${id} not found`);
+
+      await emitEvent(tx, {
+        entityType: EntityType.LOCATION,
+        entityId: row.locationId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: row.name,
+        payload: dto,
+        actor: userId,
+      });
+
+      return row;
+    });
   }
 
-  async deleteLocation(id: string) {
+  async deleteLocation(id: string, userId?: string) {
     return await this.db.transaction(async (tx) => {
       // 1. Check for orders
       const [soCount] = await tx
@@ -163,6 +190,16 @@ export class LocationsService {
         .returning();
 
       if (!row) throw new NotFoundException(`Location ${id} not found`);
+
+      await emitEvent(tx, {
+        entityType: EntityType.LOCATION,
+        entityId: row.locationId,
+        eventType: EventType.DELETED,
+        entityDisplayName: row.name,
+        payload: {},
+        actor: userId,
+      });
+
       return { success: true };
     });
   }
@@ -170,28 +207,52 @@ export class LocationsService {
   // ── Zones ─────────────────────────────────────────────────────────────────
 
   async createZone(dto: CreateZoneDto, userId?: string) {
-    const [row] = await this.db
-      .insert(zones)
-      .values({
-        ...dto,
-        source: 'app',
-        createdBy: userId,
-      })
-      .returning();
-    return row;
+    return await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(zones)
+        .values({
+          ...dto,
+          source: 'app',
+          createdBy: userId,
+        })
+        .returning();
+
+      await emitEvent(tx, {
+        entityType: EntityType.ZONE,
+        entityId: row.zoneId,
+        eventType: EventType.CREATED,
+        entityDisplayName: row.code,
+        payload: dto,
+        actor: userId,
+      });
+
+      return row;
+    });
   }
 
-  async updateZone(id: string, dto: Partial<CreateZoneDto>) {
-    const [row] = await this.db
-      .update(zones)
-      .set({ ...dto, modifiedOn: new Date() })
-      .where(eq(zones.zoneId, id))
-      .returning();
-    if (!row) throw new NotFoundException(`Zone ${id} not found`);
-    return row;
+  async updateZone(id: string, dto: Partial<CreateZoneDto>, userId?: string) {
+    return await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(zones)
+        .set({ ...dto, modifiedOn: new Date() })
+        .where(eq(zones.zoneId, id))
+        .returning();
+      if (!row) throw new NotFoundException(`Zone ${id} not found`);
+
+      await emitEvent(tx, {
+        entityType: EntityType.ZONE,
+        entityId: row.zoneId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: row.code,
+        payload: dto,
+        actor: userId,
+      });
+
+      return row;
+    });
   }
 
-  async deleteZone(id: string) {
+  async deleteZone(id: string, userId?: string) {
     return await this.db.transaction(async (tx) => {
       const [zone] = await tx.select().from(zones).where(eq(zones.zoneId, id));
       if (!zone) throw new NotFoundException(`Zone ${id} not found`);
@@ -230,6 +291,16 @@ export class LocationsService {
         .where(eq(zones.zoneId, id))
         .returning();
       if (!row) throw new NotFoundException(`Zone ${id} not found`);
+
+      await emitEvent(tx, {
+        entityType: EntityType.ZONE,
+        entityId: row.zoneId,
+        eventType: EventType.DELETED,
+        entityDisplayName: row.code,
+        payload: {},
+        actor: userId,
+      });
+
       return { success: true };
     });
   }
@@ -237,48 +308,81 @@ export class LocationsService {
   // ── Bins ──────────────────────────────────────────────────────────────────
 
   async createBin(dto: CreateBinDto, userId?: string) {
-    const [row] = await this.db
-      .insert(bins)
-      .values({
-        ...dto,
-        source: 'app',
-        createdBy: userId,
-      })
-      .returning();
-    return row;
+    return await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(bins)
+        .values({
+          ...dto,
+          source: 'app',
+          createdBy: userId,
+        })
+        .returning();
+
+      await emitEvent(tx, {
+        entityType: EntityType.BIN,
+        entityId: row.binId,
+        eventType: EventType.CREATED,
+        entityDisplayName: row.binNumber,
+        payload: dto,
+        actor: userId,
+      });
+
+      return row;
+    });
   }
 
-  async updateBin(id: string, dto: Partial<CreateBinDto>) {
-    const [row] = await this.db
-      .update(bins)
-      .set({ ...dto, modifiedOn: new Date() })
-      .where(eq(bins.binId, id))
-      .returning();
-    if (!row) throw new NotFoundException(`Bin ${id} not found`);
-    return row;
+  async updateBin(id: string, dto: Partial<CreateBinDto>, userId?: string) {
+    return await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(bins)
+        .set({ ...dto, modifiedOn: new Date() })
+        .where(eq(bins.binId, id))
+        .returning();
+      if (!row) throw new NotFoundException(`Bin ${id} not found`);
+
+      await emitEvent(tx, {
+        entityType: EntityType.BIN,
+        entityId: row.binId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: row.binNumber,
+        payload: dto,
+        actor: userId,
+      });
+
+      return row;
+    });
   }
 
-  async deleteBin(id: string) {
-    const [bin] = await this.db.select().from(bins).where(eq(bins.binId, id));
-    if (!bin) throw new NotFoundException(`Bin ${id} not found`);
+  async deleteBin(id: string, userId?: string) {
+    return await this.db.transaction(async (tx) => {
+      const [bin] = await tx.select().from(bins).where(eq(bins.binId, id));
+      if (!bin) throw new NotFoundException(`Bin ${id} not found`);
 
-    // 1. Check for stock (bin_contents)
-    const stockCount = await this.db
-      .select({ count: sql`count(*)` })
-      .from(binContents)
-      .where(and(eq(binContents.binId, id), sql`actual_quantity > 0`));
+      // 1. Check for stock (bin_contents)
+      const stockCount = await tx
+        .select({ count: sql`count(*)` })
+        .from(binContents)
+        .where(and(eq(binContents.binId, id), sql`actual_quantity > 0`));
 
-    if (Number(stockCount[0].count) > 0) {
-      throw new BadRequestException(
-        `Cannot delete bin containing ${Number(stockCount[0].count)} active stock records`,
-      );
-    }
+      if (Number(stockCount[0].count) > 0) {
+        throw new BadRequestException(
+          `Cannot delete bin containing ${Number(stockCount[0].count)} active stock records`,
+        );
+      }
 
-    const [row] = await this.db
-      .delete(bins)
-      .where(eq(bins.binId, id))
-      .returning();
-    if (!row) throw new NotFoundException(`Bin ${id} not found`);
-    return { success: true };
+      const [row] = await tx.delete(bins).where(eq(bins.binId, id)).returning();
+      if (!row) throw new NotFoundException(`Bin ${id} not found`);
+
+      await emitEvent(tx, {
+        entityType: EntityType.BIN,
+        entityId: row.binId,
+        eventType: EventType.DELETED,
+        entityDisplayName: row.binNumber,
+        payload: {},
+        actor: userId,
+      });
+
+      return { success: true };
+    });
   }
 }

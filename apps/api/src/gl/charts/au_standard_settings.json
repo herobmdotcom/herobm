@@ -7,7 +7,10 @@
     "revenue_account_code": "4100",
     "cogs_account_code": "5100",
     "tax_account_code": "2200",
-    "expense_account_code": "6900"
+    "expense_account_code": "6900",
+    "inventory_account_code": "1300",
+    "grni_account_code": "2150",
+    "shrinkage_account_code": "5300"
   },
   "gst_categories": [
     { "code": "GST", "title": "GST 10%", "type": "gst_applies", "rate": 10, "is_default": true },

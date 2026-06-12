@@ -21,6 +21,7 @@ import {
   purchaseInvoices,
   purchaseInvoiceLines,
   taxCategories,
+  supplierExpiries,
 } from '../drizzle/modbm-core-schema';
 import { eq, or, ilike, desc, sql, inArray, and, asc } from 'drizzle-orm';
 import { getErrorMessage } from '@modbm/shared';
@@ -163,6 +164,24 @@ export class PurchaseOrdersService {
 
       if (!loc) {
         throw new BadRequestException('Invalid delivery location ID.');
+      }
+
+      // Option B: Just in time lookup against supplierExpiries
+      const expiredDocs = await tx
+        .select({ id: supplierExpiries.expiryId })
+        .from(supplierExpiries)
+        .where(
+          and(
+            eq(supplierExpiries.vendorId, createDto.vendorId),
+            sql`${supplierExpiries.expiryDate} < CURRENT_DATE`,
+          ),
+        )
+        .limit(1);
+
+      if (expiredDocs.length > 0) {
+        throw new BadRequestException(
+          'Supplier has expired compliance documentation. Cannot create purchase order.',
+        );
       }
 
       // Create PO
@@ -575,6 +594,24 @@ export class PurchaseOrdersService {
           'Cannot order: Supplier or Supplier Group is blocked for purchasing.',
         );
       }
+
+      // JIT Compliance Block for Issuance
+      const expiredDocs = await db
+        .select({ id: supplierExpiries.expiryId })
+        .from(supplierExpiries)
+        .where(
+          and(
+            eq(supplierExpiries.vendorId, existing.vendorId),
+            sql`${supplierExpiries.expiryDate} < CURRENT_DATE`,
+          ),
+        )
+        .limit(1);
+
+      if (expiredDocs.length > 0) {
+        throw new BadRequestException(
+          'Supplier has expired compliance documentation. Cannot issue purchase order.',
+        );
+      }
     }
 
     if (stateCode === PURCHASE_ORDER_STATE.CANCELLED) {
@@ -643,7 +680,7 @@ export class PurchaseOrdersService {
         stateCode === PURCHASE_ORDER_STATE.CLOSED_SHORT
       ) {
         const affected = await tx
-          .select({ id: backorders.backorderId })
+          .select({ id: backorders.backorderId, soId: backorders.salesOrderId })
           .from(backorders)
           .where(eq(backorders.purchaseOrderId, id));
         for (const b of affected) {
@@ -653,6 +690,15 @@ export class PurchaseOrdersService {
             actor,
             tx,
           );
+
+          await emitEvent(tx, {
+            entityType: EntityType.SALES_ORDER,
+            entityId: b.soId,
+            eventType: EventType.DEMAND_UNALLOCATED,
+            entityDisplayName: `Sales Order`,
+            payload: { backorderId: b.id },
+            actor,
+          });
         }
 
         await tx
@@ -1214,28 +1260,45 @@ export class PurchaseOrdersService {
       .where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId))
       .returning();
 
-    let eventType: string = EventType.STATUS_CHANGED;
-    if (newState === PURCHASE_ORDER_STATE.ARCHIVED) {
-      eventType = EventType.ARCHIVED;
-    } else if (existing.stateCode === PURCHASE_ORDER_STATE.ARCHIVED) {
-      eventType = EventType.UNARCHIVED;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await emitEvent(db as any, {
-      entityType: EntityType.PURCHASE_ORDER,
+    const eventPayload = {
+      entity: 'purchase_order',
       entityId: purchaseOrderId,
-      eventType: eventType,
-      entityDisplayName: existing.orderNumber,
-      payload: {
-        entity: 'purchase_order',
+      orderNumber: existing.orderNumber,
+      from: existing.stateCode,
+      to: newState,
+    };
+
+    if (newState === PURCHASE_ORDER_STATE.ARCHIVED) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await emitEvent(db as any, {
+        entityType: EntityType.PURCHASE_ORDER,
         entityId: purchaseOrderId,
-        orderNumber: existing.orderNumber,
-        from: existing.stateCode,
-        to: newState,
-      },
-      actor,
-    });
+        eventType: EventType.ARCHIVED,
+        entityDisplayName: existing.orderNumber,
+        payload: eventPayload,
+        actor,
+      });
+    } else if (existing.stateCode === PURCHASE_ORDER_STATE.ARCHIVED) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await emitEvent(db as any, {
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: purchaseOrderId,
+        eventType: EventType.UNARCHIVED,
+        entityDisplayName: existing.orderNumber,
+        payload: eventPayload,
+        actor,
+      });
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await emitEvent(db as any, {
+        entityType: EntityType.PURCHASE_ORDER,
+        entityId: purchaseOrderId,
+        eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: existing.orderNumber,
+        payload: eventPayload,
+        actor,
+      });
+    }
 
     return updated;
   }

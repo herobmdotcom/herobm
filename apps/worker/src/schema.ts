@@ -30,6 +30,18 @@ export const suppliers = modbmCore.table('suppliers', {
   externalId: text('external_id'),
   businessNumber: text('business_number'),
   isTaxRegistered: boolean('is_tax_registered').notNull().default(false),
+  isPurchasingBlocked: boolean('is_purchasing_blocked').default(false),
+  purchasingBlockReason: text('purchasing_block_reason'),
+  blockNotes: text('block_notes'),
+});
+
+export const supplierExpiries = modbmCore.table('supplier_expiries', {
+  expiryId: uuid('expiry_id').primaryKey(),
+  vendorId: uuid('vendor_id').notNull().references(() => suppliers.vendorId),
+  expiryType: text('expiry_type').notNull(),
+  expiryDate: timestamp('expiry_date', { withTimezone: true }).notNull(),
+  notes: text('notes'),
+  createdOn: timestamp('created_on', { withTimezone: true }),
 });
 
 export const webhooks = modbmCore.table('webhooks', {

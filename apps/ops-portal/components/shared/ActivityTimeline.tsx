@@ -128,7 +128,7 @@ export default function ActivityTimeline({
         <span style={{ fontSize: 11, fontWeight: 400 }}>({events.length})</span>
       </summary>
       <div className="space-y-3" style={{ marginTop: 16 }}>
-        {[...events].reverse().map((event) => {
+        {events.map((event) => {
           const hasPayload = event.payload && Object.keys(event.payload).length > 0;
           return (
             <details

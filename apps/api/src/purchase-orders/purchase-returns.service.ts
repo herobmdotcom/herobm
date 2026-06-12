@@ -557,6 +557,20 @@ export class PurchaseReturnsService {
       .where(eq(purchaseOrderReturns.returnId, returnId))
       .returning();
 
+    if (updated) {
+      await emitEvent(db, {
+        entityType: EntityType.PURCHASE_RETURN,
+        entityId: returnId,
+        eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: updated.returnNumber,
+        payload: {
+          from: ret.stateCode,
+          to: newState,
+        },
+        actor,
+      });
+    }
+
     return updated;
   }
 }

@@ -11,6 +11,8 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { discountMatrix } from '../drizzle/modbm-core-schema';
 import { CreateDiscountMatrixDto, UpdateDiscountMatrixDto } from './dto';
 import type { DiscountRule } from '@modbm/shared';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class DiscountMatrixService {
@@ -110,6 +112,18 @@ export class DiscountMatrixService {
       })
       .returning();
 
+    const entityType = dto.customerId ? EntityType.CUSTOMER : EntityType.CUSTOMER_GROUP;
+    const entityId = dto.customerId || dto.customerGroupId!;
+
+    await emitEvent(this.db, {
+      entityType,
+      entityId,
+      eventType: EventType.UPDATED,
+      entityDisplayName: dto.customerId ? 'Customer' : 'Customer Group',
+      payload: { action: 'discount_rule_created', ruleId: rows[0].discountMatrixId },
+      actor: 'system',
+    });
+
     this.logger.log(
       `Discount rule created: ${rows[0].discountMatrixId} → ${dto.discountPercentage}%`,
     );
@@ -133,6 +147,18 @@ export class DiscountMatrixService {
       .where(eq(discountMatrix.discountMatrixId, id))
       .returning();
 
+    const entityType = existing.customerId ? EntityType.CUSTOMER : EntityType.CUSTOMER_GROUP;
+    const entityId = existing.customerId || existing.customerGroupId!;
+
+    await emitEvent(this.db, {
+      entityType,
+      entityId,
+      eventType: EventType.UPDATED,
+      entityDisplayName: existing.customerId ? 'Customer' : 'Customer Group',
+      payload: { action: 'discount_rule_updated', ruleId: id },
+      actor: 'system',
+    });
+
     return rows[0];
   }
 
@@ -140,10 +166,23 @@ export class DiscountMatrixService {
    * Delete a discount rule.
    */
   async delete(id: string) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
     await this.db
       .delete(discountMatrix)
       .where(eq(discountMatrix.discountMatrixId, id));
+
+    const entityType = existing.customerId ? EntityType.CUSTOMER : EntityType.CUSTOMER_GROUP;
+    const entityId = existing.customerId || existing.customerGroupId!;
+
+    await emitEvent(this.db, {
+      entityType,
+      entityId,
+      eventType: EventType.UPDATED,
+      entityDisplayName: existing.customerId ? 'Customer' : 'Customer Group',
+      payload: { action: 'discount_rule_deleted', ruleId: id },
+      actor: 'system',
+    });
+
     return { deleted: true };
   }
 

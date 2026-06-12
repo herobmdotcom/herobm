@@ -67,7 +67,6 @@ eval "env ENV_FILE='$ENV_FILE' API_URL='http://localhost:$API_PORT' $ENV_EXPORTS
 FE_PID=$!
 
 
-
 if [ "$ENABLE_DBT_DOCS" == "true" ]; then
     echo -e "\e[36mdbt docs will be served\e[0m"
     (cd pipelines/abm_transform && ../../.venv/bin/dbt docs serve) &

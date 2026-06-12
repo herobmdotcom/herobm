@@ -281,6 +281,41 @@
       "when": 1781039182020,
       "tag": "0039_damp_genesis",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1781190126026,
+      "tag": "0040_great_junta",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1781248793955,
+      "tag": "0041_customer_normalization",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1781254935844,
+      "tag": "0042_add_events_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1781269487420,
+      "tag": "0043_add_sales_order_shipping_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1781271344316,
+      "tag": "0044_daffy_ronan",
+      "breakpoints": true
     }
   ]
 }

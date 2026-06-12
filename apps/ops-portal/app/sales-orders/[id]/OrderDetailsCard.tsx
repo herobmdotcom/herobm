@@ -7,7 +7,6 @@ import Link from 'next/link';
 import type { OrderDetail } from './types';
 import { SALES_ORDER_STATE } from '@modbm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
-
 interface OrderDetailsCardProps {
     order: OrderDetail;
     isOrderDetailsEditable: boolean;
@@ -19,8 +18,28 @@ interface OrderDetailsCardProps {
     setEditFulfillmentLocationId: (val: string) => void;
     editNotes: string;
     setEditNotes: (val: string) => void;
-    saveHeader: () => void;
+    saveHeader: (overrides?: Partial<api.UpdateOrderDto>) => void;
     locations: api.InventoryLocationResponseDto[];
+    customerDeliveryAddresses: api.DeliveryAddressResponseDto[];
+    customerCountry?: string;
+    editShippingNotes: string;
+    setEditShippingNotes: (val: string) => void;
+    editDeliveryName: string;
+    setEditDeliveryName: (val: string) => void;
+    editDeliveryPhone: string;
+    setEditDeliveryPhone: (val: string) => void;
+    editDeliveryAddressLine1: string;
+    setEditDeliveryAddressLine1: (val: string) => void;
+    editDeliveryAddressLine2: string;
+    setEditDeliveryAddressLine2: (val: string) => void;
+    editDeliveryCity: string;
+    setEditDeliveryCity: (val: string) => void;
+    editDeliveryState: string;
+    setEditDeliveryState: (val: string) => void;
+    editDeliveryPostalCode: string;
+    setEditDeliveryPostalCode: (val: string) => void;
+    editDeliveryCountry: string;
+    setEditDeliveryCountry: (val: string) => void;
     copyOrder: () => void;
     copying: boolean;
     onQuoteClick: () => void;
@@ -41,6 +60,26 @@ export default function OrderDetailsCard({
     setEditNotes,
     saveHeader,
     locations,
+    customerDeliveryAddresses,
+    customerCountry,
+    editShippingNotes,
+    setEditShippingNotes,
+    editDeliveryName,
+    setEditDeliveryName,
+    editDeliveryPhone,
+    setEditDeliveryPhone,
+    editDeliveryAddressLine1,
+    setEditDeliveryAddressLine1,
+    editDeliveryAddressLine2,
+    setEditDeliveryAddressLine2,
+    editDeliveryCity,
+    setEditDeliveryCity,
+    editDeliveryState,
+    setEditDeliveryState,
+    editDeliveryPostalCode,
+    setEditDeliveryPostalCode,
+    editDeliveryCountry,
+    setEditDeliveryCountry,
     copyOrder,
     copying,
     onQuoteClick,
@@ -186,7 +225,7 @@ export default function OrderDetailsCard({
                         disabled={!isOrderDetailsEditable}
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        onBlur={saveHeader}
+                        onBlur={() => saveHeader()}
                         placeholder={tSales('placeholders.orderName')}
                     />
                 </div>
@@ -199,28 +238,11 @@ export default function OrderDetailsCard({
                         disabled={!isOrderDetailsEditable}
                         value={editPO}
                         onChange={(e) => setEditPO(e.target.value)}
-                        onBlur={saveHeader}
+                        onBlur={() => saveHeader()}
                         placeholder={tSales('placeholders.customerPO')}
                     />
                 </div>
-                <div className="min-w-0 md:col-span-2 lg:col-span-1">
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                        {tSales('labels.fulfillmentLocation')}
-                    </label>
-                    <select
-                        className="input w-full"
-                        disabled={!isOrderDetailsEditable}
-                        value={editFulfillmentLocationId}
-                        onChange={(e) => setEditFulfillmentLocationId(e.target.value)}
-                        onBlur={saveHeader}
-                    >
-                        {(locations || []).map((loc: api.InventoryLocationResponseDto) => (
-                            <option key={loc.locationId} value={loc.locationId}>
-                                {formatLocationDisplay(loc)}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+
                 <div className="min-w-0 col-span-1 md:col-span-2">
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                         {tCommon('notesCardHeading')}
@@ -230,11 +252,13 @@ export default function OrderDetailsCard({
                         disabled={!isOrderDetailsEditable}
                         value={editNotes}
                         onChange={(e) => setEditNotes(e.target.value)}
-                        onBlur={saveHeader}
+                        onBlur={() => saveHeader()}
                         placeholder={tCommon('notesCardPlaceholder')}
                     />
                 </div>
             </div>
+
+
         </div>
     );
 }

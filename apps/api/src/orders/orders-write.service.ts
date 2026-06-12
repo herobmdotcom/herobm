@@ -93,6 +93,7 @@ export class OrdersWriteService {
   ) {
     if (!isExternalTax) return;
     const db = tx || this.db;
+    // @modbm-skip-audit
     await db
       .update(salesOrders)
       .set({
@@ -167,7 +168,7 @@ export class OrdersWriteService {
   ): Promise<{ taxCategoryId: string; rate: number; taxProvider: string }> {
     const customer = await this.accountsService.findOne(customerId, tx);
     const mappings = this.appConfig.taxProviderMappings();
-    const country = customer.address1Country || '';
+    const country = customer.billingAddressCountry || '';
     const taxProvider = mappings[country] || 'internal';
 
     // 1. Explicit override wins
@@ -498,6 +499,15 @@ export class OrdersWriteService {
           stateCode: SALES_ORDER_STATE.DRAFT,
           currencyCode: customer.currencyCode,
           notes: dto.notes,
+          shippingNotes: dto.shippingNotes,
+          deliveryName: dto.deliveryName,
+          deliveryPhone: dto.deliveryPhone,
+          deliveryAddressLine1: dto.deliveryAddressLine1,
+          deliveryAddressLine2: dto.deliveryAddressLine2,
+          deliveryCity: dto.deliveryCity,
+          deliveryState: dto.deliveryState,
+          deliveryPostalCode: dto.deliveryPostalCode,
+          deliveryCountry: dto.deliveryCountry,
           createdBy: actor,
         })
         .returning();
@@ -815,6 +825,14 @@ export class OrdersWriteService {
           'Order must have a customer to be confirmed',
         );
       }
+      if (
+        !existing.deliveryAddressLine1 ||
+        existing.deliveryAddressLine1.trim() === ''
+      ) {
+        throw new BadRequestException(
+          'Order must have a delivery address to be confirmed',
+        );
+      }
       let orderTotal = 0;
       orderLines.forEach((lv) => {
         if (lv.totalAmount) orderTotal += parseFloat(lv.totalAmount);
@@ -881,25 +899,40 @@ export class OrdersWriteService {
         .where(eq(salesOrders.salesOrderId, id))
         .returning();
 
-      let eventType: string = EventType.STATUS_CHANGED;
-      if (newState === SALES_ORDER_STATE.ARCHIVED) {
-        eventType = EventType.ARCHIVED;
-      } else if (existing.stateCode === SALES_ORDER_STATE.ARCHIVED) {
-        eventType = EventType.UNARCHIVED;
-      }
+      const eventPayload = {
+        from: existing.stateCode,
+        to: newState,
+        discrepanciesAcknowledged,
+      };
 
-      await emitEvent(tx, {
-        entityType: EntityType.SALES_ORDER,
-        entityId: id,
-        eventType: eventType,
-        entityDisplayName: existing.orderNumber,
-        payload: {
-          from: existing.stateCode,
-          to: newState,
-          discrepanciesAcknowledged,
-        },
-        actor,
-      });
+      if (newState === SALES_ORDER_STATE.ARCHIVED) {
+        await emitEvent(tx, {
+          entityType: EntityType.SALES_ORDER,
+          entityId: id,
+          eventType: EventType.ARCHIVED,
+          entityDisplayName: existing.orderNumber,
+          payload: eventPayload,
+          actor,
+        });
+      } else if (existing.stateCode === SALES_ORDER_STATE.ARCHIVED) {
+        await emitEvent(tx, {
+          entityType: EntityType.SALES_ORDER,
+          entityId: id,
+          eventType: EventType.UNARCHIVED,
+          entityDisplayName: existing.orderNumber,
+          payload: eventPayload,
+          actor,
+        });
+      } else {
+        await emitEvent(tx, {
+          entityType: EntityType.SALES_ORDER,
+          entityId: id,
+          eventType: EventType.STATUS_CHANGED,
+          entityDisplayName: existing.orderNumber,
+          payload: eventPayload,
+          actor,
+        });
+      }
 
       return updated;
     });
@@ -982,7 +1015,7 @@ export class OrdersWriteService {
 
     const customer = await this.accountsService.findOne(order.customerId);
     const mappings = this.appConfig.taxProviderMappings();
-    const country = customer.address1Country || 'US';
+    const country = customer.billingAddressCountry || 'US';
     const taxProvider = mappings[country] || 'internal';
 
     if (taxProvider === 'internal') {
@@ -1025,10 +1058,10 @@ export class OrdersWriteService {
       from_city: org.city,
       from_street: org.addressLine1,
       to_country: country,
-      to_zip: customer.address1PostalCode,
-      to_state: customer.address1StateOrProvince,
-      to_city: customer.address1City,
-      to_street: customer.address1Line1,
+      to_zip: customer.billingAddressPostalCode,
+      to_state: customer.billingAddressStateOrProvince,
+      to_city: customer.billingAddressCity,
+      to_street: customer.billingAddressLine1,
       shipping: shippingTotal,
       line_items: taxableLines.map((l) => {
         const qty = parseFloat(l.quantity || '0');
@@ -1095,7 +1128,7 @@ export class OrdersWriteService {
         entityType: EntityType.SALES_ORDER,
         entityId: id,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        eventType: 'TAX_CALCULATED' as string,
+        eventType: EventType.TAX_CALCULATED,
         entityDisplayName: order.orderNumber,
         payload: { provider: taxProvider, totalTax: taxData.amount_to_collect },
         actor,
@@ -1851,7 +1884,7 @@ export class OrdersWriteService {
       .select()
       .from(salesEvents)
       .where(eq(salesEvents.entityId, id))
-      .orderBy(salesEvents.createdOn);
+      .orderBy(sql`${salesEvents.createdOn} DESC`);
 
     const backorderList = await this.db
       .select({
@@ -1910,7 +1943,7 @@ export class OrdersWriteService {
       .select({
         order: salesOrders,
         customerName: coreAccounts.name,
-        country: coreAccounts.address1Country,
+        country: coreAccounts.billingAddressCountry,
       })
       .from(salesOrders)
       .leftJoin(

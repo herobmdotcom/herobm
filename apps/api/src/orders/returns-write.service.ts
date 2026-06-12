@@ -279,7 +279,7 @@ export class ReturnsWriteService {
           await emitEvent(innerTx, {
             entityType: EntityType.SALES_ORDER,
             entityId: existing.salesOrderId,
-            eventType: 'return_updated',
+            eventType: EventType.RETURN_UPDATED,
             entityDisplayName: order.orderNumber,
             payload: {
               returnId,
@@ -443,7 +443,7 @@ export class ReturnsWriteService {
         await emitEvent(innerTx, {
           entityType: EntityType.SALES_ORDER,
           entityId: ret.salesOrderId,
-          eventType: 'return_line_added',
+          eventType: EventType.RETURN_LINE_ADDED,
           entityDisplayName: order.orderNumber,
           payload: {
             returnId,
@@ -784,7 +784,7 @@ export class ReturnsWriteService {
           await emitEvent(innerTx, {
             entityType: EntityType.SALES_ORDER,
             entityId: ret.salesOrderId,
-            eventType: 'return_line_updated',
+            eventType: EventType.RETURN_LINE_UPDATED,
             entityDisplayName: order.orderNumber,
             payload: {
               returnId,
@@ -842,7 +842,7 @@ export class ReturnsWriteService {
       await emitEvent(innerTx, {
         entityType: EntityType.SALES_ORDER,
         entityId: ret.salesOrderId,
-        eventType: 'return_line_removed',
+        eventType: EventType.RETURN_LINE_REMOVED,
         entityDisplayName: order.orderNumber,
         payload: {
           returnId,

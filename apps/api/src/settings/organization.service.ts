@@ -3,6 +3,8 @@ import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { organization } from '../drizzle/modbm-core-schema';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 import { UpdateOrganizationDto } from './dto';
 
 @Injectable()
@@ -38,13 +40,14 @@ export class OrganizationService {
     return rows[0];
   }
 
-  async update(dto: UpdateOrganizationDto) {
+  async update(dto: UpdateOrganizationDto, actor: string) {
     if (!dto.name) {
       throw new BadRequestException('Company name is required');
     }
 
     const rows = await this.db.select().from(organization).limit(1);
 
+    let result;
     if (rows.length === 0) {
       // Create the singleton record
       const newRows = await this.db
@@ -53,7 +56,7 @@ export class OrganizationService {
           ...dto,
         })
         .returning();
-      return newRows[0];
+      result = newRows[0];
     } else {
       // Update the existing singleton record
       const updatedRows = await this.db
@@ -63,7 +66,18 @@ export class OrganizationService {
         })
         .where(eq(organization.organizationId, rows[0].organizationId))
         .returning();
-      return updatedRows[0];
+      result = updatedRows[0];
     }
+
+    await emitEvent(this.db, {
+      entityType: EntityType.SYSTEM,
+      entityId: result.organizationId,
+      eventType: EventType.UPDATED,
+      entityDisplayName: 'Organization Settings',
+      payload: { changes: Object.keys(dto) },
+      actor,
+    });
+
+    return result;
   }
 }

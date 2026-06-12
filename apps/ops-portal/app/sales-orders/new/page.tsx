@@ -2,6 +2,17 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+
+const parseInitialPhone = (val: string) => {
+  if (!val) return '';
+  if (val.startsWith('+')) return val;
+  const digits = val.replace(/\D/g, '');
+  if (digits.length > 0) return '+' + digits;
+  return '';
+};
+
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -15,6 +26,7 @@ import * as api from '@modbm/sdk';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import CustomerSelect from '@/components/shared/CustomerSelect';
+import DeliveryAddressSlideOver from '@/components/shared/DeliveryAddressSlideOver';
 import { MobileCardField } from '@/components/shared/DataTable';
 import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment, resolveEffectiveDiscount } from '@modbm/shared';
 import type { DiscountRule } from '@modbm/shared';
@@ -98,6 +110,7 @@ export default function NewOrderPage() {
   const { baseCurrency } = useSettings();
   useDocumentTitle('New Sales Order');
   const tSales = useTranslations();
+  const tCommon = useTranslations('common');
   const router = useRouter();
 
   const [customerId, setCustomerId] = useState('');
@@ -108,7 +121,20 @@ export default function NewOrderPage() {
   const [customerTaxPosition, setCustomerTaxPosition] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [customerOrderNumber, setCustomerOrderNumber] = useState('');
+  const [customerCountry, setCustomerCountry] = useState<string | undefined>(undefined);
   const [notes, setNotes] = useState('');
+  const [shippingNotes, setShippingNotes] = useState('');
+  const [customerDeliveryAddresses, setCustomerDeliveryAddresses] = useState<api.DeliveryAddressResponseDto[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState('');
+  const [isAddressSlideOverOpen, setIsAddressSlideOverOpen] = useState(false);
+  const [deliveryName, setDeliveryName] = useState('');
+  const [deliveryPhone, setDeliveryPhone] = useState('');
+  const [deliveryAddressLine1, setDeliveryAddressLine1] = useState('');
+  const [deliveryAddressLine2, setDeliveryAddressLine2] = useState('');
+  const [deliveryCity, setDeliveryCity] = useState('');
+  const [deliveryState, setDeliveryState] = useState('');
+  const [deliveryPostalCode, setDeliveryPostalCode] = useState('');
+  const [deliveryCountry, setDeliveryCountry] = useState('');
 
   const [taxCategories, settaxCategories] = useState<TaxCategory[]>([]);
   const defaulttaxCategoryId = taxCategories.find((c) => c.isDefault)?.taxCategoryId || '';
@@ -176,6 +202,29 @@ export default function NewOrderPage() {
     const resolvedCurrency = a.currencyCode || '';
     setCurrencyCode(resolvedCurrency);
     setCustomerTaxPosition(a.taxPosition ?? null);
+
+    api.accountsControllerFindOne(a.customerId)
+      .then((res: unknown) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const customer = (res as any).data;
+        setCustomerDeliveryAddresses(customer.deliveryAddresses || []);
+        setCustomerCountry(customer.billingAddressCountry || undefined);
+      })
+      .catch(() => {
+        setCustomerDeliveryAddresses([]);
+        setCustomerCountry(undefined);
+      });
+
+    setShippingNotes('');
+    setDeliveryName('');
+    setDeliveryPhone('');
+    setDeliveryAddressLine1('');
+    setDeliveryAddressLine2('');
+    setDeliveryCity('');
+    setDeliveryState('');
+    setDeliveryPostalCode('');
+    setDeliveryCountry('');
+    setSelectedAddressId('');
 
     // Resolve the GST category: exempt customers force all lines to exempt
     const custExempt = a.taxPosition?.toLowerCase() === 'exempt';
@@ -276,6 +325,15 @@ export default function NewOrderPage() {
         customerOrderNumber: customerOrderNumber || undefined,
         fulfillmentLocationId: fulfillmentLocationId || undefined,
         notes: notes || undefined,
+        shippingNotes: shippingNotes || undefined,
+        deliveryName: deliveryName || undefined,
+        deliveryPhone: deliveryPhone || undefined,
+        deliveryAddressLine1: deliveryAddressLine1 || undefined,
+        deliveryAddressLine2: deliveryAddressLine2 || undefined,
+        deliveryCity: deliveryCity || undefined,
+        deliveryState: deliveryState || undefined,
+        deliveryPostalCode: deliveryPostalCode || undefined,
+        deliveryCountry: deliveryCountry || undefined,
         lines: lines
           .filter((l) => l.productId)
           .map((l) => ({
@@ -302,6 +360,7 @@ export default function NewOrderPage() {
     amount: computeAmount(l),
     tax: computeTax(l)
   }));
+
   const totals = computeOrderTotals(mappedLines);
   const subtotal = totals.subtotal;
   const totalTax = totals.totalTax;
@@ -454,23 +513,6 @@ export default function NewOrderPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {tSales('salesOrders.labels.fulfillmentLocation')}
-              </label>
-              <select
-                className="input"
-                value={fulfillmentLocationId}
-                onChange={(e) => setFulfillmentLocationId(e.target.value)}
-              >
-                {locations.length === 0 && <option value="" disabled>{tSales('common.loadingEllipsis')}</option>}
-                {locations.map((loc) => (
-                  <option key={loc.locationId} value={loc.locationId}>
-                    {formatLocationDisplay(loc)}
-                  </option>
-                ))}
-              </select>
-            </div>
 
             <div className="md:col-span-2 mt-2">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -879,7 +921,139 @@ export default function NewOrderPage() {
           </div>
         </div>
         </div>
+
+        {/* Delivery section */}
+        <div className="card">
+          <h3 className="section-heading mb-4">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            <span className="material-symbols-outlined">local_shipping</span>
+            Delivery
+          </h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <div className="flex flex-col gap-4">
+              <div className="mt-2">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Delivery Address
+                </label>
+                <select
+                  className="input w-full mb-2"
+                  value={selectedAddressId}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSelectedAddressId(val);
+                    if (val === 'other') {
+                      setIsAddressSlideOverOpen(true);
+                    } else {
+                      const addr = customerDeliveryAddresses.find(a => a.id === val);
+                      if (addr) {
+                        setDeliveryName(addr.recipientName || '');
+                        setDeliveryPhone(addr.recipientPhone || '');
+                        setDeliveryAddressLine1(addr.addressLine1 || '');
+                        setDeliveryAddressLine2(addr.addressLine2 || '');
+                        setDeliveryCity(addr.city || '');
+                        setDeliveryState(addr.stateOrProvince || '');
+                        setDeliveryPostalCode(addr.postalCode || '');
+                        setDeliveryCountry(addr.country || '');
+                      }
+                    }
+                  }}
+                >
+                  <option value="" disabled>Select an address...</option>
+                  {customerDeliveryAddresses.map(addr => (
+                    <option key={addr.id} value={addr.id}>
+                      {addr.addressName ? `${addr.addressName} - ` : ''}{addr.addressLine1}, {addr.city}
+                    </option>
+                  ))}
+                  <option value="other">Other...</option>
+                </select>
+                <div className="grid grid-cols-2 gap-4 mb-2 mt-2">
+                  <input
+                    className="input w-full"
+                    placeholder="Attention To"
+                    value={deliveryName}
+                    onChange={(e) => setDeliveryName(e.target.value)}
+                  />
+                  <div>
+                    <PhoneInput
+                      international
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      defaultCountry={customerCountry as any}
+                      className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
+                      value={parseInitialPhone(deliveryPhone)}
+                      onChange={(value) => setDeliveryPhone(value || '')}
+                      placeholder="Phone"
+                    />
+                    {deliveryPhone && !deliveryPhone.startsWith('+') && (
+                      <p className="text-xs text-orange-500 mt-1">{tCommon('rawPhone', { phone: deliveryPhone })}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-2">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Shipping Instructions
+                </label>
+                <textarea
+                  id="shipping-notes"
+                  className="input w-full"
+                  style={{ minHeight: 80, paddingTop: 12, resize: 'vertical' }}
+                  placeholder="Add shipping instructions..."
+                  value={shippingNotes}
+                  onChange={(e) => setShippingNotes(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="mt-2">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {tSales('salesOrders.labels.fulfillmentLocation')}
+              </label>
+              <select
+                className="input w-full"
+                value={fulfillmentLocationId}
+                onChange={(e) => setFulfillmentLocationId(e.target.value)}
+              >
+                {locations.length === 0 && <option value="" disabled>{tSales('common.loadingEllipsis')}</option>}
+                {locations.map((loc) => (
+                  <option key={loc.locationId} value={loc.locationId}>
+                    {formatLocationDisplay(loc)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
       </DetailsLayout>
+
+      {customerId && (
+        <DeliveryAddressSlideOver
+          isOpen={isAddressSlideOverOpen}
+          onClose={() => setIsAddressSlideOverOpen(false)}
+          customerId={customerId}
+          allowUnsaved={true}
+          defaultCountry={customerCountry}
+          onSaved={(addr, saved) => {
+            setDeliveryName(addr.recipientName || '');
+            setDeliveryPhone(addr.recipientPhone || '');
+            setDeliveryAddressLine1(addr.addressLine1 || '');
+            setDeliveryAddressLine2(addr.addressLine2 || '');
+            setDeliveryCity(addr.city || '');
+            setDeliveryState(addr.stateOrProvince || '');
+            setDeliveryPostalCode(addr.postalCode || '');
+            setDeliveryCountry(addr.country || '');
+            if (saved && addr.id) {
+              setCustomerDeliveryAddresses([...customerDeliveryAddresses, addr as api.DeliveryAddressResponseDto]);
+              setSelectedAddressId(addr.id);
+            } else {
+              setSelectedAddressId('other');
+            }
+          }}
+        />
+      )}
     </>
   );
 }

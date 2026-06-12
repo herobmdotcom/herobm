@@ -5,6 +5,8 @@ import { DRIZZLE, DrizzleDB } from '../drizzle/drizzle.module';
 import * as schema from '../drizzle/modbm-core-schema';
 import { CreateMacroDto } from './dto/create-macro.dto';
 import { UpdateMacroDto } from './dto/update-macro.dto';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class MacrosService {
@@ -33,13 +35,24 @@ export class MacrosService {
   }
 
   async create(createMacroDto: CreateMacroDto) {
-    const [macro] = await this.db
-      .insert(schema.macros)
-      .values({
-        ...createMacroDto,
-      })
-      .returning();
-    return macro;
+    return this.db.transaction(async (tx) => {
+      const [macro] = await tx
+        .insert(schema.macros)
+        .values({
+          ...createMacroDto,
+        })
+        .returning();
+
+      await emitEvent(tx, {
+        entityType: EntityType.MACRO,
+        entityId: macro.macroId,
+        eventType: EventType.CREATED,
+        entityDisplayName: macro.name,
+        payload: macro,
+      });
+
+      return macro;
+    });
   }
 
   async update(macroId: string, updateMacroDto: UpdateMacroDto) {
@@ -48,16 +61,26 @@ export class MacrosService {
       throw new NotFoundException(`Macro with ID ${macroId} not found`);
     }
 
-    const [updated] = await this.db
-      .update(schema.macros)
-      .set({
-        ...updateMacroDto,
-        modifiedOn: new Date(),
-      })
-      .where(eq(schema.macros.macroId, macroId))
-      .returning();
+    return this.db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(schema.macros)
+        .set({
+          ...updateMacroDto,
+          modifiedOn: new Date(),
+        })
+        .where(eq(schema.macros.macroId, macroId))
+        .returning();
 
-    return updated;
+      await emitEvent(tx, {
+        entityType: EntityType.MACRO,
+        entityId: updated.macroId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: updated.name,
+        payload: updateMacroDto,
+      });
+
+      return updated;
+    });
   }
 
   async remove(macroId: string) {
@@ -66,11 +89,21 @@ export class MacrosService {
       throw new NotFoundException(`Macro with ID ${macroId} not found`);
     }
 
-    const [deleted] = await this.db
-      .delete(schema.macros)
-      .where(eq(schema.macros.macroId, macroId))
-      .returning();
+    return this.db.transaction(async (tx) => {
+      const [deleted] = await tx
+        .delete(schema.macros)
+        .where(eq(schema.macros.macroId, macroId))
+        .returning();
 
-    return deleted;
+      await emitEvent(tx, {
+        entityType: EntityType.MACRO,
+        entityId: deleted.macroId,
+        eventType: EventType.DELETED,
+        entityDisplayName: deleted.name,
+        payload: { macroId },
+      });
+
+      return deleted;
+    });
   }
 }

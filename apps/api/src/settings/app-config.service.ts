@@ -7,6 +7,8 @@ import type {
   RevenueRoutingStrategy,
   ExpenseRoutingStrategy,
 } from '@modbm/shared';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 /**
  * Boot-time settings cache.
@@ -55,6 +57,7 @@ export class AppConfigService implements OnModuleInit {
           .toString(16)
           .padStart(12, '0');
         const newId = `${globalThis.crypto.randomUUID()}-${timeHex}`;
+        // @modbm-skip-audit
         const [updated] = await this.db
           .update(appSettings)
           .set({ systemIdentifier: newId })
@@ -210,19 +213,30 @@ export class AppConfigService implements OnModuleInit {
     return this.appCache;
   }
 
-  async update(dto: Partial<typeof appSettings.$inferInsert>) {
+  async update(dto: Partial<typeof appSettings.$inferInsert>, userId?: string) {
     const settings = this.getAppSettingsRaw();
     if (!settings) {
       throw new Error('App Settings not configured.');
     }
 
-    const [updated] = await this.db
-      .update(appSettings)
-      .set(dto)
-      .where(eq(appSettings.settingsId, settings.settingsId))
-      .returning();
+    return await this.db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(appSettings)
+        .set(dto)
+        .where(eq(appSettings.settingsId, settings.settingsId))
+        .returning();
 
-    await this.reload();
-    return updated;
+      await emitEvent(tx, {
+        entityType: EntityType.APP_SETTINGS,
+        entityId: settings.settingsId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: 'App Settings',
+        payload: dto,
+        actor: userId,
+      });
+
+      await this.reload();
+      return updated;
+    });
   }
 }

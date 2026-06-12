@@ -3,7 +3,7 @@ import { OrdersService } from '../orders/orders.service';
 import { OrdersWriteService } from '../orders/orders-write.service';
 import { resolveOrderDetail, assembleOrderData } from './report-data.helper';
 import { emitEvent } from '../common/emit-event';
-import { EntityType } from '../common/event-types';
+import { EntityType, EventType } from '../common/event-types';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { AppConfigService } from '../settings/app-config.service';
@@ -72,7 +72,7 @@ export class SalesQuoteService {
         await emitEvent(tx as any, {
           entityType: EntityType.SALES_ORDER,
           entityId: orderId,
-          eventType: 'quote_generated',
+          eventType: EventType.QUOTE_GENERATED,
           entityDisplayName: data.header.orderNumber,
           payload: { quoteIntroText: quoteIntroText },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any

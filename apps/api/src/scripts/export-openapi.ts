@@ -21,6 +21,8 @@ async function bootstrap() {
     .addTag('Enrichment', 'External data enrichment')
     .addTag('Users', 'User management')
     .addTag('Roles', 'Role management')
+    .addTag('Contacts', 'Customer and supplier contacts')
+    .addTag('Delivery Addresses', 'Delivery locations')
     .addTag('System', 'System configuration')
     .addBearerAuth()
     .build();

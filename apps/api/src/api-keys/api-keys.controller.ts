@@ -20,16 +20,13 @@ import {
   Inject,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
 import {
   CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
-import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { apiKeys } from '../drizzle/modbm-core-schema';
-import { eq } from 'drizzle-orm';
-import * as bcrypt from 'bcrypt';
-import { randomBytes } from 'crypto';
 import {
   CreateApiKeyDto,
   ApiKeyResponseDto,
@@ -37,13 +34,15 @@ import {
   ApiKeyFullResponseDto,
 } from './dto';
 
+import { ApiKeysService } from './api-keys.service';
+
 @ApiTags('System')
 @ApiBearerAuth()
 @Controller('api-keys')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.API_KEYS)
 export class ApiKeysController {
-  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
+  constructor(private readonly apiKeysService: ApiKeysService) {}
 
   @Get()
   @CasbinAction('read')
@@ -53,16 +52,7 @@ export class ApiKeysController {
     description: 'Retrieves all service API keys (without raw secrets).',
   })
   async list() {
-    const keys = await this.db
-      .select({
-        apiKeyId: apiKeys.apiKeyId,
-        name: apiKeys.name,
-        prefix: apiKeys.prefix,
-        role: apiKeys.role,
-        createdOn: apiKeys.createdOn,
-      })
-      .from(apiKeys);
-    return keys;
+    return this.apiKeysService.list();
   }
 
   @Post()
@@ -73,29 +63,10 @@ export class ApiKeysController {
     description: 'Generates a new API key. Secret is only returned once.',
   })
   @ApiCreatedResponse({ type: ApiKeyCreatedResponseDto })
-  async create(@Body() body: CreateApiKeyDto) {
-    // Generate a secure random token
-    const secret = randomBytes(32).toString('hex');
-    const prefix = secret.slice(0, 4);
-
-    const hash = await bcrypt.hash(secret, 10);
-
-    const [key] = await this.db
-      .insert(apiKeys)
-      .values({
-        name: body.name,
-        prefix: prefix,
-        role: body.role,
-        keyHash: hash,
-        createdBy: 'api', // Temporarily hardcoded for API-created keys
-      })
-      .returning();
-
-    return {
-      ...key,
-      // We ONLY return the raw secret upon creation!
-      secretKey: secret,
-    };
+  async create(@Body() body: CreateApiKeyDto, @AuthUser() user: JwtUser) {
+    // Provide a fallback for API tokens creating other API tokens (though uncommon)
+    const actor = user?.username || 'api';
+    return this.apiKeysService.create(body, actor);
   }
 
   @Delete(':id')
@@ -105,12 +76,8 @@ export class ApiKeysController {
     description: 'Permanently deletes and revokes an API key.',
   })
   @ApiOkResponse({ type: ApiKeyFullResponseDto })
-  async revoke(@Param('id') id: string) {
-    const [deleted] = await this.db
-      .delete(apiKeys)
-      .where(eq(apiKeys.apiKeyId, id))
-      .returning();
-
-    return deleted;
+  async revoke(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    const actor = user?.username || 'api';
+    return this.apiKeysService.revoke(id, actor);
   }
 }

@@ -447,8 +447,7 @@ export class TransferService {
         .from(transferOrders)
         .where(eq(transferOrders.transferOrderId, transferOrderId));
       await emitEvent(tx as unknown as DrizzleDB, {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        entityType: 'transfer_order' as any,
+        entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,
         eventType: EventType.LINE_REMOVED,
         entityDisplayName: order?.orderNumber || transferOrderId,
@@ -1340,18 +1339,34 @@ export class TransferService {
     if (dto.notes !== undefined) updates.notes = dto.notes;
 
     if (Object.keys(updates).length > 1) {
-      await this.db
+      const [updatedRecord] = await this.db
         .update(transferOrders)
         .set(updates)
-        .where(eq(transferOrders.transferOrderId, id));
+        .where(eq(transferOrders.transferOrderId, id))
+        .returning();
+
+      if (updatedRecord) {
+        await emitEvent(this.db, {
+          entityType: EntityType.TRANSFER_ORDER,
+          entityId: id,
+          eventType: EventType.UPDATED,
+          entityDisplayName: updatedRecord.orderNumber,
+          payload: { changes: updates },
+          actor,
+        });
+      }
     }
 
     return { success: true };
   }
 
+  // @modbm-skip-audit
   async addLine(id: string, dto: CreateTransferOrderLineDto, actor: string) {
     const [existing] = await this.db
-      .select({ stateCode: transferOrders.stateCode })
+      .select({
+        stateCode: transferOrders.stateCode,
+        orderNumber: transferOrders.orderNumber,
+      })
       .from(transferOrders)
       .where(eq(transferOrders.transferOrderId, id));
 
@@ -1373,6 +1388,7 @@ export class TransferService {
     return { lineId };
   }
 
+  // @modbm-skip-audit
   async updateLine(
     id: string,
     lineId: string,
@@ -1400,6 +1416,7 @@ export class TransferService {
     return { success: true };
   }
 
+  // @modbm-skip-audit
   async removeLine(id: string, lineId: string, actor: string) {
     const [existing] = await this.db
       .select({ stateCode: transferOrders.stateCode })

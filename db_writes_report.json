@@ -1,0 +1,3110 @@
+[
+  {
+    "file": "api-keys\\api-keys.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 84,
+        "type": "insert",
+        "table": "apiKeys"
+      },
+      {
+        "lineNo": 110,
+        "type": "delete",
+        "table": "apiKeys"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "auth\\casbin\\drizzle-adapter.ts",
+    "dbWrites": [
+      {
+        "lineNo": 40,
+        "type": "delete",
+        "table": "casbinRule"
+      },
+      {
+        "lineNo": 65,
+        "type": "insert",
+        "table": "casbinRule"
+      },
+      {
+        "lineNo": 96,
+        "type": "delete",
+        "table": "casbinRule"
+      },
+      {
+        "lineNo": 100,
+        "type": "delete",
+        "table": "casbinRule"
+      },
+      {
+        "lineNo": 112,
+        "type": "delete",
+        "table": "casbinRule"
+      },
+      {
+        "lineNo": 146,
+        "type": "delete",
+        "table": "casbinRule"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "business-reports\\business-reports.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 139,
+        "type": "insert",
+        "table": "businessReports"
+      },
+      {
+        "lineNo": 148,
+        "type": "update",
+        "table": "businessReports"
+      },
+      {
+        "lineNo": 158,
+        "type": "delete",
+        "table": "businessReports"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "common\\emit-event.ts",
+    "dbWrites": [
+      {
+        "lineNo": 109,
+        "type": "insert",
+        "table": "targetTable"
+      },
+      {
+        "lineNo": 124,
+        "type": "insert",
+        "table": "outbox"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 73,
+        "eventStr": "export async function emitEvent(\r\n  // eslint-disable-next-line @typescript-eslint/no-explicit-any\r\n  tx: any,\r\n  params: EmitEventParams,\r\n): Promise<void> {\r\n  let targetTable = EVENT_TABLE_MAP[params.entityType];\r\n\r\n  if (!targetTable) {\r\n    throw new Error(\r\n      `emitEvent: unknown entityType '${params.entityType}'. ` +\r\n"
+      }
+    ]
+  },
+  {
+    "file": "common\\encryption.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 22,
+        "type": "update",
+        "table": "jwtSecret"
+      },
+      {
+        "lineNo": 25,
+        "type": "update",
+        "table": "rawKey"
+      },
+      {
+        "lineNo": 36,
+        "type": "update",
+        "table": "text, 'utf8', 'hex'"
+      },
+      {
+        "lineNo": 62,
+        "type": "update",
+        "table": "encryptedText, undefined, 'utf8'"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "common\\utils\\security.util.ts",
+    "dbWrites": [
+      {
+        "lineNo": 50,
+        "type": "update",
+        "table": "pem.trim("
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "customers\\customer-groups.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 87,
+        "type": "update",
+        "table": "id, dto"
+      },
+      {
+        "lineNo": 101,
+        "type": "delete",
+        "table": "id"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "customers\\customer-groups.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 44,
+        "type": "insert",
+        "table": "customerGroups"
+      },
+      {
+        "lineNo": 59,
+        "type": "update",
+        "table": "customerGroups"
+      },
+      {
+        "lineNo": 92,
+        "type": "delete",
+        "table": "customerGroups"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "customers\\customers-write.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 96,
+        "type": "insert",
+        "table": "coreAccounts"
+      },
+      {
+        "lineNo": 191,
+        "type": "update",
+        "table": "coreAccounts"
+      },
+      {
+        "lineNo": 319,
+        "type": "update",
+        "table": "coreAccounts"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 106,
+        "eventStr": "        await emitEvent(tx as any, {\r\n          entityType: EntityType.CUSTOMER,\r\n          entityId: customer.customerId,\r\n          eventType: 'created',\r\n          entityDisplayName: customer.name,\r\n          payload: dto,\r\n          actor,\r\n        });\r\n"
+      },
+      {
+        "lineNo": 206,
+        "eventStr": "        await emitEvent(tx as any, {\r\n          entityType: EntityType.CUSTOMER,\r\n          entityId: id,\r\n          eventType: isStatusOnly ? 'status_changed' : 'updated',\r\n          entityDisplayName: updated.name,\r\n          payload: isStatusOnly\r\n            ? {\r\n                from: audit.previousValues.stateCode,\r\n                to: audit.changes.stateCode,\r\n              }\r\n"
+      },
+      {
+        "lineNo": 336,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.CUSTOMER,\r\n        entityId: customerId,\r\n        eventType: eventType,\r\n        entityDisplayName: existing[0].name,\r\n        payload: {\r\n          from: currentState,\r\n          to: newState,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 349,
+        "eventStr": "      await emitEvent(this.db as any, {\r\n        entityType: EntityType.CUSTOMER,\r\n        entityId: customerId,\r\n        eventType: eventType,\r\n        entityDisplayName: existing[0].name,\r\n        payload: {\r\n          from: currentState,\r\n          to: newState,\r\n        },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "customers\\customers.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 95,
+        "type": "update",
+        "table": "id, dto, user.username"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "email\\email.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 97,
+        "type": "update",
+        "table": "emailOutbox"
+      },
+      {
+        "lineNo": 127,
+        "type": "update",
+        "table": "emailOutbox"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "email\\email.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 34,
+        "type": "insert",
+        "table": "emailOutbox"
+      },
+      {
+        "lineNo": 56,
+        "type": "insert",
+        "table": "systemEvents"
+      },
+      {
+        "lineNo": 63,
+        "type": "insert",
+        "table": "outbox"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "enrichment\\enrichment.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 81,
+        "type": "update",
+        "table": "integrations"
+      },
+      {
+        "lineNo": 85,
+        "type": "insert",
+        "table": "integrations"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "events\\events.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 53,
+        "type": "insert",
+        "table": "outbox"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "gl\\bank-feeds.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 60,
+        "type": "insert",
+        "table": "csvMappingProfiles"
+      },
+      {
+        "lineNo": 94,
+        "type": "update",
+        "table": "csvMappingProfiles"
+      },
+      {
+        "lineNo": 106,
+        "type": "delete",
+        "table": "csvMappingProfiles"
+      },
+      {
+        "lineNo": 124,
+        "type": "insert",
+        "table": "reconciliationRules"
+      },
+      {
+        "lineNo": 177,
+        "type": "update",
+        "table": "reconciliationRules"
+      },
+      {
+        "lineNo": 189,
+        "type": "delete",
+        "table": "reconciliationRules"
+      },
+      {
+        "lineNo": 281,
+        "type": "insert",
+        "table": "bankStatementLines"
+      },
+      {
+        "lineNo": 516,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 527,
+        "type": "update",
+        "table": "bankStatementLines"
+      },
+      {
+        "lineNo": 531,
+        "type": "insert",
+        "table": "glMatchGroups"
+      },
+      {
+        "lineNo": 595,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 609,
+        "type": "update",
+        "table": "bankStatementLines"
+      },
+      {
+        "lineNo": 613,
+        "type": "insert",
+        "table": "glMatchGroups"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "gl\\bank-statement.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 104,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 109,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 116,
+        "type": "update",
+        "table": "bankStatementLines"
+      },
+      {
+        "lineNo": 150,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 155,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 162,
+        "type": "update",
+        "table": "bankStatementLines"
+      },
+      {
+        "lineNo": 173,
+        "type": "insert",
+        "table": "bankStatementLines"
+      },
+      {
+        "lineNo": 247,
+        "type": "insert",
+        "table": "glMatchGroups"
+      },
+      {
+        "lineNo": 255,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 264,
+        "type": "update",
+        "table": "bankStatementLines"
+      },
+      {
+        "lineNo": 287,
+        "type": "update",
+        "table": "bankStatementLines"
+      },
+      {
+        "lineNo": 293,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 302,
+        "type": "delete",
+        "table": "glMatchGroups"
+      },
+      {
+        "lineNo": 353,
+        "type": "update",
+        "table": "glJournalEntries"
+      },
+      {
+        "lineNo": 361,
+        "type": "update",
+        "table": "glJournalEntries"
+      },
+      {
+        "lineNo": 395,
+        "type": "delete",
+        "table": "bankStatementLines"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "gl\\coa-loader.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 275,
+        "type": "insert",
+        "table": "glAccounts"
+      },
+      {
+        "lineNo": 302,
+        "type": "update",
+        "table": "glAccounts"
+      },
+      {
+        "lineNo": 316,
+        "type": "insert",
+        "table": "glSettings"
+      },
+      {
+        "lineNo": 372,
+        "type": "insert",
+        "table": "tradingTerms"
+      },
+      {
+        "lineNo": 423,
+        "type": "update",
+        "table": "taxCategories"
+      },
+      {
+        "lineNo": 431,
+        "type": "insert",
+        "table": "taxCategories"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "gl\\gl.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 137,
+        "type": "insert",
+        "table": "salesInvoices"
+      },
+      {
+        "lineNo": 145,
+        "type": "insert",
+        "table": "salesInvoices"
+      },
+      {
+        "lineNo": 250,
+        "type": "insert",
+        "table": "glJournalEntries"
+      },
+      {
+        "lineNo": 276,
+        "type": "insert",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 412,
+        "type": "insert",
+        "table": "glAccounts"
+      },
+      {
+        "lineNo": 455,
+        "type": "update",
+        "table": "glAccounts"
+      },
+      {
+        "lineNo": 859,
+        "type": "insert",
+        "table": "glSettings"
+      },
+      {
+        "lineNo": 874,
+        "type": "update",
+        "table": "glSettings"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 279,
+        "eventStr": "      await emitEvent(db, {\r\n        entityType: EntityType.SYSTEM,\r\n        entityId: entry.journalEntryId,\r\n        eventType: EventType.GL_POSTED,\r\n        entityDisplayName: 'System',\r\n        payload: {\r\n          entryNumber,\r\n          entryDate,\r\n          sourceType: meta.sourceType,\r\n          sourceId: meta.sourceId,\r\n          lines: lineValues,\r\n        },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "gl\\reconciliation.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 121,
+        "type": "insert",
+        "table": "glReconciliations"
+      },
+      {
+        "lineNo": 374,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 380,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 390,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 398,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 408,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 436,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 442,
+        "type": "update",
+        "table": "glReconciliations"
+      },
+      {
+        "lineNo": 461,
+        "type": "update",
+        "table": "glJournalLines"
+      },
+      {
+        "lineNo": 467,
+        "type": "delete",
+        "table": "glReconciliations"
+      },
+      {
+        "lineNo": 547,
+        "type": "update",
+        "table": "glJournalLines"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "goods-received\\goods-received.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 132,
+        "type": "insert",
+        "table": "goodsReceived"
+      },
+      {
+        "lineNo": 225,
+        "type": "insert",
+        "table": "goodsReceivedLines"
+      },
+      {
+        "lineNo": 249,
+        "type": "insert",
+        "table": "zones"
+      },
+      {
+        "lineNo": 275,
+        "type": "insert",
+        "table": "bins"
+      },
+      {
+        "lineNo": 350,
+        "type": "update",
+        "table": "products"
+      },
+      {
+        "lineNo": 401,
+        "type": "update",
+        "table": "purchaseOrderLineItems"
+      },
+      {
+        "lineNo": 445,
+        "type": "update",
+        "table": "backorders"
+      },
+      {
+        "lineNo": 452,
+        "type": "insert",
+        "table": "backorders"
+      },
+      {
+        "lineNo": 773,
+        "type": "update",
+        "table": "goodsReceived"
+      },
+      {
+        "lineNo": 1377,
+        "type": "update",
+        "table": "goodsReceivedLines"
+      },
+      {
+        "lineNo": 1396,
+        "type": "insert",
+        "table": "goodsReceivedLines"
+      },
+      {
+        "lineNo": 1410,
+        "type": "update",
+        "table": "purchaseOrderLineItems"
+      },
+      {
+        "lineNo": 1443,
+        "type": "update",
+        "table": "backorders"
+      },
+      {
+        "lineNo": 1450,
+        "type": "insert",
+        "table": "backorders"
+      },
+      {
+        "lineNo": 1572,
+        "type": "update",
+        "table": "goodsReceivedLines"
+      },
+      {
+        "lineNo": 1585,
+        "type": "delete",
+        "table": "goodsReceivedLines"
+      },
+      {
+        "lineNo": 1593,
+        "type": "update",
+        "table": "goodsReceivedLines"
+      },
+      {
+        "lineNo": 1610,
+        "type": "update",
+        "table": "purchaseOrderLineItems"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 494,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.WAREHOUSE,\r\n        entityId: receipt.goodsReceivedId,\r\n        eventType: EventType.RECEIPT_CREATED,\r\n        entityDisplayName: receipt.receiptNumber,\r\n        payload: {\r\n          goodsReceivedId: receipt.goodsReceivedId,\r\n          receiptNumber: receipt.receiptNumber,\r\n          vendorId: createDto.vendorId,\r\n          vendorName: vendor.name,\r\n          locationId: createDto.locationId,\r\n          packingSlipNumber: createDto.packingSlipNumber,\r\n          lineCount: createDto.lines?.length || 0,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 707,
+        "eventStr": "        await emitEvent(tx, {\r\n          entityType: EntityType.PURCHASE_ORDER,\r\n          entityId: poId,\r\n          eventType: EventType.STATUS_CHANGED,\r\n          entityDisplayName: po.orderNumber,\r\n          payload: {\r\n            rule: 'cancel_receipt_revert',\r\n            from: PURCHASE_ORDER_STATE.RECEIVED,\r\n            to: newPoState,\r\n            reason: `Receipt ${receipt.receiptNumber} was cancelled.`,\r\n"
+      },
+      {
+        "lineNo": 778,
+        "eventStr": "    await emitEvent(tx as Parameters<typeof emitEvent>[0], {\r\n      entityType: EntityType.WAREHOUSE,\r\n      entityId: receiptId,\r\n      eventType: EventType.RECEIPT_STATUS_CHANGED,\r\n      entityDisplayName: receipt.receiptNumber,\r\n      payload: {\r\n        entity: 'goods_receipt',\r\n        entityId: receiptId,\r\n        receiptNumber: receipt.receiptNumber,\r\n        from: receipt.stateCode,\r\n        to: newState,\r\n      },\r\n"
+      },
+      {
+        "lineNo": 1500,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.SYSTEM,\r\n        entityId: grLine.goodsReceivedId,\r\n        eventType: EventType.RECEIPT_MATCHED,\r\n        entityDisplayName: receipt.receiptNumber,\r\n        payload: {\r\n          goodsReceivedLineId,\r\n          purchaseOrderLineId: poLine.poLineId,\r\n          purchaseOrderId: poLine.poId,\r\n          allocatedQuantity: targetQuantity,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 1660,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.SYSTEM,\r\n        entityId: grLine.goodsReceivedId,\r\n        eventType: EventType.RECEIPT_UNMATCHED,\r\n        entityDisplayName: receipt.receiptNumber,\r\n        payload: {\r\n          goodsReceivedLineId,\r\n          previousPurchaseOrderLineId: poLine.poLineId,\r\n          previousPurchaseOrderId: poLine.poId,\r\n        },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "inventory\\inventory.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 898,
+        "type": "insert",
+        "table": "inventoryEntries"
+      },
+      {
+        "lineNo": 940,
+        "type": "insert",
+        "table": "inventoryLedger"
+      },
+      {
+        "lineNo": 945,
+        "type": "insert",
+        "table": "binContents"
+      },
+      {
+        "lineNo": 964,
+        "type": "delete",
+        "table": "binContents"
+      },
+      {
+        "lineNo": 1340,
+        "type": "update",
+        "table": "goodsReceivedLines"
+      },
+      {
+        "lineNo": 1345,
+        "type": "update",
+        "table": "salesOrderReturnLines"
+      },
+      {
+        "lineNo": 1742,
+        "type": "update",
+        "table": "goodsReceivedLines"
+      },
+      {
+        "lineNo": 1747,
+        "type": "update",
+        "table": "salesOrderReturnLines"
+      },
+      {
+        "lineNo": 1887,
+        "type": "update",
+        "table": "salesOrderReturns"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 1062,
+        "eventStr": "    await emitEvent(tx, {\r\n      entityType: EntityType.INVENTORY_LEDGER,\r\n      entityId: entry.entryId,\r\n      eventType: EventType.ENTRY_POSTED,\r\n      entityDisplayName: params.entryNumber,\r\n      payload: { header: params, lines: ledgerPayload },\r\n"
+      },
+      {
+        "lineNo": 1350,
+        "eventStr": "        await emitEvent(tx as Parameters<typeof emitEvent>[0], {\r\n          entityType: EntityType.WAREHOUSE,\r\n          entityId: lineDto.lineId,\r\n          eventType: EventType.PUTAWAY_COMPLETED,\r\n          entityDisplayName: referenceNumber,\r\n          payload: {\r\n            lineId: lineDto.lineId,\r\n            sourceType: lineDto.sourceType,\r\n            productId,\r\n            quantityPutaway: lineDto.quantity,\r\n            destinationBinId: lineDto.destinationBinId,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 1417,
+        "eventStr": "                await emitEvent(tx, {\r\n                  entityType: EntityType.SALES_ORDER,\r\n                  entityId: ret.salesOrderId,\r\n                  eventType: EventType.STATUS_CHANGED,\r\n                  entityDisplayName: order.orderNumber,\r\n                  payload: {\r\n                    entity: 'return',\r\n                    entityId: rl.returnId,\r\n                    from: ret.stateCode,\r\n                    to: RETURN_STATE.RECEIVED,\r\n                    returnNumber: ret.returnNumber,\r\n                    reason: 'Auto-transition from complete putaway',\r\n                  },\r\n"
+      },
+      {
+        "lineNo": 1718,
+        "eventStr": "      await emitEvent(tx as Parameters<typeof emitEvent>[0], {\r\n        entityType: EntityType.WAREHOUSE,\r\n        entityId: dto.sourceBinId,\r\n        eventType: EventType.STOCK_MOVED,\r\n        entityDisplayName: reference,\r\n        payload: {\r\n          productId,\r\n          sourceBinId: sourceBin.binId,\r\n          targetBinId,\r\n          quantity: quantityToMove,\r\n          reason: dto.reason,\r\n          isUnquarantining,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 1864,
+        "eventStr": "        await emitEvent(tx as Parameters<typeof emitEvent>[0], {\r\n          entityType: EntityType.WAREHOUSE,\r\n          entityId: dto.lines[0].sourceBinId, // Using first source bin as reference\r\n          eventType: EventType.STOCK_MOVED,\r\n          entityDisplayName: entryNumber,\r\n          payload: {\r\n            reason: reasonStr,\r\n            lines: dto.lines,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 1937,
+        "eventStr": "        await emitEvent(tx as Parameters<typeof emitEvent>[0], {\r\n          entityType: EntityType.WAREHOUSE,\r\n          entityId: dto.lines[0].binId,\r\n          eventType: EventType.STOCK_MOVED,\r\n          entityDisplayName: entryNumber,\r\n          payload: {\r\n            reason: reasonStr,\r\n            lines: movementLines,\r\n          },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "invoices\\external-sync.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 227,
+        "type": "delete",
+        "table": "outbox"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "invoices\\invoice-lifecycle-rules.ts",
+    "dbWrites": [
+      {
+        "lineNo": 91,
+        "type": "update",
+        "table": "table as any"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 101,
+        "eventStr": "      await emitEvent(db as any, {\r\n        entityType,\r\n        entityId: invoiceId,\r\n        eventType: EventType.STATUS_CHANGED,\r\n        entityDisplayName: invoice.invoiceNumber,\r\n        payload: {\r\n          isAutomated: true,\r\n          rule: 'auto-transition-invoice-outstanding-amount',\r\n          trigger,\r\n          from: invoice.stateCode,\r\n          to: targetState,\r\n          reason: `Outstanding amount is ${outstanding}`,\r\n"
+      }
+    ]
+  },
+  {
+    "file": "invoices\\purchase-invoice.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 287,
+        "type": "insert",
+        "table": "purchaseInvoices"
+      },
+      {
+        "lineNo": 328,
+        "type": "insert",
+        "table": "purchaseInvoiceLines"
+      },
+      {
+        "lineNo": 369,
+        "type": "update",
+        "table": "purchaseInvoices"
+      },
+      {
+        "lineNo": 411,
+        "type": "update",
+        "table": "purchaseInvoices"
+      },
+      {
+        "lineNo": 484,
+        "type": "update",
+        "table": "purchaseInvoiceLines"
+      },
+      {
+        "lineNo": 509,
+        "type": "delete",
+        "table": "purchaseInvoiceLines"
+      },
+      {
+        "lineNo": 563,
+        "type": "insert",
+        "table": "purchaseInvoiceLines"
+      },
+      {
+        "lineNo": 927,
+        "type": "insert",
+        "table": "systemEvents"
+      },
+      {
+        "lineNo": 976,
+        "type": "update",
+        "table": "purchaseInvoiceLines"
+      },
+      {
+        "lineNo": 1049,
+        "type": "update",
+        "table": "purchaseInvoiceLines"
+      },
+      {
+        "lineNo": 1066,
+        "type": "insert",
+        "table": "purchaseInvoiceLines"
+      },
+      {
+        "lineNo": 1137,
+        "type": "update",
+        "table": "purchaseInvoiceLines"
+      },
+      {
+        "lineNo": 1315,
+        "type": "update",
+        "table": "purchaseInvoices"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 331,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.PURCHASE_INVOICE,\r\n        entityId: invoice.invoiceId,\r\n        eventType: EventType.STATUS_CHANGED,\r\n        entityDisplayName: invoice.invoiceNumber,\r\n        payload: {\r\n          entity: 'purchase_invoice',\r\n          entityId: invoice.invoiceId,\r\n          from: null,\r\n          to: PURCHASE_INVOICE_STATE.DRAFT,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 988,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.PURCHASE_ORDER,\r\n        entityId: poLine.purchaseOrderId,\r\n        eventType: EventType.INVOICE_MATCHED,\r\n        entityDisplayName: order.orderNumber,\r\n        actor,\r\n        payload: {\r\n          invoiceLineId,\r\n          purchaseOrderLineId,\r\n          invoiceId: line.invoiceId,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 1089,
+        "eventStr": "        await emitEvent(tx, {\r\n          entityType: EntityType.PURCHASE_ORDER,\r\n          entityId: purchaseOrderId,\r\n          eventType: EventType.INVOICE_MATCHED,\r\n          entityDisplayName: order.orderNumber,\r\n          actor,\r\n          payload: {\r\n            invoiceId,\r\n            matchedCount,\r\n            addedCount,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 1149,
+        "eventStr": "        await emitEvent(tx, {\r\n          entityType: EntityType.PURCHASE_ORDER,\r\n          entityId: poId,\r\n          eventType: EventType.INVOICE_UNMATCHED,\r\n          entityDisplayName: order.orderNumber,\r\n          actor,\r\n          payload: {\r\n            invoiceLineId,\r\n            invoiceId: line.invoiceId,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 1324,
+        "eventStr": "      await emitEvent(db, {\r\n        entityType: EntityType.PURCHASE_INVOICE,\r\n        entityId: invoiceId,\r\n        eventType: EventType.STATUS_CHANGED,\r\n        entityDisplayName: existing.invoiceNumber,\r\n        payload: {\r\n          entity: 'purchase_invoice',\r\n          entityId: invoiceId,\r\n          invoiceNumber: existing.invoiceNumber,\r\n          from: existing.stateCode,\r\n          to: newState,\r\n        },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "invoices\\sales-credit-note.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 336,
+        "type": "insert",
+        "table": "salesCreditNotes"
+      },
+      {
+        "lineNo": 356,
+        "type": "insert",
+        "table": "salesCreditNoteLines"
+      },
+      {
+        "lineNo": 516,
+        "type": "update",
+        "table": "salesOrderReturns"
+      },
+      {
+        "lineNo": 703,
+        "type": "insert",
+        "table": "salesCreditNotes"
+      },
+      {
+        "lineNo": 718,
+        "type": "insert",
+        "table": "salesCreditNoteLines"
+      },
+      {
+        "lineNo": 822,
+        "type": "update",
+        "table": "salesCreditNotes"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 522,
+        "eventStr": "      await emitEvent(innerTx as any, {\r\n        entityType: EntityType.SALES_ORDER,\r\n        entityId: ret.salesOrderId,\r\n        eventType: EventType.STATUS_CHANGED,\r\n        entityDisplayName: order.orderNumber,\r\n        payload: {\r\n          entity: 'return',\r\n          entityId: returnId,\r\n          from: ret.stateCode,\r\n          to: RETURN_STATE.PROCESSED,\r\n          returnNumber: ret.returnNumber,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 539,
+        "eventStr": "      await emitEvent(innerTx as any, {\r\n        entityType: EntityType.SALES_ORDER,\r\n        entityId: ret.salesOrderId,\r\n        eventType: EventType.CREDIT_NOTE_POSTED,\r\n        entityDisplayName: order.orderNumber,\r\n        payload: {\r\n          creditNoteId: creditNote.creditNoteId,\r\n          creditNoteNumber,\r\n          returnId,\r\n          returnNumber: ret.returnNumber,\r\n          salesOrderId: ret.salesOrderId,\r\n          orderNumber: order.orderNumber,\r\n          customerId: order.customerId,\r\n          totalCredit: totalCreditAmount,\r\n          totalTax: totalTaxAmount,\r\n"
+      }
+    ]
+  },
+  {
+    "file": "invoices\\sales-invoice.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 401,
+        "type": "insert",
+        "table": "salesInvoices"
+      },
+      {
+        "lineNo": 427,
+        "type": "insert",
+        "table": "salesInvoiceLines"
+      },
+      {
+        "lineNo": 958,
+        "type": "update",
+        "table": "salesInvoices"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 448,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.SALES_ORDER,\r\n        entityId: salesOrderId,\r\n        eventType: EventType.SALES_INVOICED,\r\n        entityDisplayName: order.orderNumber,\r\n        payload: outboxPayload,\r\n        actor,\r\n      });\r\n"
+      },
+      {
+        "lineNo": 968,
+        "eventStr": "      await emitEvent(db as unknown as DrizzleDB, {\r\n        entityType: EntityType.SALES_INVOICE,\r\n        entityId: invoiceId,\r\n        eventType: EventType.STATUS_CHANGED,\r\n        entityDisplayName: existing.invoiceNumber,\r\n        payload: {\r\n          entity: 'sales_invoice',\r\n          entityId: invoiceId,\r\n          invoiceNumber: existing.invoiceNumber,\r\n          from: existing.stateCode,\r\n          to: newState,\r\n        },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "locations\\locations.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 32,
+        "type": "insert",
+        "table": "locations"
+      },
+      {
+        "lineNo": 43,
+        "type": "update",
+        "table": "appSettings"
+      },
+      {
+        "lineNo": 54,
+        "type": "update",
+        "table": "locations"
+      },
+      {
+        "lineNo": 155,
+        "type": "delete",
+        "table": "bins"
+      },
+      {
+        "lineNo": 157,
+        "type": "delete",
+        "table": "zones"
+      },
+      {
+        "lineNo": 161,
+        "type": "delete",
+        "table": "locations"
+      },
+      {
+        "lineNo": 174,
+        "type": "insert",
+        "table": "zones"
+      },
+      {
+        "lineNo": 186,
+        "type": "update",
+        "table": "zones"
+      },
+      {
+        "lineNo": 225,
+        "type": "delete",
+        "table": "bins"
+      },
+      {
+        "lineNo": 229,
+        "type": "delete",
+        "table": "zones"
+      },
+      {
+        "lineNo": 241,
+        "type": "insert",
+        "table": "bins"
+      },
+      {
+        "lineNo": 253,
+        "type": "update",
+        "table": "bins"
+      },
+      {
+        "lineNo": 278,
+        "type": "delete",
+        "table": "bins"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "macros\\macros.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 85,
+        "type": "update",
+        "table": "id, updateMacroDto"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "macros\\macros.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 37,
+        "type": "insert",
+        "table": "schema.macros"
+      },
+      {
+        "lineNo": 52,
+        "type": "update",
+        "table": "schema.macros"
+      },
+      {
+        "lineNo": 70,
+        "type": "delete",
+        "table": "schema.macros"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "orders\\backorders.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 136,
+        "type": "insert",
+        "table": "backorders"
+      },
+      {
+        "lineNo": 317,
+        "type": "insert",
+        "table": "backorders"
+      },
+      {
+        "lineNo": 445,
+        "type": "insert",
+        "table": "purchaseOrders"
+      },
+      {
+        "lineNo": 478,
+        "type": "insert",
+        "table": "purchaseOrderLineItems"
+      },
+      {
+        "lineNo": 684,
+        "type": "insert",
+        "table": "backorders"
+      },
+      {
+        "lineNo": 788,
+        "type": "update",
+        "table": "salesOrderLineItems"
+      },
+      {
+        "lineNo": 796,
+        "type": "delete",
+        "table": "backorders"
+      },
+      {
+        "lineNo": 860,
+        "type": "update",
+        "table": "backorders"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 150,
+        "eventStr": "    await emitEvent(tx, {\r\n      entityType: EntityType.SALES_ORDER,\r\n      entityId: salesOrderId,\r\n      eventType: EventType.BACKORDERS_ALLOCATED,\r\n      entityDisplayName: order.orderNumber,\r\n      actor,\r\n      payload: { reason: 'demand_generated' },\r\n"
+      },
+      {
+        "lineNo": 188,
+        "eventStr": "        await emitEvent(tx, {\r\n          entityType: EntityType.PURCHASE_ORDER,\r\n          entityId: current.purchaseOrderId,\r\n          eventType: EventType.DEMAND_UNALLOCATED,\r\n          entityDisplayName: po.orderNumber,\r\n          actor,\r\n          payload: { backorderId },\r\n"
+      },
+      {
+        "lineNo": 458,
+        "eventStr": "        await emitEvent(tx, {\r\n          entityType: EntityType.PURCHASE_ORDER,\r\n          entityId: po.purchaseOrderId,\r\n          eventType: EventType.CREATED,\r\n          entityDisplayName: orderNumber,\r\n          actor,\r\n          payload: { reason: 'manual_requisition' },\r\n"
+      },
+      {
+        "lineNo": 706,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.PURCHASE_ORDER,\r\n        entityId: poLine.purchaseOrderId,\r\n        eventType: EventType.DEMAND_ALLOCATED,\r\n        entityDisplayName: poLine.orderNumber,\r\n        actor,\r\n        payload: { backorderId: demandId, quantity: quantityToLink },\r\n"
+      },
+      {
+        "lineNo": 775,
+        "eventStr": "          await emitEvent(tx, {\r\n            entityType: EntityType.PURCHASE_ORDER,\r\n            entityId: ld.purchaseOrderId,\r\n            eventType: EventType.DEMAND_UNALLOCATED,\r\n            entityDisplayName: po.orderNumber,\r\n            actor,\r\n            payload: { backorderId: ld.backorderId },\r\n"
+      },
+      {
+        "lineNo": 815,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.SALES_ORDER,\r\n        entityId: demand.salesOrderId,\r\n        eventType: EventType.DEMAND_REALLOCATED,\r\n        entityDisplayName: demand.orderNumber,\r\n        actor,\r\n        payload: {\r\n          lineId: demand.salesOrderLineId,\r\n          newLocationId,\r\n          stillHasShortage: lineGaps.length > 0,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 874,
+        "eventStr": "    await emitEvent(db, {\r\n      entityType: EntityType.SALES_ORDER,\r\n      entityId: existing.salesOrderId,\r\n      eventType: EventType.STATUS_CHANGED,\r\n      entityDisplayName: order.orderNumber,\r\n      actor,\r\n      payload: {\r\n        entity: 'backorder',\r\n        entityId: backorderId,\r\n        from: existing.stateCode,\r\n        to: newState,\r\n      },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "orders\\order-lifecycle-rules.ts",
+    "dbWrites": [
+      {
+        "lineNo": 88,
+        "type": "update",
+        "table": "salesOrders"
+      },
+      {
+        "lineNo": 167,
+        "type": "update",
+        "table": "salesOrders"
+      },
+      {
+        "lineNo": 254,
+        "type": "update",
+        "table": "salesOrders"
+      },
+      {
+        "lineNo": 304,
+        "type": "update",
+        "table": "salesOrders"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 97,
+        "eventStr": "    await emitEvent(db, {\r\n      entityType: EntityType.SALES_ORDER,\r\n      entityId: salesOrderId,\r\n      eventType: 'auto_status_changed',\r\n      entityDisplayName: orderNumber,\r\n      payload: {\r\n        rule: 'auto-ship-when-fully-shipped',\r\n        trigger,\r\n        from: SALES_ORDER_STATE.PICKING,\r\n        to: SALES_ORDER_STATE.SHIPPED,\r\n        reason: 'All lines fully shipped',\r\n      },\r\n"
+      },
+      {
+        "lineNo": 176,
+        "eventStr": "    await emitEvent(db, {\r\n      entityType: EntityType.SALES_ORDER,\r\n      entityId: salesOrderId,\r\n      eventType: 'auto_status_changed',\r\n      entityDisplayName: orderNumber,\r\n      payload: {\r\n        rule: 'revert-to-picking-on-shipment-cancel',\r\n        trigger,\r\n        from: SALES_ORDER_STATE.SHIPPED,\r\n        to: SALES_ORDER_STATE.PICKING,\r\n        reason: `Shipment ${trigger.action === SHIPMENT_STATE.DRAFT ? 'reverted to draft' : trigger.action}, order no longer fully shipped`,\r\n"
+      },
+      {
+        "lineNo": 263,
+        "eventStr": "    await emitEvent(db, {\r\n      entityType: EntityType.SALES_ORDER,\r\n      entityId: salesOrderId,\r\n      eventType: 'auto_status_changed',\r\n      entityDisplayName: orderNumber,\r\n      payload: {\r\n        rule: 'auto-invoice-when-fully-invoiced',\r\n        trigger,\r\n        from: SALES_ORDER_STATE.SHIPPED,\r\n        to: SALES_ORDER_STATE.INVOICED,\r\n        reason: 'All lines fully invoiced',\r\n      },\r\n"
+      },
+      {
+        "lineNo": 313,
+        "eventStr": "    await emitEvent(db, {\r\n      entityType: EntityType.SALES_ORDER,\r\n      entityId: salesOrderId,\r\n      eventType: 'auto_status_changed',\r\n      entityDisplayName: orderNumber,\r\n      payload: {\r\n        rule: 'start-picking-on-first-pick',\r\n        trigger,\r\n        from: SALES_ORDER_STATE.CONFIRMED,\r\n        to: SALES_ORDER_STATE.PICKING,\r\n        reason: 'First pick recorded on confirmed order',\r\n      },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "orders\\orders-write.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 97,
+        "type": "update",
+        "table": "salesOrders"
+      },
+      {
+        "lineNo": 490,
+        "type": "insert",
+        "table": "salesOrders"
+      },
+      {
+        "lineNo": 676,
+        "type": "insert",
+        "table": "salesOrderLineItems"
+      },
+      {
+        "lineNo": 721,
+        "type": "update",
+        "table": "salesOrders"
+      },
+      {
+        "lineNo": 861,
+        "type": "update",
+        "table": "backorders"
+      },
+      {
+        "lineNo": 871,
+        "type": "update",
+        "table": "salesOrders"
+      },
+      {
+        "lineNo": 1081,
+        "type": "update",
+        "table": "salesOrderLineItems"
+      },
+      {
+        "lineNo": 1087,
+        "type": "update",
+        "table": "salesOrders"
+      },
+      {
+        "lineNo": 1297,
+        "type": "insert",
+        "table": "salesOrderLineItems"
+      },
+      {
+        "lineNo": 1300,
+        "type": "update",
+        "table": "salesOrders"
+      },
+      {
+        "lineNo": 1513,
+        "type": "insert",
+        "table": "salesOrderLineItems"
+      },
+      {
+        "lineNo": 1516,
+        "type": "update",
+        "table": "salesOrders"
+      },
+      {
+        "lineNo": 1603,
+        "type": "update",
+        "table": "salesOrderLineItems"
+      },
+      {
+        "lineNo": 1654,
+        "type": "update",
+        "table": "salesOrderLineItems"
+      },
+      {
+        "lineNo": 1669,
+        "type": "update",
+        "table": "salesOrders"
+      },
+      {
+        "lineNo": 1737,
+        "type": "delete",
+        "table": "backorders"
+      },
+      {
+        "lineNo": 1742,
+        "type": "delete",
+        "table": "salesOrderLineItems"
+      },
+      {
+        "lineNo": 1748,
+        "type": "delete",
+        "table": "backorders"
+      },
+      {
+        "lineNo": 1753,
+        "type": "delete",
+        "table": "salesOrderLineItems"
+      },
+      {
+        "lineNo": 1757,
+        "type": "update",
+        "table": "salesOrders"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 680,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.SALES_ORDER,\r\n        entityId: order.salesOrderId,\r\n        eventType: EventType.CREATED,\r\n        entityDisplayName: orderNumber,\r\n        payload: {\r\n          orderNumber,\r\n          customerId: dto.customerId,\r\n          lineCount: lineValues.length,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 730,
+        "eventStr": "        await emitEvent(tx, {\r\n          entityType: EntityType.SALES_ORDER,\r\n          entityId: id,\r\n          eventType: EventType.UPDATED,\r\n          entityDisplayName: existing.orderNumber,\r\n          payload: {\r\n            changes: audit.changes,\r\n            previousValues: audit.previousValues,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 891,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.SALES_ORDER,\r\n        entityId: id,\r\n        eventType: eventType,\r\n        entityDisplayName: existing.orderNumber,\r\n        payload: {\r\n          from: existing.stateCode,\r\n          to: newState,\r\n          discrepanciesAcknowledged,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 1094,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.SALES_ORDER,\r\n        entityId: id,\r\n        // eslint-disable-next-line @typescript-eslint/no-explicit-any\r\n        eventType: 'TAX_CALCULATED' as string,\r\n        entityDisplayName: order.orderNumber,\r\n        payload: { provider: taxProvider, totalTax: taxData.amount_to_collect },\r\n"
+      },
+      {
+        "lineNo": 1306,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.SALES_ORDER,\r\n        entityId: orderId,\r\n        eventType: EventType.LINE_ADDED,\r\n        entityDisplayName: order.orderNumber,\r\n        payload: {\r\n          lineId: parentLineId,\r\n          productId: dto.productId,\r\n          quantity: dto.quantity,\r\n          taxCategoryId,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 1522,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.SALES_ORDER,\r\n        entityId: orderId,\r\n        eventType: EventType.POST_CONFIRMATION_LINE_ADDED,\r\n        entityDisplayName: order.orderNumber,\r\n        payload: {\r\n          lineId: parentLineId,\r\n          productId: dto.productId,\r\n          quantity: dto.quantity,\r\n          taxCategoryId,\r\n          pricePerUnit: dto.pricePerUnit,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 1676,
+        "eventStr": "        await emitEvent(tx, {\r\n          entityType: EntityType.SALES_ORDER,\r\n          entityId: orderId,\r\n          eventType: EventType.LINE_UPDATED,\r\n          entityDisplayName: order.orderNumber,\r\n          payload: {\r\n            lineId,\r\n            changes: audit.changes,\r\n            previousValues: audit.previousValues,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 1770,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.SALES_ORDER,\r\n        entityId: orderId,\r\n        eventType: EventType.LINE_REMOVED,\r\n        entityDisplayName: order.orderNumber,\r\n        payload: {\r\n          lineId,\r\n          productId: existingLine.productId,\r\n          quantity: existingLine.quantity,\r\n        },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "orders\\orders.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 128,
+        "type": "update",
+        "table": "id, body, user.username"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "orders\\picking.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 332,
+        "type": "insert",
+        "table": "salesOrderPicks"
+      },
+      {
+        "lineNo": 345,
+        "type": "update",
+        "table": "salesOrders"
+      },
+      {
+        "lineNo": 756,
+        "type": "update",
+        "table": "salesOrders"
+      },
+      {
+        "lineNo": 803,
+        "type": "update",
+        "table": "salesOrderPicks"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 349,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.WAREHOUSE,\r\n        entityId: newPick.pickId,\r\n        eventType: EventType.PICK_CREATED,\r\n        entityDisplayName: order.orderNumber,\r\n        payload: {\r\n          pickId: newPick.pickId,\r\n          salesOrderId: orderId,\r\n          quantityPicked: quantity,\r\n          binId,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 816,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.WAREHOUSE,\r\n        entityId: pickId,\r\n        eventType: EventType.PICK_CANCELLED,\r\n        entityDisplayName: order.orderNumber,\r\n        payload: {\r\n          pickId,\r\n          salesOrderId: pick.salesOrderId,\r\n          salesOrderLineId: pick.salesOrderLineId,\r\n          productId: pick.productId,\r\n          quantity: pick.quantity,\r\n          binId: pick.binId,\r\n        },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "orders\\returns-write.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 198,
+        "type": "insert",
+        "table": "salesOrderReturns"
+      },
+      {
+        "lineNo": 218,
+        "type": "insert",
+        "table": "salesOrderReturnLines"
+      },
+      {
+        "lineNo": 266,
+        "type": "update",
+        "table": "salesOrderReturns"
+      },
+      {
+        "lineNo": 327,
+        "type": "update",
+        "table": "salesOrderReturns"
+      },
+      {
+        "lineNo": 424,
+        "type": "insert",
+        "table": "salesOrderReturnLines"
+      },
+      {
+        "lineNo": 435,
+        "type": "update",
+        "table": "salesOrderReturns"
+      },
+      {
+        "lineNo": 558,
+        "type": "update",
+        "table": "salesOrderReturnLines"
+      },
+      {
+        "lineNo": 767,
+        "type": "update",
+        "table": "salesOrderReturnLines"
+      },
+      {
+        "lineNo": 775,
+        "type": "update",
+        "table": "salesOrderReturns"
+      },
+      {
+        "lineNo": 830,
+        "type": "delete",
+        "table": "salesOrderReturnLines"
+      },
+      {
+        "lineNo": 834,
+        "type": "update",
+        "table": "salesOrderReturns"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 221,
+        "eventStr": "        await emitEvent(innerTx, {\r\n          entityType: EntityType.SALES_ORDER,\r\n          entityId: salesOrderId,\r\n          eventType: EventType.RETURN_CREATED,\r\n          entityDisplayName: order.orderNumber,\r\n          payload: {\r\n            returnId: ret.returnId,\r\n            returnNumber,\r\n            lineCount: lineValues.length,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 279,
+        "eventStr": "          await emitEvent(innerTx, {\r\n            entityType: EntityType.SALES_ORDER,\r\n            entityId: existing.salesOrderId,\r\n            eventType: 'return_updated',\r\n            entityDisplayName: order.orderNumber,\r\n            payload: {\r\n              returnId,\r\n              changes: audit.changes,\r\n              previousValues: audit.previousValues,\r\n            },\r\n"
+      },
+      {
+        "lineNo": 343,
+        "eventStr": "        await emitEvent(innerTx, {\r\n          entityType: EntityType.SALES_ORDER,\r\n          entityId: existing.salesOrderId,\r\n          eventType: EventType.STATUS_CHANGED,\r\n          entityDisplayName: order.orderNumber,\r\n          payload: {\r\n            entity: 'return',\r\n            entityId: returnId,\r\n            from: existing.stateCode,\r\n            to: newState,\r\n            returnNumber: existing.returnNumber,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 443,
+        "eventStr": "        await emitEvent(innerTx, {\r\n          entityType: EntityType.SALES_ORDER,\r\n          entityId: ret.salesOrderId,\r\n          eventType: 'return_line_added',\r\n          entityDisplayName: order.orderNumber,\r\n          payload: {\r\n            returnId,\r\n            returnLineId: line.returnLineId,\r\n            salesOrderLineId: dto.salesOrderLineId,\r\n            quantityReturned: dto.quantityReturned,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 784,
+        "eventStr": "          await emitEvent(innerTx, {\r\n            entityType: EntityType.SALES_ORDER,\r\n            entityId: ret.salesOrderId,\r\n            eventType: 'return_line_updated',\r\n            entityDisplayName: order.orderNumber,\r\n            payload: {\r\n              returnId,\r\n              returnLineId: lineId,\r\n              changes: audit.changes,\r\n              previousValues: audit.previousValues,\r\n            },\r\n"
+      },
+      {
+        "lineNo": 842,
+        "eventStr": "      await emitEvent(innerTx, {\r\n        entityType: EntityType.SALES_ORDER,\r\n        entityId: ret.salesOrderId,\r\n        eventType: 'return_line_removed',\r\n        entityDisplayName: order.orderNumber,\r\n        payload: {\r\n          returnId,\r\n          returnLineId: lineId,\r\n          salesOrderLineId: existingLine.salesOrderLineId,\r\n          quantityReturned: existingLine.quantityReturned,\r\n        },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "orders\\shipment.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 165,
+        "type": "insert",
+        "table": "salesOrderShipments"
+      },
+      {
+        "lineNo": 184,
+        "type": "insert",
+        "table": "salesOrderShipmentLines"
+      },
+      {
+        "lineNo": 268,
+        "type": "update",
+        "table": "salesOrderShipments"
+      },
+      {
+        "lineNo": 331,
+        "type": "update",
+        "table": "salesOrderShipments"
+      },
+      {
+        "lineNo": 539,
+        "type": "update",
+        "table": "salesOrderPicks"
+      },
+      {
+        "lineNo": 546,
+        "type": "insert",
+        "table": "salesOrderPicks"
+      },
+      {
+        "lineNo": 705,
+        "type": "insert",
+        "table": "salesOrderShipmentLines"
+      },
+      {
+        "lineNo": 714,
+        "type": "update",
+        "table": "salesOrderShipments"
+      },
+      {
+        "lineNo": 782,
+        "type": "update",
+        "table": "salesOrderShipmentLines"
+      },
+      {
+        "lineNo": 792,
+        "type": "update",
+        "table": "salesOrderShipments"
+      },
+      {
+        "lineNo": 837,
+        "type": "delete",
+        "table": "salesOrderShipmentLines"
+      },
+      {
+        "lineNo": 841,
+        "type": "update",
+        "table": "salesOrderShipments"
+      },
+      {
+        "lineNo": 1179,
+        "type": "update",
+        "table": "salesOrderPicks"
+      },
+      {
+        "lineNo": 1185,
+        "type": "insert",
+        "table": "salesOrderPicks"
+      },
+      {
+        "lineNo": 1339,
+        "type": "update",
+        "table": "salesOrderPicks"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 227,
+        "eventStr": "        await emitEvent(innerTx, {\r\n          entityType: EntityType.SHIPMENT,\r\n          entityId: shipment.shipmentId,\r\n          eventType: 'shipment_created',\r\n          entityDisplayName: shipmentNumber,\r\n          payload: {\r\n            shipmentId: shipment.shipmentId,\r\n            shipmentNumber,\r\n            lineCount: lineValues.length,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 279,
+        "eventStr": "        await emitEvent(innerTx, {\r\n          entityType: EntityType.SHIPMENT,\r\n          entityId: shipmentId,\r\n          eventType: 'shipment_updated',\r\n          entityDisplayName: shipment.shipmentNumber,\r\n          payload: {\r\n            shipmentId,\r\n            changes: dto,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 339,
+        "eventStr": "        await emitEvent(innerTx, {\r\n          entityType: EntityType.SHIPMENT,\r\n          entityId: shipmentId,\r\n          eventType,\r\n          entityDisplayName: shipment.shipmentNumber,\r\n          payload: {\r\n            entity: 'shipment',\r\n            entityId: shipmentId,\r\n            shipmentNumber: shipment.shipmentNumber,\r\n            from: shipment.stateCode,\r\n            to: newState,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 718,
+        "eventStr": "        await emitEvent(innerTx, {\r\n          entityType: EntityType.SHIPMENT,\r\n          entityId: shipmentId,\r\n          eventType: 'shipment_line_added',\r\n          entityDisplayName: shipment.shipmentNumber,\r\n          payload: {\r\n            shipmentId,\r\n            shipmentLineId: line.shipmentLineId,\r\n            salesOrderLineId: dto.salesOrderLineId,\r\n            quantityShipped: dto.quantityShipped,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 796,
+        "eventStr": "        await emitEvent(innerTx, {\r\n          entityType: EntityType.SHIPMENT,\r\n          entityId: shipmentId,\r\n          eventType: 'shipment_line_updated',\r\n          entityDisplayName: shipment.shipmentNumber,\r\n          payload: {\r\n            shipmentId,\r\n            shipmentLineId: lineId,\r\n            changes: dto,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 845,
+        "eventStr": "      await emitEvent(innerTx, {\r\n        entityType: EntityType.SHIPMENT,\r\n        entityId: shipmentId,\r\n        eventType: 'shipment_line_removed',\r\n        entityDisplayName: shipment.shipmentNumber,\r\n        payload: {\r\n          shipmentId,\r\n          shipmentLineId: lineId,\r\n          salesOrderLineId: existingLine.salesOrderLineId,\r\n          quantityShipped: existingLine.quantityShipped,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 1298,
+        "eventStr": "    await emitEvent(innerTx, {\r\n      entityType: EntityType.SHIPMENT,\r\n      entityId: shipment.shipmentId,\r\n      eventType: EventType.STOCK_DISPATCHED,\r\n      entityDisplayName: shipment.shipmentNumber,\r\n      payload: {\r\n        shipmentId: shipment.shipmentId,\r\n        shipmentNumber: shipment.shipmentNumber,\r\n        salesOrderId: shipment.salesOrderId,\r\n        cogsDetails,\r\n      },\r\n"
+      },
+      {
+        "lineNo": 1349,
+        "eventStr": "      await emitEvent(tx, {\r\n        entityType: EntityType.WAREHOUSE,\r\n        entityId: pickId,\r\n        eventType: EventType.PICK_CANCELLED,\r\n        entityDisplayName: order.orderNumber,\r\n        payload: {\r\n          pickId,\r\n          salesOrderId: existing.salesOrderId,\r\n        },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "orders\\transfers\\transfers.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 243,
+        "type": "update",
+        "table": "id, body, user.username"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "orders\\transfers\\transfers.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 135,
+        "type": "insert",
+        "table": "transferOrders"
+      },
+      {
+        "lineNo": 147,
+        "type": "insert",
+        "table": "transferOrderLines"
+      },
+      {
+        "lineNo": 156,
+        "type": "update",
+        "table": "backorders"
+      },
+      {
+        "lineNo": 377,
+        "type": "insert",
+        "table": "transferOrderPicks"
+      },
+      {
+        "lineNo": 531,
+        "type": "insert",
+        "table": "transferOrderShipments"
+      },
+      {
+        "lineNo": 576,
+        "type": "update",
+        "table": "transferOrderPicks"
+      },
+      {
+        "lineNo": 583,
+        "type": "update",
+        "table": "transferOrderLines"
+      },
+      {
+        "lineNo": 595,
+        "type": "insert",
+        "table": "transferOrderShipmentLines"
+      },
+      {
+        "lineNo": 710,
+        "type": "update",
+        "table": "transferOrderLines"
+      },
+      {
+        "lineNo": 736,
+        "type": "update",
+        "table": "transferOrderShipments"
+      },
+      {
+        "lineNo": 880,
+        "type": "insert",
+        "table": "transferOrderReceipts"
+      },
+      {
+        "lineNo": 921,
+        "type": "update",
+        "table": "transferOrderLines"
+      },
+      {
+        "lineNo": 940,
+        "type": "insert",
+        "table": "transferOrderReceiptLines"
+      },
+      {
+        "lineNo": 1019,
+        "type": "update",
+        "table": "transferOrders"
+      },
+      {
+        "lineNo": 1067,
+        "type": "update",
+        "table": "transferOrderPicks"
+      },
+      {
+        "lineNo": 1289,
+        "type": "insert",
+        "table": "transferOrders"
+      },
+      {
+        "lineNo": 1306,
+        "type": "insert",
+        "table": "transferOrderLines"
+      },
+      {
+        "lineNo": 1344,
+        "type": "update",
+        "table": "transferOrders"
+      },
+      {
+        "lineNo": 1366,
+        "type": "insert",
+        "table": "transferOrderLines"
+      },
+      {
+        "lineNo": 1396,
+        "type": "update",
+        "table": "transferOrderLines"
+      },
+      {
+        "lineNo": 1417,
+        "type": "delete",
+        "table": "transferOrderLines"
+      },
+      {
+        "lineNo": 1442,
+        "type": "update",
+        "table": "backorders"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 166,
+        "eventStr": "      await emitEvent(tx as unknown as DrizzleDB, {\r\n        entityType: EntityType.TRANSFER_ORDER,\r\n        entityId: transferOrderId,\r\n        eventType: EventType.CREATED,\r\n        entityDisplayName: orderNumber,\r\n        payload: {\r\n          orderNumber,\r\n          sourceLocationId,\r\n          destinationLocationId: destLocationId,\r\n          lineCount: lines.length,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 403,
+        "eventStr": "      await emitEvent(tx as unknown as DrizzleDB, {\r\n        entityType: EntityType.WAREHOUSE,\r\n        entityId: lineId,\r\n        eventType: EventType.PICK_CREATED,\r\n        entityDisplayName: `Pick for ${order?.orderNumber || transferOrderId}`,\r\n"
+      },
+      {
+        "lineNo": 449,
+        "eventStr": "      await emitEvent(tx as unknown as DrizzleDB, {\r\n        // eslint-disable-next-line @typescript-eslint/no-explicit-any\r\n        entityType: 'transfer_order' as any,\r\n        entityId: transferOrderId,\r\n        eventType: EventType.LINE_REMOVED,\r\n        entityDisplayName: order?.orderNumber || transferOrderId,\r\n        actor,\r\n        payload: { pickId },\r\n"
+      },
+      {
+        "lineNo": 615,
+        "eventStr": "      await emitEvent(tx as unknown as DrizzleDB, {\r\n        entityType: EntityType.TRANSFER_ORDER,\r\n        entityId: transferOrderId,\r\n        eventType: EventType.STOCK_DISPATCHED,\r\n        entityDisplayName: order.orderNumber,\r\n        payload: { shipmentNumber, itemCount: picks.length },\r\n"
+      },
+      {
+        "lineNo": 750,
+        "eventStr": "      await emitEvent(tx as unknown as DrizzleDB, {\r\n        entityType: EntityType.TRANSFER_ORDER,\r\n        entityId: transferOrderId,\r\n        eventType: EventType.STATUS_CHANGED,\r\n        entityDisplayName: order!.orderNumber,\r\n        actor,\r\n        payload: {\r\n          entity: 'transfer_order',\r\n          entityId: transferOrderId,\r\n          from: TRANSFER_ORDER_STATE.SHIPPED,\r\n          to: TRANSFER_ORDER_STATE.PICKING,\r\n          shipmentId,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 960,
+        "eventStr": "      await emitEvent(tx as unknown as DrizzleDB, {\r\n        entityType: EntityType.TRANSFER_ORDER,\r\n        entityId: transferOrderId,\r\n        eventType: EventType.UPDATED,\r\n        entityDisplayName: order.orderNumber,\r\n        payload: { receiptNumber, totalReceived, action: 'stock_received' },\r\n"
+      },
+      {
+        "lineNo": 1024,
+        "eventStr": "    await emitEvent(tx as unknown as DrizzleDB, {\r\n      entityType: EntityType.TRANSFER_ORDER,\r\n      entityId: transferOrderId,\r\n      eventType: EventType.STATUS_CHANGED,\r\n      entityDisplayName: order.orderNumber,\r\n      payload: {\r\n        entity: 'transfer_order',\r\n        entityId: transferOrderId,\r\n        from: order.stateCode,\r\n        to: newState,\r\n      },\r\n"
+      },
+      {
+        "lineNo": 1076,
+        "eventStr": "      await emitEvent(tx as unknown as DrizzleDB, {\r\n        entityType: EntityType.WAREHOUSE,\r\n        entityId: pickId,\r\n        eventType: EventType.PICK_CANCELLED,\r\n        entityDisplayName: order?.orderNumber || existing.transferOrderId,\r\n        payload: {\r\n          pickId,\r\n          transferOrderId: existing.transferOrderId,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 1309,
+        "eventStr": "      await emitEvent(tx as unknown as DrizzleDB, {\r\n        entityType: EntityType.TRANSFER_ORDER,\r\n        entityId: transferOrderId,\r\n        eventType: EventType.UPDATED,\r\n        entityDisplayName: orderNumber,\r\n        payload: { orderNumber },\r\n"
+      },
+      {
+        "lineNo": 1451,
+        "eventStr": "      await emitEvent(tx as unknown as DrizzleDB, {\r\n        entityType: EntityType.TRANSFER_ORDER,\r\n        entityId: id,\r\n        eventType: EventType.LINE_REMOVED,\r\n        entityDisplayName: order?.orderNumber || id,\r\n        actor,\r\n        payload: {\r\n          entity: 'transfer_order',\r\n          entityId: id,\r\n          from: order?.stateCode,\r\n          to: TRANSFER_ORDER_STATE.CANCELLED,\r\n        },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "payments\\payments.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 198,
+        "type": "insert",
+        "table": "paymentEntries"
+      },
+      {
+        "lineNo": 217,
+        "type": "insert",
+        "table": "paymentLines"
+      },
+      {
+        "lineNo": 543,
+        "type": "insert",
+        "table": "paymentAllocations"
+      },
+      {
+        "lineNo": 555,
+        "type": "update",
+        "table": "targetTable"
+      },
+      {
+        "lineNo": 596,
+        "type": "update",
+        "table": "paymentEntries"
+      },
+      {
+        "lineNo": 905,
+        "type": "update",
+        "table": "paymentEntries"
+      },
+      {
+        "lineNo": 1020,
+        "type": "update",
+        "table": "paymentEntries"
+      },
+      {
+        "lineNo": 1082,
+        "type": "update",
+        "table": "paymentEntries"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 578,
+        "eventStr": "        await emitEvent(tx as any, {\r\n          entityType: EntityType.PAYMENT,\r\n          entityId: paymentId,\r\n          eventType: EventType.PAYMENT_ALLOCATED,\r\n          entityDisplayName: payment.paymentNumber,\r\n          payload: {\r\n            allocationId: allocationRecord.allocationId,\r\n            referenceType: alloc.referenceType,\r\n            referenceId: alloc.referenceId,\r\n            allocatedAmount: alloc.allocatedAmount,\r\n            newOutstandingBalance: newOutstanding,\r\n          },\r\n"
+      },
+      {
+        "lineNo": 1088,
+        "eventStr": "    await emitEvent(tx as any, {\r\n      entityType: EntityType.PAYMENT,\r\n      entityId: paymentId,\r\n      eventType: EventType.STATUS_CHANGED,\r\n      entityDisplayName: payment.paymentNumber,\r\n      payload: {\r\n        entity: 'payment',\r\n        entityId: paymentId,\r\n        paymentNumber: payment.paymentNumber,\r\n        totalAmount: payment.totalAmount,\r\n        modeOfPayment: payment.modeOfPayment,\r\n        glAccountBank: payment.glAccountBank,\r\n        from: payment.stateCode,\r\n        to: newState,\r\n      },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "pdf-templates\\pdf-templates.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 169,
+        "type": "insert",
+        "table": "pdfTemplates"
+      },
+      {
+        "lineNo": 174,
+        "type": "insert",
+        "table": "pdfTemplateContexts"
+      },
+      {
+        "lineNo": 199,
+        "type": "update",
+        "table": "pdfTemplates"
+      },
+      {
+        "lineNo": 210,
+        "type": "delete",
+        "table": "pdfTemplateContexts"
+      },
+      {
+        "lineNo": 215,
+        "type": "insert",
+        "table": "pdfTemplateContexts"
+      },
+      {
+        "lineNo": 246,
+        "type": "delete",
+        "table": "pdfTemplates"
+      },
+      {
+        "lineNo": 273,
+        "type": "insert",
+        "table": "pdfTemplateHooks"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "pdf-templates\\sales-quote.service.ts",
+    "dbWrites": [],
+    "events": [
+      {
+        "lineNo": 72,
+        "eventStr": "        await emitEvent(tx as any, {\r\n          entityType: EntityType.SALES_ORDER,\r\n          entityId: orderId,\r\n          eventType: 'quote_generated',\r\n          entityDisplayName: data.header.orderNumber,\r\n          payload: { quoteIntroText: quoteIntroText },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "pricing\\discount-matrix.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 131,
+        "type": "update",
+        "table": "id, dto"
+      },
+      {
+        "lineNo": 150,
+        "type": "delete",
+        "table": "id"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "pricing\\discount-matrix.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 104,
+        "type": "insert",
+        "table": "discountMatrix"
+      },
+      {
+        "lineNo": 126,
+        "type": "update",
+        "table": "discountMatrix"
+      },
+      {
+        "lineNo": 145,
+        "type": "delete",
+        "table": "discountMatrix"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "products\\product-groups.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 87,
+        "type": "update",
+        "table": "id, dto"
+      },
+      {
+        "lineNo": 98,
+        "type": "delete",
+        "table": "id"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "products\\product-groups.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 44,
+        "type": "insert",
+        "table": "productGroups"
+      },
+      {
+        "lineNo": 59,
+        "type": "update",
+        "table": "productGroups"
+      },
+      {
+        "lineNo": 92,
+        "type": "delete",
+        "table": "productGroups"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "products\\products-write.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 52,
+        "type": "insert",
+        "table": "coreProducts"
+      },
+      {
+        "lineNo": 104,
+        "type": "update",
+        "table": "coreProducts"
+      },
+      {
+        "lineNo": 234,
+        "type": "update",
+        "table": "coreProducts"
+      },
+      {
+        "lineNo": 292,
+        "type": "insert",
+        "table": "productSuppliers"
+      },
+      {
+        "lineNo": 326,
+        "type": "update",
+        "table": "productSuppliers"
+      },
+      {
+        "lineNo": 377,
+        "type": "insert",
+        "table": "productUoms"
+      },
+      {
+        "lineNo": 428,
+        "type": "delete",
+        "table": "productUoms"
+      },
+      {
+        "lineNo": 468,
+        "type": "update",
+        "table": "productDefaultBins"
+      },
+      {
+        "lineNo": 479,
+        "type": "insert",
+        "table": "productDefaultBins"
+      },
+      {
+        "lineNo": 537,
+        "type": "delete",
+        "table": "productDefaultBins"
+      },
+      {
+        "lineNo": 631,
+        "type": "insert",
+        "table": "productComponents"
+      },
+      {
+        "lineNo": 694,
+        "type": "update",
+        "table": "productComponents"
+      },
+      {
+        "lineNo": 745,
+        "type": "delete",
+        "table": "productComponents"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 60,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.PRODUCT,\r\n        entityId: product.productId,\r\n        eventType: EventType.CREATED,\r\n        entityDisplayName: product.name,\r\n        payload: dto,\r\n        actor,\r\n      });\r\n"
+      },
+      {
+        "lineNo": 119,
+        "eventStr": "          await emitEvent(tx as any, {\r\n            entityType: EntityType.PRODUCT,\r\n            entityId: id,\r\n            eventType: EventType.STATUS_CHANGED,\r\n            entityDisplayName: updated.name,\r\n            payload: {\r\n              from: existing[0].stateCode,\r\n              to: audit.changes.stateCode,\r\n            },\r\n"
+      },
+      {
+        "lineNo": 132,
+        "eventStr": "          await emitEvent(tx as any, {\r\n            entityType: EntityType.PRODUCT,\r\n            entityId: id,\r\n            eventType: EventType.UPDATED,\r\n            entityDisplayName: updated.name,\r\n            payload: {\r\n              changes: audit.changes,\r\n              previousValues: audit.previousValues,\r\n            },\r\n"
+      },
+      {
+        "lineNo": 249,
+        "eventStr": "    await emitEvent(targetTx as any, {\r\n      entityType: EntityType.PRODUCT,\r\n      entityId: productId,\r\n      eventType: eventType,\r\n      entityDisplayName: updated.name,\r\n      payload: {\r\n        from: currentState,\r\n        to: newState,\r\n      },\r\n"
+      },
+      {
+        "lineNo": 307,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.PRODUCT_SUPPLIER,\r\n        entityId: mapping.productSupplierId,\r\n        eventType: EventType.LINKED,\r\n        entityDisplayName: existingProduct[0].name,\r\n        payload: dto,\r\n        actor,\r\n      });\r\n"
+      },
+      {
+        "lineNo": 344,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.PRODUCT_SUPPLIER,\r\n        entityId: mapping.productSupplierId,\r\n        eventType: EventType.UNLINKED,\r\n        entityDisplayName: product.name,\r\n        payload: { stateCode: PRODUCT_STATE.ARCHIVED },\r\n"
+      },
+      {
+        "lineNo": 394,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.PRODUCT,\r\n        entityId: productId,\r\n        eventType: 'uom_added',\r\n        entityDisplayName: existing[0].name,\r\n        payload: { uomCode: dto.uomCode, ratio: dto.ratio },\r\n"
+      },
+      {
+        "lineNo": 437,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.PRODUCT,\r\n        entityId: productId,\r\n        eventType: 'uom_removed',\r\n        entityDisplayName: product.name,\r\n        payload: { uomCode: existing[0].uomCode, ratio: existing[0].ratio },\r\n"
+      },
+      {
+        "lineNo": 504,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.PRODUCT,\r\n        entityId: productId,\r\n        eventType: EventType.UPDATED,\r\n        entityDisplayName: existing[0].name,\r\n        payload: {\r\n          action: 'linked_default_bin',\r\n          binId: dto.binId,\r\n          isPrimary: dto.isPrimaryPerLocation,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 546,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.PRODUCT,\r\n        entityId: existing[0].productId,\r\n        eventType: EventType.UPDATED,\r\n        entityDisplayName: product.name,\r\n        payload: { action: 'unlinked_default_bin', binId: existing[0].binId },\r\n"
+      },
+      {
+        "lineNo": 643,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.PRODUCT,\r\n        entityId: productId,\r\n        eventType: EventType.UPDATED,\r\n        entityDisplayName: parent.name,\r\n        payload: {\r\n          action: 'component_added',\r\n          componentId: component.componentId,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 711,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.PRODUCT,\r\n        entityId: productId,\r\n        eventType: EventType.UPDATED,\r\n        entityDisplayName: product.name,\r\n        payload: { action: 'component_updated', componentId },\r\n"
+      },
+      {
+        "lineNo": 754,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.PRODUCT,\r\n        entityId: productId,\r\n        eventType: EventType.UPDATED,\r\n        entityDisplayName: product.name,\r\n        payload: { action: 'component_removed', componentId },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "products\\products.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 106,
+        "type": "update",
+        "table": "id, dto, user.username"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "purchase-debit-notes\\purchase-debit-notes.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 133,
+        "type": "insert",
+        "table": "purchaseDebitNotes"
+      },
+      {
+        "lineNo": 161,
+        "type": "insert",
+        "table": "purchaseDebitNoteLines"
+      },
+      {
+        "lineNo": 350,
+        "type": "update",
+        "table": "purchaseDebitNotes"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 164,
+        "eventStr": "      await emitEvent(tx as unknown as DrizzleDB, {\n        entityType: EntityType.PURCHASE_ORDER,\n        entityId: ret.purchaseOrderId,\n        eventType: EventType.CREATED,\n        entityDisplayName: po.orderNumber,\n        payload: {\n          debitNoteId: dn.debitNoteId,\n          debitNoteNumber,\n          returnId: dto.returnId,\n        },\n"
+      },
+      {
+        "lineNo": 363,
+        "eventStr": "    await emitEvent(db as unknown as DrizzleDB, {\n      entityType: EntityType.PURCHASE_ORDER,\n      entityId: existing.purchaseOrderId,\n      eventType: EventType.STATUS_CHANGED,\n      entityDisplayName: order.orderNumber,\n      payload: {\n        entity: 'debit_note',\n        entityId: debitNoteId,\n        debitNoteNumber: existing.debitNoteNumber,\n        from: existing.stateCode,\n        to: newState,\n      },\n"
+      }
+    ]
+  },
+  {
+    "file": "purchase-orders\\purchase-order-lifecycle-rules.ts",
+    "dbWrites": [
+      {
+        "lineNo": 93,
+        "type": "update",
+        "table": "purchaseOrders"
+      },
+      {
+        "lineNo": 177,
+        "type": "update",
+        "table": "purchaseOrders"
+      },
+      {
+        "lineNo": 296,
+        "type": "update",
+        "table": "purchaseOrders"
+      },
+      {
+        "lineNo": 394,
+        "type": "update",
+        "table": "purchaseOrders"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 98,
+        "eventStr": "    await emitEvent(db as any, {\r\n      entityType: EntityType.PURCHASE_ORDER,\r\n      entityId: poId,\r\n      eventType: EventType.STATUS_CHANGED,\r\n      entityDisplayName: order.orderNumber,\r\n      payload: {\r\n        rule: 'auto-receive-when-fully-received',\r\n        trigger,\r\n        from: order.stateCode,\r\n        to: PURCHASE_ORDER_STATE.RECEIVED,\r\n        reason: 'All lines fully received',\r\n      },\r\n"
+      },
+      {
+        "lineNo": 185,
+        "eventStr": "    await emitEvent(db as any, {\r\n      entityType: EntityType.PURCHASE_ORDER,\r\n      entityId: poId,\r\n      eventType: EventType.STATUS_CHANGED,\r\n      entityDisplayName: order.orderNumber,\r\n      payload: {\r\n        rule: 'auto-partially-receive-when-some-received',\r\n        trigger,\r\n        from: order.stateCode,\r\n        to: PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,\r\n        reason: 'Some lines received',\r\n      },\r\n"
+      },
+      {
+        "lineNo": 301,
+        "eventStr": "    await emitEvent(db as any, {\r\n      entityType: EntityType.PURCHASE_ORDER,\r\n      entityId: poId,\r\n      eventType: EventType.STATUS_CHANGED,\r\n      entityDisplayName: order.orderNumber,\r\n      payload: {\r\n        rule: 'auto-invoice-when-fully-invoiced-and-received',\r\n        trigger,\r\n        from: order.stateCode,\r\n        to: PURCHASE_ORDER_STATE.INVOICED,\r\n        reason: 'All lines fully invoiced and received',\r\n      },\r\n"
+      },
+      {
+        "lineNo": 403,
+        "eventStr": "    await emitEvent(db as any, {\r\n      entityType: EntityType.PURCHASE_ORDER,\r\n      entityId: poId,\r\n      eventType: EventType.STATUS_CHANGED,\r\n      entityDisplayName: order.orderNumber,\r\n      payload: {\r\n        rule: 'auto-revert-to-partially-received-on-return',\r\n        trigger,\r\n        from: order.stateCode,\r\n        to: newState,\r\n        reason,\r\n      },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "purchase-orders\\purchase-orders.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 172,
+        "type": "insert",
+        "table": "purchaseOrders"
+      },
+      {
+        "lineNo": 231,
+        "type": "insert",
+        "table": "purchaseOrderLineItems"
+      },
+      {
+        "lineNo": 659,
+        "type": "update",
+        "table": "backorders"
+      },
+      {
+        "lineNo": 750,
+        "type": "insert",
+        "table": "purchaseOrderLineItems"
+      },
+      {
+        "lineNo": 859,
+        "type": "update",
+        "table": "purchaseOrderLineItems"
+      },
+      {
+        "lineNo": 890,
+        "type": "update",
+        "table": "backorders"
+      },
+      {
+        "lineNo": 900,
+        "type": "delete",
+        "table": "purchaseOrderLineItems"
+      },
+      {
+        "lineNo": 940,
+        "type": "update",
+        "table": "purchaseOrders"
+      },
+      {
+        "lineNo": 963,
+        "type": "delete",
+        "table": "purchaseOrderLineItems"
+      },
+      {
+        "lineNo": 999,
+        "type": "insert",
+        "table": "purchaseOrderLineItems"
+      },
+      {
+        "lineNo": 1208,
+        "type": "update",
+        "table": "purchaseOrders"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 234,
+        "eventStr": "      await emitEvent(tx, {\n        entityType: EntityType.PURCHASE_ORDER,\n        entityId: order.purchaseOrderId,\n        eventType: EventType.CREATED,\n        entityDisplayName: order.orderNumber,\n        payload: {\n          orderNumber: order.orderNumber,\n          vendorId: createDto.vendorId,\n          lineCount: createDto.lines?.length || 0,\n        },\n"
+      },
+      {
+        "lineNo": 765,
+        "eventStr": "      await emitEvent(tx, {\n        entityType: EntityType.PURCHASE_ORDER,\n        entityId: orderId,\n        eventType: EventType.LINE_ADDED,\n        entityDisplayName: existing.orderNumber,\n        payload: {\n          productId: lineDto.productId,\n          quantity: lineDto.quantity,\n          pricePerUnit: lineDto.pricePerUnit,\n        },\n"
+      },
+      {
+        "lineNo": 863,
+        "eventStr": "      await emitEvent(tx, {\n        entityType: EntityType.PURCHASE_ORDER,\n        entityId: orderId,\n        eventType: EventType.LINE_UPDATED,\n        entityDisplayName: existing.orderNumber,\n        payload: {\n          lineId,\n          changes: updateFields,\n        },\n"
+      },
+      {
+        "lineNo": 903,
+        "eventStr": "      await emitEvent(tx, {\n        entityType: EntityType.PURCHASE_ORDER,\n        entityId: orderId,\n        eventType: EventType.LINE_REMOVED,\n        entityDisplayName: existing.orderNumber,\n        payload: { lineId },\n"
+      },
+      {
+        "lineNo": 1005,
+        "eventStr": "          await emitEvent(tx as any, {\n            entityType: EntityType.PURCHASE_ORDER,\n            entityId: id,\n            eventType: EventType.UPDATED,\n            entityDisplayName: existing.orderNumber,\n            payload: {\n              changes: audit.changes,\n              previousValues: audit.previousValues,\n              linesCount: updateDto.lines?.length,\n            },\n"
+      },
+      {
+        "lineNo": 1225,
+        "eventStr": "    await emitEvent(db as any, {\n      entityType: EntityType.PURCHASE_ORDER,\n      entityId: purchaseOrderId,\n      eventType: eventType,\n      entityDisplayName: existing.orderNumber,\n      payload: {\n        entity: 'purchase_order',\n        entityId: purchaseOrderId,\n        orderNumber: existing.orderNumber,\n        from: existing.stateCode,\n        to: newState,\n      },\n"
+      }
+    ]
+  },
+  {
+    "file": "purchase-orders\\purchase-returns.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 123,
+        "type": "insert",
+        "table": "purchaseOrderReturns"
+      },
+      {
+        "lineNo": 142,
+        "type": "insert",
+        "table": "purchaseOrderReturnLines"
+      },
+      {
+        "lineNo": 332,
+        "type": "insert",
+        "table": "purchaseOrderReturnShipments"
+      },
+      {
+        "lineNo": 355,
+        "type": "insert",
+        "table": "purchaseOrderReturnShipmentLines"
+      },
+      {
+        "lineNo": 554,
+        "type": "update",
+        "table": "purchaseOrderReturns"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 146,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.PURCHASE_ORDER,\r\n        entityId: purchaseOrderId,\r\n        eventType: EventType.RETURN_CREATED,\r\n        entityDisplayName: order.orderNumber,\r\n        payload: { returnId: ret.returnId, returnNumber },\r\n"
+      },
+      {
+        "lineNo": 226,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.PURCHASE_ORDER,\r\n        entityId: po.purchaseOrderId,\r\n        eventType: EventType.STATUS_CHANGED,\r\n        entityDisplayName: po.orderNumber,\r\n        payload: {\r\n          entity: 'return',\r\n          entityId: returnId,\r\n          returnNumber: ret.returnNumber,\r\n          from: ret.stateCode,\r\n          to: PURCHASE_RETURN_STATE.STAGED,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 279,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.PURCHASE_ORDER,\r\n        entityId: po.purchaseOrderId,\r\n        eventType: EventType.STATUS_CHANGED,\r\n        entityDisplayName: po.orderNumber,\r\n        payload: {\r\n          entity: 'return',\r\n          entityId: returnId,\r\n          returnNumber: ret.returnNumber,\r\n          from: ret.stateCode,\r\n          to: PURCHASE_RETURN_STATE.CANCELLED,\r\n        },\r\n"
+      },
+      {
+        "lineNo": 502,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.PURCHASE_ORDER,\r\n        entityId: po.purchaseOrderId,\r\n        eventType: EventType.STATUS_CHANGED,\r\n        entityDisplayName: po.orderNumber,\r\n        payload: {\r\n          entity: 'return',\r\n          entityId: returnId,\r\n          returnNumber: ret.returnNumber,\r\n          from: ret.stateCode,\r\n          to: PURCHASE_RETURN_STATE.SHIPPED,\r\n        },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "scripts\\fix-countries-currencies.ts",
+    "dbWrites": [
+      {
+        "lineNo": 58,
+        "type": "update",
+        "table": "customers"
+      },
+      {
+        "lineNo": 74,
+        "type": "update",
+        "table": "suppliers"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "scripts\\seed-business-reports.ts",
+    "dbWrites": [
+      {
+        "lineNo": 717,
+        "type": "insert",
+        "table": "businessReports"
+      },
+      {
+        "lineNo": 721,
+        "type": "update",
+        "table": "businessReports"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "scripts\\seed-demo.ts",
+    "dbWrites": [
+      {
+        "lineNo": 124,
+        "type": "insert",
+        "table": "locations"
+      },
+      {
+        "lineNo": 136,
+        "type": "insert",
+        "table": "zones"
+      },
+      {
+        "lineNo": 143,
+        "type": "insert",
+        "table": "bins"
+      },
+      {
+        "lineNo": 173,
+        "type": "insert",
+        "table": "suppliers"
+      },
+      {
+        "lineNo": 191,
+        "type": "insert",
+        "table": "customers"
+      },
+      {
+        "lineNo": 204,
+        "type": "insert",
+        "table": "uomDictionary"
+      },
+      {
+        "lineNo": 229,
+        "type": "insert",
+        "table": "products"
+      },
+      {
+        "lineNo": 270,
+        "type": "insert",
+        "table": "purchaseOrders"
+      },
+      {
+        "lineNo": 286,
+        "type": "insert",
+        "table": "purchaseOrderLineItems"
+      },
+      {
+        "lineNo": 299,
+        "type": "insert",
+        "table": "inventoryEntries"
+      },
+      {
+        "lineNo": 308,
+        "type": "insert",
+        "table": "inventoryLedger"
+      },
+      {
+        "lineNo": 333,
+        "type": "insert",
+        "table": "binContents"
+      },
+      {
+        "lineNo": 354,
+        "type": "insert",
+        "table": "salesOrders"
+      },
+      {
+        "lineNo": 372,
+        "type": "insert",
+        "table": "salesOrderLineItems"
+      },
+      {
+        "lineNo": 386,
+        "type": "insert",
+        "table": "salesOrderPicks"
+      },
+      {
+        "lineNo": 398,
+        "type": "insert",
+        "table": "inventoryEntries"
+      },
+      {
+        "lineNo": 418,
+        "type": "insert",
+        "table": "salesOrderShipments"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "scripts\\seed-dynamic-reports.ts",
+    "dbWrites": [
+      {
+        "lineNo": 165,
+        "type": "delete",
+        "table": "pdfTemplateHooks"
+      },
+      {
+        "lineNo": 168,
+        "type": "delete",
+        "table": "pdfTemplateContexts"
+      },
+      {
+        "lineNo": 170,
+        "type": "delete",
+        "table": "pdfTemplates"
+      },
+      {
+        "lineNo": 174,
+        "type": "insert",
+        "table": "pdfTemplates"
+      },
+      {
+        "lineNo": 194,
+        "type": "insert",
+        "table": "pdfTemplateContexts"
+      },
+      {
+        "lineNo": 201,
+        "type": "insert",
+        "table": "pdfTemplateHooks"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "scripts\\seed.ts",
+    "dbWrites": [
+      {
+        "lineNo": 47,
+        "type": "update",
+        "table": "nsBuffer"
+      },
+      {
+        "lineNo": 48,
+        "type": "update",
+        "table": "nameBuffer"
+      },
+      {
+        "lineNo": 107,
+        "type": "delete",
+        "table": "casbinRule"
+      },
+      {
+        "lineNo": 1308,
+        "type": "insert",
+        "table": "casbinRule"
+      },
+      {
+        "lineNo": 1335,
+        "type": "insert",
+        "table": "users"
+      },
+      {
+        "lineNo": 1350,
+        "type": "insert",
+        "table": "users"
+      },
+      {
+        "lineNo": 1365,
+        "type": "insert",
+        "table": "users"
+      },
+      {
+        "lineNo": 1381,
+        "type": "insert",
+        "table": "users"
+      },
+      {
+        "lineNo": 1401,
+        "type": "insert",
+        "table": "users"
+      },
+      {
+        "lineNo": 1421,
+        "type": "insert",
+        "table": "users"
+      },
+      {
+        "lineNo": 1441,
+        "type": "insert",
+        "table": "users"
+      },
+      {
+        "lineNo": 1457,
+        "type": "insert",
+        "table": "users"
+      },
+      {
+        "lineNo": 1501,
+        "type": "insert",
+        "table": "uomDictionary"
+      },
+      {
+        "lineNo": 1509,
+        "type": "insert",
+        "table": "products"
+      },
+      {
+        "lineNo": 1538,
+        "type": "insert",
+        "table": "costCenters"
+      },
+      {
+        "lineNo": 1552,
+        "type": "insert",
+        "table": "activities"
+      },
+      {
+        "lineNo": 1581,
+        "type": "insert",
+        "table": "organization"
+      },
+      {
+        "lineNo": 1611,
+        "type": "insert",
+        "table": "appSettings"
+      },
+      {
+        "lineNo": 1649,
+        "type": "insert",
+        "table": "glSettings"
+      },
+      {
+        "lineNo": 1722,
+        "type": "insert",
+        "table": "glAccounts"
+      },
+      {
+        "lineNo": 1746,
+        "type": "update",
+        "table": "glAccounts"
+      },
+      {
+        "lineNo": 1782,
+        "type": "insert",
+        "table": "taxCategories"
+      },
+      {
+        "lineNo": 1806,
+        "type": "insert",
+        "table": "tradingTerms"
+      },
+      {
+        "lineNo": 1851,
+        "type": "insert",
+        "table": "glSettings"
+      },
+      {
+        "lineNo": 1916,
+        "type": "insert",
+        "table": "pdfTemplates"
+      },
+      {
+        "lineNo": 1938,
+        "type": "insert",
+        "table": "pdfTemplateHooks"
+      },
+      {
+        "lineNo": 1953,
+        "type": "insert",
+        "table": "pdfTemplateContexts"
+      },
+      {
+        "lineNo": 2004,
+        "type": "insert",
+        "table": "customers"
+      },
+      {
+        "lineNo": 2019,
+        "type": "insert",
+        "table": "suppliers"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "settings\\activities.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 75,
+        "type": "update",
+        "table": "id, dto"
+      },
+      {
+        "lineNo": 86,
+        "type": "delete",
+        "table": "id"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "settings\\activities.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 36,
+        "type": "insert",
+        "table": "activities"
+      },
+      {
+        "lineNo": 59,
+        "type": "update",
+        "table": "activities"
+      },
+      {
+        "lineNo": 78,
+        "type": "delete",
+        "table": "activities"
+      },
+      {
+        "lineNo": 101,
+        "type": "insert",
+        "table": "activities"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "settings\\app-config.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 66,
+        "type": "update",
+        "table": "updatePayload"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "settings\\app-config.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 59,
+        "type": "update",
+        "table": "appSettings"
+      },
+      {
+        "lineNo": 220,
+        "type": "update",
+        "table": "appSettings"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "settings\\cost-centers.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 75,
+        "type": "update",
+        "table": "id, dto"
+      },
+      {
+        "lineNo": 86,
+        "type": "delete",
+        "table": "id"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "settings\\cost-centers.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 36,
+        "type": "insert",
+        "table": "costCenters"
+      },
+      {
+        "lineNo": 59,
+        "type": "update",
+        "table": "costCenters"
+      },
+      {
+        "lineNo": 78,
+        "type": "delete",
+        "table": "costCenters"
+      },
+      {
+        "lineNo": 101,
+        "type": "insert",
+        "table": "costCenters"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "settings\\exchange-rates.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 74,
+        "type": "update",
+        "table": "id, dto"
+      },
+      {
+        "lineNo": 82,
+        "type": "delete",
+        "table": "id"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "settings\\exchange-rates.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 49,
+        "type": "insert",
+        "table": "exchangeRates"
+      },
+      {
+        "lineNo": 77,
+        "type": "update",
+        "table": "exchangeRates"
+      },
+      {
+        "lineNo": 98,
+        "type": "delete",
+        "table": "exchangeRates"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "settings\\license.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 25,
+        "type": "update",
+        "table": "pem.trim("
+      },
+      {
+        "lineNo": 136,
+        "type": "update",
+        "table": "activeLicenseKey"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "settings\\organization.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 40,
+        "type": "update",
+        "table": "dto"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "settings\\organization.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 51,
+        "type": "insert",
+        "table": "organization"
+      },
+      {
+        "lineNo": 60,
+        "type": "update",
+        "table": "organization"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "settings\\uom-dictionary.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 70,
+        "type": "update",
+        "table": "code, dto"
+      },
+      {
+        "lineNo": 78,
+        "type": "delete",
+        "table": "code"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "settings\\uom-dictionary.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 40,
+        "type": "insert",
+        "table": "uomDictionary"
+      },
+      {
+        "lineNo": 62,
+        "type": "update",
+        "table": "uomDictionary"
+      },
+      {
+        "lineNo": 78,
+        "type": "delete",
+        "table": "uomDictionary"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "setup\\setup.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 538,
+        "type": "insert",
+        "table": "entry.table"
+      },
+      {
+        "lineNo": 550,
+        "type": "insert",
+        "table": "entry.table"
+      },
+      {
+        "lineNo": 554,
+        "type": "insert",
+        "table": "entry.table"
+      },
+      {
+        "lineNo": 613,
+        "type": "update",
+        "table": "glSettings"
+      },
+      {
+        "lineNo": 719,
+        "type": "update",
+        "table": "appSettings"
+      },
+      {
+        "lineNo": 857,
+        "type": "update",
+        "table": "glSettings"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "suppliers\\supplier-groups.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 87,
+        "type": "update",
+        "table": "id, dto"
+      },
+      {
+        "lineNo": 98,
+        "type": "delete",
+        "table": "id"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "suppliers\\supplier-groups.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 44,
+        "type": "insert",
+        "table": "supplierGroups"
+      },
+      {
+        "lineNo": 77,
+        "type": "update",
+        "table": "supplierGroups"
+      },
+      {
+        "lineNo": 127,
+        "type": "delete",
+        "table": "supplierGroups"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "suppliers\\suppliers-write.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 48,
+        "type": "insert",
+        "table": "coreSuppliers"
+      },
+      {
+        "lineNo": 93,
+        "type": "update",
+        "table": "coreSuppliers"
+      },
+      {
+        "lineNo": 222,
+        "type": "update",
+        "table": "coreSuppliers"
+      },
+      {
+        "lineNo": 267,
+        "type": "insert",
+        "table": "supplierExpiries"
+      },
+      {
+        "lineNo": 320,
+        "type": "update",
+        "table": "supplierExpiries"
+      },
+      {
+        "lineNo": 357,
+        "type": "delete",
+        "table": "supplierExpiries"
+      }
+    ],
+    "events": [
+      {
+        "lineNo": 57,
+        "eventStr": "      await emitEvent(tx as any, {\r\n        entityType: EntityType.SUPPLIER,\r\n        entityId: supplier.vendorId,\r\n        eventType: EventType.CREATED,\r\n        entityDisplayName: supplier.name,\r\n        payload: dto,\r\n        actor,\r\n      });\r\n"
+      },
+      {
+        "lineNo": 107,
+        "eventStr": "          await emitEvent(tx as any, {\r\n            entityType: EntityType.SUPPLIER,\r\n            entityId: id,\r\n            eventType: EventType.STATUS_CHANGED,\r\n            entityDisplayName: updated.name,\r\n            payload: {\r\n              from: existing[0].stateCode,\r\n              to: audit.changes.stateCode,\r\n            },\r\n"
+      },
+      {
+        "lineNo": 120,
+        "eventStr": "          await emitEvent(tx as any, {\r\n            entityType: EntityType.SUPPLIER,\r\n            entityId: id,\r\n            eventType: EventType.UPDATED,\r\n            entityDisplayName: updated.name,\r\n            payload: {\r\n              changes: audit.changes,\r\n              previousValues: audit.previousValues,\r\n            },\r\n"
+      },
+      {
+        "lineNo": 237,
+        "eventStr": "    await emitEvent(targetTx as any, {\r\n      entityType: EntityType.SUPPLIER,\r\n      entityId: vendorId,\r\n      eventType: eventType,\r\n      entityDisplayName: updated.name,\r\n      payload: {\r\n        from: currentState,\r\n        to: newState,\r\n      },\r\n"
+      },
+      {
+        "lineNo": 278,
+        "eventStr": "    await emitEvent(this.db as any, {\r\n      entityType: EntityType.SUPPLIER,\r\n      entityId: vendorId,\r\n      eventType: EventType.ADDED_EXPIRY,\r\n      entityDisplayName: existing[0].name,\r\n      payload: { expiryType: dto.expiryType },\r\n"
+      },
+      {
+        "lineNo": 326,
+        "eventStr": "    await emitEvent(this.db as any, {\r\n      entityType: EntityType.SUPPLIER,\r\n      entityId: vendorId,\r\n      eventType: EventType.UPDATED_EXPIRY,\r\n      entityDisplayName: existing[0].supplierName,\r\n      payload: { expiryId },\r\n"
+      },
+      {
+        "lineNo": 361,
+        "eventStr": "    await emitEvent(this.db as any, {\r\n      entityType: EntityType.SUPPLIER,\r\n      entityId: vendorId,\r\n      eventType: EventType.DELETED_EXPIRY,\r\n      entityDisplayName: existing[0].supplierName,\r\n      payload: { type },\r\n"
+      }
+    ]
+  },
+  {
+    "file": "suppliers\\suppliers.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 115,
+        "type": "update",
+        "table": "id, dto, user.username"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "suppliers\\suppliers.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 168,
+        "type": "update",
+        "table": "coreSuppliers"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "tax\\tax-categories.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 86,
+        "type": "update",
+        "table": "id, dto"
+      },
+      {
+        "lineNo": 97,
+        "type": "delete",
+        "table": "id"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "tax\\tax-categories.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 79,
+        "type": "update",
+        "table": "taxCategories"
+      },
+      {
+        "lineNo": 85,
+        "type": "insert",
+        "table": "taxCategories"
+      },
+      {
+        "lineNo": 103,
+        "type": "update",
+        "table": "taxCategories"
+      },
+      {
+        "lineNo": 114,
+        "type": "update",
+        "table": "taxCategories"
+      },
+      {
+        "lineNo": 139,
+        "type": "delete",
+        "table": "taxCategories"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "user-settings\\user-settings.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 18,
+        "type": "insert",
+        "table": "userSettings"
+      },
+      {
+        "lineNo": 39,
+        "type": "update",
+        "table": "userSettings"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "users\\users.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 96,
+        "type": "update",
+        "table": "id, dto, user.userId, user.username"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "users\\users.service.ts",
+    "dbWrites": [
+      {
+        "lineNo": 83,
+        "type": "insert",
+        "table": "users"
+      },
+      {
+        "lineNo": 93,
+        "type": "insert",
+        "table": "userEvents"
+      },
+      {
+        "lineNo": 181,
+        "type": "update",
+        "table": "users"
+      },
+      {
+        "lineNo": 186,
+        "type": "insert",
+        "table": "userEvents"
+      },
+      {
+        "lineNo": 220,
+        "type": "update",
+        "table": "users"
+      },
+      {
+        "lineNo": 225,
+        "type": "insert",
+        "table": "userEvents"
+      },
+      {
+        "lineNo": 262,
+        "type": "insert",
+        "table": "userEvents"
+      },
+      {
+        "lineNo": 273,
+        "type": "delete",
+        "table": "users"
+      }
+    ],
+    "events": []
+  },
+  {
+    "file": "webhooks\\webhooks.controller.ts",
+    "dbWrites": [
+      {
+        "lineNo": 85,
+        "type": "insert",
+        "table": "webhooks"
+      },
+      {
+        "lineNo": 112,
+        "type": "update",
+        "table": "webhooks"
+      },
+      {
+        "lineNo": 142,
+        "type": "delete",
+        "table": "webhooks"
+      }
+    ],
+    "events": []
+  }
+]

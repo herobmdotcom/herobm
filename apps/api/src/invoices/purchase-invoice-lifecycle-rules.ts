@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { salesInvoices, purchaseInvoices } from '../drizzle/modbm-core-schema';
+import { purchaseInvoices } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { SALES_INVOICE_STATE } from '@modbm/shared';
+import { PURCHASE_INVOICE_STATE } from '@modbm/shared';
 
-export interface InvoiceLifecycleTrigger {
+export interface PurchaseInvoiceLifecycleTrigger {
   entity: 'payment';
   id: string;
   action: 'allocated' | 'unallocated';
@@ -18,15 +18,14 @@ export interface AutoTransitionResult {
   reason: string;
 }
 
-export interface InvoiceLifecycleRule {
+export interface PurchaseInvoiceLifecycleRule {
   name: string;
   description: string;
   enabled: boolean;
   evaluate: (
     db: DrizzleDB,
-    invoiceType: 'sales' | 'purchase',
     invoiceId: string,
-    trigger: InvoiceLifecycleTrigger,
+    trigger: PurchaseInvoiceLifecycleTrigger,
     actor: string,
   ) => Promise<AutoTransitionResult | null>;
 }
@@ -35,36 +34,30 @@ export interface InvoiceLifecycleRule {
 // Rules
 // ============================================================================
 
-export const autoTransitionInvoiceBasedOnOutstandingAmount: InvoiceLifecycleRule =
+export const autoTransitionPurchaseInvoiceBasedOnOutstandingAmount: PurchaseInvoiceLifecycleRule =
   {
-    name: 'auto-transition-invoice-outstanding-amount',
+    name: 'auto-transition-purchase-invoice-outstanding-amount',
     description:
-      'Transitions an invoice between invoiced, partially_paid, and paid based on its outstanding amount',
+      'Transitions a purchase invoice between invoiced, partially_paid, and paid based on its outstanding amount',
     enabled: true,
-    evaluate: async (db, invoiceType, invoiceId, trigger, actor) => {
-      const table = invoiceType === 'sales' ? salesInvoices : purchaseInvoices;
-      const pkColumn =
-        invoiceType === 'sales'
-          ? salesInvoices.invoiceId
-          : purchaseInvoices.invoiceId;
-
+    evaluate: async (db, invoiceId, trigger, actor) => {
       // 1. Get current invoice state
       const [invoice] = await db
         .select({
-          stateCode: table.stateCode,
-          totalAmount: table.totalAmount,
-          outstandingAmount: table.outstandingAmount,
-          invoiceNumber: table.invoiceNumber,
+          stateCode: purchaseInvoices.stateCode,
+          totalAmount: purchaseInvoices.totalAmount,
+          outstandingAmount: purchaseInvoices.outstandingAmount,
+          invoiceNumber: purchaseInvoices.invoiceNumber,
         })
-        .from(table)
-        .where(eq(pkColumn, invoiceId));
+        .from(purchaseInvoices)
+        .where(eq(purchaseInvoices.invoiceId, invoiceId));
 
       if (!invoice) return null;
 
       // Ignore drafts and cancelled invoices
       if (
-        invoice.stateCode === SALES_INVOICE_STATE.DRAFT ||
-        invoice.stateCode === SALES_INVOICE_STATE.CANCELLED
+        invoice.stateCode === PURCHASE_INVOICE_STATE.DRAFT ||
+        invoice.stateCode === PURCHASE_INVOICE_STATE.CANCELLED
       )
         return null;
 
@@ -75,11 +68,11 @@ export const autoTransitionInvoiceBasedOnOutstandingAmount: InvoiceLifecycleRule
 
       // 2. Determine correct state
       if (outstanding <= 0.001) {
-        targetState = SALES_INVOICE_STATE.PAID;
+        targetState = PURCHASE_INVOICE_STATE.PAID;
       } else if (outstanding < total - 0.001) {
-        targetState = SALES_INVOICE_STATE.PARTIALLY_PAID;
+        targetState = PURCHASE_INVOICE_STATE.PARTIALLY_PAID;
       } else {
-        targetState = SALES_INVOICE_STATE.INVOICED;
+        targetState = PURCHASE_INVOICE_STATE.INVOICED;
       }
 
       // 3. If state hasn't changed, do nothing
@@ -87,25 +80,19 @@ export const autoTransitionInvoiceBasedOnOutstandingAmount: InvoiceLifecycleRule
 
       // 4. Execute transition
       await db
+        .update(purchaseInvoices)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update(table as any)
-        .set({ stateCode: targetState, modifiedOn: new Date() })
-        .where(eq(pkColumn, invoiceId));
+        .set({ stateCode: targetState as any, modifiedOn: new Date() })
+        .where(eq(purchaseInvoices.invoiceId, invoiceId));
 
-      const entityType =
-        invoiceType === 'sales'
-          ? EntityType.SALES_INVOICE
-          : EntityType.PURCHASE_INVOICE;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await emitEvent(db as any, {
-        entityType,
+      await emitEvent(db, {
+        entityType: EntityType.PURCHASE_INVOICE,
         entityId: invoiceId,
         eventType: EventType.STATUS_CHANGED,
         entityDisplayName: invoice.invoiceNumber,
         payload: {
           isAutomated: true,
-          rule: 'auto-transition-invoice-outstanding-amount',
+          rule: 'auto-transition-purchase-invoice-outstanding-amount',
           trigger,
           from: invoice.stateCode,
           to: targetState,
@@ -115,7 +102,7 @@ export const autoTransitionInvoiceBasedOnOutstandingAmount: InvoiceLifecycleRule
       });
 
       return {
-        ruleName: 'auto-transition-invoice-outstanding-amount',
+        ruleName: 'auto-transition-purchase-invoice-outstanding-amount',
         from: invoice.stateCode,
         to: targetState,
         reason: `Outstanding amount changed to ${outstanding}`,
@@ -127,18 +114,17 @@ export const autoTransitionInvoiceBasedOnOutstandingAmount: InvoiceLifecycleRule
 // Registry & Engine
 // ============================================================================
 
-const LIFECYCLE_RULES: InvoiceLifecycleRule[] = [
-  autoTransitionInvoiceBasedOnOutstandingAmount,
+const LIFECYCLE_RULES: PurchaseInvoiceLifecycleRule[] = [
+  autoTransitionPurchaseInvoiceBasedOnOutstandingAmount,
 ];
 
 /**
  * Evaluate all enabled lifecycle rules against the current state.
  */
-export async function evaluateInvoiceLifecycleRules(
+export async function evaluatePurchaseInvoiceLifecycleRules(
   db: DrizzleDB,
-  invoiceType: 'sales' | 'purchase',
   invoiceId: string,
-  trigger: InvoiceLifecycleTrigger,
+  trigger: PurchaseInvoiceLifecycleTrigger,
   actor: string,
 ): Promise<AutoTransitionResult[]> {
   const transitions: AutoTransitionResult[] = [];
@@ -146,13 +132,7 @@ export async function evaluateInvoiceLifecycleRules(
   for (const rule of LIFECYCLE_RULES) {
     if (!rule.enabled) continue;
 
-    const result = await rule.evaluate(
-      db,
-      invoiceType,
-      invoiceId,
-      trigger,
-      actor,
-    );
+    const result = await rule.evaluate(db, invoiceId, trigger, actor);
     if (result) {
       transitions.push(result);
       break; // One transition per pass

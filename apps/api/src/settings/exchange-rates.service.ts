@@ -9,6 +9,8 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { exchangeRates } from '../drizzle/modbm-core-schema';
 import { CreateExchangeRateDto, UpdateExchangeRateDto } from './dto';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class ExchangeRatesService {
@@ -21,8 +23,9 @@ export class ExchangeRatesService {
       .orderBy(exchangeRates.currencyCode);
   }
 
-  async findOne(id: string) {
-    const rows = await this.db
+  async findOne(id: string, tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const rows = await db
       .select()
       .from(exchangeRates)
       .where(eq(exchangeRates.exchangeRateId, id))
@@ -33,7 +36,7 @@ export class ExchangeRatesService {
     return rows[0];
   }
 
-  async create(dto: CreateExchangeRateDto) {
+  async create(dto: CreateExchangeRateDto, userId?: string) {
     if (
       !dto.currencyCode ||
       !dto.currencyName ||
@@ -45,20 +48,32 @@ export class ExchangeRatesService {
       );
     }
     try {
-      const rows = await this.db
-        .insert(exchangeRates)
-        .values({
-          currencyCode: dto.currencyCode.toUpperCase().trim(),
-          currencyName: dto.currencyName.trim(),
-          buyRate: dto.buyRate,
-          sellRate: dto.sellRate,
-          effectiveDate: dto.effectiveDate
-            ? new Date(dto.effectiveDate)
-            : new Date(),
-          updatedOn: new Date(),
-        })
-        .returning();
-      return rows[0];
+      return await this.db.transaction(async (tx) => {
+        const rows = await tx
+          .insert(exchangeRates)
+          .values({
+            currencyCode: dto.currencyCode.toUpperCase().trim(),
+            currencyName: dto.currencyName.trim(),
+            buyRate: dto.buyRate,
+            sellRate: dto.sellRate,
+            effectiveDate: dto.effectiveDate
+              ? new Date(dto.effectiveDate)
+              : new Date(),
+            updatedOn: new Date(),
+          })
+          .returning();
+
+        await emitEvent(tx, {
+          entityType: EntityType.EXCHANGE_RATE,
+          entityId: rows[0].exchangeRateId,
+          eventType: EventType.CREATED,
+          entityDisplayName: rows[0].currencyCode,
+          payload: dto,
+          actor: userId,
+        });
+
+        return rows[0];
+      });
     } catch (err: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((err as any)?.code === '23505') {
@@ -70,33 +85,56 @@ export class ExchangeRatesService {
     }
   }
 
-  async update(id: string, dto: UpdateExchangeRateDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateExchangeRateDto, userId?: string) {
+    return await this.db.transaction(async (tx) => {
+      await this.findOne(id, tx);
 
-    const rows = await this.db
-      .update(exchangeRates)
-      .set({
-        ...(dto.currencyName !== undefined && {
-          currencyName: dto.currencyName.trim(),
-        }),
-        ...(dto.buyRate !== undefined && { buyRate: dto.buyRate }),
-        ...(dto.sellRate !== undefined && { sellRate: dto.sellRate }),
-        ...(dto.effectiveDate !== undefined && {
-          effectiveDate: new Date(dto.effectiveDate),
-        }),
-        updatedOn: new Date(),
-      })
-      .where(eq(exchangeRates.exchangeRateId, id))
-      .returning();
+      const rows = await tx
+        .update(exchangeRates)
+        .set({
+          ...(dto.currencyName !== undefined && {
+            currencyName: dto.currencyName.trim(),
+          }),
+          ...(dto.buyRate !== undefined && { buyRate: dto.buyRate }),
+          ...(dto.sellRate !== undefined && { sellRate: dto.sellRate }),
+          ...(dto.effectiveDate !== undefined && {
+            effectiveDate: new Date(dto.effectiveDate),
+          }),
+          updatedOn: new Date(),
+        })
+        .where(eq(exchangeRates.exchangeRateId, id))
+        .returning();
 
-    return rows[0];
+      await emitEvent(tx, {
+        entityType: EntityType.EXCHANGE_RATE,
+        entityId: rows[0].exchangeRateId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: rows[0].currencyCode,
+        payload: dto,
+        actor: userId,
+      });
+
+      return rows[0];
+    });
   }
 
-  async delete(id: string) {
-    await this.findOne(id);
-    await this.db
-      .delete(exchangeRates)
-      .where(eq(exchangeRates.exchangeRateId, id));
-    return { deleted: true };
+  async delete(id: string, userId?: string) {
+    return await this.db.transaction(async (tx) => {
+      const rate = await this.findOne(id, tx);
+      await tx
+        .delete(exchangeRates)
+        .where(eq(exchangeRates.exchangeRateId, id));
+
+      await emitEvent(tx, {
+        entityType: EntityType.EXCHANGE_RATE,
+        entityId: id,
+        eventType: EventType.DELETED,
+        entityDisplayName: rate.currencyCode,
+        payload: {},
+        actor: userId,
+      });
+
+      return { deleted: true };
+    });
   }
 }

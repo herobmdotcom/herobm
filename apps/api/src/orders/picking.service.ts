@@ -753,7 +753,7 @@ export class PickingService {
 
       // 3. Update order modifiedOn
       await tx
-        .update(salesOrders)
+        .update(salesOrders) // @modbm-skip-audit
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
@@ -990,7 +990,7 @@ export class PickingService {
    * quantities and available-to-ship amounts, plus existing shipment summaries.
    */
   async getShippingContext(orderId: string) {
-    await findOrder(this.db, orderId);
+    const order = await findOrder(this.db, orderId);
 
     const lines = await this.db
       .select({
@@ -1100,6 +1100,7 @@ export class PickingService {
     }
 
     return {
+      order,
       lines: enrichedLines,
       shipments: shipments.map((s) => ({
         ...s,

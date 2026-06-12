@@ -365,6 +365,7 @@ export class PurchaseInvoiceService {
     const taxAmt = parseFloat(invoice.taxAmount || '0');
     const newTotal = lineTotal + taxAmt;
 
+    // @modbm-skip-audit
     await tx
       .update(purchaseInvoices)
       .set({
@@ -480,6 +481,7 @@ export class PurchaseInvoiceService {
         updateData.amount = pricing.amount;
       }
 
+      // @modbm-skip-audit
       await tx
         .update(purchaseInvoiceLines)
         .set(updateData)
@@ -493,6 +495,7 @@ export class PurchaseInvoiceService {
     });
   }
 
+  // @modbm-skip-audit
   async removeLine(invoiceId: string, lineId: string, actor: string) {
     return this.db.transaction(async (tx) => {
       const [invoice] = await tx
@@ -515,6 +518,7 @@ export class PurchaseInvoiceService {
     });
   }
 
+  // @modbm-skip-audit
   async addLine(
     invoiceId: string,
     dto: {

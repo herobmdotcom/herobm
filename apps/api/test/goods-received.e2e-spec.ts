@@ -164,7 +164,6 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
           ],
         })
         .expect(201);
-
       expect(res.body).toHaveProperty('goodsReceivedId');
       expect(res.body).toHaveProperty('receiptNumber');
       expect(res.body.receiptNumber).toMatch(/^GR-/);

@@ -29,6 +29,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
@@ -59,8 +60,8 @@ export class ActivitiesController {
     summary: 'Create a new activity',
     description: 'Create a new activity',
   })
-  create(@Body() dto: CreateActivityDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CreateActivityDto, @AuthUser() user: JwtUser) {
+    return this.service.create(dto, user?.userId);
   }
 
   @Patch(':id')
@@ -71,8 +72,12 @@ export class ActivitiesController {
     summary: 'Update an activity',
     description: 'Update an activity',
   })
-  update(@Param('id') id: string, @Body() dto: UpdateActivityDto) {
-    return this.service.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateActivityDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.service.update(id, dto, user?.userId);
   }
 
   @Delete(':id')
@@ -82,8 +87,8 @@ export class ActivitiesController {
     summary: 'Delete an activity',
     description: 'Delete an activity',
   })
-  delete(@Param('id') id: string) {
-    return this.service.delete(id);
+  delete(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.service.delete(id, user?.userId);
   }
 
   @Post('import')
@@ -94,7 +99,10 @@ export class ActivitiesController {
     summary: 'Bulk import activities',
     description: 'Bulk import activities',
   })
-  import(@Body() data: CreateActivityDto[]): Promise<BulkImportResultDto> {
-    return this.service.importMany(data);
+  import(
+    @Body() data: CreateActivityDto[],
+    @AuthUser() user: JwtUser,
+  ): Promise<BulkImportResultDto> {
+    return this.service.importMany(data, user?.userId);
   }
 }

@@ -6,4 +6,11 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface UpdatePurchaseInvoiceDto { [key: string]: unknown }
+export interface UpdatePurchaseInvoiceDto {
+  supplierInvoiceNumber?: string;
+  receiptFilename?: string;
+  notes?: string;
+  taxAmount?: string;
+  currencyCode?: string;
+  vendorId?: string;
+}

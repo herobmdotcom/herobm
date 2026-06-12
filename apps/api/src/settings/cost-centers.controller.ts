@@ -29,6 +29,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
@@ -59,8 +60,8 @@ export class CostCentersController {
     summary: 'Create a new cost center',
     description: 'Create a new cost center',
   })
-  create(@Body() dto: CreateCostCenterDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CreateCostCenterDto, @AuthUser() user: JwtUser) {
+    return this.service.create(dto, user?.userId);
   }
 
   @Patch(':id')
@@ -71,8 +72,12 @@ export class CostCentersController {
     summary: 'Update a cost center',
     description: 'Update a cost center',
   })
-  update(@Param('id') id: string, @Body() dto: UpdateCostCenterDto) {
-    return this.service.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateCostCenterDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.service.update(id, dto, user?.userId);
   }
 
   @Delete(':id')
@@ -82,8 +87,8 @@ export class CostCentersController {
     summary: 'Delete a cost center',
     description: 'Delete a cost center',
   })
-  delete(@Param('id') id: string) {
-    return this.service.delete(id);
+  delete(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.service.delete(id, user?.userId);
   }
 
   @Post('import')
@@ -94,7 +99,10 @@ export class CostCentersController {
     summary: 'Bulk import cost centers',
     description: 'Bulk import cost centers',
   })
-  import(@Body() data: CreateCostCenterDto[]): Promise<BulkImportResultDto> {
-    return this.service.importMany(data);
+  import(
+    @Body() data: CreateCostCenterDto[],
+    @AuthUser() user: JwtUser,
+  ): Promise<BulkImportResultDto> {
+    return this.service.importMany(data, user?.userId);
   }
 }

@@ -13,6 +13,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { AppConfigService } from './app-config.service';
 import { AppConfigResponseDto, UpdateAppConfigDto } from './dto';
 import { EncryptionService } from '../common/encryption.service';
@@ -53,6 +54,7 @@ export class AppConfigController {
   async update(
     @Body()
     dto: UpdateAppConfigDto,
+    @AuthUser() user: JwtUser,
   ) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updatePayload: any = { ...dto };
@@ -63,7 +65,10 @@ export class AppConfigController {
       delete updatePayload.smtpPass;
     }
 
-    const updated = await this.appConfigService.update(updatePayload);
+    const updated = await this.appConfigService.update(
+      updatePayload,
+      user?.userId,
+    );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response: any = { ...updated };
     if (response.smtpPassEncrypted) {

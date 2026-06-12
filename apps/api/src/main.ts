@@ -60,6 +60,8 @@ async function bootstrap() {
       .addServer('http://localhost:3000', 'Local Development Server')
       .addTag('System', 'System configuration, webhooks, auth, and setup')
       .addTag('Customers', 'Customer management and CRM')
+      .addTag('Contacts', 'Customer and supplier contacts')
+      .addTag('Delivery Addresses', 'Delivery locations')
       .addTag('Products', 'Product catalog and master data')
       .addTag('Suppliers', 'Supplier and vendor management')
       .addTag('Sales Orders', 'Sales order processing')

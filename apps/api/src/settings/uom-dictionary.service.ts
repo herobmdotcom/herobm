@@ -10,6 +10,8 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { uomDictionary } from '../drizzle/modbm-core-schema';
 import { CreateUomDto, UpdateUomDto } from './dto';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class UomDictionaryService {
@@ -43,6 +45,16 @@ export class UomDictionaryService {
           description: dto.description.trim(),
         })
         .returning();
+
+      await emitEvent(this.db, {
+        entityType: EntityType.SYSTEM,
+        entityId: 'system',
+        eventType: EventType.UPDATED,
+        entityDisplayName: 'System UOM',
+        payload: { uomCode: rows[0].uomCode },
+        actor: 'system', // we could take actor in create() but no param exists currently
+      });
+
       return rows[0];
     } catch (err: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,6 +80,15 @@ export class UomDictionaryService {
       .where(eq(uomDictionary.uomCode, code))
       .returning();
 
+    await emitEvent(this.db, {
+      entityType: EntityType.SYSTEM,
+      entityId: 'system',
+      eventType: EventType.UPDATED,
+      entityDisplayName: 'System UOM',
+      payload: { uomCode: rows[0].uomCode },
+      actor: 'system',
+    });
+
     return rows[0];
   }
 
@@ -77,6 +98,16 @@ export class UomDictionaryService {
       await this.db
         .delete(uomDictionary)
         .where(eq(uomDictionary.uomCode, code));
+
+      await emitEvent(this.db, {
+        entityType: EntityType.SYSTEM,
+        entityId: 'system',
+        eventType: EventType.UPDATED,
+        entityDisplayName: 'System UOM',
+        payload: { uomCode: code, action: 'deleted' },
+        actor: 'system',
+      });
+
       return { deleted: true };
     } catch (err: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

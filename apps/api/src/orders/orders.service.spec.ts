@@ -50,7 +50,7 @@ describe('OrdersService', () => {
       customerNumber: 'ACC001',
       name: 'Acme Corp',
       currencyCode: 'EUR',
-      address1Country: 'AU',
+      billingAddressCountry: 'AU',
     });
 
     await pg.db.insert(products).values({

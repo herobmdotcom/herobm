@@ -17,14 +17,10 @@ import {
   Delete,
   Body,
   Param,
-  Inject,
-  NotFoundException,
   UseGuards,
 } from '@nestjs/common';
-import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { webhooks } from '../drizzle/modbm-core-schema';
-import { eq } from 'drizzle-orm';
-import { randomBytes } from 'crypto';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
 
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -38,13 +34,15 @@ import { OUTBOX_EVENT_TYPES } from '../common/event-types';
 
 import { ThrottlerGuard } from '@nestjs/throttler';
 
+import { WebhooksService } from './webhooks.service';
+
 @ApiTags('System')
 @ApiBearerAuth()
 @Controller('webhooks')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard, ThrottlerGuard)
 @CasbinResource(SystemResource.WEBHOOKS)
 export class WebhooksController {
-  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
+  constructor(private readonly webhooksService: WebhooksService) {}
 
   @Get()
   @CasbinAction('read')
@@ -54,7 +52,7 @@ export class WebhooksController {
   })
   @ApiOkResponse({ type: [WebhookResponseDto] })
   async list() {
-    return this.db.select().from(webhooks);
+    return this.webhooksService.list();
   }
 
   @Get('events')
@@ -66,7 +64,7 @@ export class WebhooksController {
   })
   @ApiOkResponse({ type: [String] })
   async listEvents() {
-    return Array.from(OUTBOX_EVENT_TYPES).sort();
+    return this.webhooksService.listEvents();
   }
 
   @Post()
@@ -77,21 +75,9 @@ export class WebhooksController {
     description: 'Registers a new webhook endpoint for system events.',
   })
   @ApiCreatedResponse({ type: WebhookResponseDto })
-  async create(@Body() body: CreateWebhookDto) {
-    const { targetUrl, eventTypes } = body;
-    const secretKey = randomBytes(32).toString('hex');
-
-    const [created] = await this.db
-      .insert(webhooks)
-      .values({
-        targetUrl,
-        eventTypes,
-        secretKey,
-        isActive: true,
-      })
-      .returning();
-
-    return created;
+  async create(@Body() body: CreateWebhookDto, @AuthUser() user: JwtUser) {
+    const actor = user?.username || 'api';
+    return this.webhooksService.create(body, actor);
   }
 
   @Put(':id')
@@ -103,23 +89,11 @@ export class WebhooksController {
   @ApiOkResponse({ type: WebhookResponseDto })
   async update(
     @Param('id') id: string,
-    @Body()
-    body: UpdateWebhookDto,
+    @Body() body: UpdateWebhookDto,
+    @AuthUser() user: JwtUser,
   ) {
-    const { targetUrl, eventTypes, isActive } = body;
-
-    const [updated] = await this.db
-      .update(webhooks)
-      .set({
-        ...(targetUrl !== undefined && { targetUrl }),
-        ...(eventTypes !== undefined && { eventTypes }),
-        ...(isActive !== undefined && { isActive }),
-      })
-      .where(eq(webhooks.webhookId, id))
-      .returning();
-
-    if (!updated) throw new NotFoundException('Webhook not found');
-    return updated;
+    const actor = user?.username || 'api';
+    return this.webhooksService.update(id, body, actor);
   }
 
   @Delete(':id')
@@ -137,12 +111,8 @@ export class WebhooksController {
       },
     },
   })
-  async remove(@Param('id') id: string) {
-    const [deleted] = await this.db
-      .delete(webhooks)
-      .where(eq(webhooks.webhookId, id))
-      .returning();
-    if (!deleted) throw new NotFoundException('Webhook not found');
-    return { success: true };
+  async remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    const actor = user?.username || 'api';
+    return this.webhooksService.remove(id, actor);
   }
 }

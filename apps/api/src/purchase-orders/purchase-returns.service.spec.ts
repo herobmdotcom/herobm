@@ -242,11 +242,11 @@ describe('PurchaseReturnsService', () => {
       expect(glCallLines).toHaveLength(2);
       expect(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        glCallLines.find((l: any) => l.customerId === 'grni-acc').debit,
+        glCallLines.find((l: any) => l.accountId === 'grni-acc').debit,
       ).toBe(50);
       expect(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        glCallLines.find((l: any) => l.customerId === 'inv-acc').credit,
+        glCallLines.find((l: any) => l.accountId === 'inv-acc').credit,
       ).toBe(50);
 
       // Assert 6: evaluatePOLifecycleRules was triggered

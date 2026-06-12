@@ -334,10 +334,10 @@ describe('Inventory Cycle (e2e)', () => {
       .expect(200);
 
     await request(app.getHttpServer())
-      .patch(`/api/sales-orders/${soId}/returns/${returnId}/state`)
+      .post(`/api/sales-credit-notes`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ stateCode: 'processed', locationId })
-      .expect(200);
+      .send({ returnId })
+      .expect(201);
 
     const invResAfter = await request(app.getHttpServer())
       .get(`/api/inventory/by-products?productIds=${productId}`)

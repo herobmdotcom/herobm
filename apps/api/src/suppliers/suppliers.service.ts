@@ -150,7 +150,7 @@ export class SuppliersService {
             eq(masterDataEvents.entityType, EntityType.SUPPLIER),
           ),
         )
-        .orderBy(masterDataEvents.createdOn);
+        .orderBy(sql`${masterDataEvents.createdOn} DESC`);
 
       const expiredDocs = await this.db
         .select({ id: supplierExpiries.expiryId })
@@ -163,22 +163,9 @@ export class SuppliersService {
         )
         .limit(1);
 
-      if (expiredDocs.length > 0 && !rows[0].isPurchasingBlocked) {
-        await this.db
-          .update(coreSuppliers)
-          .set({
-            isPurchasingBlocked: true,
-            purchasingBlockReason: 'compliance_breach',
-            blockNotes:
-              'System automatically blocked due to expired compliance documentation.',
-          })
-          .where(eq(coreSuppliers.vendorId, id));
-
-        rows[0].isPurchasingBlocked = true;
-        rows[0].purchasingBlockReason = 'compliance_breach';
-        rows[0].blockNotes =
-          'System automatically blocked due to expired compliance documentation.';
-      }
+      // Note: Supplier compliance is now verified asynchronously by a daily worker (BullMQ)
+      // and just-in-time when critical actions are taken (like PO creation).
+      // We no longer mutate the supplier's state silently during a read operation.
 
       return { ...rows[0], events };
     }

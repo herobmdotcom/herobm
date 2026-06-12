@@ -180,5 +180,6 @@ export function useAccount(id: string) {
     // Actions
     archiveAccount,
     unarchiveAccount,
+    loadAccount,
   };
 }

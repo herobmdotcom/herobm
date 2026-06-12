@@ -5,8 +5,19 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { Object } from './object';
 
 export type OrdersControllerFindAllParams = {
+q?: string;
+page?: number;
+cursor?: string;
+direction?: Object;
+limit?: number;
+state?: string;
+includeArchived?: boolean;
+customerId?: string;
+days?: number;
+purchaseOrderId?: string;
 /**
  * Comma separated list of fields to include in the response (e.g. "id,name")
  */

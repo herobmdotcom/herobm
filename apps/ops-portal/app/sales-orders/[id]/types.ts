@@ -56,6 +56,15 @@ export interface OrderDetail {
     currencyCode: string;
     notes: string | null;
     discrepanciesAcknowledged?: boolean;
+    shippingNotes?: string | null;
+    deliveryName?: string | null;
+    deliveryPhone?: string | null;
+    deliveryAddressLine1?: string | null;
+    deliveryAddressLine2?: string | null;
+    deliveryCity?: string | null;
+    deliveryState?: string | null;
+    deliveryPostalCode?: string | null;
+    deliveryCountry?: string | null;
     createdBy: string | null;
     createdOn: string;
     modifiedOn: string;

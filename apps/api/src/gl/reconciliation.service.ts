@@ -20,6 +20,8 @@ import { eq, and, sql, isNull, lte, asc, or, not } from 'drizzle-orm';
 import { CreateReconciliationDto, CreateAdjustmentDto } from './dto';
 import { RECONCILIATION_STATE } from '@modbm/shared';
 import { GlService, JournalMeta } from './gl.service';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class ReconciliationService {
@@ -117,17 +119,29 @@ export class ReconciliationService {
   }
 
   async createReconciliation(data: CreateReconciliationDto) {
-    const result = await this.db
-      .insert(glReconciliations)
-      .values({
-        glAccountId: data.glAccountId,
-        statementDate: data.statementDate,
-        statementBalance: String(data.statementBalance),
-        status: RECONCILIATION_STATE.DRAFT,
-        createdBy: data.createdBy,
-      })
-      .returning({ reconciliationId: glReconciliations.reconciliationId });
-    return result[0];
+    return await this.db.transaction(async (tx) => {
+      const result = await tx
+        .insert(glReconciliations)
+        .values({
+          glAccountId: data.glAccountId,
+          statementDate: data.statementDate,
+          statementBalance: String(data.statementBalance),
+          status: RECONCILIATION_STATE.DRAFT,
+          createdBy: data.createdBy,
+        })
+        .returning({ reconciliationId: glReconciliations.reconciliationId });
+
+      await emitEvent(tx, {
+        entityType: EntityType.GL_RECONCILIATION,
+        entityId: result[0].reconciliationId,
+        eventType: EventType.CREATED,
+        entityDisplayName: `Reconciliation ${result[0].reconciliationId}`,
+        payload: data,
+        actor: data.createdBy,
+      });
+
+      return result[0];
+    });
   }
 
   async getLines(id: string) {
@@ -370,12 +384,14 @@ export class ReconciliationService {
         );
 
         // Link the original line and the reversal line to perfectly offset each other
+        // @modbm-skip-audit
         await tx
           .update(glJournalLines)
           .set({ reconciliationId })
           .where(eq(glJournalLines.journalLineId, journalLineId));
 
         if (reversalLine) {
+          // @modbm-skip-audit
           await tx
             .update(glJournalLines)
             .set({ reconciliationId })
@@ -386,6 +402,7 @@ export class ReconciliationService {
 
         // Link the cleared portion
         if (clearedLine) {
+          // @modbm-skip-audit
           await tx
             .update(glJournalLines)
             .set({ reconciliationId })
@@ -394,6 +411,7 @@ export class ReconciliationService {
 
         // Ensure remaining portion is explicitly unlinked
         if (remainingLine) {
+          // @modbm-skip-audit
           await tx
             .update(glJournalLines)
             .set({ reconciliationId: null })
@@ -404,6 +422,7 @@ export class ReconciliationService {
       });
     } else {
       // Standard clearing / un-clearing
+      // @modbm-skip-audit
       await this.db
         .update(glJournalLines)
         .set({
@@ -415,7 +434,7 @@ export class ReconciliationService {
     return { success: true };
   }
 
-  async postReconciliation(id: string) {
+  async postReconciliation(id: string, actor: string = 'system') {
     const details = await this.getReconciliation(id);
     if (details.status === RECONCILIATION_STATE.POSTED) {
       throw new BadRequestException('Already posted');
@@ -431,22 +450,33 @@ export class ReconciliationService {
       throw new BadRequestException('Variance must be zero before posting');
     }
 
-    // Mark all lines linked to this reconciliation as fully reconciled
-    await this.db
-      .update(glJournalLines)
-      .set({ isReconciled: true })
-      .where(eq(glJournalLines.reconciliationId, id));
+    return await this.db.transaction(async (tx) => {
+      // Mark all lines linked to this reconciliation as fully reconciled
+      await tx
+        .update(glJournalLines)
+        .set({ isReconciled: true })
+        .where(eq(glJournalLines.reconciliationId, id));
 
-    // Mark reconciliation as posted
-    await this.db
-      .update(glReconciliations)
-      .set({ status: RECONCILIATION_STATE.POSTED, postedOn: new Date() })
-      .where(eq(glReconciliations.reconciliationId, id));
+      // Mark reconciliation as posted
+      await tx
+        .update(glReconciliations)
+        .set({ status: RECONCILIATION_STATE.POSTED, postedOn: new Date() })
+        .where(eq(glReconciliations.reconciliationId, id));
 
-    return { success: true };
+      await emitEvent(tx, {
+        entityType: EntityType.GL_RECONCILIATION,
+        entityId: id,
+        eventType: EventType.UPDATED,
+        entityDisplayName: `Reconciliation ${id}`,
+        payload: { status: RECONCILIATION_STATE.POSTED },
+        actor,
+      });
+
+      return { success: true };
+    });
   }
 
-  async discardReconciliation(id: string) {
+  async discardReconciliation(id: string, actor: string = 'system') {
     const recs = await this.db
       .select()
       .from(glReconciliations)
@@ -466,6 +496,15 @@ export class ReconciliationService {
       await tx
         .delete(glReconciliations)
         .where(eq(glReconciliations.reconciliationId, id));
+
+      await emitEvent(tx, {
+        entityType: EntityType.GL_RECONCILIATION,
+        entityId: id,
+        eventType: EventType.DELETED,
+        entityDisplayName: `Reconciliation ${id}`,
+        payload: { deleted: true },
+        actor,
+      });
     });
 
     return { success: true };
@@ -544,10 +583,22 @@ export class ReconciliationService {
       if (newLines.length) {
         // Simple clear — just set the reconciliationId directly
         await tx
-          .update(glJournalLines)
+          .update(glJournalLines) // @modbm-skip-audit
           .set({ reconciliationId: id })
           .where(eq(glJournalLines.journalLineId, newLines[0].journalLineId));
       }
+
+      await emitEvent(tx, {
+        entityType: EntityType.GL_RECONCILIATION,
+        entityId: id,
+        entityDisplayName: `Reconciliation ${id}`,
+        eventType: EventType.UPDATED,
+        payload: {
+          action: 'create_adjustment',
+          journalEntryId: newJournalId.journalEntryId,
+        },
+        actor,
+      });
 
       return {
         journalEntryId: newJournalId.journalEntryId,

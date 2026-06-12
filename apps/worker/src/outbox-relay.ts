@@ -81,6 +81,7 @@ export { eventsProcessedCounter, eventsFailedCounter, journalEntriesCounter };
 import { pollOutbox, processEvent } from './relay.service';
 import { pollEmailOutbox } from './email-relay';
 import { purgeOldEmails } from './purge-emails.service';
+import { checkSupplierCompliance } from './check-supplier-compliance.service';
 
 // Start Worker
 const worker = new Worker('external-sync', (job) => processEvent(job, db), { connection, concurrency: 5 });
@@ -106,11 +107,25 @@ maintenanceQueue.add(
   logger.error({ err }, 'Failed to schedule purge-emails job');
 });
 
+maintenanceQueue.add(
+  'check-supplier-compliance',
+  {},
+  {
+    repeat: {
+      pattern: '0 1 * * *', // Every day at 1 AM
+    },
+  }
+).catch(err => {
+  logger.error({ err }, 'Failed to schedule check-supplier-compliance job');
+});
+
 const maintenanceWorker = new Worker(
   'system-maintenance',
   async (job) => {
     if (job.name === 'purge-emails') {
       return purgeOldEmails(job, db);
+    } else if (job.name === 'check-supplier-compliance') {
+      return checkSupplierCompliance(job, db);
     }
   },
   { connection, concurrency: 1 }

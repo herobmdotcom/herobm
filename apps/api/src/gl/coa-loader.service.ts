@@ -11,6 +11,8 @@ import { eq, count } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { v5 as uuidv5 } from 'uuid';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 import { GLAccountType } from '@modbm/shared';
 
@@ -293,6 +295,14 @@ export class CoaLoaderService {
           .returning();
 
         codeToId.set(row.accountCode, inserted.glAccountId);
+
+        await emitEvent(tx, {
+          entityType: EntityType.GL_ACCOUNT,
+          entityId: inserted.glAccountId,
+          eventType: EventType.CREATED,
+          entityDisplayName: row.accountCode,
+          payload: { seed: true },
+        });
       }
 
       // Second pass: set parent_account_id
@@ -400,6 +410,7 @@ export class CoaLoaderService {
   /**
    * Load only tax settings (GST categories) from a settings JSON file.
    */
+  // @modbm-skip-audit
   async loadTaxSettingsFromFile(
     filename: string,
   ): Promise<{ created: number; skipped: boolean }> {

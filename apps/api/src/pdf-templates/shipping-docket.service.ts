@@ -44,12 +44,12 @@ export class ShippingDocketService {
         createdOn: salesOrderShipments.createdOn,
         orderNumber: salesOrders.orderNumber,
         customerName: coreAccounts.name,
-        address1: coreAccounts.address1Line1,
-        address2: coreAccounts.address1Line2,
-        city: coreAccounts.address1City,
-        state: coreAccounts.address1StateOrProvince,
-        postcode: coreAccounts.address1PostalCode,
-        country: coreAccounts.address1Country,
+        address1: coreAccounts.billingAddressLine1,
+        address2: coreAccounts.billingAddressLine2,
+        city: coreAccounts.billingAddressCity,
+        state: coreAccounts.billingAddressStateOrProvince,
+        postcode: coreAccounts.billingAddressPostalCode,
+        country: coreAccounts.billingAddressCountry,
       })
       .from(salesOrderShipments)
       .innerJoin(

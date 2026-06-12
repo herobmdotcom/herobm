@@ -155,7 +155,7 @@ export class ProductsService {
         .select()
         .from(masterDataEvents)
         .where(eq(masterDataEvents.entityId, id))
-        .orderBy(masterDataEvents.createdOn);
+        .orderBy(sql`${masterDataEvents.createdOn} DESC`);
 
       const uoms = await db
         .select()

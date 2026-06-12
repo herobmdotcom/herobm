@@ -120,7 +120,7 @@ describe('ShipmentService', () => {
           customerNumber: 'CUST-001',
           name: 'Test Customer',
           currencyCode: 'AUD',
-          address1Country: 'AU',
+          billingAddressCountry: 'AU',
         },
       ])
       .onConflictDoNothing();

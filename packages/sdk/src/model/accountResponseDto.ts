@@ -6,23 +6,22 @@
  * OpenAPI spec version: 1.0
  */
 import type { AccountResponseDtoEventsItem } from './accountResponseDtoEventsItem';
+import type { AccountResponseDtoContactsItem } from './accountResponseDtoContactsItem';
+import type { AccountResponseDtoDeliveryAddressesItem } from './accountResponseDtoDeliveryAddressesItem';
 
 export interface AccountResponseDto {
   customerId: string;
   customerNumber: string;
   name: string;
-  address1Line1?: string;
-  address1Line2?: string;
-  address1City?: string;
-  address1StateOrProvince?: string;
-  address1PostalCode?: string;
-  address1Country: string;
+  billingAddressLine1?: string;
+  billingAddressLine2?: string;
+  billingAddressCity?: string;
+  billingAddressStateOrProvince?: string;
+  billingAddressPostalCode?: string;
+  billingAddressCountry: string;
   telephone1?: string;
   fax?: string;
   emailAddress1?: string;
-  primaryContactName?: string;
-  primaryContactEmail?: string;
-  primaryContactPhone?: string;
   customerGroupId?: string;
   parentCustomerId?: string;
   taxCategoryId?: string;
@@ -47,4 +46,6 @@ export interface AccountResponseDto {
   customerGroupIsOnCreditHold?: boolean;
   gstCategoryName?: string;
   events?: AccountResponseDtoEventsItem[];
+  contacts?: AccountResponseDtoContactsItem[];
+  deliveryAddresses?: AccountResponseDtoDeliveryAddressesItem[];
 }

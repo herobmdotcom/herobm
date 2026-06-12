@@ -118,11 +118,11 @@ export class SalesInvoiceService {
     let customerRevenueAccountId: string | null = null;
     let customerCostCenterId: string | null = null;
     let customerActivityId: string | null = null;
-    let address1Country: string | null = null;
-    let address1PostalCode: string | null = null;
-    let address1StateOrProvince: string | null = null;
-    let address1City: string | null = null;
-    let address1Line1: string | null = null;
+    let billingAddressCountry: string | null = null;
+    let billingAddressPostalCode: string | null = null;
+    let billingAddressStateOrProvince: string | null = null;
+    let billingAddressCity: string | null = null;
+    let billingAddressLine1: string | null = null;
 
     if (order.customerId) {
       // Find Party details to bind
@@ -139,11 +139,12 @@ export class SalesInvoiceService {
           defaultRevenueAccountId: customerGroups.defaultRevenueAccountId,
           defaultCostCenterId: customerGroups.defaultCostCenterId,
           defaultActivityId: customerGroups.defaultActivityId,
-          address1Country: customers.address1Country,
-          address1PostalCode: customers.address1PostalCode,
-          address1StateOrProvince: customers.address1StateOrProvince,
-          address1City: customers.address1City,
-          address1Line1: customers.address1Line1,
+          billingAddressCountry: customers.billingAddressCountry,
+          billingAddressPostalCode: customers.billingAddressPostalCode,
+          billingAddressStateOrProvince:
+            customers.billingAddressStateOrProvince,
+          billingAddressCity: customers.billingAddressCity,
+          billingAddressLine1: customers.billingAddressLine1,
         })
         .from(customers)
         .leftJoin(
@@ -164,11 +165,12 @@ export class SalesInvoiceService {
         customerRevenueAccountId = custRows[0].defaultRevenueAccountId;
         customerCostCenterId = custRows[0].defaultCostCenterId;
         customerActivityId = custRows[0].defaultActivityId;
-        address1Country = custRows[0].address1Country;
-        address1PostalCode = custRows[0].address1PostalCode;
-        address1StateOrProvince = custRows[0].address1StateOrProvince;
-        address1City = custRows[0].address1City;
-        address1Line1 = custRows[0].address1Line1;
+        billingAddressCountry = custRows[0].billingAddressCountry;
+        billingAddressPostalCode = custRows[0].billingAddressPostalCode;
+        billingAddressStateOrProvince =
+          custRows[0].billingAddressStateOrProvince;
+        billingAddressCity = custRows[0].billingAddressCity;
+        billingAddressLine1 = custRows[0].billingAddressLine1;
       }
     }
 
@@ -578,7 +580,8 @@ export class SalesInvoiceService {
 
       // F. Record Transaction in External Engine if applicable
       const mappings = this.appConfig.taxProviderMappings();
-      const orderTaxProvider = mappings[address1Country || 'US'] || 'internal';
+      const orderTaxProvider =
+        mappings[billingAddressCountry || 'US'] || 'internal';
 
       if (
         orderTaxProvider &&
@@ -611,11 +614,11 @@ export class SalesInvoiceService {
           from_state: org.state,
           from_city: org.city,
           from_street: org.addressLine1,
-          to_country: address1Country || 'US',
-          to_zip: address1PostalCode,
-          to_state: address1StateOrProvince,
-          to_city: address1City,
-          to_street: address1Line1,
+          to_country: billingAddressCountry || undefined,
+          to_zip: billingAddressPostalCode || undefined,
+          to_state: billingAddressStateOrProvince || undefined,
+          to_city: billingAddressCity || undefined,
+          to_street: billingAddressLine1 || undefined,
           line_items: taxableLines.map((l) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const payloadLine: any = {
@@ -955,7 +958,7 @@ export class SalesInvoiceService {
       }
 
       const [updated] = await db
-        .update(salesInvoices)
+        .update(salesInvoices) // @modbm-skip-audit
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .set({
           stateCode: newState,

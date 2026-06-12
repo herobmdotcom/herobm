@@ -78,7 +78,6 @@ $workerCmd = $envInjection + "`$env:PORT=9092; npm run dev -w apps/worker"
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", $workerCmd
 
 
-
 if ($enableDbtDocs -eq 'true') {
     Write-Host "dbt docs will be served" -ForegroundColor Cyan
     $dbtCmd = $envInjection + "Push-Location pipelines\abm_transform; ..\..\.venv\Scripts\dbt docs serve; Pop-Location"

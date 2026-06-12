@@ -82,7 +82,6 @@
       }
     },
     "reporting": {
-
       "hooks": {
         "toast": {
           "success": "Updated successfully"
@@ -837,6 +836,7 @@
     "adjustStock": "Adjust stock",
     "copiedToClipboard": "Copied to clipboard",
     "copy": "Copy",
+    "rawPhone": "Raw: {phone}",
     "actions": "Actions",
     "costCenter": "Cost Center",
     "activity": "Activity",
@@ -872,6 +872,7 @@
     "columns": {
       "activityTimeline": "Activity Timeline",
       "address": "Address",
+      "billingAddress": "Billing Address",
       "address2": "Address 2",
       "available": "Avail",
       "city": "City",
@@ -1221,7 +1222,32 @@
       "discountPct": "Customer Discount %"
     },
     "company": "Customer",
+    "billing": "Billing",
+    "contacts": "Contacts",
+    "deliveryAddresses": "Delivery Addresses",
+    "contactManagement": {
+      "primaryBadge": "Primary",
+      "addContact": "Add Contact",
+      "editContact": "Edit Contact",
+      "deleteContact": "Delete Contact",
+      "confirmDeleteContact": "Are you sure you want to delete this contact? This action cannot be undone.",
+      "contactAdded": "Contact added successfully",
+      "contactUpdated": "Contact updated successfully",
+      "contactDeleted": "Contact deleted successfully",
+      "errors": {
+        "firstNameRequired": "First Name is required",
+        "lastNameRequired": "Last Name is required"
+      },
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "jobTitle": "Job Title",
+      "email": "Email",
+      "phone": "Phone",
+      "mobile": "Mobile",
+      "isPrimary": "Primary Contact"
+    },
     "fields": {
+      "billingEmail": "Billing Email",
       "accountNumber": "Account Number",
       "bankAccountName": "Bank Account Name",
       "businessNumber": "Business Number",

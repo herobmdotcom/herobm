@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0
  */
 import type { DbConfigDto } from './dbConfigDto';
+import type { ExecuteEltDtoSource } from './executeEltDtoSource';
 
 export interface ExecuteEltDto {
   dbConfig?: DbConfigDto;
-  abmImport?: boolean;
-  odooImport?: boolean;
+  source?: ExecuteEltDtoSource;
   resumeExtraction?: boolean;
   skipExtraction?: boolean;
   defaultLocationCode?: string;

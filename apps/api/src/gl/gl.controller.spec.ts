@@ -4,6 +4,7 @@ import { GlService } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { GLAccountType } from '@modbm/shared';
+import { JwtUser } from '../auth/auth-user.decorator';
 
 /**
  * Unit tests for the GL Controller.
@@ -92,8 +93,9 @@ describe('GlController', () => {
         name: 'Test',
         accountType: 'asset',
       };
-      await controller.createAccount(body);
-      expect(glService.createAccount).toHaveBeenCalledWith(body);
+      const mockUser = { userId: 'test-user', username: 'test-user' };
+      await controller.createAccount(body, mockUser as unknown as JwtUser);
+      expect(glService.createAccount).toHaveBeenCalledWith(body, 'test-user');
     });
 
     it('should pass parentAccountId and isGroup when provided', async () => {
@@ -112,24 +114,43 @@ describe('GlController', () => {
         isGroup: true,
         currencyCode: 'USD',
       };
-      await controller.createAccount(body);
-      expect(glService.createAccount).toHaveBeenCalledWith(body);
+      const mockUser = { userId: 'test-user', username: 'test-user' };
+      await controller.createAccount(body, mockUser as unknown as JwtUser);
+      expect(glService.createAccount).toHaveBeenCalledWith(body, 'test-user');
     });
   });
 
   describe('PATCH /gl/accounts/:id', () => {
     it('should delegate to updateAccount with id and body', async () => {
-      await controller.updateAccount('uuid-1', { name: 'New Name' });
-      expect(glService.updateAccount).toHaveBeenCalledWith('uuid-1', {
-        name: 'New Name',
-      });
+      const mockUser = { userId: 'test-user', username: 'test-user' };
+      await controller.updateAccount(
+        'uuid-1',
+        { name: 'New Name' },
+        mockUser as unknown as JwtUser,
+      );
+      expect(glService.updateAccount).toHaveBeenCalledWith(
+        'uuid-1',
+        {
+          name: 'New Name',
+        },
+        'test-user',
+      );
     });
 
     it('should support isActive updates', async () => {
-      await controller.updateAccount('uuid-2', { isActive: false });
-      expect(glService.updateAccount).toHaveBeenCalledWith('uuid-2', {
-        isActive: false,
-      });
+      const mockUser = { userId: 'test-user', username: 'test-user' };
+      await controller.updateAccount(
+        'uuid-2',
+        { isActive: false },
+        mockUser as unknown as JwtUser,
+      );
+      expect(glService.updateAccount).toHaveBeenCalledWith(
+        'uuid-2',
+        {
+          isActive: false,
+        },
+        'test-user',
+      );
     });
   });
 

@@ -39,7 +39,7 @@ export async function createTestCustomer(db: any, opts?: { name?: string }) {
     customerNumber: `CUST-TEST-${++_sequence}`,
     name: opts?.name || 'Test Customer',
     currencyCode: 'AUD', // fixture
-    address1Country: 'AU',
+    billingAddressCountry: 'AU',
   });
   return { customerId };
 }
@@ -98,6 +98,7 @@ export async function createTestSalesOrder(
     customerId: opts.customerId,
     fulfillmentLocationId: opts.locationId,
     stateCode: opts.state || SALES_ORDER_STATE.DRAFT,
+    deliveryAddressLine1: 'Test Address 123',
     currencyCode: 'AUD', // fixture
     source: 'app',
   });

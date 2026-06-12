@@ -22,6 +22,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { AccountGroupsService } from './customer-groups.service';
 import {
   CreateAccountGroupDto,
@@ -71,8 +72,8 @@ export class AccountGroupsController {
     description: 'Add a new customer group to the system.',
   })
   @ApiCreatedResponse({ type: AccountGroupResponseDto })
-  create(@Body() dto: CreateAccountGroupDto) {
-    return this.accountGroupsService.create(dto);
+  create(@Body() dto: CreateAccountGroupDto, @AuthUser() user: JwtUser) {
+    return this.accountGroupsService.create(dto, user?.userId);
   }
 
   @Patch(':id')
@@ -83,8 +84,12 @@ export class AccountGroupsController {
     description: 'Modify the details of an existing customer group.',
   })
   @ApiOkResponse({ type: AccountGroupResponseDto })
-  update(@Param('id') id: string, @Body() dto: UpdateAccountGroupDto) {
-    return this.accountGroupsService.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateAccountGroupDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.accountGroupsService.update(id, dto, user?.userId);
   }
 
   @Delete(':id')
@@ -97,7 +102,7 @@ export class AccountGroupsController {
     // BYPASS-TYPING-TEST
     schema: { type: 'object', properties: { deleted: { type: 'boolean' } } },
   })
-  remove(@Param('id') id: string) {
-    return this.accountGroupsService.delete(id);
+  remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.accountGroupsService.delete(id, user?.userId);
   }
 }

@@ -1840,6 +1840,9 @@ export async function seedCoaSettings(
     { json: 'cogs_account_code', col: 'defaultCogsAccountId' },
     { json: 'tax_account_code', col: 'defaultTaxAccountId' },
     { json: 'expense_account_code', col: 'defaultExpenseAccountId' },
+    { json: 'inventory_account_code', col: 'defaultInventoryAccountId' },
+    { json: 'grni_account_code', col: 'defaultGrniAccountId' },
+    { json: 'shrinkage_account_code', col: 'defaultShrinkageAccountId' },
   ];
 
   for (const map of mappings) {
@@ -2007,11 +2010,11 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
       customerNumber: 'CUST-E2E-001',
       name: 'E2E Default Customer',
       currencyCode: 'AUD', // testData
-      address1Country: 'AU',
+      billingAddressCountry: 'AU',
     })
     .onConflictDoUpdate({
       target: customers.customerId,
-      set: { name: 'E2E Default Customer', address1Country: 'AU' },
+      set: { name: 'E2E Default Customer', billingAddressCountry: 'AU' },
     });
 
   // Seed vendor

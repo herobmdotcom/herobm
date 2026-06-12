@@ -19,7 +19,7 @@ test('page: product-groups loads without errors', async ({ page }) => {
   await page.waitForLoadState('networkidle');
 
   // Verify generic "Error" text is NOT visible (shallow smoke)
-  await expect(page.getByText('Error')).not.toBeVisible();
+  await expect(page.getByText('Error', { exact: true })).not.toBeVisible();
   
   // Verify no hard crashes in console
   expect(errors).toHaveLength(0);

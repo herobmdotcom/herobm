@@ -16,6 +16,8 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { taxCategories } from '../drizzle/modbm-core-schema';
 import { CreateTaxCategoryDto, UpdateTaxCategoryDto } from './dto';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class TaxCategoriesService {
@@ -72,82 +74,117 @@ export class TaxCategoriesService {
     return rows[0];
   }
 
-  async create(dto: CreateTaxCategoryDto) {
-    // If the new category wants to be default, unset any existing default first
-    if (dto.isDefault) {
-      await this.db
-        .update(taxCategories)
-        .set({ isDefault: false })
-        .where(eq(taxCategories.isDefault, true));
-    }
+  async create(dto: CreateTaxCategoryDto, userId?: string) {
+    return await this.db.transaction(async (tx) => {
+      // If the new category wants to be default, unset any existing default first
+      if (dto.isDefault) {
+        await tx
+          .update(taxCategories) // @modbm-skip-audit
+          .set({ isDefault: false })
+          .where(eq(taxCategories.isDefault, true));
+      }
 
-    const rows = await this.db
-      .insert(taxCategories)
-      .values({
-        code: dto.code,
-        title: dto.title,
-        type: dto.type,
-        rate: dto.rate ?? '0',
-        isDefault: dto.isDefault ?? false,
-      })
-      .returning();
-    return rows[0];
+      const rows = await tx
+        .insert(taxCategories)
+        .values({
+          code: dto.code,
+          title: dto.title,
+          type: dto.type,
+          rate: dto.rate ?? '0',
+          isDefault: dto.isDefault ?? false,
+        })
+        .returning();
+
+      await emitEvent(tx, {
+        entityType: EntityType.TAX_CATEGORY,
+        entityId: rows[0].taxCategoryId,
+        eventType: EventType.CREATED,
+        entityDisplayName: rows[0].code,
+        payload: dto,
+        actor: userId,
+      });
+
+      return rows[0];
+    });
   }
 
-  async update(id: string, dto: UpdateTaxCategoryDto) {
-    await this.getById(id); // ensure exists
+  async update(id: string, dto: UpdateTaxCategoryDto, userId?: string) {
+    return await this.db.transaction(async (tx) => {
+      await this.getById(id, tx); // ensure exists
 
-    // If toggling isDefault to true, unset the current default
-    if (dto.isDefault === true) {
-      await this.db
+      // If toggling isDefault to true, unset the current default
+      if (dto.isDefault === true) {
+        await tx
+          .update(taxCategories) // @modbm-skip-audit
+          .set({ isDefault: false })
+          .where(
+            and(
+              eq(taxCategories.isDefault, true),
+              ne(taxCategories.taxCategoryId, id),
+            ),
+          );
+      }
+
+      const rows = await tx
         .update(taxCategories)
-        .set({ isDefault: false })
-        .where(
-          and(
-            eq(taxCategories.isDefault, true),
-            ne(taxCategories.taxCategoryId, id),
-          ),
-        );
-    }
+        .set({
+          ...(dto.code !== undefined && { code: dto.code }),
+          ...(dto.title !== undefined && { title: dto.title }),
+          ...(dto.type !== undefined && { type: dto.type }),
+          ...(dto.rate !== undefined && { rate: dto.rate }),
+          ...(dto.isDefault !== undefined && { isDefault: dto.isDefault }),
+        })
+        .where(eq(taxCategories.taxCategoryId, id))
+        .returning();
 
-    const rows = await this.db
-      .update(taxCategories)
-      .set({
-        ...(dto.code !== undefined && { code: dto.code }),
-        ...(dto.title !== undefined && { title: dto.title }),
-        ...(dto.type !== undefined && { type: dto.type }),
-        ...(dto.rate !== undefined && { rate: dto.rate }),
-        ...(dto.isDefault !== undefined && { isDefault: dto.isDefault }),
-      })
-      .where(eq(taxCategories.taxCategoryId, id))
-      .returning();
+      await emitEvent(tx, {
+        entityType: EntityType.TAX_CATEGORY,
+        entityId: rows[0].taxCategoryId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: rows[0].code,
+        payload: dto,
+        actor: userId,
+      });
 
-    return rows[0];
+      return rows[0];
+    });
   }
 
-  async delete(id: string) {
-    const cat = await this.getById(id);
+  async delete(id: string, userId?: string) {
+    return await this.db.transaction(async (tx) => {
+      const cat = await this.getById(id, tx);
 
-    if (cat.isDefault) {
-      throw new BadRequestException(
-        'Cannot delete the default tax category. Assign a different default first.',
-      );
-    }
-
-    try {
-      await this.db
-        .delete(taxCategories)
-        .where(eq(taxCategories.taxCategoryId, id));
-      return { deleted: true };
-    } catch (err: unknown) {
-      // Postgres foreign_key_violation
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((err as any)?.code === '23503') {
+      if (cat.isDefault) {
         throw new BadRequestException(
-          'Cannot delete this tax category because it is assigned to one or more customers or products. Remove the assignments first.',
+          'Cannot delete the default tax category. Assign a different default first.',
         );
       }
-      throw err;
-    }
+
+      try {
+        await tx
+          .delete(taxCategories)
+          .where(eq(taxCategories.taxCategoryId, id));
+
+        await emitEvent(tx, {
+          entityType: EntityType.TAX_CATEGORY,
+          entityId: id,
+          eventType: EventType.DELETED,
+          entityDisplayName: cat.code,
+          payload: {},
+          actor: userId,
+        });
+
+        return { deleted: true };
+      } catch (err: unknown) {
+        // Postgres foreign_key_violation
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((err as any)?.code === '23503') {
+          throw new BadRequestException(
+            'Cannot delete this tax category because it is assigned to one or more customers or products. Remove the assignments first.',
+          );
+        }
+        throw err;
+      }
+    });
   }
 }

@@ -65,7 +65,7 @@ describe('SalesInvoiceService', () => {
       customerNumber: 'CUST001',
       name: 'Acme Corp',
       currencyCode: 'AUD',
-      address1Country: 'AU',
+      billingAddressCountry: 'AU',
     });
 
     await pg.db.insert(products).values({

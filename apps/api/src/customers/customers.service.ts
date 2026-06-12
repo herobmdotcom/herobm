@@ -16,6 +16,8 @@ import {
   masterDataEvents,
   customerGroups,
   taxCategories,
+  customerContacts,
+  customerDeliveryAddresses,
 } from '../drizzle/modbm-core-schema';
 import {
   PaginationQuery,
@@ -157,15 +159,39 @@ export class AccountsService {
 
     const customer = rows[0];
 
-    // Load activity events
     const eventsQuery = db
       .select()
       .from(masterDataEvents)
       .where(eq(masterDataEvents.entityId, customer.customerId))
-      .orderBy(masterDataEvents.createdOn);
+      .orderBy(sql`${masterDataEvents.createdOn} DESC`);
 
-    const events = await eventsQuery;
+    const [events, contactsResult, deliveryAddressesResult] = await Promise.all(
+      [
+        eventsQuery,
+        db.query.customerContacts
+          .findMany({
+            where: eq(customerContacts.customerId, customer.customerId),
+          })
+          .catch(() => []), // fallback if not available
+        db.query.customerDeliveryAddresses
+          .findMany({
+            where: eq(
+              customerDeliveryAddresses.customerId,
+              customer.customerId,
+            ),
+          })
+          .catch(() => []),
+      ],
+    );
 
-    return { ...customer, events };
+    // Use dynamic import workaround to avoid cyclic dependency if any, or just import them
+    // Actually, I should import customerContacts and customerDeliveryAddresses at the top.
+
+    return {
+      ...customer,
+      events,
+      contacts: contactsResult,
+      deliveryAddresses: deliveryAddressesResult,
+    };
   }
 }

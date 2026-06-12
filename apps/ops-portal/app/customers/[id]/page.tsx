@@ -18,7 +18,9 @@ import PageNav from "@/components/shared/PageNav";
 import GroupSelect from "@/components/shared/GroupSelect";
 import CustomerSelect from "@/components/shared/CustomerSelect";
 import DiscountMatrixSlideOver from "@/components/shared/DiscountMatrixSlideOver";
-
+import { ContactSlideOver } from "./ContactSlideOver";
+import DeliveryAddressSlideOver from "@/components/shared/DeliveryAddressSlideOver";
+import InfoCard from "@/components/shared/InfoCard";
 import { useSettings } from "@/components/SettingsProvider";
 import {
   getErrorMessage,
@@ -53,6 +55,7 @@ export default function AccountDetailPage({
     isEditable,
     taxCategories,
     hasDiscountRules,
+    loadAccount,
     updateField,
     saveField,
     handleSave,
@@ -70,9 +73,62 @@ export default function AccountDetailPage({
 
   // Tab state is purely UI, kept local to the page
   const [activeTab, setActiveTab] = useState<
-    "details" | "salesOrders" | "invoices"
+    "details" | "contacts" | "delivery" | "salesOrders" | "invoices"
   >("details");
   const [showDiscounts, setShowDiscounts] = useState(false);
+  const [isContactSlideOverOpen, setIsContactSlideOverOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [editingContact, setEditingContact] = useState<any>(null);
+
+  const handleAddContactClick = () => {
+    setEditingContact(null);
+    setIsContactSlideOverOpen(true);
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleEditContactClick = (contact: any) => {
+    setEditingContact(contact);
+    setIsContactSlideOverOpen(true);
+  };
+
+  const handleDeleteContactClick = async (contactId: string) => {
+    if (window.confirm(t("customers.contactManagement.confirmDeleteContact"))) {
+      try {
+        await api.contactsControllerRemove(contactId);
+        toast.success(t("customers.contactManagement.contactDeleted"));
+        loadAccount();
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err));
+      }
+    }
+  };
+
+  const [isAddressSlideOverOpen, setIsAddressSlideOverOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [editingAddress, setEditingAddress] = useState<any>(null);
+
+  const handleAddAddressClick = () => {
+    setEditingAddress(null);
+    setIsAddressSlideOverOpen(true);
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleEditAddressClick = (addr: any) => {
+    setEditingAddress(addr);
+    setIsAddressSlideOverOpen(true);
+  };
+
+  const handleDeleteAddressClick = async (addressId: string) => {
+    if (window.confirm("Are you sure you want to delete this delivery address?")) {
+      try {
+        await api.deliveryAddressesControllerRemove(addressId);
+        toast.success("Delivery address deleted");
+        loadAccount();
+      } catch (err: unknown) {
+        toast.error(getErrorMessage(err));
+      }
+    }
+  };
 
   const handleOrderRowClicked = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -251,7 +307,7 @@ export default function AccountDetailPage({
         },
         {
           id: "address-section",
-          label: "Company",
+          label: "Billing Address",
           onClick: () => {
             setActiveTab("details");
             setTimeout(
@@ -263,20 +319,7 @@ export default function AccountDetailPage({
             );
           },
         },
-        {
-          id: "contact-section",
-          label: "Contact",
-          onClick: () => {
-            setActiveTab("details");
-            setTimeout(
-              () =>
-                document
-                  .getElementById("contact-section")
-                  ?.scrollIntoView({ behavior: "smooth", block: "start" }),
-              50,
-            );
-          },
-        },
+
         {
           id: "bank-section",
           label: "Bank",
@@ -320,6 +363,20 @@ export default function AccountDetailPage({
           },
         },
       ],
+    },
+    {
+      id: "tab-contacts",
+      label: "Contacts",
+      isSubPage: true,
+      isActive: activeTab === "contacts",
+      onClick: () => setActiveTab("contacts"),
+    },
+    {
+      id: "tab-delivery",
+      label: "Delivery",
+      isSubPage: true,
+      isActive: activeTab === "delivery",
+      onClick: () => setActiveTab("delivery"),
     },
     {
       id: "tab-sales",
@@ -484,6 +541,160 @@ export default function AccountDetailPage({
           </div>
         )}
 
+        {activeTab === "contacts" && (
+          <div className="flex flex-col gap-3">
+            <div className="card">
+              <div className="flex items-start justify-between mb-4">
+                <h3 className="section-heading m-0">
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  <span className="material-symbols-outlined">group</span>
+                  {t("customers.contacts")}
+                </h3>
+                <button className="btn btn-primary btn-sm" onClick={handleAddContactClick}>
+                  {t("customers.contactManagement.addContact")}
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {customer.contacts && customer.contacts.length > 0 ? [...customer.contacts].sort((a: any, b: any) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0) || (a.firstName || '').localeCompare(b.firstName || '')).map((contact: any) => (
+                  <InfoCard
+                    key={contact.id}
+                    title={`${contact.firstName} ${contact.lastName}`}
+                    isPrimary={contact.isPrimary}
+                    primaryLabel={t("customers.contactManagement.primaryBadge")}
+                    badges={
+                      <>
+                        <div className="flex items-center ml-auto">
+                          <button
+                            type="button"
+                            className="text-gray-400 hover:text-[var(--accent)] transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
+                            onClick={() => handleEditContactClick(contact)}
+                            title={t("customers.contactManagement.editContact")}
+                          >
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            <span className="material-symbols-outlined text-[18px]">edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="text-gray-400 hover:text-red-500 transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
+                            onClick={() => handleDeleteContactClick(contact.id)}
+                            title={t("customers.contactManagement.deleteContact")}
+                          >
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                        </div>
+                      </>
+                    }
+                  >
+                    {/* eslint-disable-next-line no-restricted-syntax */}
+                    <div className="text-sm text-gray-600">{contact.jobTitle || 'No Title'}</div>
+                    {(contact.phone || contact.mobile) && (
+                      <div className="flex flex-col gap-1.5 mt-2">
+                        {contact.phone && (
+                          <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            <span className="material-symbols-outlined text-[14px] text-gray-400">phone</span>
+                            <a href={`tel:${contact.phone}`} className="hover:text-[var(--accent)] transition-colors">{contact.phone}</a>
+                          </div>
+                        )}
+                        {contact.mobile && (
+                          <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            <span className="material-symbols-outlined text-[14px] text-gray-400">smartphone</span>
+                            <a href={`tel:${contact.mobile}`} className="hover:text-[var(--accent)] transition-colors">{contact.mobile}</a>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {contact.email && (
+                      <div className="flex items-center gap-1.5 text-sm text-gray-600 mt-1.5">
+                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                        <span className="material-symbols-outlined text-[14px] text-gray-400">mail</span>
+                        <a href={`mailto:${contact.email}`} className="text-[var(--accent)] hover:underline truncate">
+                          {contact.email}
+                        </a>
+                      </div>
+                    )}
+                  </InfoCard>
+                )) : (
+                  <>
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    <div className="text-gray-500 text-sm py-4">No contacts found.</div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "delivery" && (
+          <div className="flex flex-col gap-3">
+            <div className="card">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="section-heading mb-0">
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  <span className="material-symbols-outlined">local_shipping</span>
+                  {t("customers.deliveryAddresses")}
+                </h3>
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <button className="btn btn-primary btn-sm" onClick={handleAddAddressClick}>Add Address</button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {customer.deliveryAddresses && customer.deliveryAddresses.length > 0 ? customer.deliveryAddresses.map((addr: any) => (
+                  <InfoCard 
+                    key={addr.id} 
+                    title={addr.addressName || 'Unnamed Address'}
+                    isPrimary={addr.isPrimary}
+                    headerRight={
+                      <>
+                        <div className="flex gap-1 ml-auto">
+                          <button
+                            type="button"
+                            className="text-gray-400 hover:text-blue-600 transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
+                            onClick={() => handleEditAddressClick(addr)}
+                            title="Edit Address"
+                          >
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            <span className="material-symbols-outlined text-[18px]">edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="text-gray-400 hover:text-red-500 transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
+                            onClick={() => handleDeleteAddressClick(addr.id)}
+                            title="Delete Address"
+                          >
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                        </div>
+                      </>
+                    }
+                  >
+                    <div className="mt-2">
+                      {(addr.recipientName || addr.recipientPhone) && (
+                        <div className="text-sm text-gray-600">
+                          {[addr.recipientName, addr.recipientPhone].filter(Boolean).join(' - ')}
+                        </div>
+                      )}
+                      <div className="text-sm text-gray-600">{addr.addressLine1}</div>
+                      {addr.addressLine2 && <div className="text-sm text-gray-600">{addr.addressLine2}</div>}
+                    <div className="text-sm text-gray-600">{addr.city}{addr.city && (addr.stateOrProvince || addr.postalCode) ? ', ' : ''}{addr.stateOrProvince} {addr.postalCode}</div>
+                    <div className="text-sm text-gray-600">{COUNTRIES.find(c => c.code === addr.country)?.name || addr.country}</div>
+                    </div>
+                  </InfoCard>
+                )) : (
+                  <>
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    <div className="text-gray-500 text-sm py-4">No delivery addresses found.</div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === "details" && (
           <div className="flex flex-col gap-3">
             {/* Basic Info Card */}
@@ -571,10 +782,10 @@ export default function AccountDetailPage({
                   </label>
                   <select
                     className="input"
-                    value={dto.address1Country || ""}
+                    value={dto.billingAddressCountry || ""}
                     onChange={(e) => {
                       const val = e.target.value;
-                      updateField("address1Country", val);
+                      updateField("billingAddressCountry", val);
                       const newCurrency = getCurrencyForCountry(val);
                       if (newCurrency) {
                         updateField("currencyCode", newCurrency);
@@ -582,7 +793,7 @@ export default function AccountDetailPage({
                     }}
                     onBlur={(e) => {
                       const val = e.target.value;
-                      saveField("address1Country", val);
+                      saveField("billingAddressCountry", val);
                       const newCurrency = getCurrencyForCountry(val);
                       if (newCurrency) {
                         saveField("currencyCode", newCurrency);
@@ -766,7 +977,7 @@ export default function AccountDetailPage({
                     {t("customers.fields.businessNumber")}
                     <FrontendEnrichmentDecorator
                       field="customer.business_number"
-                      country={dto.address1Country || ""}
+                      country={dto.billingAddressCountry || ""}
                       value={dto.businessNumber || ""}
                       isSaving={saving}
                       onEnrich={(data) => {
@@ -861,7 +1072,7 @@ export default function AccountDetailPage({
               <h3 className="section-heading">
                 {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">location_on</span>
-                {t("customers.company")}
+                {t("customers.billing")}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -869,7 +1080,7 @@ export default function AccountDetailPage({
                     className="block text-xs font-medium mb-1.5"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    {t("common.columns.email")}
+                    {t("customers.fields.billingEmail")}
                   </label>
                   <input
                     type="email"
@@ -903,16 +1114,35 @@ export default function AccountDetailPage({
                     className="block text-xs font-medium mb-1.5"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    {t("common.columns.address")}
+                    {t("common.columns.billingAddress")}
                   </label>
                   <input
                     type="text"
                     className="input"
-                    value={dto.address1Line1 || ""}
+                    value={dto.billingAddressLine1 || ""}
                     onChange={(e) =>
-                      updateField("address1Line1", e.target.value)
+                      updateField("billingAddressLine1", e.target.value)
                     }
-                    onBlur={(e) => saveField("address1Line1", e.target.value)}
+                    onBlur={(e) => saveField("billingAddressLine1", e.target.value)}
+                    disabled={!isEditable || saving}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label
+                    className="block text-xs font-medium mb-1.5"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {/* eslint-disable-next-line no-restricted-syntax */}
+                    {"Address Line 2"}
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={dto.billingAddressLine2 || ""}
+                    onChange={(e) =>
+                      updateField("billingAddressLine2", e.target.value)
+                    }
+                    onBlur={(e) => saveField("billingAddressLine2", e.target.value)}
                     disabled={!isEditable || saving}
                   />
                 </div>
@@ -926,11 +1156,11 @@ export default function AccountDetailPage({
                   <input
                     type="text"
                     className="input"
-                    value={dto.address1City || ""}
+                    value={dto.billingAddressCity || ""}
                     onChange={(e) =>
-                      updateField("address1City", e.target.value)
+                      updateField("billingAddressCity", e.target.value)
                     }
-                    onBlur={(e) => saveField("address1City", e.target.value)}
+                    onBlur={(e) => saveField("billingAddressCity", e.target.value)}
                     disabled={!isEditable || saving}
                   />
                 </div>
@@ -944,12 +1174,12 @@ export default function AccountDetailPage({
                   <input
                     type="text"
                     className="input"
-                    value={dto.address1StateOrProvince || ""}
+                    value={dto.billingAddressStateOrProvince || ""}
                     onChange={(e) =>
-                      updateField("address1StateOrProvince", e.target.value)
+                      updateField("billingAddressStateOrProvince", e.target.value)
                     }
                     onBlur={(e) =>
-                      saveField("address1StateOrProvince", e.target.value)
+                      saveField("billingAddressStateOrProvince", e.target.value)
                     }
                     disabled={!isEditable || saving}
                   />
@@ -964,12 +1194,12 @@ export default function AccountDetailPage({
                   <input
                     type="text"
                     className="input"
-                    value={dto.address1PostalCode || ""}
+                    value={dto.billingAddressPostalCode || ""}
                     onChange={(e) =>
-                      updateField("address1PostalCode", e.target.value)
+                      updateField("billingAddressPostalCode", e.target.value)
                     }
                     onBlur={(e) =>
-                      saveField("address1PostalCode", e.target.value)
+                      saveField("billingAddressPostalCode", e.target.value)
                     }
                     disabled={!isEditable || saving}
                   />
@@ -977,76 +1207,6 @@ export default function AccountDetailPage({
               </div>
             </div>
 
-            {/* Contact Card */}
-            <div id="contact-section" className="card h-fit">
-              <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined">person</span>
-                {t("common.columns.contact")}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label
-                    className="block text-xs font-medium mb-1.5"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {t("common.columns.contactName")}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.primaryContactName || ""}
-                    onChange={(e) =>
-                      updateField("primaryContactName", e.target.value)
-                    }
-                    onBlur={(e) =>
-                      saveField("primaryContactName", e.target.value)
-                    }
-                    disabled={!isEditable || saving}
-                  />
-                </div>
-                <div>
-                  <label
-                    className="block text-xs font-medium mb-1.5"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {t("common.columns.contactEmail")}
-                  </label>
-                  <input
-                    type="email"
-                    className="input"
-                    value={dto.primaryContactEmail || ""}
-                    onChange={(e) =>
-                      updateField("primaryContactEmail", e.target.value)
-                    }
-                    onBlur={(e) =>
-                      saveField("primaryContactEmail", e.target.value)
-                    }
-                    disabled={!isEditable || saving}
-                  />
-                </div>
-                <div>
-                  <label
-                    className="block text-xs font-medium mb-1.5"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {t("common.columns.contactPhone")}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.primaryContactPhone || ""}
-                    onChange={(e) =>
-                      updateField("primaryContactPhone", e.target.value)
-                    }
-                    onBlur={(e) =>
-                      saveField("primaryContactPhone", e.target.value)
-                    }
-                    disabled={!isEditable || saving}
-                  />
-                </div>
-              </div>
-            </div>
 
             {/* Bank Details Card */}
             <div id="bank-section" className="card h-fit">
@@ -1207,6 +1367,36 @@ export default function AccountDetailPage({
           }
           customerId={params.id}
         />
+
+        {customer && (
+          <>
+            <ContactSlideOver
+              isOpen={isContactSlideOverOpen}
+              onClose={() => setIsContactSlideOverOpen(false)}
+              entityId={customer.customerId}
+              entityType="customer"
+              contactId={editingContact?.id}
+              existingData={editingContact}
+              defaultCountry={customer.billingAddressCountry || undefined}
+              onSaved={() => {
+                setIsContactSlideOverOpen(false);
+                loadAccount();
+              }}
+            />
+            <DeliveryAddressSlideOver
+              isOpen={isAddressSlideOverOpen}
+              onClose={() => setIsAddressSlideOverOpen(false)}
+              customerId={customer.customerId}
+              addressId={editingAddress?.id}
+              existingData={editingAddress}
+              defaultCountry={customer.billingAddressCountry || undefined}
+              onSaved={() => {
+                setIsAddressSlideOverOpen(false);
+                loadAccount();
+              }}
+            />
+          </>
+        )}
       </DetailsLayout>
     </>
   );

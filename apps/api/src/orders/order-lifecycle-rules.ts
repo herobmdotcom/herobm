@@ -97,7 +97,7 @@ export const autoShipWhenFullyShipped: LifecycleRule = {
     await emitEvent(db, {
       entityType: EntityType.SALES_ORDER,
       entityId: salesOrderId,
-      eventType: 'auto_status_changed',
+      eventType: EventType.AUTO_STATUS_CHANGED,
       entityDisplayName: orderNumber,
       payload: {
         rule: 'auto-ship-when-fully-shipped',
@@ -176,7 +176,7 @@ export const revertToPickingOnShipmentCancel: LifecycleRule = {
     await emitEvent(db, {
       entityType: EntityType.SALES_ORDER,
       entityId: salesOrderId,
-      eventType: 'auto_status_changed',
+      eventType: EventType.AUTO_STATUS_CHANGED,
       entityDisplayName: orderNumber,
       payload: {
         rule: 'revert-to-picking-on-shipment-cancel',
@@ -263,7 +263,7 @@ export const autoInvoiceWhenFullyInvoiced: LifecycleRule = {
     await emitEvent(db, {
       entityType: EntityType.SALES_ORDER,
       entityId: salesOrderId,
-      eventType: 'auto_status_changed',
+      eventType: EventType.AUTO_STATUS_CHANGED,
       entityDisplayName: orderNumber,
       payload: {
         rule: 'auto-invoice-when-fully-invoiced',
@@ -313,7 +313,7 @@ export const startPickingOnFirstPick: LifecycleRule = {
     await emitEvent(db, {
       entityType: EntityType.SALES_ORDER,
       entityId: salesOrderId,
-      eventType: 'auto_status_changed',
+      eventType: EventType.AUTO_STATUS_CHANGED,
       entityDisplayName: orderNumber,
       payload: {
         rule: 'start-picking-on-first-pick',

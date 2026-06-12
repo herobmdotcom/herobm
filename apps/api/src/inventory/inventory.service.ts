@@ -640,43 +640,6 @@ export class InventoryService {
     return data;
   }
 
-  async getMovements(days: number) {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days);
-    const cutoffIso = cutoff.toISOString();
-
-    const query = sql`
-      SELECT
-        p.product_number AS "productNumber",
-        p.name AS "productName",
-        SUM(CASE WHEN l.quantity::numeric > 0 THEN l.quantity::numeric ELSE 0 END) AS "stockIn",
-        SUM(CASE WHEN l.quantity::numeric < 0 THEN ABS(l.quantity::numeric) ELSE 0 END) AS "stockOut",
-        SUM(l.quantity::numeric) AS "netChange",
-        COALESCE(inv.qty, 0) AS "onHand"
-      FROM modbm_core.inventory_ledger l
-      JOIN modbm_core.inventory_entries e ON e.entry_id = l.entry_id
-      JOIN modbm_core.products p ON p.product_id = l.product_id
-      LEFT JOIN (
-        SELECT bc.product_id, SUM(bc.actual_quantity) as qty
-        FROM modbm_core.bin_contents bc
-        JOIN modbm_core.bins b ON b.bin_id = bc.bin_id
-        WHERE ${isPickableBinSqlCondition('b')}
-        GROUP BY bc.product_id
-      ) inv ON inv.product_id = p.product_id
-      WHERE e.entry_date >= ${cutoffIso}
-        AND e.source_type != 'INITIAL_IMPORT'
-      GROUP BY p.product_id, p.product_number, p.name, inv.qty
-      HAVING SUM(ABS(l.quantity::numeric)) > 0
-      ORDER BY p.name ASC
-    `;
-
-    const result = await this.db.execute(query);
-    const rows = Array.isArray(result)
-      ? result
-      : (result as { rows: unknown[] }).rows;
-    return { data: rows };
-  }
-
   async getLedger(days: number) {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
@@ -1883,10 +1846,24 @@ export class InventoryService {
     returnId: string,
     stateCode: (typeof RETURN_STATE)[keyof typeof RETURN_STATE],
   ) {
-    await tx
+    const [updated] = await tx
       .update(salesOrderReturns)
       .set({ stateCode })
-      .where(eq(salesOrderReturns.returnId, returnId));
+      .where(eq(salesOrderReturns.returnId, returnId))
+      .returning();
+
+    if (updated) {
+      await emitEvent(tx, {
+        entityType: EntityType.SALES_RETURN,
+        entityId: returnId,
+        eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: updated.returnNumber,
+        payload: {
+          stateCode,
+        },
+        actor: 'system', // mostly system-driven
+      });
+    }
   }
 
   async adjustStock(dto: import('./dto').AdjustStockDto, userId: string) {

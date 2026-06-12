@@ -226,25 +226,42 @@ export class SuppliersWriteService {
       .returning();
 
     const targetTx = tx || this.db;
-    let eventType: string = EventType.STATUS_CHANGED;
-    if (newState === SUPPLIER_STATE.ARCHIVED) {
-      eventType = EventType.ARCHIVED;
-    } else if (currentState === SUPPLIER_STATE.ARCHIVED) {
-      eventType = EventType.UNARCHIVED;
-    }
+    const eventPayload = {
+      from: currentState,
+      to: newState,
+    };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await emitEvent(targetTx as any, {
-      entityType: EntityType.SUPPLIER,
-      entityId: vendorId,
-      eventType: eventType,
-      entityDisplayName: updated.name,
-      payload: {
-        from: currentState,
-        to: newState,
-      },
-      actor,
-    });
+    if (newState === SUPPLIER_STATE.ARCHIVED) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await emitEvent(targetTx as any, {
+        entityType: EntityType.SUPPLIER,
+        entityId: vendorId,
+        eventType: EventType.ARCHIVED,
+        entityDisplayName: updated.name,
+        payload: eventPayload,
+        actor,
+      });
+    } else if (currentState === SUPPLIER_STATE.ARCHIVED) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await emitEvent(targetTx as any, {
+        entityType: EntityType.SUPPLIER,
+        entityId: vendorId,
+        eventType: EventType.UNARCHIVED,
+        entityDisplayName: updated.name,
+        payload: eventPayload,
+        actor,
+      });
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await emitEvent(targetTx as any, {
+        entityType: EntityType.SUPPLIER,
+        entityId: vendorId,
+        eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: updated.name,
+        payload: eventPayload,
+        actor,
+      });
+    }
 
     return updated;
   }

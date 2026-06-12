@@ -238,25 +238,43 @@ export class ProductsWriteService {
       .returning();
 
     const targetTx = tx || this.db;
-    let eventType: string = EventType.STATUS_CHANGED;
-    if (newState === PRODUCT_STATE.ARCHIVED) {
-      eventType = EventType.ARCHIVED;
-    } else if (currentState === PRODUCT_STATE.ARCHIVED) {
-      eventType = EventType.UNARCHIVED;
-    }
+    const eventPayload = {
+      from: currentState,
+      to: newState,
+    };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await emitEvent(targetTx as any, {
-      entityType: EntityType.PRODUCT,
-      entityId: productId,
-      eventType: eventType,
-      entityDisplayName: updated.name,
-      payload: {
-        from: currentState,
-        to: newState,
-      },
-      actor,
-    });
+    if (newState === PRODUCT_STATE.ARCHIVED) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await emitEvent(targetTx as any, {
+        entityType: EntityType.PRODUCT,
+        entityId: productId,
+        eventType: EventType.ARCHIVED,
+        entityDisplayName: updated.name,
+        payload: eventPayload,
+        actor,
+      });
+    } else if (currentState === PRODUCT_STATE.ARCHIVED) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await emitEvent(targetTx as any, {
+        entityType: EntityType.PRODUCT,
+        entityId: productId,
+        eventType: EventType.UNARCHIVED,
+        entityDisplayName: updated.name,
+        payload: eventPayload,
+        actor,
+      });
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await emitEvent(targetTx as any, {
+        entityType: EntityType.PRODUCT,
+        entityId: productId,
+        eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: updated.name,
+        payload: eventPayload,
+        actor,
+      });
+    }
 
     return updated;
   }
@@ -394,7 +412,7 @@ export class ProductsWriteService {
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
         entityId: productId,
-        eventType: 'uom_added',
+        eventType: EventType.UOM_ADDED,
         entityDisplayName: existing[0].name,
         payload: { uomCode: dto.uomCode, ratio: dto.ratio },
         actor,
@@ -437,7 +455,7 @@ export class ProductsWriteService {
       await emitEvent(tx as any, {
         entityType: EntityType.PRODUCT,
         entityId: productId,
-        eventType: 'uom_removed',
+        eventType: EventType.UOM_REMOVED,
         entityDisplayName: product.name,
         payload: { uomCode: existing[0].uomCode, ratio: existing[0].ratio },
         actor,

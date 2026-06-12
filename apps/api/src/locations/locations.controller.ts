@@ -65,8 +65,12 @@ export class LocationsController {
     description: 'Modify the details of an existing warehouse location.',
   })
   @ApiOkResponse({ type: LocationResponseDto })
-  updateLocation(@Param('id') id: string, @Body() dto: UpdateLocationDto) {
-    return this.locationsService.updateLocation(id, dto);
+  updateLocation(
+    @Param('id') id: string,
+    @Body() dto: UpdateLocationDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.locationsService.updateLocation(id, dto, user?.userId);
   }
 
   @Delete('locations/:id')
@@ -76,8 +80,8 @@ export class LocationsController {
     description: 'Remove a warehouse location.',
   })
   @ApiOkResponse({ type: LocationResponseDto })
-  deleteLocation(@Param('id') id: string) {
-    return this.locationsService.deleteLocation(id);
+  deleteLocation(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.locationsService.deleteLocation(id, user?.userId);
   }
 
   // ── Zones ─────────────────────────────────────────────────────────────────
@@ -102,8 +106,12 @@ export class LocationsController {
     description: 'Modify the details of an existing storage zone.',
   })
   @ApiOkResponse({ type: ZoneResponseDto })
-  updateZone(@Param('id') id: string, @Body() dto: UpdateZoneDto) {
-    return this.locationsService.updateZone(id, dto);
+  updateZone(
+    @Param('id') id: string,
+    @Body() dto: UpdateZoneDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.locationsService.updateZone(id, dto, user?.userId);
   }
 
   @Delete('zones/:id')
@@ -113,8 +121,8 @@ export class LocationsController {
     description: 'Remove a storage zone.',
   })
   @ApiOkResponse({ type: ZoneResponseDto })
-  deleteZone(@Param('id') id: string) {
-    return this.locationsService.deleteZone(id);
+  deleteZone(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.locationsService.deleteZone(id, user?.userId);
   }
 
   // ── Bins ──────────────────────────────────────────────────────────────────
@@ -139,8 +147,12 @@ export class LocationsController {
     description: 'Modify the details of an existing storage bin.',
   })
   @ApiOkResponse({ type: BinResponseDto })
-  updateBin(@Param('id') id: string, @Body() dto: UpdateBinDto) {
-    return this.locationsService.updateBin(id, dto);
+  updateBin(
+    @Param('id') id: string,
+    @Body() dto: UpdateBinDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.locationsService.updateBin(id, dto, user?.userId);
   }
 
   @Delete('bins/:id')
@@ -150,7 +162,7 @@ export class LocationsController {
     description: 'Remove a storage bin.',
   })
   @ApiOkResponse({ type: BinResponseDto })
-  deleteBin(@Param('id') id: string) {
-    return this.locationsService.deleteBin(id);
+  deleteBin(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.locationsService.deleteBin(id, user?.userId);
   }
 }

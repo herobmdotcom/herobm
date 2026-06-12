@@ -96,7 +96,7 @@ describe('DashboardService', () => {
           name: 'Test Customer',
           customerNumber: 'ACC1',
           currencyCode: 'USD',
-          address1Country: 'AU',
+          billingAddressCountry: 'AU',
         })
         .returning();
 
@@ -149,7 +149,7 @@ describe('DashboardService', () => {
           name: 'Alpha Corp',
           customerNumber: 'AC-01',
           currencyCode: 'USD',
-          address1Country: 'AU',
+          billingAddressCountry: 'AU',
         })
         .returning();
 
@@ -179,7 +179,7 @@ describe('DashboardService', () => {
           name: 'Search Acc',
           customerNumber: 'SA1',
           currencyCode: 'USD',
-          address1Country: 'AU',
+          billingAddressCountry: 'AU',
         })
         .returning();
 
@@ -210,7 +210,7 @@ describe('DashboardService', () => {
         name: 'Timeline Customer',
         customerNumber: 'TACC',
         currencyCode: 'USD',
-        address1Country: 'AU',
+        billingAddressCountry: 'AU',
       });
 
       await pg.db.insert(systemEvents).values({

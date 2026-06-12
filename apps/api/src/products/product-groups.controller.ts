@@ -22,6 +22,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { ProductGroupsService } from './product-groups.service';
 import {
   CreateProductGroupDto,
@@ -71,8 +72,8 @@ export class ProductGroupsController {
     description: 'Create a new product group for categorizing items.',
   })
   @ApiCreatedResponse({ type: ProductGroupResponseDto })
-  create(@Body() dto: CreateProductGroupDto) {
-    return this.productGroupsService.create(dto);
+  create(@Body() dto: CreateProductGroupDto, @AuthUser() user: JwtUser) {
+    return this.productGroupsService.create(dto, user?.userId);
   }
 
   @Patch(':id')
@@ -83,8 +84,12 @@ export class ProductGroupsController {
     description: 'Modify an existing product group.',
   })
   @ApiOkResponse({ type: ProductGroupResponseDto })
-  update(@Param('id') id: string, @Body() dto: UpdateProductGroupDto) {
-    return this.productGroupsService.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateProductGroupDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.productGroupsService.update(id, dto, user?.userId);
   }
 
   @Delete(':id')
@@ -94,7 +99,7 @@ export class ProductGroupsController {
     description: 'Remove a product group from the system.',
   })
   @ApiOkResponse({ type: ProductGroupResponseDto })
-  remove(@Param('id') id: string) {
-    return this.productGroupsService.delete(id);
+  remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.productGroupsService.delete(id, user?.userId);
   }
 }

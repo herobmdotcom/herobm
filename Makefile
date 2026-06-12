@@ -199,9 +199,21 @@ extract-table:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make extract-table SOURCE=abm|odoo TABLE=name))
 	"$(VENV_PYTHON)" pipelines/$(SOURCE)_extract/pipeline.py --table $(TABLE)
 
+# Extract and transform a single table: make sync-table SOURCE=abm TABLE=SGROUPS MODEL=import_abm_customer_groups
+sync-table:
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make sync-table SOURCE=abm TABLE=name MODEL=name))
+	$(if $(TABLE),,$(error Error: TABLE is required. Usage: make sync-table SOURCE=abm TABLE=name MODEL=name))
+	$(if $(MODEL),,$(error Error: MODEL is required. Usage: make sync-table SOURCE=abm TABLE=name MODEL=name))
+	"$(VENV_PYTHON)" pipelines/$(SOURCE)_extract/pipeline.py --table $(TABLE)
+	"$(DBT)" run --select +$(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+
 transform:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform SOURCE=abm|odoo))
 	"$(DBT)" run --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+
+transform-seed:
+	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-seed SOURCE=abm|odoo))
+	"$(DBT)" seed --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 test-transform:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make test-transform SOURCE=abm|odoo))
@@ -486,4 +498,4 @@ verify-db: migrate-status
 
 verify-all: build-all check-all verify-db test-all
 
-verify-fast: check-all test-api-unit test-deps test-structural
+verify-fast: check-all test-api-unit test-deps test-structural test-api-e2e

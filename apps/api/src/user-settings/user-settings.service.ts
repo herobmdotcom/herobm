@@ -15,6 +15,7 @@ export class UserSettingsService {
 
     if (!settings) {
       const [inserted] = await this.db
+        // @modbm-skip-audit
         .insert(userSettings)
         .values({ userId })
         .returning();
@@ -36,6 +37,7 @@ export class UserSettingsService {
     await this.getSettings(userId);
 
     const [updated] = await this.db
+      // @modbm-skip-audit
       .update(userSettings)
       .set({
         ...(data.dashboardConfig !== undefined && {

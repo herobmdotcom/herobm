@@ -86,8 +86,13 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     // Login as viewer (read-only)
     const viewerLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'viewer', password: process.env.DEV_VIEWER_PASSWORD })
-      .expect(201);
+      .send({
+        username: 'viewer',
+        password: process.env.DEV_VIEWER_PASSWORD || 'password',
+      });
+    if (viewerLogin.status !== 201)
+      console.log('viewerLogin Error:', viewerLogin.body);
+    expect(viewerLogin.status).toBe(201);
     viewerToken = viewerLogin.body.access_token;
 
     // Fetch real IDs from mart data
@@ -309,9 +314,11 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
           .get('/api/inventory/bins')
           .set('Authorization', `Bearer ${adminToken}`)
           .expect(200);
-        // Hardcode a valid storage bin ID from seeds, as /inventory/bins now returns binContents
-        const binId =
-          binsRes.body.data[0]?.binId || '40000000-0000-0000-0000-000000000003';
+        const validBin = binsRes.body.data.find(
+          (b: { binNumber: string; binId: string }) =>
+            b.binNumber !== 'SHIPPING',
+        );
+        const binId = validBin?.binId || '40000000-0000-0000-0000-000000000003';
 
         const detail = await request(app.getHttpServer())
           .get(`/api/sales-orders/${oid}`)
@@ -408,8 +415,11 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
               pricePerUnit: '10.00',
             },
           ],
-        })
-        .expect(201);
+        });
+      if (res.status !== 201) {
+        console.log('Create Draft Order Error Body:', res.body);
+      }
+      expect(res.status).toBe(201);
       draftOrderId = res.body.salesOrderId;
     });
 
@@ -504,9 +514,12 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
             .get('/api/inventory/bins')
             .set('Authorization', `Bearer ${adminToken}`)
             .expect(200);
+          const validBin = binsRes.body.data.find(
+            (b: { binNumber: string; binId: string }) =>
+              b.binNumber !== 'SHIPPING',
+          );
           const binId =
-            binsRes.body.data[0]?.binId ||
-            '40000000-0000-0000-0000-000000000003';
+            validBin?.binId || '40000000-0000-0000-0000-000000000003';
 
           const detail = await request(app.getHttpServer())
             .get(`/api/sales-orders/${invoicedId}`)
@@ -516,13 +529,16 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const shipLines: any[] = [];
           for (const line of detail.body.lines) {
-            await request(app.getHttpServer())
+            const pickRes = await request(app.getHttpServer())
               .post(
                 `/api/sales-orders/${invoicedId}/picking/lines/${line.salesOrderLineId}`,
               )
               .set('Authorization', `Bearer ${adminToken}`)
-              .send({ binId, quantity: line.quantity })
-              .expect(201);
+              .send({ binId, quantity: line.quantity });
+            if (pickRes.status !== 201) {
+              console.log('Pick Error Body:', pickRes.body);
+            }
+            expect(pickRes.status).toBe(201);
             shipLines.push({
               salesOrderLineId: line.salesOrderLineId,
               quantityShipped: line.quantity,

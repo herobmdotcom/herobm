@@ -2108,41 +2108,6 @@
         ]
       }
     },
-    "/inventory/movements": {
-      "get": {
-        "description": "Retrieve inventory movements.",
-        "operationId": "InventoryController_getMovements",
-        "parameters": [
-          {
-            "name": "days",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/InventoryMovementResponseDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "List Movements",
-        "tags": [
-          "Warehouse"
-        ]
-      }
-    },
     "/inventory/ledger": {
       "get": {
         "description": "Retrieve inventory ledger entries.",
@@ -14704,6 +14669,216 @@
           "System"
         ]
       }
+    },
+    "/contacts": {
+      "post": {
+        "description": "Create a new contact for a given entity.",
+        "operationId": "ContactsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create Contact",
+        "tags": [
+          "Contacts"
+        ]
+      }
+    },
+    "/contacts/{id}": {
+      "patch": {
+        "description": "Update an existing contact.",
+        "operationId": "ContactsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Contact",
+        "tags": [
+          "Contacts"
+        ]
+      },
+      "delete": {
+        "description": "Hard delete an existing contact.",
+        "operationId": "ContactsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete Contact",
+        "tags": [
+          "Contacts"
+        ]
+      }
+    },
+    "/delivery-addresses": {
+      "post": {
+        "description": "Create a new delivery address for a customer.",
+        "operationId": "DeliveryAddressesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDeliveryAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created delivery address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryAddressResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new delivery address",
+        "tags": [
+          "Delivery Addresses"
+        ]
+      }
+    },
+    "/delivery-addresses/{id}": {
+      "put": {
+        "description": "Update an existing delivery address.",
+        "operationId": "DeliveryAddressesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDeliveryAddressDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated delivery address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryAddressResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update an existing delivery address",
+        "tags": [
+          "Delivery Addresses"
+        ]
+      },
+      "delete": {
+        "description": "Delete a delivery address.",
+        "operationId": "DeliveryAddressesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Delivery address deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteDeliveryAddressSuccessDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a delivery address",
+        "tags": [
+          "Delivery Addresses"
+        ]
+      }
     }
   },
   "info": {
@@ -14720,6 +14895,14 @@
     {
       "name": "Customers",
       "description": "Customer management and CRM"
+    },
+    {
+      "name": "Contacts",
+      "description": "Customer and supplier contacts"
+    },
+    {
+      "name": "Delivery Addresses",
+      "description": "Delivery locations"
     },
     {
       "name": "Products",
@@ -14944,22 +15127,22 @@
           "name": {
             "type": "string"
           },
-          "address1Line1": {
+          "billingAddressLine1": {
             "type": "string"
           },
-          "address1Line2": {
+          "billingAddressLine2": {
             "type": "string"
           },
-          "address1City": {
+          "billingAddressCity": {
             "type": "string"
           },
-          "address1StateOrProvince": {
+          "billingAddressStateOrProvince": {
             "type": "string"
           },
-          "address1PostalCode": {
+          "billingAddressPostalCode": {
             "type": "string"
           },
-          "address1Country": {
+          "billingAddressCountry": {
             "type": "string"
           },
           "telephone1": {
@@ -14969,15 +15152,6 @@
             "type": "string"
           },
           "emailAddress1": {
-            "type": "string"
-          },
-          "primaryContactName": {
-            "type": "string"
-          },
-          "primaryContactEmail": {
-            "type": "string"
-          },
-          "primaryContactPhone": {
             "type": "string"
           },
           "customerGroupId": {
@@ -15056,13 +15230,25 @@
             "items": {
               "type": "object"
             }
+          },
+          "contacts": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "deliveryAddresses": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           }
         },
         "required": [
           "customerId",
           "customerNumber",
           "name",
-          "address1Country",
+          "billingAddressCountry",
           "currencyCode",
           "stateCode",
           "source"
@@ -15081,22 +15267,22 @@
           "name": {
             "type": "string"
           },
-          "address1Line1": {
+          "billingAddressLine1": {
             "type": "string"
           },
-          "address1Line2": {
+          "billingAddressLine2": {
             "type": "string"
           },
-          "address1City": {
+          "billingAddressCity": {
             "type": "string"
           },
-          "address1StateOrProvince": {
+          "billingAddressStateOrProvince": {
             "type": "string"
           },
-          "address1PostalCode": {
+          "billingAddressPostalCode": {
             "type": "string"
           },
-          "address1Country": {
+          "billingAddressCountry": {
             "type": "string"
           },
           "telephone1": {
@@ -15108,16 +15294,6 @@
           "emailAddress1": {
             "type": "string",
             "format": "email"
-          },
-          "primaryContactName": {
-            "type": "string"
-          },
-          "primaryContactEmail": {
-            "type": "string",
-            "format": "email"
-          },
-          "primaryContactPhone": {
-            "type": "string"
           },
           "customerGroupId": {
             "type": "string",
@@ -15159,7 +15335,7 @@
         "required": [
           "customerNumber",
           "name",
-          "address1Country"
+          "billingAddressCountry"
         ]
       },
       "UpdateAccountDto": {
@@ -15168,22 +15344,22 @@
           "name": {
             "type": "string"
           },
-          "address1Line1": {
+          "billingAddressLine1": {
             "type": "string"
           },
-          "address1Line2": {
+          "billingAddressLine2": {
             "type": "string"
           },
-          "address1City": {
+          "billingAddressCity": {
             "type": "string"
           },
-          "address1StateOrProvince": {
+          "billingAddressStateOrProvince": {
             "type": "string"
           },
-          "address1PostalCode": {
+          "billingAddressPostalCode": {
             "type": "string"
           },
-          "address1Country": {
+          "billingAddressCountry": {
             "type": "string"
           },
           "telephone1": {
@@ -15195,16 +15371,6 @@
           "emailAddress1": {
             "type": "string",
             "format": "email"
-          },
-          "primaryContactName": {
-            "type": "string"
-          },
-          "primaryContactEmail": {
-            "type": "string",
-            "format": "email"
-          },
-          "primaryContactPhone": {
-            "type": "string"
           },
           "customerGroupId": {
             "type": "string",
@@ -16018,30 +16184,6 @@
           "locationId",
           "code",
           "name"
-        ]
-      },
-      "InventoryMovementResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "productId": {
-            "type": "string"
-          },
-          "quantity": {
-            "type": "string"
-          },
-          "date": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "productId",
-          "quantity",
-          "date"
         ]
       },
       "InventoryLedgerResponseDto": {
@@ -18465,6 +18607,33 @@
           "createdOn": {
             "format": "date-time",
             "type": "string"
+          },
+          "deliveryName": {
+            "type": "string"
+          },
+          "deliveryPhone": {
+            "type": "string"
+          },
+          "deliveryAddressLine1": {
+            "type": "string"
+          },
+          "deliveryAddressLine2": {
+            "type": "string"
+          },
+          "deliveryCity": {
+            "type": "string"
+          },
+          "deliveryState": {
+            "type": "string"
+          },
+          "deliveryPostalCode": {
+            "type": "string"
+          },
+          "deliveryCountry": {
+            "type": "string"
+          },
+          "shippingNotes": {
+            "type": "string"
           }
         },
         "required": [
@@ -18630,6 +18799,33 @@
           "fulfillmentLocationId": {
             "type": "string"
           },
+          "shippingNotes": {
+            "type": "string"
+          },
+          "deliveryName": {
+            "type": "string"
+          },
+          "deliveryPhone": {
+            "type": "string"
+          },
+          "deliveryAddressLine1": {
+            "type": "string"
+          },
+          "deliveryAddressLine2": {
+            "type": "string"
+          },
+          "deliveryCity": {
+            "type": "string"
+          },
+          "deliveryState": {
+            "type": "string"
+          },
+          "deliveryPostalCode": {
+            "type": "string"
+          },
+          "deliveryCountry": {
+            "type": "string"
+          },
           "lines": {
             "type": "array",
             "items": {
@@ -18656,6 +18852,33 @@
             "type": "string"
           },
           "fulfillmentLocationId": {
+            "type": "string"
+          },
+          "shippingNotes": {
+            "type": "string"
+          },
+          "deliveryName": {
+            "type": "string"
+          },
+          "deliveryPhone": {
+            "type": "string"
+          },
+          "deliveryAddressLine1": {
+            "type": "string"
+          },
+          "deliveryAddressLine2": {
+            "type": "string"
+          },
+          "deliveryCity": {
+            "type": "string"
+          },
+          "deliveryState": {
+            "type": "string"
+          },
+          "deliveryPostalCode": {
+            "type": "string"
+          },
+          "deliveryCountry": {
             "type": "string"
           }
         }
@@ -22314,11 +22537,12 @@
           "dbConfig": {
             "$ref": "#/components/schemas/DbConfigDto"
           },
-          "abmImport": {
-            "type": "boolean"
-          },
-          "odooImport": {
-            "type": "boolean"
+          "source": {
+            "type": "string",
+            "enum": [
+              "abm",
+              "odoo"
+            ]
           },
           "resumeExtraction": {
             "type": "boolean"
@@ -23228,6 +23452,310 @@
             "description": "Generic UI preferences"
           }
         }
+      },
+      "CreateContactDto": {
+        "type": "object",
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "enum": [
+              "customer"
+            ]
+          },
+          "entityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "mobile": {
+            "type": "string"
+          },
+          "jobTitle": {
+            "type": "string"
+          },
+          "isPrimary": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entityType",
+          "entityId",
+          "firstName",
+          "lastName"
+        ]
+      },
+      "ContactResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "mobile": {
+            "type": "string",
+            "nullable": true
+          },
+          "jobTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "modifiedOn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "firstName",
+          "lastName",
+          "isPrimary",
+          "createdOn",
+          "modifiedOn"
+        ]
+      },
+      "UpdateContactDto": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "mobile": {
+            "type": "string"
+          },
+          "jobTitle": {
+            "type": "string"
+          },
+          "isPrimary": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CreateDeliveryAddressDto": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "addressName": {
+            "type": "string"
+          },
+          "recipientName": {
+            "type": "string"
+          },
+          "recipientPhone": {
+            "type": "string"
+          },
+          "addressLine1": {
+            "type": "string"
+          },
+          "addressLine2": {
+            "type": "string",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "stateOrProvince": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "postalCode": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
+          "country": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2
+          },
+          "isPrimary": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "customerId",
+          "addressLine1",
+          "country"
+        ]
+      },
+      "DeliveryAddressResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string"
+          },
+          "addressName": {
+            "type": "string",
+            "nullable": true
+          },
+          "recipientName": {
+            "type": "string",
+            "nullable": true
+          },
+          "recipientPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressLine1": {
+            "type": "string",
+            "nullable": true
+          },
+          "addressLine2": {
+            "type": "string",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "nullable": true
+          },
+          "stateOrProvince": {
+            "type": "string",
+            "nullable": true
+          },
+          "postalCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "country": {
+            "type": "string",
+            "nullable": true
+          },
+          "isPrimary": {
+            "type": "boolean"
+          },
+          "sourceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "source": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "modifiedOn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "customerId",
+          "addressLine1",
+          "country",
+          "isPrimary",
+          "source"
+        ]
+      },
+      "UpdateDeliveryAddressDto": {
+        "type": "object",
+        "properties": {
+          "addressName": {
+            "type": "string"
+          },
+          "recipientName": {
+            "type": "string"
+          },
+          "recipientPhone": {
+            "type": "string"
+          },
+          "addressLine1": {
+            "type": "string"
+          },
+          "addressLine2": {
+            "type": "string",
+            "nullable": true
+          },
+          "city": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "stateOrProvince": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100
+          },
+          "postalCode": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 50
+          },
+          "country": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2
+          },
+          "isPrimary": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DeleteDeliveryAddressSuccessDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ]
       }
     }
   }

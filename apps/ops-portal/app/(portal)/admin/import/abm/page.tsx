@@ -5,6 +5,7 @@ import * as api from '@modbm/sdk';
 import { reportError } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { ExecuteEltDtoSource } from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { CURRENCIES, getCurrencyByAbmCode } from '@/lib/currency';
 import { getErrorMessage } from '@modbm/shared';
@@ -133,7 +134,7 @@ export default function AdminImportPage() {
           password: config.password,
           port: parseInt(config.port, 10)
         },
-        source: 'abm',
+        source: ExecuteEltDtoSource.abm,
         resumeExtraction: config.extractionMode === 'resume',
         skipExtraction: config.extractionMode === 'skip',
         defaultLocationCode: config.defaultLocationCode,

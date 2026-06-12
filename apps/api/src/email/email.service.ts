@@ -6,6 +6,7 @@ import {
 } from '../drizzle/modbm-core-schema';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { EntityType, EventType } from '../common/event-types';
+import { emitEvent } from '../common/emit-event';
 
 export interface QueueEmailParams {
   entityType?: string;
@@ -45,25 +46,30 @@ export class EmailService {
       })
       .returning({ id: emailOutbox.id });
 
-    // Optional event logging if linked to an entity
+    const payload = {
+      emailId: insertedEmail.id,
+      toAddress: params.toAddress,
+      subject: params.subject,
+    };
+
+    // 1. Always log an event specifically for the EMAIL entity
+    await emitEvent(tx, {
+      entityType: EntityType.EMAIL,
+      entityId: insertedEmail.id,
+      eventType: EventType.QUEUED,
+      entityDisplayName: `Email to ${params.toAddress}`,
+      payload: payload,
+    });
+
+    // 2. Optional event logging if linked to an entity
     if (params.entityType && params.entityId) {
-      const payload = {
-        emailId: insertedEmail.id,
-        toAddress: params.toAddress,
-        subject: params.subject,
-      };
-
-      await tx.insert(systemEvents).values({
-        entityType: params.entityType,
+      // @sync-ignore
+      await emitEvent(tx, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        entityType: params.entityType as any,
         entityId: params.entityId,
         eventType: `email.${EventType.QUEUED}`,
-        payload: payload,
-      });
-
-      await tx.insert(outbox).values({
-        entityType: params.entityType,
-        entityId: params.entityId,
-        eventType: `email.${EventType.QUEUED}`,
+        entityDisplayName: `Email to ${params.toAddress}`,
         payload: payload,
       });
     }

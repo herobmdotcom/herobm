@@ -66,9 +66,10 @@ interface PickingSummary {
 interface Props {
     orderId: string;
     pickingSummary: PickingSummary | null;
+    order: import('./types').OrderDetail;
 }
 
-export default function FulfillmentSection({ orderId, pickingSummary }: Props) {
+export default function FulfillmentSection({ orderId, pickingSummary, order }: Props) {
     const t = useTranslations('fulfillment');
     const tCommon = useTranslations('common');
 
@@ -109,6 +110,7 @@ export default function FulfillmentSection({ orderId, pickingSummary }: Props) {
                 </div>
             ) : (
                 <>
+
                     <DataTable
                         data={physicalLines}
                         keyExtractor={(line) => line.salesOrderLineId}

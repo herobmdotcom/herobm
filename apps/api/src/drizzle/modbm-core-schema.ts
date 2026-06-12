@@ -142,6 +142,15 @@ export const salesOrders = modbmCore.table(
       .default(SALES_ORDER_STATE.DRAFT),
     currencyCode: text('currency_code').notNull(),
     notes: text('notes'),
+    shippingNotes: text('shipping_notes'),
+    deliveryName: text('delivery_name'),
+    deliveryPhone: text('delivery_phone'),
+    deliveryAddressLine1: text('delivery_address_line1'),
+    deliveryAddressLine2: text('delivery_address_line2'),
+    deliveryCity: text('delivery_city'),
+    deliveryState: text('delivery_state'),
+    deliveryPostalCode: text('delivery_postal_code'),
+    deliveryCountry: text('delivery_country'),
     customFields: jsonb('custom_fields'),
     discrepanciesAcknowledged: boolean('discrepancies_acknowledged')
       .notNull()
@@ -1453,18 +1462,15 @@ export const customers = modbmCore.table(
     customerId: uuid('customer_id').primaryKey().defaultRandom(),
     customerNumber: text('customer_number').unique().notNull(),
     name: text('name').notNull(),
-    address1Line1: text('address1_line1'),
-    address1Line2: text('address1_line2'),
-    address1City: text('address1_city'),
-    address1StateOrProvince: text('address1_state_or_province'),
-    address1PostalCode: text('address1_postal_code'),
-    address1Country: text('address1_country').notNull(),
+    billingAddressLine1: text('billing_address_line1'),
+    billingAddressLine2: text('billing_address_line2'),
+    billingAddressCity: text('billing_address_city'),
+    billingAddressStateOrProvince: text('billing_address_state_or_province'),
+    billingAddressPostalCode: text('billing_address_postal_code'),
+    billingAddressCountry: text('billing_address_country').notNull(),
     telephone1: text('telephone1'),
     fax: text('fax'),
     emailAddress1: text('email_address1'),
-    primaryContactName: text('primary_contact_name'),
-    primaryContactEmail: text('primary_contact_email'),
-    primaryContactPhone: text('primary_contact_phone'),
     customerGroupId: uuid('customer_group_id').references(
       () => customerGroups.customerGroupId,
     ),
@@ -1496,6 +1502,50 @@ export const customers = modbmCore.table(
   (t) => ({
     currencyCheck: validCurrencyCheck('customers'),
   }),
+);
+
+export const customerContacts = modbmCore.table('customer_contacts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  customerId: uuid('customer_id')
+    .notNull()
+    .references(() => customers.customerId),
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  fullName: text('full_name'),
+  email: text('email'),
+  emailSecondary: text('email_secondary'),
+  phone: text('phone'),
+  mobile: text('mobile'),
+  jobTitle: text('job_title'),
+  isPrimary: boolean('is_primary').notNull().default(false),
+  sourceId: text('source_id'),
+  source: text('source').notNull().default('app'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+export const customerDeliveryAddresses = modbmCore.table(
+  'customer_delivery_addresses',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    customerId: uuid('customer_id')
+      .notNull()
+      .references(() => customers.customerId),
+    addressName: text('address_name'),
+    recipientName: text('recipient_name'),
+    recipientPhone: text('recipient_phone'),
+    addressLine1: text('address_line1'),
+    addressLine2: text('address_line2'),
+    city: text('city'),
+    stateOrProvince: text('state_or_province'),
+    postalCode: text('postal_code'),
+    country: text('country'),
+    isPrimary: boolean('is_primary').notNull().default(false),
+    sourceId: text('source_id'),
+    source: text('source').notNull().default('app'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
 );
 
 // ---------------------------------------------------------------------------
@@ -2232,6 +2282,76 @@ export const systemEvents = modbmCore.table('system_events', {
 });
 
 // ---------------------------------------------------------------------------
+// business_report_events
+// ---------------------------------------------------------------------------
+export const businessReportEvents = modbmCore.table('business_report_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id').notNull(),
+  eventType: text('event_type').notNull(),
+  entityDisplayName: text('entity_display_name'),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// email_events
+// ---------------------------------------------------------------------------
+export const emailEvents = modbmCore.table('email_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id').notNull(),
+  eventType: text('event_type').notNull(),
+  entityDisplayName: text('entity_display_name'),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// integration_events
+// ---------------------------------------------------------------------------
+export const integrationEvents = modbmCore.table('integration_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id').notNull(),
+  eventType: text('event_type').notNull(),
+  entityDisplayName: text('entity_display_name'),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// reconciliation_events  (Reconciliation audit log)
+// ---------------------------------------------------------------------------
+export const reconciliationEvents = modbmCore.table('reconciliation_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id').notNull(),
+  eventType: text('event_type').notNull(),
+  entityDisplayName: text('entity_display_name'),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// group_events  (Master data group audit log)
+// ---------------------------------------------------------------------------
+export const groupEvents = modbmCore.table('group_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id').notNull(),
+  eventType: text('event_type').notNull(),
+  entityDisplayName: text('entity_display_name'),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // goods_received  (Physical dock manifest — one per incoming package/packing slip)
 // ---------------------------------------------------------------------------
 export const goodsReceived = modbmCore.table('goods_received', {
@@ -2446,6 +2566,31 @@ export const pdfTemplateHooksRelations = relations(
     template: one(pdfTemplates, {
       fields: [pdfTemplateHooks.reportId],
       references: [pdfTemplates.id],
+    }),
+  }),
+);
+
+export const customersRelations = relations(customers, ({ many }) => ({
+  contacts: many(customerContacts),
+  deliveryAddresses: many(customerDeliveryAddresses),
+}));
+
+export const customerContactsRelations = relations(
+  customerContacts,
+  ({ one }) => ({
+    customer: one(customers, {
+      fields: [customerContacts.customerId],
+      references: [customers.customerId],
+    }),
+  }),
+);
+
+export const customerDeliveryAddressesRelations = relations(
+  customerDeliveryAddresses,
+  ({ one }) => ({
+    customer: one(customers, {
+      fields: [customerDeliveryAddresses.customerId],
+      references: [customers.customerId],
     }),
   }),
 );

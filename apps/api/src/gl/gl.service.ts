@@ -367,16 +367,19 @@ export class GlService implements OnModuleInit {
       .orderBy(glAccounts.accountCode);
   }
 
-  async createAccount(data: {
-    accountCode: string;
-    name: string;
-    accountType: GLAccountType;
-    parentAccountId?: string;
-    isGroup?: boolean;
-    isBankAccount?: boolean;
-    currencyCode?: string;
-    metadata?: Record<string, unknown>;
-  }) {
+  async createAccount(
+    data: {
+      accountCode: string;
+      name: string;
+      accountType: GLAccountType;
+      parentAccountId?: string;
+      isGroup?: boolean;
+      isBankAccount?: boolean;
+      currencyCode?: string;
+      metadata?: Record<string, unknown>;
+    },
+    userId?: string,
+  ) {
     // Validate account type
     const validTypes = Object.values(GL_ACCOUNT_TYPE) as string[];
     if (!validTypes.includes(data.accountType)) {
@@ -385,44 +388,55 @@ export class GlService implements OnModuleInit {
       );
     }
 
-    // Validate parent exists if specified
-    if (data.parentAccountId) {
-      const parent = await this.db
-        .select()
-        .from(glAccounts)
-        .where(eq(glAccounts.glAccountId, data.parentAccountId))
-        .limit(1);
+    return await this.db.transaction(async (tx) => {
+      // Validate parent exists if specified
+      if (data.parentAccountId) {
+        const parent = await tx
+          .select()
+          .from(glAccounts)
+          .where(eq(glAccounts.glAccountId, data.parentAccountId))
+          .limit(1);
 
-      if (parent.length === 0) {
-        throw new BadRequestException('Parent account not found.');
+        if (parent.length === 0) {
+          throw new BadRequestException('Parent account not found.');
+        }
+        if (!parent[0].isGroup) {
+          throw new BadRequestException(
+            'Parent account must be a group account.',
+          );
+        }
+        if (parent[0].accountType !== data.accountType) {
+          throw new BadRequestException(
+            'Child account type must match parent account type.',
+          );
+        }
       }
-      if (!parent[0].isGroup) {
-        throw new BadRequestException(
-          'Parent account must be a group account.',
-        );
-      }
-      if (parent[0].accountType !== data.accountType) {
-        throw new BadRequestException(
-          'Child account type must match parent account type.',
-        );
-      }
-    }
 
-    const [account] = await this.db
-      .insert(glAccounts)
-      .values({
-        accountCode: data.accountCode,
-        name: data.name,
-        accountType: data.accountType,
-        parentAccountId: data.parentAccountId,
-        isGroup: data.isGroup ?? false,
-        isBankAccount: data.isBankAccount ?? false,
-        currencyCode: data.currencyCode ?? this.appConfig.homeCurrency(),
-        metadata: data.metadata ?? {},
-      })
-      .returning();
+      const [account] = await tx
+        .insert(glAccounts)
+        .values({
+          accountCode: data.accountCode,
+          name: data.name,
+          accountType: data.accountType,
+          parentAccountId: data.parentAccountId,
+          isGroup: data.isGroup ?? false,
+          isBankAccount: data.isBankAccount ?? false,
+          currencyCode: data.currencyCode ?? this.appConfig.homeCurrency(),
+          metadata: data.metadata ?? {},
+        })
+        .returning();
 
-    return account;
+      await emitEvent(tx, {
+        entityType: EntityType.GL_ACCOUNT,
+        entityId: account.glAccountId,
+        eventType: EventType.CREATED,
+        entityDisplayName: account.accountCode,
+        payload: data,
+        actor: userId,
+      });
+
+      return account;
+    });
   }
 
   async updateAccount(
@@ -433,31 +447,43 @@ export class GlService implements OnModuleInit {
       isBankAccount?: boolean;
       metadata?: Record<string, unknown>;
     },
+    userId?: string,
   ) {
-    // Don't allow deactivating system accounts
-    const [existing] = await this.db
-      .select()
-      .from(glAccounts)
-      .where(eq(glAccounts.glAccountId, glAccountId))
-      .limit(1);
+    return await this.db.transaction(async (tx) => {
+      // Don't allow deactivating system accounts
+      const [existing] = await tx
+        .select()
+        .from(glAccounts)
+        .where(eq(glAccounts.glAccountId, glAccountId))
+        .limit(1);
 
-    if (!existing) {
-      throw new NotFoundException(`Account '${glAccountId}' not found.`);
-    }
+      if (!existing) {
+        throw new NotFoundException(`Account '${glAccountId}' not found.`);
+      }
 
-    if (existing.isSystem && data.isActive === false) {
-      throw new BadRequestException(
-        `System account '${existing.accountCode} - ${existing.name}' cannot be deactivated.`,
-      );
-    }
+      if (existing.isSystem && data.isActive === false) {
+        throw new BadRequestException(
+          `System account '${existing.accountCode} - ${existing.name}' cannot be deactivated.`,
+        );
+      }
 
-    const [updated] = await this.db
-      .update(glAccounts)
-      .set(data)
-      .where(eq(glAccounts.glAccountId, glAccountId))
-      .returning();
+      const [updated] = await tx
+        .update(glAccounts)
+        .set(data)
+        .where(eq(glAccounts.glAccountId, glAccountId))
+        .returning();
 
-    return updated;
+      await emitEvent(tx, {
+        entityType: EntityType.GL_ACCOUNT,
+        entityId: updated.glAccountId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: updated.accountCode,
+        payload: data,
+        actor: userId,
+      });
+
+      return updated;
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -859,6 +885,15 @@ export class GlService implements OnModuleInit {
         .insert(glSettings)
         .values(data as typeof glSettings.$inferInsert)
         .returning();
+
+      await emitEvent(db, {
+        entityType: EntityType.GL_SETTINGS,
+        entityId: newSettings.settingsId,
+        entityDisplayName: 'General Ledger Settings',
+        eventType: EventType.UPDATED,
+        payload: { changes: data },
+        actor: 'system',
+      });
       return newSettings;
     }
 
@@ -875,6 +910,15 @@ export class GlService implements OnModuleInit {
       .set(validData)
       .where(eq(glSettings.settingsId, existing.settingsId))
       .returning();
+
+    await emitEvent(db, {
+      entityType: EntityType.GL_SETTINGS,
+      entityId: existing.settingsId,
+      entityDisplayName: 'General Ledger Settings',
+      eventType: EventType.UPDATED,
+      payload: { changes: validData },
+      actor: 'system',
+    });
 
     return updated;
   }

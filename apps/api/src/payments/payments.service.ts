@@ -21,11 +21,13 @@ import {
   paymentLines,
   salesCreditNotes,
   purchaseDebitNotes,
+  supplierExpiries,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
-import { evaluateInvoiceLifecycleRules } from '../invoices/invoice-lifecycle-rules';
+import { evaluateSalesInvoiceLifecycleRules } from '../invoices/sales-invoice-lifecycle-rules';
+import { evaluatePurchaseInvoiceLifecycleRules } from '../invoices/purchase-invoice-lifecycle-rules';
 import { CreatePaymentDto, AllocatePaymentDto } from './dto';
 import { AbaGeneratorService } from './aba-generator.service';
 import { NachaGeneratorService } from './nacha-generator.service';
@@ -194,6 +196,26 @@ export class PaymentsService {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const paymentNumber = await this.generatePaymentNumber(tx as any);
 
+      // JIT Compliance Block for Payments
+      if (dto.paymentType.startsWith('supplier_') && dto.partyId) {
+        const expiredDocs = await tx
+          .select({ id: supplierExpiries.expiryId })
+          .from(supplierExpiries)
+          .where(
+            and(
+              eq(supplierExpiries.vendorId, dto.partyId),
+              sql`${supplierExpiries.expiryDate} < CURRENT_DATE`,
+            ),
+          )
+          .limit(1);
+
+        if (expiredDocs.length > 0) {
+          throw new BadRequestException(
+            'Supplier has expired compliance documentation. Cannot create payment.',
+          );
+        }
+      }
+
       const [payment] = await tx
         .insert(paymentEntries)
         .values({
@@ -233,6 +255,15 @@ export class PaymentsService {
         );
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await emitEvent(tx as any, {
+        entityType: EntityType.PAYMENT,
+        entityId: payment.paymentId,
+        eventType: EventType.CREATED,
+        entityDisplayName: payment.paymentNumber,
+        payload: payment,
+      });
+
       return payment;
     });
   }
@@ -261,6 +292,26 @@ export class PaymentsService {
         throw new BadRequestException(
           `Only draft or exported payments can be submitted`,
         );
+      }
+
+      // JIT Compliance Block for Payments
+      if (payment.paymentType.startsWith('supplier_') && payment.partyId) {
+        const expiredDocs = await tx
+          .select({ id: supplierExpiries.expiryId })
+          .from(supplierExpiries)
+          .where(
+            and(
+              eq(supplierExpiries.vendorId, payment.partyId),
+              sql`${supplierExpiries.expiryDate} < CURRENT_DATE`,
+            ),
+          )
+          .limit(1);
+
+        if (expiredDocs.length > 0) {
+          throw new BadRequestException(
+            'Supplier has expired compliance documentation. Cannot submit payment.',
+          );
+        }
       }
 
       // 2. Resolve Payment Lines (Split) vs Control Customer (AR/AP/Direct)
@@ -562,11 +613,18 @@ export class PaymentsService {
         unallocatedAmount -= alloc.allocatedAmount;
 
         // 5. Evaluate Invoice Lifecycle (only for invoices)
-        if (alloc.referenceType.endsWith('_invoice')) {
-          await evaluateInvoiceLifecycleRules(
+        if (alloc.referenceType === 'sales_invoice') {
+          await evaluateSalesInvoiceLifecycleRules(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             tx as any,
-            alloc.referenceType === 'sales_invoice' ? 'sales' : 'purchase',
+            alloc.referenceId,
+            { entity: 'payment', id: paymentId, action: 'allocated' },
+            actor,
+          );
+        } else if (alloc.referenceType === 'purchase_invoice') {
+          await evaluatePurchaseInvoiceLifecycleRules(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            tx as any,
             alloc.referenceId,
             { entity: 'payment', id: paymentId, action: 'allocated' },
             actor,
@@ -908,6 +966,15 @@ export class PaymentsService {
             modifiedOn: new Date(),
           })
           .where(eq(paymentEntries.paymentId, p.paymentId));
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await emitEvent(tx as any, {
+          entityType: EntityType.PAYMENT,
+          entityId: p.paymentId,
+          eventType: EventType.UPDATED,
+          entityDisplayName: p.paymentNumber,
+          payload: { abaExported: true },
+        });
       }
 
       return abaContent;
@@ -1023,6 +1090,15 @@ export class PaymentsService {
             modifiedOn: new Date(),
           })
           .where(eq(paymentEntries.paymentId, p.paymentId));
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await emitEvent(tx as any, {
+          entityType: EntityType.PAYMENT,
+          entityId: p.paymentId,
+          eventType: EventType.UPDATED,
+          entityDisplayName: p.paymentNumber,
+          payload: { nachaExported: true },
+        });
       }
 
       return nachaContent;

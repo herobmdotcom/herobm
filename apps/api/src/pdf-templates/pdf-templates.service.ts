@@ -25,6 +25,8 @@ import { BadRequestException } from '@nestjs/common';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import { CASBIN_ENFORCER } from '../auth/casbin.provider';
 import type { Enforcer } from 'casbin';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 const execAsync = promisify(exec);
 
@@ -156,6 +158,7 @@ export class PdfTemplatesService {
     };
   }
 
+  // @modbm-skip-audit
   async createReport(data: {
     name: string;
     slug: string;
@@ -182,6 +185,7 @@ export class PdfTemplatesService {
     return { ...inserted, contexts: contexts || [] };
   }
 
+  // @modbm-skip-audit
   async updateReport(
     id: string,
     data: Partial<{
@@ -247,6 +251,16 @@ export class PdfTemplatesService {
       .where(eq(pdfTemplates.id, id))
       .returning();
     if (!deleted) throw new NotFoundException('Report not found');
+
+    await emitEvent(this.db, {
+      entityType: EntityType.SYSTEM,
+      entityId: 'system',
+      eventType: EventType.UPDATED,
+      entityDisplayName: 'PDF Templates',
+      payload: { deletedReportId: id },
+      actor: 'system',
+    });
+
     return { success: true };
   }
 
@@ -282,6 +296,16 @@ export class PdfTemplatesService {
         set: { reportId, contextSlug, updatedAt: new Date() },
       })
       .returning();
+
+    await emitEvent(this.db, {
+      entityType: EntityType.SYSTEM,
+      entityId: 'system',
+      eventType: EventType.UPDATED,
+      entityDisplayName: 'PDF Templates',
+      payload: { updatedHookSlug: hookSlug },
+      actor: 'system',
+    });
+
     return updated;
   }
 

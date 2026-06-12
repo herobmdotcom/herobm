@@ -58,6 +58,8 @@ import type {
   ChartFileDto,
   ClientErrorDto,
   ConfirmRejectResponseDto,
+  ContactResponseDto,
+  ContactsControllerRemove200,
   CostCenterResponseDto,
   CostCentersControllerFindAllParams,
   CreateAccountDto,
@@ -70,8 +72,10 @@ import type {
   CreateBankStatementLineDto,
   CreateBinDto,
   CreateBusinessReportDto,
+  CreateContactDto,
   CreateCostCenterDto,
   CreateDebitNoteDto,
+  CreateDeliveryAddressDto,
   CreateDiscountMatrixDto,
   CreateExchangeRateDto,
   CreateGoodsReceivedDto,
@@ -115,6 +119,8 @@ import type {
   DashboardControllerSearchParams,
   DataSourceItemDto,
   DeleteEventsResponseDto,
+  DeliveryAddressResponseDto,
+  DeliveryAddressesControllerRemove200,
   DiscardReconciliationResponseDto,
   DiscountMatrixControllerDelete200,
   DiscountMatrixControllerListParams,
@@ -187,13 +193,11 @@ import type {
   InventoryControllerFindBinsParams,
   InventoryControllerFindByProductIdsParams,
   InventoryControllerGetLedgerParams,
-  InventoryControllerGetMovementsParams,
   InventoryControllerGetPendingPutawayParams,
   InventoryControllerGetPutawayContextParams,
   InventoryEntryDetailsResponseDto,
   InventoryLedgerResponseDto,
   InventoryLocationResponseDto,
-  InventoryMovementResponseDto,
   InventoryResponseDto,
   InventorySuccessResponseDto,
   InvoiceDetailControllerGetPurchaseInvoicesGlobalParams,
@@ -308,9 +312,12 @@ import type {
   SuppliersControllerFindAll200,
   SuppliersControllerFindAllParams,
   SuppliersControllerFindByProduct200,
+  SuppliersControllerFindByProductParams,
   SuppliersControllerFindOneParams,
   SuppliersControllerFindSupplierExpiries200,
+  SuppliersControllerFindSupplierExpiriesParams,
   SuppliersControllerFindSupplierProducts200,
+  SuppliersControllerFindSupplierProductsParams,
   SyncEventsResponseDto,
   SyncStatusResponseDto,
   SystemControllerGetSystemLogsParams,
@@ -343,7 +350,9 @@ import type {
   UpdateAppConfigDto,
   UpdateBinDto,
   UpdateBusinessReportDto,
+  UpdateContactDto,
   UpdateCostCenterDto,
+  UpdateDeliveryAddressDto,
   UpdateDiscountMatrixDto,
   UpdateExchangeRateDto,
   UpdateHookAssignmentDto,
@@ -357,6 +366,7 @@ import type {
   UpdateProductComponentDto,
   UpdateProductDto,
   UpdateProductGroupDto,
+  UpdatePurchaseInvoiceDto,
   UpdatePurchaseOrderDto,
   UpdatePurchaseOrderLineDto,
   UpdateReconciliationRuleDto,
@@ -2229,50 +2239,6 @@ export const locationsControllerCreateLocation = async (createLocationDto: Creat
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createLocationDto,)
-  }
-);}
-
-
-
-/**
- * Retrieve inventory movements.
- * @summary List Movements
- */
-export type inventoryControllerGetMovementsResponse200 = {
-  data: InventoryMovementResponseDto[]
-  status: 200
-}
-    
-export type inventoryControllerGetMovementsResponseSuccess = (inventoryControllerGetMovementsResponse200) & {
-  headers: Headers;
-};
-;
-
-export type inventoryControllerGetMovementsResponse = (inventoryControllerGetMovementsResponseSuccess)
-
-export const getInventoryControllerGetMovementsUrl = (params?: InventoryControllerGetMovementsParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/inventory/movements?${stringifiedParams}` : `/inventory/movements`
-}
-
-export const inventoryControllerGetMovements = async (params?: InventoryControllerGetMovementsParams, options?: RequestInit): Promise<inventoryControllerGetMovementsResponse> => {
-  
-  return customFetch<inventoryControllerGetMovementsResponse>(getInventoryControllerGetMovementsUrl(params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
   }
 );}
 
@@ -9125,7 +9091,7 @@ export const getInvoiceDetailControllerUpdateInvoiceUrl = (id: string,) => {
 }
 
 export const invoiceDetailControllerUpdateInvoice = async (id: string,
-    updateInvoiceLineDto: UpdateInvoiceLineDto, options?: RequestInit): Promise<invoiceDetailControllerUpdateInvoiceResponse> => {
+    updatePurchaseInvoiceDto: UpdatePurchaseInvoiceDto, options?: RequestInit): Promise<invoiceDetailControllerUpdateInvoiceResponse> => {
   
   return customFetch<invoiceDetailControllerUpdateInvoiceResponse>(getInvoiceDetailControllerUpdateInvoiceUrl(id),
   {      
@@ -9133,7 +9099,7 @@ export const invoiceDetailControllerUpdateInvoice = async (id: string,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      updateInvoiceLineDto,)
+      updatePurchaseInvoiceDto,)
   }
 );}
 
@@ -10723,17 +10689,26 @@ export type suppliersControllerFindByProductResponseSuccess = (suppliersControll
 
 export type suppliersControllerFindByProductResponse = (suppliersControllerFindByProductResponseSuccess)
 
-export const getSuppliersControllerFindByProductUrl = (productId: string,) => {
+export const getSuppliersControllerFindByProductUrl = (productId: string,
+    params?: SuppliersControllerFindByProductParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/suppliers/by-product/${productId}`
+  return stringifiedParams.length > 0 ? `/suppliers/by-product/${productId}?${stringifiedParams}` : `/suppliers/by-product/${productId}`
 }
 
-export const suppliersControllerFindByProduct = async (productId: string, options?: RequestInit): Promise<suppliersControllerFindByProductResponse> => {
+export const suppliersControllerFindByProduct = async (productId: string,
+    params?: SuppliersControllerFindByProductParams, options?: RequestInit): Promise<suppliersControllerFindByProductResponse> => {
   
-  return customFetch<suppliersControllerFindByProductResponse>(getSuppliersControllerFindByProductUrl(productId),
+  return customFetch<suppliersControllerFindByProductResponse>(getSuppliersControllerFindByProductUrl(productId,params),
   {      
     ...options,
     method: 'GET'
@@ -10845,17 +10820,26 @@ export type suppliersControllerFindSupplierProductsResponseSuccess = (suppliersC
 
 export type suppliersControllerFindSupplierProductsResponse = (suppliersControllerFindSupplierProductsResponseSuccess)
 
-export const getSuppliersControllerFindSupplierProductsUrl = (id: string,) => {
+export const getSuppliersControllerFindSupplierProductsUrl = (id: string,
+    params?: SuppliersControllerFindSupplierProductsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/suppliers/${id}/products`
+  return stringifiedParams.length > 0 ? `/suppliers/${id}/products?${stringifiedParams}` : `/suppliers/${id}/products`
 }
 
-export const suppliersControllerFindSupplierProducts = async (id: string, options?: RequestInit): Promise<suppliersControllerFindSupplierProductsResponse> => {
+export const suppliersControllerFindSupplierProducts = async (id: string,
+    params?: SuppliersControllerFindSupplierProductsParams, options?: RequestInit): Promise<suppliersControllerFindSupplierProductsResponse> => {
   
-  return customFetch<suppliersControllerFindSupplierProductsResponse>(getSuppliersControllerFindSupplierProductsUrl(id),
+  return customFetch<suppliersControllerFindSupplierProductsResponse>(getSuppliersControllerFindSupplierProductsUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -10960,17 +10944,26 @@ export type suppliersControllerFindSupplierExpiriesResponseSuccess = (suppliersC
 
 export type suppliersControllerFindSupplierExpiriesResponse = (suppliersControllerFindSupplierExpiriesResponseSuccess)
 
-export const getSuppliersControllerFindSupplierExpiriesUrl = (id: string,) => {
+export const getSuppliersControllerFindSupplierExpiriesUrl = (id: string,
+    params?: SuppliersControllerFindSupplierExpiriesParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/suppliers/${id}/expiries`
+  return stringifiedParams.length > 0 ? `/suppliers/${id}/expiries?${stringifiedParams}` : `/suppliers/${id}/expiries`
 }
 
-export const suppliersControllerFindSupplierExpiries = async (id: string, options?: RequestInit): Promise<suppliersControllerFindSupplierExpiriesResponse> => {
+export const suppliersControllerFindSupplierExpiries = async (id: string,
+    params?: SuppliersControllerFindSupplierExpiriesParams, options?: RequestInit): Promise<suppliersControllerFindSupplierExpiriesResponse> => {
   
-  return customFetch<suppliersControllerFindSupplierExpiriesResponse>(getSuppliersControllerFindSupplierExpiriesUrl(id),
+  return customFetch<suppliersControllerFindSupplierExpiriesResponse>(getSuppliersControllerFindSupplierExpiriesUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -14517,6 +14510,234 @@ export const userSettingsControllerUpdateSettings = async (updateUserSettingsDto
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       updateUserSettingsDto,)
+  }
+);}
+
+
+
+/**
+ * Create a new contact for a given entity.
+ * @summary Create Contact
+ */
+export type contactsControllerCreateResponse201 = {
+  data: ContactResponseDto
+  status: 201
+}
+    
+export type contactsControllerCreateResponseSuccess = (contactsControllerCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type contactsControllerCreateResponse = (contactsControllerCreateResponseSuccess)
+
+export const getContactsControllerCreateUrl = () => {
+
+
+  
+
+  return `/contacts`
+}
+
+export const contactsControllerCreate = async (createContactDto: CreateContactDto, options?: RequestInit): Promise<contactsControllerCreateResponse> => {
+  
+  return customFetch<contactsControllerCreateResponse>(getContactsControllerCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createContactDto,)
+  }
+);}
+
+
+
+/**
+ * Update an existing contact.
+ * @summary Update Contact
+ */
+export type contactsControllerUpdateResponse200 = {
+  data: ContactResponseDto
+  status: 200
+}
+    
+export type contactsControllerUpdateResponseSuccess = (contactsControllerUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type contactsControllerUpdateResponse = (contactsControllerUpdateResponseSuccess)
+
+export const getContactsControllerUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/contacts/${id}`
+}
+
+export const contactsControllerUpdate = async (id: string,
+    updateContactDto: UpdateContactDto, options?: RequestInit): Promise<contactsControllerUpdateResponse> => {
+  
+  return customFetch<contactsControllerUpdateResponse>(getContactsControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateContactDto,)
+  }
+);}
+
+
+
+/**
+ * Hard delete an existing contact.
+ * @summary Delete Contact
+ */
+export type contactsControllerRemoveResponse200 = {
+  data: ContactsControllerRemove200
+  status: 200
+}
+    
+export type contactsControllerRemoveResponseSuccess = (contactsControllerRemoveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type contactsControllerRemoveResponse = (contactsControllerRemoveResponseSuccess)
+
+export const getContactsControllerRemoveUrl = (id: string,) => {
+
+
+  
+
+  return `/contacts/${id}`
+}
+
+export const contactsControllerRemove = async (id: string, options?: RequestInit): Promise<contactsControllerRemoveResponse> => {
+  
+  return customFetch<contactsControllerRemoveResponse>(getContactsControllerRemoveUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Create a new delivery address for a customer.
+ * @summary Create a new delivery address
+ */
+export type deliveryAddressesControllerCreateResponse201 = {
+  data: DeliveryAddressResponseDto
+  status: 201
+}
+    
+export type deliveryAddressesControllerCreateResponseSuccess = (deliveryAddressesControllerCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type deliveryAddressesControllerCreateResponse = (deliveryAddressesControllerCreateResponseSuccess)
+
+export const getDeliveryAddressesControllerCreateUrl = () => {
+
+
+  
+
+  return `/delivery-addresses`
+}
+
+export const deliveryAddressesControllerCreate = async (createDeliveryAddressDto: CreateDeliveryAddressDto, options?: RequestInit): Promise<deliveryAddressesControllerCreateResponse> => {
+  
+  return customFetch<deliveryAddressesControllerCreateResponse>(getDeliveryAddressesControllerCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createDeliveryAddressDto,)
+  }
+);}
+
+
+
+/**
+ * Update an existing delivery address.
+ * @summary Update an existing delivery address
+ */
+export type deliveryAddressesControllerUpdateResponse200 = {
+  data: DeliveryAddressResponseDto
+  status: 200
+}
+    
+export type deliveryAddressesControllerUpdateResponseSuccess = (deliveryAddressesControllerUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type deliveryAddressesControllerUpdateResponse = (deliveryAddressesControllerUpdateResponseSuccess)
+
+export const getDeliveryAddressesControllerUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/delivery-addresses/${id}`
+}
+
+export const deliveryAddressesControllerUpdate = async (id: string,
+    updateDeliveryAddressDto: UpdateDeliveryAddressDto, options?: RequestInit): Promise<deliveryAddressesControllerUpdateResponse> => {
+  
+  return customFetch<deliveryAddressesControllerUpdateResponse>(getDeliveryAddressesControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateDeliveryAddressDto,)
+  }
+);}
+
+
+
+/**
+ * Delete a delivery address.
+ * @summary Delete a delivery address
+ */
+export type deliveryAddressesControllerRemoveResponse200 = {
+  data: DeliveryAddressesControllerRemove200
+  status: 200
+}
+    
+export type deliveryAddressesControllerRemoveResponseSuccess = (deliveryAddressesControllerRemoveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type deliveryAddressesControllerRemoveResponse = (deliveryAddressesControllerRemoveResponseSuccess)
+
+export const getDeliveryAddressesControllerRemoveUrl = (id: string,) => {
+
+
+  
+
+  return `/delivery-addresses/${id}`
+}
+
+export const deliveryAddressesControllerRemove = async (id: string, options?: RequestInit): Promise<deliveryAddressesControllerRemoveResponse> => {
+  
+  return customFetch<deliveryAddressesControllerRemoveResponse>(getDeliveryAddressesControllerRemoveUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
   }
 );}
 

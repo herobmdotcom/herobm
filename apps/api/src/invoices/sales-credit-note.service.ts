@@ -163,22 +163,23 @@ export class SalesCreditNoteService {
       // 3. Resolve customer cost center / activity dimensions
       let customerCostCenterId: string | undefined;
       let customerActivityId: string | undefined;
-      let address1Country: string | null = null;
-      let address1PostalCode: string | null = null;
-      let address1StateOrProvince: string | null = null;
-      let address1City: string | null = null;
-      let address1Line1: string | null = null;
+      let billingAddressCountry: string | null = null;
+      let billingAddressPostalCode: string | null = null;
+      let billingAddressStateOrProvince: string | null = null;
+      let billingAddressCity: string | null = null;
+      let billingAddressLine1: string | null = null;
 
       if (order.customerId) {
         const [custInfo] = await innerTx
           .select({
             costCenterId: customerGroups.defaultCostCenterId,
             activityId: customerGroups.defaultActivityId,
-            address1Country: coreAccounts.address1Country,
-            address1PostalCode: coreAccounts.address1PostalCode,
-            address1StateOrProvince: coreAccounts.address1StateOrProvince,
-            address1City: coreAccounts.address1City,
-            address1Line1: coreAccounts.address1Line1,
+            billingAddressCountry: coreAccounts.billingAddressCountry,
+            billingAddressPostalCode: coreAccounts.billingAddressPostalCode,
+            billingAddressStateOrProvince:
+              coreAccounts.billingAddressStateOrProvince,
+            billingAddressCity: coreAccounts.billingAddressCity,
+            billingAddressLine1: coreAccounts.billingAddressLine1,
           })
           .from(coreAccounts)
           .leftJoin(
@@ -196,11 +197,12 @@ export class SalesCreditNoteService {
         if (custInfo) {
           customerCostCenterId = custInfo.costCenterId || undefined;
           customerActivityId = custInfo.activityId || undefined;
-          address1Country = custInfo.address1Country;
-          address1PostalCode = custInfo.address1PostalCode;
-          address1StateOrProvince = custInfo.address1StateOrProvince;
-          address1City = custInfo.address1City;
-          address1Line1 = custInfo.address1Line1;
+          billingAddressCountry = custInfo.billingAddressCountry;
+          billingAddressPostalCode = custInfo.billingAddressPostalCode;
+          billingAddressStateOrProvince =
+            custInfo.billingAddressStateOrProvince;
+          billingAddressCity = custInfo.billingAddressCity;
+          billingAddressLine1 = custInfo.billingAddressLine1;
         }
       }
 
@@ -454,11 +456,11 @@ export class SalesCreditNoteService {
           from_state: org.state,
           from_city: org.city,
           from_street: org.addressLine1,
-          to_country: address1Country || 'US',
-          to_zip: address1PostalCode,
-          to_state: address1StateOrProvince,
-          to_city: address1City,
-          to_street: address1Line1,
+          to_country: billingAddressCountry || 'US',
+          to_zip: billingAddressPostalCode,
+          to_state: billingAddressStateOrProvince,
+          to_city: billingAddressCity,
+          to_street: billingAddressLine1,
           line_items: taxableLines.map((l) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const payloadLine: any = {

@@ -154,19 +154,6 @@ export class InventoryController {
     return this.inventoryService.findAllLocations(productId);
   }
 
-  @Get('movements')
-  @CasbinAction('read')
-  @ApiOperation({
-    summary: 'List Movements',
-    description: 'Retrieve inventory movements.',
-  })
-  @ApiOkResponse({ type: [InventoryMovementResponseDto] })
-  @ApiQuery({ name: 'days', required: false })
-  getMovements(@Query('days') days?: string) {
-    const daysInt = parseInt(days || '30', 10);
-    return this.inventoryService.getMovements(isNaN(daysInt) ? 30 : daysInt);
-  }
-
   @Get('ledger')
   @CasbinAction('read')
   @ApiOperation({

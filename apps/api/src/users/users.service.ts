@@ -11,7 +11,8 @@ import * as bcrypt from 'bcrypt';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { users, userEvents } from '../drizzle/modbm-core-schema';
-import { EventType } from '../common/event-types';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 import { CreateUserDto, UpdateUserDto } from './dto';
 import { CUSTOMER_STATE } from '@modbm/shared';
 
@@ -90,9 +91,11 @@ export class UsersService {
           })
           .returning(PUBLIC_COLUMNS);
 
-        await tx.insert(userEvents).values({
-          userId: created.userId,
+        await emitEvent(tx, {
+          entityType: EntityType.USER,
+          entityId: created.userId,
           eventType: EventType.CREATED,
+          entityDisplayName: created.username,
           payload: {
             username: created.username,
             role: dto.role,
@@ -183,9 +186,11 @@ export class UsersService {
         .where(eq(users.userId, id))
         .returning(PUBLIC_COLUMNS);
 
-      await tx.insert(userEvents).values({
-        userId: id,
+      await emitEvent(tx, {
+        entityType: EntityType.USER,
+        entityId: id,
         eventType: EventType.UPDATED,
+        entityDisplayName: updated.username,
         payload: auditChanges,
         actor,
       });
@@ -222,9 +227,11 @@ export class UsersService {
         .where(eq(users.userId, id))
         .returning(PUBLIC_COLUMNS);
 
-      await tx.insert(userEvents).values({
-        userId: id,
+      await emitEvent(tx, {
+        entityType: EntityType.USER,
+        entityId: id,
         eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: target.username,
         payload: {
           username: target.username,
           from: target.isActive
@@ -258,19 +265,22 @@ export class UsersService {
       await this.assertNotLastAdmin(id);
     }
 
-    // Emit the deletion event BEFORE deleting the user (FK constraint)
-    await this.db.insert(userEvents).values({
-      userId: id,
-      eventType: EventType.DELETED,
-      payload: {
-        username: target.username,
-        role: target.role,
-        displayName: target.displayName || null,
-      },
-      actor,
-    });
+    await this.db.transaction(async (tx) => {
+      await emitEvent(tx, {
+        entityType: EntityType.USER,
+        entityId: id,
+        eventType: EventType.DELETED,
+        entityDisplayName: target.username,
+        payload: {
+          username: target.username,
+          role: target.role,
+          displayName: target.displayName || null,
+        },
+        actor,
+      });
 
-    await this.db.delete(users).where(eq(users.userId, id));
+      await tx.delete(users).where(eq(users.userId, id));
+    });
 
     this.logger.log(
       `[AUDIT] User '${actor}' deleted user '${target.username}'`,

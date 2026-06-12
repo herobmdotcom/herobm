@@ -15,6 +15,8 @@ import { toast } from 'react-hot-toast';
 import { SHIPMENT_STATE } from '@modbm/shared';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 import { getErrorMessage } from '@modbm/shared';
+import AddressDisplay from '@/components/shared/AddressDisplay';
+import { DataTable } from '@/components/shared/DataTable';
 
 interface ShipmentLine {
   shipmentLineId: string;
@@ -40,6 +42,15 @@ interface ShipmentDetail {
   createdBy: string | null;
   lines: ShipmentLine[];
   events: TimelineEvent[];
+  deliveryName?: string;
+  deliveryPhone?: string;
+  deliveryAddressLine1?: string;
+  deliveryAddressLine2?: string;
+  deliveryCity?: string;
+  deliveryState?: string;
+  deliveryPostalCode?: string;
+  deliveryCountry?: string;
+  shippingNotes?: string;
 }
 
 export default function ShipmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -162,21 +173,25 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
             </button>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {t('columns.customer')}
               </label>
-              <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
-                {shipment.customerName || '—'}
-              </p>
+              <div className="text-sm" style={{ paddingTop: 6 }}>
+                {shipment.customerName ? (
+                  <Link href={`/customers/${shipment.customerId}`} className="text-[var(--accent)] hover:underline">
+                    {shipment.customerName}
+                  </Link>
+                ) : '—'}
+              </div>
             </div>
             
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {t('columns.tracking')}
               </label>
-              <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+              <p className="text-sm" style={{ paddingTop: 6 }}>
                 {shipment.trackingNumber || '—'}
               </p>
             </div>
@@ -185,7 +200,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {t('columns.date')}
               </label>
-              <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+              <p className="text-sm" style={{ paddingTop: 6 }}>
                 {new Date(shipment.createdOn).toLocaleString()} {tCommon('by')} {shipment.createdBy || tCommon('system')}
               </p>
             </div>
@@ -194,11 +209,47 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {tCommon('notesCardHeading')}
               </label>
-              <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+              <p className="text-sm" style={{ paddingTop: 6 }}>
                 {shipment.notes || '—'}
               </p>
             </div>
           </div>
+
+          {(shipment.deliveryAddressLine1 || shipment.shippingNotes) && (
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                {shipment.deliveryAddressLine1 && (
+                    <div className="flex-1">
+                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                            Delivery Address
+                        </label>
+                        <div>
+                            <AddressDisplay
+                                addressLine1={shipment.deliveryAddressLine1}
+                                addressLine2={shipment.deliveryAddressLine2}
+                                city={shipment.deliveryCity}
+                                stateOrProvince={shipment.deliveryState}
+                                postalCode={shipment.deliveryPostalCode}
+                                country={shipment.deliveryCountry}
+                                phone={shipment.deliveryPhone}
+                                recipientName={shipment.deliveryName}
+                            />
+                        </div>
+                    </div>
+                )}
+                {shipment.shippingNotes && (
+                    <div className="flex-1">
+                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                            Shipping Instructions
+                        </label>
+                        <div className="mt-1 text-sm text-[var(--text-primary)] whitespace-pre-wrap">
+                            {shipment.shippingNotes}
+                        </div>
+                    </div>
+                )}
+            </div>
+          )}
         </div>
 
         {/* Line Items Card */}
@@ -210,49 +261,35 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
               <span>{t('lineItems')}</span>
             </h3>
           </div>
-          
-          {/* Desktop Table */}
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="table-lines min-w-[500px]">
-              <thead>
-                <tr>
-                <th style={{ width: 120 }}>{t('columns.orderNumber')}</th>
-                <th>{t('columns.product')}</th>
-                <th>{t('columns.description')}</th>
-                <th style={{ width: 90, textAlign: 'right' }}>{t('columns.qty')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {shipment.lines.map((line) => (
+          <DataTable
+            data={shipment.lines}
+            keyExtractor={(line) => line.shipmentLineId}
+            columns={[
+                { header: t('columns.orderNumber'), width: 220 },
+                { header: t('columns.product'), width: 140 },
+                { header: t('columns.description') },
+                { header: t('columns.qty'), align: 'right', width: 90 }
+            ]}
+            emptyMessage={tCommon('orderReadView.noLineItems')}
+            renderCustomRow={(line) => (
                 <tr key={line.shipmentLineId}>
-                  <td style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-                    {line.orderNumber}
-                  </td>
-                  <td style={{ fontWeight: 600, fontSize: 12 }}>
-                    <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-                      {line.productNumber || '—'}
-                    </Link>
-                  </td>
-                  <td>{line.productDescription || '—'}</td>
-                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                    {line.quantityShipped}
-                  </td>
+                    <td style={{ fontWeight: 500 }}>
+                        <Link href={`/sales-orders/${shipment.salesOrderId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                            {line.orderNumber}
+                        </Link>
+                    </td>
+                    <td style={{ fontWeight: 600, fontSize: 12 }}>
+                        <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                            {line.productNumber || '—'}
+                        </Link>
+                    </td>
+                    <td>{line.productDescription || '—'}</td>
+                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                        {line.quantityShipped}
+                    </td>
                 </tr>
-              ))}
-              {shipment.lines.length === 0 && (
-                <tr>
-                  <td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
-                    {tCommon('orderReadView.noLineItems')}
-                  </td>
-                </tr>
-              )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Cards */}
-          <div className="flex flex-col lg:hidden mt-2">
-            {shipment.lines.map((line, idx) => (
+            )}
+            mobileCard={(line, idx) => (
               <MobileLineItemCard
                 key={line.shipmentLineId}
                 title={
@@ -269,17 +306,16 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
                   },
                   {
                     label: t('columns.orderNumber'),
-                    value: <span className="font-semibold text-[var(--text-secondary)]">{line.orderNumber}</span>
+                    value: (
+                        <Link href={`/sales-orders/${shipment.salesOrderId}`} className="font-semibold text-[var(--accent)] hover:underline">
+                            {line.orderNumber}
+                        </Link>
+                    )
                   }
                 ]}
               />
-            ))}
-            {shipment.lines.length === 0 && (
-              <div className="text-center text-sm text-[var(--text-muted)] py-4 border border-[var(--border)] rounded-lg">
-                {tCommon('orderReadView.noLineItems')}
-              </div>
             )}
-          </div>
+          />
         </div>
 
         {/* Activity Timeline Card */}

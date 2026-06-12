@@ -38,10 +38,12 @@ import { ApiKeysModule } from './api-keys/api-keys.module';
 import { EventsModule } from './events/events.module';
 import { EnrichmentModule } from './enrichment/enrichment.module';
 import { EmailModule } from './email/email.module';
+import { DeliveryAddressesModule } from './delivery-addresses/delivery-addresses.module';
 
 import { RolesModule } from './roles/roles.module';
 import { BusinessReportsModule } from './business-reports/business-reports.module';
 import { UserSettingsModule } from './user-settings/user-settings.module';
+import { ContactsModule } from './contacts/contacts.module';
 
 import { ReadOnlyGuard } from './common/guards/read-only.guard';
 
@@ -52,15 +54,15 @@ import { ReadOnlyGuard } from './common/guards/read-only.guard';
       envFilePath: ['../../.env', '.env'],
     }),
     ThrottlerModule.forRoot([
-      { 
-        name: 'default', 
-        ttl: RATE_LIMITS.DEFAULT.ttl, 
-        limit: RATE_LIMITS.DEFAULT.limit 
+      {
+        name: 'default',
+        ttl: RATE_LIMITS.DEFAULT.ttl,
+        limit: RATE_LIMITS.DEFAULT.limit,
       },
-      { 
-        name: 'api', 
-        ttl: RATE_LIMITS.API.ttl, 
-        limit: RATE_LIMITS.API.limit 
+      {
+        name: 'api',
+        ttl: RATE_LIMITS.API.ttl,
+        limit: RATE_LIMITS.API.limit,
       },
     ]),
     DrizzleModule,
@@ -97,6 +99,8 @@ import { ReadOnlyGuard } from './common/guards/read-only.guard';
     EmailModule,
     BusinessReportsModule,
     UserSettingsModule,
+    ContactsModule,
+    DeliveryAddressesModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },

@@ -9,6 +9,8 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { costCenters } from '../drizzle/modbm-core-schema';
 import { CreateCostCenterDto, UpdateCostCenterDto } from './dto';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class CostCentersService {
@@ -18,8 +20,9 @@ export class CostCentersService {
     return this.db.select().from(costCenters).orderBy(costCenters.code);
   }
 
-  async findOne(id: string) {
-    const rows = await this.db
+  async findOne(id: string, tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const rows = await db
       .select()
       .from(costCenters)
       .where(eq(costCenters.costCenterId, id))
@@ -30,17 +33,29 @@ export class CostCentersService {
     return rows[0];
   }
 
-  async create(dto: CreateCostCenterDto) {
+  async create(dto: CreateCostCenterDto, userId?: string) {
     try {
-      const rows = await this.db
-        .insert(costCenters)
-        .values({
-          code: dto.code.trim(),
-          name: dto.name.trim(),
-          isActive: dto.isActive ?? true,
-        })
-        .returning();
-      return rows[0];
+      return await this.db.transaction(async (tx) => {
+        const rows = await tx
+          .insert(costCenters)
+          .values({
+            code: dto.code.trim(),
+            name: dto.name.trim(),
+            isActive: dto.isActive ?? true,
+          })
+          .returning();
+
+        await emitEvent(tx, {
+          entityType: EntityType.COST_CENTER,
+          entityId: rows[0].costCenterId,
+          eventType: EventType.CREATED,
+          entityDisplayName: rows[0].code,
+          payload: dto,
+          actor: userId,
+        });
+
+        return rows[0];
+      });
     } catch (err: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if ((err as any)?.code === '23505') {
@@ -52,43 +67,66 @@ export class CostCentersService {
     }
   }
 
-  async update(id: string, dto: UpdateCostCenterDto) {
-    const existing = await this.findOne(id);
+  async update(id: string, dto: UpdateCostCenterDto, userId?: string) {
+    return await this.db.transaction(async (tx) => {
+      const existing = await this.findOne(id, tx);
 
-    const rows = await this.db
-      .update(costCenters)
-      .set({
-        ...(dto.name !== undefined && { name: dto.name.trim() }),
-        ...(dto.isActive !== undefined && { isActive: dto.isActive }),
-        modifiedOn: new Date(),
-      })
-      .where(eq(costCenters.costCenterId, id))
-      .returning();
+      const rows = await tx
+        .update(costCenters)
+        .set({
+          ...(dto.name !== undefined && { name: dto.name.trim() }),
+          ...(dto.isActive !== undefined && { isActive: dto.isActive }),
+          modifiedOn: new Date(),
+        })
+        .where(eq(costCenters.costCenterId, id))
+        .returning();
 
-    return rows[0];
+      await emitEvent(tx, {
+        entityType: EntityType.COST_CENTER,
+        entityId: rows[0].costCenterId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: rows[0].code,
+        payload: dto,
+        actor: userId,
+      });
+
+      return rows[0];
+    });
   }
 
-  async delete(id: string) {
-    const existing = await this.findOne(id);
-    if (existing.isSystem) {
-      throw new BadRequestException('Cannot delete a system cost center');
-    }
-
-    try {
-      await this.db.delete(costCenters).where(eq(costCenters.costCenterId, id));
-      return { deleted: true };
-    } catch (err: unknown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((err as any)?.code === '23503') {
-        throw new BadRequestException(
-          `Cannot delete cost center '${existing.code}' because it is in use by journal entries.`,
-        );
+  async delete(id: string, userId?: string) {
+    return await this.db.transaction(async (tx) => {
+      const existing = await this.findOne(id, tx);
+      if (existing.isSystem) {
+        throw new BadRequestException('Cannot delete a system cost center');
       }
-      throw err;
-    }
+
+      try {
+        await tx.delete(costCenters).where(eq(costCenters.costCenterId, id));
+
+        await emitEvent(tx, {
+          entityType: EntityType.COST_CENTER,
+          entityId: id,
+          eventType: EventType.DELETED,
+          entityDisplayName: existing.code,
+          payload: {},
+          actor: userId,
+        });
+
+        return { deleted: true };
+      } catch (err: unknown) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((err as any)?.code === '23503') {
+          throw new BadRequestException(
+            `Cannot delete cost center '${existing.code}' because it is in use by journal entries.`,
+          );
+        }
+        throw err;
+      }
+    });
   }
 
-  async importMany(data: CreateCostCenterDto[]) {
+  async importMany(data: CreateCostCenterDto[], userId?: string) {
     if (data.length === 0) return { count: 0, updated: 0 };
 
     const values = data.map((d) => ({
@@ -97,22 +135,35 @@ export class CostCentersService {
       isActive: d.isActive ?? true,
     }));
 
-    const rows = await this.db
-      .insert(costCenters)
-      .values(values)
-      .onConflictDoUpdate({
-        target: costCenters.code,
-        set: {
-          name: sql`EXCLUDED.name`,
-          isActive: sql`EXCLUDED.is_active`,
-          modifiedOn: new Date(),
-        },
-      })
-      .returning();
+    return await this.db.transaction(async (tx) => {
+      const rows = await tx
+        .insert(costCenters)
+        .values(values)
+        .onConflictDoUpdate({
+          target: costCenters.code,
+          set: {
+            name: sql`EXCLUDED.name`,
+            isActive: sql`EXCLUDED.is_active`,
+            modifiedOn: new Date(),
+          },
+        })
+        .returning();
 
-    return {
-      count: rows.length,
-      updated: rows.length, // Simplified for now as returning() gives all affected
-    };
+      for (const row of rows) {
+        await emitEvent(tx, {
+          entityType: EntityType.COST_CENTER,
+          entityId: row.costCenterId,
+          eventType: EventType.UPDATED,
+          entityDisplayName: row.code,
+          payload: {},
+          actor: userId,
+        });
+      }
+
+      return {
+        count: rows.length,
+        updated: rows.length, // Simplified for now as returning() gives all affected
+      };
+    });
   }
 }

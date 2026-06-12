@@ -14,6 +14,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { UpdateOrganizationDto, OrganizationResponseDto } from './dto';
 
 @Controller('settings/organization')
@@ -36,7 +37,7 @@ export class OrganizationController {
   @ApiOkResponse({ type: OrganizationResponseDto })
   @CasbinAction('write')
   @ApiOperation({ summary: 'update', description: 'update operation' })
-  update(@Body() dto: UpdateOrganizationDto) {
-    return this.orgService.update(dto);
+  update(@Body() dto: UpdateOrganizationDto, @AuthUser() user: JwtUser) {
+    return this.orgService.update(dto, user?.userId || 'system');
   }
 }

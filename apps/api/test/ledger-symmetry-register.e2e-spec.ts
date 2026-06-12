@@ -243,14 +243,12 @@ describe('API E2E — Ledger Symmetry Register', () => {
       action: async (app, ctx) => {
         // Change return state to "processed" to hit GL
         const retCredRes = await request(app.getHttpServer())
-          .patch(
-            `/api/sales-orders/${ctx.salesOrderId}/returns/${ctx.salesReturnId}/state`,
-          )
+          .post(`/api/sales-credit-notes`)
           .set('Authorization', `Bearer ${ctx.adminToken}`)
-          .send({ stateCode: 'processed' });
-        if (retCredRes.status !== 200)
+          .send({ returnId: ctx.salesReturnId });
+        if (retCredRes.status !== 201)
           console.error('Sales Return Process Error:', retCredRes.body);
-        expect(retCredRes.status).toBe(200);
+        expect(retCredRes.status).toBe(201);
       },
       inverseAction: async (app, ctx) => {
         // Cancel the return

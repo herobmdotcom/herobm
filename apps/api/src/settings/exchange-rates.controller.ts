@@ -23,6 +23,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import {
   CreateExchangeRateDto,
   UpdateExchangeRateDto,
@@ -61,8 +62,8 @@ export class ExchangeRatesController {
   @ApiCreatedResponse({ type: ExchangeRateResponseDto })
   @CasbinAction('write')
   @ApiOperation({ summary: 'create', description: 'create operation' })
-  create(@Body() dto: CreateExchangeRateDto) {
-    return this.exchangeService.create(dto);
+  create(@Body() dto: CreateExchangeRateDto, @AuthUser() user: JwtUser) {
+    return this.exchangeService.create(dto, user?.userId);
   }
 
   @Patch(':id')
@@ -70,15 +71,19 @@ export class ExchangeRatesController {
   @ApiOkResponse({ type: ExchangeRateResponseDto })
   @CasbinAction('write')
   @ApiOperation({ summary: 'update', description: 'update operation' })
-  update(@Param('id') id: string, @Body() dto: UpdateExchangeRateDto) {
-    return this.exchangeService.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateExchangeRateDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.exchangeService.update(id, dto, user?.userId);
   }
 
   @Delete(':id')
   @ApiOkResponse({ type: ExchangeRateResponseDto })
   @CasbinAction('write')
   @ApiOperation({ summary: 'remove', description: 'remove operation' })
-  remove(@Param('id') id: string) {
-    return this.exchangeService.delete(id);
+  remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.exchangeService.delete(id, user?.userId);
   }
 }

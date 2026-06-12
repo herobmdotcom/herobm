@@ -70,6 +70,10 @@
               "account_number": "2100",
               "account_type": "Payable"
             },
+            "Goods Received Not Invoiced": {
+              "account_number": "2150",
+              "account_type": "Liability"
+            },
             "GST Payable": {
               "account_number": "2200",
               "account_type": "Tax",
@@ -156,6 +160,10 @@
             },
             "COGS - Freight": {
               "account_number": "5200"
+            },
+            "Inventory Shrinkage": {
+              "account_number": "5300",
+              "account_type": "Cost of Goods Sold"
             }
           }
         },

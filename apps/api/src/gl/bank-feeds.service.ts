@@ -21,6 +21,8 @@ import {
 } from './dto/bank-feeds.dto';
 import { parse } from 'csv-parse/sync';
 import { GlService } from './gl.service';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class BankFeedsService {
@@ -56,22 +58,33 @@ export class BankFeedsService {
   }
 
   async createMappingProfile(dto: CreateMappingProfileDto) {
-    const result = await this.db
-      .insert(csvMappingProfiles)
-      .values({
-        name: dto.name,
-        dateColumn: dto.dateColumn,
-        amountColumn: dto.amountColumn || '',
-        debitColumn: dto.debitColumn,
-        creditColumn: dto.creditColumn,
-        descriptionColumn: dto.descriptionColumn,
-        typeColumn: dto.typeColumn,
-        payeeColumn: dto.payeeColumn,
-        referenceColumn: dto.referenceColumn,
-        headerRows: dto.headerRows,
-      })
-      .returning();
-    return result[0];
+    return this.db.transaction(async (tx) => {
+      const result = await tx
+        .insert(csvMappingProfiles)
+        .values({
+          name: dto.name,
+          dateColumn: dto.dateColumn,
+          amountColumn: dto.amountColumn || '',
+          debitColumn: dto.debitColumn,
+          creditColumn: dto.creditColumn,
+          descriptionColumn: dto.descriptionColumn,
+          typeColumn: dto.typeColumn,
+          payeeColumn: dto.payeeColumn,
+          referenceColumn: dto.referenceColumn,
+          headerRows: dto.headerRows,
+        })
+        .returning();
+
+      await emitEvent(tx, {
+        entityType: EntityType.CSV_MAPPING_PROFILE,
+        entityId: result[0].profileId,
+        eventType: EventType.CREATED,
+        entityDisplayName: result[0].name,
+        payload: result[0],
+      });
+
+      return result[0];
+    });
   }
 
   async updateMappingProfile(profileId: string, dto: UpdateMappingProfileDto) {
@@ -90,26 +103,48 @@ export class BankFeedsService {
       values.referenceColumn = dto.referenceColumn;
     if (dto.headerRows !== undefined) values.headerRows = dto.headerRows;
 
-    const result = await this.db
-      .update(csvMappingProfiles)
-      .set(values)
-      .where(eq(csvMappingProfiles.profileId, profileId))
-      .returning();
-    if (!result.length) {
-      throw new NotFoundException('Mapping profile not found');
-    }
-    return result[0];
+    return this.db.transaction(async (tx) => {
+      const result = await tx
+        .update(csvMappingProfiles)
+        .set(values)
+        .where(eq(csvMappingProfiles.profileId, profileId))
+        .returning();
+      if (!result.length) {
+        throw new NotFoundException('Mapping profile not found');
+      }
+
+      await emitEvent(tx, {
+        entityType: EntityType.CSV_MAPPING_PROFILE,
+        entityId: result[0].profileId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: result[0].name,
+        payload: values,
+      });
+
+      return result[0];
+    });
   }
 
   async deleteMappingProfile(profileId: string) {
-    const result = await this.db
-      .delete(csvMappingProfiles)
-      .where(eq(csvMappingProfiles.profileId, profileId))
-      .returning();
-    if (!result.length) {
-      throw new NotFoundException('Mapping profile not found');
-    }
-    return result[0];
+    return this.db.transaction(async (tx) => {
+      const result = await tx
+        .delete(csvMappingProfiles)
+        .where(eq(csvMappingProfiles.profileId, profileId))
+        .returning();
+      if (!result.length) {
+        throw new NotFoundException('Mapping profile not found');
+      }
+
+      await emitEvent(tx, {
+        entityType: EntityType.CSV_MAPPING_PROFILE,
+        entityId: profileId,
+        eventType: EventType.DELETED,
+        entityDisplayName: result[0].name,
+        payload: { profileId },
+      });
+
+      return true;
+    });
   }
 
   async getReconciliationRules() {
@@ -119,33 +154,49 @@ export class BankFeedsService {
       .orderBy(asc(reconciliationRules.priority));
   }
 
-  async createReconciliationRule(dto: CreateReconciliationRuleDto) {
-    const result = await this.db
-      .insert(reconciliationRules)
-      .values({
-        glAccountIds: dto.glAccountIds?.length ? dto.glAccountIds : null,
-        conditionType: dto.conditionType || null,
-        conditionValue: dto.conditionValue || null,
-        typeCondition: dto.typeCondition || null,
-        payeeConditionType: dto.payeeConditionType || null,
-        payeeConditionValue: dto.payeeConditionValue || null,
-        targetGlAccountId: dto.targetGlAccountId,
-        amountMin: dto.amountMin?.toString(),
-        amountMax: dto.amountMax?.toString(),
-        costCenterId: dto.costCenterId,
-        activityId: dto.activityId,
-        partyType: dto.partyType,
-        partyId: dto.partyId,
-        memo: dto.memo,
-        priority: dto.priority ?? 10,
-      })
-      .returning();
-    return result[0];
+  async createReconciliationRule(
+    dto: CreateReconciliationRuleDto,
+    actor?: string,
+  ) {
+    return await this.db.transaction(async (tx) => {
+      const result = await tx
+        .insert(reconciliationRules)
+        .values({
+          glAccountIds: dto.glAccountIds?.length ? dto.glAccountIds : null,
+          conditionType: dto.conditionType || null,
+          conditionValue: dto.conditionValue || null,
+          typeCondition: dto.typeCondition || null,
+          payeeConditionType: dto.payeeConditionType || null,
+          payeeConditionValue: dto.payeeConditionValue || null,
+          targetGlAccountId: dto.targetGlAccountId,
+          amountMin: dto.amountMin?.toString(),
+          amountMax: dto.amountMax?.toString(),
+          costCenterId: dto.costCenterId,
+          activityId: dto.activityId,
+          partyType: dto.partyType,
+          partyId: dto.partyId,
+          memo: dto.memo,
+          priority: dto.priority ?? 10,
+        })
+        .returning();
+
+      await emitEvent(tx, {
+        entityType: EntityType.RECONCILIATION_RULE,
+        entityId: result[0].ruleId,
+        eventType: EventType.CREATED,
+        entityDisplayName: `Rule ${result[0].ruleId}`,
+        payload: dto,
+        actor,
+      });
+
+      return result[0];
+    });
   }
 
   async updateReconciliationRule(
     ruleId: string,
     dto: UpdateReconciliationRuleDto,
+    actor?: string,
   ) {
     const values: Partial<typeof reconciliationRules.$inferInsert> = {};
     if (dto.glAccountIds !== undefined)
@@ -173,26 +224,50 @@ export class BankFeedsService {
     if (dto.memo !== undefined) values.memo = dto.memo;
     if (dto.priority !== undefined) values.priority = dto.priority;
 
-    const result = await this.db
-      .update(reconciliationRules)
-      .set(values)
-      .where(eq(reconciliationRules.ruleId, ruleId))
-      .returning();
-    if (!result.length) {
-      throw new NotFoundException('Rule not found');
-    }
-    return result[0];
+    return await this.db.transaction(async (tx) => {
+      const result = await tx
+        .update(reconciliationRules)
+        .set(values)
+        .where(eq(reconciliationRules.ruleId, ruleId))
+        .returning();
+      if (!result.length) {
+        throw new NotFoundException('Rule not found');
+      }
+
+      await emitEvent(tx, {
+        entityType: EntityType.RECONCILIATION_RULE,
+        entityId: ruleId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: `Rule ${ruleId}`,
+        payload: dto,
+        actor,
+      });
+
+      return result[0];
+    });
   }
 
-  async deleteReconciliationRule(ruleId: string) {
-    const result = await this.db
-      .delete(reconciliationRules)
-      .where(eq(reconciliationRules.ruleId, ruleId))
-      .returning();
-    if (!result.length) {
-      throw new NotFoundException('Rule not found');
-    }
-    return result[0];
+  async deleteReconciliationRule(ruleId: string, actor?: string) {
+    return await this.db.transaction(async (tx) => {
+      const result = await tx
+        .delete(reconciliationRules)
+        .where(eq(reconciliationRules.ruleId, ruleId))
+        .returning();
+      if (!result.length) {
+        throw new NotFoundException('Rule not found');
+      }
+
+      await emitEvent(tx, {
+        entityType: EntityType.RECONCILIATION_RULE,
+        entityId: ruleId,
+        eventType: EventType.DELETED,
+        entityDisplayName: `Rule ${ruleId}`,
+        payload: { deleted: true },
+        actor,
+      });
+
+      return result[0];
+    });
   }
 
   async importCsv(
@@ -278,16 +353,33 @@ export class BankFeedsService {
 
         const dateIso = parsedDate.toISOString().split('T')[0];
 
-        await tx.insert(bankStatementLines).values({
-          glAccountId,
-          date: dateIso,
-          description: desc,
-          amount: String(amount),
-          reference: ref,
-          type: type || null,
-          payee: payee || null,
-          isReconciled: false,
-          matchedJournalLineId: null,
+        const [inserted] = await tx
+          .insert(bankStatementLines)
+          .values({
+            glAccountId,
+            date: dateIso,
+            description: desc,
+            amount: String(amount),
+            reference: ref,
+            type: type || null,
+            payee: payee || null,
+            isReconciled: false,
+            matchedJournalLineId: null,
+          })
+          .returning();
+
+        await emitEvent(tx, {
+          entityType: EntityType.BANK_STATEMENT_LINE,
+          entityId: inserted.lineId,
+          eventType: EventType.CREATED,
+          entityDisplayName: `Statement Line ${inserted.lineId}`,
+          payload: {
+            glAccountId,
+            date: dateIso,
+            description: desc,
+            amount: String(amount),
+          },
+          actor,
         });
       }
     });
@@ -535,6 +627,15 @@ export class BankFeedsService {
               createdBy: actor,
             });
 
+            await emitEvent(tx, {
+              entityType: EntityType.GL_MATCH_GROUP,
+              entityId: matchGroupId,
+              eventType: EventType.CREATED,
+              entityDisplayName: `Match Group (Auto Rule)`,
+              payload: { matchType: 'rule', ruleId: matchedRule.ruleId },
+              actor,
+            });
+
             autoMatchedCount++;
             continue;
           }
@@ -614,6 +715,15 @@ export class BankFeedsService {
                 matchGroupId,
                 matchType: 'auto',
                 createdBy: actor,
+              });
+
+              await emitEvent(tx, {
+                entityType: EntityType.GL_MATCH_GROUP,
+                entityId: matchGroupId,
+                eventType: EventType.CREATED,
+                entityDisplayName: `Match Group (Smart Auto)`,
+                payload: { matchType: 'auto' },
+                actor,
               });
             } else {
               smartMatches.push({

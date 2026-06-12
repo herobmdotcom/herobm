@@ -22,6 +22,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { SupplierGroupsService } from './supplier-groups.service';
 import {
   CreateSupplierGroupDto,
@@ -71,8 +72,8 @@ export class SupplierGroupsController {
     description: 'Create a new supplier group.',
   })
   @ApiCreatedResponse({ type: SupplierGroupResponseDto })
-  create(@Body() dto: CreateSupplierGroupDto) {
-    return this.supplierGroupsService.create(dto);
+  create(@Body() dto: CreateSupplierGroupDto, @AuthUser() user: JwtUser) {
+    return this.supplierGroupsService.create(dto, user?.userId);
   }
 
   @Patch(':id')
@@ -83,8 +84,12 @@ export class SupplierGroupsController {
     description: 'Modify the details of an existing supplier group.',
   })
   @ApiOkResponse({ type: SupplierGroupResponseDto })
-  update(@Param('id') id: string, @Body() dto: UpdateSupplierGroupDto) {
-    return this.supplierGroupsService.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateSupplierGroupDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.supplierGroupsService.update(id, dto, user?.userId);
   }
 
   @Delete(':id')
@@ -94,7 +99,7 @@ export class SupplierGroupsController {
     description: 'Remove a supplier group from the system.',
   })
   @ApiOkResponse({ type: SupplierGroupResponseDto })
-  remove(@Param('id') id: string) {
-    return this.supplierGroupsService.delete(id);
+  remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.supplierGroupsService.delete(id, user?.userId);
   }
 }

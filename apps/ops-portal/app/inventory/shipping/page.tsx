@@ -12,6 +12,7 @@ import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import MasterDetailLayout from '@/components/shared/MasterDetailLayout';
 import { getErrorMessage } from '@modbm/shared';
+import AddressDisplay from '@/components/shared/AddressDisplay';
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -54,6 +55,8 @@ interface ShipmentSummary {
 }
 
 interface ShippingContext {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    order: any;
     lines: ShippingLine[];
     shipments: ShipmentSummary[];
 }
@@ -255,11 +258,48 @@ export default function ShippingPage() {
                                 </div>
                             )}
 
-                            <div className="space-y-8">
+                            <div className="space-y-6">
+                                {/* Delivery Address & Shipping Notes */}
+                                {(context.order.deliveryAddressLine1 || context.order.shippingNotes) && (
+                                    <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                                        {(context.order.deliveryAddressLine1) && (
+                                            <div className="flex-1">
+                                                {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                                                    Delivery Address
+                                                </label>
+                                                <div className="p-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg">
+                                                    <AddressDisplay
+                                                        addressLine1={context.order.deliveryAddressLine1}
+                                                        addressLine2={context.order.deliveryAddressLine2}
+                                                        city={context.order.deliveryCity}
+                                                        stateOrProvince={context.order.deliveryState}
+                                                        postalCode={context.order.deliveryPostalCode}
+                                                        country={context.order.deliveryCountry}
+                                                        phone={context.order.deliveryPhone}
+                                                        recipientName={context.order.deliveryName}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                        {context.order.shippingNotes && (
+                                            <div className="flex-1">
+                                                {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                                                    Shipping Instructions
+                                                </label>
+                                                <div className="p-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg text-sm text-[var(--text-primary)] whitespace-pre-wrap">
+                                                    {context.order.shippingNotes}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 {/* Ship Form Header Fields */}
                                 <div className="flex flex-col sm:flex-row gap-4">
                                     <div className="flex-1">
-                                        <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1 block">
+                                        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                                             {t('columns.trackingNumber')}
                                         </label>
                                         <input
@@ -271,7 +311,7 @@ export default function ShippingPage() {
                                         />
                                     </div>
                                     <div className="flex-1">
-                                        <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1 block">
+                                        <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                                             {t('columns.notes')}
                                         </label>
                                         <input

@@ -13,6 +13,17 @@ import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import DeliveryAddressSlideOver from '@/components/shared/DeliveryAddressSlideOver';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+
+const parseInitialPhone = (val: string) => {
+  if (!val) return '';
+  if (val.startsWith('+')) return val;
+  const digits = val.replace(/\D/g, '');
+  if (digits.length > 0) return '+' + digits;
+  return '';
+};
 
 import PageNav from '@/components/shared/PageNav';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
@@ -112,6 +123,8 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     /* ── Post-Confirmation Line UI State ───────────────────────────── */
     const [isPostConfirmationAddingEnabled, setIsPostConfirmationAddingEnabled] = useState(false);
 
+    const [isAddressSlideOverOpen, setIsAddressSlideOverOpen] = useState(false);
+
     /* ── Quote Dialog ──────────────────────────────────────────────────────── */
     const [showQuoteDialog, setShowQuoteDialog] = useState(false);
 
@@ -171,8 +184,21 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
         saveHeader, changeState, calculateTaxes, archiveOrder, unarchiveOrder, copyOrder,
         updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
         loadOrder, loadReturns, loadInvoices,
-        discrepanciesAcknowledged, setDiscrepanciesAcknowledged
+        discrepanciesAcknowledged, setDiscrepanciesAcknowledged,
+        customerDeliveryAddresses,
+        customerCountry,
+        editShippingNotes, setEditShippingNotes,
+        editDeliveryName, setEditDeliveryName,
+        editDeliveryPhone, setEditDeliveryPhone,
+        editDeliveryAddressLine1, setEditDeliveryAddressLine1,
+        editDeliveryAddressLine2, setEditDeliveryAddressLine2,
+        editDeliveryCity, setEditDeliveryCity,
+        editDeliveryState, setEditDeliveryState,
+        editDeliveryPostalCode, setEditDeliveryPostalCode,
+        editDeliveryCountry, setEditDeliveryCountry
     } = o;
+
+    const selectedAddressId = customerDeliveryAddresses.find(a => a.addressLine1 === editDeliveryAddressLine1 && a.city === editDeliveryCity)?.id || (editDeliveryAddressLine1 ? 'other' : '');
 
     const handleStateClick = async (state: string) => {
         if (state === SALES_ORDER_STATE.CONFIRMED && gaps.length > 0 && !discrepanciesAcknowledged) {
@@ -330,6 +356,26 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         onQuoteClick={() => setShowQuoteDialog(true)}
                         reportError={reportError}
                         setError={setError}
+                        customerDeliveryAddresses={customerDeliveryAddresses}
+                        customerCountry={customerCountry}
+                        editShippingNotes={editShippingNotes}
+                        setEditShippingNotes={setEditShippingNotes}
+                        editDeliveryName={editDeliveryName}
+                        setEditDeliveryName={setEditDeliveryName}
+                        editDeliveryPhone={editDeliveryPhone}
+                        setEditDeliveryPhone={setEditDeliveryPhone}
+                        editDeliveryAddressLine1={editDeliveryAddressLine1}
+                        setEditDeliveryAddressLine1={setEditDeliveryAddressLine1}
+                        editDeliveryAddressLine2={editDeliveryAddressLine2}
+                        setEditDeliveryAddressLine2={setEditDeliveryAddressLine2}
+                        editDeliveryCity={editDeliveryCity}
+                        setEditDeliveryCity={setEditDeliveryCity}
+                        editDeliveryState={editDeliveryState}
+                        setEditDeliveryState={setEditDeliveryState}
+                        editDeliveryPostalCode={editDeliveryPostalCode}
+                        setEditDeliveryPostalCode={setEditDeliveryPostalCode}
+                        editDeliveryCountry={editDeliveryCountry}
+                        setEditDeliveryCountry={setEditDeliveryCountry}
                     />
 
                 {/* Line items / Availability tabs */}
@@ -1134,8 +1180,129 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     )}
                 </div>
 
+                {/* Delivery section */}
+                <div className="card">
+                    <h3 className="section-heading mb-4">
+                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                        <span className="material-symbols-outlined">local_shipping</span>
+                        Delivery
+                    </h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                        <div className="flex flex-col gap-4">
+                            <div className="mt-2">
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                                Delivery Address
+                            </label>
+                            <select
+                                className="input w-full mb-2"
+                                disabled={!isOrderDetailsEditable}
+                                value={selectedAddressId}
+                                onChange={(e) => {
+                                    if (e.target.value === 'other') {
+                                        setIsAddressSlideOverOpen(true);
+                                    } else {
+                                        const addr = customerDeliveryAddresses.find(a => a.id === e.target.value);
+                                        if (addr) {
+                                            setEditDeliveryName(addr.recipientName || '');
+                                            setEditDeliveryPhone(addr.recipientPhone || '');
+                                            setEditDeliveryAddressLine1(addr.addressLine1 || '');
+                                            setEditDeliveryAddressLine2(addr.addressLine2 || '');
+                                            setEditDeliveryCity(addr.city || '');
+                                            setEditDeliveryState(addr.stateOrProvince || '');
+                                            setEditDeliveryPostalCode(addr.postalCode || '');
+                                            setEditDeliveryCountry(addr.country || '');
+                                            
+                                            saveHeader({
+                                                deliveryName: addr.recipientName || undefined,
+                                                deliveryPhone: addr.recipientPhone || undefined,
+                                                deliveryAddressLine1: addr.addressLine1 || undefined,
+                                                deliveryAddressLine2: addr.addressLine2 || undefined,
+                                                deliveryCity: addr.city || undefined,
+                                                deliveryState: addr.stateOrProvince || undefined,
+                                                deliveryPostalCode: addr.postalCode || undefined,
+                                                deliveryCountry: addr.country || undefined,
+                                            });
+                                        }
+                                    }
+                                }}
+                            >
+                                <option value="" disabled>Select an address...</option>
+                                {customerDeliveryAddresses.map(addr => (
+                                    <option key={addr.id} value={addr.id}>
+                                        {addr.addressName ? `${addr.addressName} - ` : ''}{addr.addressLine1}, {addr.city}
+                                    </option>
+                                ))}
+                                <option value="other">Other...</option>
+                            </select>
+                            <div className="grid grid-cols-2 gap-4 mb-2 mt-2">
+                                <input
+                                    className="input w-full"
+                                    disabled={!isOrderDetailsEditable}
+                                    placeholder="Attention To"
+                                    value={editDeliveryName}
+                                    onChange={e => setEditDeliveryName(e.target.value)}
+                                    onBlur={() => saveHeader()}
+                                />
+                                <div>
+                                    <PhoneInput
+                                        international
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        defaultCountry={customerCountry as any}
+                                        disabled={!isOrderDetailsEditable}
+                                        className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
+                                        value={parseInitialPhone(editDeliveryPhone)}
+                                        onChange={value => setEditDeliveryPhone(value || '')}
+                                        onBlur={() => saveHeader()}
+                                        placeholder="Phone"
+                                    />
+                                    {editDeliveryPhone && !editDeliveryPhone.startsWith('+') && (
+                                        <p className="text-xs text-orange-500 mt-1">{tCommon('rawPhone', { phone: editDeliveryPhone })}</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-2">
+                                {/* eslint-disable-next-line i18next/no-literal-string */}
+                                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                                    Shipping Instructions
+                                </label>
+                                <textarea
+                                    className="input w-full"
+                                    style={{ minHeight: 80, paddingTop: 12, resize: 'vertical' }}
+                                    disabled={!isOrderDetailsEditable}
+                                    value={editShippingNotes}
+                                    onChange={(e) => setEditShippingNotes(e.target.value)}
+                                    onBlur={() => saveHeader()}
+                                    placeholder="Add shipping instructions..."
+                                />
+                            </div>
+                        </div>
+
+                        <div className="mt-2">
+                            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                                {tSales('labels.fulfillmentLocation')}
+                            </label>
+                            <select
+                                className="input w-full"
+                                disabled={!isOrderDetailsEditable}
+                                value={editFulfillmentLocationId}
+                                onChange={(e) => setEditFulfillmentLocationId(e.target.value)}
+                                onBlur={() => saveHeader()}
+                            >
+                                {(locations || []).map((loc: api.InventoryLocationResponseDto) => (
+                                    <option key={loc.locationId} value={loc.locationId}>
+                                        {formatLocationDisplay(loc)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 {sections.fulfillment.show && (
-                    <FulfillmentSection orderId={id} pickingSummary={pickingSummary} />
+                    <FulfillmentSection orderId={id} pickingSummary={pickingSummary} order={order} />
                 )}
 
                 {sections.shipments.show && (
@@ -1184,6 +1351,39 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                 onClose={() => setShowQuoteDialog(false)}
                 onGenerate={handleGenerateQuote}
             />
+
+            {order?.customerId && (
+                <DeliveryAddressSlideOver
+                    isOpen={isAddressSlideOverOpen}
+                    onClose={() => setIsAddressSlideOverOpen(false)}
+                    customerId={order.customerId}
+                    allowUnsaved={true}
+                    defaultCountry={customerCountry}
+                    onSaved={(addr, saved) => {
+                        setEditDeliveryName(addr.recipientName || '');
+                        setEditDeliveryPhone(addr.recipientPhone || '');
+                        setEditDeliveryAddressLine1(addr.addressLine1 || '');
+                        setEditDeliveryAddressLine2(addr.addressLine2 || '');
+                        setEditDeliveryCity(addr.city || '');
+                        setEditDeliveryState(addr.stateOrProvince || '');
+                        setEditDeliveryPostalCode(addr.postalCode || '');
+                        setEditDeliveryCountry(addr.country || '');
+                        if (saved && addr.id) {
+                            customerDeliveryAddresses.push(addr as api.DeliveryAddressResponseDto);
+                        }
+                        saveHeader({
+                            deliveryName: addr.recipientName || undefined,
+                            deliveryPhone: addr.recipientPhone || undefined,
+                            deliveryAddressLine1: addr.addressLine1 || undefined,
+                            deliveryAddressLine2: addr.addressLine2 || undefined,
+                            deliveryCity: addr.city || undefined,
+                            deliveryState: addr.stateOrProvince || undefined,
+                            deliveryPostalCode: addr.postalCode || undefined,
+                            deliveryCountry: addr.country || undefined,
+                        });
+                    }}
+                />
+            )}
 
             {showDiscrepancyModal && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">

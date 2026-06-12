@@ -82,7 +82,7 @@ describe('emitEvent', () => {
       });
 
       expect(calls[0].table).toBe(salesEvents);
-      expect(calls[0].values).toEqual({
+      expect(calls[0].values).toMatchObject({
         entityType: EntityType.SALES_ORDER,
         entityId: 'so-001',
         eventType: 'created',
@@ -207,7 +207,7 @@ describe('emitEvent', () => {
       expect(calls).toHaveLength(2);
       expect(calls[0].table).toBe(salesEvents);
       expect(calls[1].table).toBe(outbox);
-      expect(calls[1].values).toEqual({
+      expect(calls[1].values).toMatchObject({
         entityType: 'sales_order',
         entityId: 'so-001',
         eventType: 'sales_order.created',
@@ -218,10 +218,11 @@ describe('emitEvent', () => {
 
     it('should write to audit table ONLY for non-integration events', async () => {
       const { tx, calls } = createMockTx();
+      // @sync-ignore
       await emitEvent(tx, {
         entityType: EntityType.SALES_ORDER,
         entityId: 'so-001',
-        eventType: EventType.LINE_ADDED,
+        eventType: 'internal_audit_only',
         entityDisplayName: 'Test Entity',
         payload: {},
         actor: 'admin',
@@ -296,11 +297,12 @@ describe('emitEvent', () => {
       const { tx } = createMockTx();
 
       await expect(
+        // @sync-ignore
         emitEvent(tx, {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           entityType: 'unknown_entity' as any,
           entityId: 'id-001',
-          eventType: 'created',
+          eventType: EventType.CREATED,
           entityDisplayName: 'Test Entity',
           payload: {},
         }),

@@ -18,6 +18,8 @@ import { eq, and, desc, inArray } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateBankStatementLineDto } from './dto/bank-statement.dto';
 import { GlService } from './gl.service';
+import { emitEvent } from '../common/emit-event';
+import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
 export class BankStatementService {
@@ -72,11 +74,7 @@ export class BankStatementService {
     return lines;
   }
 
-  async confirmMatch(
-    lineId: string,
-    _actor: string,
-    reconciliationId?: string,
-  ) {
+  async confirmMatch(lineId: string, actor: string, reconciliationId?: string) {
     return this.db.transaction(async (tx) => {
       const bsLine = await tx
         .select()
@@ -117,6 +115,18 @@ export class BankStatementService {
         .set({ isReconciled: true })
         .where(eq(bankStatementLines.lineId, lineId));
 
+      await emitEvent(tx, {
+        entityType: EntityType.BANK_STATEMENT_LINE,
+        entityId: lineId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: `Statement Line ${lineId}`,
+        payload: {
+          isReconciled: true,
+          matchedJournalLineId: line.matchedJournalLineId,
+        },
+        actor,
+      });
+
       return { success: true };
     });
   }
@@ -124,7 +134,7 @@ export class BankStatementService {
   async manualMatch(
     lineId: string,
     journalLineId: string,
-    _actor: string,
+    actor: string,
     reconciliationId?: string,
   ) {
     return this.db.transaction(async (tx) => {
@@ -163,32 +173,62 @@ export class BankStatementService {
         .set({ matchedJournalLineId: journalLineId, isReconciled: true })
         .where(eq(bankStatementLines.lineId, lineId));
 
+      await emitEvent(tx, {
+        entityType: EntityType.BANK_STATEMENT_LINE,
+        entityId: lineId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: `Statement Line ${lineId}`,
+        payload: { isReconciled: true, matchedJournalLineId: journalLineId },
+        actor,
+      });
+
       return { success: true };
     });
   }
 
-  async createLinesBulk(dtos: CreateBankStatementLineDto[], _actor: string) {
+  async createLinesBulk(dtos: CreateBankStatementLineDto[], actor: string) {
     if (!dtos.length) return { success: true };
 
-    await this.db.insert(bankStatementLines).values(
-      dtos.map((d) => ({
-        glAccountId: d.glAccountId,
-        date: d.date,
-        description: d.description,
-        amount: String(d.amount),
-        reference: d.reference,
-        isReconciled: false,
-      })),
-    );
+    return await this.db.transaction(async (tx) => {
+      const inserted = await tx
+        .insert(bankStatementLines)
+        .values(
+          dtos.map((d) => ({
+            glAccountId: d.glAccountId,
+            date: d.date,
+            description: d.description,
+            amount: String(d.amount),
+            reference: d.reference,
+            isReconciled: false,
+          })),
+        )
+        .returning();
 
-    return { success: true };
+      for (const row of inserted) {
+        await emitEvent(tx, {
+          entityType: EntityType.BANK_STATEMENT_LINE,
+          entityId: row.lineId,
+          eventType: EventType.CREATED,
+          entityDisplayName: `Statement Line ${row.lineId}`,
+          payload: {
+            glAccountId: row.glAccountId,
+            date: row.date,
+            description: row.description,
+            amount: row.amount,
+          },
+          actor,
+        });
+      }
+
+      return { success: true };
+    });
   }
 
   async matchBulk(
     bankLineIds: string[],
     journalLineIds: string[],
     reconciliationId: string,
-    _actor: string,
+    actor: string,
   ) {
     if (!bankLineIds.length || !journalLineIds.length) {
       throw new BadRequestException(
@@ -247,7 +287,16 @@ export class BankStatementService {
       await tx.insert(glMatchGroups).values({
         matchGroupId,
         matchType: 'manual',
-        createdBy: _actor,
+        createdBy: actor,
+      });
+
+      await emitEvent(tx, {
+        entityType: EntityType.GL_MATCH_GROUP,
+        entityId: matchGroupId,
+        eventType: EventType.CREATED,
+        entityDisplayName: `Match Group (Manual)`,
+        payload: { matchType: 'manual' },
+        actor,
       });
 
       // 4. Update journal lines
@@ -268,6 +317,17 @@ export class BankStatementService {
           matchGroupId,
         })
         .where(inArray(bankStatementLines.lineId, bankLineIds));
+
+      for (const id of bankLineIds) {
+        await emitEvent(tx, {
+          entityType: EntityType.BANK_STATEMENT_LINE,
+          entityId: id,
+          eventType: EventType.UPDATED,
+          entityDisplayName: `Statement Line ${id}`,
+          payload: { isReconciled: true, matchGroupId },
+          actor,
+        });
+      }
 
       return { success: true };
     });
@@ -372,11 +432,27 @@ export class BankStatementService {
         }
       }
 
+      for (const line of jLines) {
+        if (line.journalLineId) {
+          // Journal lines aren't emitted as individual entities usually, skip or emit?
+          // We can omit journal line individual updates
+        }
+      }
+
+      await emitEvent(tx, {
+        entityType: EntityType.GL_MATCH_GROUP,
+        entityId: matchGroupId,
+        eventType: EventType.DELETED,
+        entityDisplayName: `Match Group ${matchGroupId}`,
+        payload: { deleted: true },
+        actor,
+      });
+
       return { success: true };
     });
   }
 
-  async deleteLine(lineId: string, _actor: string) {
+  async deleteLine(lineId: string, actor: string) {
     return this.db.transaction(async (tx) => {
       const bsLine = await tx
         .select()
@@ -394,6 +470,15 @@ export class BankStatementService {
       await tx
         .delete(bankStatementLines)
         .where(eq(bankStatementLines.lineId, lineId));
+
+      await emitEvent(tx, {
+        entityType: EntityType.BANK_STATEMENT_LINE,
+        entityId: lineId,
+        eventType: EventType.DELETED,
+        entityDisplayName: `Statement Line ${lineId}`,
+        payload: { deleted: true },
+        actor,
+      });
 
       return { success: true };
     });
