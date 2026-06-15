@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 // Force reload 1
 import { AppModule } from './app.module';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe, RequestMethod } from '@nestjs/common';
 import { collectDefaultMetrics, register } from 'prom-client';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { FileLoggerService } from './common/file-logger.service';
@@ -30,7 +30,9 @@ async function bootstrap() {
   // Enable graceful shutdown hooks for SIGTERM / SIGINT signals
   app.enableShutdownHooks();
 
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: 'internal/setup/webhook', method: RequestMethod.POST }],
+  });
   app.useGlobalFilters(new AllExceptionsFilter());
 
   // Debug middleware to log bodies
