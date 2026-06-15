@@ -84,8 +84,16 @@ echo -e "\n\e[36m--- Python packages ---\e[0m"
 if command -v podman-compose >/dev/null 2>&1; then
     echo -e "  \e[32m[OK]\e[0m podman-compose -- $(command -v podman-compose)"
 else
-    echo -e "  \e[33m[MISSING]\e[0m podman-compose -- installing via pip..."
-    pip3 install podman-compose --user >/dev/null 2>&1 || pip install podman-compose --user >/dev/null 2>&1
+    echo -e "  \e[33m[MISSING]\e[0m podman-compose -- installing..."
+    if command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get install -y podman-compose >/dev/null 2>&1 || true
+    elif command -v dnf >/dev/null 2>&1; then
+        sudo dnf install -y podman-compose >/dev/null 2>&1 || true
+    fi
+    
+    if ! command -v podman-compose >/dev/null 2>&1; then
+        pip3 install podman-compose --user --break-system-packages >/dev/null 2>&1 || pip3 install podman-compose --user >/dev/null 2>&1 || true
+    fi
     echo -e "  \e[32m[INSTALLED]\e[0m podman-compose"
 fi
 
