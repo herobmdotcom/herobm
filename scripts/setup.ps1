@@ -40,17 +40,35 @@ if (-not $wingetCmd) {
 # --- Check and install each prerequisite ---
 foreach ($prereq in $prereqs) {
     $cmd = Get-Command $prereq.Cmd -ErrorAction SilentlyContinue
+    $needsInstall = $false
+    
     if ($cmd) {
-        Write-Host "  [OK] $($prereq.Name) -- $($cmd.Source)" -ForegroundColor Green
-        $skipped += $prereq.Name
+        if ($prereq.Cmd -eq "node") {
+            $nodeVerStr = & node -v
+            $nodeVer = [int]($nodeVerStr -replace "^v","" -replace "\..*","")
+            if ($nodeVer -lt 20) {
+                Write-Host "  [OUTDATED] $($prereq.Name) (Current: $nodeVerStr) -- requires >= v20" -ForegroundColor Yellow
+                $needsInstall = $true
+            } else {
+                Write-Host "  [OK] $($prereq.Name) -- $nodeVerStr" -ForegroundColor Green
+                $skipped += $prereq.Name
+            }
+        } else {
+            Write-Host "  [OK] $($prereq.Name) -- $($cmd.Source)" -ForegroundColor Green
+            $skipped += $prereq.Name
+        }
     }
     else {
         Write-Host "  [MISSING] $($prereq.Name) -- installing via winget..." -ForegroundColor Yellow
+        $needsInstall = $true
+    }
+    
+    if ($needsInstall) {
         try {
             winget install --id $prereq.Id --accept-source-agreements --accept-package-agreements --silent
             if ($LASTEXITCODE -eq 0) {
                 $installed += $prereq.Name
-                Write-Host "  [INSTALLED] $($prereq.Name)" -ForegroundColor Green
+                Write-Host "  [INSTALLED/UPDATED] $($prereq.Name)" -ForegroundColor Green
             }
             else {
                 $failed += $prereq.Name
@@ -160,8 +178,6 @@ Write-Host "  1) Local native Node.js (Recommended for fullstack developers)"
 Write-Host "  2) Full Containerization (Recommended for pure evaluation/ops)"
 $pathChoice = Read-Host "Enter option [1 or 2]"
 
-$installErpnext = Read-Host "Enable ERPNext Integration Stack? [y/N]"
-
 $makeTargets = @()
 if ($pathChoice -eq "1") {
     $makeTargets += "up-db"
@@ -170,11 +186,6 @@ if ($pathChoice -eq "1") {
 else {
     $makeTargets += "up-fe-api"
     Write-Host "  -> Selected Full Containerization path" -ForegroundColor Gray
-}
-
-if ($installErpnext -match "^[yY]") {
-    $makeTargets += "up-erpnext"
-    Write-Host "  -> Enabled ERPNext Stack" -ForegroundColor Gray
 }
 
 $makeCmdString = "make " + ($makeTargets -join " ")

@@ -55,7 +55,8 @@ ifeq ($(OS),Windows_NT)
   COMPOSE_OVERRIDE =
   DBT = $(CURDIR)/.venv/Scripts/dbt
   VENV_PYTHON = $(CURDIR)/.venv/Scripts/python
-  INIT_ENV_CMD = python scripts/init_env.py
+  PYTHON_CMD = python
+  INIT_ENV_CMD = $(PYTHON_CMD) scripts/init_env.py
   DEV_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
   PROD_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/prod-local.ps1
   CLEAN_BUILD_CMD = powershell -ExecutionPolicy Bypass -File scripts/clean-build.ps1
@@ -66,7 +67,8 @@ else
   COMPOSE_OVERRIDE =
   DBT = $(CURDIR)/.venv/bin/dbt
   VENV_PYTHON = $(CURDIR)/.venv/bin/python
-  INIT_ENV_CMD = python3 scripts/init_env.py
+  PYTHON_CMD = python3
+  INIT_ENV_CMD = $(PYTHON_CMD) scripts/init_env.py
   DEV_LOCAL_CMD = bash scripts/dev-local.sh
   PROD_LOCAL_CMD = bash scripts/prod-local.sh
   CLEAN_BUILD_CMD = bash scripts/clean-build.sh
@@ -341,13 +343,13 @@ dev-portal:
 # --- Migrations (herobm_core) ---
 
 migrate:
-	"$(VENV_PYTHON)" tools/migrate.py
+	$(PYTHON_CMD) tools/migrate.py
 
 migrate-status:
-	"$(VENV_PYTHON)" tools/migrate.py --status
+	$(PYTHON_CMD) tools/migrate.py --status
 
 migrate-dry:
-	"$(VENV_PYTHON)" tools/migrate.py --dry-run
+	$(PYTHON_CMD) tools/migrate.py --dry-run
 
 seed:
 	npm run seed

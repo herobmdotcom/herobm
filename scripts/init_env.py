@@ -45,8 +45,8 @@ def main():
         print(f"\033[31mERROR: .env.example not found at {example_file_path}\033[0m")
         sys.exit(1)
 
-    with open(example_file_path, "r", encoding="utf-8") as f:
-        content = f.read()
+    with open(example_file_path, "r", encoding="utf-8", errors="ignore") as f:
+        content = f.read().replace('\x00', '')
 
     print("\n\033[36m=== PostgreSQL Connection ===\033[0m")
     print("Press Enter to accept defaults, or supply details for an existing external Postgres server.")

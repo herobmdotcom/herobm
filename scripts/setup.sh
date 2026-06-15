@@ -26,7 +26,17 @@ MISSING=()
 
 for cmd in "${PREREQS[@]}"; do
     if command -v "$cmd" >/dev/null 2>&1; then
-        echo -e "  \e[32m[OK]\e[0m $cmd -- $(command -v "$cmd")"
+        if [ "$cmd" == "node" ]; then
+            NODE_VER=$(node -v | cut -d 'v' -f 2 | cut -d '.' -f 1)
+            if [ "$NODE_VER" -lt 20 ]; then
+                echo -e "  \e[33m[OUTDATED]\e[0m node -- v$NODE_VER (requires >= 20)"
+                MISSING+=("node")
+            else
+                echo -e "  \e[32m[OK]\e[0m node -- $(node -v)"
+            fi
+        else
+            echo -e "  \e[32m[OK]\e[0m $cmd -- $(command -v "$cmd")"
+        fi
     else
         echo -e "  \e[33m[MISSING]\e[0m $cmd"
         MISSING+=("$cmd")
@@ -57,7 +67,10 @@ if [ ${#MISSING[@]} -ne 0 ]; then
         sudo apt-get update
         for pkg in "${MISSING[@]}"; do
             if [ "$pkg" == "node" ]; then
-                sudo apt-get install -y nodejs npm
+                curl -fsSL https://deb.nodesource.com/setup_22.x -o nodesource_setup.sh
+                sudo -E bash nodesource_setup.sh
+                sudo apt-get install -y nodejs
+                rm -f nodesource_setup.sh
             elif [ "$pkg" == "typst" ]; then
                 sudo apt-get install -y typst || install_typst_fallback
             else
@@ -67,10 +80,15 @@ if [ ${#MISSING[@]} -ne 0 ]; then
     elif command -v dnf >/dev/null 2>&1; then
         echo "Detected Fedora/RHEL (dnf). Asking for sudo..."
         for pkg in "${MISSING[@]}"; do
-            if [ "$pkg" == "typst" ]; then
+            if [ "$pkg" == "node" ]; then
+                curl -fsSL https://rpm.nodesource.com/setup_22.x -o nodesource_setup.sh
+                sudo bash nodesource_setup.sh
+                sudo dnf install -y nodejs
+                rm -f nodesource_setup.sh
+            elif [ "$pkg" == "typst" ]; then
                 sudo dnf install -y typst || install_typst_fallback
             else
-                sudo dnf install -y "${pkg/node/nodejs npm}"
+                sudo dnf install -y "$pkg"
             fi
         done
     else
@@ -108,10 +126,8 @@ if [ "$NON_INTERACTIVE" = false ]; then
     echo "  1) Local native Node.js (Recommended for fullstack developers)"
     echo "  2) Full Containerization (Recommended for pure evaluation/ops)"
     read -p "Enter option [1 or 2]: " pathChoice
-    read -p "Enable ERPNext Integration Stack? [y/N]: " installErpnext
 else
     pathChoice="1"
-    installErpnext="n"
 fi
 
 makeTargets=()
@@ -120,8 +136,6 @@ if [ "$pathChoice" == "1" ]; then
 else
     makeTargets+=("up-fe-api")
 fi
-
-if [[ "$installErpnext" =~ ^[Yy] ]]; then makeTargets+=("up-erpnext"); fi
 
 MAKE_CMD_STRING="make ${makeTargets[*]}"
 
