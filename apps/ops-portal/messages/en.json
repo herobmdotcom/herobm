@@ -2855,7 +2855,7 @@
   },
   "setup": {
     "dataImport": {
-      "taxFormat": "Tax Format",
+      "taxFormat": "{name} ({rate}%) - {code}",
       "abm": "Back",
       "back": "Back",
       "buttons": {

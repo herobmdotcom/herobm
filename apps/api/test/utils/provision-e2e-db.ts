@@ -28,7 +28,7 @@ import {
   seedCoaAccounts,
   seedAccounts,
 } from '../../src/scripts/seed';
-import { seedTestLocations } from './test-seed';
+import { seedTestLocations, seedTestUsers } from './test-seed';
 
 const E2E_DB_NAME = 'herobm_e2e_test';
 
@@ -139,6 +139,7 @@ async function provision() {
     await seedCoaAccounts(db, false);
     await seedCoaSettings(db, false);
     await seedTestLocations(db, false);
+    await seedTestUsers(db, false);
     await seedAccounts(db, false);
     console.log('[E2E DB] Seeds applied.');
   } finally {

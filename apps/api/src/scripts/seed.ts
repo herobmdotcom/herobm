@@ -1327,10 +1327,6 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
   }
 
   const hash = await bcrypt.hash(adminPass, 10);
-  const viewerPass = process.env.DEV_VIEWER_PASSWORD || 'password'; // TEST_CREDENTIAL
-  const viewerHash = await bcrypt.hash(viewerPass, 10);
-  const salesHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
-
   await db
     .insert(users)
     .values({
@@ -1346,134 +1342,8 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
       set: { passwordHash: hash, role: 'admin' as any, isActive: true },
     });
 
-  await db
-    .insert(users)
-    .values({
-      username: 'viewer',
-      passwordHash: viewerHash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'viewer' as any,
-      isActive: true,
-    })
-    .onConflictDoUpdate({
-      target: users.username,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      set: { passwordHash: viewerHash, role: 'viewer' as any, isActive: true },
-    });
-
-  await db
-    .insert(users)
-    .values({
-      username: 'sales',
-      passwordHash: salesHash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'sales' as any,
-      isActive: true,
-    })
-    .onConflictDoUpdate({
-      target: users.username,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      set: { passwordHash: salesHash, role: 'sales' as any, isActive: true },
-    });
-
-  const financeHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
-  await db
-    .insert(users)
-    .values({
-      username: 'finance',
-      passwordHash: financeHash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'finance' as any,
-      isActive: true,
-    })
-    .onConflictDoUpdate({
-      target: users.username,
-      set: {
-        passwordHash: financeHash,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        role: 'finance' as any,
-        isActive: true,
-      },
-    });
-
-  const warehouseHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
-  await db
-    .insert(users)
-    .values({
-      username: 'warehouse',
-      passwordHash: warehouseHash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'warehouse' as any,
-      isActive: true,
-    })
-    .onConflictDoUpdate({
-      target: users.username,
-      set: {
-        passwordHash: warehouseHash,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        role: 'warehouse' as any,
-        isActive: true,
-      },
-    });
-
-  const procurementHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
-  await db
-    .insert(users)
-    .values({
-      username: 'procurement',
-      passwordHash: procurementHash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'procurement' as any,
-      isActive: true,
-    })
-    .onConflictDoUpdate({
-      target: users.username,
-      set: {
-        passwordHash: procurementHash,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        role: 'procurement' as any,
-        isActive: true,
-      },
-    });
-
-  const systemHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
-  await db
-    .insert(users)
-    .values({
-      username: 'system',
-      passwordHash: systemHash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'system' as any,
-      isActive: true,
-    })
-    .onConflictDoUpdate({
-      target: users.username,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      set: { passwordHash: systemHash, role: 'system' as any, isActive: true },
-    });
-
-  const restrictedHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
-  await db
-    .insert(users)
-    .values({
-      username: 'restricted_user',
-      passwordHash: restrictedHash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'restricted_user' as any,
-      isActive: true,
-    })
-    .onConflictDoUpdate({
-      target: users.username,
-      set: {
-        passwordHash: restrictedHash,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        role: 'restricted_user' as any,
-        isActive: true,
-      },
-    });
-
   console.log(
-    '  Seeded users: admin, viewer, sales, finance, warehouse, procurement, system, restricted_user',
+    '  Seeded users: admin',
   );
 
   if (generated) {
