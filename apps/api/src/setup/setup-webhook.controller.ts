@@ -7,7 +7,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 @ApiExcludeController()
 @SkipCasbin()
 @UseGuards(ThrottlerGuard)
-@Controller('internal/setup-webhook')
+@Controller('internal/setup/webhook')
 export class SetupWebhookController {
   constructor(private readonly setupService: SetupService) {}
 
