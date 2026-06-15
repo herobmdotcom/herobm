@@ -491,7 +491,7 @@ cli-bootstrap:
 	$(MAKE) build-api
 	npm run seed
 	$(MAKE) verify-db
-	@"$(VENV_PYTHON)" -c "import os; env=dict(line.strip().split('=',1) for line in open('.env') if '=' in line and not line.strip().startswith('#')) if os.path.exists('.env') else {}; print('\n=============================================================\n  [SECURE] Admin Password:\n  ' + env.get('ADMIN_PASSWORD', 'UNKNOWN') + '\n  (This is also saved securely in your .env file)\n=============================================================\n') if env.get('ADMIN_PASSWORD') else None"
+	@"$(PYTHON_CMD)" -c "import os; env=dict(line.strip().split('=',1) for line in open('.env') if '=' in line and not line.strip().startswith('#')) if os.path.exists('.env') else {}; print('\n=============================================================\n  [SECURE] Admin Password:\n  ' + env.get('ADMIN_PASSWORD', 'UNKNOWN') + '\n  (This is also saved securely in your .env file)\n=============================================================\n') if env.get('ADMIN_PASSWORD') else None"
 
 verify-db: migrate-status
 	@echo "Verifying seeded system records..."
