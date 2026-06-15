@@ -147,15 +147,22 @@ export async function emitEvent(
   }
 
   // 1. Write to the domain audit table
-  await tx.insert(targetTable).values({
-    entityType: params.entityType,
-    entityId: params.entityId,
+  const insertPayload: any = {
     eventType: params.eventType,
     entityDisplayName: params.entityDisplayName,
     payload: params.payload,
     actor: params.actor,
     createdOn: sql`clock_timestamp()`,
-  });
+  };
+
+  if (targetTable === userEvents) {
+    insertPayload.userId = params.entityId;
+  } else {
+    insertPayload.entityType = params.entityType;
+    insertPayload.entityId = params.entityId;
+  }
+
+  await tx.insert(targetTable).values(insertPayload);
 
   // 2. Conditionally enqueue for integration relay
   if (OUTBOX_EVENT_TYPES.has(finalEventForOutbox)) {
