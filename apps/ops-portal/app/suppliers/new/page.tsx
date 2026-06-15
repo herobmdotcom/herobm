@@ -2,10 +2,10 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
@@ -13,7 +13,7 @@ import { CURRENCIES } from '@/lib/currency';
 import GroupSelect from '@/components/shared/GroupSelect';
 import { useSettings } from '@/components/SettingsProvider';
 import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichmentDecorator';
-import { getErrorMessage, COUNTRIES, getCurrencyForCountry } from '@modbm/shared';
+import { getErrorMessage, COUNTRIES, getCurrencyForCountry } from '@herobm/shared';
 
 export default function NewSupplierPage() {
   const { baseCurrency, organization } = useSettings();
@@ -43,7 +43,14 @@ export default function NewSupplierPage() {
     bankAccountNumber: '',
     businessNumber: '',
     isTaxRegistered: false,
+    taxPositionId: '',
   });
+
+  const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
+
+  useEffect(() => {
+    api.taxPositionsControllerFindAll().then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[])).catch(console.error);
+  }, []);
 
   const handleSubmit = async () => {
     if (!isValid || submitting) return;
@@ -179,9 +186,11 @@ export default function NewSupplierPage() {
           <h3 className="section-heading">
             {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">payments</span>
-            Financials
+            FINANCIALS
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* ── Row 1 ── */}
+            {/* 1. Currency */}
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {tCommon('columns.currency')} *
@@ -200,21 +209,13 @@ export default function NewSupplierPage() {
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('columns.paymentTerms')}
-              </label>
-              <input
-                type="text"
-                className="input"
-                value={dto.paymentTerms}
-                onChange={(e) => updateField('paymentTerms', e.target.value)}
-                placeholder={t('placeholders.paymentTerms')}
-                disabled={submitting}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            
+            {/* Empty slots to match the layout of the details page */}
+            <div className="hidden md:block"></div>
+            <div className="hidden md:block"></div>
+
+            {/* ── Row 2 ── */}
+            {/* 4. Business Number */}
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {t('fields.businessNumber')}
@@ -244,6 +245,8 @@ export default function NewSupplierPage() {
                 placeholder="Enter business number..."
               />
             </div>
+
+            {/* 5. Tax Registered */}
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {t('fields.taxRegistered')}
@@ -284,6 +287,42 @@ export default function NewSupplierPage() {
                   {dto.isTaxRegistered ? tCommon('yes') : tCommon('no')}
                 </span>
               </div>
+            </div>
+
+            {/* 6. Tax Position */}
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {tCommon('columns.taxPosition')}
+              </label>
+              <select
+                className="input"
+                value={dto.taxPositionId || ''}
+                onChange={(e) => updateField('taxPositionId', e.target.value)}
+                disabled={submitting}
+              >
+                <option value="">{tCommon('options.none')}</option>
+                {taxPositions.map((pos) => (
+                  <option key={pos.taxPositionId} value={pos.taxPositionId}>
+                    {pos.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* ── Row 3 ── */}
+            {/* 7. Payment Terms */}
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('columns.paymentTerms')}
+              </label>
+              <input
+                type="text"
+                className="input"
+                value={dto.paymentTerms}
+                onChange={(e) => updateField('paymentTerms', e.target.value)}
+                placeholder={t('placeholders.paymentTerms')}
+                disabled={submitting}
+              />
             </div>
           </div>
         </div>

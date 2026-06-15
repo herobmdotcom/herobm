@@ -19,7 +19,7 @@ import {
   GOODS_RECEIVED_STATE,
   MATCH_STATUS,
   PUTAWAY_STATUS,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');

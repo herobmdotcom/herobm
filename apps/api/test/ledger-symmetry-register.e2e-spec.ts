@@ -11,7 +11,7 @@ import { sql } from 'drizzle-orm';
 import {
   salesOrders,
   salesOrderLineItems,
-} from '../src/drizzle/modbm-core-schema';
+} from '../src/drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 
 interface LedgerSnapshot {
@@ -505,8 +505,8 @@ describe('API E2E — Ledger Symmetry Register', () => {
 
         // Find a valid bin in the source location
         const rows = await db.execute(sql`
-          SELECT b.bin_id FROM modbm_core.bins b
-          JOIN modbm_core.zones z ON b.zone_id = z.zone_id
+          SELECT b.bin_id FROM herobm_core.bins b
+          JOIN herobm_core.zones z ON b.zone_id = z.zone_id
           WHERE z.location_id = ${ctx.validLocationId} AND b.bin_type IN ('pick', 'storage') AND b.is_unavailable = false
           LIMIT 1
         `);
@@ -514,10 +514,10 @@ describe('API E2E — Ledger Symmetry Register', () => {
 
         // Ensure there is enough stock in the bin to pick from
         await db.execute(sql`
-          INSERT INTO modbm_core.bin_contents (bin_id, product_id, actual_quantity)
+          INSERT INTO herobm_core.bin_contents (bin_id, product_id, actual_quantity)
           VALUES (${transferBinId}, ${ctx.validProductId}, 100)
           ON CONFLICT (bin_id, product_id) 
-          DO UPDATE SET actual_quantity = modbm_core.bin_contents.actual_quantity + 100;
+          DO UPDATE SET actual_quantity = herobm_core.bin_contents.actual_quantity + 100;
         `);
 
         const pickRes = await request(app.getHttpServer())

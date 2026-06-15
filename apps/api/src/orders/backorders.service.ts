@@ -20,7 +20,7 @@ import {
   suppliers as coreSuppliers,
   taxCategories,
   locations,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { eq, sql, and, inArray } from 'drizzle-orm';
@@ -30,10 +30,10 @@ import {
   TRANSFER_ORDER_STATE,
   OPEN_PURCHASE_ORDER_STATES,
   BACKORDER_TRANSITIONS,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import { InventoryService } from '../inventory/inventory.service';
-import { calculateInventoryGaps } from '@modbm/shared';
-import type { InventoryGap, PurchaseOrderState } from '@modbm/shared';
+import { calculateInventoryGaps } from '@herobm/shared';
+import type { InventoryGap, PurchaseOrderState } from '@herobm/shared';
 
 import { AppConfigService } from '../settings/app-config.service';
 
@@ -454,7 +454,7 @@ export class BackordersService {
           this.appConfig.defaultFulfillmentLocationId();
         if (!deliveryLocationId) {
           const locs = await tx.execute(
-            sql`SELECT location_id FROM modbm_core.locations LIMIT 1`,
+            sql`SELECT location_id FROM herobm_core.locations LIMIT 1`,
           );
           deliveryLocationId = (locs as unknown as { location_id: string }[])[0]
             ?.location_id;

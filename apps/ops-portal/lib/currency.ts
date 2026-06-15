@@ -1,5 +1,5 @@
 /**
- * Re-export currency utilities from @modbm/shared.
+ * Re-export currency utilities from @herobm/shared.
  * This maintains compatibility while centralizing the implementation.
  */
-export * from '@modbm/shared';
+export * from '@herobm/shared';

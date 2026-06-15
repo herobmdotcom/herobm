@@ -4,14 +4,15 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useTranslations } from 'next-intl';
 
 import { useState, useEffect, useMemo } from 'react';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
+import FinancialDefaultsSlideOver from '@/components/shared/FinancialDefaultsSlideOver';
 
 export default function AccountGroupsAdmin() {
-  useDocumentTitle('Account Groups');
+  useDocumentTitle('Customer Groups');
   const t = useTranslations('admin.customerGroups');
   const tCommon = useTranslations('admin.common');
   const tGlobalCommon = useTranslations('common');
@@ -20,19 +21,22 @@ export default function AccountGroupsAdmin() {
   const [costCenters, setCostCenters] = useState<api.CostCenterResponseDto[]>([]);
   const [activities, setActivities] = useState<api.ActivityResponseDto[]>([]);
   const [matrixRules, setMatrixRules] = useState<api.DiscountMatrixResponseDto[]>([]);
+  const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [discountGroup, setDiscountGroup] = useState<Partial<api.AccountGroupResponseDto> | null>(null);
+  const [financialGroup, setFinancialGroup] = useState<Partial<api.AccountGroupResponseDto> | null>(null);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [data, customers, cc, act, rules] = await Promise.all([
+      const [data, customers, cc, act, rules, taxPositionsData] = await Promise.all([
         api.accountGroupsControllerFindAll().then(r => r.data || []),
         api.glControllerGetAccounts({ format: 'flat' }).then(r => r.data || []),
         api.costCentersControllerFindAll().then(r => r.data || []),
         api.activitiesControllerFindAll().then(r => r.data || []),
-        api.discountMatrixControllerList({ ownerType: 'account_group' }).then(r => r.data || [])
+        api.discountMatrixControllerList({ ownerType: 'account_group' }).then(r => r.data || []),
+        api.taxPositionsControllerFindAll().then(r => r.data || [])
       ]);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sorted = [...data].sort((a: any, b: any) => 
@@ -43,6 +47,7 @@ export default function AccountGroupsAdmin() {
       setCostCenters(cc);
       setActivities(act);
       setMatrixRules(rules);
+      setTaxPositions(taxPositionsData);
     } catch (err: unknown) {
       toast.error('Failed to load groups: ' + getErrorMessage(err));
     } finally {
@@ -58,6 +63,8 @@ export default function AccountGroupsAdmin() {
   const costCenterOptions = useMemo(() => costCenters.map((c: any) => ({ value: c.costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const activityOptions = useMemo(() => activities.map((a: any) => ({ value: a.activityId, label: `${a.code} - ${a.name}` })), [activities]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const taxPositionOptions = useMemo(() => taxPositions.map((p: any) => ({ value: p.taxPositionId, label: p.title })), [taxPositions]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns: InlineTableColumn<any>[] = useMemo(() => [
@@ -85,11 +92,25 @@ export default function AccountGroupsAdmin() {
         );
       }
     },
-    { key: 'defaultArAccountId', title: tCommon('defArAccount'), type: 'select', options: glAccountOptions, emptyLabel: `-- ${tGlobalCommon('selectNone')} --`, width: 140 },
-    { key: 'defaultRevenueAccountId', title: tCommon('defRevAccount'), type: 'select', options: glAccountOptions, emptyLabel: `-- ${tGlobalCommon('selectNone')} --`, width: 140 },
-    { key: 'defaultCostCenterId', title: tCommon('defCostCenter'), type: 'select', options: costCenterOptions, emptyLabel: `-- ${tGlobalCommon('selectNone')} --`, width: 140 },
-    { key: 'defaultActivityId', title: tCommon('defActivity'), type: 'select', options: activityOptions, emptyLabel: `-- ${tGlobalCommon('selectNone')} --`, width: 140 }
-  ], [tCommon, t, tGlobalCommon, glAccountOptions, costCenterOptions, activityOptions, matrixRules]);
+    { 
+      key: 'financials', 
+      title: tCommon('financialDefaults'), 
+      width: 140,
+      render: (row, isEditing) => {
+        if (isEditing) {
+          return <span className="text-xs text-muted italic">{t('saveToManage')}</span>;
+        }
+        return (
+          <button 
+            className="btn btn-secondary btn-xs relative"
+            onClick={() => setFinancialGroup(row)}
+          >
+            {t('manage')}
+          </button>
+        );
+      }
+    }
+  ], [tCommon, t, matrixRules]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSave = async (payload: any, isNew: boolean) => {
@@ -104,6 +125,7 @@ export default function AccountGroupsAdmin() {
         defaultRevenueAccountId: payload.defaultRevenueAccountId || null,
         defaultCostCenterId: payload.defaultCostCenterId || null,
         defaultActivityId: payload.defaultActivityId || null,
+        taxPositionId: payload.taxPositionId || null,
       };
 
       if (!isNew) {
@@ -169,6 +191,19 @@ export default function AccountGroupsAdmin() {
         onClose={() => setDiscountGroup(null)}
         ownerLabel={discountGroup ? `${discountGroup.groupCode} — ${discountGroup.name}` : ''}
         customerGroupId={discountGroup?.customerGroupId}
+      />
+
+      <FinancialDefaultsSlideOver
+        isOpen={!!financialGroup}
+        onClose={() => setFinancialGroup(null)}
+        groupType="customer"
+        ownerLabel={financialGroup ? `${financialGroup.groupCode} — ${financialGroup.name}` : ''}
+        data={financialGroup}
+        onSave={(data) => handleSave(data, false)}
+        glAccountOptions={glAccountOptions}
+        costCenterOptions={costCenterOptions}
+        activityOptions={activityOptions}
+        taxPositionOptions={taxPositionOptions}
       />
     </div>
   );

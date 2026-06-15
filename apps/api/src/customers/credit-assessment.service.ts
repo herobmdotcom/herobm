@@ -7,7 +7,7 @@ import {
   customers,
   customerGroups,
   tradingTerms,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq, sql, and } from 'drizzle-orm';
 import { resolveEffectiveTradingTermsId } from './credit-control.utils';
 
@@ -68,6 +68,7 @@ export class CreditAssessmentService {
     });
 
     let allowedDays = 0;
+    let termType = 'net';
     if (effectiveTermsId) {
       const [terms] = await db
         .select()
@@ -76,20 +77,31 @@ export class CreditAssessmentService {
         .limit(1);
       if (terms) {
         allowedDays = terms.days;
+        termType = terms.type;
       }
     }
 
+    // Determine the overdue condition based on the trading term type.
+    let overdueCondition = sql`e.entry_date + (${allowedDays} || ' days')::interval < CURRENT_DATE`;
+
+    if (termType === 'cash_on_delivery') {
+      overdueCondition = sql`e.entry_date < CURRENT_DATE`;
+    } else if (termType === 'end_of_month') {
+      // In PostgreSQL: find the last day of the invoice's month, then add allowedDays.
+      overdueCondition = sql`((date_trunc('month', e.entry_date) + interval '1 month') - interval '1 day')::date + (${allowedDays} || ' days')::interval < CURRENT_DATE`;
+    }
+
     // 2. Query the GL for all entries related to this party.
-    // Calculate total debits, total credits, AND debits that are strictly older than the allowed days.
+    // Calculate total debits, total credits, AND debits that are strictly older than the allowed due date.
     const query = sql`
       SELECT 
         COALESCE(SUM(l.debit), 0) AS total_debits,
         COALESCE(SUM(l.credit), 0) AS total_credits,
         COALESCE(SUM(CASE 
-          WHEN e.entry_date + (${allowedDays} || ' days')::interval < CURRENT_DATE 
+          WHEN ${overdueCondition} 
           THEN l.debit ELSE 0 END), 0) AS overdue_debits
-      FROM modbm_core.gl_journal_lines l
-      JOIN modbm_core.gl_journal_entries e ON l.journal_entry_id = e.journal_entry_id
+      FROM herobm_core.gl_journal_lines l
+      JOIN herobm_core.gl_journal_entries e ON l.journal_entry_id = e.journal_entry_id
       WHERE l.party_id = ${customerId} AND l.party_type = 'customer'
     `;
 
@@ -101,6 +113,12 @@ export class CreditAssessmentService {
       total_credits: string;
       overdue_debits: string;
     }[];
+    console.log(
+      'Credit Assessment Query Result for customer',
+      customerId,
+      ':',
+      aggs,
+    );
     const payload = aggs[0];
 
     const totalDebits = parseFloat(payload?.total_debits || '0');

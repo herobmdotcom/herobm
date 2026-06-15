@@ -17,7 +17,7 @@ raw_abm schema (Postgres)     ← Raw, dlt-managed tables
 public_staging schema          ← This layer (20 views + 6 tables)
   │  dbt incremental models
   ▼
-modbm_core schema              ← Application-owned tables (Drizzle ORM)
+herobm_core schema              ← Application-owned tables (Drizzle ORM)
 ```
 
 ## What staging models do
@@ -145,7 +145,7 @@ Per [Phase 1 Requirements §4](phase_1_requirements.md), the staging layer uses 
 - Timestamps as `*_date`, `*_at`, or descriptive names (`trading_date`, `updated_at`)
 - Booleans as `is_*` or `has_*` (`is_primary`, `is_outstanding`, `has_been_printed`)
 
-The **import layer** (above staging) uses [Microsoft CDM](https://learn.microsoft.com/en-us/common-data-model/) and [Schema.org](https://schema.org/) naming conventions when writing into `modbm_core`.
+The **import layer** (above staging) uses [Microsoft CDM](https://learn.microsoft.com/en-us/common-data-model/) and [Schema.org](https://schema.org/) naming conventions when writing into `herobm_core`.
 
 ## How to add a new staging model
 

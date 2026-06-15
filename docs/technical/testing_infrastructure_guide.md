@@ -14,7 +14,7 @@ These tests do not require a running database or container stack. They parse the
 *   **`test_controller_authz.ps1`**: Enforces that every NestJS controller uses the `@CasbinResource` decorator, preventing accidental unauthenticated endpoints.
 *   **`test_no_hardcoded_secrets.ps1`**: Scans the codebase for hardcoded credentials, JWT secrets, or DB URIs.
 *   **`test_drizzle_schema_sync.ps1`**: Ensures that Drizzle ORM schema definitions remain in sync and don't introduce prohibited mutations (like dropping the Outbox table).
-*   **`test_no_inline_pricing.ps1` / `test_no_inline_inventory_math.ps1`**: Enforces that complex business math is strictly imported from the `@modbm/shared` package rather than being hardcoded inline.
+*   **`test_no_inline_pricing.ps1` / `test_no_inline_inventory_math.ps1`**: Enforces that complex business math is strictly imported from the `@herobm/shared` package rather than being hardcoded inline.
 *   **`test_api_fetch_usage.ps1`**: Verifies that the frontend strictly uses the `apiFetch<T>` utility wrapper instead of raw `fetch()`, ensuring consistent auth-header injection and error handling.
 
 **How to run:**

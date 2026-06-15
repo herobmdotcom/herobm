@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string, no-restricted-syntax */
 "use client";
 
 import { useState, use, useCallback, useMemo } from "react";
@@ -7,11 +8,11 @@ import { useTranslations } from "next-intl";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import EntityHeader from "@/components/shared/EntityHeader";
 import { FrontendEnrichmentDecorator } from "@/components/shared/FrontendEnrichmentDecorator";
-import * as api from "@modbm/sdk";
+import * as api from "@herobm/sdk";
 import DetailsLayout from "@/components/shared/DetailsLayout";
 import { formatAmount } from "@/lib/currency";
 import ActivityTimeline from "@/components/shared/ActivityTimeline";
-import StateBadge, { StateName } from "@/components/StateBadge";
+import { StateName } from "@/components/StateBadge";
 import DataGrid from "@/components/DataGrid";
 import { ValidState } from "@/types/states";
 import PageNav from "@/components/shared/PageNav";
@@ -28,7 +29,7 @@ import {
   COUNTRIES,
   CUSTOMER_STATE,
   getCurrencyForCountry,
-} from "@modbm/shared";
+} from "@herobm/shared";
 import { toast } from "react-hot-toast";
 
 import { useAccount } from "./useCustomer";
@@ -53,7 +54,8 @@ export default function AccountDetailPage({
     dto,
     isDirty,
     isEditable,
-    taxCategories,
+    taxPositions,
+    tradingTerms,
     hasDiscountRules,
     loadAccount,
     updateField,
@@ -411,7 +413,7 @@ export default function AccountDetailPage({
             isSaving={saving}
             isDirty={isDirty}
             onSave={handleSave}
-            badges={<StateBadge state={customer.stateCode as ValidState} />}
+
             nav={<PageNav sections={visibleSections} />}
           />
         }
@@ -836,7 +838,9 @@ export default function AccountDetailPage({
                 <span className="material-symbols-outlined">payments</span>
                 FINANCIALS
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* ── Row 1 ── */}
+                {/* 1. Currency */}
                 <div>
                   <label
                     className="block text-xs font-medium mb-1.5"
@@ -860,26 +864,8 @@ export default function AccountDetailPage({
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label
-                    className="block text-xs font-medium mb-1.5"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {t("customers.fields.discountRules")}
-                  </label>
-                  <button
-                    className="btn btn-secondary relative"
-                    onClick={() => setShowDiscounts(true)}
-                    disabled={!isEditable || saving}
-                  >
-                    {t("customers.fields.manage")}
-                    {hasDiscountRules && (
-                      <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                      </span>
-                    )}
-                  </button>
-                </div>
+
+                {/* 2. State */}
                 <div>
                   <label
                     className="block text-xs font-medium mb-1.5"
@@ -943,32 +929,66 @@ export default function AccountDetailPage({
                     </span>
                   </div>
                 </div>
+
+                {/* 3. Credit Hold */}
                 <div>
                   <label
                     className="block text-xs font-medium mb-1.5"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    {t("common.columns.taxPosition")}
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    Credit Hold
                   </label>
-                  <select
-                    className="input"
-                    disabled={!isEditable || saving}
-                    value={dto.taxCategoryId || ""}
-                    onChange={(e) => {
-                      updateField("taxCategoryId", e.target.value);
-                      saveField("taxCategoryId", e.target.value);
+                  <div
+                    className="flex items-center gap-3"
+                    style={{
+                      paddingTop: 6,
+                      cursor: !isEditable || saving ? "not-allowed" : "pointer",
+                    }}
+                    onClick={() => {
+                      if (!isEditable || saving) return;
+                      updateField("isOnCreditHold", !dto.isOnCreditHold);
+                      saveField("isOnCreditHold", !dto.isOnCreditHold);
                     }}
                   >
-                    <option value="">{t("common.options.none")}</option>
-                    {taxCategories.map((cat) => (
-                      <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
-                        {cat.title} ({cat.code})
-                      </option>
-                    ))}
-                  </select>
+                    <div
+                      style={{
+                        width: 40,
+                        height: 22,
+                        borderRadius: 11,
+                        background: dto.isOnCreditHold
+                          ? "var(--danger)"
+                          : "var(--border)",
+                        position: "relative",
+                        transition: "background 0.2s ease",
+                        opacity: !isEditable || saving ? 0.5 : 1,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: "50%",
+                          background: "#fff",
+                          position: "absolute",
+                          top: 3,
+                          left: dto.isOnCreditHold ? 21 : 3,
+                          transition: "left 0.2s ease",
+                        }}
+                      />
+                    </div>
+                    <span
+                      className="text-sm"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      {/* eslint-disable-next-line no-restricted-syntax, i18next/no-literal-string */}
+                      {dto.isOnCreditHold ? "On Hold" : "No Hold"}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+
+                {/* ── Row 2 ── */}
+                {/* 4. Business Number */}
                 <div>
                   <label
                     className="block text-xs font-medium mb-1.5"
@@ -999,18 +1019,20 @@ export default function AccountDetailPage({
                   </label>
                   <input
                     type="text"
-                    className="input w-full"
+                    className="input"
                     value={dto.businessNumber || ""}
-                    onChange={(e) =>
-                      updateField("businessNumber", e.target.value)
-                    }
+                    onChange={(e) => {
+                      updateField("businessNumber", e.target.value);
+                    }}
+                    onBlur={(e) => {
+                      saveField("businessNumber", e.target.value);
+                    }}
                     disabled={!isEditable || saving}
-                    onBlur={() =>
-                      saveField("businessNumber", dto.businessNumber)
-                    }
                     placeholder="Enter business number..."
                   />
                 </div>
+
+                {/* 5. Tax Registered */}
                 <div>
                   <label
                     className="block text-xs font-medium mb-1.5"
@@ -1026,9 +1048,8 @@ export default function AccountDetailPage({
                     }}
                     onClick={() => {
                       if (!isEditable || saving) return;
-                      const newValue = !dto.isTaxRegistered;
-                      updateField("isTaxRegistered", newValue);
-                      saveField("isTaxRegistered", newValue);
+                      updateField("isTaxRegistered", !dto.isTaxRegistered);
+                      saveField("isTaxRegistered", !dto.isTaxRegistered);
                     }}
                   >
                     <div
@@ -1061,11 +1082,114 @@ export default function AccountDetailPage({
                       className="text-sm"
                       style={{ color: "var(--text-secondary)" }}
                     >
-                      {dto.isTaxRegistered ? tCommon("yes") : tCommon("no")}
+                      {dto.isTaxRegistered ? "Yes" : "No"}
                     </span>
                   </div>
                 </div>
+
+                {/* 6. Tax Position */}
+                <div>
+                  <label
+                    className="block text-xs font-medium mb-1.5"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {t("common.columns.taxPosition")}
+                  </label>
+                  <select
+                    className="input"
+                    disabled={!isEditable || saving}
+                    value={dto.taxPositionId || ""}
+                    onChange={(e) => {
+                      updateField("taxPositionId", e.target.value);
+                      saveField("taxPositionId", e.target.value);
+                    }}
+                  >
+                    <option value="">{t("common.options.none")}</option>
+                    {taxPositions.map((pos) => (
+                      <option key={pos.taxPositionId} value={pos.taxPositionId}>
+                        {pos.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* ── Row 3 ── */}
+                {/* 7. Trading Terms */}
+                <div>
+                  <label
+                    className="block text-xs font-medium mb-1.5"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    Trading Terms
+                  </label>
+                  <select
+                    className="input"
+                    disabled={!isEditable || saving}
+                    value={dto.tradingTermsId || ""}
+                    onChange={(e) => {
+                      updateField("tradingTermsId", e.target.value);
+                      saveField("tradingTermsId", e.target.value);
+                    }}
+                  >
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    <option value="">System Default</option>
+                    {tradingTerms.map((term) => (
+                      <option key={term.id} value={term.id}>
+                        {term.code} - {term.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 8. Credit Limit */}
+                <div>
+                  <label
+                    className="block text-xs font-medium mb-1.5"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    Credit Limit
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="input"
+                    value={dto.creditLimit || ""}
+                    onChange={(e) => {
+                      updateField("creditLimit", e.target.value);
+                    }}
+                    onBlur={(e) => {
+                      saveField("creditLimit", e.target.value);
+                    }}
+                    disabled={!isEditable || saving}
+                    placeholder="Enter limit or leave blank"
+                  />
+                </div>
+
+                {/* 9. Discount Rules */}
+                <div>
+                  <label
+                    className="block text-xs font-medium mb-1.5"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {t("customers.fields.discountRules")}
+                  </label>
+                  <button
+                    className="btn btn-secondary relative"
+                    onClick={() => setShowDiscounts(true)}
+                    disabled={!isEditable || saving}
+                  >
+                    {t("customers.fields.manage")}
+                    {hasDiscountRules && (
+                      <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                      </span>
+                    )}
+                  </button>
+                </div>
               </div>
+
             </div>
             {/* Address & Contact Card */}
             <div id="address-section" className="card">

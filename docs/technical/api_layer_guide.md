@@ -1,11 +1,11 @@
 # API Layer Guide
 
-The NestJS API layer (`apps/api/`) provides a typed, authenticated HTTP interface for the ops-portal. All data endpoints require JWT authentication and Casbin RBAC authorisation. The API reads and writes exclusively to the `modbm_core` schema via Drizzle ORM.
+The NestJS API layer (`apps/api/`) provides a typed, authenticated HTTP interface for the ops-portal. All data endpoints require JWT authentication and Casbin RBAC authorisation. The API reads and writes exclusively to the `herobm_core` schema via Drizzle ORM.
 
 ## Architecture
 
 ```
-modbm_core schema (Postgres)
+herobm_core schema (Postgres)
   │  Drizzle ORM (typed select, insert, update)
   ▼
 NestJS API (apps/api/, port 3001)
@@ -175,7 +175,7 @@ apps/api/src/
 ├── main.ts                        # Bootstrap, Prometheus /metrics endpoint
 ├── app.module.ts                  # Root module, global MetricsInterceptor
 ├── drizzle/
-│   ├── modbm-core-schema.ts       # Typed schema for the core application database
+│   ├── herobm-core-schema.ts       # Typed schema for the core application database
 │   └── drizzle.module.ts          # Global DI provider (DRIZZLE token)
 ├── auth/
 │   ├── auth.module.ts             # JWT + Passport + Casbin wiring
@@ -260,9 +260,9 @@ export class AccountsController {
 ## Data Validation & Integrity
 
 The API enforces strict data hygiene rules during mutations (e.g. Sales Orders, Purchase Orders, Returns):
-- **Pricing & Tax**: Lines calculate their own total derived from `computeLinePriceForStorage` (`@modbm/shared`).
+- **Pricing & Tax**: Lines calculate their own total derived from `computeLinePriceForStorage` (`@herobm/shared`).
 - **Duplicate Line Prevention**: The `OrdersWriteService` throws a `BadRequestException` if multiple lines reference the same `productId`. 
-  - **Exception (`SYSTEM-CUSTOM-LINE`)**: The UUID `00000000-0000-0000-0000-000000000000` is explicitly exempted from duplicate product checks. This allows the frontend to submit multiple "Custom Lines" on a single order while maintaining valid foreign key constraints to the `modbm_core.products` table.
+  - **Exception (`SYSTEM-CUSTOM-LINE`)**: The UUID `00000000-0000-0000-0000-000000000000` is explicitly exempted from duplicate product checks. This allows the frontend to submit multiple "Custom Lines" on a single order while maintaining valid foreign key constraints to the `herobm_core.products` table.
 
 ## Observability
 

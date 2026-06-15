@@ -6,7 +6,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';
 import ShipReturnSlideOver from './ShipReturnSlideOver';
-import { PURCHASE_RETURN_STATE } from '@modbm/shared';
+import { PURCHASE_RETURN_STATE } from '@herobm/shared';
 
 export default function ShipmentsReturnsPage() {
     const tCommon = useTranslations('common');

@@ -56,7 +56,7 @@ export default tseslint.config(
         paths: [{
           name: '@/lib/api',
           importNames: ['apiFetch', 'apiMutate'],
-          message: 'ADV-080: Use the generated SDK @modbm/sdk instead of manual apiFetch or apiMutate.'
+          message: 'ADV-080: Use the generated SDK @herobm/sdk instead of manual apiFetch or apiMutate.'
         }]
       }],
       '@typescript-eslint/no-unused-vars': 'off',
@@ -93,7 +93,7 @@ export default tseslint.config(
         {
           // ADV-051: No Raw State Strings
           selector: "Literal[value=/^(active|inactive|archived|discontinued|draft|pending_putaway|awaiting_matching|quarantined|matched|unmatched|ambiguous)$/]:not(ImportDeclaration > Literal):not(TSLiteralType > Literal):not(CallExpression[callee.name=/^(describe|it|test|t|tCommon)$/] > Literal):not(JSXAttribute > Literal)",
-          message: "ADV-051: Do not use raw string literals for state machine statuses. Import and use the appropriate constant from @modbm/shared."
+          message: "ADV-051: Do not use raw string literals for state machine statuses. Import and use the appropriate constant from @herobm/shared."
         },
         {
           selector: "CallExpression[callee.name=/^t[A-Z]*/] ObjectExpression Property[key.name='fallback']",

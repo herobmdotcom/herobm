@@ -1,12 +1,12 @@
 # Dynamic Reporting Guide
 
-Welcome to the **Dynamic Reporting** system! ModBM now features a fully database-driven reporting engine that allows you to manage, edit, and test all printable documents (like Invoices, Quotes, and Picking Slips) directly from your browser. 
+Welcome to the **Dynamic Reporting** system! HeroBM now features a fully database-driven reporting engine that allows you to manage, edit, and test all printable documents (like Invoices, Quotes, and Picking Slips) directly from your browser. 
 
 You no longer need an engineer to modify the visual aesthetics, layout, or text of your operational documents.
 
 ## How It Works
 
-ModBM's dynamic reporting allows administrators to map **Context Data** (like a specific "Sales Invoice") into a **Typst Template** in real-time. Whenever a user prints a PDF, the system grabs the latest template string from the database, retrieves the latest structured data for that specific record, and complies them into a pixel-perfect PDF document.
+HeroBM's dynamic reporting allows administrators to map **Context Data** (like a specific "Sales Invoice") into a **Typst Template** in real-time. Whenever a user prints a PDF, the system grabs the latest template string from the database, retrieves the latest structured data for that specific record, and complies them into a pixel-perfect PDF document.
 
 ### The Reporting Admin UI
 
@@ -28,7 +28,7 @@ To preview your changes instantly without leaving the page:
 3. Click the **🎲 (Magic Dice)** button next to the **Target Record** input field! The system will automatically select a random, real entry from your current database (e.g., a random Sales Invoice ID).
 4. Click **Preview**. The PDF will instantly compile and render inside the viewport!
 
-Whenever you are satisfied with your layout changes, hit **Save Changes**. The very next time your warehouse staff or sales manager clicks 'Print' for that document type anywhere in the ModBM application, they will seamlessly receive your new design. 
+Whenever you are satisfied with your layout changes, hit **Save Changes**. The very next time your warehouse staff or sales manager clicks 'Print' for that document type anywhere in the HeroBM application, they will seamlessly receive your new design. 
 
 ## Best Practices
 

@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import Link from 'next/link';
 
 /**

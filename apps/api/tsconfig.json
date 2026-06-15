@@ -15,8 +15,8 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@modbm/shared": ["../../packages/shared/dist/index"],
-      "@modbm/shared/*": ["../../packages/shared/dist/*"]
+      "@herobm/shared": ["../../packages/shared/dist/index"],
+      "@herobm/shared/*": ["../../packages/shared/dist/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
@@ -33,7 +33,6 @@
     "debug_find_one.ts",
     "test-login.ts",
     "drizzle.config.ts",
-    "./scripts",
     "./tools",
     "run-migrations.ts",
     "**/*.js"

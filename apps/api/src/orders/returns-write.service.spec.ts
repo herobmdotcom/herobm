@@ -15,7 +15,7 @@ import {
   taxCategories,
   bins,
   zones,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),
@@ -33,8 +33,8 @@ import {
   createTestShipment,
   createTestShipmentLine,
 } from '../../test/fixtures';
-import { SALES_ORDER_STATE, RETURN_STATE } from '@modbm/shared';
-import type { ReturnState, SalesOrderState } from '@modbm/shared';
+import { SALES_ORDER_STATE, RETURN_STATE } from '@herobm/shared';
+import type { ReturnState, SalesOrderState } from '@herobm/shared';
 
 // Shared test data
 const INVOICED_ORDER = {
@@ -93,15 +93,15 @@ describe('ReturnsWriteService', () => {
     jest.clearAllMocks();
 
     await pg.client.exec(`
-      TRUNCATE modbm_core.sales_order_return_lines CASCADE;
-      TRUNCATE modbm_core.sales_order_returns CASCADE;
-      TRUNCATE modbm_core.sales_order_shipment_lines CASCADE;
-      TRUNCATE modbm_core.sales_order_shipments CASCADE;
-      TRUNCATE modbm_core.sales_order_lines CASCADE;
-      TRUNCATE modbm_core.sales_orders CASCADE;
-      TRUNCATE modbm_core.customers CASCADE;
-      TRUNCATE modbm_core.products CASCADE;
-      TRUNCATE modbm_core.outbox CASCADE;
+      TRUNCATE herobm_core.sales_order_return_lines CASCADE;
+      TRUNCATE herobm_core.sales_order_returns CASCADE;
+      TRUNCATE herobm_core.sales_order_shipment_lines CASCADE;
+      TRUNCATE herobm_core.sales_order_shipments CASCADE;
+      TRUNCATE herobm_core.sales_order_lines CASCADE;
+      TRUNCATE herobm_core.sales_orders CASCADE;
+      TRUNCATE herobm_core.customers CASCADE;
+      TRUNCATE herobm_core.products CASCADE;
+      TRUNCATE herobm_core.outbox CASCADE;
     `);
 
     mockInventoryService = {

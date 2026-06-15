@@ -1,6 +1,6 @@
 # Rate Limiting
 
-The ModBM API enforces rate limiting to ensure system stability and fair usage across all consumers. 
+The HeroBM API enforces rate limiting to ensure system stability and fair usage across all consumers. 
 
 Rate limits are applied dynamically based on the authentication context. 
 

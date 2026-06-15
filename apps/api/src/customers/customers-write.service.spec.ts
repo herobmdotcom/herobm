@@ -8,9 +8,9 @@ import {
 } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { customers, masterDataEvents } from '../drizzle/modbm-core-schema';
+import { customers, masterDataEvents } from '../drizzle/herobm-core-schema';
 import { eq, sql } from 'drizzle-orm';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 describe('AccountsWriteService', () => {
   const pg = setupPgliteSuite();

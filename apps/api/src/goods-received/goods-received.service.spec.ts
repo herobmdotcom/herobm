@@ -20,14 +20,14 @@ import {
   bins,
   uomDictionary,
   taxCategories,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq, sql } from 'drizzle-orm';
 import {
   PURCHASE_ORDER_STATE,
   MATCH_STATUS,
   PUTAWAY_STATUS,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 jest.mock('../purchase-orders/purchase-order-lifecycle-rules', () => ({
   evaluatePOLifecycleRules: jest.fn().mockResolvedValue([]),

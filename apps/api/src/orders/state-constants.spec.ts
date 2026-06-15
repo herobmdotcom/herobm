@@ -7,7 +7,7 @@ import {
   RETURN_STATE,
   PURCHASE_INVOICE_STATE,
   SALES_INVOICE_STATE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 describe('State Constants Architecture', () => {
   const rootDir = path.resolve(__dirname, '../..'); // apps/api

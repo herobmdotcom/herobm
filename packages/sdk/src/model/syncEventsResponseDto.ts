@@ -5,7 +5,9 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { OutboxEventDto } from './outboxEventDto';
 
 export interface SyncEventsResponseDto {
-  data: string[];
+  events: OutboxEventDto[];
+  total: number;
 }

@@ -1,4 +1,4 @@
-import { SystemResource, SALES_CREDIT_NOTE_STATE } from '@modbm/shared';
+import { SystemResource, SALES_CREDIT_NOTE_STATE } from '@herobm/shared';
 import {
   ApiTags,
   ApiOperation,

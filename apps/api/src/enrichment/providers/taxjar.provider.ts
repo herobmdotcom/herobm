@@ -3,7 +3,7 @@ import {
   IEnrichmentProvider,
   EnrichmentResult,
 } from './enrichment-provider.interface';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 import { IntegrationLoggerService } from '../../common/integration-logger.service';
 

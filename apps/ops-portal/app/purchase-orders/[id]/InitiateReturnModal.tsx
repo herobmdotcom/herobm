@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
-import * as api from '@modbm/sdk';
-import { getErrorMessage } from '@modbm/shared';
+import * as api from '@herobm/sdk';
+import { getErrorMessage } from '@herobm/shared';
 
 export default function InitiateReturnModal({
   isOpen,

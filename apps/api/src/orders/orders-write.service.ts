@@ -1,11 +1,12 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { BackordersService } from './backorders.service';
+import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
 import {
   InventoryGap,
   SALES_ORDER_STATE,
   CUSTOMER_STATE,
   getErrorMessage,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import {
   Injectable,
   Inject,
@@ -31,7 +32,8 @@ import {
   locations,
   productUoms,
   productComponents,
-} from '../drizzle/modbm-core-schema';
+  tradingTerms,
+} from '../drizzle/herobm-core-schema';
 import {
   CreateOrderDto,
   UpdateOrderDto,
@@ -55,10 +57,11 @@ import {
   SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
   getValidStates,
   computeLinePriceForStorage,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import {
   resolveEffectiveCreditHold,
   resolveEffectiveCreditLimit,
+  resolveEffectiveTradingTermsId,
 } from '../customers/credit-control.utils';
 
 const VALID_STATES = getValidStates(STATE_TRANSITIONS);
@@ -70,6 +73,7 @@ export class OrdersWriteService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly taxService: TaxCategoriesService,
+    private readonly taxResolutionEngine: TaxResolutionEngine,
     private readonly pickingService: PickingService,
     private readonly inventoryService: InventoryService,
     private readonly accountsService: AccountsService,
@@ -93,7 +97,7 @@ export class OrdersWriteService {
   ) {
     if (!isExternalTax) return;
     const db = tx || this.db;
-    // @modbm-skip-audit
+    // @herobm-skip-audit
     await db
       .update(salesOrders)
       .set({
@@ -150,7 +154,7 @@ export class OrdersWriteService {
       taxRate: taxRate,
     });
   }
-  // ABM tax_category text mapping has been migrated directly into modbm_core.products schema
+  // ABM tax_category text mapping has been migrated directly into herobm_core.products schema
   /**
    * Resolve the GST category for a single order line.
    *
@@ -171,48 +175,40 @@ export class OrdersWriteService {
     const country = customer.billingAddressCountry || '';
     const taxProvider = mappings[country] || 'internal';
 
-    // 1. Explicit override wins
-    if (taxCategoryIdOverride) {
-      const cat = await this.taxService.getById(taxCategoryIdOverride, tx);
-      return {
-        taxCategoryId: cat.taxCategoryId,
-        rate: parseFloat(cat.rate ?? '0'),
-        taxProvider,
-      };
-    }
-
-    // 2. Customer exempt → always 0%
-    if (customer.taxCategoryId) {
-      const acctCat = await this.taxService.getById(customer.taxCategoryId, tx);
-      if (acctCat.code === 'EXE' || acctCat.type === 'exempt') {
-        return {
-          taxCategoryId: acctCat.taxCategoryId,
-          rate: parseFloat(acctCat.rate ?? '0'),
-          taxProvider,
-        };
-      }
-    }
-
-    // 3. Product's GST category
+    let productDefaultTaxCategoryId: string | null = null;
     if (productId) {
       const product = await this.lookupProduct(productId, tx);
-      if (product.salesTaxCategoryId) {
-        try {
-          const cat = await this.taxService.getById(
-            product.salesTaxCategoryId,
-            tx,
-          );
-          return {
-            taxCategoryId: cat.taxCategoryId,
-            rate: parseFloat(cat.rate ?? '0'),
-            taxProvider,
-          };
-        } catch (err) {
-          // Bad link, fallback to default
-          this.logger.warn(
-            `Product ${productId} had invalid tax category ID: ${product.salesTaxCategoryId}`,
-          );
-        }
+      productDefaultTaxCategoryId = product.salesTaxCategoryId || null;
+    }
+
+    const resolvedTaxCategoryId =
+      await this.taxResolutionEngine.resolveTaxCategory(
+        {
+          isPurchase: false,
+          isTaxRegistered: customer.isTaxRegistered || false,
+          partyTaxPositionId:
+            customer.taxPositionId ||
+            ((customer as Record<string, unknown>)
+              .customerGroupTaxPositionId as string | undefined) ||
+            null,
+          productDefaultTaxCategoryId,
+          manualOverrideTaxCategoryId: taxCategoryIdOverride || null,
+        },
+        tx,
+      );
+
+    if (resolvedTaxCategoryId) {
+      try {
+        const cat = await this.taxService.getById(resolvedTaxCategoryId, tx);
+        return {
+          taxCategoryId: cat.taxCategoryId,
+          rate: parseFloat(cat.rate ?? '0'),
+          taxProvider,
+        };
+      } catch (err) {
+        this.logger.warn(
+          `Resolved invalid tax category ID: ${resolvedTaxCategoryId}`,
+        );
       }
     }
 
@@ -226,22 +222,15 @@ export class OrdersWriteService {
   }
 
   /**
-   * Resolve a customer from modbm_core.customers.
+   * Resolve a customer from herobm_core.customers.
    * Throws BadRequestException if not found.
    * Returns the currency code. Discount resolution is now handled
    * by the frontend via the discount_matrix; backend trusts posted values.
    */
-  private async resolveCustomer(
-    customerId: string,
-    tx?: DrizzleDB,
-  ): Promise<{
-    currencyCode: string;
-  }> {
+  private async resolveCustomer(customerId: string, tx?: DrizzleDB) {
     try {
       const customer = await this.accountsService.findOne(customerId, tx);
-      return {
-        currencyCode: customer.currencyCode ?? 'EUR',
-      };
+      return customer;
     } catch (err) {
       if (err instanceof NotFoundException) {
         throw new BadRequestException(`Customer '${customerId}' not found`);
@@ -257,87 +246,33 @@ export class OrdersWriteService {
   private async assertAccountStanding(
     customerId: string,
     additionalExposure: number,
-    operation: 'create' | 'update' | 'confirm',
+    operation: 'create' | 'update' | 'confirm' | 'quote',
     tx?: DrizzleDB,
+    creditHoldOverrideAt?: Date | null,
   ): Promise<void> {
-    const customer = await this.accountsService.findOne(customerId, tx);
-
-    // 1. Strict State Block
     if (
-      customer.stateCode === CUSTOMER_STATE.INACTIVE ||
-      customer.stateCode === CUSTOMER_STATE.ARCHIVED
+      creditHoldOverrideAt &&
+      (operation === 'confirm' || operation === 'quote')
     ) {
-      throw new BadRequestException(
-        `Cannot ${operation} order: Customer '${customer.name}' is ${customer.stateCode}.`,
-      );
+      return; // Order has a valid credit hold override, bypass check
     }
 
-    // 2. Credit Hold Status
-    const isHold = resolveEffectiveCreditHold({
-      creditLimit: customer.creditLimit,
-      isOnCreditHold: customer.isOnCreditHold,
-      tradingTermsId: customer.tradingTermsId,
-      accountGroup: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        creditLimit: (customer as any).accountGroupCreditLimit,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        isOnCreditHold: (customer as any).accountGroupIsOnCreditHold,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tradingTermsId: (customer as any).accountGroupTradingTermsId,
-      },
-    });
-
-    if (isHold && (operation === 'confirm' || operation === 'update')) {
-      throw new BadRequestException(
-        `Cannot ${operation} order: Customer '${customer.name}' is on strict Credit Hold.`,
-      );
-    }
-
-    // 3. Credit Assessment (Limits and Overdue)
-    const assessment = await this.creditAssessmentService.assessCredit(
+    const risk = await this.accountsService.assessRisk(
       customerId,
+      additionalExposure,
+      operation,
       tx,
     );
 
-    if (assessment.isOverdue && operation === 'confirm') {
+    if (risk.isSalesBlocked) {
       throw new BadRequestException(
-        `Cannot confirm order: Customer has $${assessment.overdueBalance.toFixed(2)} in overdue balances.`,
+        `Cannot ${operation} order: ${risk.salesBlockReasons.join(', ')}.`,
       );
-    }
-
-    const limitStr = resolveEffectiveCreditLimit({
-      creditLimit: customer.creditLimit,
-      isOnCreditHold: customer.isOnCreditHold,
-      tradingTermsId: customer.tradingTermsId,
-      accountGroup: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        creditLimit: (customer as any).accountGroupCreditLimit,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        isOnCreditHold: (customer as any).accountGroupIsOnCreditHold,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tradingTermsId: (customer as any).accountGroupTradingTermsId,
-      },
-    });
-
-    const creditLimit = parseFloat(limitStr);
-
-    // If limits apply, check exposure
-    if (creditLimit >= 0) {
-      if (assessment.totalArBalance + additionalExposure > creditLimit) {
-        const behavior = this.appConfig.creditLimitBehavior();
-        if (behavior === 'hard') {
-          throw new BadRequestException(
-            `Order exceeds customer credit limit of $${creditLimit.toFixed(2)}. Current AR: $${assessment.totalArBalance.toFixed(2)}`,
-          );
-        } else {
-          this.logger.warn(`Soft Limit Warning for ${customer.name}`);
-        }
-      }
     }
   }
 
   /**
-   * Look up a product from modbm_core.products.
+   * Look up a product from herobm_core.products.
    * Throws BadRequestException if not found.
    * Returns productId, taxCategoryId, productType, and listPrice.
    */
@@ -428,7 +363,7 @@ export class OrdersWriteService {
   }
 
   /**
-   * Validate that a product exists in modbm_core.products.
+   * Validate that a product exists in herobm_core.products.
    */
   private async validateProduct(
     productId: string,
@@ -485,6 +420,32 @@ export class OrdersWriteService {
         );
       }
 
+      let termsDescription = null;
+      const effectiveTermsId = resolveEffectiveTradingTermsId({
+        creditLimit: customer.creditLimit,
+        isOnCreditHold: customer.isOnCreditHold,
+        tradingTermsId: customer.tradingTermsId,
+        accountGroup: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          creditLimit: (customer as any).accountGroupCreditLimit,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          isOnCreditHold: (customer as any).accountGroupIsOnCreditHold,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          tradingTermsId: (customer as any).accountGroupTradingTermsId,
+        },
+        systemDefaultTradingTermsId:
+          this.appConfig.getAppSettingsRaw()?.defaultTradingTermsId,
+      });
+
+      if (effectiveTermsId) {
+        const [termRow] = await tx
+          .select()
+          .from(tradingTerms)
+          .where(eq(tradingTerms.tradingTermsId, effectiveTermsId))
+          .limit(1);
+        if (termRow) termsDescription = termRow.description;
+      }
+
       const orderNumber = await this.generateOrderNumber(tx);
       // Insert order header with snapshotted customer discount + GST category
       const [order] = await tx
@@ -508,6 +469,7 @@ export class OrdersWriteService {
           deliveryState: dto.deliveryState,
           deliveryPostalCode: dto.deliveryPostalCode,
           deliveryCountry: dto.deliveryCountry,
+          termsDescription: termsDescription,
           createdBy: actor,
         })
         .returning();
@@ -837,11 +799,13 @@ export class OrdersWriteService {
       orderLines.forEach((lv) => {
         if (lv.totalAmount) orderTotal += parseFloat(lv.totalAmount);
       });
-      // A status change to confirmed or allocated constitutes a review process, so operation='confirm' will trigger the checks
+      // A status change to quoted, confirmed, or allocated constitutes a review process
       await this.assertAccountStanding(
         existing.customerId,
         orderTotal,
-        'confirm',
+        newState === SALES_ORDER_STATE.QUOTED ? 'quote' : 'confirm',
+        undefined,
+        existing.creditHoldOverrideAt,
       );
     }
 
@@ -1136,6 +1100,44 @@ export class OrdersWriteService {
     });
 
     return await this.findOrder(id);
+  }
+
+  /**
+   * Overrides the credit hold for a specific order.
+   */
+  async overrideCreditHold(id: string, reason: string, actor: string) {
+    const existing = await this.findOrder(id);
+
+    if (
+      existing.stateCode !== SALES_ORDER_STATE.DRAFT &&
+      existing.stateCode !== SALES_ORDER_STATE.QUOTED
+    ) {
+      throw new BadRequestException(
+        `Cannot override credit hold on order in '${existing.stateCode}' state`,
+      );
+    }
+
+    const [updated] = await this.db
+      .update(salesOrders)
+      .set({
+        creditHoldOverrideAt: new Date(),
+        creditHoldOverrideBy: actor,
+        creditHoldOverrideReason: reason,
+        modifiedOn: new Date(),
+      })
+      .where(eq(salesOrders.salesOrderId, id))
+      .returning();
+
+    await emitEvent(this.db, {
+      entityType: EntityType.SALES_ORDER,
+      entityId: id,
+      eventType: EventType.UPDATED,
+      entityDisplayName: `Sales Order ${existing.orderNumber}`,
+      actor,
+      payload: { creditHoldOverrideReason: reason },
+    });
+
+    return updated;
   }
 
   /**

@@ -17,4 +17,13 @@ export interface ShipmentResponseDto {
   carrierId?: string;
   notes?: string;
   createdOn?: string;
+  deliveryName?: string;
+  deliveryPhone?: string;
+  deliveryAddressLine1?: string;
+  deliveryAddressLine2?: string;
+  deliveryCity?: string;
+  deliveryState?: string;
+  deliveryPostalCode?: string;
+  deliveryCountry?: string;
+  shippingNotes?: string;
 }

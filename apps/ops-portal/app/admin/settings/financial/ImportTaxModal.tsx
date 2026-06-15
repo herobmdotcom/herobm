@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
 import { useTranslations } from 'next-intl';
-import * as api from '@modbm/sdk';
-import { getErrorMessage } from '@modbm/shared';
+import * as api from '@herobm/sdk';
+import { getErrorMessage } from '@herobm/shared';
 import { toast } from 'react-hot-toast';
 
 interface SettingsFile {

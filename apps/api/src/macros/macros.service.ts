@@ -2,7 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE, DrizzleDB } from '../drizzle/drizzle.module';
-import * as schema from '../drizzle/modbm-core-schema';
+import * as schema from '../drizzle/herobm-core-schema';
 import { CreateMacroDto } from './dto/create-macro.dto';
 import { UpdateMacroDto } from './dto/update-macro.dto';
 import { emitEvent } from '../common/emit-event';

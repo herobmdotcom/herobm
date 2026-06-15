@@ -4,7 +4,7 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { businessReportsControllerGetReports, businessReportsControllerRunReport, userSettingsControllerGetSettings, userSettingsControllerUpdateSettings } from '@modbm/sdk';
+import { businessReportsControllerGetReports, businessReportsControllerRunReport, userSettingsControllerGetSettings, userSettingsControllerUpdateSettings } from '@herobm/sdk';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
 import { AgGridReact } from 'ag-grid-react';
@@ -224,9 +224,9 @@ export default function ReportViewer() {
           onBack={() => router.push('/reporting')}
           nav={undefined}
           actions={
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <select 
-                className="input max-w-[200px] !py-1"
+                className="input max-w-[200px] text-sm h-8 !py-0"
                 onChange={(e) => {
                   if (e.target.value) router.push(`/reporting/${e.target.value}`);
                 }}
@@ -255,7 +255,7 @@ export default function ReportViewer() {
                 )}
               </select>
               <select 
-                className="input max-w-[200px] !py-1"
+                className="input max-w-[200px] text-sm h-8 !py-0"
                 onChange={(e) => handleLoadView(e.target.value)}
                 value=""
               >
@@ -267,7 +267,7 @@ export default function ReportViewer() {
                   if (!configs || (configs as any[]).length === 0) return null;
                   return (
                     <optgroup key={rSlug} label={rName}>
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                       {(configs as any[]).map((c) => (
                         <option key={c.id} value={`${rSlug}|${c.id}`}>{c.name}</option>
                       ))}
@@ -278,14 +278,14 @@ export default function ReportViewer() {
               {loadedConfig ? (
                 <button 
                   onClick={() => handleUnsaveView(loadedConfig.id)}
-                  className="btn btn-secondary"
+                  className="btn btn-secondary btn-sm whitespace-nowrap h-8"
                 >
                   Unsave View
                 </button>
               ) : (
                 <button 
                   onClick={() => setIsSavingView(true)}
-                  className="btn btn-secondary"
+                  className="btn btn-secondary btn-sm whitespace-nowrap h-8"
                 >
                   Save View
                 </button>
@@ -331,7 +331,7 @@ export default function ReportViewer() {
         <div className="flex flex-wrap items-end gap-4 p-4 border-b border-[rgba(196,198,205,0.4)] bg-[#f2f4f6]">
           {uiConfig.filters && uiConfig.filters.length > 0 && (
             <>
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {uiConfig.filters.some((f: any) => f.name === 'fromDate') && uiConfig.filters.some((f: any) => f.name === 'toDate') && (
                 <div className="flex flex-col">
                   <DateRangeFilter 
@@ -341,7 +341,7 @@ export default function ReportViewer() {
                   />
                 </div>
               )}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {uiConfig.filters.filter((f: any) => f.name !== 'fromDate' && f.name !== 'toDate').map((f: any) => (
                 <div key={f.name} className="flex flex-col">
                   <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--text-muted)' }}>{f.label}</label>
@@ -368,7 +368,7 @@ export default function ReportViewer() {
                 }}
               >
                 <option value="">None</option>
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {drillDownOptions.map((opt: any) => (
                   <option key={opt.id} value={opt.id}>{opt.label}</option>
                 ))}

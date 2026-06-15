@@ -14,7 +14,7 @@ export interface OrderLine {
     totalAmount: string;
     unitOfMeasure: string;
     baseUom?: string;
-    productUoms?: import('@modbm/shared').ProductUom[];
+    productUoms?: import('@herobm/shared').ProductUom[];
     fulfillmentLocationId?: string | null;
     isPostConfirmation?: boolean | null;
 }

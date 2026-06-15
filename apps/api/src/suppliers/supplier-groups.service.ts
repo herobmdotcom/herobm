@@ -7,7 +7,7 @@ import {
 import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { supplierGroups, suppliers } from '../drizzle/modbm-core-schema';
+import { supplierGroups, suppliers } from '../drizzle/herobm-core-schema';
 import { CreateSupplierGroupDto, UpdateSupplierGroupDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -59,6 +59,9 @@ export class SupplierGroupsService {
           ...(dto.earlyPaymentDiscount && {
             earlyPaymentDiscount: dto.earlyPaymentDiscount,
           }),
+          ...(dto.earlyPaymentDiscountDays !== undefined && {
+            earlyPaymentDiscountDays: dto.earlyPaymentDiscountDays,
+          }),
           ...(dto.creditLimit && { creditLimit: dto.creditLimit }),
           isPurchasingBlocked: dto.isPurchasingBlocked ?? false,
           ...(dto.purchasingBlockReason && {
@@ -102,6 +105,9 @@ export class SupplierGroupsService {
           }),
           ...(dto.earlyPaymentDiscount !== undefined && {
             earlyPaymentDiscount: dto.earlyPaymentDiscount,
+          }),
+          ...(dto.earlyPaymentDiscountDays !== undefined && {
+            earlyPaymentDiscountDays: dto.earlyPaymentDiscountDays,
           }),
           ...(dto.creditLimit !== undefined && {
             creditLimit: dto.creditLimit,

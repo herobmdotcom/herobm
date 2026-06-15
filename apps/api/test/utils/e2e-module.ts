@@ -3,7 +3,7 @@ import { AppModule } from '../../src/app.module';
 import { DRIZZLE, POSTGRES_CLIENT } from '../../src/drizzle/drizzle.module';
 // PGlite imports removed from static scope to prevent Node from evaluating
 // ES modules when PGlite is not in use (avoids ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG)
-import * as schema from '../../src/drizzle/modbm-core-schema';
+import * as schema from '../../src/drizzle/herobm-core-schema';
 import * as fs from 'fs';
 import * as path from 'path';
 

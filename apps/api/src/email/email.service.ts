@@ -3,7 +3,7 @@ import {
   emailOutbox,
   outbox,
   systemEvents,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { EntityType, EventType } from '../common/event-types';
 import { emitEvent } from '../common/emit-event';

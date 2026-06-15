@@ -20,7 +20,7 @@ import {
   customers as coreAccounts,
   products as coreProducts,
   customerGroups,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
@@ -29,7 +29,7 @@ import { OrganizationService } from '../settings/organization.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { EnrichmentService } from '../enrichment/enrichment.service';
 import { CreateSalesCreditNoteDto } from './sales-credit-notes.dto';
-import { computeLinePrice, computeReturnCreditSummary } from '@modbm/shared';
+import { computeLinePrice, computeReturnCreditSummary } from '@herobm/shared';
 import {
   SALES_CREDIT_NOTE_STATE,
   SALES_CREDIT_NOTE_TRANSITIONS,
@@ -37,7 +37,7 @@ import {
   RETURN_STATE,
   getErrorMessage,
   getValidStates,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 const VALID_CN_STATES = getValidStates(SALES_CREDIT_NOTE_TRANSITIONS);
 

@@ -7,7 +7,7 @@
 ## Executive Summary
 This guide details the architecture of the Metadata-Driven Report Engine. The core system decouples "Intents" (e.g., printing an invoice) from "Implementations" (the specific Typst template used). 
 
-By storing templates in the `modbm_core` database (`reports` table) and utilizing a many-to-many context mapping (`report_contexts`), the system enables administrators to create, test, and deploy arbitrary reports for any entity without requiring API deployments or source code changes.
+By storing templates in the `herobm_core` database (`reports` table) and utilizing a many-to-many context mapping (`report_contexts`), the system enables administrators to create, test, and deploy arbitrary reports for any entity without requiring API deployments or source code changes.
 
 ## Key Architectural Pillars
 

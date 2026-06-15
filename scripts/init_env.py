@@ -99,7 +99,7 @@ def main():
         print("  Generated: ENCRYPTION_KEY")
 
     if active_profile:
-        postgres_db = f"modbm_{active_profile}"
+        postgres_db = f"herobm_{active_profile}"
         content = content.replace("POSTGRES_DB=herobm", f"POSTGRES_DB={postgres_db}")
         print(f"\n\033[32m=== Auto-Configured ===\n  POSTGRES_DB={postgres_db}\033[0m")
 

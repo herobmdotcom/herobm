@@ -15,14 +15,14 @@ import {
   productDefaultBins,
   productComponents,
   productSuppliers,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {
   PRODUCT_TRANSITIONS,
   PRODUCT_STATE,
   ProductState,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import {
   CreateProductDto,
@@ -38,7 +38,7 @@ export class ProductsWriteService {
   private readonly logger = new Logger(ProductsWriteService.name);
 
   /**
-   * Create a new product in modbm_core.
+   * Create a new product in herobm_core.
    * Product number uniqueness is enforced by the DB UNIQUE constraint.
    */
   async create(dto: CreateProductDto, actor: string) {

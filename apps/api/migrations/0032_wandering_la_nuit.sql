@@ -1,4 +1,4 @@
-CREATE TABLE "modbm_core"."email_outbox" (
+CREATE TABLE "herobm_core"."email_outbox" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"to_address" text NOT NULL,
 	"reply_to" text,
@@ -13,8 +13,8 @@ CREATE TABLE "modbm_core"."email_outbox" (
 	"processed_at" timestamp with time zone
 );
 --> statement-breakpoint
-ALTER TABLE "modbm_core"."app_settings" ADD COLUMN "smtp_host" text;--> statement-breakpoint
-ALTER TABLE "modbm_core"."app_settings" ADD COLUMN "smtp_port" integer;--> statement-breakpoint
-ALTER TABLE "modbm_core"."app_settings" ADD COLUMN "smtp_user" text;--> statement-breakpoint
-ALTER TABLE "modbm_core"."app_settings" ADD COLUMN "smtp_pass_encrypted" text;--> statement-breakpoint
-ALTER TABLE "modbm_core"."app_settings" ADD COLUMN "smtp_from_address" text;
+ALTER TABLE "herobm_core"."app_settings" ADD COLUMN "smtp_host" text;--> statement-breakpoint
+ALTER TABLE "herobm_core"."app_settings" ADD COLUMN "smtp_port" integer;--> statement-breakpoint
+ALTER TABLE "herobm_core"."app_settings" ADD COLUMN "smtp_user" text;--> statement-breakpoint
+ALTER TABLE "herobm_core"."app_settings" ADD COLUMN "smtp_pass_encrypted" text;--> statement-breakpoint
+ALTER TABLE "herobm_core"."app_settings" ADD COLUMN "smtp_from_address" text;

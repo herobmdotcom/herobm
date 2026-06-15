@@ -6,12 +6,12 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import Link from 'next/link';
 
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useSettings } from '@/components/SettingsProvider';
-import { PUTAWAY_STATUS } from '@modbm/shared';
+import { PUTAWAY_STATUS } from '@herobm/shared';
 import SlideOver from '@/components/shared/SlideOver';
 import MasterDetailLayout from '@/components/shared/MasterDetailLayout';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 interface PutawayLine {
     id: string;

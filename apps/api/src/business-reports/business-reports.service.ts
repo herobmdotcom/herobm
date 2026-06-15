@@ -8,7 +8,7 @@ import {
 import { verifySystemHealth } from '../common/utils/security.util';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { businessReports } from '../drizzle/modbm-core-schema';
+import { businessReports } from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import { BadRequestException } from '@nestjs/common';

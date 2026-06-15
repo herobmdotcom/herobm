@@ -3,9 +3,9 @@ import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 interface KitComponentSlideOverProps {
   isOpen: boolean;

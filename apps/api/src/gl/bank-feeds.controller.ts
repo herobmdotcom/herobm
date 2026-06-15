@@ -1,4 +1,4 @@
-import { SystemResource } from '@modbm/shared';
+import { SystemResource } from '@herobm/shared';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import {

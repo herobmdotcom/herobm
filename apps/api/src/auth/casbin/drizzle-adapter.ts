@@ -1,7 +1,7 @@
 import { Adapter, Model, Helper } from 'casbin';
 import { eq, and, sql } from 'drizzle-orm';
 import type { DrizzleDB } from '../../drizzle/drizzle.module';
-import { casbinRule } from '../../drizzle/modbm-core-schema';
+import { casbinRule } from '../../drizzle/herobm-core-schema';
 
 export class DrizzleAdapter implements Adapter {
   private db: DrizzleDB;
@@ -35,7 +35,7 @@ export class DrizzleAdapter implements Adapter {
     Helper.loadPolicyLine(lineText, model);
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   public async savePolicy(model: Model): Promise<boolean> {
     // Drop all policies
     await this.db.delete(casbinRule);
@@ -61,7 +61,7 @@ export class DrizzleAdapter implements Adapter {
     return true;
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   private async savePolicyLine(ptype: string, rule: string[]): Promise<void> {
     const line = this.getPolicyLine(ptype, rule);
     await this.db.insert(casbinRule).values(line);
@@ -90,7 +90,7 @@ export class DrizzleAdapter implements Adapter {
     await this.savePolicyLine(ptype, rule);
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   public async removePolicy(
     sec: string,
     ptype: string,
@@ -119,7 +119,7 @@ export class DrizzleAdapter implements Adapter {
     await query;
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   public async removeFilteredPolicy(
     sec: string,
     ptype: string,

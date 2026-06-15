@@ -21,7 +21,7 @@ export class PdfTemplatesModule implements OnModuleInit {
         // Return dummy organization data or empty for now.
         // Usually would fetch the active tenant's org info from the DB.
         return {
-          orgName: 'MODBM Demo Organization',
+          orgName: 'HEROBM Demo Organization',
           orgAddress: '123 Enterprise Way',
           orgEmail: 'contact@demo.org',
           orgPhone: '+1-555-0100',

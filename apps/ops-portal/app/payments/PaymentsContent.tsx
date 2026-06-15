@@ -5,13 +5,14 @@ import { useTranslations } from 'next-intl';
 import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import type { ColDef } from 'ag-grid-community';
 
 import { useSettings } from '@/components/SettingsProvider';
 import PaymentManagerSlideOver from './PaymentManagerSlideOver';
-import { PAYMENT_STATE } from '@modbm/shared';
-import { getErrorMessage } from '@modbm/shared';
+import { PaymentRunGeneratorSlideOver } from './PaymentRunGeneratorSlideOver';
+import { PAYMENT_STATE } from '@herobm/shared';
+import { reportError } from '@/lib/api';
 
 interface UnifiedPayment {
   paymentId: string;
@@ -42,6 +43,7 @@ export default function PaymentsContent() {
   const [allocationFilter, setAllocationFilter, isReadyAlloc] = usePersistedFilter('payments-allocation', 'all');
   const isReady = isReadyDays && isReadyAlloc;
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
+  const [generatorSlideOverOpen, setGeneratorSlideOverOpen] = useState(false);
   const t = useTranslations('payments');
   const tCommon = useTranslations('common');
   const tStates = useTranslations('common.states');
@@ -169,7 +171,7 @@ export default function PaymentsContent() {
       window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
       setSelectedPayments([]);
     } catch (err: unknown) {
-      alert(getErrorMessage(err));
+      reportError(err, 'PaymentsContent_handleExportAba');
     } finally {
       setIsProcessingBatch(false);
     }
@@ -193,7 +195,7 @@ export default function PaymentsContent() {
       window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
       setSelectedPayments([]);
     } catch (err: unknown) {
-      alert(getErrorMessage(err));
+      reportError(err, 'PaymentsContent_handleExportNacha');
     } finally {
       setIsProcessingBatch(false);
     }
@@ -211,7 +213,7 @@ export default function PaymentsContent() {
       window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
       setSelectedPayments([]);
     } catch (err: unknown) {
-      alert(getErrorMessage(err));
+      reportError(err, 'PaymentsContent_handleSetState');
     } finally {
       setIsProcessingBatch(false);
     }
@@ -261,7 +263,23 @@ export default function PaymentsContent() {
         </>
       }
       headerActions={
-        <>
+        <div className="flex lg:hidden flex-wrap items-center justify-start gap-3 w-full">
+          <button  
+            onClick={() => {
+              setSelectedPaymentId(null);
+              setSlideOverOpen(true);
+            }}
+            className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all whitespace-nowrap"
+          >
+            {t('newPayment')}
+          </button>
+          <button
+            onClick={() => setGeneratorSlideOverOpen(true)}
+            className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
+          >
+            {t('generateRun')}
+          </button>
+
           {hasDraftSelected && showAba && (
             <button 
               onClick={handleExportAba} 
@@ -300,17 +318,69 @@ export default function PaymentsContent() {
               </button>
             </>
           )}
-
+        </div>
+      }
+      secondaryHeader={
+        <div className="flex flex-wrap items-center justify-end gap-3 w-full">
           <button  
             onClick={() => {
               setSelectedPaymentId(null);
               setSlideOverOpen(true);
             }}
-            className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all whitespace-nowrap"
+            className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
           >
             {t('newPayment')}
           </button>
-        </>
+          <button
+            onClick={() => setGeneratorSlideOverOpen(true)}
+            className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
+          >
+            {t('generateRun')}
+          </button>
+          
+          {(hasDraftSelected || hasExportedSelected) && (
+            <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-1"></div>
+          )}
+
+          {hasDraftSelected && showAba && (
+            <button 
+              onClick={handleExportAba} 
+              disabled={isProcessingBatch}
+              className="px-4 py-2 bg-[var(--brand-blue)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
+            >
+              {isProcessingBatch ? t('processing') : t('exportAba', { count: draftSelected.length })}
+            </button>
+          )}
+
+          {hasDraftSelected && showNacha && (
+            <button 
+              onClick={handleExportNacha} 
+              disabled={isProcessingBatch}
+              className="px-4 py-2 bg-[var(--brand-blue)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
+            >
+              {isProcessingBatch ? t('processing') : `Export NACHA (${draftSelected.length})`}
+            </button>
+          )}
+          
+          {hasExportedSelected && (
+            <>
+              <button 
+                onClick={() => handleBatchAction('confirm-exported')} 
+                disabled={isProcessingBatch}
+                className="px-4 py-2 bg-[var(--success)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
+              >
+                {t('confirmCount', { count: exportedSelected.length })}
+              </button>
+              <button 
+                onClick={() => handleBatchAction('reject-exported')} 
+                disabled={isProcessingBatch}
+                className="px-4 py-2 bg-[var(--danger)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
+              >
+                {t('reject')}
+              </button>
+            </>
+          )}
+        </div>
       }
     />
       
@@ -326,6 +396,13 @@ export default function PaymentsContent() {
           }}
         />
       )}
+
+      <PaymentRunGeneratorSlideOver
+        open={generatorSlideOverOpen}
+        onClose={() => setGeneratorSlideOverOpen(false)}
+        onSuccess={() => window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'))}
+        baseCurrency={baseCurrency}
+      />
     </>
   );
 }

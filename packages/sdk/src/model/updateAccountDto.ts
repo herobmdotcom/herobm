@@ -20,7 +20,7 @@ export interface UpdateAccountDto {
   customerGroupId?: string;
   stateCode?: string;
   parentCustomerId?: string;
-  taxCategoryId?: string;
+  taxPositionId?: string;
   currencyCode?: string;
   customerDiscount?: string;
   notes?: string;
@@ -29,4 +29,7 @@ export interface UpdateAccountDto {
   bankAccountNumber?: string;
   businessNumber?: string;
   isTaxRegistered?: boolean;
+  creditLimit?: string;
+  isOnCreditHold?: boolean;
+  tradingTermsId?: string;
 }

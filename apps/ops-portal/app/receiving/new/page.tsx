@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
@@ -17,7 +17,7 @@ import LocationSelect from '@/components/shared/LocationSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import { useTranslations } from 'next-intl';
 import { formatAmount } from '@/lib/currency';
-import { getErrorMessage, MATCH_STATUS } from '@modbm/shared';
+import { getErrorMessage, MATCH_STATUS } from '@herobm/shared';
 
 interface DraftLine {
   id: string;

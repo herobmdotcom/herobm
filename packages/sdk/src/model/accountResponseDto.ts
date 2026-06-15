@@ -24,7 +24,7 @@ export interface AccountResponseDto {
   emailAddress1?: string;
   customerGroupId?: string;
   parentCustomerId?: string;
-  taxCategoryId?: string;
+  taxPositionId?: string;
   currencyCode: string;
   customerDiscount?: string;
   notes?: string;
@@ -33,6 +33,9 @@ export interface AccountResponseDto {
   bankAccountNumber?: string;
   businessNumber?: string;
   isTaxRegistered?: boolean;
+  creditLimit?: string;
+  isOnCreditHold?: boolean;
+  tradingTermsId?: string;
   stateCode: string;
   sourceId?: string;
   source: string;

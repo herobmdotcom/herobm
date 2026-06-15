@@ -3,7 +3,7 @@
  *
  * Guards against hardcoded state strings in API requests or URLs.
  *
- * All stateCode values MUST use the centralized enums from `@modbm/shared`
+ * All stateCode values MUST use the centralized enums from `@herobm/shared`
  * (e.g. `RETURN_STATE.CONFIRMED`, `SALES_ORDER_STATE.DRAFT`).
  */
 import * as fs from 'fs';
@@ -144,7 +144,7 @@ describe('State Enums Boundary (structural)', () => {
 
       throw new Error(
         `\nState Enums Boundary Violations Found:\n\n${report}\n\n` +
-          `State strings must use centralized enums from @modbm/shared (e.g. RETURN_STATE.CONFIRMED).\n` +
+          `State strings must use centralized enums from @herobm/shared (e.g. RETURN_STATE.CONFIRMED).\n` +
           `Do not use hardcoded strings for 'stateCode' inside URLs, object literals, or comparisons.`,
       );
     }

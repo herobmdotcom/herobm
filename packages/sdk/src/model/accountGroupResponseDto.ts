@@ -15,6 +15,7 @@ export interface AccountGroupResponseDto {
   defaultRevenueAccountId?: string;
   defaultCostCenterId?: string;
   defaultActivityId?: string;
+  stateCode?: string;
   isOnCreditHold?: boolean;
   creditLimit?: string;
   tradingTermsId?: string;

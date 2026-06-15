@@ -8,10 +8,10 @@ const db = drizzle(pool);
 
 async function run() {
   try {
-    const plocationsCols = await db.execute(\SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'modbm_mirror' AND table_name = 'plocations'\);
+    const plocationsCols = await db.execute(\SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'herobm_mirror' AND table_name = 'plocations'\);
     console.log('PLOCATIONS Columns:', plocationsCols.rows);
     
-    const pbinsCols = await db.execute(\SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'modbm_mirror' AND table_name = 'pbins'\);
+    const pbinsCols = await db.execute(\SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = 'herobm_mirror' AND table_name = 'pbins'\);
     console.log('PBINS Columns:', pbinsCols.rows);
   } catch (err) {
     console.error(err);

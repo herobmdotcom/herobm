@@ -1,6 +1,6 @@
-# ModBM MCP Server
+# HeroBM MCP Server
 
-This directory contains the Model Context Protocol (MCP) server for ModBM. It provides an interface for AI agents and assistants (like Cursor, Claude Desktop, etc.) to securely interact with the ModBM API and Database.
+This directory contains the Model Context Protocol (MCP) server for HeroBM. It provides an interface for AI agents and assistants (like Cursor, Claude Desktop, etc.) to securely interact with the HeroBM API and Database.
 
 ## Installation / Configuration in AI Clients
 
@@ -15,10 +15,10 @@ npm run dev -s -w apps/mcp-server
 ### Cursor
 1. Go to **Settings > Features > MCP Servers**
 2. Click **+ Add new MCP server**
-3. Name: `modbm`
+3. Name: `herobm`
 4. Type: `command`
 5. Command: `npm run dev -s -w apps/mcp-server`
-6. Make sure to run Cursor from the root of the ModBM workspace, or use an absolute path to the workspace in a custom wrapper script.
+6. Make sure to run Cursor from the root of the HeroBM workspace, or use an absolute path to the workspace in a custom wrapper script.
 
 ### Claude Desktop
 Add the following to your `claude_desktop_config.json` file:
@@ -28,15 +28,15 @@ Add the following to your `claude_desktop_config.json` file:
 ```json
 {
   "mcpServers": {
-    "modbm": {
+    "herobm": {
       "command": "npm",
       "args": ["run", "dev", "-s", "-w", "apps/mcp-server"],
-      "cwd": "ABSOLUTE_PATH_TO_MODBM_ROOT"
+      "cwd": "ABSOLUTE_PATH_TO_HEROBM_ROOT"
     }
   }
 }
 ```
-*(Remember to replace `ABSOLUTE_PATH_TO_MODBM_ROOT` with the actual path to the modbm-monorepo folder on your machine).*
+*(Remember to replace `ABSOLUTE_PATH_TO_HEROBM_ROOT` with the actual path to the herobm-monorepo folder on your machine).*
 
 ## Manual Testing (Inspector)
 

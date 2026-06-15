@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import toast from 'react-hot-toast';
 import {
   buildReallocateLocationOptions,

@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { reportError, ApiError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { 
     SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
     SALES_ORDER_STATE
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 import type {
     OrderDetail, TaxCategory, InventoryLevel,

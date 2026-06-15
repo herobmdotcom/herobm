@@ -1,6 +1,6 @@
 # Purchase Order Management
 
-This document describes how purchase orders work in modbm, including the order lifecycle, pricing, currency, and the receiving process for suppliers.
+This document describes how purchase orders work in herobm, including the order lifecycle, pricing, currency, and the receiving process for suppliers.
 
 ---
 
@@ -111,7 +111,7 @@ When a shipment arrives with a packing slip, a Reception is created in the syste
 
 ### Data Model
 
-Receptions are stored as two tables in `modbm_core`:
+Receptions are stored as two tables in `herobm_core`:
 
 - **`purchase_order_receptions`** — reception header (linked to `purchase_orders`), storing the auto-generated reception number, packing slip number, notes, and the user who created it.
 - **`purchase_order_reception_lines`** — per-line received quantities (linked to `purchase_order_line_items`).

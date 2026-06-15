@@ -4,7 +4,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useTranslations } from 'next-intl';
 
 import { useState, useEffect, useRef } from 'react';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 
 interface LogsResponse {
   lines: string[];
@@ -24,7 +24,7 @@ export default function SystemLogsPage() {
   const fetchIdRef = useRef(0);
 
   useEffect(() => {
-    const savedService = localStorage.getItem('modbm_logs_service');
+    const savedService = localStorage.getItem('herobm_logs_service');
     if (savedService) {
       setService(savedService);
     }
@@ -33,7 +33,7 @@ export default function SystemLogsPage() {
 
   const handleServiceChange = (newService: string) => {
     setService(newService);
-    localStorage.setItem('modbm_logs_service', newService);
+    localStorage.setItem('herobm_logs_service', newService);
   };
 
   const loadLogs = async () => {

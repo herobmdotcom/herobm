@@ -74,7 +74,7 @@ export class CreateAccountDto {
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
-  taxCategoryId?: string;
+  taxPositionId?: string;
 
   @IsOptional()
   @IsString()
@@ -107,6 +107,19 @@ export class CreateAccountDto {
   @IsOptional()
   @IsBoolean()
   isTaxRegistered?: boolean;
+
+  @IsOptional()
+  @IsNumberString()
+  creditLimit?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isOnCreditHold?: boolean;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  tradingTermsId?: string;
 }
 
 export class UpdateAccountDto {
@@ -171,7 +184,7 @@ export class UpdateAccountDto {
 
   @IsOptional()
   @IsUUID()
-  taxCategoryId?: string;
+  taxPositionId?: string;
 
   @IsOptional()
   @IsString()
@@ -204,6 +217,19 @@ export class UpdateAccountDto {
   @IsOptional()
   @IsBoolean()
   isTaxRegistered?: boolean;
+
+  @IsOptional()
+  @IsNumberString()
+  creditLimit?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isOnCreditHold?: boolean;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  tradingTermsId?: string;
 }
 
 export class CreateAccountGroupDto {
@@ -264,6 +290,14 @@ export class UpdateAccountGroupDto {
   @IsOptional()
   @IsUUID()
   defaultActivityId?: string;
+
+  @IsOptional()
+  @IsString()
+  stateCode?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isOnCreditHold?: boolean;
 }
 
 export class AccountResponseDto {
@@ -281,7 +315,7 @@ export class AccountResponseDto {
   emailAddress1?: string;
   customerGroupId?: string;
   parentCustomerId?: string;
-  taxCategoryId?: string;
+  taxPositionId?: string;
   currencyCode!: string;
   customerDiscount?: string;
   notes?: string;
@@ -290,6 +324,9 @@ export class AccountResponseDto {
   bankAccountNumber?: string;
   businessNumber?: string;
   isTaxRegistered?: boolean;
+  creditLimit?: string;
+  isOnCreditHold?: boolean;
+  tradingTermsId?: string;
   stateCode!: string;
   sourceId?: string;
   source!: string;
@@ -317,6 +354,7 @@ export class AccountGroupResponseDto {
   defaultRevenueAccountId?: string;
   defaultCostCenterId?: string;
   defaultActivityId?: string;
+  stateCode?: string;
   isOnCreditHold?: boolean;
   creditLimit?: string;
   tradingTermsId?: string;

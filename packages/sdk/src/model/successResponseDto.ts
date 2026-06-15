@@ -7,5 +7,5 @@
  */
 
 export interface SuccessResponseDto {
-  success?: boolean;
+  success: boolean;
 }

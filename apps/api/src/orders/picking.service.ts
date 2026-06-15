@@ -21,10 +21,12 @@ import {
   salesOrderShipmentLines,
   backorders,
   customers as coreAccounts,
+  customerGroups,
+  salesInvoices,
   transferOrders,
   transferOrderLines,
   transferOrderPicks,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { InventoryService } from '../inventory/inventory.service';
 import {
   findOrder,
@@ -48,7 +50,7 @@ import {
   TRANSFER_ORDER_PICK_STATE,
   BACKORDER_STATE,
   getValidStates,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 const VALID_PICK_STATES = getValidStates(SALES_ORDER_PICK_TRANSITIONS);
 
@@ -445,26 +447,42 @@ export class PickingService {
         createdOn: salesOrders.createdOn,
         createdBy: salesOrders.createdBy,
         currencyCode: salesOrders.currencyCode,
+        isCreditBlocked: sql<boolean>`CASE 
+          WHEN ${salesOrders.creditHoldOverrideAt} IS NOT NULL THEN false
+          ELSE (
+            ${coreAccounts.stateCode} != 'active'
+            OR ${customerGroups.stateCode} != 'active'
+            OR ${coreAccounts.isOnCreditHold} = true
+            OR (${customerGroups.isOnCreditHold} = true AND ${coreAccounts.creditLimit} IS NULL AND ${coreAccounts.tradingTermsId} IS NULL)
+            OR (
+              SELECT COALESCE(SUM(si.outstanding_amount), 0)
+              FROM herobm_core.sales_invoices si
+              WHERE si.customer_id = ${salesOrders.customerId}
+                AND si.state_code NOT IN ('draft', 'cancelled')
+                AND si.due_date < CURRENT_DATE
+            ) > 0
+          )
+        END`,
         lineId: salesOrderLineItems.salesOrderLineId,
         lineQuantity: salesOrderLineItems.quantity,
         isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} = 'inventory' THEN true ELSE false END`,
         onHand: sql<number>`COALESCE((
           SELECT sum(bc.actual_quantity)
-          FROM modbm_core.bin_contents bc
-          JOIN modbm_core.bins b ON b.bin_id = bc.bin_id
-          JOIN modbm_core.zones z ON z.zone_id = b.zone_id
+          FROM herobm_core.bin_contents bc
+          JOIN herobm_core.bins b ON b.bin_id = bc.bin_id
+          JOIN herobm_core.zones z ON z.zone_id = b.zone_id
           WHERE bc.product_id = ${salesOrderLineItems.productId}
             AND z.location_id = ${salesOrderLineItems.fulfillmentLocationId}
             AND ${isPickableBinSqlCondition('b')}
         ), 0)`,
         pickedQty: sql<number>`COALESCE((
           SELECT SUM(quantity) 
-          FROM modbm_core.sales_order_picks 
+          FROM herobm_core.sales_order_picks 
           WHERE sales_order_line_id = ${salesOrderLineItems.salesOrderLineId}
             AND state_code != ${SALES_ORDER_PICK_STATE.CANCELLED}
         ), 0)`,
         hasAllocation: sql<boolean>`EXISTS(
-          SELECT 1 FROM modbm_core.backorders bo
+          SELECT 1 FROM herobm_core.backorders bo
           WHERE bo.sales_order_line_id = ${salesOrderLineItems.salesOrderLineId}
             AND bo.state_code = ${BACKORDER_STATE.RECEIVED_RESERVED}
         )`,
@@ -477,6 +495,10 @@ export class PickingService {
       .leftJoin(
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
+      )
+      .leftJoin(
+        customerGroups,
+        eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),
       )
       .leftJoin(
         coreProducts,
@@ -506,21 +528,22 @@ export class PickingService {
         createdOn: transferOrders.createdOn,
         createdBy: transferOrders.createdBy,
         currencyCode: sql<string>`'N/A'`,
+        isCreditBlocked: sql<boolean>`false`,
         lineId: transferOrderLines.transferOrderLineId,
         lineQuantity: transferOrderLines.quantity,
         isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} = 'inventory' THEN true ELSE false END`,
         onHand: sql<number>`COALESCE((
           SELECT sum(bc.actual_quantity)
-          FROM modbm_core.bin_contents bc
-          JOIN modbm_core.bins b ON b.bin_id = bc.bin_id
-          JOIN modbm_core.zones z ON z.zone_id = b.zone_id
+          FROM herobm_core.bin_contents bc
+          JOIN herobm_core.bins b ON b.bin_id = bc.bin_id
+          JOIN herobm_core.zones z ON z.zone_id = b.zone_id
           WHERE bc.product_id = ${transferOrderLines.productId}
             AND z.location_id = ${transferOrders.sourceLocationId}
             AND ${isPickableBinSqlCondition('b')}
         ), 0)`,
         pickedQty: sql<number>`COALESCE((
           SELECT SUM(quantity) 
-          FROM modbm_core.transfer_order_picks 
+          FROM herobm_core.transfer_order_picks 
           WHERE transfer_order_line_id = ${transferOrderLines.transferOrderLineId}
             AND state_code != ${TRANSFER_ORDER_PICK_STATE.CANCELLED}
         ), 0)`,
@@ -570,6 +593,7 @@ export class PickingService {
         createdBy: string | null;
         totalPrice: string | null;
         currencyCode: string | null;
+        isCreditBlocked: boolean;
         type: string;
         _hasAllocation?: boolean;
         _linesUnfulfilled?: number;
@@ -592,6 +616,7 @@ export class PickingService {
           createdBy: row.createdBy,
           totalPrice: null,
           currencyCode: row.currencyCode,
+          isCreditBlocked: row.isCreditBlocked,
           _linesUnfulfilled: 0,
           _linesFullyPickable: 0,
           _linesPartiallyPickable: 0,
@@ -670,7 +695,7 @@ export class PickingService {
   // Cancel Pick Line
   // -------------------------------------------------------------------------
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   async cancelPick(orderId: string, pickId: string, actor: string) {
     const pickRows = await this.db
       .select({
@@ -754,7 +779,7 @@ export class PickingService {
 
       // 3. Update order modifiedOn
       await tx
-        .update(salesOrders) // @modbm-skip-audit
+        .update(salesOrders) // @herobm-skip-audit
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
@@ -854,19 +879,35 @@ export class PickingService {
         createdOn: salesOrders.createdOn,
         createdBy: salesOrders.createdBy,
         currencyCode: salesOrders.currencyCode,
+        isCreditBlocked: sql<boolean>`CASE 
+          WHEN ${salesOrders.creditHoldOverrideAt} IS NOT NULL THEN false
+          ELSE (
+            ${coreAccounts.stateCode} != 'active'
+            OR ${customerGroups.stateCode} != 'active'
+            OR ${coreAccounts.isOnCreditHold} = true
+            OR (${customerGroups.isOnCreditHold} = true AND ${coreAccounts.creditLimit} IS NULL AND ${coreAccounts.tradingTermsId} IS NULL)
+            OR (
+              SELECT COALESCE(SUM(si.outstanding_amount), 0)
+              FROM herobm_core.sales_invoices si
+              WHERE si.customer_id = ${salesOrders.customerId}
+                AND si.state_code NOT IN ('draft', 'cancelled')
+                AND si.due_date < CURRENT_DATE
+            ) > 0
+          )
+        END`,
         lineId: salesOrderLineItems.salesOrderLineId,
         lineQuantity: salesOrderLineItems.quantity,
         isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} = 'inventory' OR ${coreProducts.productType} IS NULL THEN true ELSE false END`,
         pickedQty: sql<number>`COALESCE((
           SELECT SUM(quantity)
-          FROM modbm_core.sales_order_picks
+          FROM herobm_core.sales_order_picks
           WHERE sales_order_line_id = ${salesOrderLineItems.salesOrderLineId}
             AND state_code != ${SALES_ORDER_PICK_STATE.CANCELLED}
         ), 0)`,
         shippedQty: sql<number>`COALESCE((
           SELECT SUM(sl.quantity_shipped)
-          FROM modbm_core.sales_order_shipment_lines sl
-          JOIN modbm_core.sales_order_shipments s ON s.shipment_id = sl.shipment_id
+          FROM herobm_core.sales_order_shipment_lines sl
+          JOIN herobm_core.sales_order_shipments s ON s.shipment_id = sl.shipment_id
           WHERE sl.sales_order_line_id = ${salesOrderLineItems.salesOrderLineId}
              AND s.state_code != ${SALES_ORDER_PICK_STATE.CANCELLED}
         ), 0)`,
@@ -879,6 +920,10 @@ export class PickingService {
       .leftJoin(
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
+      )
+      .leftJoin(
+        customerGroups,
+        eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),
       )
       .leftJoin(
         coreProducts,

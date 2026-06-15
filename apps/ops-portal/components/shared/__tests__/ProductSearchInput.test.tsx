@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProductSearchInput from '../ProductSearchInput';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 
 // Mock next-intl translations
 jest.mock('next-intl', () => ({
@@ -9,7 +9,7 @@ jest.mock('next-intl', () => ({
 }));
 
 // Mock sdk
-jest.mock('@modbm/sdk', () => ({
+jest.mock('@herobm/sdk', () => ({
   productsControllerFindAll: jest.fn(),
 }));
 

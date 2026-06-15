@@ -26,7 +26,7 @@ jest.mock('@/lib/api', () => ({
     reportError: jest.fn(),
 }));
 
-jest.mock('@modbm/sdk', () => ({
+jest.mock('@herobm/sdk', () => ({
     __esModule: true,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ordersControllerFindOne: (...args: any[]) => mockSdkFetch(...args),
@@ -64,7 +64,7 @@ jest.mock('@modbm/sdk', () => ({
 
 import { useOrder } from '../useOrder';
 import type { OrderDetail } from '../types';
-import { SALES_ORDER_STATE } from '@modbm/shared';
+import { SALES_ORDER_STATE } from '@herobm/shared';
 
 // ── Fixtures ─────────────────────────────────────────────────────────
 
@@ -400,7 +400,7 @@ describe('useOrder — mutations', () => {
             tradePrice: '70.00',
         };
 
-        await act(async () => { await result.current.addLineFromProduct(product as unknown as import('@modbm/sdk').ProductResponseDto); });
+        await act(async () => { await result.current.addLineFromProduct(product as unknown as import('@herobm/sdk').ProductResponseDto); });
 
         expect(mockSdkMutate).toHaveBeenCalledWith(
             'addLine',
@@ -430,7 +430,7 @@ describe('useOrder — mutations', () => {
             listPrice: '50.00',
         };
 
-        await act(async () => { await result.current.addLineFromProduct(duplicate as unknown as import('@modbm/sdk').ProductResponseDto); });
+        await act(async () => { await result.current.addLineFromProduct(duplicate as unknown as import('@herobm/sdk').ProductResponseDto); });
 
         expect(mockSdkMutate).not.toHaveBeenCalled();
         expect(toast).toHaveBeenCalled();

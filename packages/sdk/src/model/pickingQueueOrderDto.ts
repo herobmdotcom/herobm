@@ -19,6 +19,7 @@ export interface PickingQueueOrderDto {
   createdBy: string;
   /** @nullable */
   currencyCode?: string | null;
+  isCreditBlocked: boolean;
   type?: string;
   pickabilityStatus: string;
   hasAllocation: boolean;

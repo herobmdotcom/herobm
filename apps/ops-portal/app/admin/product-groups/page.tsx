@@ -3,11 +3,12 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useMemo } from 'react';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
+import FinancialDefaultsSlideOver from '@/components/shared/FinancialDefaultsSlideOver';
 
 export default function ProductGroupsAdmin() {
   const t = useTranslations('admin.productGroups');
@@ -21,18 +22,19 @@ export default function ProductGroupsAdmin() {
   const [costCenters, setCostCenters] = useState<api.CostCenterResponseDto[]>([]);
   const [activities, setActivities] = useState<api.ActivityResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [financialGroup, setFinancialGroup] = useState<Partial<api.ProductGroupResponseDto> | null>(null);
   
   const loadData = async () => {
     try {
       setLoading(true);
       const [data, glAccs, cc, act] = await Promise.all([
-        api.productGroupsControllerFindAll().then(({ data: page }) => page.data || []),
+        api.productGroupsControllerFindAll().then(r => (Array.isArray(r.data) ? r.data : ((r.data as unknown as { data: api.ProductGroupResponseDto[] }).data) || []) as api.ProductGroupResponseDto[]),
         api.glControllerGetAccounts({ format: 'flat' }).then(r => r.data || []),
         api.costCentersControllerFindAll().then(r => r.data),
         api.activitiesControllerFindAll().then(r => r.data)
       ]);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sorted = [...data].sort((a: any, b: any) => 
+      const sorted = [...data].sort((a: api.ProductGroupResponseDto, b: api.ProductGroupResponseDto) => 
         a.name.localeCompare(b.name, undefined, { numeric: true })
       );
       setGroups(sorted);
@@ -61,11 +63,25 @@ export default function ProductGroupsAdmin() {
   const columns: InlineTableColumn<any>[] = useMemo(() => [
     { key: 'groupCode', title: tc('code'), type: 'text', placeholder: t('placeholders.code'), width: 100 },
     { key: 'name', title: tc('name'), type: 'text', placeholder: t('placeholders.name') },
-    { key: 'defaultExpenseAccountId', title: tc('defExpenseAccount'), type: 'select', options: glAccountOptions, emptyLabel: t_gen('selectNone'), width: 140 },
-    { key: 'defaultRevenueAccountId', title: tc('defRevAccount'), type: 'select', options: glAccountOptions, emptyLabel: t_gen('selectNone'), width: 140 },
-    { key: 'defaultCostCenterId', title: tc('defCostCenter'), type: 'select', options: costCenterOptions, emptyLabel: t_gen('selectNone'), width: 140 },
-    { key: 'defaultActivityId', title: tc('defActivity'), type: 'select', options: activityOptions, emptyLabel: t_gen('selectNone'), width: 140 }
-  ], [tc, t, t_gen, glAccountOptions, costCenterOptions, activityOptions]);
+    { 
+      key: 'financials', 
+      title: tc('financialDefaults'), 
+      width: 140,
+      render: (row, isEditing) => {
+        if (isEditing) {
+          return <span className="text-xs text-muted italic">{tc('saveToManage')}</span>;
+        }
+        return (
+          <button 
+            className="btn btn-secondary btn-xs relative"
+            onClick={() => setFinancialGroup(row)}
+          >
+            {tc('manage')}
+          </button>
+        );
+      }
+    }
+  ], [tc, t]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSave = async (payload: any, isNew: boolean) => {
@@ -126,7 +142,7 @@ export default function ProductGroupsAdmin() {
           title={<span style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>{t('definedGroups')}</span>}
           columns={columns}
           data={groups}
-          rowKey={row => row.id || ''}
+          rowKey={row => ((row as Record<string, unknown>).productGroupId as string) || ((row as Record<string, unknown>).id as string) || ''}
           onSave={handleSave}
           onDelete={handleDelete}
           onAdd={() => ({
@@ -141,6 +157,18 @@ export default function ProductGroupsAdmin() {
           emptyLabel={loading ? null : t('noGroups')}
         />
       </div>
+
+      <FinancialDefaultsSlideOver
+        isOpen={!!financialGroup}
+        onClose={() => setFinancialGroup(null)}
+        groupType="product"
+        ownerLabel={financialGroup ? `${financialGroup.groupCode} — ${financialGroup.name}` : ''}
+        data={financialGroup}
+        onSave={(data) => handleSave(data, false)}
+        glAccountOptions={glAccountOptions}
+        costCenterOptions={costCenterOptions}
+        activityOptions={activityOptions}
+      />
     </div>
   );
 }

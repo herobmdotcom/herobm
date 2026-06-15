@@ -3,7 +3,7 @@
 import { reportError } from '@/lib/api';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { businessReportsControllerGetReports, businessReportsControllerRunReport, userSettingsControllerGetSettings } from '@modbm/sdk';
+import { businessReportsControllerGetReports, businessReportsControllerRunReport, userSettingsControllerGetSettings } from '@herobm/sdk';
 import { ReportChartViewer } from '@/components/reporting/ReportChartViewer';
 import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';

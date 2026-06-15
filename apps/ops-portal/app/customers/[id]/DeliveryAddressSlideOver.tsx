@@ -1,10 +1,9 @@
-/* eslint-disable i18next/no-literal-string */
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
-import { getErrorMessage, COUNTRIES } from '@modbm/shared';
+import { getErrorMessage, COUNTRIES } from '@herobm/shared';
 
 interface DeliveryAddressSlideOverProps {
   isOpen: boolean;
@@ -25,6 +24,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
   onSaved,
 }) => {
   const tCommon = useTranslations('common');
+  const t = useTranslations('deliveryAddress');
   const [saving, setSaving] = useState(false);
   const [dto, setDto] = useState({
     addressName: '',
@@ -71,7 +71,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
 
   const handleSave = async () => {
     if (!dto.addressLine1 || !dto.country) {
-      toast.error('Address Line 1 and Country are required');
+      toast.error(t('requiredError'));
       return;
     }
 
@@ -81,13 +81,13 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
         await api.deliveryAddressesControllerUpdate(addressId, {
           ...dto,
         });
-        toast.success('Address updated');
+        toast.success(t('updatedSuccess'));
       } else {
         await api.deliveryAddressesControllerCreate({
           ...dto,
           customerId,
         });
-        toast.success('Address created');
+        toast.success(t('createdSuccess'));
       }
       onSaved();
       onClose();
@@ -102,7 +102,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
     <SlideOver
       isOpen={isOpen}
       onClose={onClose}
-      title={addressId ? 'Edit Delivery Address' : 'Add Delivery Address'}
+      title={addressId ? t('editAddress') : t('addAddress')}
       footer={
         <div className="flex justify-end gap-3 w-full">
           <button
@@ -118,9 +118,10 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
             disabled={saving}
           >
             {saving ? (
-              <span className="material-symbols-outlined animate-spin text-sm">
-                progress_activity
-              </span>
+              <>
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+              </>
             ) : null}
             {tCommon('save')}
           </button>
@@ -130,20 +131,20 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
       <div className="flex flex-col gap-4 py-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Address Name
+            {t('addressName')}
           </label>
           <input
             type="text"
             className="input"
             value={dto.addressName}
             onChange={(e) => handleChange('addressName', e.target.value)}
-            placeholder="e.g. Headquarters"
+            placeholder={t('addressNamePlaceholder')}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Address Line 1 *
+            {t('addressLine1')}
           </label>
           <input
             type="text"
@@ -155,7 +156,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Address Line 2
+            {t('addressLine2')}
           </label>
           <input
             type="text"
@@ -168,7 +169,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              City
+              {t('city')}
             </label>
             <input
               type="text"
@@ -179,7 +180,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              State / Province
+              {t('stateOrProvince')}
             </label>
             <input
               type="text"
@@ -193,7 +194,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Postal Code
+              {t('postalCode')}
             </label>
             <input
               type="text"
@@ -204,7 +205,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Country *
+              {t('country')}
             </label>
             <select
               className="input"
@@ -212,7 +213,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
               onChange={(e) => handleChange('country', e.target.value)}
             >
               <option value="" disabled>
-                Select Country
+                {t('selectCountry')}
               </option>
               {COUNTRIES.map((c) => (
                 <option key={c.code} value={c.code}>
@@ -235,7 +236,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
             htmlFor="isPrimaryDeliveryAddress"
             className="text-sm text-gray-700 cursor-pointer"
           >
-            Set as primary delivery address
+            {t('setAsPrimary')}
           </label>
         </div>
       </div>

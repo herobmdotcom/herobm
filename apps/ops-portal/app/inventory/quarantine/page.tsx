@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useSettings } from '@/components/SettingsProvider';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import toast from 'react-hot-toast';
 import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';

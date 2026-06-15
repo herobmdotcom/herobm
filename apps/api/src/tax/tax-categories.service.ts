@@ -14,7 +14,7 @@ import {
 import { eq, ne, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { taxCategories } from '../drizzle/modbm-core-schema';
+import { taxCategories } from '../drizzle/herobm-core-schema';
 import { CreateTaxCategoryDto, UpdateTaxCategoryDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -79,7 +79,7 @@ export class TaxCategoriesService {
       // If the new category wants to be default, unset any existing default first
       if (dto.isDefault) {
         await tx
-          .update(taxCategories) // @modbm-skip-audit
+          .update(taxCategories) // @herobm-skip-audit
           .set({ isDefault: false })
           .where(eq(taxCategories.isDefault, true));
       }
@@ -115,7 +115,7 @@ export class TaxCategoriesService {
       // If toggling isDefault to true, unset the current default
       if (dto.isDefault === true) {
         await tx
-          .update(taxCategories) // @modbm-skip-audit
+          .update(taxCategories) // @herobm-skip-audit
           .set({ isDefault: false })
           .where(
             and(

@@ -10,8 +10,8 @@ import {
   purchaseOrders as corePurchaseOrders,
   binContents as coreBinContents,
   salesOrderLineItems as coreSalesOrderLines,
-} from '../drizzle/modbm-core-schema';
-import { SALES_ORDER_STATE, PURCHASE_ORDER_STATE } from '@modbm/shared';
+} from '../drizzle/herobm-core-schema';
+import { SALES_ORDER_STATE, PURCHASE_ORDER_STATE } from '@herobm/shared';
 import { EventType } from '../common/event-types';
 export interface SearchResult {
   id: string;
@@ -271,7 +271,7 @@ export class DashboardService {
         e.entity_display_name as "entityDisplay", 
         e.actor, 
         e.created_on as "timestamp"
-      FROM modbm_core.dashboard_timeline e
+      FROM herobm_core.dashboard_timeline e
       WHERE ${whereClause}
       ORDER BY e.created_on DESC
       LIMIT ${limit}

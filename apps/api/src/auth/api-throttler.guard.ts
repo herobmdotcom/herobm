@@ -7,7 +7,7 @@ import {
 } from '@nestjs/throttler';
 import { Inject } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { appSettings } from '../drizzle/modbm-core-schema';
+import { appSettings } from '../drizzle/herobm-core-schema';
 import { Reflector } from '@nestjs/core';
 
 @Injectable()

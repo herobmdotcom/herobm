@@ -8,7 +8,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ReturnsSection from '../ReturnsSection';
 import type { OrderDetail, OrderReturn } from '../types';
-import { RETURN_STATE, RETURN_TRANSITIONS, RETURN_LIFECYCLE, SALES_ORDER_STATE } from '@modbm/shared';
+import { RETURN_STATE, RETURN_TRANSITIONS, RETURN_LIFECYCLE, SALES_ORDER_STATE } from '@herobm/shared';
 
 // ── Mocks ────────────────────────────────────────────────────────────
 jest.mock('next-intl', () => ({
@@ -19,7 +19,7 @@ const mockOrderReturnsControllerUpdateReturnLine = jest.fn().mockResolvedValue({
 const mockOrderReturnsControllerRemoveReturnLine = jest.fn().mockResolvedValue({});
 const mockOrderReturnsControllerCreateReturn = jest.fn().mockResolvedValue({});
 const mockSalesCreditNotesControllerCreateCreditNote = jest.fn().mockResolvedValue({});
-jest.mock('@modbm/sdk', () => ({
+jest.mock('@herobm/sdk', () => ({
     __esModule: true,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     orderReturnsControllerChangeReturnState: (...args: any[]) => mockOrderReturnsControllerChangeReturnState(...args),
@@ -41,8 +41,8 @@ jest.mock('@/lib/currency', () => ({
     formatAmount: (v: number, cc: string) => `${cc} ${v.toFixed(2)}`,
 }));
 
-jest.mock('@modbm/shared', () => {
-    const actual = jest.requireActual('@modbm/shared');
+jest.mock('@herobm/shared', () => {
+    const actual = jest.requireActual('@herobm/shared');
     return {
         ...actual,
         RETURN_TRANSITIONS: {

@@ -5,7 +5,7 @@ This doc expands on system_overview.md to give more details about technical choi
 ## 1. Architectural Strategy: The Composable ERP
 The goal is to transition from a monolithic legacy system (ABM) to a modern, decoupled architecture. 
 
-- **Consolidated Native Core:** We custom-build the Order Management (OMS), Warehouse Management (WMS), complex Pricing, CRM, and the **General Ledger (GL)** directly into the ModBM ecosystem. By housing the GL natively within the Postgres `modbm_core` database, we guarantee ACID compliance and referential integrity between operational data (invoices, shipments) and financial data (journal entries).
+- **Consolidated Native Core:** We custom-build the Order Management (OMS), Warehouse Management (WMS), complex Pricing, CRM, and the **General Ledger (GL)** directly into the HeroBM ecosystem. By housing the GL natively within the Postgres `herobm_core` database, we guarantee ACID compliance and referential integrity between operational data (invoices, shipments) and financial data (journal entries).
 - **Asynchronous Extensibility:** While the core is self-sufficient, we use a Transactional Outbox pattern to safely and asynchronously synchronize data to external downstream systems (such as legacy ERPs, BI tools, or specialized tax engines) without bottlenecking operational workflows.
 
 ## 2. High-Level System Architecture
@@ -37,7 +37,7 @@ flowchart TD
     end
 
     %% Databases
-    DB_Custom[(modbm_core DB \n PostgreSQL)]
+    DB_Custom[(herobm_core DB \n PostgreSQL)]
 
     %% Integration
     Broker{{Event Broker / Queue \n Redis + BullMQ}}
@@ -177,9 +177,9 @@ sequenceDiagram
 ```
 
 ## 6. Domain Master Data Boundaries
-To prevent "split-brain" scenarios, the native ModBM system is the single source of truth:
+To prevent "split-brain" scenarios, the native HeroBM system is the single source of truth:
 
-- ModBM Core Owns: Products/SKUs, Multi-location Inventory, Bins, Sales Orders, Purchase Orders, CRM data, Chart of Accounts, Tax Rates, General Ledger Journals, AR/AP Balances.
+- HeroBM Core Owns: Products/SKUs, Multi-location Inventory, Bins, Sales Orders, Purchase Orders, CRM data, Chart of Accounts, Tax Rates, General Ledger Journals, AR/AP Balances.
 
 - External System Synchronization: If synchronising with a downstream BI tool or external CRM, the Integration Worker automatically provisions lightweight mapping profiles (using `external_id`) purely so data can be attached correctly downstream.
 
@@ -207,7 +207,7 @@ To maintain the required "Always Output Observability" mandate, we use a robust 
 - **Centralized Telemetry Hooks**:
   - The frontend ships client-side unhandled exceptions and promise rejections to a backend `TelemetryController`, which emits them to `stdout` as rigidly formatted JSON payloads.
   - The backend uses a global `AllExceptionsFilter` to intercept every unhandled server error and dumps it to `stdout` as structured JSON.
-- **Forward-Compatibility**: By strictly enforcing structured JSON output on `stdout`, the system remains "PLG-ready" or compatible with any external log forwarder (like Datadog or Splunk). A deployer can simply attach a log agent to the host's Docker socket without requiring any code modifications to the ModBM application itself.
+- **Forward-Compatibility**: By strictly enforcing structured JSON output on `stdout`, the system remains "PLG-ready" or compatible with any external log forwarder (like Datadog or Splunk). A deployer can simply attach a log agent to the host's Docker socket without requiring any code modifications to the HeroBM application itself.
 
 ## Areas for your review before V2:
 Pricing Complexity: ABM is known for having incredibly complex, customer-specific pricing matrices (PRICEDETAILS, PSUBMATRIX). Do you want to replicate this exact logic in the custom app, or use this replatforming as an opportunity to simplify your pricing model?

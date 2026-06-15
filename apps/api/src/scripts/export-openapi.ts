@@ -12,7 +12,7 @@ async function bootstrap() {
     logger: ['error', 'warn'],
   });
   const config = new DocumentBuilder()
-    .setTitle('ModBM API')
+    .setTitle('HeroBM API')
     .setDescription('Core Forgeron API System endpoints')
     .setVersion('1.0')
     .addTag('Auth', 'Authentication and Authorization')

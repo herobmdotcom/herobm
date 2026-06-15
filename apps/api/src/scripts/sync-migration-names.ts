@@ -37,7 +37,7 @@ async function main() {
 
   // 1. Fetch current migrations from the DB
   const existingMigrations = await sql<{ filename: string }[]>`
-    SELECT filename FROM modbm_core.schema_migrations;
+    SELECT filename FROM herobm_core.schema_migrations;
   `;
 
   const migrationSet = new Set(existingMigrations.map((m) => m.filename));
@@ -49,7 +49,7 @@ async function main() {
     if (migrationSet.has(oldName)) {
       console.log(`Syncing rename: ${oldName} -> ${newName}`);
       await sql`
-        UPDATE modbm_core.schema_migrations
+        UPDATE herobm_core.schema_migrations
         SET filename = ${newName}
         WHERE filename = ${oldName};
       `;

@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { formatAmount } from '../../lib/currency';
-import { MATCH_STATUS } from '@modbm/shared';
+import { MATCH_STATUS } from '@herobm/shared';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */

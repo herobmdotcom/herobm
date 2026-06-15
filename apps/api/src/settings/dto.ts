@@ -285,6 +285,68 @@ export class UpdateAppConfigDto {
 }
 export class TradingTermResponseDto {
   @ApiProperty() id!: string;
-  @ApiProperty() name!: string;
+  @ApiProperty() code!: string;
+  @ApiProperty() description!: string;
+  @ApiProperty() days!: number;
+  @ApiProperty() type!: string;
+  @ApiProperty() isDefaultCustomer!: boolean;
+  @ApiProperty() isDefaultSupplier!: boolean;
 }
+
+export class CreateTradingTermDto {
+  @IsString()
+  @IsNotEmpty()
+  code!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  description!: string;
+
+  @IsNumber()
+  days!: number;
+
+  @IsString()
+  @IsNotEmpty()
+  type!: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isDefaultCustomer?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isDefaultSupplier?: boolean;
+}
+
+export class UpdateTradingTermDto {
+  @IsOptional()
+  @IsString()
+  code?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsNumber()
+  days?: number;
+
+  @IsOptional()
+  @IsString()
+  type?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isDefaultCustomer?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isDefaultSupplier?: boolean;
+}
+
 export class EmptyBodyDto {}
+
+export class SettingsSuccessResponseDto {
+  @ApiProperty()
+  success!: boolean;
+}

@@ -1,11 +1,11 @@
 # ABM Import Process
 
-Technical reference for the ELT pipeline that imports legacy ABM data into the `modbm_core` schema.
+Technical reference for the ELT pipeline that imports legacy ABM data into the `herobm_core` schema.
 
 ## Architecture Overview
 
 ```
-ABM ODBC → dlt extract → public_staging.* → dbt transform → modbm_core.*
+ABM ODBC → dlt extract → public_staging.* → dbt transform → herobm_core.*
                                                   ↓
                                           sync_* macros → order/quote lines
 ```
@@ -84,7 +84,7 @@ select
     coalesce(dest.account_id, gen_random_uuid()) as account_id,
     s.*
 from source_data s
-left join modbm_core.accounts dest on dest.source_id = s.source_id
+left join herobm_core.accounts dest on dest.source_id = s.source_id
 ```
 
 ### 3. `--full-refresh` is prohibited
@@ -117,7 +117,7 @@ The test script `infra/tests/test_data_counts.py` validates staging↔core parit
 
 ## Constraint Integrity
 
-The `modbm_core` schema has **115 constraints** across 42 tables:
+The `herobm_core` schema has **115 constraints** across 42 tables:
 
 - **Every table** has a UUID primary key with `gen_random_uuid()` default
 - **All FK relationships** are enforced (e.g. `sales_order_lines.product_id → products.product_id`)

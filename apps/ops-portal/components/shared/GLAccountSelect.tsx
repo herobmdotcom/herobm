@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 
 interface GLAccount {

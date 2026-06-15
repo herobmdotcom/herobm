@@ -8,9 +8,9 @@ import {
 import { eq, or, and, isNull } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { discountMatrix } from '../drizzle/modbm-core-schema';
+import { discountMatrix } from '../drizzle/herobm-core-schema';
 import { CreateDiscountMatrixDto, UpdateDiscountMatrixDto } from './dto';
-import type { DiscountRule } from '@modbm/shared';
+import type { DiscountRule } from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 
@@ -112,15 +112,21 @@ export class DiscountMatrixService {
       })
       .returning();
 
-    const entityType = dto.customerId ? EntityType.CUSTOMER : EntityType.CUSTOMER_GROUP;
+    const entityType = dto.customerId
+      ? EntityType.CUSTOMER
+      : EntityType.CUSTOMER_GROUP;
     const entityId = dto.customerId || dto.customerGroupId!;
 
+    // @sync-ignore
     await emitEvent(this.db, {
       entityType,
       entityId,
       eventType: EventType.UPDATED,
       entityDisplayName: dto.customerId ? 'Customer' : 'Customer Group',
-      payload: { action: 'discount_rule_created', ruleId: rows[0].discountMatrixId },
+      payload: {
+        action: 'discount_rule_created',
+        ruleId: rows[0].discountMatrixId,
+      },
       actor: 'system',
     });
 
@@ -147,9 +153,12 @@ export class DiscountMatrixService {
       .where(eq(discountMatrix.discountMatrixId, id))
       .returning();
 
-    const entityType = existing.customerId ? EntityType.CUSTOMER : EntityType.CUSTOMER_GROUP;
+    const entityType = existing.customerId
+      ? EntityType.CUSTOMER
+      : EntityType.CUSTOMER_GROUP;
     const entityId = existing.customerId || existing.customerGroupId!;
 
+    // @sync-ignore
     await emitEvent(this.db, {
       entityType,
       entityId,
@@ -171,9 +180,12 @@ export class DiscountMatrixService {
       .delete(discountMatrix)
       .where(eq(discountMatrix.discountMatrixId, id));
 
-    const entityType = existing.customerId ? EntityType.CUSTOMER : EntityType.CUSTOMER_GROUP;
+    const entityType = existing.customerId
+      ? EntityType.CUSTOMER
+      : EntityType.CUSTOMER_GROUP;
     const entityId = existing.customerId || existing.customerGroupId!;
 
+    // @sync-ignore
     await emitEvent(this.db, {
       entityType,
       entityId,

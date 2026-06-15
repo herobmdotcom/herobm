@@ -107,7 +107,7 @@ export async function processEvent(job: Job, db: any) {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-modbm-signature': signature
+              'x-herobm-signature': signature
             },
             body: payloadString
           });

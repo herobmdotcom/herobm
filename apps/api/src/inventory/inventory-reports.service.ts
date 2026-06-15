@@ -13,7 +13,7 @@ import {
   productDefaultBins,
   productGroups,
   binContents,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { sql, eq, and, gte, lte } from 'drizzle-orm';
 import { isQuarantineBinCondition } from './inventory-math.utils';
 

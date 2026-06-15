@@ -11,7 +11,7 @@ import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { PURCHASE_ORDER_STATE } from '@modbm/shared';
+import { PURCHASE_ORDER_STATE } from '@herobm/shared';
 
 export interface AvailableElsewhereEntry {
   locationId: string;

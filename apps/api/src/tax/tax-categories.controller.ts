@@ -1,4 +1,4 @@
-import { SystemResource } from '@modbm/shared';
+import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -32,7 +32,7 @@ import {
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 
-@ApiTags('System')
+@ApiTags('Tax')
 @Controller('tax-categories')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)

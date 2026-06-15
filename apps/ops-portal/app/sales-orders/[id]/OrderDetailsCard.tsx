@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import Link from 'next/link';
 import type { OrderDetail } from './types';
-import { SALES_ORDER_STATE } from '@modbm/shared';
+import { SALES_ORDER_STATE } from '@herobm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
 interface OrderDetailsCardProps {
     order: OrderDetail;

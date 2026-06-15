@@ -8,5 +8,10 @@
 
 export interface TradingTermResponseDto {
   id: string;
-  name: string;
+  code: string;
+  description: string;
+  days: number;
+  type: string;
+  isDefaultCustomer: boolean;
+  isDefaultSupplier: boolean;
 }

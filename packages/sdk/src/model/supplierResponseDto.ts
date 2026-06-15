@@ -32,6 +32,8 @@ export interface SupplierResponseDto {
   /** @nullable */
   earlyPaymentDiscount: string | null;
   /** @nullable */
+  earlyPaymentDiscountDays: number | null;
+  /** @nullable */
   creditLimit: string | null;
   isPurchasingBlocked: boolean;
   /** @nullable */
@@ -56,6 +58,8 @@ export interface SupplierResponseDto {
   /** @nullable */
   businessNumber: string | null;
   isTaxRegistered: boolean;
+  /** @nullable */
+  taxPositionId: string | null;
   /** @nullable */
   stateCode: string | null;
   tenantId: string;

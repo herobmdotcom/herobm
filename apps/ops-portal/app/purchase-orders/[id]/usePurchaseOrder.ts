@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import {
   PURCHASE_ORDER_TRANSITIONS as STATE_TRANSITIONS,
   PURCHASE_ORDER_LIFECYCLE as ORDER_LIFECYCLE,
@@ -13,8 +13,8 @@ import {
   isBackTransition as sharedIsBackTransition,
   cap,
   calculateUomPriceAdjustment,
-} from '@modbm/shared';
-import type { ProductUom } from '@modbm/shared';
+} from '@herobm/shared';
+import type { ProductUom } from '@herobm/shared';
 
 import type {
   TaxCategory, OrderLine, OrderDetail,
@@ -201,7 +201,7 @@ export function usePurchaseOrder(id: string) {
   useEffect(() => {
     loadOrder();
     api.taxCategoriesControllerFindAll()
-      .then(res => setTaxCategories((res.data || []).map((t: import('@modbm/sdk').TaxCategoryResponseDto) => ({ ...t, taxCategoryId: (t as unknown as { id?: string }).id || t.taxCategoryId } as unknown as TaxCategory))))
+      .then(res => setTaxCategories((res.data || []).map((t: import('@herobm/sdk').TaxCategoryResponseDto) => ({ ...t, taxCategoryId: (t as unknown as { id?: string }).id || t.taxCategoryId } as unknown as TaxCategory))))
       .catch((err) => reportError(err, 'OrderDetailPage'));
   }, [id]);
 

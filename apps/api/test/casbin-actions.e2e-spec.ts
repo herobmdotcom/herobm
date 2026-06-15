@@ -1,6 +1,6 @@
 import { Project, SyntaxKind, ObjectLiteralExpression } from 'ts-morph';
 import * as path from 'path';
-import { SystemResource } from '@modbm/shared';
+import { SystemResource } from '@herobm/shared';
 
 describe('Casbin VALID_ACTIONS Sync (e2e)', () => {
   it('should ensure frontend VALID_ACTIONS matches backend Casbin decorators', () => {

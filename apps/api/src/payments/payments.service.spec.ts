@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsService } from './payments.service';
 import { GlService } from '../gl/gl.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
+import { SuppliersService } from '../suppliers/suppliers.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
@@ -25,7 +26,7 @@ import {
   activities,
   glJournalEntries,
   glJournalLines,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import {
@@ -33,12 +34,14 @@ import {
   PAYMENT_STATE,
   SALES_INVOICE_STATE,
   SALES_ORDER_STATE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 describe('PaymentsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: PaymentsService;
   let glService: GlService;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockSuppliersService: any;
 
   // Shared GL customers
   let bankAccountId: string;
@@ -207,6 +210,15 @@ describe('PaymentsService', () => {
         PaymentsService,
         GlService,
         {
+          provide: SuppliersService,
+          useValue: {
+            assessRisk: jest.fn().mockResolvedValue({
+              isPaymentBlocked: false,
+              paymentBlockReasons: [],
+            }),
+          },
+        },
+        {
           provide: DataSourcesRegistry,
           useValue: { registerReport: jest.fn(), getReport: jest.fn() },
         },
@@ -228,6 +240,7 @@ describe('PaymentsService', () => {
 
     service = module.get<PaymentsService>(PaymentsService);
     glService = module.get<GlService>(GlService);
+    mockSuppliersService = module.get(SuppliersService);
   });
 
   // -----------------------------------------------------------------------
@@ -254,6 +267,30 @@ describe('PaymentsService', () => {
       expect(payment.paymentNumber).toMatch(/^PAY-\d{8}-\d{4}$/);
       expect(parseFloat(payment.totalAmount)).toBe(1000);
       expect(parseFloat(payment.unallocatedAmount)).toBe(1000);
+    });
+
+    it('should throw BadRequestException if supplier is blocked for payment', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mockSuppliersService.assessRisk.mockResolvedValueOnce({
+        isPaymentBlocked: true,
+        paymentBlockReasons: ['supplier_inactive'],
+      });
+
+      await expect(
+        service.createPaymentEntry(
+          {
+            paymentId: '00000000-0000-0000-0000-000000000009',
+            paymentType: PAYMENT_TYPE.SUPPLIER_PAYMENT,
+            partyId: supplierId,
+            paymentDate: new Date().toISOString(),
+            modeOfPayment: 'EFT',
+            totalAmount: 1000,
+            glAccountBank: bankAccountId,
+            currencyCode: 'AUD',
+          },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should increment sequence number for payments on the same day', async () => {

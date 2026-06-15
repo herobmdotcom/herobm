@@ -5,7 +5,7 @@ import { createMemoryDb } from '../../test/utils/memory-db';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
-import * as schema from '../drizzle/modbm-core-schema';
+import * as schema from '../drizzle/herobm-core-schema';
 
 export interface PgliteTestContext {
   readonly db: DrizzleDB;
@@ -19,37 +19,37 @@ export interface PgliteTestContext {
 // Order matters — children before parents to respect FK constraints.
 // --------------------------------------------------------------------------
 const TRANSACTIONAL_TABLES = [
-  'modbm_core.gl_journal_lines',
-  'modbm_core.gl_journal_entries',
-  'modbm_core.sales_invoice_lines',
-  'modbm_core.sales_invoices',
-  'modbm_core.purchase_invoice_lines',
-  'modbm_core.purchase_invoices',
-  'modbm_core.sales_order_return_lines',
-  'modbm_core.sales_order_returns',
-  'modbm_core.sales_order_picks',
-  'modbm_core.sales_order_shipment_lines',
-  'modbm_core.sales_order_shipments',
-  'modbm_core.backorders',
-  'modbm_core.order_events',
-  'modbm_core.outbox',
-  'modbm_core.sales_order_lines',
-  'modbm_core.sales_orders',
-  'modbm_core.purchase_order_return_lines',
-  'modbm_core.purchase_order_returns',
-  'modbm_core.goods_received_lines',
-  'modbm_core.goods_received',
-  'modbm_core.purchase_order_events',
-  'modbm_core.purchase_order_lines',
-  'modbm_core.purchase_orders',
-  'modbm_core.inventory_ledger',
-  'modbm_core.account_events',
-  'modbm_core.customers',
-  'modbm_core.suppliers',
-  'modbm_core.products',
-  'modbm_core.payment_events',
-  'modbm_core.payment_allocations',
-  'modbm_core.payment_entries',
+  'herobm_core.gl_journal_lines',
+  'herobm_core.gl_journal_entries',
+  'herobm_core.sales_invoice_lines',
+  'herobm_core.sales_invoices',
+  'herobm_core.purchase_invoice_lines',
+  'herobm_core.purchase_invoices',
+  'herobm_core.sales_order_return_lines',
+  'herobm_core.sales_order_returns',
+  'herobm_core.sales_order_picks',
+  'herobm_core.sales_order_shipment_lines',
+  'herobm_core.sales_order_shipments',
+  'herobm_core.backorders',
+  'herobm_core.order_events',
+  'herobm_core.outbox',
+  'herobm_core.sales_order_lines',
+  'herobm_core.sales_orders',
+  'herobm_core.purchase_order_return_lines',
+  'herobm_core.purchase_order_returns',
+  'herobm_core.goods_received_lines',
+  'herobm_core.goods_received',
+  'herobm_core.purchase_order_events',
+  'herobm_core.purchase_order_lines',
+  'herobm_core.purchase_orders',
+  'herobm_core.inventory_ledger',
+  'herobm_core.account_events',
+  'herobm_core.customers',
+  'herobm_core.suppliers',
+  'herobm_core.products',
+  'herobm_core.payment_events',
+  'herobm_core.payment_allocations',
+  'herobm_core.payment_entries',
 ];
 
 /**
@@ -160,8 +160,8 @@ export function setupPgliteSuite(opts?: {
     // constraints like 'fail_audit', 'fail_on_test' that would
     // persist across tests in the shared PGlite instance).
     for (const [table, constraint] of [
-      ['modbm_core.order_events', 'fail_audit'],
-      ['modbm_core.account_events', 'fail_on_test'],
+      ['herobm_core.order_events', 'fail_audit'],
+      ['herobm_core.account_events', 'fail_on_test'],
     ]) {
       try {
         await context._client.exec(

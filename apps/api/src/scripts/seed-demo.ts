@@ -24,15 +24,15 @@ import {
   taxCategories,
   glSettings,
   tradingTerms,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import {
   SALES_ORDER_STATE,
   PURCHASE_ORDER_STATE,
   SHIPMENT_STATE,
   SALES_ORDER_PICK_STATE,
   PUTAWAY_STATUS,
-} from '@modbm/shared';
-import * as schema from '../drizzle/modbm-core-schema';
+} from '@herobm/shared';
+import * as schema from '../drizzle/herobm-core-schema';
 import * as readline from 'readline';
 
 // Import standard setup functions
@@ -62,14 +62,14 @@ async function wipeDatabase(db: any) {
   await db.execute(
     sql.raw(`
     TRUNCATE TABLE 
-      modbm_core.inventory_ledger, modbm_core.inventory_entries, modbm_core.bin_contents,
-      modbm_core.sales_order_lines, modbm_core.sales_orders, modbm_core.sales_order_picks, modbm_core.sales_order_shipment_lines, modbm_core.sales_order_shipments,
-      modbm_core.purchase_order_lines, modbm_core.purchase_orders, modbm_core.procurement_events, modbm_core.sales_events, modbm_core.warehouse_events, modbm_core.master_data_events, modbm_core.financial_events, modbm_core.inventory_events, modbm_core.system_events,
-      modbm_core.products, modbm_core.customers, modbm_core.suppliers,
-      modbm_core.bins, modbm_core.zones, modbm_core.locations,
-      modbm_core.tax_categories, modbm_core.uom_dictionary,
-      modbm_core.organization, modbm_core.gl_settings, modbm_core.app_settings,
-      modbm_core.users, modbm_core.gl_accounts
+      herobm_core.inventory_ledger, herobm_core.inventory_entries, herobm_core.bin_contents,
+      herobm_core.sales_order_lines, herobm_core.sales_orders, herobm_core.sales_order_picks, herobm_core.sales_order_shipment_lines, herobm_core.sales_order_shipments,
+      herobm_core.purchase_order_lines, herobm_core.purchase_orders, herobm_core.procurement_events, herobm_core.sales_events, herobm_core.warehouse_events, herobm_core.master_data_events, herobm_core.financial_events, herobm_core.inventory_events, herobm_core.system_events,
+      herobm_core.products, herobm_core.customers, herobm_core.suppliers,
+      herobm_core.bins, herobm_core.zones, herobm_core.locations,
+      herobm_core.tax_categories, herobm_core.uom_dictionary,
+      herobm_core.organization, herobm_core.gl_settings, herobm_core.app_settings,
+      herobm_core.users, herobm_core.gl_accounts
     CASCADE;
   `),
   );
@@ -325,7 +325,7 @@ async function generateTransactions(db: any, data: MasterData) {
       if (existingBin.length > 0) {
         await db.execute(
           sql.raw(
-            `UPDATE modbm_core.bin_contents SET actual_quantity = actual_quantity + ${qty} WHERE bin_id = '${location.binId}' AND product_id = '${prod.id}'`,
+            `UPDATE herobm_core.bin_contents SET actual_quantity = actual_quantity + ${qty} WHERE bin_id = '${location.binId}' AND product_id = '${prod.id}'`,
           ),
         );
       } else {
@@ -407,7 +407,7 @@ async function generateTransactions(db: any, data: MasterData) {
         // (A real app would do this via service layer)
         await db.execute(
           sql.raw(
-            `UPDATE modbm_core.bin_contents SET actual_quantity = actual_quantity - ${qty} WHERE bin_id = '${location.binId}' AND product_id = '${prod.id}'`,
+            `UPDATE herobm_core.bin_contents SET actual_quantity = actual_quantity - ${qty} WHERE bin_id = '${location.binId}' AND product_id = '${prod.id}'`,
           ),
         );
       }

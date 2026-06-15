@@ -8,7 +8,7 @@ import {
   suppliers,
   products,
   productGroups,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { sql, eq, and, gte, lte, asc } from 'drizzle-orm';
 import {
   getAggregationPeriod,

@@ -24,7 +24,7 @@ import {
   systemEvents,
   warehouseEvents,
   salesOrderPicks,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { AppConfigService } from '../settings/app-config.service';
 import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
@@ -56,8 +56,8 @@ import {
   SALES_ORDER_PICK_STATE,
   SALES_ORDER_PICK_TRANSITIONS,
   getValidStates,
-} from '@modbm/shared';
-import type { SalesOrderPickState } from '@modbm/shared';
+} from '@herobm/shared';
+import type { SalesOrderPickState } from '@herobm/shared';
 
 const VALID_SHIPMENT_STATES = getValidStates(SHIPMENT_STATE_TRANSITIONS);
 

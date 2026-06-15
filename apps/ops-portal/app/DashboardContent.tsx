@@ -10,7 +10,7 @@ import DashboardTimeline from './DashboardTimeline';
 import TimelineSettingsSlideOver, { DEFAULT_ENABLED_EVENTS, EventType } from './TimelineSettingsSlideOver';
 import PinnedReportWidget from './PinnedReportWidget';
 import ReportSettingsSlideOver from './ReportSettingsSlideOver';
-import { userSettingsControllerGetSettings, userSettingsControllerUpdateSettings, businessReportsControllerGetReports } from '@modbm/sdk';
+import { userSettingsControllerGetSettings, userSettingsControllerUpdateSettings, businessReportsControllerGetReports } from '@herobm/sdk';
 
 export default function DashboardContent() {
   const t = useTranslations('dashboard');

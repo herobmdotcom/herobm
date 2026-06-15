@@ -5,9 +5,9 @@ import SlideOver from '@/components/shared/SlideOver';
 import { useTranslations } from 'next-intl';
 import LocationSelect from '@/components/shared/LocationSelect';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 interface LineItem {
   productId: string;

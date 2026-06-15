@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { logout } from '../../lib/api';
 import { useTranslations } from 'next-intl';
-import { useRef, useLayoutEffect } from 'react';
+import { useRef, useLayoutEffect, useState } from 'react';
 
 export interface NavItem {
   href: string;
@@ -20,19 +20,20 @@ export interface NavSection {
 }
 
 export interface SidebarProps {
-  /** Portal title, e.g. "modbm" */
+  /** Portal title, e.g. "herobm" */
   title: string;
   /** Subtitle shown below the title, e.g. "Business Management" */
   subtitle: string;
   /** Navigation sections with grouped items */
   sections: NavSection[];
-  /** Optional footer text, e.g. "Phase 3 • modbm" */
+  /** Optional footer text, e.g. "Phase 3 • herobm" */
   footer?: string;
 }
 
 export default function Sidebar({ title, subtitle, sections, footer }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations('common.auth');
+  const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
 
   return (
     <aside
@@ -42,7 +43,7 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
       <div className="px-5 py-5">
         <Link href="/" className="flex items-center gap-2 no-underline hover:opacity-80 transition-opacity">
           <div className="flex items-center justify-center w-7 h-7 rounded border-2 border-[var(--accent)] text-[var(--accent)] font-extrabold text-lg" style={{ fontFamily: 'Manrope, sans-serif' }}>
-            M
+            H
           </div>
           <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Manrope, sans-serif' }}>
             {title}
@@ -56,14 +57,23 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
         {sections.map((section, si) => (
           <div key={si} className={si > 0 ? 'mt-4' : ''}>
             {section.label && (
-              <p
-                className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-1"
-                style={{ color: 'var(--text-muted)' }}
+              <div 
+                className="flex items-center justify-between px-3 mb-1 cursor-pointer group"
+                onClick={() => setCollapsed(prev => ({ ...prev, [si]: !prev[si] }))}
               >
-                {section.label}
-              </p>
+                <p
+                  className="text-[10px] font-semibold uppercase tracking-wider transition-colors group-hover:text-[var(--text-primary)]"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  {section.label}
+                </p>
+                <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-50 transition-opacity" style={{ color: 'var(--text-muted)' }}>
+                  {/* eslint-disable-next-line no-restricted-syntax */}
+                  {collapsed[si] ? 'expand_more' : 'expand_less'}
+                </span>
+              </div>
             )}
-            {section.items.map((item) => {
+            {!collapsed[si] && section.items.map((item) => {
               const allItems = sections.flatMap((s) => s.items);
               const isActive =
                 item.href === '/'

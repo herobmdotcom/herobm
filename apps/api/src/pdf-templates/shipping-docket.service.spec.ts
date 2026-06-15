@@ -13,12 +13,12 @@ import {
   uomDictionary,
   locations,
   taxCategories,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import {
   SALES_ORDER_STATE,
   SHIPMENT_STATE,
   CUSTOMER_STATE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 describe('ShippingDocketService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

@@ -31,13 +31,13 @@ describe('Projection Completeness', () => {
   function getSchemaColumns(tableName: string): string[] {
     const schemaPath = path.resolve(
       __dirname,
-      '../drizzle/modbm-core-schema.ts',
+      '../drizzle/herobm-core-schema.ts',
     );
     const src = fs.readFileSync(schemaPath, 'utf-8');
 
-    // Find the table definition block: export const <tableName> = modbmCore.table(...)
+    // Find the table definition block: export const <tableName> = herobmCore.table(...)
     const tableRegex = new RegExp(
-      `export const ${tableName}\\s*=\\s*modbmCore\\.table\\([^,]+,\\s*\\{([^}]+)\\}`,
+      `export const ${tableName}\\s*=\\s*herobmCore\\.table\\([^,]+,\\s*\\{([^}]+)\\}`,
       's',
     );
     const match = src.match(tableRegex);

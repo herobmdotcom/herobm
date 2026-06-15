@@ -1,4 +1,4 @@
-import { SystemResource } from '@modbm/shared';
+import { SystemResource } from '@herobm/shared';
 import {
   Controller,
   Get,
@@ -17,7 +17,7 @@ import { RolesService } from './roles.service';
 import {
   SetRolePermissionsDto,
   RoleDetailsDto,
-  SuccessResponseDto,
+  RolesSuccessResponseDto,
 } from './dto';
 import {
   ApiOkResponse,
@@ -76,7 +76,7 @@ export class RolesController {
     summary: 'Delete role',
     description: 'Deletes a specific role.',
   })
-  @ApiOkResponse({ type: SuccessResponseDto })
+  @ApiOkResponse({ type: RolesSuccessResponseDto })
   async remove(@Param('role') role: string) {
     return this.rolesService.deleteRole(role);
   }

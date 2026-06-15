@@ -20,7 +20,7 @@ jest.mock('@/lib/api', () => ({
     reportError: jest.fn(),
 }));
 
-jest.mock('@modbm/sdk', () => ({
+jest.mock('@herobm/sdk', () => ({
     salesInvoiceControllerCreateSalesInvoice: jest.fn().mockResolvedValue({}),
     pdfTemplatesControllerRunHook: jest.fn().mockResolvedValue({ data: new Blob(['pdf'], { type: 'application/pdf' }) })
 }));
@@ -229,7 +229,7 @@ describe('InvoicesSection — create invoice form', () => {
         await user.click(screen.getByText('buttons.createInvoice'));
         await user.click(screen.getByText('buttons.generateInvoice'));
 
-        const api = require('@modbm/sdk');
+        const api = require('@herobm/sdk');
         await waitFor(() => {
             expect(api.salesInvoiceControllerCreateSalesInvoice).toHaveBeenCalledWith(
                 'so-001',
@@ -260,7 +260,7 @@ describe('InvoicesSection — create invoice form', () => {
     it('shows error when generation fails', async () => {
         const user = userEvent.setup();
         jest.spyOn(window, 'confirm').mockReturnValue(true);
-        const api = require('@modbm/sdk');
+        const api = require('@herobm/sdk');
         api.salesInvoiceControllerCreateSalesInvoice.mockRejectedValueOnce(new Error('Invoice generation failed'));
 
         const setError = jest.fn();
@@ -299,7 +299,7 @@ describe('InvoicesSection — PDF download', () => {
         render(<InvoicesSection {...defaultProps} invoices={[invoice]} />);
         await user.click(screen.getByText('buttons.printInvoice'));
 
-        const api = require('@modbm/sdk');
+        const api = require('@herobm/sdk');
         await waitFor(() => {
             expect(api.pdfTemplatesControllerRunHook).toHaveBeenCalledWith(
                 'sales-invoice',

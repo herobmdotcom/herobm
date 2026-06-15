@@ -47,6 +47,8 @@ export const EntityType = {
   SUPPLIER_GROUP: 'supplier_group',
 
   TAX_CATEGORY: 'tax_category',
+  TAX_POSITION: 'tax_position',
+  TAX_POSITION_MAPPING: 'tax_position_mapping',
   EXCHANGE_RATE: 'exchange_rate',
   COST_CENTER: 'cost_center',
   ACTIVITY: 'activity',
@@ -63,7 +65,7 @@ import {
   SALES_ORDER_STATE,
   CUSTOMER_STATE,
   PURCHASE_ORDER_STATE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 /**
  * All known event types across the platform.
@@ -231,10 +233,7 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'product_group.updated',
   'product_supplier.linked',
   'product_supplier.unlinked',
-  'purchase_invoice.order_linked',
-  'purchase_invoice.order_unlinked',
   'purchase_invoice.status_changed',
-  'purchase_invoice.updated',
   'purchase_order.archived',
   'purchase_order.created',
   'purchase_order.demand_allocated',
@@ -260,6 +259,7 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'sales_order.credit_note_posted',
   'sales_order.demand_allocated',
   'sales_order.demand_reallocated',
+  'sales_order.demand_unallocated',
   'sales_order.line_added',
   'sales_order.line_removed',
   'sales_order.line_updated',
@@ -298,6 +298,11 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'tax_category.created',
   'tax_category.deleted',
   'tax_category.updated',
+  'tax_position.created',
+  'tax_position.deleted',
+  'tax_position.updated',
+  'tax_position_mapping.created',
+  'tax_position_mapping.deleted',
   'transfer_order.created',
   'transfer_order.line_removed',
   'transfer_order.status_changed',

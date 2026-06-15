@@ -8,7 +8,7 @@ import {
 import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { customerContacts, customers } from '../drizzle/modbm-core-schema';
+import { customerContacts, customers } from '../drizzle/herobm-core-schema';
 import { CreateContactDto, UpdateContactDto, ContactResponseDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';

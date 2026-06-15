@@ -1,4 +1,4 @@
-// Pro Forma Invoice — modbm report template
+// Pro Forma Invoice — herobm report template
 // Data is loaded from a JSON file passed via sys.inputs.data
 
 #let data = json(sys.inputs.at("data"))

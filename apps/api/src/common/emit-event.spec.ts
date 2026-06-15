@@ -60,7 +60,7 @@ import {
   financialEvents,
   inventoryEvents,
   outbox,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 
 // ---------------------------------------------------------------------------
 // Tests

@@ -1,4 +1,4 @@
-import { SystemResource } from '@modbm/shared';
+import { SystemResource } from '@herobm/shared';
 import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { CasbinResource, CasbinAction } from '../auth/casbin.guard';

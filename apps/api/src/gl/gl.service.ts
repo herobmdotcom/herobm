@@ -18,7 +18,7 @@ import {
   costCenters,
   activities,
   outbox,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {
@@ -26,7 +26,7 @@ import {
   EXPENSE_ROUTING_PRECEDENCE,
   GL_ACCOUNT_TYPE,
   GLAccountType,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import { JournalLineDto } from './dto';
 
 // ---------------------------------------------------------------------------
@@ -504,11 +504,11 @@ export class GlService implements OnModuleInit {
         COALESCE(SUM(activity.debit), 0)::numeric  AS total_debit,
         COALESCE(SUM(activity.credit), 0)::numeric AS total_credit,
         COALESCE(SUM(activity.debit), 0) - COALESCE(SUM(activity.credit), 0) AS balance
-      FROM modbm_core.gl_accounts a
+      FROM herobm_core.gl_accounts a
       LEFT JOIN (
         SELECT jl.gl_account_id, jl.debit, jl.credit
-        FROM modbm_core.gl_journal_lines jl
-        JOIN modbm_core.gl_journal_entries je ON je.journal_entry_id = jl.journal_entry_id
+        FROM herobm_core.gl_journal_lines jl
+        JOIN herobm_core.gl_journal_entries je ON je.journal_entry_id = jl.journal_entry_id
         ${dateFilterSub}
       ) activity ON activity.gl_account_id = a.gl_account_id
       WHERE a.is_group = false
@@ -566,10 +566,10 @@ export class GlService implements OnModuleInit {
         jl.memo AS line_memo,
         je.created_by,
         je.created_on
-      FROM modbm_core.gl_journal_lines jl
-      JOIN modbm_core.gl_journal_entries je
+      FROM herobm_core.gl_journal_lines jl
+      JOIN herobm_core.gl_journal_entries je
         ON je.journal_entry_id = jl.journal_entry_id
-      JOIN modbm_core.gl_accounts a
+      JOIN herobm_core.gl_accounts a
         ON a.gl_account_id = jl.gl_account_id
       ${whereClause}
       ORDER BY je.entry_date DESC, je.entry_number DESC
@@ -578,10 +578,10 @@ export class GlService implements OnModuleInit {
 
     const countQuery = sql`
       SELECT count(*)::int as count 
-      FROM modbm_core.gl_journal_lines jl
-      JOIN modbm_core.gl_journal_entries je
+      FROM herobm_core.gl_journal_lines jl
+      JOIN herobm_core.gl_journal_entries je
         ON je.journal_entry_id = jl.journal_entry_id
-      JOIN modbm_core.gl_accounts a
+      JOIN herobm_core.gl_accounts a
         ON a.gl_account_id = jl.gl_account_id
       ${whereClause}
     `;
@@ -683,7 +683,7 @@ export class GlService implements OnModuleInit {
           journal_entry_id,
           party_id,
           party_type
-        FROM modbm_core.gl_journal_lines
+        FROM herobm_core.gl_journal_lines
         WHERE party_id IS NOT NULL
         ORDER BY journal_entry_id, journal_line_id
       )
@@ -693,13 +693,13 @@ export class GlService implements OnModuleInit {
         flp.party_id as "partyIdRef",
         flp.party_type as "partyTypeRef",
         COALESCE(si.invoice_number, pi.invoice_number, sor.return_number) as "sourceNumber"
-      FROM modbm_core.gl_journal_entries je
+      FROM herobm_core.gl_journal_entries je
       LEFT JOIN first_line_parties flp ON flp.journal_entry_id = je.journal_entry_id
-      LEFT JOIN modbm_core.customers acc ON acc.customer_id = flp.party_id::uuid AND flp.party_type = 'customer'
-      LEFT JOIN modbm_core.suppliers supp ON supp.vendor_id = flp.party_id::uuid AND flp.party_type = 'supplier'
-      LEFT JOIN modbm_core.sales_invoices si ON si.invoice_id = je.source_id AND je.source_type = 'sales_invoice'
-      LEFT JOIN modbm_core.purchase_invoices pi ON pi.invoice_id = je.source_id AND je.source_type = 'purchase_invoice'
-      LEFT JOIN modbm_core.sales_order_returns sor ON sor.return_id = je.source_id AND je.source_type = 'sales_credit_note'
+      LEFT JOIN herobm_core.customers acc ON acc.customer_id = flp.party_id::uuid AND flp.party_type = 'customer'
+      LEFT JOIN herobm_core.suppliers supp ON supp.vendor_id = flp.party_id::uuid AND flp.party_type = 'supplier'
+      LEFT JOIN herobm_core.sales_invoices si ON si.invoice_id = je.source_id AND je.source_type = 'sales_invoice'
+      LEFT JOIN herobm_core.purchase_invoices pi ON pi.invoice_id = je.source_id AND je.source_type = 'purchase_invoice'
+      LEFT JOIN herobm_core.sales_order_returns sor ON sor.return_id = je.source_id AND je.source_type = 'sales_credit_note'
       ${whereClause ? sql`WHERE ${whereClause}` : sql``}
       ORDER BY je.entry_date DESC, je.entry_number DESC
       LIMIT ${limit} OFFSET ${offset}
@@ -709,7 +709,7 @@ export class GlService implements OnModuleInit {
       this.db.execute(entriesQuery),
       this.db.execute(sql`
         SELECT count(*)::int as count 
-        FROM modbm_core.gl_journal_entries je 
+        FROM herobm_core.gl_journal_entries je 
         ${whereClause ? sql`WHERE ${whereClause}` : sql``}
       `),
     ]);
@@ -976,11 +976,11 @@ export class GlService implements OnModuleInit {
         COALESCE(SUM(activity.debit), 0)::numeric  AS "totalDebit",
         COALESCE(SUM(activity.credit), 0)::numeric AS "totalCredit",
         COALESCE(SUM(activity.debit), 0) - COALESCE(SUM(activity.credit), 0) AS "balance"
-      FROM modbm_core.gl_accounts a
+      FROM herobm_core.gl_accounts a
       JOIN (
         SELECT jl.gl_account_id, jl.debit, jl.credit
-        FROM modbm_core.gl_journal_lines jl
-        JOIN modbm_core.gl_journal_entries je ON je.journal_entry_id = jl.journal_entry_id
+        FROM herobm_core.gl_journal_lines jl
+        JOIN herobm_core.gl_journal_entries je ON je.journal_entry_id = jl.journal_entry_id
         ${whereClause}
       ) activity ON activity.gl_account_id = a.gl_account_id
       WHERE a.is_group = false

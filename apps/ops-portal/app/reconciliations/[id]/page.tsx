@@ -11,11 +11,11 @@ import AutoMatchPreviewModal from './AutoMatchPreviewModal';
 import BankImportModal from '../components/BankImportModal';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import BankMatchingView from './BankMatchingView';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ToggleCell = (p: any) => {

@@ -1,6 +1,6 @@
 # Sales Order Management
 
-This document describes how sales orders work in modbm, including the order lifecycle, pricing, currency, discounts, and tax.
+This document describes how sales orders work in herobm, including the order lifecycle, pricing, currency, discounts, and tax.
 
 ---
 
@@ -168,9 +168,9 @@ When a line is added to an order (via `create`, `addLine`), the system resolves 
 | **3. Product category** | Map the product's ABM `gst_category` to our code | See mapping table below |
 | **4. System default** | None of the above matched | System default GST (currently **9% GST**) |
 
-#### Product GST category mapping (ABM → modbm)
+#### Product GST category mapping (ABM → herobm)
 
-| ABM `gst_category` value | modbm code | Rate |
+| ABM `gst_category` value | herobm code | Rate |
 |---------------------------|------------|------|
 | `9% GST` | **GST** | 9% |
 | `Zero Rated Products` | **ZR** | 0% |
@@ -230,7 +230,7 @@ ABM orders appear in the order list alongside app orders and can be viewed in fu
 
 ## Inventory Visibility
 
-Stock information is sourced from the `modbm_core.inventory_levels` view (the single source of truth for all stock data). Product-level tables do not carry stock fields.
+Stock information is sourced from the `herobm_core.inventory_levels` view (the single source of truth for all stock data). Product-level tables do not carry stock fields.
 
 ### Product Search
 
@@ -311,7 +311,7 @@ The UI provides a convenience toggle to enter the fee as a percentage of the ori
 
 ### Data Model
 
-Returns are stored as two tables in `modbm_core`:
+Returns are stored as two tables in `herobm_core`:
 
 - **`sales_order_returns`** — return header (linked to `sales_orders`)
 - **`sales_order_return_lines`** — per-line return quantities, reason, and fee (linked to `sales_order_lines`)

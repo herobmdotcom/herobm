@@ -1,11 +1,11 @@
 # General Ledger Engine Guide
 
-The NestJS General Ledger (GL) module (`apps/api/src/gl/`) provides a robust, double-entry accounting engine built directly into ModBM. It replaces the need for an external financial backend (like ERPNext) for core operational accounting.
+The NestJS General Ledger (GL) module (`apps/api/src/gl/`) provides a robust, double-entry accounting engine built directly into HeroBM. It replaces the need for an external financial backend (like ERPNext) for core operational accounting.
 
 ## Architecture
 
 ```
-modbm_core schema (Postgres)
+herobm_core schema (Postgres)
   │  Drizzle ORM (typed schema & mutations)
   ▼
 NestJS API (apps/api/, port 3001)
@@ -14,7 +14,7 @@ NestJS API (apps/api/, port 3001)
 Other Modules (Invoices) / HTTP JSON / Portal UI
 ```
 
-The GL engine operates entirely within the native `modbm_core` schema, ensuring ACID compliance and referential integrity with other operational tables (like users and invoices).
+The GL engine operates entirely within the native `herobm_core` schema, ensuring ACID compliance and referential integrity with other operational tables (like users and invoices).
 
 ## Core Responsibilities
 
@@ -25,7 +25,7 @@ The GL engine operates entirely within the native `modbm_core` schema, ensuring 
 
 ## Drizzle Schema
 
-The engine relies on 4 dedicated tables in the `modbm_core` schema:
+The engine relies on 4 dedicated tables in the `herobm_core` schema:
 
 | Table | Purpose | Key Columns |
 |-------|---------|-------------|

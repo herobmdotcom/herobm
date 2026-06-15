@@ -27,7 +27,8 @@ import {
   paymentEntries,
   glJournalEntries,
   glJournalLines,
-} from '../drizzle/modbm-core-schema';
+  tradingTerms,
+} from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
@@ -41,7 +42,8 @@ import {
   PURCHASE_INVOICE_TRANSITIONS,
   MATCH_STATUS,
   getValidStates,
-} from '@modbm/shared';
+} from '@herobm/shared';
+import { calculateDueDate } from '../settings/trading-terms.utils';
 
 const VALID_INVOICE_STATES = getValidStates(PURCHASE_INVOICE_TRANSITIONS);
 import { CreateStandaloneInvoiceDto } from './dto';
@@ -60,7 +62,7 @@ export class PurchaseInvoiceService {
   ) {}
 
   /**
-   * Generates a structural sequence number for the internal AP bill record natively in ModBM.
+   * Generates a structural sequence number for the internal AP bill record natively in HeroBM.
    */
   private async generateBillNumber(): Promise<string> {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -82,7 +84,7 @@ export class PurchaseInvoiceService {
   }
 
   /**
-   * Fetch a specific ModBM AP Bill with natively populated mappings structurally
+   * Fetch a specific HeroBM AP Bill with natively populated mappings structurally
    */
   async findOne(invoiceId: string, tx?: DrizzleDB) {
     const db = tx || this.db;
@@ -103,7 +105,7 @@ export class PurchaseInvoiceService {
     const invoiceEntity = rows[0].invoice || rows[0];
     const invoice = { ...invoiceEntity, vendorName: rows[0].vendorName };
 
-    // Hydrate explicitly native ModBM line mapping structurally
+    // Hydrate explicitly native HeroBM line mapping structurally
     const lines = await db
       .select({
         lineId: purchaseInvoiceLines.invoiceLineId,
@@ -177,7 +179,7 @@ export class PurchaseInvoiceService {
   }
 
   /**
-   * Fetch all Native ModBM Bills strictly tied to a distinct active purchase order.
+   * Fetch all Native HeroBM Bills strictly tied to a distinct active purchase order.
    * Finds any invoice that has lines matched to the purchase order.
    */
   async findByOrder(purchaseOrderId: string) {
@@ -282,7 +284,67 @@ export class PurchaseInvoiceService {
   ): Promise<typeof purchaseInvoices.$inferSelect> {
     const internalBillNumber = await this.generateBillNumber();
 
+    let vendorTermType: string | null = null;
+    let vendorTermDays: number | null = null;
+
+    if (dto.vendorId) {
+      const vendRows = await this.db
+        .select({
+          tradingTermsId: suppliers.tradingTermsId,
+          groupTradingTermsId: supplierGroups.tradingTermsId,
+        })
+        .from(suppliers)
+        .leftJoin(
+          supplierGroups,
+          eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
+        )
+        .where(eq(suppliers.vendorId, dto.vendorId))
+        .limit(1);
+
+      if (vendRows.length > 0) {
+        const effectiveTermsId =
+          vendRows[0].tradingTermsId ||
+          vendRows[0].groupTradingTermsId ||
+          this.appConfig.getAppSettingsRaw()?.defaultTradingTermsId;
+
+        if (effectiveTermsId) {
+          const [term] = await this.db
+            .select()
+            .from(tradingTerms)
+            .where(eq(tradingTerms.tradingTermsId, effectiveTermsId))
+            .limit(1);
+          if (term) {
+            vendorTermType = term.type as
+              | 'net'
+              | 'end_of_month'
+              | 'cash_on_delivery';
+            vendorTermDays = term.days;
+          }
+        }
+      }
+    }
+
     return this.db.transaction(async (tx: DrizzleDB) => {
+      const invoiceDate = new Date();
+      let dueDate = new Date();
+      if (vendorTermType && vendorTermDays !== null) {
+        console.log(
+          'Calculating due date for vendor',
+          dto.vendorId,
+          'type',
+          vendorTermType,
+          'days',
+          vendorTermDays,
+        );
+        dueDate = calculateDueDate(invoiceDate, vendorTermType, vendorTermDays);
+      } else {
+        console.log(
+          'Falling back to new Date for vendor',
+          dto.vendorId,
+          'vendorTermType',
+          vendorTermType,
+        );
+      }
       const [invoice] = await tx
         .insert(purchaseInvoices)
         .values({
@@ -297,6 +359,8 @@ export class PurchaseInvoiceService {
           stateCode: PURCHASE_INVOICE_STATE.DRAFT,
           notes: dto.notes,
           purchaseOrderId: dto.purchaseOrderId,
+          invoiceDate,
+          dueDate,
           createdBy: actor,
         })
         .returning();
@@ -346,7 +410,7 @@ export class PurchaseInvoiceService {
     });
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   private async recalculateInvoiceTotals(invoiceId: string, tx: DrizzleDB) {
     const lines = await tx
       .select({ amount: purchaseInvoiceLines.amount })
@@ -366,7 +430,7 @@ export class PurchaseInvoiceService {
     const taxAmt = parseFloat(invoice.taxAmount || '0');
     const newTotal = lineTotal + taxAmt;
 
-    // @modbm-skip-audit
+    // @herobm-skip-audit
     await tx
       .update(purchaseInvoices)
       .set({
@@ -376,7 +440,7 @@ export class PurchaseInvoiceService {
       .where(eq(purchaseInvoices.invoiceId, invoiceId));
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   async updateInvoice(
     invoiceId: string,
     dto: {
@@ -424,7 +488,7 @@ export class PurchaseInvoiceService {
     });
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   async updateLine(
     invoiceId: string,
     lineId: string,
@@ -484,7 +548,7 @@ export class PurchaseInvoiceService {
         updateData.amount = pricing.amount;
       }
 
-      // @modbm-skip-audit
+      // @herobm-skip-audit
       await tx
         .update(purchaseInvoiceLines)
         .set(updateData)
@@ -498,8 +562,8 @@ export class PurchaseInvoiceService {
     });
   }
 
-  // @modbm-skip-audit
-  // @modbm-skip-audit
+  // @herobm-skip-audit
+  // @herobm-skip-audit
   async removeLine(invoiceId: string, lineId: string, actor: string) {
     return this.db.transaction(async (tx) => {
       const [invoice] = await tx
@@ -522,8 +586,8 @@ export class PurchaseInvoiceService {
     });
   }
 
-  // @modbm-skip-audit
-  // @modbm-skip-audit
+  // @herobm-skip-audit
+  // @herobm-skip-audit
   async addLine(
     invoiceId: string,
     dto: {
@@ -866,7 +930,7 @@ export class PurchaseInvoiceService {
    * Handles draft -> cancelled, cancelled -> draft.
    * draft -> invoiced delegates to postInvoice.
    */
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   async changePurchaseInvoiceState(
     invoiceId: string,
     newState: string,
@@ -1243,7 +1307,7 @@ export class PurchaseInvoiceService {
     return await dataQuery;
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   private async changePurchaseInvoiceStateInternal(
     invoiceId: string,
     newState: string,

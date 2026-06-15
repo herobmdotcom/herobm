@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 
 import type { OrderDetail, TaxCategory, SalesInvoice } from './types';
-import { computeLinePrice, SALES_ORDER_STATE, SALES_INVOICE_STATE } from '@modbm/shared';
+import { computeLinePrice, SALES_ORDER_STATE, SALES_INVOICE_STATE } from '@herobm/shared';
 import type { NewInvoiceLine } from './useOrder';
 import { calculateInvoiceableQuantities } from '@/lib/sales-order-utils';
 import { useSettings } from '@/components/SettingsProvider';

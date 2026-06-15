@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { useLicense } from '@/components/LicenseProvider';
-import { licenseControllerApplyLicense } from '@modbm/sdk';
+import { licenseControllerApplyLicense } from '@herobm/sdk';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import DetailsLayout from '@/components/shared/DetailsLayout';

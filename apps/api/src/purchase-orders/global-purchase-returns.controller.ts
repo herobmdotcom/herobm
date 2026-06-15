@@ -1,4 +1,4 @@
-import { SystemResource } from '@modbm/shared';
+import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -32,7 +32,7 @@ import {
   purchaseOrders,
   purchaseOrderReturnLines,
   suppliers,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq, desc, inArray } from 'drizzle-orm';
 import {
   PurchaseReturnResponseDto,

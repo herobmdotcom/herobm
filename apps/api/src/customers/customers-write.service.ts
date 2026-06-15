@@ -12,7 +12,7 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   masterDataEvents,
   customers as coreAccounts,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {
@@ -20,7 +20,7 @@ import {
   CUSTOMER_STATE,
   CustomerState,
   getValidStates,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { CreateAccountDto, UpdateAccountDto } from './dto';
@@ -69,10 +69,14 @@ export class AccountsWriteService {
       'fax',
       'emailAddress1',
       'customerGroupId',
-      'taxCategoryId',
+      'taxPositionId',
+      'tradingTermsId',
       'currencyCode',
       'parentCustomerId',
-
+      'isTaxRegistered',
+      'isOnCreditHold',
+      'creditLimit',
+      'businessNumber',
       'notes',
     ];
 
@@ -156,10 +160,14 @@ export class AccountsWriteService {
       'emailAddress1',
       'customerGroupId',
       'stateCode',
-      'taxCategoryId',
+      'taxPositionId',
+      'tradingTermsId',
       'currencyCode',
       'parentCustomerId',
-
+      'isTaxRegistered',
+      'isOnCreditHold',
+      'creditLimit',
+      'businessNumber',
       'notes',
     ];
 

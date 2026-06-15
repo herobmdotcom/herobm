@@ -9,7 +9,7 @@ import {
   bins,
   binContents,
   appSettings,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 
 describe('LocationsService', () => {

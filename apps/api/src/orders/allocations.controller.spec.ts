@@ -14,8 +14,8 @@ import {
   binContents,
   uomDictionary,
   taxCategories,
-} from '../drizzle/modbm-core-schema';
-import { BACKORDER_STATE } from '@modbm/shared';
+} from '../drizzle/herobm-core-schema';
+import { BACKORDER_STATE } from '@herobm/shared';
 
 describe('AllocationsController.getOpenDemands — availableElsewhere enrichment', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

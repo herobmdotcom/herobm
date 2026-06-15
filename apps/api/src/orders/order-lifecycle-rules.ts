@@ -5,7 +5,7 @@ import {
   salesOrderLineItems,
   salesInvoices,
   salesInvoiceLines,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { findOrder, getCommittedPerLine } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -13,7 +13,7 @@ import {
   SALES_ORDER_STATE,
   SHIPMENT_STATE,
   SALES_INVOICE_STATE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 export interface LifecycleTrigger {
   entity: 'shipment' | 'sales_invoice' | 'picking';

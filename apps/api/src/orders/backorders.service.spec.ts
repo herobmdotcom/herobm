@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BackordersService } from './backorders.service';
-import type { InventoryGap } from '@modbm/shared';
+import type { InventoryGap } from '@herobm/shared';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { AppConfigService } from '../settings/app-config.service';
@@ -13,7 +13,7 @@ import {
   locations,
   uomDictionary,
   taxCategories,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 
 describe('BackordersService', () => {

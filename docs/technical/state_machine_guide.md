@@ -3,7 +3,7 @@
 This document outlines the core business lifecycles and state machine transitions used throughout the Composable ERP. 
 The system enforces strict state transitions to prevent invalid business operations (e.g., cancelling an order that has already been shipped).
 
-All state definitions and transition rules are centrally managed in `@modbm/shared/state-machines` (`packages/shared/src/state-machines.ts`), ensuring the API validation and UI rendering logic are always perfectly synchronized.
+All state definitions and transition rules are centrally managed in `@herobm/shared/state-machines` (`packages/shared/src/state-machines.ts`), ensuring the API validation and UI rendering logic are always perfectly synchronized.
 
 ---
 

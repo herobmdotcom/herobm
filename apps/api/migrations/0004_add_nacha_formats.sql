@@ -1,1 +1,1 @@
-ALTER TABLE "modbm_core"."gl_settings" ADD COLUMN "supported_batch_payment_formats" jsonb DEFAULT '[]'::jsonb;
+ALTER TABLE "herobm_core"."gl_settings" ADD COLUMN "supported_batch_payment_formats" jsonb DEFAULT '[]'::jsonb;

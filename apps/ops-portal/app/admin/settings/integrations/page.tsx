@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import * as api from '@modbm/sdk';
-import { getErrorMessage, COUNTRIES } from '@modbm/shared';
+import * as api from '@herobm/sdk';
+import { getErrorMessage, COUNTRIES } from '@herobm/shared';
 import toast from 'react-hot-toast';
 
 import DetailsLayout from '@/components/shared/DetailsLayout';

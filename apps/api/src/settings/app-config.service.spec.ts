@@ -6,10 +6,10 @@ import {
   glSettings,
   appSettings,
   locations,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
-import * as schema from '../drizzle/modbm-core-schema';
+import * as schema from '../drizzle/herobm-core-schema';
 
 describe('AppConfigService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

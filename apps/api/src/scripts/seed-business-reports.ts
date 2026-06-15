@@ -2,7 +2,7 @@ import { config } from 'dotenv';
 config({ path: '.env' });
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { businessReports } from '../drizzle/modbm-core-schema';
+import { businessReports } from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 
 async function seedBusinessReports() {

@@ -1,6 +1,6 @@
 services:
   ops-portal:
-    image: localhost/modbm_ops-portal:latest
+    image: localhost/herobm_ops-portal:latest
     build:
       context: .
       dockerfile: Dockerfile.portal
@@ -63,7 +63,7 @@ services:
       - app-net
 
   custom-api:
-    image: localhost/modbm_custom-api:latest
+    image: localhost/herobm_custom-api:latest
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -151,6 +151,32 @@ services:
     networks:
       - app-net
       - monitoring-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  pipeline-runner:
+    image: localhost/herobm_pipeline-runner:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.pipeline
+    container_name: pipeline-runner
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres-custom
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      postgres-custom:
+        condition: service_healthy
+    networks:
+      - app-net
     logging:
       driver: "json-file"
       options:

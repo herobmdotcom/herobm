@@ -5,7 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { getCountryCode, getErrorMessage } from '@modbm/shared';
+import { getCountryCode, getErrorMessage } from '@herobm/shared';
 import { sql } from 'drizzle-orm';
 import {
   appSettings,
@@ -13,7 +13,7 @@ import {
   organization,
   locations,
   glAccounts,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import {
   ExecuteSetupDto,
   TestAbmConnectionDto,
@@ -29,7 +29,7 @@ import { Readable } from 'stream';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import * as bcrypt from 'bcrypt';
 import { parse } from 'csv-parse';
-import * as schema from '../drizzle/modbm-core-schema';
+import * as schema from '../drizzle/herobm-core-schema';
 import { EntityType, EventType } from '../common/event-types';
 import { emitEvent } from '../common/emit-event';
 
@@ -38,8 +38,14 @@ export class SetupService {
   private readonly logger = new Logger(SetupService.name);
 
   // In-memory job tracking for the setup process
-  // eslint-disable-next-line ,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private activeJobs: Record<string, any> = {};
+
+  // In-memory resolvers for webhook-driven async tasks
+  private jobResolvers: Record<
+    string,
+    { resolve: () => void; reject: (err: Error) => void }
+  > = {};
 
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
@@ -77,133 +83,127 @@ export class SetupService {
   async testAbmConnection(dto: TestAbmConnectionDto) {
     this.logger.log(`Testing ABM connection to ${dto.host}...`);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return new Promise<{ success: boolean; message: string; preview?: any }>(
-      (resolve) => {
-        const envOverride: Record<string, string> = {
-          ...process.env,
-          SOURCE_DB_HOST: dto.host,
-          SOURCE_DB_DATABASE: dto.database,
-          SOURCE_DB_USER: dto.username,
-          SOURCE_DB_PASSWORD: dto.password,
-          SOURCE_DB_PORT: dto.port ? dto.port.toString() : '1433',
-        };
+    const envOverride: Record<string, string> = {
+      ...process.env,
+      SOURCE_DB_HOST: dto.host,
+      SOURCE_DB_DATABASE: dto.database,
+      SOURCE_DB_USER: dto.username,
+      SOURCE_DB_PASSWORD: dto.password,
+      SOURCE_DB_PORT: dto.port ? dto.port.toString() : '1433',
+    };
 
-        const rootDir = this.getWorkspaceRoot();
-        const venvPython =
-          process.platform === 'win32'
-            ? '".venv\\Scripts\\python"'
-            : '".venv/bin/python"';
-
-        const child = spawn(`${venvPython} pipelines/abm_extract/preview.py`, {
-          cwd: rootDir,
+    try {
+      const response = await fetch('http://pipeline-runner:8000/run-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          command: 'python',
+          args: ['pipelines/abm_extract/preview.py'],
           env: envOverride,
-          shell: true,
-        });
+        }),
+      });
 
-        let stdout = '';
-        let stderr = '';
+      if (!response.ok) {
+        return { success: false, message: 'Pipeline runner unreachable' };
+      }
 
-        child.stdout.on('data', (data) => (stdout += data.toString()));
-        child.stderr.on('data', (data) => (stderr += data.toString()));
-
-        child.on('close', (code) => {
-          if (code !== 0) {
-            let msg = 'Connection failed.';
-            try {
-              if (stdout) {
-                const errorJson = JSON.parse(stdout.trim());
-                if (errorJson.error) msg = errorJson.error;
-              }
-            } catch (e) {
-              msg = stderr.substring(0, 200) || stdout.substring(0, 200);
-            }
-            return resolve({ success: false, message: msg });
+      const result = await response.json();
+      if (result.error || result.returncode !== 0) {
+        let msg = 'Connection failed.';
+        try {
+          if (result.stdout) {
+            const errorJson = JSON.parse(result.stdout.trim());
+            if (errorJson.error) msg = errorJson.error;
           }
-          try {
-            const result = stdout.trim()
-              ? JSON.parse(stdout.trim())
-              : undefined;
-            resolve({
-              success: true,
-              message: 'Connected',
-              preview: result,
-            });
-          } catch (e) {
-            resolve({
-              success: false,
-              message: 'Invalid response from preview script',
-            });
-          }
-        });
-      },
-    );
+        } catch (e) {
+          msg =
+            result.stderr?.substring(0, 200) ||
+            result.stdout?.substring(0, 200) ||
+            result.error;
+        }
+        return { success: false, message: msg };
+      }
+
+      try {
+        const previewData = result.stdout.trim()
+          ? JSON.parse(result.stdout.trim())
+          : undefined;
+        return { success: true, message: 'Connected', preview: previewData };
+      } catch (e) {
+        return {
+          success: false,
+          message: 'Invalid response from preview script',
+        };
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to connect to pipeline-runner: ${error.message}`,
+      );
+      return { success: false, message: 'Pipeline runner error' };
+    }
   }
 
   async testOdooConnection(dto: TestOdooConnectionDto) {
     this.logger.log(`Testing Odoo connection to ${dto.host}...`);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return new Promise<{ success: boolean; message: string; preview?: any }>(
-      (resolve) => {
-        const envOverride: Record<string, string> = {
-          ...process.env,
-          SOURCE_DB_HOST: dto.host,
-          SOURCE_DB_DATABASE: dto.database,
-          SOURCE_DB_USER: dto.username,
-          SOURCE_DB_PASSWORD: dto.password,
-          SOURCE_DB_PORT: dto.port ? dto.port.toString() : '5432',
-        };
+    const envOverride: Record<string, string> = {
+      ...process.env,
+      SOURCE_DB_HOST: dto.host,
+      SOURCE_DB_DATABASE: dto.database,
+      SOURCE_DB_USER: dto.username,
+      SOURCE_DB_PASSWORD: dto.password,
+      SOURCE_DB_PORT: dto.port ? dto.port.toString() : '5432',
+    };
 
-        const rootDir = this.getWorkspaceRoot();
-        const venvPython =
-          process.platform === 'win32'
-            ? '".venv\\Scripts\\python"'
-            : '".venv/bin/python"';
-
-        const child = spawn(`${venvPython} pipelines/odoo_extract/preview.py`, {
-          cwd: rootDir,
+    try {
+      const response = await fetch('http://pipeline-runner:8000/run-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          command: 'python',
+          args: ['pipelines/odoo_extract/preview.py'],
           env: envOverride,
-          shell: true,
-        });
+        }),
+      });
 
-        let stdout = '';
-        let stderr = '';
+      if (!response.ok) {
+        return { success: false, message: 'Pipeline runner unreachable' };
+      }
 
-        child.stdout.on('data', (data) => (stdout += data.toString()));
-        child.stderr.on('data', (data) => (stderr += data.toString()));
-
-        child.on('close', (code) => {
-          if (code !== 0) {
-            let msg = 'Connection failed.';
-            try {
-              if (stdout) {
-                const errorJson = JSON.parse(stdout.trim());
-                if (errorJson.error) msg = errorJson.error;
-              }
-            } catch (e) {
-              msg = stderr.substring(0, 200) || stdout.substring(0, 200);
-            }
-            return resolve({ success: false, message: msg });
+      const result = await response.json();
+      if (result.error || result.returncode !== 0) {
+        let msg = 'Connection failed.';
+        try {
+          if (result.stdout) {
+            const errorJson = JSON.parse(result.stdout.trim());
+            if (errorJson.error) msg = errorJson.error;
           }
-          try {
-            const result = stdout.trim()
-              ? JSON.parse(stdout.trim())
-              : undefined;
-            resolve({
-              success: true,
-              message: 'Connected',
-              preview: result,
-            });
-          } catch (e) {
-            resolve({
-              success: false,
-              message: 'Invalid response from preview script',
-            });
-          }
-        });
-      },
-    );
+        } catch (e) {
+          msg =
+            result.stderr?.substring(0, 200) ||
+            result.stdout?.substring(0, 200) ||
+            result.error;
+        }
+        return { success: false, message: msg };
+      }
+
+      try {
+        const previewData = result.stdout.trim()
+          ? JSON.parse(result.stdout.trim())
+          : undefined;
+        return { success: true, message: 'Connected', preview: previewData };
+      } catch (e) {
+        return {
+          success: false,
+          message: 'Invalid response from preview script',
+        };
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to connect to pipeline-runner: ${error.message}`,
+      );
+      return { success: false, message: 'Pipeline runner error' };
+    }
   }
 
   async getValidation() {
@@ -222,13 +222,13 @@ export class SetupService {
   async getImportSummary() {
     try {
       const [{ count: products }] = await this.db.execute(
-        sql`SELECT COUNT(*) FROM modbm_core.products`,
+        sql`SELECT COUNT(*) FROM herobm_core.products`,
       );
       const [{ count: customers }] = await this.db.execute(
-        sql`SELECT COUNT(*) FROM modbm_core.customers`,
+        sql`SELECT COUNT(*) FROM herobm_core.customers`,
       );
       const [{ count: orders }] = await this.db.execute(
-        sql`SELECT COUNT(*) FROM modbm_core.sales_orders`,
+        sql`SELECT COUNT(*) FROM herobm_core.sales_orders`,
       );
 
       return {
@@ -455,7 +455,7 @@ export class SetupService {
     return { jobId };
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   private async runCsvCore(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     entry: any,
@@ -843,24 +843,59 @@ export class SetupService {
     args: string[],
     envOverride?: Record<string, string>,
   ): Promise<void> {
+    if (!jobId) {
+      return Promise.reject(new Error('jobId is required for async webhooks'));
+    }
+
     return new Promise((resolve, reject) => {
-      const child = spawn([cmd, ...args].join(' '), {
-        cwd: this.getWorkspaceRoot(),
-        shell: true,
-        env: { ...process.env, ...envOverride },
-      });
-      child.stdout.on('data', (data) =>
-        this.log(jobId, data.toString().trim()),
-      );
-      child.stderr.on('data', (data) =>
-        this.log(jobId, data.toString().trim()),
-      );
-      child.on('close', (code) =>
-        code === 0
-          ? resolve()
-          : reject(new Error(`${cmd} failed with code ${code}`)),
-      );
+      this.jobResolvers[jobId] = { resolve, reject };
+
+      fetch('http://pipeline-runner:8000/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId,
+          command: cmd,
+          args: args,
+          env: { ...process.env, ...envOverride },
+        }),
+      })
+        .then(async (response) => {
+          if (!response.ok) {
+            const body = await response.text();
+            delete this.jobResolvers[jobId];
+            reject(new Error(`Failed to trigger sidecar: ${body}`));
+          }
+        })
+        .catch((err) => {
+          delete this.jobResolvers[jobId];
+          reject(err instanceof Error ? err : new Error(String(err)));
+        });
     });
+  }
+
+  public handleWebhook(payload: {
+    jobId: string;
+    logLine: string;
+    status: string;
+  }) {
+    if (payload.logLine) {
+      this.log(payload.jobId, payload.logLine);
+    }
+
+    if (payload.status === 'done') {
+      if (this.jobResolvers[payload.jobId]) {
+        this.jobResolvers[payload.jobId].resolve();
+        delete this.jobResolvers[payload.jobId];
+      }
+    } else if (payload.status === 'failed') {
+      if (this.jobResolvers[payload.jobId]) {
+        this.jobResolvers[payload.jobId].reject(
+          new Error(payload.logLine || 'Pipeline failed'),
+        );
+        delete this.jobResolvers[payload.jobId];
+      }
+    }
   }
 
   private async inferAndSaveGlMetadataSchema(jobId?: string) {

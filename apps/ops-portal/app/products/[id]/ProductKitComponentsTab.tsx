@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import DataGrid from '@/components/DataGrid';
 import { KitComponentSlideOver } from './KitComponentSlideOver';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 interface ProductKitComponentsTabProps {
   productId: string;

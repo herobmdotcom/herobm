@@ -13,7 +13,7 @@ import {
   locations,
   uomDictionary,
   taxCategories,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { sql } from 'drizzle-orm';
 
 describe('DashboardService', () => {
@@ -26,7 +26,7 @@ describe('DashboardService', () => {
     // Ensure the view exists since it's an .existing() view in Drizzle
     // and might be missing from migrations if it was created manually.
     await pg.db.execute(sql`
-      CREATE OR REPLACE VIEW modbm_core.dashboard_timeline AS
+      CREATE OR REPLACE VIEW herobm_core.dashboard_timeline AS
       SELECT 
         event_id,
         entity_type,
@@ -36,7 +36,7 @@ describe('DashboardService', () => {
         payload,
         actor,
         created_on
-      FROM modbm_core.system_events;
+      FROM herobm_core.system_events;
     `);
 
     // Create a shared location for tests

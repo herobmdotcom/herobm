@@ -1,7 +1,7 @@
 import { Module, Global, OnApplicationShutdown, Inject } from '@nestjs/common';
 import { drizzle, PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import * as coreSchema from './modbm-core-schema';
+import * as coreSchema from './herobm-core-schema';
 
 const schema = { ...coreSchema };
 

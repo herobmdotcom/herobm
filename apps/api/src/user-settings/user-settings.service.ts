@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { userSettings } from '../drizzle/modbm-core-schema';
+import { userSettings } from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 
 @Injectable()
@@ -15,7 +15,7 @@ export class UserSettingsService {
 
     if (!settings) {
       const [inserted] = await this.db
-        // @modbm-skip-audit
+        // @herobm-skip-audit
         .insert(userSettings)
         .values({ userId })
         .returning();
@@ -37,7 +37,7 @@ export class UserSettingsService {
     await this.getSettings(userId);
 
     const [updated] = await this.db
-      // @modbm-skip-audit
+      // @herobm-skip-audit
       .update(userSettings)
       .set({
         ...(data.dashboardConfig !== undefined && {

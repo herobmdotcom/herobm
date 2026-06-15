@@ -7,6 +7,11 @@
 # Usage: .\scripts\setup.ps1
 # ==============================================================================
 
+[CmdletBinding()]
+param(
+    [switch]$SkipRun
+)
+
 $ErrorActionPreference = "Stop"
 
 # --- Prerequisite definitions ---
@@ -59,17 +64,29 @@ foreach ($prereq in $prereqs) {
     }
 }
 
-# --- Check Make (special case: not reliably on winget) ---
+# --- Check Make ---
 $makeCmd = Get-Command make -ErrorAction SilentlyContinue
 if ($makeCmd) {
     Write-Host "  [OK] Make -- $($makeCmd.Source)" -ForegroundColor Green
     $skipped += "Make"
 }
 else {
-    Write-Host "  [MISSING] Make -- install manually:" -ForegroundColor Yellow
-    Write-Host "           choco install make" -ForegroundColor Yellow
-    Write-Host "        or scoop install make" -ForegroundColor Yellow
-    $failed += "Make"
+    Write-Host "  [MISSING] Make -- installing via winget..." -ForegroundColor Yellow
+    try {
+        winget install --id ezwinports.make --accept-source-agreements --accept-package-agreements --silent
+        if ($LASTEXITCODE -eq 0) {
+            $installed += "Make"
+            Write-Host "  [INSTALLED] Make" -ForegroundColor Green
+        }
+        else {
+            $failed += "Make"
+            Write-Host "  [FAILED] Make -- winget exit code $LASTEXITCODE" -ForegroundColor Red
+        }
+    }
+    catch {
+        $failed += "Make"
+        Write-Host "  [FAILED] Make -- $($_.Exception.Message)" -ForegroundColor Red
+    }
 }
 
 # --- Install podman-compose via pip ---
@@ -143,7 +160,6 @@ Write-Host "  1) Local native Node.js (Recommended for fullstack developers)"
 Write-Host "  2) Full Containerization (Recommended for pure evaluation/ops)"
 $pathChoice = Read-Host "Enter option [1 or 2]"
 
-$installPlg = Read-Host "Enable PLG Stack (Prometheus/Loki/Grafana)? [y/N]"
 $installErpnext = Read-Host "Enable ERPNext Integration Stack? [y/N]"
 
 $makeTargets = @()
@@ -156,10 +172,6 @@ else {
     Write-Host "  -> Selected Full Containerization path" -ForegroundColor Gray
 }
 
-if ($installPlg -match "^[yY]") {
-    $makeTargets += "up-plg"
-    Write-Host "  -> Enabled PLG Stack" -ForegroundColor Gray
-}
 if ($installErpnext -match "^[yY]") {
     $makeTargets += "up-erpnext"
     Write-Host "  -> Enabled ERPNext Stack" -ForegroundColor Gray
@@ -180,7 +192,7 @@ try {
     $logFile = Join-Path $projectDir "logs\autostart.log"
     $shortcut.Arguments = "-WindowStyle Hidden -Command `"Set-Location '$projectDir'; `$logFile = '$logFile'; '--- Autostart: ' + (Get-Date) | Out-File `$logFile; podman machine start 2>&1 | Tee-Object -FilePath `$logFile -Append; $makeCmdString 2>&1 | Tee-Object -FilePath `$logFile -Append; '--- Done: ' + (Get-Date) | Out-File `$logFile -Append`""
     $shortcut.WorkingDirectory = $projectDir
-    $shortcut.Description = "Starts Podman machine and ModBM containers ($makeCmdString) on boot"
+    $shortcut.Description = "Starts Podman machine and HeroBM containers ($makeCmdString) on boot"
     $shortcut.Save()
     Write-Host "  [OK] Created Windows Startup shortcut: $makeCmdString" -ForegroundColor Green
 }
@@ -201,8 +213,11 @@ if ($failed.Count -gt 0) {
     Write-Host "`n  Please install failed items manually, then re-run this script." -ForegroundColor Yellow
 }
 else {
-    Write-Host "`n  All prerequisites installed! Starting your chosen environment..." -ForegroundColor Green
-    $initCmd = "make init-env " + ($makeTargets -join " ")
-    Write-Host "  Running: $initCmd" -ForegroundColor Cyan
-    Invoke-Expression $initCmd
+    Write-Host "`n  All prerequisites installed!" -ForegroundColor Green
+    if (-not $SkipRun) {
+        Write-Host "  Starting your chosen environment..." -ForegroundColor Green
+        $initCmd = "make init-env " + ($makeTargets -join " ")
+        Write-Host "  Running: $initCmd" -ForegroundColor Cyan
+        Invoke-Expression $initCmd
+    }
 }

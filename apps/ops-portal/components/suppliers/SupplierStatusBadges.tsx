@@ -9,7 +9,7 @@ interface Props {
 }
 
 import { useTranslations } from 'next-intl';
-import { SUPPLIER_STATE } from '@modbm/shared';
+import { SUPPLIER_STATE } from '@herobm/shared';
 
 export default function SupplierStatusBadges({ profile, stateCode, mode = 'grid' }: Props) {
   const tSupplier = useTranslations('suppliers');

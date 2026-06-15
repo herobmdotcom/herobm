@@ -5,10 +5,10 @@ import {
   purchaseOrderLineItems,
   purchaseInvoices,
   purchaseInvoiceLines,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { PURCHASE_ORDER_STATE } from '@modbm/shared';
+import { PURCHASE_ORDER_STATE } from '@herobm/shared';
 
 export interface POLifecycleTrigger {
   entity: 'goods_receipt' | 'purchase_invoice' | 'purchase_return';

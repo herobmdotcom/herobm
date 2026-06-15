@@ -74,6 +74,7 @@ async function bootstrap() {
       .addTag('Warehouse', 'Inventory, receiving, and fulfillment')
       .addTag('Payments', 'Payment processing and reconciliation')
       .addTag('General Ledger', 'Accounting, charts, and journals')
+      .addTag('Tax', 'Tax configuration and mappings')
       .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document);

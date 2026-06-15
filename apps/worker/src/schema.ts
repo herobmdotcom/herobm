@@ -1,8 +1,8 @@
 import { pgSchema, uuid, text, jsonb, timestamp, boolean } from 'drizzle-orm/pg-core';
 
-export const modbmCore = pgSchema('modbm_core');
+export const herobmCore = pgSchema('herobm_core');
 
-export const outbox = modbmCore.table('outbox', {
+export const outbox = herobmCore.table('outbox', {
   outboxId: uuid('outbox_id').primaryKey(),
   entityType: text('entity_type').notNull(),
   entityId: uuid('entity_id').notNull(),
@@ -15,7 +15,7 @@ export const outbox = modbmCore.table('outbox', {
   lastError: text('last_error'),
 });
 
-export const accounts = modbmCore.table('accounts', {
+export const accounts = herobmCore.table('accounts', {
   accountId: uuid('account_id').primaryKey(),
   accountNumber: text('account_number').notNull(),
   name: text('name').notNull(),
@@ -25,7 +25,7 @@ export const accounts = modbmCore.table('accounts', {
   isTaxRegistered: boolean('is_tax_registered').notNull().default(false),
 });
 
-export const suppliers = modbmCore.table('suppliers', {
+export const suppliers = herobmCore.table('suppliers', {
   vendorId: uuid('vendor_id').primaryKey(),
   externalId: text('external_id'),
   businessNumber: text('business_number'),
@@ -35,7 +35,7 @@ export const suppliers = modbmCore.table('suppliers', {
   blockNotes: text('block_notes'),
 });
 
-export const supplierExpiries = modbmCore.table('supplier_expiries', {
+export const supplierExpiries = herobmCore.table('supplier_expiries', {
   expiryId: uuid('expiry_id').primaryKey(),
   vendorId: uuid('vendor_id').notNull().references(() => suppliers.vendorId),
   expiryType: text('expiry_type').notNull(),
@@ -44,7 +44,7 @@ export const supplierExpiries = modbmCore.table('supplier_expiries', {
   createdOn: timestamp('created_on', { withTimezone: true }),
 });
 
-export const webhooks = modbmCore.table('webhooks', {
+export const webhooks = herobmCore.table('webhooks', {
   webhookId: uuid('webhook_id').primaryKey(),
   targetUrl: text('target_url').notNull(),
   eventTypes: jsonb('event_types').notNull(),
@@ -52,7 +52,7 @@ export const webhooks = modbmCore.table('webhooks', {
   isActive: boolean('is_active').notNull(),
 });
 
-export const systemEvents = modbmCore.table('system_events', {
+export const systemEvents = herobmCore.table('system_events', {
   eventId: uuid('event_id').primaryKey(),
   entityType: text('entity_type').notNull(),
   entityId: uuid('entity_id').notNull(),
@@ -62,9 +62,9 @@ export const systemEvents = modbmCore.table('system_events', {
   createdOn: timestamp('created_on', { withTimezone: true }),
 });
 
-export const emailStatusEnum = modbmCore.enum('email_status', ['pending', 'sending', 'sent', 'failed', 'dismissed']);
+export const emailStatusEnum = herobmCore.enum('email_status', ['pending', 'sending', 'sent', 'failed', 'dismissed']);
 
-export const emailOutbox = modbmCore.table('email_outbox', {
+export const emailOutbox = herobmCore.table('email_outbox', {
   id: uuid('id').primaryKey(),
   entityType: text('entity_type'),
   entityId: uuid('entity_id'),
@@ -81,7 +81,7 @@ export const emailOutbox = modbmCore.table('email_outbox', {
   processedAt: timestamp('processed_at', { withTimezone: true }),
 });
 
-export const appSettings = modbmCore.table('app_settings', {
+export const appSettings = herobmCore.table('app_settings', {
   settingsId: uuid('settings_id').primaryKey(),
   smtpHost: text('smtp_host'),
   smtpPort: text('smtp_port'), // integer

@@ -21,7 +21,7 @@ import {
   products as coreProducts,
   suppliers,
   supplierGroups,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { InventoryService } from '../inventory/inventory.service';
@@ -32,7 +32,7 @@ import {
   PURCHASE_RETURN_SHIPMENT_STATE,
   PURCHASE_ORDER_STATE,
   getValidStates,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
 import { getValuationStrategy } from '../inventory/valuation';
@@ -445,7 +445,7 @@ export class PurchaseReturnsService {
         }
 
         await tx.execute(
-          sql`UPDATE modbm_core.purchase_order_lines SET quantity_received = (quantity_received::numeric - ${rl.quantityReturned}::numeric) WHERE purchase_order_line_id = ${rl.purchaseOrderLineId}`,
+          sql`UPDATE herobm_core.purchase_order_lines SET quantity_received = (quantity_received::numeric - ${rl.quantityReturned}::numeric) WHERE purchase_order_line_id = ${rl.purchaseOrderLineId}`,
         );
       }
 

@@ -2,7 +2,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as schema from '../../src/drizzle/modbm-core-schema';
+import * as schema from '../../src/drizzle/herobm-core-schema';
 import {
   runStandardSeeds,
   seedCoaSettings,
@@ -15,7 +15,7 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
   const client = new PGlite();
 
   await client.exec(`
-    CREATE SCHEMA IF NOT EXISTS modbm_core;
+    CREATE SCHEMA IF NOT EXISTS herobm_core;
   `);
 
   const migrationsDir = path.join(process.cwd(), 'migrations');
@@ -36,9 +36,13 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
 
   // Schema drift catch-up (missing in migrations but present in Drizzle schema)
   await client.exec(`
-    ALTER TABLE "modbm_core"."sales_invoices" ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
-    ALTER TABLE "modbm_core"."purchase_invoices" ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
-    ALTER TABLE "modbm_core"."api_keys" ADD COLUMN IF NOT EXISTS "role" text DEFAULT 'system' NOT NULL;
+    ALTER TABLE "herobm_core"."sales_invoices" ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
+    ALTER TABLE "herobm_core"."purchase_invoices" ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
+    ALTER TABLE "herobm_core"."api_keys" ADD COLUMN IF NOT EXISTS "role" text DEFAULT 'system' NOT NULL;
+    ALTER TABLE "herobm_core"."gl_settings" ADD COLUMN IF NOT EXISTS "default_discounts_received_account_id" uuid;
+    ALTER TABLE "herobm_core"."payment_allocations" ADD COLUMN IF NOT EXISTS "discount_amount" numeric DEFAULT '0';
+    ALTER TABLE "herobm_core"."supplier_groups" ADD COLUMN IF NOT EXISTS "early_payment_discount_days" integer;
+    ALTER TABLE "herobm_core"."suppliers" ADD COLUMN IF NOT EXISTS "early_payment_discount_days" integer;
   `);
 
   // Run extensions (Views, triggers, etc)

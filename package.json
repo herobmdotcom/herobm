@@ -1,5 +1,5 @@
 {
-  "name": "modbm-monorepo",
+  "name": "herobm-monorepo",
   "private": true,
   "workspaces": [
     "apps/*",

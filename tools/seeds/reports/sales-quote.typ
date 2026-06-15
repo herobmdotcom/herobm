@@ -1,4 +1,4 @@
-// Sales Quote — modbm report template
+// Sales Quote — herobm report template
 // Data is loaded from a JSON file passed via sys.inputs.data
 
 #let data = json(sys.inputs.at("data"))

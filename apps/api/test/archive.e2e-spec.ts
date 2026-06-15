@@ -21,7 +21,7 @@ import {
   SUPPLIER_STATE,
   SALES_ORDER_STATE,
   PURCHASE_ORDER_STATE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');

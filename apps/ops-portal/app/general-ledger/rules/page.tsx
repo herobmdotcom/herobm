@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 /** Local row type that flattens glAccountIds[0] → glAccountId for the inline table */
 interface RuleRow extends api.ReconciliationRuleResponseDto {

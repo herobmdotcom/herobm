@@ -1,3 +1,5 @@
+import { SUPPLIER_STATE } from '@herobm/shared';
+
 export interface SupplierProfile {
   tradingTermsId?: string | null;
   earlyPaymentDiscount?: string | null;
@@ -6,6 +8,7 @@ export interface SupplierProfile {
   purchasingBlockReason?: string | null;
   isPaymentBlocked: boolean;
   paymentBlockReason?: string | null;
+  stateCode?: string | null;
 }
 
 export interface SupplierGroupProfile {
@@ -94,6 +97,14 @@ export function resolveSupplierRiskProfile(
       resolved.isPurchasingBlocked = true;
       resolved.purchasingBlockReasons.push('compliance_breach');
     }
+  }
+
+  // 5. Check Master Active Control
+  if (supplier.stateCode && supplier.stateCode !== SUPPLIER_STATE.ACTIVE) {
+    resolved.isPurchasingBlocked = true;
+    resolved.purchasingBlockReasons.push('supplier_inactive');
+    resolved.isPaymentBlocked = true;
+    resolved.paymentBlockReasons.push('supplier_inactive');
   }
 
   // Deduplicate reasons

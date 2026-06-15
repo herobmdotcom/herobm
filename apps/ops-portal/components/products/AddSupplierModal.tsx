@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 interface AddSupplierModalProps {
   productId: string;

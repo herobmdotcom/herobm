@@ -4,7 +4,7 @@ import { use, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -12,9 +12,9 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
-import { SHIPMENT_STATE } from '@modbm/shared';
+import { SHIPMENT_STATE } from '@herobm/shared';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 import AddressDisplay from '@/components/shared/AddressDisplay';
 import { DataTable } from '@/components/shared/DataTable';
 
@@ -158,7 +158,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
               className="btn btn-secondary btn-sm flex items-center shrink-0"
               onClick={async () => {
                 try {
-                  const api = await import('@modbm/sdk');
+                  const api = await import('@herobm/sdk');
                   const res = await api.pdfTemplatesControllerRunHook('shipping-docket', {}, { id, context: 'shipment' });
                   const blob = res.data as Blob;
                   const url = URL.createObjectURL(blob);

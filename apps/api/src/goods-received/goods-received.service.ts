@@ -22,7 +22,7 @@ import {
   backorders,
   glJournalEntries,
   glJournalLines,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 
 import { InventoryService } from '../inventory/inventory.service';
 import { emitEvent } from '../common/emit-event';
@@ -63,7 +63,7 @@ import {
   PUTAWAY_STATUS,
   MATCH_STATUS,
   BIN_TYPE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 const VALID_GRN_STATES = getValidStates(RECEIPT_TRANSITIONS);
 
@@ -308,7 +308,7 @@ export class GoodsReceivedService {
             productId: products.productId,
             standardCost: products.standardCost,
             weightedAverageCost: products.weightedAverageCost,
-            qoh: sql`COALESCE((SELECT SUM(actual_quantity) FROM modbm_core.bin_contents WHERE product_id = ${products.productId}), 0)`.mapWith(
+            qoh: sql`COALESCE((SELECT SUM(actual_quantity) FROM herobm_core.bin_contents WHERE product_id = ${products.productId}), 0)`.mapWith(
               Number,
             ),
           })
@@ -664,7 +664,7 @@ export class GoodsReceivedService {
           line.purchaseOrderId
         ) {
           await tx.execute(
-            sql`UPDATE modbm_core.purchase_order_lines 
+            sql`UPDATE herobm_core.purchase_order_lines 
                 SET quantity_received = COALESCE(quantity_received, 0) - CAST(${line.quantityReceived} AS NUMERIC)
                 WHERE purchase_order_line_id = ${line.purchaseOrderLineId}`,
           );

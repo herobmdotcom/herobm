@@ -7,7 +7,7 @@ This guide walks you through setting up the HeroBM Platform on Windows using the
 Ensure you have **Git** installed. Then, open a PowerShell terminal and navigate to the project folder:
 
 ```powershell
-cd path/to/modbm
+cd path/to/herobm
 ```
 
 ## 2. Environment Setup

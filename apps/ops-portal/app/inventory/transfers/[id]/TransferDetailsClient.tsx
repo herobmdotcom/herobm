@@ -9,8 +9,8 @@ import StateBadge from '@/components/StateBadge';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import { ValidState } from '@/types/states';
 import { useTransferOrder } from './useTransferOrder';
-import { TRANSFER_ORDER_STATE } from '@modbm/shared';
-import { TransferLineResponseDto } from '@modbm/sdk';
+import { TRANSFER_ORDER_STATE } from '@herobm/shared';
+import { TransferLineResponseDto } from '@herobm/sdk';
 import ProductSearchInput, { Product } from '@/components/shared/ProductSearchInput';
 import { MobileCardField } from '@/components/shared/DataTable';
 

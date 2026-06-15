@@ -16,8 +16,8 @@ import {
   inventoryLedger,
   inventoryEntries,
   uomDictionary,
-} from '../drizzle/modbm-core-schema';
-import { PUTAWAY_STATUS } from '@modbm/shared';
+} from '../drizzle/herobm-core-schema';
+import { PUTAWAY_STATUS } from '@herobm/shared';
 import { eq } from 'drizzle-orm';
 import { BadRequestException } from '@nestjs/common';
 

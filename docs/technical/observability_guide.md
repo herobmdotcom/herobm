@@ -1,15 +1,15 @@
 # Observability Guide
 
-ModBM employs a local setup for observability: applications emit strictly formatted JSON logs directly to the Docker logging daemon, and simultaneously persist human-readable logs to an internal volume. This approach allows the system to remain lightweight while guaranteeing high-quality, structured logs can be ingested by any centralized monitoring platform (e.g. Datadog, Splunk) that a deployer chooses to attach to the Docker socket.
+HeroBM employs a local setup for observability: applications emit strictly formatted JSON logs directly to the Docker logging daemon, and simultaneously persist human-readable logs to an internal volume. This approach allows the system to remain lightweight while guaranteeing high-quality, structured logs can be ingested by any centralized monitoring platform (e.g. Datadog, Splunk) that a deployer chooses to attach to the Docker socket.
 
 ## Architecture
 
 ```text
-ModBM API, Worker, PostgreSQL
+HeroBM API, Worker, PostgreSQL
   │
   ├─► stdout/stderr ───────► Docker json-file driver (max-size 20m) ──► (Available to host / 3rd-party forwarders)
   │
-  └─► File outputs ────────► /app/logs/*.log ──► admin/system-logs API ──► ModBM Ops Portal UI
+  └─► File outputs ────────► /app/logs/*.log ──► admin/system-logs API ──► HeroBM Ops Portal UI
 ```
 
 ## Local File Logging
@@ -21,7 +21,7 @@ The application is optimized for small to mid-sized installations without requir
 1. **Dual Output**: The `FileLoggerService` inside the NestJS API and the `pino.multistream` configuration in the outbox worker emit formatted logs to both `stdout` and local files simultaneously. PostgreSQL behaves similarly via its native `logging_collector`.
 2. **Persistent Logs**: Files are written to a mounted `./logs` volume (`api.log`, `worker.log`, and `postgres.log`), ensuring they survive container restarts.
 3. **Container Safeguards**: In `docker-compose.yml`, the core services are restricted using Docker's native `json-file` logging driver (`max-size: 20m`, `max-file: 3`), ensuring a runaway loop won't exhaust the host's disk space.
-4. **Ops Portal Integration**: The logs are exposed directly within the ModBM UI over a secure REST endpoint.
+4. **Ops Portal Integration**: The logs are exposed directly within the HeroBM UI over a secure REST endpoint.
 
 ### System Logs UI
 

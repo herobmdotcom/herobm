@@ -17,14 +17,14 @@ Write-Host "Checking status..."
 $status = git status --porcelain
 if ($status) {
     Write-Host "Committing files..."
-    git commit -m "Initial commit for modbm project" 2>&1 | Out-Null
+    git commit -m "Initial commit for herobm project" 2>&1 | Out-Null
 } else {
     Write-Host "Nothing to commit or already committed."
 }
 
 Write-Host "Adding remote..."
 git remote remove origin 2>&1 | Out-Null
-git remote add origin https://github.com/emmpeegee/modbm.git
+git remote add origin https://github.com/emmpeegee/herobm.git
 
 Write-Host "Renaming branch to main..."
 git branch -M main

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 // eslint-disable-next-line no-restricted-imports
 import { getToken, apiFetch } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 
 function getExcelColumnName(colIndex: string): string {
   const num = parseInt(colIndex, 10);

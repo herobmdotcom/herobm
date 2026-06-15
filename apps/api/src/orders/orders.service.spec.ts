@@ -11,9 +11,9 @@ import {
   taxCategories,
   products,
   uomDictionary,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
-import { SALES_ORDER_STATE } from '@modbm/shared';
+import { SALES_ORDER_STATE } from '@herobm/shared';
 
 describe('OrdersService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

@@ -5,7 +5,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import * as bcrypt from 'bcrypt';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { users } from '../drizzle/modbm-core-schema';
+import { users } from '../drizzle/herobm-core-schema';
 
 // eslint-disable-next-line no-restricted-syntax
 const TEST_PASSWORD = 'test-admin-pw-xyz'; // TEST_CREDENTIAL

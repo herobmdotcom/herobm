@@ -1,6 +1,6 @@
 # Inventory Management
 
-This document describes how inventory works in modbm — the data model, how stock levels are tracked, and how movements flow through the system.
+This document describes how inventory works in herobm — the data model, how stock levels are tracked, and how movements flow through the system.
 
 ---
 
@@ -23,11 +23,11 @@ graph TD
 
 | Table | Schema | Purpose | Mutated by |
 |-------|--------|---------|------------|
-| **inventory_entries** | `modbm_core` | Movement headers — one per event (shipment, receipt, return, etc.) | `recordInventoryMovement` |
-| **inventory_ledger** | `modbm_core` | Immutable per-line movements (product × bin × quantity) | `recordInventoryMovement` |
-| **bin_contents** | `modbm_core` | Snapshot cache of current stock per bin × product | dbt import (initial), app mutations (future) |
-| **inventory_levels** | `modbm_core` | **VIEW** — aggregates ledger into on_hand / committed / on_order per product × location | Not directly mutated — computed from ledger |
-| **bins** | `modbm_core` | Physical storage locations (bins within a warehouse) | dbt import |
+| **inventory_entries** | `herobm_core` | Movement headers — one per event (shipment, receipt, return, etc.) | `recordInventoryMovement` |
+| **inventory_ledger** | `herobm_core` | Immutable per-line movements (product × bin × quantity) | `recordInventoryMovement` |
+| **bin_contents** | `herobm_core` | Snapshot cache of current stock per bin × product | dbt import (initial), app mutations (future) |
+| **inventory_levels** | `herobm_core` | **VIEW** — aggregates ledger into on_hand / committed / on_order per product × location | Not directly mutated — computed from ledger |
+| **bins** | `herobm_core` | Physical storage locations (bins within a warehouse) | dbt import |
 
 > [!IMPORTANT]
 > The `inventory_levels` table is a **database VIEW**, not a table. It computes stock positions by aggregating the immutable `inventory_ledger`. This means stock levels are always consistent with the movement history — there is no drift.

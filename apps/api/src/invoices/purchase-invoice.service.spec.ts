@@ -14,10 +14,10 @@ import {
   products,
   locations,
   uomDictionary,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
-import { PURCHASE_ORDER_STATE } from '@modbm/shared';
+import { PURCHASE_ORDER_STATE } from '@herobm/shared';
 
 describe('PurchaseInvoiceService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

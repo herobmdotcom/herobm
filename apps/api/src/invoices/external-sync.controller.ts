@@ -1,4 +1,4 @@
-import { SystemResource } from '@modbm/shared';
+import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -26,7 +26,7 @@ import {
 } from '../auth/casbin.guard';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { outbox } from '../drizzle/modbm-core-schema';
+import { outbox } from '../drizzle/herobm-core-schema';
 import { desc, isNull, isNotNull, sql, count, eq, and } from 'drizzle-orm';
 
 export class SyncSummaryDto {
@@ -61,7 +61,8 @@ export class SyncStatusResponseDto {
 }
 
 export class SyncEventsResponseDto {
-  @ApiProperty() data!: unknown[];
+  @ApiProperty({ type: [OutboxEventDto] }) events!: OutboxEventDto[];
+  @ApiProperty() total!: number;
 }
 
 export class DeleteEventsResponseDto {
@@ -173,6 +174,8 @@ export class ExternalSyncController {
       conditions.push(isNotNull(outbox.processedAt));
     } else if (status === 'failed') {
       conditions.push(isNotNull(outbox.lastError));
+    } else if (status === 'all') {
+      // no additional conditions
     } else {
       // default: pending only
       conditions.push(isNull(outbox.processedAt));

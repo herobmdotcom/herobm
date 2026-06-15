@@ -4,7 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { SHIPMENT_STATE, SALES_ORDER_PICK_STATE } from '@modbm/shared';
+import { SHIPMENT_STATE, SALES_ORDER_PICK_STATE } from '@herobm/shared';
 import { eq, sql, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -17,7 +17,7 @@ import {
   salesInvoiceLines,
   salesOrderPicks,
   products,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 
 // ============================================================================
 // Shared query helpers for picking & shipment services

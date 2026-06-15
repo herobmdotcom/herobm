@@ -1,4 +1,4 @@
-import type { ProductUom } from '@modbm/shared';
+import type { ProductUom } from '@herobm/shared';
 
 export interface OrderLine {
   purchaseOrderLineId: string;

@@ -47,7 +47,7 @@ import {
   UpdateGLSettingsDto,
 } from './dto';
 import { AppConfigService } from '../settings/app-config.service';
-import { GLAccountType, SystemResource } from '@modbm/shared';
+import { GLAccountType, SystemResource } from '@herobm/shared';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 import { ApiPaginatedResponse } from '../common/pagination';

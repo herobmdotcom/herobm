@@ -210,6 +210,7 @@ export class UpdateGLSettingsDto {
   @IsOptional() @IsString() defaultGrniAccountId?: string | null;
   @IsOptional() @IsString() defaultShrinkageAccountId?: string | null;
   @IsOptional() @IsString() defaultFeeRevenueAccountId?: string | null;
+  @IsOptional() @IsString() defaultDiscountsReceivedAccountId?: string | null;
   @IsOptional() @IsString() baseCurrency?: string;
   @IsOptional() @IsArray() supportedBatchPaymentFormats?: string[];
   @IsOptional() @IsString() revenueRoutingPrecedence?: string;

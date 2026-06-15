@@ -1,4 +1,4 @@
-import { SystemResource } from '@modbm/shared';
+import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -8,7 +8,7 @@ import {
 } from '@nestjs/swagger';
 import { Controller, Post, Body, Inject, UseGuards } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { outbox } from '../drizzle/modbm-core-schema';
+import { outbox } from '../drizzle/herobm-core-schema';
 
 import { AuthGuard } from '@nestjs/passport';
 import {

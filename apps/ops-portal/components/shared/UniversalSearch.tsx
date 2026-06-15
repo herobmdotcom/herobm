@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 
 interface SearchResult {
   id: string;

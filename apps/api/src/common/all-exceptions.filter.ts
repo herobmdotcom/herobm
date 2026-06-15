@@ -63,20 +63,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const stack = exception instanceof Error ? exception.stack : undefined;
 
     // Structured JSON log for local log parsing
+    const isServerError = statusCode >= 500;
     const logPayload = {
-      event: 'unhandled_exception',
+      event: isServerError ? 'unhandled_exception' : 'client_error',
       method: request.method,
       path: request.url,
       statusCode,
       message,
-      stack: stack ?? null,
+      stack: isServerError && stack ? stack : null,
       timestamp: new Date().toISOString(),
     };
 
-    if (statusCode >= 500) {
+    if (isServerError) {
       this.logger.error(JSON.stringify(logPayload));
     } else {
-      this.logger.warn(JSON.stringify(logPayload));
+      this.logger.debug(JSON.stringify(logPayload));
     }
 
     // If the exception has a rich object response (e.g. { message: 'INVENTORY_GAP', gaps: [...] }) we want to pass that out.

@@ -1,6 +1,6 @@
 import { OrdersWriteService } from '../orders/orders-write.service';
 import { SalesQuoteData } from './sales-quote.service';
-import { computeOrderTotals } from '@modbm/shared';
+import { computeOrderTotals } from '@herobm/shared';
 
 /**
  * Shared helper for resolving order detail and assembling report data.
@@ -10,7 +10,7 @@ import { computeOrderTotals } from '@modbm/shared';
  */
 
 // ---------------------------------------------------------------------------
-// Order resolution — all orders are now in modbm_core
+// Order resolution — all orders are now in herobm_core
 // ---------------------------------------------------------------------------
 
 export async function resolveOrderDetail(

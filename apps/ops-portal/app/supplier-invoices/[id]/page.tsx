@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
@@ -13,7 +14,7 @@ import POMatchingPanel from '@/components/shared/POMatchingPanel';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
-import { cap, isBackTransition, PURCHASE_INVOICE_LIFECYCLE, PURCHASE_INVOICE_STATE, MATCH_STATUS } from '@modbm/shared';
+import { cap, isBackTransition, PURCHASE_INVOICE_LIFECYCLE, PURCHASE_INVOICE_STATE, MATCH_STATUS } from '@herobm/shared';
 import { useSupplierInvoice, PurchaseInvoiceDetails } from './useSupplierInvoice';
 import PaymentManagerSlideOver from '@/app/payments/PaymentManagerSlideOver';
 
@@ -83,10 +84,9 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
       return (
         <div className="flex items-center justify-between gap-2 h-full w-full">
           <div className="flex flex-col gap-1">
-            { }
-            <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">{t('inventoryAsset')}</span>
-            { }
-            <span style={{ fontWeight: 500, fontSize: 12 }}>{t('poNumberLabel', { number: line.purchaseOrderNumber || '' })}</span>
+            <Link href={`/purchase-orders/${line.purchaseOrderId}`} className="text-[var(--brand-blue)] hover:underline" style={{ fontWeight: 500, fontSize: 12 }}>
+              {t('poNumberLabel', { number: line.purchaseOrderNumber || '' })}
+            </Link>
           </div>
           {isEditable && (
             <button
@@ -199,7 +199,9 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                   />
                 </div>
               ) : (
-                <div className="text-sm">{invoice.vendorName || invoice.vendorId}</div>
+                <Link href={`/customers/${invoice.vendorId}`} className="text-sm text-[var(--brand-blue)] hover:underline">
+                  {invoice.vendorName || invoice.vendorId}
+                </Link>
               )}
             </div>
             <div>
@@ -249,6 +251,22 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
               ) : (
                 <div className="text-sm">{invoice.receiptFilename || '—'}</div>
               )}
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+                {tCommon('columns.date')}
+              </label>
+              <div className="text-sm">
+                {invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString() : '—'}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+                {tCommon('columns.dueDate')}
+              </label>
+              <div className="text-sm">
+                {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}
+              </div>
             </div>
             <div className="md:col-span-2 mt-2">
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
@@ -386,8 +404,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                           <input
                             className="input"
                             type="number"
-                            min="0"
-                            step="0.01"
+                            step="any"
                             style={{ width: '100%', textAlign: 'right' }}
                             defaultValue={line.quantityInvoiced}
                             key={`qty-${line.lineId}-${line.quantityInvoiced}`}
@@ -406,7 +423,6 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                           <input
                             className="input"
                             type="number"
-                            min="0"
                             step="0.01"
                             style={{ width: '100%', textAlign: 'right' }}
                             defaultValue={parseFloat(line.pricePerUnit || '0').toFixed(2)}
@@ -586,8 +602,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                             <input
                               className="input"
                               type="number"
-                              min="0"
-                              step="0.01"
+                              step="any"
                               style={{ width: '80px', textAlign: 'right' }}
                               defaultValue={line.quantityInvoiced}
                               key={`qty-mob-${line.lineId}-${line.quantityInvoiced}`}
@@ -607,7 +622,6 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                             <input
                               className="input"
                               type="number"
-                              min="0"
                               step="0.01"
                               style={{ width: '90px', textAlign: 'right' }}
                               defaultValue={parseFloat(line.pricePerUnit || '0').toFixed(2)}

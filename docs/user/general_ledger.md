@@ -1,6 +1,6 @@
 # General Ledger (GL) & Financial Fundamentals
 
-This document describes how ModBM handles core financial accounting. The native General Ledger (GL) sits at the center of the system, acting as the ultimate source of truth for all financial movements.
+This document describes how HeroBM handles core financial accounting. The native General Ledger (GL) sits at the center of the system, acting as the ultimate source of truth for all financial movements.
 
 ## The Chart of Accounts (COA)
 
@@ -36,7 +36,7 @@ When a transaction involves a customer or a supplier, the relevant line (e.g., t
 
 ## Double-Entry Accounting
 
-ModBM strictly enforces the principles of double-entry accounting. Every business event must be recorded as a **Journal Entry** consisting of two or more lines.
+HeroBM strictly enforces the principles of double-entry accounting. Every business event must be recorded as a **Journal Entry** consisting of two or more lines.
 
 ### The Golden Rule: The Balance Invariant
 
@@ -84,7 +84,7 @@ Authorized users (`admin` or `finance` roles) can create manual journal entries 
 
 ## Financial Reporting
 
-ModBM provides real-time visibility into the financial health of the business via the Ops Portal.
+HeroBM provides real-time visibility into the financial health of the business via the Ops Portal.
 
 ### Trial Balance
 The Trial Balance is a snapshot proving that your books are balanced. It lists every active leaf account alongside its total Debits, total Credits, and current running Balance up to a specific "As of Date". 

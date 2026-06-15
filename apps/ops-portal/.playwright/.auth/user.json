@@ -5,11 +5,11 @@
       "origin": "http://localhost:4301",
       "localStorage": [
         {
-          "name": "modbm_token",
+          "name": "herobm_token",
           "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3NDFhODU5MS02MWU4LTRhZGYtYWYyNi02OTVlYTY4OWI1ZGYiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzgxMjc3MDk5LCJleHAiOjE3ODEzMDU4OTl9.ZprIRMmtx0hC9HVdLtqzEFA_gWTk5ANiP7feyGiOUbY"
         },
         {
-          "name": "modbm_role",
+          "name": "herobm_role",
           "value": "admin"
         }
       ]

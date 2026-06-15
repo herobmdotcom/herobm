@@ -1,13 +1,13 @@
-# ModBM Core Inventory Engine Guide
+# HeroBM Core Inventory Engine Guide
 
-This document describes the design, architecture, and core mutation pathways of the new ModBM Inventory Engine. The engine is built on a double-entry ledger architecture, ensuring high-fidelity traceability for every physical movement of stock.
+This document describes the design, architecture, and core mutation pathways of the new HeroBM Inventory Engine. The engine is built on a double-entry ledger architecture, ensuring high-fidelity traceability for every physical movement of stock.
 
 > [!IMPORTANT]
 > The legacy `mart_inventory` and `commitStock`/`releaseStock` paradigms have been entirely removed. **All** inventory movements must be recorded via double-entry ledger lines.
 
 ## Double-Entry Ledger Architecture
 
-The core tenet of the ModBM inventory engine is that stock never "appears" or "disappears"—it only moves between states or bins. 
+The core tenet of the HeroBM inventory engine is that stock never "appears" or "disappears"—it only moves between states or bins. 
 
 The ledger consists of two primary tables:
 1.  **`inventory_entries`**: Header table tracking the transaction metadata (date, user, source document, generic memo). Use this table to understand *why* a movement occurred.
@@ -39,7 +39,7 @@ The method does three things in the same transaction:
 
 ## Valuation Cache (`quantityOnHand`)
 
-While the ledger stores immutable facts about stock movement, doing a `SUM()` over millions of rows on every API request is too slow. ModBM uses a **Valuation Cache** pattern on the `products` table.
+While the ledger stores immutable facts about stock movement, doing a `SUM()` over millions of rows on every API request is too slow. HeroBM uses a **Valuation Cache** pattern on the `products` table.
 
 > [!NOTE]
 > The `quantityOnHand` column on the `products` table is a **cache**. It is only updated on goods receipt/return events for the purpose of Standard Cost and Weighted Average Cost (WAC) calculations.
@@ -78,20 +78,20 @@ The fulfillment flow moves stock from storage bins, through location-specific st
 ## Common Operations
 
 ### Read: Current Stock Levels
-To read total stock levels per product and location, use the PostgreSQL View `modbm_core.inventory_levels`. This view automatically aggregates the `inventory_ledger` grouping by `product_id` and `location_no`, extracting `quantityCommitted` and `quantityReserved`.
+To read total stock levels per product and location, use the PostgreSQL View `herobm_core.inventory_levels`. This view automatically aggregates the `inventory_ledger` grouping by `product_id` and `location_no`, extracting `quantityCommitted` and `quantityReserved`.
 
 > [!IMPORTANT]
 > **Shared Inventory Functions**
-> The database view DOES NOT evaluate the final `Available` metric. By design, you must never write raw SQL queries relying on `available > 0` directly. Instead, any backend logic or frontend component MUST import and use the `@modbm/shared` library:
+> The database view DOES NOT evaluate the final `Available` metric. By design, you must never write raw SQL queries relying on `available > 0` directly. Instead, any backend logic or frontend component MUST import and use the `@herobm/shared` library:
 > ```typescript
-> import { calculateAvailableQuantity } from '@modbm/shared';
+> import { calculateAvailableQuantity } from '@herobm/shared';
 > 
 > const available = calculateAvailableQuantity(onHand, committed, reserved);
 > ```
 > This guarantees structural parity between the API mappings and Client UI calculations.
 
 ### Read: Bin Contents
-To see exactly what stock is in what bin, use the `InventoryService.findBins` method which queries the `modbm_core.bin_contents` view.
+To see exactly what stock is in what bin, use the `InventoryService.findBins` method which queries the `herobm_core.bin_contents` view.
 
 ## Testing Strategy
 The inventory engine is validated by comprehensive test suites:

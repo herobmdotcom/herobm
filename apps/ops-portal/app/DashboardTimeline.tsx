@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { EventType } from './TimelineSettingsSlideOver';
 import Link from 'next/link';
 

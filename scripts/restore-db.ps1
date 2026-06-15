@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Restores a modbm_core PostgreSQL database from a given backup file.
+Restores a herobm_core PostgreSQL database from a given backup file.
 #>
 
 param (
@@ -10,7 +10,7 @@ param (
 )
 
 Write-Host "=========================================" -ForegroundColor Cyan
-Write-Host " MODBM PostgreSQL Database Restore Worker " -ForegroundColor White
+Write-Host " HEROBM PostgreSQL Database Restore Worker " -ForegroundColor White
 Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Target container : postgres-custom"

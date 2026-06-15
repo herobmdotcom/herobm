@@ -6,7 +6,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';
 import ReceiveReturnSlideOver from './ReceiveReturnSlideOver';
-import { RETURN_STATE } from '@modbm/shared';
+import { RETURN_STATE } from '@herobm/shared';
 
 export default function ReceivingReturnsPage() {
     const tCommon = useTranslations('common');

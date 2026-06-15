@@ -1,5 +1,5 @@
 ---
-title: ModBM API v1.0
+title: HeroBM API v1.0
 language_tabs:
   - shell: Shell
   - http: HTTP
@@ -19,7 +19,7 @@ headingLevel: 2
 
 <!-- Generator: Widdershins v4.0.1 -->
 
-<h1 id="modbm-api">ModBM API v1.0</h1>
+<h1 id="herobm-api">HeroBM API v1.0</h1>
 
 > Scroll down for code samples, example requests and responses. Select a language for code samples from the tabs above or the mobile navigation menu.
 
@@ -31,7 +31,7 @@ Base URLs:
 
 - HTTP Authentication, scheme: bearer 
 
-<h1 id="modbm-api-auth">Auth</h1>
+<h1 id="herobm-api-auth">Auth</h1>
 
 ## AuthController_login
 
@@ -334,7 +334,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-accounts">Accounts</h1>
+<h1 id="herobm-api-accounts">Accounts</h1>
 
 ## AccountsController_findAll
 
@@ -1301,7 +1301,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-accountgroups">AccountGroups</h1>
+<h1 id="herobm-api-accountgroups">AccountGroups</h1>
 
 ## AccountGroupsController_findAll
 
@@ -2068,7 +2068,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-products">Products</h1>
+<h1 id="herobm-api-products">Products</h1>
 
 ## ProductsController_findAll
 
@@ -4461,7 +4461,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-productgroups">ProductGroups</h1>
+<h1 id="herobm-api-productgroups">ProductGroups</h1>
 
 ## ProductGroupsController_findAll
 
@@ -5224,7 +5224,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-inventory">Inventory</h1>
+<h1 id="herobm-api-inventory">Inventory</h1>
 
 ## InventoryController_findAll
 
@@ -6965,7 +6965,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-locations">Locations</h1>
+<h1 id="herobm-api-locations">Locations</h1>
 
 ## LocationsController_createBin
 
@@ -8316,7 +8316,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-gl">Gl</h1>
+<h1 id="herobm-api-gl">Gl</h1>
 
 ## GlController_getAccounts
 
@@ -10574,7 +10574,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-gl-reconciliations">GL Reconciliations</h1>
+<h1 id="herobm-api-gl-reconciliations">GL Reconciliations</h1>
 
 ## ReconciliationController_getReconciliations
 
@@ -11776,7 +11776,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-uomdictionary">UomDictionary</h1>
+<h1 id="herobm-api-uomdictionary">UomDictionary</h1>
 
 ## UomDictionaryController_findAll
 
@@ -12521,7 +12521,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-exchangerates">ExchangeRates</h1>
+<h1 id="herobm-api-exchangerates">ExchangeRates</h1>
 
 ## ExchangeRatesController_findAll
 
@@ -13278,7 +13278,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-organization">Organization</h1>
+<h1 id="herobm-api-organization">Organization</h1>
 
 ## OrganizationController_get
 
@@ -13646,7 +13646,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-appconfig">AppConfig</h1>
+<h1 id="herobm-api-appconfig">AppConfig</h1>
 
 ## AppConfigController_get
 
@@ -13941,7 +13941,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-tradingterms">TradingTerms</h1>
+<h1 id="herobm-api-tradingterms">TradingTerms</h1>
 
 ## TradingTermsController_findAll
 
@@ -14073,7 +14073,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-settings">Settings</h1>
+<h1 id="herobm-api-settings">Settings</h1>
 
 ## CostCentersController_findAll
 
@@ -15691,7 +15691,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-orderpicking">OrderPicking</h1>
+<h1 id="herobm-api-orderpicking">OrderPicking</h1>
 
 ## OrderPickingController_getPickingQueue
 
@@ -16587,7 +16587,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-orders">Orders</h1>
+<h1 id="herobm-api-orders">Orders</h1>
 
 ## OrdersController_findAll
 
@@ -18362,7 +18362,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-orderreturns">OrderReturns</h1>
+<h1 id="herobm-api-orderreturns">OrderReturns</h1>
 
 ## OrderReturnsController_createReturn
 
@@ -19805,7 +19805,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-ordershipments">OrderShipments</h1>
+<h1 id="herobm-api-ordershipments">OrderShipments</h1>
 
 ## OrderShipmentsController_createShipment
 
@@ -21194,7 +21194,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-globalshipments">GlobalShipments</h1>
+<h1 id="herobm-api-globalshipments">GlobalShipments</h1>
 
 ## GlobalShipmentsController_findAll
 
@@ -21475,7 +21475,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-globalreturns">GlobalReturns</h1>
+<h1 id="herobm-api-globalreturns">GlobalReturns</h1>
 
 ## GlobalReturnsController_findGlobalReturns
 
@@ -21616,7 +21616,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-allocations">Allocations</h1>
+<h1 id="herobm-api-allocations">Allocations</h1>
 
 ## AllocationsController_getOpenDemands
 
@@ -22815,7 +22815,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-transfers">Transfers</h1>
+<h1 id="herobm-api-transfers">Transfers</h1>
 
 ## TransfersController_createTransferFromDemands
 
@@ -25006,7 +25006,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-taxcategories">TaxCategories</h1>
+<h1 id="herobm-api-taxcategories">TaxCategories</h1>
 
 ## TaxCategoriesController_findAll
 
@@ -25765,7 +25765,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-reports">Reports</h1>
+<h1 id="herobm-api-reports">Reports</h1>
 
 ## ReportsController_runHook
 
@@ -27239,7 +27239,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-salesinvoice">SalesInvoice</h1>
+<h1 id="herobm-api-salesinvoice">SalesInvoice</h1>
 
 ## SalesInvoiceController_createSalesInvoice
 
@@ -27559,7 +27559,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-purchaseinvoice">PurchaseInvoice</h1>
+<h1 id="herobm-api-purchaseinvoice">PurchaseInvoice</h1>
 
 ## PurchaseInvoiceController_getPurchaseBills
 
@@ -27697,7 +27697,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-invoicedetail">InvoiceDetail</h1>
+<h1 id="herobm-api-invoicedetail">InvoiceDetail</h1>
 
 ## InvoiceDetailController_getSalesInvoiceDetails
 
@@ -29716,7 +29716,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-externalsync">ExternalSync</h1>
+<h1 id="herobm-api-externalsync">ExternalSync</h1>
 
 ## ExternalSyncController_getSyncStatus
 
@@ -30141,7 +30141,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-payments">Payments</h1>
+<h1 id="herobm-api-payments">Payments</h1>
 
 ## PaymentsController_findAll
 
@@ -31580,7 +31580,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-dashboard">Dashboard</h1>
+<h1 id="herobm-api-dashboard">Dashboard</h1>
 
 ## DashboardController_getSummary
 
@@ -31992,7 +31992,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-telemetry">Telemetry</h1>
+<h1 id="herobm-api-telemetry">Telemetry</h1>
 
 ## TelemetryController_reportClientError
 
@@ -32169,7 +32169,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-suppliers">Suppliers</h1>
+<h1 id="herobm-api-suppliers">Suppliers</h1>
 
 ## SuppliersController_findAll
 
@@ -34038,7 +34038,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-suppliergroups">SupplierGroups</h1>
+<h1 id="herobm-api-suppliergroups">SupplierGroups</h1>
 
 ## SupplierGroupsController_findAll
 
@@ -34833,7 +34833,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-purchaseorders">PurchaseOrders</h1>
+<h1 id="herobm-api-purchaseorders">PurchaseOrders</h1>
 
 ## PurchaseOrdersController_create
 
@@ -36808,7 +36808,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-purchasereturns">PurchaseReturns</h1>
+<h1 id="herobm-api-purchasereturns">PurchaseReturns</h1>
 
 ## PurchaseReturnsController_createReturn
 
@@ -37609,7 +37609,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-globalpurchasereturns">GlobalPurchaseReturns</h1>
+<h1 id="herobm-api-globalpurchasereturns">GlobalPurchaseReturns</h1>
 
 ## GlobalPurchaseReturnsController_getPurchaseReturns
 
@@ -37886,7 +37886,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-purchasedebitnotes">PurchaseDebitNotes</h1>
+<h1 id="herobm-api-purchasedebitnotes">PurchaseDebitNotes</h1>
 
 ## PurchaseDebitNotesController_createDebitNote
 
@@ -38219,7 +38219,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-system">System</h1>
+<h1 id="herobm-api-system">System</h1>
 
 ## SystemController_getSystemLogs
 
@@ -38362,7 +38362,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-setup">Setup</h1>
+<h1 id="herobm-api-setup">Setup</h1>
 
 ## SetupController_testAbm
 
@@ -39943,7 +39943,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-goodsreceived">GoodsReceived</h1>
+<h1 id="herobm-api-goodsreceived">GoodsReceived</h1>
 
 ## GoodsReceivedController_create
 
@@ -41035,7 +41035,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-macros">Macros</h1>
+<h1 id="herobm-api-macros">Macros</h1>
 
 ## MacrosController_create
 
@@ -41795,7 +41795,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-users">Users</h1>
+<h1 id="herobm-api-users">Users</h1>
 
 ## UsersController_findAll
 
@@ -42688,7 +42688,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-discountmatrix">DiscountMatrix</h1>
+<h1 id="herobm-api-discountmatrix">DiscountMatrix</h1>
 
 ## DiscountMatrixController_list
 
@@ -43490,7 +43490,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-webhooks">Webhooks</h1>
+<h1 id="herobm-api-webhooks">Webhooks</h1>
 
 ## WebhooksController_list
 
@@ -44024,7 +44024,7 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="modbm-api-apikeys">ApiKeys</h1>
+<h1 id="herobm-api-apikeys">ApiKeys</h1>
 
 ## ApiKeysController_list
 

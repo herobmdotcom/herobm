@@ -14,9 +14,9 @@ import {
   taxCategories,
   salesEvents,
   outbox,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
-import { SALES_ORDER_STATE, SHIPMENT_STATE } from '@modbm/shared';
+import { SALES_ORDER_STATE, SHIPMENT_STATE } from '@herobm/shared';
 
 // Mock emitEvent to avoid needing event emitter setup
 jest.mock('../common/emit-event', () => ({

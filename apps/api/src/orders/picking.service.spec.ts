@@ -19,14 +19,14 @@ import {
   uomDictionary,
   salesEvents,
   outbox,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq, and } from 'drizzle-orm';
 import {
   SALES_ORDER_STATE,
   SALES_ORDER_PICK_STATE,
   PRODUCT_STATE,
   CUSTOMER_STATE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 describe('PickingService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

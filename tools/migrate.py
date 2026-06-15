@@ -1,8 +1,8 @@
 """
-Migration runner for modbm_core schema.
+Migration runner for herobm_core schema.
 
 Applies SQL migration files from apps/api/migrations/ in order,
-tracking which have already been applied in modbm_core.schema_migrations.
+tracking which have already been applied in herobm_core.schema_migrations.
 
 Usage:
     python tools/migrate.py              # apply pending migrations
@@ -50,8 +50,8 @@ def psql_file(filepath: str, record_migration: str | None = None) -> bool:
     ]
     if record_migration:
         cmd.append("-1")  # wrap in a single transaction
-        sql += f"\nCREATE TABLE IF NOT EXISTS modbm_core.schema_migrations (filename TEXT PRIMARY KEY, applied_at TIMESTAMPTZ DEFAULT NOW());\n"
-        sql += f"\nINSERT INTO modbm_core.schema_migrations (filename) VALUES ('{record_migration}');\n"
+        sql += f"\nCREATE TABLE IF NOT EXISTS herobm_core.schema_migrations (filename TEXT PRIMARY KEY, applied_at TIMESTAMPTZ DEFAULT NOW());\n"
+        sql += f"\nINSERT INTO herobm_core.schema_migrations (filename) VALUES ('{record_migration}');\n"
 
     # Pass known env vars as psql variables for migration seeding
     for env_key in [
@@ -72,10 +72,10 @@ def psql_file(filepath: str, record_migration: str | None = None) -> bool:
 
 def ensure_tracking_table() -> None:
     """Create the migration tracking table if it doesn't exist, provided the schema exists."""
-    check = psql("SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = 'modbm_core');", capture=True)
+    check = psql("SELECT EXISTS(SELECT 1 FROM information_schema.schemata WHERE schema_name = 'herobm_core');", capture=True)
     if check and check.strip() == 't':
         psql("""
-            CREATE TABLE IF NOT EXISTS modbm_core.schema_migrations (
+            CREATE TABLE IF NOT EXISTS herobm_core.schema_migrations (
                 filename TEXT PRIMARY KEY,
                 applied_at TIMESTAMPTZ DEFAULT NOW()
             );
@@ -96,11 +96,11 @@ def apply_extensions(dry_run: bool) -> None:
 
 def get_applied() -> set[str]:
     """Return set of already-applied migration filenames."""
-    check = psql("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'modbm_core' AND table_name = 'schema_migrations');", capture=True)
+    check = psql("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'herobm_core' AND table_name = 'schema_migrations');", capture=True)
     if not check or check.strip() != 't':
         return set()
         
-    raw = psql("SELECT filename FROM modbm_core.schema_migrations ORDER BY filename;", capture=True)
+    raw = psql("SELECT filename FROM herobm_core.schema_migrations ORDER BY filename;", capture=True)
     if not raw:
         return set()
     return set(raw.strip().splitlines())
@@ -147,7 +147,7 @@ def main() -> None:
         for filepath in pending:
             basename = os.path.basename(filepath)
             print(f"  Marking: {basename} ...", end=" ", flush=True)
-            psql(f"CREATE TABLE IF NOT EXISTS modbm_core.schema_migrations (filename TEXT PRIMARY KEY, applied_at TIMESTAMPTZ DEFAULT NOW()); INSERT INTO modbm_core.schema_migrations (filename) VALUES ('{basename}');")
+            psql(f"CREATE TABLE IF NOT EXISTS herobm_core.schema_migrations (filename TEXT PRIMARY KEY, applied_at TIMESTAMPTZ DEFAULT NOW()); INSERT INTO herobm_core.schema_migrations (filename) VALUES ('{basename}');")
             print("OK")
         print("\nDone. Migration history synced.")
         return
@@ -178,7 +178,7 @@ def main() -> None:
                     choice = 'n'
                     
                 if choice == 'y':
-                    psql(f"CREATE TABLE IF NOT EXISTS modbm_core.schema_migrations (filename TEXT PRIMARY KEY, applied_at TIMESTAMPTZ DEFAULT NOW()); INSERT INTO modbm_core.schema_migrations (filename) VALUES ('{basename}');")
+                    psql(f"CREATE TABLE IF NOT EXISTS herobm_core.schema_migrations (filename TEXT PRIMARY KEY, applied_at TIMESTAMPTZ DEFAULT NOW()); INSERT INTO herobm_core.schema_migrations (filename) VALUES ('{basename}');")
                     print("  -> Marked as applied. Continuing...")
                 else:
                     print("Aborting.")

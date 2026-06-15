@@ -12,7 +12,7 @@ import {
   costCenters,
   activities,
   glSettings,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';

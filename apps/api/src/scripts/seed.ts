@@ -1,6 +1,6 @@
-import { SystemResource } from '@modbm/shared';
+import { SystemResource } from '@herobm/shared';
 import { PgDatabase } from 'drizzle-orm/pg-core';
-import * as schema from '../drizzle/modbm-core-schema';
+import * as schema from '../drizzle/herobm-core-schema';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SeedDB = PgDatabase<any, typeof schema, any>;
@@ -31,7 +31,7 @@ import {
   bins,
   customers,
   suppliers,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
 
@@ -96,7 +96,7 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
     return;
   }
 
-  const { casbinRule } = await import('../drizzle/modbm-core-schema.js');
+  const { casbinRule } = await import('../drizzle/herobm-core-schema.js');
 
   const existingSet = new Set();
 

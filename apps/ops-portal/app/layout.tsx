@@ -13,8 +13,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: 'modbm',
-    template: '%s | modbm',
+    default: 'herobm',
+    template: '%s | herobm',
   },
   description: 'Business management portal',
   icons: {

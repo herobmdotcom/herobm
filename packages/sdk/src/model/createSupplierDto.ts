@@ -9,6 +9,7 @@ import type { CreateSupplierDtoPurchasingBlockReason } from './createSupplierDto
 import type { CreateSupplierDtoPaymentBlockReason } from './createSupplierDtoPaymentBlockReason';
 
 export interface CreateSupplierDto {
+  earlyPaymentDiscountDays?: number;
   vendorNumber: string;
   name: string;
   address1Line1?: string;
@@ -36,4 +37,5 @@ export interface CreateSupplierDto {
   bankAccountNumber?: string;
   businessNumber?: string;
   isTaxRegistered?: boolean;
+  taxPositionId?: string;
 }

@@ -99,7 +99,7 @@ export async function pollEmailOutbox(db: any) {
         logger.info(`Sending email ${email.id} to ${email.toAddress}`);
 
         const mailOptions: nodemailer.SendMailOptions = {
-          from: settings.smtpFromAddress || 'noreply@modbm.com',
+          from: settings.smtpFromAddress || 'noreply@herobm.com',
           to: email.toAddress,
           replyTo: email.replyTo || undefined,
           subject: email.subject,

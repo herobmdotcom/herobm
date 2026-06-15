@@ -4,7 +4,7 @@
  * Guards against hand-rolled return credit/net credit calculations.
  *
  * All return credit totals (subtotal, tax, fees, netCredit) MUST be
- * computed via `computeReturnCreditSummary()` from `@modbm/shared`.
+ * computed via `computeReturnCreditSummary()` from `@herobm/shared`.
  *
  * This test statically scans all `.service.ts` and `.tsx` files for
  * patterns that indicate inline return credit accumulation, such as:
@@ -168,7 +168,7 @@ describe('Return Credit Boundary (structural)', () => {
       throw new Error(
         `\nReturn Credit Boundary Violations Found:\n\n${report}\n\n` +
           `Return credit totals (subtotal, tax, fees, netCredit) must be computed ` +
-          `via computeReturnCreditSummary() from @modbm/shared.\n` +
+          `via computeReturnCreditSummary() from @herobm/shared.\n` +
           `Do not hand-roll the formula "amount + tax - fees" in service or UI code.`,
       );
     }

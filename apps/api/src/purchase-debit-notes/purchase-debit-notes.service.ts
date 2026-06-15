@@ -16,7 +16,7 @@ import {
   purchaseDebitNoteLines,
   suppliers,
   supplierGroups,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { CreateDebitNoteDto } from './dto';
@@ -25,12 +25,12 @@ import {
   PURCHASE_DEBIT_NOTE_STATE,
   PURCHASE_DEBIT_NOTE_TRANSITIONS,
   getValidStates,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import type { InventoryGlAccounts } from '../inventory/inventory-accounting';
-import { glAccounts } from '../drizzle/modbm-core-schema';
+import { glAccounts } from '../drizzle/herobm-core-schema';
 
 const VALID_DN_STATES = getValidStates(PURCHASE_DEBIT_NOTE_TRANSITIONS);
 

@@ -2,14 +2,14 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useMemo } from 'react';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import { useTranslations } from 'next-intl';
-import { getErrorMessage, COUNTRIES } from '@modbm/shared';
+import { getErrorMessage, COUNTRIES } from '@herobm/shared';
 import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
 
 // ── Types ────────────────────────────────────────────────────────────────────

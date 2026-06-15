@@ -127,11 +127,53 @@ describe('credit-control.utils', () => {
       expect(resolveEffectiveTradingTermsId(p)).toBe('term_2');
     });
 
-    it('returns null if neither exist', () => {
+    it('falls back to system default if customer and group terms are missing', () => {
       const p: AccountCreditProfile = {
         creditLimit: null,
         isOnCreditHold: false,
         tradingTermsId: null,
+        accountGroup: {
+          creditLimit: null,
+          isOnCreditHold: false,
+          tradingTermsId: null,
+        },
+        systemDefaultTradingTermsId: 'term_system',
+      };
+      expect(resolveEffectiveTradingTermsId(p)).toBe('term_system');
+    });
+
+    it('prioritizes group term over system default', () => {
+      const p: AccountCreditProfile = {
+        creditLimit: null,
+        isOnCreditHold: false,
+        tradingTermsId: null,
+        accountGroup: {
+          creditLimit: null,
+          isOnCreditHold: false,
+          tradingTermsId: 'term_group',
+        },
+        systemDefaultTradingTermsId: 'term_system',
+      };
+      expect(resolveEffectiveTradingTermsId(p)).toBe('term_group');
+    });
+
+    it('prioritizes customer term over system default', () => {
+      const p: AccountCreditProfile = {
+        creditLimit: null,
+        isOnCreditHold: false,
+        tradingTermsId: 'term_customer',
+        accountGroup: null,
+        systemDefaultTradingTermsId: 'term_system',
+      };
+      expect(resolveEffectiveTradingTermsId(p)).toBe('term_customer');
+    });
+
+    it('returns null if all are missing', () => {
+      const p: AccountCreditProfile = {
+        creditLimit: null,
+        isOnCreditHold: false,
+        tradingTermsId: null,
+        systemDefaultTradingTermsId: null,
       };
       expect(resolveEffectiveTradingTermsId(p)).toBeNull();
     });

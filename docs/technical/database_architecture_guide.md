@@ -17,7 +17,7 @@ flowchart TD
     end
 
     subgraph "3. Operational Layer (Drizzle ORM)"
-        Marts -- "Initial Import Pipeline" --> Core[(modbm_core)]
+        Marts -- "Initial Import Pipeline" --> Core[(herobm_core)]
         App(NestJS API) -- "Reads & Writes" --> Core
         Core -- "Outbox Relay" --> ERPNext
     end
@@ -46,8 +46,8 @@ flowchart TD
   * **Strict Access Boundary:** The application API **DOES NOT** read from or write to `public_marts`.
   * The only system that reads from `public_marts` is the **Initial Import Pipeline** which seeds the core database during setup/migration.
 
-### 3. `modbm_core` (The Application Source of Truth)
-* **Owner:** Drizzle ORM (`apps/api/src/drizzle/modbm-core-schema.ts`)
+### 3. `herobm_core` (The Application Source of Truth)
+* **Owner:** Drizzle ORM (`apps/api/src/drizzle/herobm-core-schema.ts`)
 * **Purpose:** The transactional backbone of the custom application.
 * **Characteristics:**
   * Highly normalized.
@@ -64,5 +64,5 @@ flowchart TD
 
 Because the platform spans legacy extraction tools (dbt) and modern application ORMs (Drizzle), maintaining structural integrity is critical.
 
-* **Import Mapping:** The import scripts read the flattened views from `public_marts` and map them into the heavily constrained relational structure of `modbm_core`.
+* **Import Mapping:** The import scripts read the flattened views from `public_marts` and map them into the heavily constrained relational structure of `herobm_core`.
 * **Structural Testing:** The system utilizes the AST test **`test_drizzle_schema_sync.ps1`** to automatically detect and prevent schema definition drift between the application and the database.

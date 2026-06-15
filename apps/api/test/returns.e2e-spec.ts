@@ -2,7 +2,7 @@
  * E2E Tests — Sales Order Returns API
  *
  * These tests exercise the return endpoints on OrderReturnsController against
- * a real Postgres database (modbm_core schema). They verify the full return
+ * a real Postgres database (herobm_core schema). They verify the full return
  * lifecycle: create, update, add/update/remove lines, state transitions, and
  * RBAC enforcement.
  *
@@ -20,7 +20,7 @@ import {
   RETURN_STATE,
   SALES_ORDER_STATE,
   SALES_CREDIT_NOTE_STATE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
@@ -54,21 +54,21 @@ describe('API E2E — Sales Order Returns', () => {
       DECLARE
           r RECORD;
       BEGIN
-          FOR r IN SELECT sales_order_id FROM modbm_core.sales_orders WHERE name LIKE 'E2E-RET%'
+          FOR r IN SELECT sales_order_id FROM herobm_core.sales_orders WHERE name LIKE 'E2E-RET%'
           LOOP
-              DELETE FROM modbm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
-              DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.sales_order_picks WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
-              DELETE FROM modbm_core.warehouse_events WHERE entity_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
-              DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
-              DELETE FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.backorders WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.sales_order_picks WHERE sales_order_line_id IN (SELECT sales_order_line_id FROM modbm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id);
-              DELETE FROM modbm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.sales_events WHERE entity_id = r.sales_order_id;
-              DELETE FROM modbm_core.outbox WHERE entity_id = r.sales_order_id;
+              DELETE FROM herobm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM herobm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
+              DELETE FROM herobm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM herobm_core.sales_order_picks WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM herobm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM herobm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
+              DELETE FROM herobm_core.warehouse_events WHERE entity_id IN (SELECT shipment_id FROM herobm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
+              DELETE FROM herobm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM herobm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM herobm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
+              DELETE FROM herobm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM herobm_core.backorders WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM herobm_core.sales_order_picks WHERE sales_order_line_id IN (SELECT sales_order_line_id FROM herobm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id);
+              DELETE FROM herobm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM herobm_core.sales_events WHERE entity_id = r.sales_order_id;
+              DELETE FROM herobm_core.outbox WHERE entity_id = r.sales_order_id;
           END LOOP;
       END $$;
     `);

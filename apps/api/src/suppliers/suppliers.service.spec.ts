@@ -3,7 +3,7 @@ import { SuppliersService } from './suppliers.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { suppliers } from '../drizzle/modbm-core-schema';
+import { suppliers } from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 
 describe('SuppliersService', () => {
@@ -83,6 +83,33 @@ describe('SuppliersService', () => {
     it('should throw NotFoundException if not found', async () => {
       await expect(
         service.findOne('00000000-0000-0000-0000-000000000999'),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('assessRisk', () => {
+    it('should retrieve supplier and assess risk correctly', async () => {
+      const [s] = await pg.db
+        .insert(suppliers)
+        .values({
+          vendorNumber: 'V-RISK',
+          name: 'Risk Vendor',
+          currencyCode: 'EUR',
+          address1Country: 'AU',
+          stateCode: 'INACTIVE',
+        })
+        .returning();
+
+      const risk = await service.assessRisk(s.vendorId);
+      expect(risk.isPurchasingBlocked).toBe(true);
+      expect(risk.purchasingBlockReasons).toContain('supplier_inactive');
+      expect(risk.isPaymentBlocked).toBe(true);
+      expect(risk.paymentBlockReasons).toContain('supplier_inactive');
+    });
+
+    it('should throw NotFoundException if vendor does not exist', async () => {
+      await expect(
+        service.assessRisk('00000000-0000-0000-0000-000000000999'),
       ).rejects.toThrow(NotFoundException);
     });
   });

@@ -51,7 +51,7 @@ export class WebhookReceiver {
   public expressMiddleware() {
     return async (req: { headers: Record<string, string | string[] | undefined>; body: Buffer | unknown }, res: { status: (code: number) => { json: (body: unknown) => void } }) => {
       try {
-        const signature = req.headers['x-modbm-signature'];
+        const signature = req.headers['x-herobm-signature'];
         if (!signature || typeof signature !== 'string') {
           return res.status(401).json({ error: 'Missing or invalid signature header' });
         }

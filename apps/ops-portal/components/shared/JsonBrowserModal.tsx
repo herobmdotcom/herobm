@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import SlideOver from './SlideOver';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import JournalEntrySlideOver, { JournalEntry } from './journal-entries/JournalEntrySlideOver';
 import CodesModal from './CodesModal';

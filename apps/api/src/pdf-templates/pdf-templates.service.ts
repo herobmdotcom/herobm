@@ -14,7 +14,7 @@ import {
   pdfTemplateHooks,
   pdfTemplateContexts,
   organization,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq, like, or, inArray } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -158,7 +158,7 @@ export class PdfTemplatesService {
     };
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   async createReport(data: {
     name: string;
     slug: string;
@@ -185,7 +185,7 @@ export class PdfTemplatesService {
     return { ...inserted, contexts: contexts || [] };
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   async updateReport(
     id: string,
     data: Partial<{

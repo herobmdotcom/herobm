@@ -8,7 +8,7 @@ import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { uomDictionary } from '../drizzle/modbm-core-schema';
+import { uomDictionary } from '../drizzle/herobm-core-schema';
 import { CreateUomDto, UpdateUomDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';

@@ -5,11 +5,11 @@ import { useTranslations } from 'next-intl';
 import { reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import Link from 'next/link';
 
 import type { OrderDetail, TaxCategory } from './types';
-import { computeLinePrice, PURCHASE_ORDER_STATE } from '@modbm/shared';
+import { computeLinePrice, PURCHASE_ORDER_STATE } from '@herobm/shared';
 import { PurchaseInvoice } from '@/lib/purchase-order-utils';
 import { useSettings } from '@/components/SettingsProvider';
 import { useRouter } from 'next/navigation';

@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
@@ -53,8 +53,8 @@ import {
     cap,
     calculateUomPriceAdjustment,
     calculateInventoryGaps
-} from '@modbm/shared';
-import type { ProductUom } from '@modbm/shared';
+} from '@herobm/shared';
+import type { ProductUom } from '@herobm/shared';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 

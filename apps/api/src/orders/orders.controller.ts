@@ -1,4 +1,4 @@
-import { SystemResource } from '@modbm/shared';
+import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -36,6 +36,7 @@ import {
   OrderResponseDto,
   EmptyBodyDto,
   ChangeOrderStateDto,
+  OverrideCreditHoldDto,
 } from './dto';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { AuthUser } from '../auth/auth-user.decorator';
@@ -91,7 +92,7 @@ export class OrdersController {
   }
 
   // -------------------------------------------------------------------------
-  // Write endpoints (modbm_core app data)
+  // Write endpoints (herobm_core app data)
   // -------------------------------------------------------------------------
 
   @Post()
@@ -162,6 +163,26 @@ export class OrdersController {
       user.username,
       dto.generateBackorders,
       dto.discrepanciesAcknowledged,
+    );
+  }
+
+  @Post(':id/override-credit-hold')
+  @ApiBody({ type: OverrideCreditHoldDto })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Override Credit Hold',
+    description: 'Temporarily overrides a credit hold for this specific order.',
+  })
+  @ApiOkResponse({ type: OrderResponseDto })
+  async overrideCreditHold(
+    @Param('id') id: string,
+    @Body() dto: OverrideCreditHoldDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.ordersWriteService.overrideCreditHold(
+      id,
+      dto.reason,
+      user.username,
     );
   }
 

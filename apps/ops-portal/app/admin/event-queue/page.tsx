@@ -4,14 +4,14 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 import { useState, useEffect, Fragment } from 'react';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 interface OutboxEvent {
   outboxId: string;
-  aggregateType: string;
-  aggregateId: string;
+  entityType: string;
+  entityId: string;
   eventType: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any;
@@ -71,8 +71,8 @@ export default function EventQueueDashboard() {
     setDrawerLoading(true);
     setDrawerExpandedId(null);
     try {
-      const { data: page } = await api.externalSyncControllerGetEventsByType({ type: eventType, status: 'failed', limit: '50' });
-      setDrawerEvents((page as unknown as OutboxEvent[]) || []);
+      const { data: page } = await api.externalSyncControllerGetEventsByType({ type: eventType, status: 'all', limit: '50' });
+      setDrawerEvents((page?.events as OutboxEvent[]) || []);
     } catch (err: unknown) {
       setDrawerEvents([]);
       reportError(err, 'EventQueueDashboard_handleViewEvents');
@@ -334,7 +334,7 @@ export default function EventQueueDashboard() {
                                               {new Date(evt.createdOn).toLocaleString()}
                                             </td>
                                             <td style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                                              {evt.aggregateType}:{evt.aggregateId.substring(0, 12)}
+                                              {evt.entityType}:{(evt.entityId || '').substring(0, 12)}
                                             </td>
                                             <td style={{ fontSize: 10 }}>
                                               {evt.lastError ? (

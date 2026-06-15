@@ -7,6 +7,7 @@ export interface AccountCreditProfile {
     isOnCreditHold: boolean;
     tradingTermsId: string | null;
   } | null;
+  systemDefaultTradingTermsId?: string | null;
 }
 
 /**
@@ -42,7 +43,7 @@ export function resolveEffectiveCreditLimit(
 
 /**
  * Resolves the effective Trading Terms ID.
- * Order of precedence: Customer term -> Group term -> null (Cash/COD defaults in system).
+ * Order of precedence: Customer term -> Group term -> System Default.
  */
 export function resolveEffectiveTradingTermsId(
   customer: AccountCreditProfile,
@@ -58,6 +59,12 @@ export function resolveEffectiveTradingTermsId(
     customer.accountGroup?.tradingTermsId !== undefined
   ) {
     return customer.accountGroup.tradingTermsId;
+  }
+  if (
+    customer.systemDefaultTradingTermsId !== null &&
+    customer.systemDefaultTradingTermsId !== undefined
+  ) {
+    return customer.systemDefaultTradingTermsId;
   }
   return null;
 }

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { licenseControllerGetStatus } from '@modbm/sdk';
+import { licenseControllerGetStatus } from '@herobm/sdk';
 
 export type LicenseState = 'active' | 'warning' | 'read_only';
 

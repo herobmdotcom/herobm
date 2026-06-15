@@ -7,7 +7,7 @@ import {
   products,
   productUoms,
   uomDictionary,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 
 describe('UomService', () => {

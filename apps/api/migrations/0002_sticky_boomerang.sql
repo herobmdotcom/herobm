@@ -1,1 +1,1 @@
-ALTER TABLE "modbm_core"."api_keys" ADD COLUMN "role" text NOT NULL;
+ALTER TABLE "herobm_core"."api_keys" ADD COLUMN "role" text NOT NULL;

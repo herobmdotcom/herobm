@@ -176,19 +176,20 @@ export function InlineSettingsTable<T extends Record<string, any>>({
               return (
                 <tr key={id} style={isEditing ? { background: 'var(--bg-secondary)' } : undefined}>
                   {columns.map(col => {
-                    if (col.render) {
-                      return (
-                        <td key={String(col.key)}>
-                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                          {col.render(isEditing ? editForm as T : row, isEditing, (val: any) => {
-                            setEditForm({ ...editForm, [col.key as keyof T]: val });
-                            if (errors[String(col.key)]) setErrors(prev => ({ ...prev, [String(col.key)]: '' }));
-                          })}
-                        </td>
-                      );
-                    }
-                    
                     const value = isEditing ? editForm[col.key as keyof T] : row[col.key as keyof T];
+                    
+                    let customRender: React.ReactNode = undefined;
+                    if (col.render) {
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      customRender = col.render(isEditing ? editForm as T : row, isEditing, (val: any) => {
+                        setEditForm({ ...editForm, [col.key as keyof T]: val });
+                        if (errors[String(col.key)]) setErrors(prev => ({ ...prev, [String(col.key)]: '' }));
+                      });
+                    }
+
+                    if (customRender !== undefined && customRender !== null) {
+                      return <td key={String(col.key)}>{customRender}</td>;
+                    }
                     
                     return (
                       <td key={String(col.key)}>

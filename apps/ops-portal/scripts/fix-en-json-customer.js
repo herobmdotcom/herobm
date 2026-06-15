@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const enJsonPath = 'c:/Users/Marcel/volz/modbm/modbm/apps/ops-portal/messages/en.json';
+const enJsonPath = 'c:/Users/Marcel/volz/herobm/herobm/apps/ops-portal/messages/en.json';
 const data = JSON.parse(fs.readFileSync(enJsonPath, 'utf8'));
 
 let modified = false;

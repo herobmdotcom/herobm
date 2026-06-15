@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 interface LinkToPOSlideOverProps {
   isOpen: boolean;

@@ -19,8 +19,8 @@
     "generate-api": "npx openapi-typescript http://127.0.0.1:3001/api-docs-json -o lib/api-types.ts"
   },
   "dependencies": {
-    "@modbm/sdk": "^0.1.0",
-    "@modbm/shared": "*",
+    "@herobm/sdk": "^0.1.0",
+    "@herobm/shared": "*",
     "@parcel/watcher": "^2.5.0",
     "ag-grid-community": "^33.2.5",
     "ag-grid-react": "^33.2.5",

@@ -1,14 +1,14 @@
 # Outbox Relay Guide
 
-The outbox relay (`apps/worker/`) is a standalone Node.js process that bridges ModBM operational events to external systems (such as legacy ERPs or external General Ledgers). It implements the [Transactional Outbox pattern](https://microservices.io/patterns/data/transactional-outbox.html): the API writes events atomically alongside business data, and the worker asynchronously relays them to downstream consumers via BullMQ.
+The outbox relay (`apps/worker/`) is a standalone Node.js process that bridges HeroBM operational events to external systems (such as legacy ERPs or external General Ledgers). It implements the [Transactional Outbox pattern](https://microservices.io/patterns/data/transactional-outbox.html): the API writes events atomically alongside business data, and the worker asynchronously relays them to downstream consumers via BullMQ.
 
 ## Architecture
 
 ```
-ModBM API (NestJS, port 3001)
-  │  INSERT into modbm_core.outbox (same DB transaction as business write)
+HeroBM API (NestJS, port 3001)
+  │  INSERT into herobm_core.outbox (same DB transaction as business write)
   ▼
-Postgres — modbm_core.outbox table
+Postgres — herobm_core.outbox table
   │  Poll every 5 s (SELECT … WHERE processed_at IS NULL)
   ▼
 Outbox Relay Worker (apps/worker/, port 9091)
@@ -22,14 +22,14 @@ External System (e.g. ERPNext, external BI)
 
 ## What the outbox relay does
 
-1. **Poll** — Every 5 seconds, queries `modbm_core.outbox` for unprocessed events of handled types. Batch size: 50.
+1. **Poll** — Every 5 seconds, queries `herobm_core.outbox` for unprocessed events of handled types. Batch size: 50.
 2. **Enqueue** — Adds each event to BullMQ queue `external-sync` with job-ID deduplication. Marks the outbox row as `processed_at = NOW()`.
 3. **Process** — BullMQ workers pick up jobs and map each event type to a payload for the external system via the `processEvent` function.
 4. **Observe** — Exposes Prometheus counters on `:9091/metrics` and structured JSON logs via pino.
 
 ## Outbox table schema
 
-The outbox table lives in the `modbm_core` Postgres schema and is written to by the API in the same transaction as the business data write.
+The outbox table lives in the `herobm_core` Postgres schema and is written to by the API in the same transaction as the business data write.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -70,7 +70,7 @@ Events like `created`, `status_changed`, `line_added`, `archived`, etc. are writ
 
 ### JIT master data sync
 
-For `sales_invoiced` and `purchase_invoiced`, the worker may perform just-in-time (JIT) master data synchronisation: if the customer/supplier does not yet have an external ID, the worker creates the corresponding entity in the external system and writes the resulting ID back to the ModBM `accounts` or `suppliers` table as `external_id`.
+For `sales_invoiced` and `purchase_invoiced`, the worker may perform just-in-time (JIT) master data synchronisation: if the customer/supplier does not yet have an external ID, the worker creates the corresponding entity in the external system and writes the resulting ID back to the HeroBM `accounts` or `suppliers` table as `external_id`.
 
 ### Purchase price variance
 

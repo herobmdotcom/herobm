@@ -18,7 +18,7 @@ import {
   type GridState,
   type ScrollState,
 } from "ag-grid-community";
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import useSWR from 'swr';
 
 ModuleRegistry.registerModules([AllCommunityModule]);

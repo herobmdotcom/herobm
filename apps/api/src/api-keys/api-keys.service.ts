@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { apiKeys } from '../drizzle/modbm-core-schema';
+import { apiKeys } from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';

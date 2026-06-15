@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ExecuteEltDtoSource } from '@modbm/sdk';
+import { ExecuteEltDtoSource } from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { CURRENCIES, getCurrencyByAbmCode } from '@/lib/currency';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 type Step = 'config' | 'preview' | 'executing' | 'finalisation';
 

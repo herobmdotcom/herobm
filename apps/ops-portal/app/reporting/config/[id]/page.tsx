@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import ReportConfigForm from '../ReportConfigForm';
 

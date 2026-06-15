@@ -48,22 +48,22 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       DO $$ 
       DECLARE r RECORD;
       BEGIN
-        FOR r IN SELECT sales_order_id FROM modbm_core.sales_orders WHERE name LIKE 'E2E%'
+        FOR r IN SELECT sales_order_id FROM herobm_core.sales_orders WHERE name LIKE 'E2E%'
         LOOP
-          DELETE FROM modbm_core.sales_order_picks WHERE sales_order_id = r.sales_order_id;
-          DELETE FROM modbm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
-          DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
-          DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
-          DELETE FROM modbm_core.warehouse_events WHERE entity_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
-          DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
-          DELETE FROM modbm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
-          DELETE FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
-          DELETE FROM modbm_core.backorders WHERE sales_order_id = r.sales_order_id;
-          DELETE FROM modbm_core.sales_order_picks WHERE sales_order_line_id IN (SELECT sales_order_line_id FROM modbm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id);
-          DELETE FROM modbm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id;
-          DELETE FROM modbm_core.sales_events WHERE entity_id = r.sales_order_id;
-          DELETE FROM modbm_core.outbox WHERE entity_id = r.sales_order_id;
-          DELETE FROM modbm_core.sales_orders WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM herobm_core.sales_order_picks WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM herobm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM herobm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
+          DELETE FROM herobm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM herobm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM herobm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
+          DELETE FROM herobm_core.warehouse_events WHERE entity_id IN (SELECT shipment_id FROM herobm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
+          DELETE FROM herobm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM herobm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM herobm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
+          DELETE FROM herobm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM herobm_core.backorders WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM herobm_core.sales_order_picks WHERE sales_order_line_id IN (SELECT sales_order_line_id FROM herobm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id);
+          DELETE FROM herobm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM herobm_core.sales_events WHERE entity_id = r.sales_order_id;
+          DELETE FROM herobm_core.outbox WHERE entity_id = r.sales_order_id;
+          DELETE FROM herobm_core.sales_orders WHERE sales_order_id = r.sales_order_id;
         END LOOP;
       END $$;
     `);
@@ -307,7 +307,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
 
     it('picks are recorded in the sales_order_picks sub-ledger', async () => {
       const res = await db.execute(sql`
-        SELECT * FROM modbm_core.sales_order_picks 
+        SELECT * FROM herobm_core.sales_order_picks 
         WHERE sales_order_id = ${orderId}
         ORDER BY created_on
       `);
@@ -321,7 +321,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
 
     it('inventory ledger entries created for each pick', async () => {
       const res = await db.execute(sql`
-        SELECT * FROM modbm_core.inventory_entries 
+        SELECT * FROM herobm_core.inventory_entries 
         WHERE source_id = ${orderId} AND source_type = 'SO_PICK'
       `);
       const entries = res.rows || res;

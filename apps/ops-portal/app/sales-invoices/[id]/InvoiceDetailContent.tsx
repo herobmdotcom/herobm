@@ -13,8 +13,8 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useSalesInvoice } from './useSalesInvoice';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 
-import * as api from '@modbm/sdk';
-import { getErrorMessage, SALES_INVOICE_STATE } from '@modbm/shared';
+import * as api from '@herobm/sdk';
+import { getErrorMessage, SALES_INVOICE_STATE } from '@herobm/shared';
 
 export default function InvoiceDetailContent({ id }: { id: string }) {
   const router = useRouter();

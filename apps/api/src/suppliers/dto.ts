@@ -8,7 +8,9 @@ import {
   IsBoolean,
   IsDateString,
   IsIn,
+  IsNumber,
 } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 export class CreateSupplierDto {
   @IsString()
@@ -64,6 +66,11 @@ export class CreateSupplierDto {
   @IsOptional()
   @IsNumberString()
   earlyPaymentDiscount?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  earlyPaymentDiscountDays?: number;
 
   @IsOptional()
   @IsNumberString()
@@ -136,6 +143,10 @@ export class CreateSupplierDto {
   @IsOptional()
   @IsBoolean()
   isTaxRegistered?: boolean;
+
+  @IsOptional()
+  @IsUUID()
+  taxPositionId?: string;
 }
 
 export class UpdateSupplierDto {
@@ -188,6 +199,11 @@ export class UpdateSupplierDto {
   @IsOptional()
   @IsNumberString()
   earlyPaymentDiscount?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  earlyPaymentDiscountDays?: number;
 
   @IsOptional()
   @IsNumberString()
@@ -264,6 +280,10 @@ export class UpdateSupplierDto {
   @IsOptional()
   @IsBoolean()
   isTaxRegistered?: boolean;
+
+  @IsOptional()
+  @IsUUID()
+  taxPositionId?: string;
 }
 
 export class CreateSupplierGroupDto {
@@ -290,6 +310,11 @@ export class CreateSupplierGroupDto {
   @IsOptional()
   @IsNumberString()
   earlyPaymentDiscount?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  earlyPaymentDiscountDays?: number;
 
   @IsOptional()
   @IsNumberString()
@@ -363,6 +388,11 @@ export class UpdateSupplierGroupDto {
   @IsOptional()
   @IsNumberString()
   earlyPaymentDiscount?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  earlyPaymentDiscountDays?: number;
 
   @IsOptional()
   @IsNumberString()
@@ -455,6 +485,7 @@ export class SupplierResponseDto {
   emailAddress1: string | null;
   tradingTermsId: string | null;
   earlyPaymentDiscount: string | null;
+  earlyPaymentDiscountDays: number | null;
   creditLimit: string | null;
   isPurchasingBlocked: boolean;
   purchasingBlockReason: string | null;
@@ -469,6 +500,7 @@ export class SupplierResponseDto {
   bankAccountNumber: string | null;
   businessNumber: string | null;
   isTaxRegistered: boolean;
+  taxPositionId: string | null;
   stateCode: string | null;
   tenantId: string;
   createdAt: Date;
@@ -483,6 +515,7 @@ export class SupplierGroupResponseDto {
   defaultExpenseAccountId: string | null;
   tradingTermsId: string | null;
   earlyPaymentDiscount: string | null;
+  earlyPaymentDiscountDays: number | null;
   creditLimit: string | null;
   isPurchasingBlocked: boolean;
   purchasingBlockReason: string | null;

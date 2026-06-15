@@ -1,1 +1,1 @@
-ALTER TABLE "modbm_core"."app_settings" ADD COLUMN "enrichment_provider_mappings" jsonb;
+ALTER TABLE "herobm_core"."app_settings" ADD COLUMN "enrichment_provider_mappings" jsonb;

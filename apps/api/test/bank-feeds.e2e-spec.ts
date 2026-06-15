@@ -8,7 +8,7 @@ import {
   glAccounts,
   reconciliationRules,
   csvMappingProfiles,
-} from '../src/drizzle/modbm-core-schema';
+} from '../src/drizzle/herobm-core-schema';
 
 describe('BankFeedsController (e2e)', () => {
   let app: INestApplication;

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# MODBM PostgreSQL Database Backup Worker (Linux/cron-ready)
+# HEROBM PostgreSQL Database Backup Worker (Linux/cron-ready)
 # ==============================================================================
 # Backups the herobm PostgreSQL database from the podman container.
 # Suitable for execution via cron.
@@ -10,18 +10,18 @@
 # 1. Install dependencies: `sudo apt update && sudo apt install rclone`
 # 2. Configure Google Drive: Run `rclone config`, type "n", name it "gdrive", 
 #    select "drive", and follow the interactive prompts.
-# 3. Update .env: Add `BACKUP_RCLONE_DEST=gdrive:modbm_backups` to your .env file
+# 3. Update .env: Add `BACKUP_RCLONE_DEST=gdrive:herobm_backups` to your .env file
 # 4. Set up Cron: Make this script executable (`chmod +x scripts/backup-db.sh`),
 #    then run `crontab -e` and add the following line (update paths as needed):
-#    0 2 * * * /path/to/modbm/scripts/backup-db.sh >> /path/to/modbm/logs/backup.log 2>&1
+#    0 2 * * * /path/to/herobm/scripts/backup-db.sh >> /path/to/herobm/logs/backup.log 2>&1
 # ==============================================================================
 
 set -e
 
 # ================= Configuration =================
-BACKUP_DIR="${HOME}/modbm_backups"
+BACKUP_DIR="${HOME}/herobm_backups"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-BACKUP_FILE="${BACKUP_DIR}/modbm_db_backup_${TIMESTAMP}.sql"
+BACKUP_FILE="${BACKUP_DIR}/herobm_db_backup_${TIMESTAMP}.sql"
 GZ_BACKUP_FILE="${BACKUP_FILE}.gz"
 RETENTION_DAYS=14 # How many days to keep local backups
 # Parse command line arguments
@@ -55,7 +55,7 @@ DB_USER=${POSTGRES_USER:-postgres}
 DB_NAME=${POSTGRES_DB:-herobm}
 
 echo -e "\e[36m=========================================\e[0m"
-echo -e "\e[97m MODBM PostgreSQL Database Backup Worker \e[0m"
+echo -e "\e[97m HEROBM PostgreSQL Database Backup Worker \e[0m"
 echo -e "\e[36m=========================================\e[0m"
 echo ""
 echo "Target container : postgres-custom"
@@ -101,6 +101,6 @@ fi
 
 # ================= Cleanup Old Backups =================
 echo -e "\e[90mCleaning up local backups older than ${RETENTION_DAYS} days...\e[0m"
-find "$BACKUP_DIR" -name "modbm_db_backup_*.sql.gz" -type f -mtime +${RETENTION_DAYS} -delete
+find "$BACKUP_DIR" -name "herobm_db_backup_*.sql.gz" -type f -mtime +${RETENTION_DAYS} -delete
 
 echo "Done."

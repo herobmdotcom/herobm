@@ -5,7 +5,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';

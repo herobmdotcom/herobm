@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrderReturnsController } from './order-returns.controller';
 import { ReturnsWriteService } from './returns-write.service';
-import { RETURN_STATE } from '@modbm/shared';
+import { RETURN_STATE } from '@herobm/shared';
 
 describe('OrderReturnsController', () => {
   let controller: OrderReturnsController;

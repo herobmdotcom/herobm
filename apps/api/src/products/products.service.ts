@@ -21,13 +21,13 @@ import {
   bins,
   inventoryLedger,
   productComponents,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import {
   PaginationQuery,
   parsePagination,
   withCursorPagination,
 } from '../common/pagination';
-import { PRODUCT_STATE } from '@modbm/shared';
+import { PRODUCT_STATE } from '@herobm/shared';
 
 @Injectable()
 export class ProductsService {

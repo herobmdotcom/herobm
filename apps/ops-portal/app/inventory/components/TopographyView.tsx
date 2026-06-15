@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useAuth } from '@/components/AuthGate';
 import SlideOver from '@/components/shared/SlideOver';
 import toast from 'react-hot-toast';
-import { getErrorMessage, BIN_TYPE } from '@modbm/shared';
+import { getErrorMessage, BIN_TYPE } from '@herobm/shared';
 
 interface Bin {
   binId: string;

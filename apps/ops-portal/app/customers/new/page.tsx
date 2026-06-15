@@ -5,7 +5,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
@@ -13,7 +13,7 @@ import { CURRENCIES } from '@/lib/currency';
 import GroupSelect from '@/components/shared/GroupSelect';
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichmentDecorator';
-import { getErrorMessage, COUNTRIES, getCurrencyForCountry } from '@modbm/shared';
+import { getErrorMessage, COUNTRIES, getCurrencyForCountry } from '@herobm/shared';
 import { useSettings } from '@/components/SettingsProvider';
 
 export default function NewAccountPage() {
@@ -34,7 +34,7 @@ export default function NewAccountPage() {
     telephone1: '',
     billingAddressCountry: defaultCountry,
     customerGroupId: '',
-    taxCategoryId: '',
+    taxPositionId: '',
     currencyCode: defaultCurrency,
     customerDiscount: '0',
     notes: '',
@@ -42,10 +42,10 @@ export default function NewAccountPage() {
     businessNumber: '',
     isTaxRegistered: false,
   });
-  const [taxCategories, setTaxCategories] = useState<api.TaxCategoryResponseDto[]>([]);
+  const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
 
   useEffect(() => {
-    api.taxCategoriesControllerFindAll().then((res: unknown) => setTaxCategories((res as { data: unknown[] }).data as unknown as api.TaxCategoryResponseDto[])).catch(console.error);
+    api.taxPositionsControllerFindAll().then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[])).catch(console.error);
   }, []);
 
   const handleSubmit = async () => {
@@ -181,7 +181,7 @@ export default function NewAccountPage() {
                       disabled={submitting}
                     >
                       <option value="">{t('common.notConfigured')}</option>
-                      {COUNTRIES.map(c => (
+                      {COUNTRIES.map((c: { code: string; name: string }) => (
                         <option key={c.code} value={c.code}>{c.name}</option>
                       ))}
                     </select>
@@ -249,14 +249,14 @@ export default function NewAccountPage() {
                   </label>
                   <select
                     className="input"
-                    value={dto.taxCategoryId || ''}
-                    onChange={(e) => updateField('taxCategoryId', e.target.value)}
+                    value={dto.taxPositionId || ''}
+                    onChange={(e) => updateField('taxPositionId', e.target.value)}
                     disabled={submitting}
                   >
                     <option value="">{t('common.options.none')}</option>
-                    {taxCategories.map((cat) => (
-                      <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
-                        {cat.title} ({cat.code})
+                    {taxPositions.map((pos) => (
+                      <option key={pos.taxPositionId} value={pos.taxPositionId}>
+                        {pos.title}
                       </option>
                     ))}
                   </select>

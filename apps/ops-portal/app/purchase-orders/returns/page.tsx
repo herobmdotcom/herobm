@@ -4,13 +4,13 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { formatAmount } from '@/lib/currency';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 interface ReturnableLine {
   purchaseOrderId: string;

@@ -11,7 +11,7 @@
  */
 
 import { useTranslations } from 'next-intl';
-import { computeOrderTotals } from '@modbm/shared';
+import { computeOrderTotals } from '@herobm/shared';
 import MobileLineItemCard from './MobileLineItemCard';
 
 /* ── Type definitions ────────────────────────────────────────────── */

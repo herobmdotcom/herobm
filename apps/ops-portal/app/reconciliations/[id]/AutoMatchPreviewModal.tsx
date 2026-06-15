@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';

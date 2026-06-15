@@ -9,7 +9,7 @@ import {
   salesOrderLineItems,
   products as coreProducts,
   customers as coreAccounts,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 
 export interface ShippingDocketData {
   header: {

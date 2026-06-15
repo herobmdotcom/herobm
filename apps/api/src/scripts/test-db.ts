@@ -9,7 +9,7 @@ const sql = postgres({
   database: process.env.POSTGRES_DB ?? 'herobm',
 });
 async function main() {
-  const result = await sql`SELECT * FROM modbm_core.payment_entries`;
+  const result = await sql`SELECT * FROM herobm_core.payment_entries`;
   console.log('Result:', result);
   process.exit(0);
 }

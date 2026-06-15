@@ -7,9 +7,9 @@ import {
   products,
   masterDataEvents,
   uomDictionary,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq, sql, and } from 'drizzle-orm';
-import { PRODUCT_STATE } from '@modbm/shared';
+import { PRODUCT_STATE } from '@herobm/shared';
 import { EventType, EntityType } from '../common/event-types';
 
 describe('ProductsWriteService', () => {
@@ -29,7 +29,7 @@ describe('ProductsWriteService', () => {
 
   beforeEach(async () => {
     await pg.db.execute(
-      sql`TRUNCATE modbm_core.master_data_events, modbm_core.products CASCADE`,
+      sql`TRUNCATE herobm_core.master_data_events, herobm_core.products CASCADE`,
     );
 
     const module: TestingModule = await Test.createTestingModule({

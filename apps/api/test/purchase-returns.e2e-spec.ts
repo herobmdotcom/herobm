@@ -2,7 +2,7 @@
  * E2E Tests — Purchase Order Returns API
  *
  * These tests exercise the purchase return endpoints on PurchaseReturnsController
- * against a real Postgres database (modbm_core schema). They verify
+ * against a real Postgres database (herobm_core schema). They verify
  * the return draft creation, fetching, actioning (which does inventory deduction),
  * and RBAC enforcement.
  *
@@ -14,7 +14,7 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
-import { PURCHASE_ORDER_STATE, PURCHASE_RETURN_STATE } from '@modbm/shared';
+import { PURCHASE_ORDER_STATE, PURCHASE_RETURN_STATE } from '@herobm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');

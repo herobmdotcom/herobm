@@ -3,12 +3,12 @@
 import { use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { calculateAvailableQuantity, PURCHASE_ORDER_STATE } from '@modbm/shared';
+import { calculateAvailableQuantity, PURCHASE_ORDER_STATE } from '@herobm/shared';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { formatAmount } from '@/lib/currency';
-import { calculateUomPriceAdjustment } from '@modbm/shared';
-import type { ProductUom } from '@modbm/shared';
+import { calculateUomPriceAdjustment } from '@herobm/shared';
+import type { ProductUom } from '@herobm/shared';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';

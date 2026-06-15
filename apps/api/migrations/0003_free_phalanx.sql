@@ -1,4 +1,4 @@
-CREATE TABLE "modbm_core"."casbin_rule" (
+CREATE TABLE "herobm_core"."casbin_rule" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"ptype" text NOT NULL,
 	"v0" text,

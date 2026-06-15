@@ -1,6 +1,6 @@
 # GL Account Mapping Reference
 
-This document records the GL account mappings used by automated journal postings in ModBM. These mappings are currently resolved from GL Settings or hardcoded by convention. They should be made configurable via the UI in a future release.
+This document records the GL account mappings used by automated journal postings in HeroBM. These mappings are currently resolved from GL Settings or hardcoded by convention. They should be made configurable via the UI in a future release.
 
 ## Sales Invoice (AR)
 
@@ -40,7 +40,7 @@ AR line carries `partyType: 'customer'` and `partyId`.
 
 ## Financial Dimensions
  
-ModBM supports tracking expenses and revenues across two primary dimensions: **Cost Centers** and **Activities**.
+HeroBM supports tracking expenses and revenues across two primary dimensions: **Cost Centers** and **Activities**.
  
 | Dimension | Default Code | System ID (v5 UUID) | Description |
 |---|---|---|---|

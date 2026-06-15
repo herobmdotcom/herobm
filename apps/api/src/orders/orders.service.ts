@@ -9,7 +9,7 @@ import {
   salesOrders,
   products,
   productGroups,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import {
   PaginationQuery,
   parsePagination,
@@ -19,7 +19,7 @@ import {
   getAggregationPeriod,
   getAggregationSql,
 } from '../common/utils/date-range.util';
-import { SALES_ORDER_STATE } from '@modbm/shared';
+import { SALES_ORDER_STATE } from '@herobm/shared';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 
 export interface UnifiedOrderRow {

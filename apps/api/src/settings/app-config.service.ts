@@ -2,11 +2,11 @@ import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { eq } from 'drizzle-orm';
-import { glSettings, appSettings } from '../drizzle/modbm-core-schema';
+import { glSettings, appSettings } from '../drizzle/herobm-core-schema';
 import type {
   RevenueRoutingStrategy,
   ExpenseRoutingStrategy,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 
@@ -57,7 +57,7 @@ export class AppConfigService implements OnModuleInit {
           .toString(16)
           .padStart(12, '0');
         const newId = `${globalThis.crypto.randomUUID()}-${timeHex}`;
-        // @modbm-skip-audit
+        // @herobm-skip-audit
         const [updated] = await this.db
           .update(appSettings)
           .set({ systemIdentifier: newId })
@@ -219,7 +219,7 @@ export class AppConfigService implements OnModuleInit {
       throw new Error('App Settings not configured.');
     }
 
-    return await this.db.transaction(async (tx) => {
+    const result = await this.db.transaction(async (tx) => {
       const [updated] = await tx
         .update(appSettings)
         .set(dto)
@@ -235,8 +235,10 @@ export class AppConfigService implements OnModuleInit {
         actor: userId,
       });
 
-      await this.reload();
       return updated;
     });
+
+    await this.reload();
+    return result;
   }
 }

@@ -65,7 +65,7 @@ describe('Architecture Structural Test: Error Handling (e2e)', () => {
     if (errors.length > 0) {
       throw new Error(
         `\nTypeless Catch Block Anti-Pattern detected:\n\n${errors.join('\n')}\n\n` +
-          `To fix this, change the error signature to 'catch (e: unknown)' and use the getErrorMessage(e) utility from @modbm/shared.\n`,
+          `To fix this, change the error signature to 'catch (e: unknown)' and use the getErrorMessage(e) utility from @herobm/shared.\n`,
       );
     }
   });

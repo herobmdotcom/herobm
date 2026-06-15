@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 
 import { useTranslations } from 'next-intl';
 import { DataTable } from '@/components/shared/DataTable';

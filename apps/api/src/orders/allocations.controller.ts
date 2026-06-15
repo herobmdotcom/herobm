@@ -29,7 +29,7 @@ import {
   BACKORDER_STATE,
   calculateAvailableQuantity,
   SystemResource,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import {
   OpenDemandsListResponseDto,
   PoAllocationsListResponseDto,
@@ -57,7 +57,7 @@ import {
   locations,
   inventoryLevels,
   purchaseOrders,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { sql, eq, and, inArray } from 'drizzle-orm';
 
 @ApiTags('Warehouse')

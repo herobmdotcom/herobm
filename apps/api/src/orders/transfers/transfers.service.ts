@@ -23,7 +23,7 @@ import {
   backorders,
   salesOrderLineItems,
   products as coreProducts,
-} from '../../drizzle/modbm-core-schema';
+} from '../../drizzle/herobm-core-schema';
 import { eq, and, inArray, sum, sql, desc, or, ilike, asc } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import {
@@ -47,8 +47,11 @@ import {
   TRANSFER_ORDER_PICK_STATE,
   TRANSFER_ORDER_PICK_TRANSITIONS,
   getValidStates,
-} from '@modbm/shared';
-import type { TransferOrderState, TransferOrderPickState } from '@modbm/shared';
+} from '@herobm/shared';
+import type {
+  TransferOrderState,
+  TransferOrderPickState,
+} from '@herobm/shared';
 import { v4 as uuidv4 } from 'uuid';
 
 const VALID_TRANSFER_STATES = getValidStates(TRANSFER_ORDER_TRANSITIONS);
@@ -1360,7 +1363,7 @@ export class TransferService {
     return { success: true };
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   async addLine(id: string, dto: CreateTransferOrderLineDto, actor: string) {
     const [existing] = await this.db
       .select({
@@ -1388,7 +1391,7 @@ export class TransferService {
     return { lineId };
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   async updateLine(
     id: string,
     lineId: string,
@@ -1416,7 +1419,7 @@ export class TransferService {
     return { success: true };
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   async removeLine(id: string, lineId: string, actor: string) {
     const [existing] = await this.db
       .select({ stateCode: transferOrders.stateCode })

@@ -7,7 +7,7 @@ import {
 import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { customerGroups, customers } from '../drizzle/modbm-core-schema';
+import { customerGroups, customers } from '../drizzle/herobm-core-schema';
 import { CreateAccountGroupDto, UpdateAccountGroupDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';

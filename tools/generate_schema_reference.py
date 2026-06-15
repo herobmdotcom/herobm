@@ -1,7 +1,7 @@
 """
 generate_schema_reference.py
 
-Introspects the live Postgres `modbm_core` schema and produces an agent-friendly
+Introspects the live Postgres `herobm_core` schema and produces an agent-friendly
 docs/technical/schema_reference.md documenting every table, column, constraint,
 and FK relationship.
 
@@ -23,7 +23,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 OUTPUT_FILE = PROJECT_ROOT / "docs" / "technical" / "schema_reference.md"
 
-SCHEMA = "modbm_core"
+SCHEMA = "herobm_core"
 CONTAINER = "postgres-custom"
 
 
@@ -144,7 +144,7 @@ def render(tables: list, columns: list, constraints: list) -> str:
         con_map.setdefault(c["table_name"], []).append(c)
 
     lines = [
-        "# Schema Reference — `modbm_core`",
+        "# Schema Reference — `herobm_core`",
         "",
         f"> Auto-generated from live Postgres introspection. Last generated: {now}",
         "> Regenerate with: `make schema-ref`",
@@ -271,7 +271,7 @@ def render(tables: list, columns: list, constraints: list) -> str:
 def main():
     env = load_env()
 
-    print("Introspecting modbm_core schema from Postgres...")
+    print("Introspecting herobm_core schema from Postgres...")
 
     print("  Fetching tables...")
     tables = get_tables(env)

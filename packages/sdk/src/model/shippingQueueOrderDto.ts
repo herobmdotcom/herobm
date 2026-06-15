@@ -19,6 +19,7 @@ export interface ShippingQueueOrderDto {
   createdBy: string;
   /** @nullable */
   currencyCode?: string | null;
+  isCreditBlocked: boolean;
   shippabilityStatus: string;
   totalShippableLines: number;
   totalLines: number;

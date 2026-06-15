@@ -28,7 +28,7 @@ import {
   emailEvents,
   businessReportEvents,
   integrationEvents,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq, sql } from 'drizzle-orm';
 
 // ---------------------------------------------------------------------------
@@ -75,6 +75,8 @@ const EVENT_TABLE_MAP: Record<string, unknown> = {
   [EntityType.SUPPLIER_GROUP]: groupEvents,
 
   [EntityType.TAX_CATEGORY]: financialEvents,
+  [EntityType.TAX_POSITION]: financialEvents,
+  [EntityType.TAX_POSITION_MAPPING]: financialEvents,
   [EntityType.EXCHANGE_RATE]: financialEvents,
   [EntityType.COST_CENTER]: financialEvents,
   [EntityType.ACTIVITY]: financialEvents,

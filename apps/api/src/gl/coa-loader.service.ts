@@ -6,7 +6,7 @@ import {
   glSettings,
   taxCategories,
   tradingTerms,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq, count } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,7 +14,7 @@ import { v5 as uuidv5 } from 'uuid';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 
-import { GLAccountType } from '@modbm/shared';
+import { GLAccountType } from '@herobm/shared';
 
 export function resolveChartsDir(dirnameFallback: string): string {
   // 1. Standard flat structure / ts-node
@@ -410,7 +410,7 @@ export class CoaLoaderService {
   /**
    * Load only tax settings (GST categories) from a settings JSON file.
    */
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   async loadTaxSettingsFromFile(
     filename: string,
   ): Promise<{ created: number; skipped: boolean }> {

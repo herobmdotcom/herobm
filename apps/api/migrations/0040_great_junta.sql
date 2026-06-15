@@ -1,4 +1,4 @@
-CREATE TABLE "modbm_core"."group_events" (
+CREATE TABLE "herobm_core"."group_events" (
 	"event_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"entity_type" text NOT NULL,
 	"entity_id" uuid NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE "modbm_core"."group_events" (
 	"created_on" timestamp with time zone DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE "modbm_core"."reconciliation_events" (
+CREATE TABLE "herobm_core"."reconciliation_events" (
 	"event_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"entity_type" text NOT NULL,
 	"entity_id" uuid NOT NULL,

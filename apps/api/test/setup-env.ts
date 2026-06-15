@@ -45,7 +45,7 @@ if (!process.env.SETUP_TOKEN) {
 }
 
 if (!process.env.ADMIN_PASSWORD) {
-  process.env.ADMIN_PASSWORD = process.env.DEV_ADMIN_PASSWORD || 'modbmadmin'; // TEST_CREDENTIAL
+  process.env.ADMIN_PASSWORD = process.env.DEV_ADMIN_PASSWORD || 'herobmadmin'; // TEST_CREDENTIAL
 }
 
 // Ensure NODE_ENV is test so throttlers use higher limits during tests

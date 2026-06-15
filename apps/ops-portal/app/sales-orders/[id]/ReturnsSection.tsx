@@ -4,9 +4,9 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { formatAmount } from '@/lib/currency';
-import { computeLinePrice, computeReturnCreditSummary } from '@modbm/shared';
+import { computeLinePrice, computeReturnCreditSummary } from '@herobm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
 
 import type { OrderDetail, OrderReturn, TaxCategory } from './types';
@@ -16,7 +16,7 @@ import {
     RETURN_LIFECYCLE,
     SALES_ORDER_STATE,
     isBackTransition as sharedIsBackTransition,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import { useSettings } from '@/components/SettingsProvider';

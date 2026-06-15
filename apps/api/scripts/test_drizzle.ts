@@ -4,7 +4,7 @@ config({ path: '../../.env' });
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { eq, sql } from 'drizzle-orm';
-import * as schema from '../src/drizzle/modbm-core-schema.js';
+import * as schema from '../src/drizzle/herobm-core-schema.js';
 
 const sqlClient = postgres(process.env.DATABASE_URL!);
 const db = drizzle(sqlClient, { schema });

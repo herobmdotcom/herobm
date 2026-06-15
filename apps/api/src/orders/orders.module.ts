@@ -16,7 +16,7 @@ import {
   salesOrderShipments,
   customers as coreAccounts,
   transferOrders,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { ConfigModule } from '@nestjs/config';
 import { OrdersController } from './orders.controller';
 import { OrderReturnsController } from './order-returns.controller';

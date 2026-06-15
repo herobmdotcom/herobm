@@ -5,7 +5,7 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  transpilePackages: ['@modbm/portal-ui', '@modbm/shared'],
+  transpilePackages: ['@herobm/portal-ui', '@herobm/shared'],
   async rewrites() {
     const apiPort = process.env.API_PORT || '3001';
     const apiUrl = process.env.API_URL || `http://localhost:${apiPort}`;

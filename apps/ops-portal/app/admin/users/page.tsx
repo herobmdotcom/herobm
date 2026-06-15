@@ -2,14 +2,14 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useMemo } from 'react';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import { useTranslations } from 'next-intl';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ type RoleKey = typeof ROLES[number];
 /** Decode the JWT payload from localStorage to get the current user's identity. */
 function getCurrentUserId(): string | null {
   try {
-    const token = localStorage.getItem('modbm_token');
+    const token = localStorage.getItem('herobm_token');
     if (!token) return null;
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.sub ?? null;

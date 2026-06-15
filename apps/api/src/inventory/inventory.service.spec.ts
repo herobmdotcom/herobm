@@ -16,7 +16,7 @@ import {
   inventoryLedger,
   binContents,
   uomDictionary,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq, sql } from 'drizzle-orm';
 
 jest.mock('../common/emit-event', () => ({

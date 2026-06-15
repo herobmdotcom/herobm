@@ -2,7 +2,7 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useMemo } from 'react';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -10,7 +10,7 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
 import { useTranslations } from 'next-intl';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 import { reportError } from '@/lib/api';
 
 // ── Types ────────────────────────────────────────────────────────────────────

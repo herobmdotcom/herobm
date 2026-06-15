@@ -2,7 +2,7 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { products, productUoms } from '../drizzle/modbm-core-schema';
+import { products, productUoms } from '../drizzle/herobm-core-schema';
 
 export interface UomInputLine {
   uomCode?: string;

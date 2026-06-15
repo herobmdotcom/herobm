@@ -50,7 +50,7 @@ describe('WebhookReceiver', () => {
       };
     });
 
-    it('should return 401 if x-modbm-signature header is missing', async () => {
+    it('should return 401 if x-herobm-signature header is missing', async () => {
       const middleware = receiver.expressMiddleware();
       await middleware(mockReq, mockRes);
       expect(mockRes.status).toHaveBeenCalledWith(401);
@@ -58,7 +58,7 @@ describe('WebhookReceiver', () => {
     });
 
     it('should return 500 if req.body is not a Buffer', async () => {
-      mockReq.headers['x-modbm-signature'] = 'any_signature';
+      mockReq.headers['x-herobm-signature'] = 'any_signature';
       mockReq.body = { parsed: 'json' }; // Not a buffer
 
       const middleware = receiver.expressMiddleware();
@@ -69,7 +69,7 @@ describe('WebhookReceiver', () => {
     });
 
     it('should return 401 if signature verification fails', async () => {
-      mockReq.headers['x-modbm-signature'] = 'wrong_signature';
+      mockReq.headers['x-herobm-signature'] = 'wrong_signature';
       mockReq.body = Buffer.from(JSON.stringify({ hello: 'world' }));
 
       const middleware = receiver.expressMiddleware();
@@ -83,7 +83,7 @@ describe('WebhookReceiver', () => {
       const invalidEvent = { eventId: '123' }; // missing eventType
       const rawPayload = Buffer.from(JSON.stringify(invalidEvent));
       
-      mockReq.headers['x-modbm-signature'] = generateSignature(rawPayload);
+      mockReq.headers['x-herobm-signature'] = generateSignature(rawPayload);
       mockReq.body = rawPayload;
 
       const middleware = receiver.expressMiddleware();
@@ -104,7 +104,7 @@ describe('WebhookReceiver', () => {
       };
       
       const rawPayload = Buffer.from(JSON.stringify(validEvent));
-      mockReq.headers['x-modbm-signature'] = generateSignature(rawPayload);
+      mockReq.headers['x-herobm-signature'] = generateSignature(rawPayload);
       mockReq.body = rawPayload;
 
       const handlerMock = jest.fn();

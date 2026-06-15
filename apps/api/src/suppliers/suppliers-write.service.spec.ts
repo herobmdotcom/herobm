@@ -4,7 +4,7 @@ import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { suppliers, masterDataEvents } from '../drizzle/modbm-core-schema';
+import { suppliers, masterDataEvents } from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 
 describe('SuppliersWriteService', () => {

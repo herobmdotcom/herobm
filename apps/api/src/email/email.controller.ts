@@ -19,7 +19,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
-import { emailOutbox } from '../drizzle/modbm-core-schema';
+import { emailOutbox } from '../drizzle/herobm-core-schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -27,7 +27,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
-import { SystemResource } from '@modbm/shared';
+import { SystemResource } from '@herobm/shared';
 
 @ApiTags('System')
 @ApiBearerAuth()

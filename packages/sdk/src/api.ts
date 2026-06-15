@@ -104,6 +104,9 @@ import type {
   CreateSupplierExpiryDto,
   CreateSupplierGroupDto,
   CreateTaxCategoryDto,
+  CreateTaxPositionDto,
+  CreateTaxPositionMappingDto,
+  CreateTradingTermDto,
   CreateTransferFromDemandsDto,
   CreateTransferOrderDto,
   CreateTransferOrderLineDto,
@@ -118,9 +121,9 @@ import type {
   DashboardControllerSearch200Item,
   DashboardControllerSearchParams,
   DataSourceItemDto,
+  DeleteDeliveryAddressSuccessDto,
   DeleteEventsResponseDto,
   DeliveryAddressResponseDto,
-  DeliveryAddressesControllerRemove200,
   DiscardReconciliationResponseDto,
   DiscountMatrixControllerDelete200,
   DiscountMatrixControllerListParams,
@@ -161,6 +164,8 @@ import type {
   FileUploadDto,
   FindByProductIdsBulkDto,
   GeneratePOsDto,
+  GeneratePaymentRunDto,
+  GeneratePaymentRunResponseDto,
   GenerateTransfersDto,
   GlAccountResponseDto,
   GlControllerGetAccountsParams,
@@ -227,7 +232,9 @@ import type {
   OrdersControllerFindAll200,
   OrdersControllerFindAllParams,
   OrdersControllerFindOneParams,
+  OrdersControllerOverrideCreditHold201,
   OrganizationResponseDto,
+  OverrideCreditHoldDto,
   PaginatedGoodsReceivedDto,
   PaginatedGoodsReceivedLineDto,
   PaginatedJournalEntriesDto,
@@ -286,6 +293,7 @@ import type {
   ResumeStateDto,
   ReturnResponseDto,
   RoleDetailsDto,
+  RolesSuccessResponseDto,
   RunHookBodyDto,
   SalesCreditNoteResponseDto,
   SalesCreditNotesControllerFindAllParams,
@@ -297,6 +305,7 @@ import type {
   SetRolePermissionsDto,
   SettingsFileDto,
   SettingsResponseDto,
+  SettingsSuccessResponseDto,
   SetupControllerExecuteCsv201,
   SetupControllerExecuteCsvBody,
   SetupValidationDto,
@@ -304,7 +313,6 @@ import type {
   ShippingContextDto,
   ShippingQueueOrderDto,
   SuccessMessageResponseDto,
-  SuccessResponseDto,
   SupplierGroupResponseDto,
   SupplierGroupsControllerFindAllParams,
   SupplierGroupsControllerFindOneParams,
@@ -325,6 +333,8 @@ import type {
   TaxCategoriesControllerFindAllParams,
   TaxCategoriesControllerFindOneParams,
   TaxCategoryResponseDto,
+  TaxPositionMappingResponseDto,
+  TaxPositionResponseDto,
   TestAbmConnectionDto,
   TestConnectionResultDto,
   TestOdooConnectionDto,
@@ -379,6 +389,8 @@ import type {
   UpdateSupplierExpiryDto,
   UpdateSupplierGroupDto,
   UpdateTaxCategoryDto,
+  UpdateTaxPositionDto,
+  UpdateTradingTermDto,
   UpdateTransferOrderDto,
   UpdateTransferOrderLineDto,
   UpdateUomDto,
@@ -590,7 +602,7 @@ export const rolesControllerSetPermissions = async (role: string,
  * @summary Delete role
  */
 export type rolesControllerRemoveResponse200 = {
-  data: SuccessResponseDto
+  data: RolesSuccessResponseDto
   status: 200
 }
     
@@ -4791,6 +4803,120 @@ export const tradingTermsControllerFindAll = async (params?: TradingTermsControl
 
 
 /**
+ * Create a new trading term
+ * @summary Create trading term
+ */
+export type tradingTermsControllerCreateResponse201 = {
+  data: TradingTermResponseDto
+  status: 201
+}
+    
+export type tradingTermsControllerCreateResponseSuccess = (tradingTermsControllerCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type tradingTermsControllerCreateResponse = (tradingTermsControllerCreateResponseSuccess)
+
+export const getTradingTermsControllerCreateUrl = () => {
+
+
+  
+
+  return `/settings/trading-terms`
+}
+
+export const tradingTermsControllerCreate = async (createTradingTermDto: CreateTradingTermDto, options?: RequestInit): Promise<tradingTermsControllerCreateResponse> => {
+  
+  return customFetch<tradingTermsControllerCreateResponse>(getTradingTermsControllerCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createTradingTermDto,)
+  }
+);}
+
+
+
+/**
+ * Update an existing trading term
+ * @summary Update trading term
+ */
+export type tradingTermsControllerUpdateResponse200 = {
+  data: TradingTermResponseDto
+  status: 200
+}
+    
+export type tradingTermsControllerUpdateResponseSuccess = (tradingTermsControllerUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type tradingTermsControllerUpdateResponse = (tradingTermsControllerUpdateResponseSuccess)
+
+export const getTradingTermsControllerUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/settings/trading-terms/${id}`
+}
+
+export const tradingTermsControllerUpdate = async (id: string,
+    updateTradingTermDto: UpdateTradingTermDto, options?: RequestInit): Promise<tradingTermsControllerUpdateResponse> => {
+  
+  return customFetch<tradingTermsControllerUpdateResponse>(getTradingTermsControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateTradingTermDto,)
+  }
+);}
+
+
+
+/**
+ * Delete an existing trading term
+ * @summary Delete trading term
+ */
+export type tradingTermsControllerDeleteResponse200 = {
+  data: SettingsSuccessResponseDto
+  status: 200
+}
+    
+export type tradingTermsControllerDeleteResponseSuccess = (tradingTermsControllerDeleteResponse200) & {
+  headers: Headers;
+};
+;
+
+export type tradingTermsControllerDeleteResponse = (tradingTermsControllerDeleteResponseSuccess)
+
+export const getTradingTermsControllerDeleteUrl = (id: string,) => {
+
+
+  
+
+  return `/settings/trading-terms/${id}`
+}
+
+export const tradingTermsControllerDelete = async (id: string, options?: RequestInit): Promise<tradingTermsControllerDeleteResponse> => {
+  
+  return customFetch<tradingTermsControllerDeleteResponse>(getTradingTermsControllerDeleteUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
  * List all cost centers
  * @summary List all cost centers
  */
@@ -6003,6 +6129,50 @@ export const ordersControllerChangeState = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       changeOrderStateDto,)
+  }
+);}
+
+
+
+/**
+ * Temporarily overrides a credit hold for this specific order.
+ * @summary Override Credit Hold
+ */
+export type ordersControllerOverrideCreditHoldResponse200 = {
+  data: OrderResponseDto
+  status: 200
+}
+
+export type ordersControllerOverrideCreditHoldResponse201 = {
+  data: OrdersControllerOverrideCreditHold201
+  status: 201
+}
+    
+export type ordersControllerOverrideCreditHoldResponseSuccess = (ordersControllerOverrideCreditHoldResponse200 | ordersControllerOverrideCreditHoldResponse201) & {
+  headers: Headers;
+};
+;
+
+export type ordersControllerOverrideCreditHoldResponse = (ordersControllerOverrideCreditHoldResponseSuccess)
+
+export const getOrdersControllerOverrideCreditHoldUrl = (id: string,) => {
+
+
+  
+
+  return `/sales-orders/${id}/override-credit-hold`
+}
+
+export const ordersControllerOverrideCreditHold = async (id: string,
+    overrideCreditHoldDto: OverrideCreditHoldDto, options?: RequestInit): Promise<ordersControllerOverrideCreditHoldResponse> => {
+  
+  return customFetch<ordersControllerOverrideCreditHoldResponse>(getOrdersControllerOverrideCreditHoldUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      overrideCreditHoldDto,)
   }
 );}
 
@@ -8291,6 +8461,309 @@ export const taxCategoriesControllerRemove = async (id: string, options?: Reques
 
 
 /**
+ * Retrieves all mappings across all tax positions. In the future this may be scoped.
+ * @summary List all tax position mappings (ignores path param for now)
+ */
+export type taxPositionMappingsControllerFindAllResponse200 = {
+  data: TaxPositionMappingResponseDto[]
+  status: 200
+}
+    
+export type taxPositionMappingsControllerFindAllResponseSuccess = (taxPositionMappingsControllerFindAllResponse200) & {
+  headers: Headers;
+};
+;
+
+export type taxPositionMappingsControllerFindAllResponse = (taxPositionMappingsControllerFindAllResponseSuccess)
+
+export const getTaxPositionMappingsControllerFindAllUrl = () => {
+
+
+  
+
+  return `/tax-positions/mappings`
+}
+
+export const taxPositionMappingsControllerFindAll = async ( options?: RequestInit): Promise<taxPositionMappingsControllerFindAllResponse> => {
+  
+  return customFetch<taxPositionMappingsControllerFindAllResponse>(getTaxPositionMappingsControllerFindAllUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Creates a mapping rule that translates a source tax category to a destination category for this position.
+ * @summary Create a new mapping for a tax position
+ */
+export type taxPositionMappingsControllerCreateResponse201 = {
+  data: TaxPositionMappingResponseDto
+  status: 201
+}
+    
+export type taxPositionMappingsControllerCreateResponseSuccess = (taxPositionMappingsControllerCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type taxPositionMappingsControllerCreateResponse = (taxPositionMappingsControllerCreateResponseSuccess)
+
+export const getTaxPositionMappingsControllerCreateUrl = (taxPositionId: string,) => {
+
+
+  
+
+  return `/tax-positions/${taxPositionId}/mappings`
+}
+
+export const taxPositionMappingsControllerCreate = async (taxPositionId: string,
+    createTaxPositionMappingDto: CreateTaxPositionMappingDto, options?: RequestInit): Promise<taxPositionMappingsControllerCreateResponse> => {
+  
+  return customFetch<taxPositionMappingsControllerCreateResponse>(getTaxPositionMappingsControllerCreateUrl(taxPositionId),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createTaxPositionMappingDto,)
+  }
+);}
+
+
+
+/**
+ * Deletes a specific tax category mapping from a tax position.
+ * @summary Remove a mapping from a tax position
+ */
+export type taxPositionMappingsControllerRemoveResponse200 = {
+  data: TaxPositionMappingResponseDto
+  status: 200
+}
+    
+export type taxPositionMappingsControllerRemoveResponseSuccess = (taxPositionMappingsControllerRemoveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type taxPositionMappingsControllerRemoveResponse = (taxPositionMappingsControllerRemoveResponseSuccess)
+
+export const getTaxPositionMappingsControllerRemoveUrl = (taxPositionId: string,
+    sourceTaxCategoryId: string,) => {
+
+
+  
+
+  return `/tax-positions/${taxPositionId}/mappings/${sourceTaxCategoryId}`
+}
+
+export const taxPositionMappingsControllerRemove = async (taxPositionId: string,
+    sourceTaxCategoryId: string, options?: RequestInit): Promise<taxPositionMappingsControllerRemoveResponse> => {
+  
+  return customFetch<taxPositionMappingsControllerRemoveResponse>(getTaxPositionMappingsControllerRemoveUrl(taxPositionId,sourceTaxCategoryId),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Retrieves a list of all configured tax positions.
+ * @summary List all tax positions
+ */
+export type taxPositionsControllerFindAllResponse200 = {
+  data: TaxPositionResponseDto[]
+  status: 200
+}
+    
+export type taxPositionsControllerFindAllResponseSuccess = (taxPositionsControllerFindAllResponse200) & {
+  headers: Headers;
+};
+;
+
+export type taxPositionsControllerFindAllResponse = (taxPositionsControllerFindAllResponseSuccess)
+
+export const getTaxPositionsControllerFindAllUrl = () => {
+
+
+  
+
+  return `/tax-positions`
+}
+
+export const taxPositionsControllerFindAll = async ( options?: RequestInit): Promise<taxPositionsControllerFindAllResponse> => {
+  
+  return customFetch<taxPositionsControllerFindAllResponse>(getTaxPositionsControllerFindAllUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Creates a new tax position for business context tax rules.
+ * @summary Create a new tax position
+ */
+export type taxPositionsControllerCreateResponse201 = {
+  data: TaxPositionResponseDto
+  status: 201
+}
+    
+export type taxPositionsControllerCreateResponseSuccess = (taxPositionsControllerCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type taxPositionsControllerCreateResponse = (taxPositionsControllerCreateResponseSuccess)
+
+export const getTaxPositionsControllerCreateUrl = () => {
+
+
+  
+
+  return `/tax-positions`
+}
+
+export const taxPositionsControllerCreate = async (createTaxPositionDto: CreateTaxPositionDto, options?: RequestInit): Promise<taxPositionsControllerCreateResponse> => {
+  
+  return customFetch<taxPositionsControllerCreateResponse>(getTaxPositionsControllerCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createTaxPositionDto,)
+  }
+);}
+
+
+
+/**
+ * Retrieves a specific tax position by its unique identifier.
+ * @summary Get a tax position by id
+ */
+export type taxPositionsControllerFindOneResponse200 = {
+  data: TaxPositionResponseDto
+  status: 200
+}
+    
+export type taxPositionsControllerFindOneResponseSuccess = (taxPositionsControllerFindOneResponse200) & {
+  headers: Headers;
+};
+;
+
+export type taxPositionsControllerFindOneResponse = (taxPositionsControllerFindOneResponseSuccess)
+
+export const getTaxPositionsControllerFindOneUrl = (id: string,) => {
+
+
+  
+
+  return `/tax-positions/${id}`
+}
+
+export const taxPositionsControllerFindOne = async (id: string, options?: RequestInit): Promise<taxPositionsControllerFindOneResponse> => {
+  
+  return customFetch<taxPositionsControllerFindOneResponse>(getTaxPositionsControllerFindOneUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Updates an existing tax position.
+ * @summary Update a tax position
+ */
+export type taxPositionsControllerUpdateResponse200 = {
+  data: TaxPositionResponseDto
+  status: 200
+}
+    
+export type taxPositionsControllerUpdateResponseSuccess = (taxPositionsControllerUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type taxPositionsControllerUpdateResponse = (taxPositionsControllerUpdateResponseSuccess)
+
+export const getTaxPositionsControllerUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/tax-positions/${id}`
+}
+
+export const taxPositionsControllerUpdate = async (id: string,
+    updateTaxPositionDto: UpdateTaxPositionDto, options?: RequestInit): Promise<taxPositionsControllerUpdateResponse> => {
+  
+  return customFetch<taxPositionsControllerUpdateResponse>(getTaxPositionsControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateTaxPositionDto,)
+  }
+);}
+
+
+
+/**
+ * Deletes a tax position. This will also cascade delete any associated mappings.
+ * @summary Delete a tax position
+ */
+export type taxPositionsControllerRemoveResponse200 = {
+  data: TaxPositionResponseDto
+  status: 200
+}
+    
+export type taxPositionsControllerRemoveResponseSuccess = (taxPositionsControllerRemoveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type taxPositionsControllerRemoveResponse = (taxPositionsControllerRemoveResponseSuccess)
+
+export const getTaxPositionsControllerRemoveUrl = (id: string,) => {
+
+
+  
+
+  return `/tax-positions/${id}`
+}
+
+export const taxPositionsControllerRemove = async (id: string, options?: RequestInit): Promise<taxPositionsControllerRemoveResponse> => {
+  
+  return customFetch<taxPositionsControllerRemoveResponse>(getTaxPositionsControllerRemoveUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
  * Execute a specific reporting hook and generate a PDF document.
  * @summary Run Hook
  */
@@ -10423,169 +10896,35 @@ export const paymentsControllerRejectExported = async (batchPaymentActionDto: Ba
 
 
 
-/**
- * Retrieves key metrics and statistics for the dashboard.
- * @summary Get Summary
- */
-export type dashboardControllerGetSummaryResponse200 = {
-  data: DashboardControllerGetSummary200
-  status: 200
-}
-    
-export type dashboardControllerGetSummaryResponseSuccess = (dashboardControllerGetSummaryResponse200) & {
-  headers: Headers;
-};
-;
-
-export type dashboardControllerGetSummaryResponse = (dashboardControllerGetSummaryResponseSuccess)
-
-export const getDashboardControllerGetSummaryUrl = () => {
-
-
-  
-
-  return `/dashboard/summary`
-}
-
-export const dashboardControllerGetSummary = async ( options?: RequestInit): Promise<dashboardControllerGetSummaryResponse> => {
-  
-  return customFetch<dashboardControllerGetSummaryResponse>(getDashboardControllerGetSummaryUrl(),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Performs a global search across multiple entity types.
- * @summary Universal Search
- */
-export type dashboardControllerSearchResponse200 = {
-  data: DashboardControllerSearch200Item[]
-  status: 200
-}
-    
-export type dashboardControllerSearchResponseSuccess = (dashboardControllerSearchResponse200) & {
-  headers: Headers;
-};
-;
-
-export type dashboardControllerSearchResponse = (dashboardControllerSearchResponseSuccess)
-
-export const getDashboardControllerSearchUrl = (params: DashboardControllerSearchParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/dashboard/search?${stringifiedParams}` : `/dashboard/search`
-}
-
-export const dashboardControllerSearch = async (params: DashboardControllerSearchParams, options?: RequestInit): Promise<dashboardControllerSearchResponse> => {
-  
-  return customFetch<dashboardControllerSearchResponse>(getDashboardControllerSearchUrl(params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Retrieves a chronological list of recent system events.
- * @summary Get Timeline
- */
-export type dashboardControllerGetTimelineResponse200 = {
-  data: DashboardControllerGetTimeline200Item[]
-  status: 200
-}
-    
-export type dashboardControllerGetTimelineResponseSuccess = (dashboardControllerGetTimelineResponse200) & {
-  headers: Headers;
-};
-;
-
-export type dashboardControllerGetTimelineResponse = (dashboardControllerGetTimelineResponseSuccess)
-
-export const getDashboardControllerGetTimelineUrl = (params: DashboardControllerGetTimelineParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/dashboard/timeline?${stringifiedParams}` : `/dashboard/timeline`
-}
-
-export const dashboardControllerGetTimeline = async (params: DashboardControllerGetTimelineParams, options?: RequestInit): Promise<dashboardControllerGetTimelineResponse> => {
-  
-  return customFetch<dashboardControllerGetTimelineResponse>(getDashboardControllerGetTimelineUrl(params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Ingests frontend application errors for monitoring.
- * @summary Report Client Error
- */
-export type telemetryControllerReportClientErrorResponse201 = {
-  data: EmptyBodyDto
+export type paymentsControllerGeneratePaymentRunResponse201 = {
+  data: GeneratePaymentRunResponseDto
   status: 201
 }
-
-export type telemetryControllerReportClientErrorResponse204 = {
-  data: void
-  status: 204
-}
     
-export type telemetryControllerReportClientErrorResponseSuccess = (telemetryControllerReportClientErrorResponse201 | telemetryControllerReportClientErrorResponse204) & {
+export type paymentsControllerGeneratePaymentRunResponseSuccess = (paymentsControllerGeneratePaymentRunResponse201) & {
   headers: Headers;
 };
 ;
 
-export type telemetryControllerReportClientErrorResponse = (telemetryControllerReportClientErrorResponseSuccess)
+export type paymentsControllerGeneratePaymentRunResponse = (paymentsControllerGeneratePaymentRunResponseSuccess)
 
-export const getTelemetryControllerReportClientErrorUrl = () => {
+export const getPaymentsControllerGeneratePaymentRunUrl = () => {
 
 
   
 
-  return `/telemetry/client-errors`
+  return `/payments/generate-run`
 }
 
-export const telemetryControllerReportClientError = async (clientErrorDto: ClientErrorDto, options?: RequestInit): Promise<telemetryControllerReportClientErrorResponse> => {
+export const paymentsControllerGeneratePaymentRun = async (generatePaymentRunDto: GeneratePaymentRunDto, options?: RequestInit): Promise<paymentsControllerGeneratePaymentRunResponse> => {
   
-  return customFetch<telemetryControllerReportClientErrorResponse>(getTelemetryControllerReportClientErrorUrl(),
+  return customFetch<paymentsControllerGeneratePaymentRunResponse>(getPaymentsControllerGeneratePaymentRunUrl(),
   {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      clientErrorDto,)
+      generatePaymentRunDto,)
   }
 );}
 
@@ -11292,6 +11631,174 @@ export const supplierGroupsControllerRemove = async (id: string, options?: Reque
     method: 'DELETE'
     
     
+  }
+);}
+
+
+
+/**
+ * Retrieves key metrics and statistics for the dashboard.
+ * @summary Get Summary
+ */
+export type dashboardControllerGetSummaryResponse200 = {
+  data: DashboardControllerGetSummary200
+  status: 200
+}
+    
+export type dashboardControllerGetSummaryResponseSuccess = (dashboardControllerGetSummaryResponse200) & {
+  headers: Headers;
+};
+;
+
+export type dashboardControllerGetSummaryResponse = (dashboardControllerGetSummaryResponseSuccess)
+
+export const getDashboardControllerGetSummaryUrl = () => {
+
+
+  
+
+  return `/dashboard/summary`
+}
+
+export const dashboardControllerGetSummary = async ( options?: RequestInit): Promise<dashboardControllerGetSummaryResponse> => {
+  
+  return customFetch<dashboardControllerGetSummaryResponse>(getDashboardControllerGetSummaryUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Performs a global search across multiple entity types.
+ * @summary Universal Search
+ */
+export type dashboardControllerSearchResponse200 = {
+  data: DashboardControllerSearch200Item[]
+  status: 200
+}
+    
+export type dashboardControllerSearchResponseSuccess = (dashboardControllerSearchResponse200) & {
+  headers: Headers;
+};
+;
+
+export type dashboardControllerSearchResponse = (dashboardControllerSearchResponseSuccess)
+
+export const getDashboardControllerSearchUrl = (params: DashboardControllerSearchParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/dashboard/search?${stringifiedParams}` : `/dashboard/search`
+}
+
+export const dashboardControllerSearch = async (params: DashboardControllerSearchParams, options?: RequestInit): Promise<dashboardControllerSearchResponse> => {
+  
+  return customFetch<dashboardControllerSearchResponse>(getDashboardControllerSearchUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Retrieves a chronological list of recent system events.
+ * @summary Get Timeline
+ */
+export type dashboardControllerGetTimelineResponse200 = {
+  data: DashboardControllerGetTimeline200Item[]
+  status: 200
+}
+    
+export type dashboardControllerGetTimelineResponseSuccess = (dashboardControllerGetTimelineResponse200) & {
+  headers: Headers;
+};
+;
+
+export type dashboardControllerGetTimelineResponse = (dashboardControllerGetTimelineResponseSuccess)
+
+export const getDashboardControllerGetTimelineUrl = (params: DashboardControllerGetTimelineParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/dashboard/timeline?${stringifiedParams}` : `/dashboard/timeline`
+}
+
+export const dashboardControllerGetTimeline = async (params: DashboardControllerGetTimelineParams, options?: RequestInit): Promise<dashboardControllerGetTimelineResponse> => {
+  
+  return customFetch<dashboardControllerGetTimelineResponse>(getDashboardControllerGetTimelineUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Ingests frontend application errors for monitoring.
+ * @summary Report Client Error
+ */
+export type telemetryControllerReportClientErrorResponse201 = {
+  data: EmptyBodyDto
+  status: 201
+}
+
+export type telemetryControllerReportClientErrorResponse204 = {
+  data: void
+  status: 204
+}
+    
+export type telemetryControllerReportClientErrorResponseSuccess = (telemetryControllerReportClientErrorResponse201 | telemetryControllerReportClientErrorResponse204) & {
+  headers: Headers;
+};
+;
+
+export type telemetryControllerReportClientErrorResponse = (telemetryControllerReportClientErrorResponseSuccess)
+
+export const getTelemetryControllerReportClientErrorUrl = () => {
+
+
+  
+
+  return `/telemetry/client-errors`
+}
+
+export const telemetryControllerReportClientError = async (clientErrorDto: ClientErrorDto, options?: RequestInit): Promise<telemetryControllerReportClientErrorResponse> => {
+  
+  return customFetch<telemetryControllerReportClientErrorResponse>(getTelemetryControllerReportClientErrorUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      clientErrorDto,)
   }
 );}
 
@@ -14711,7 +15218,7 @@ export const deliveryAddressesControllerUpdate = async (id: string,
  * @summary Delete a delivery address
  */
 export type deliveryAddressesControllerRemoveResponse200 = {
-  data: DeliveryAddressesControllerRemove200
+  data: DeleteDeliveryAddressSuccessDto
   status: 200
 }
     

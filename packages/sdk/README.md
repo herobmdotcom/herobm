@@ -1,6 +1,6 @@
-# @modbm/sdk
+# @herobm/sdk
 
-This package contains the auto-generated TypeScript SDK for the ModBM API.
+This package contains the auto-generated TypeScript SDK for the HeroBM API.
 
 The SDK is generated using [Orval](https://orval.dev/) from the OpenAPI specification produced by the `apps/api` NestJS backend.
 
@@ -21,13 +21,13 @@ This command will:
 
 ## Usage
 
-In the Next.js frontend (`apps/ops-portal`), the SDK is imported and configured via the `@modbm/sdk` alias.
+In the Next.js frontend (`apps/ops-portal`), the SDK is imported and configured via the `@herobm/sdk` alias.
 
 ### Configuration
 The Axios instance must be configured with the base URL and authentication tokens. This is usually done in the layout or initialization phase of the app:
 
 ```typescript
-import { axiosInstance } from '@modbm/sdk';
+import { axiosInstance } from '@herobm/sdk';
 
 axiosInstance.defaults.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -46,7 +46,7 @@ axiosInstance.interceptors.request.use((config) => {
 Simply import the SDK methods. They map directly to the API controllers and are strictly typed.
 
 ```typescript
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 
 // Automatically typed Request & Response DTOs
 const res = await api.productsControllerFindAll();

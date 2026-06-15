@@ -23,7 +23,7 @@ import {
   products as coreProducts,
   customers as coreAccounts,
   customerGroups,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
@@ -42,7 +42,7 @@ import {
   RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
   getValidStates,
   PUTAWAY_STATUS,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import { validateReturnQuantity } from './returns-math.utils';

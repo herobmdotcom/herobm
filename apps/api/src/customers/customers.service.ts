@@ -15,10 +15,10 @@ import {
   customers,
   masterDataEvents,
   customerGroups,
-  taxCategories,
+  taxPositions,
   customerContacts,
   customerDeliveryAddresses,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import {
   PaginationQuery,
   parsePagination,
@@ -26,11 +26,66 @@ import {
 } from '../common/pagination';
 import { alias } from 'drizzle-orm/pg-core';
 
-import { CUSTOMER_STATE } from '@modbm/shared';
+import { CUSTOMER_STATE } from '@herobm/shared';
+import { CreditAssessmentService } from './credit-assessment.service';
+import { AppConfigService } from '../settings/app-config.service';
+import {
+  resolveCustomerRiskProfile,
+  ResolvedCustomerRiskProfile,
+} from './customer-risk.domain';
 
 @Injectable()
 export class AccountsService {
-  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private db: DrizzleDB,
+    private readonly creditAssessmentService: CreditAssessmentService,
+    private readonly appConfig: AppConfigService,
+  ) {}
+
+  async assessRisk(
+    customerId: string,
+    additionalExposure: number = 0,
+    operation: 'create' | 'update' | 'confirm' | 'quote' = 'confirm',
+    tx?: DrizzleDB,
+  ): Promise<ResolvedCustomerRiskProfile> {
+    const db = tx || this.db;
+
+    const [customer] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.customerId, customerId));
+
+    if (!customer) {
+      throw new NotFoundException(`Customer ${customerId} not found`);
+    }
+
+    let group = null;
+    if (customer.customerGroupId) {
+      const [g] = await db
+        .select()
+        .from(customerGroups)
+        .where(eq(customerGroups.customerGroupId, customer.customerGroupId));
+      group = g;
+    }
+
+    const assessment = await this.creditAssessmentService.assessCredit(
+      customerId,
+      tx,
+    );
+
+    const behavior = this.appConfig.creditLimitBehavior();
+
+    return resolveCustomerRiskProfile(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      customer as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      group as any,
+      assessment,
+      additionalExposure,
+      behavior,
+      operation,
+    );
+  }
 
   async findAll(query?: PaginationQuery) {
     const { page, limit, cursor, direction, searchTerm, includeArchived } =
@@ -63,7 +118,8 @@ export class AccountsService {
         customerGroupTradingTermsId: customerGroups.tradingTermsId,
         customerGroupCreditLimit: customerGroups.creditLimit,
         customerGroupIsOnCreditHold: customerGroups.isOnCreditHold,
-        gstCategoryName: taxCategories.code,
+        customerGroupTaxPositionId: customerGroups.taxPositionId,
+        gstCategoryName: taxPositions.code,
       })
       .from(customers)
       .leftJoin(
@@ -71,8 +127,8 @@ export class AccountsService {
         eq(customers.customerGroupId, customerGroups.customerGroupId),
       )
       .leftJoin(
-        taxCategories,
-        eq(customers.taxCategoryId, taxCategories.taxCategoryId),
+        taxPositions,
+        eq(customers.taxPositionId, taxPositions.taxPositionId),
       )
       .$dynamic();
 
@@ -138,7 +194,8 @@ export class AccountsService {
         customerGroupTradingTermsId: customerGroups.tradingTermsId,
         customerGroupCreditLimit: customerGroups.creditLimit,
         customerGroupIsOnCreditHold: customerGroups.isOnCreditHold,
-        gstCategoryName: taxCategories.code,
+        customerGroupTaxPositionId: customerGroups.taxPositionId,
+        gstCategoryName: taxPositions.code,
       })
       .from(customers)
       .leftJoin(
@@ -146,8 +203,8 @@ export class AccountsService {
         eq(customers.customerGroupId, customerGroups.customerGroupId),
       )
       .leftJoin(
-        taxCategories,
-        eq(customers.taxCategoryId, taxCategories.taxCategoryId),
+        taxPositions,
+        eq(customers.taxPositionId, taxPositions.taxPositionId),
       )
 
       .where(isUuid ? eq(customers.customerId, id) : eq(customers.sourceId, id))

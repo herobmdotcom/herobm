@@ -3,7 +3,7 @@ import {
   zones,
   bins,
   appSettings,
-} from '../../src/drizzle/modbm-core-schema';
+} from '../../src/drizzle/herobm-core-schema';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function seedTestLocations(db: any, dryRun = false) {

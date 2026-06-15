@@ -22,7 +22,7 @@ const sqlClient = process.env.DATABASE_URL
       port: Number(process.env.POSTGRES_PORT || 5432),
       user: process.env.POSTGRES_USER || 'postgres',
       password: process.env.POSTGRES_PASSWORD,
-      database: process.env.POSTGRES_DB || 'modbm_core',
+      database: process.env.POSTGRES_DB || 'herobm_core',
     });
 const db = drizzle(sqlClient);
 
@@ -37,7 +37,7 @@ async function run() {
       return;
     }
     
-    const schemaFileUrl = url.pathToFileURL(path.resolve(process.cwd(), 'src/drizzle/modbm-core-schema.ts')).href;
+    const schemaFileUrl = url.pathToFileURL(path.resolve(process.cwd(), 'src/drizzle/herobm-core-schema.ts')).href;
     const schema = await import(schemaFileUrl);
     
     const result = await module.default(db, schema);

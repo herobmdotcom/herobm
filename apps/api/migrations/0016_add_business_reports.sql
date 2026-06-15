@@ -1,4 +1,4 @@
-CREATE TABLE "modbm_core"."business_reports" (
+CREATE TABLE "herobm_core"."business_reports" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"slug" text NOT NULL,
 	"name" text NOT NULL,

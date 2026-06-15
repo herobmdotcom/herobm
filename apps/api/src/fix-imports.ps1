@@ -1,5 +1,5 @@
 # Fix import paths: ../gst/tax-categories.service -> ../tax/tax-categories.service
-$root = "C:\Users\Marcel\volz\modbm\modbm\apps\api\src"
+$root = "C:\Users\Marcel\volz\herobm\herobm\apps\api\src"
 
 $replacements = @(
     @{ From = "../gst/tax-categories.service"; To = "../tax/tax-categories.service" },

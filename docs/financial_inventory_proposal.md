@@ -1,9 +1,9 @@
 # Financial Integration of Inventory Movements
 
 ## 1. Introduction: Inventory Accounting Models
-There are two primary approaches to tracking the financial value of inventory in an ERP system. ModBM currently employs the first, but we are proposing a configurable shift toward the second.
+There are two primary approaches to tracking the financial value of inventory in an ERP system. HeroBM currently employs the first, but we are proposing a configurable shift toward the second.
 
-### Periodic Inventory Tracking (Current ModBM Approach)
+### Periodic Inventory Tracking (Current HeroBM Approach)
 In this model, the system tracks the physical movement of goods (Quantity on Hand), but financial accounting is decoupled and simplified. Purchases are treated as immediate expenses.
 *   **Pros:** Simpler to implement. Generates far fewer journal entries. Ideal for low-value consumables or service-based operations.
 *   **Cons:** Zero real-time visibility into the actual value of inventory sitting on the balance sheet. Cost of Goods Sold (COGS) cannot be matched to specific sales in real-time, masking true gross margins. Financial valuation requires a manual physical stock-take at month-end.
@@ -27,7 +27,7 @@ In a perpetual system, the flow looks like this:
 3. **Dispatch (Shipping)**: When goods are shipped to a customer, the physical asset leaves the warehouse. Financially, you credit the **Inventory Asset** account. At the exact same time, you recognize the cost of that sale by debiting the **Cost of Goods Sold (COGS)** expense account on the P&L.
 
 ### Valuation Strategy: Weighted Average vs. Standard Costing
-When inventory moves in or out, we must assign it a monetary value. ModBM's `appSettings` currently defaults to `weighted_average`. Here is the difference:
+When inventory moves in or out, we must assign it a monetary value. HeroBM's `appSettings` currently defaults to `weighted_average`. Here is the difference:
 
 *   **Weighted Average Cost (WAC)**: The cost of an item is mathematically recalculated every time a new shipment is received. 
     *   *Example:* You have 10 units valued at $10 each. You receive 10 more at $12 each. The new WAC is $11. When you ship, you debit COGS for $11.
@@ -36,7 +36,7 @@ When inventory moves in or out, we must assign it a monetary value. ModBM's `app
     *   *Example:* Standard Cost is set to $10. You receive 10 units at $12. Inventory is valued strictly at $10. The extra $2 per unit is immediately expensed to a "Purchase Price Variance" account.
     *   *Pros:* Predictable margins for sales teams. Highlights purchasing inefficiencies immediately.
 
-*(ModBM's `valuation.ts` utility currently supports both, so this is fully supported under the new perpetual flow).*
+*(HeroBM's `valuation.ts` utility currently supports both, so this is fully supported under the new perpetual flow).*
 
 ### 2.1 Explicit Stock Actions with Financial Implications
 To ensure there are no partially applied accounting changes, the implementation must comprehensively cover every boundary where stock enters or leaves the system ledger. 
@@ -59,9 +59,9 @@ The following actions have **strict financial implications** under Perpetual tra
 **Important Note on Internal Transfers:**
 - **Bin-to-Bin / Internal Warehouse Movements**: These strictly move stock within the same facility and do not alter the total quantity on hand for the legal entity. They have **no financial implications** and will not generate GL journal entries.
 
-## 3. State Comparison: ModBM Perpetual vs ModBM Periodic
+## 3. State Comparison: HeroBM Perpetual vs HeroBM Periodic
 
-| Event | Physical Inventory | Financial Impact (ModBM Perpetual) | Financial Impact (ModBM Periodic) |
+| Event | Physical Inventory | Financial Impact (HeroBM Perpetual) | Financial Impact (HeroBM Periodic) |
 | :--- | :--- | :--- | :--- |
 | **1. Goods Receipt** | +QOH | **Debit:** Inventory Asset<br>**Credit:** GRNI Liability | **None.** |
 | **2. Purchase Invoice** | None | **Debit:** GRNI (Clears liability)<br>**Credit:** Accounts Payable (AP) | **Debit:** Expense (Direct to P&L)*<br>**Credit:** Accounts Payable (AP) |
@@ -76,7 +76,7 @@ The following actions have **strict financial implications** under Perpetual tra
 ### Database Schema Updates
 Add the required GL accounts to the configuration schema.
 
-#### [MODIFY] modbm-core-schema.ts
+#### [MODIFY] herobm-core-schema.ts
 - Expand `glSettings` table to include:
   - `defaultInventoryAccountId`
   - `defaultGrniAccountId`

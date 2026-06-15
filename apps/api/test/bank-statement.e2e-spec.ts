@@ -10,9 +10,9 @@ import {
   glJournalEntries,
   glJournalLines,
   glReconciliations,
-} from '../src/drizzle/modbm-core-schema';
+} from '../src/drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
-import { RECONCILIATION_STATE } from '@modbm/shared';
+import { RECONCILIATION_STATE } from '@herobm/shared';
 
 describe('BankStatementController (e2e)', () => {
   let app: INestApplication;

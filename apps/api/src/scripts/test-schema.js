@@ -36,13 +36,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var modbm_core_schema_1 = require("../drizzle/modbm-core-schema");
+var herobm_core_schema_1 = require("../drizzle/herobm-core-schema");
 var drizzle_orm_1 = require("drizzle-orm");
 function run() {
     return __awaiter(this, void 0, void 0, function () {
         var columns;
         return __generator(this, function (_a) {
-            columns = (0, drizzle_orm_1.getTableColumns)(modbm_core_schema_1.glSettings);
+            columns = (0, drizzle_orm_1.getTableColumns)(herobm_core_schema_1.glSettings);
             console.log(Object.keys(columns));
             return [2 /*return*/];
         });

@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { OrdersWriteService } from './orders-write.service';
-import { SALES_ORDER_STATE } from '@modbm/shared';
+import { SALES_ORDER_STATE } from '@herobm/shared';
 
 describe('OrdersController', () => {
   let controller: OrdersController;

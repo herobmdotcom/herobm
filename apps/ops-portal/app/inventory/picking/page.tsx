@@ -8,10 +8,10 @@ import { ValidState } from '@/types/states';
 import MasterDetailLayout from '@/components/shared/MasterDetailLayout';
 
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useSettings } from '@/components/SettingsProvider';
-import { SALES_ORDER_PICK_STATE } from '@modbm/shared';
-import { getErrorMessage } from '@modbm/shared';
+import { SALES_ORDER_PICK_STATE } from '@herobm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 interface UnifiedOrder {
     id: string;

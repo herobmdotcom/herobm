@@ -1,10 +1,10 @@
 # Authentication
 
-The ModBM API uses API Keys to authenticate external requests. API keys should be treated like passwords and kept secure.
+The HeroBM API uses API Keys to authenticate external requests. API keys should be treated like passwords and kept secure.
 
 ## Obtaining an API Key
 
-You can generate an API key in the ModBM Operations Portal:
+You can generate an API key in the HeroBM Operations Portal:
 
 1. Navigate to **Admin > Developers**.
 2. Click **+ Create Key**.

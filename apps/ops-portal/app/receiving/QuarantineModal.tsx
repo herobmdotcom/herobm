@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import SlideOver from '@/components/shared/SlideOver';
-import { BIN_TYPE } from '@modbm/shared';
+import { BIN_TYPE } from '@herobm/shared';
 
 interface QuarantineModalProps {
   isOpen: boolean;

@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { purchaseInvoices } from '../drizzle/modbm-core-schema';
+import { purchaseInvoices } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { PURCHASE_INVOICE_STATE } from '@modbm/shared';
+import { PURCHASE_INVOICE_STATE } from '@herobm/shared';
 
 export interface PurchaseInvoiceLifecycleTrigger {
   entity: 'payment';

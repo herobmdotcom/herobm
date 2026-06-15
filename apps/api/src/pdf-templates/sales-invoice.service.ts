@@ -11,7 +11,7 @@ import {
   salesInvoices,
   salesInvoiceLines,
   taxCategories,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { AppConfigService } from '../settings/app-config.service';
 
 @Injectable()

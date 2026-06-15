@@ -5,7 +5,7 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   customerDeliveryAddresses,
   customers,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import {
   CreateDeliveryAddressDto,
   UpdateDeliveryAddressDto,

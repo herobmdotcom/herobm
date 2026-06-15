@@ -12,14 +12,14 @@ import {
   suppliers as coreSuppliers,
   masterDataEvents,
   supplierExpiries,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import {
   SUPPLIER_TRANSITIONS,
   SUPPLIER_STATE,
   SupplierState,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import {
   CreateSupplierDto,
@@ -39,7 +39,7 @@ export class SuppliersWriteService {
   private readonly logger = new Logger(SuppliersWriteService.name);
 
   /**
-   * Create a new supplier in modbm_core.
+   * Create a new supplier in herobm_core.
    * Vendor number uniqueness is enforced by the DB UNIQUE constraint.
    */
   async create(dto: CreateSupplierDto, actor: string) {

@@ -1,6 +1,6 @@
 # Make Targets Guide
 
-This repository uses a `Makefile` to simplify and standardize the orchestration of the various Docker containers, development scripts, and verification tests that make up the ModBM platform.
+This repository uses a `Makefile` to simplify and standardize the orchestration of the various Docker containers, development scripts, and verification tests that make up the HeroBM platform.
 
 Below is an overview of the primary commands available.
 
@@ -14,7 +14,7 @@ Below is an overview of the primary commands available.
 
 ## Containerized Stacks (`up-*` and `down-*`)
 
-ModBM utilizes Docker Compose profiles to logically isolate different operational domains. The `make` commands cleanly wrap these targets.
+HeroBM utilizes Docker Compose profiles to logically isolate different operational domains. The `make` commands cleanly wrap these targets.
 
 - **`make up-db`** / **`make down-db`**
   The "Local Native" path. Starts only `postgres-custom` and `redis-broker`. Use this when you intend to run the API and Frontend locally via Node.js for maximum hot-reloading developer performance.
@@ -23,10 +23,10 @@ ModBM utilizes Docker Compose profiles to logically isolate different operationa
   The "Full Containerization" path. Starts the `custom-api`, `ops-portal`, `postgres-custom`, and `redis-broker` fully containerized. Recommended for evaluation and ops.
 
 - **`make up-external`** / **`make down-external`**
-  Spins up the entire external suite (mock external backend, dedicated Redis caches, schedulers, and workers). This stack connects to the `app-net` to allow the ModBM Worker to relay data, but otherwise operates independently.
+  Spins up the entire external suite (mock external backend, dedicated Redis caches, schedulers, and workers). This stack connects to the `app-net` to allow the HeroBM Worker to relay data, but otherwise operates independently.
 
 - **`make up-queue`** / **`make down-queue`**
-  Starts the `outbox-worker` container (which requires `redis-broker` and External systems to be running). The worker polls the ModBM database and processes domain events via BullMQ.
+  Starts the `outbox-worker` container (which requires `redis-broker` and External systems to be running). The worker polls the HeroBM database and processes domain events via BullMQ.
 
 - **`make up-all`** / **`make down-all`**
   A wildcard command that brings up absolutely every service across all profiles simultaneously (FE, API, Postgres, Redis, Queue, and External).
@@ -46,7 +46,7 @@ Before merging PRs or deploying, you can use these bundled commands to ensure th
 
 ## ELT Pipeline Commands
 
-The pipeline orchestrating data integration from legacy MSSQL systems into the `modbm_core` database uses several targets:
+The pipeline orchestrating data integration from legacy MSSQL systems into the `herobm_core` database uses several targets:
 
 - **`make extract`** — Runs the Python `dlt` pipeline locally to extract state.
 - **`make transform`** — Executes `dbt run` locally to build the data marts.

@@ -1,4 +1,4 @@
-// Return Slip — modbm report template
+// Return Slip — herobm report template
 // Data is loaded from a JSON file passed via sys.inputs.data
 
 #let data = json(sys.inputs.at("data"))

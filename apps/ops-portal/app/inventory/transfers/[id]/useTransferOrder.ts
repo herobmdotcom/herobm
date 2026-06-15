@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import * as api from '@modbm/sdk';
-import { getErrorMessage } from '@modbm/shared';
+import * as api from '@herobm/sdk';
+import { getErrorMessage } from '@herobm/shared';
 
 export function useTransferOrder(id: string) {
   const [order, setOrder] = useState<api.TransferResponseDto | null>(null);
@@ -92,7 +92,7 @@ export function useTransferOrder(id: string) {
   const shipOrder = async () => {
     try {
       setSaving(true);
-      await api.transfersControllerShipTransferOrder(id, {} as unknown as import('@modbm/sdk').EmptyBodyDto);
+      await api.transfersControllerShipTransferOrder(id, {} as unknown as import('@herobm/sdk').EmptyBodyDto);
       await loadOrder();
     } catch (e: unknown) {
       setError(getErrorMessage(e) || 'Failed to ship order');
@@ -104,7 +104,7 @@ export function useTransferOrder(id: string) {
   const cancelOrder = async () => {
     try {
       setSaving(true);
-      await api.transfersControllerCancelTransferOrder(id, {} as unknown as import('@modbm/sdk').EmptyBodyDto);
+      await api.transfersControllerCancelTransferOrder(id, {} as unknown as import('@herobm/sdk').EmptyBodyDto);
       await loadOrder();
     } catch (e: unknown) {
       setError(getErrorMessage(e) || 'Failed to cancel order');
@@ -128,7 +128,7 @@ export function useTransferOrder(id: string) {
   const cancelShipment = async () => {
     try {
       setSaving(true);
-      await api.transfersControllerCancelTransferOrderShipment(id, {} as unknown as import('@modbm/sdk').EmptyBodyDto);
+      await api.transfersControllerCancelTransferOrderShipment(id, {} as unknown as import('@herobm/sdk').EmptyBodyDto);
       await loadOrder();
     } catch (e: unknown) {
       setError(getErrorMessage(e) || 'Failed to cancel shipment');

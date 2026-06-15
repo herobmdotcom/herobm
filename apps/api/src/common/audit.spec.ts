@@ -1,5 +1,5 @@
 import { calculateAuditTrail, AuditMode } from './audit';
-import { CUSTOMER_STATE } from '@modbm/shared';
+import { CUSTOMER_STATE } from '@herobm/shared';
 
 describe('calculateAuditTrail', () => {
   const existing = {

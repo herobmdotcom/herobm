@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import * as api from '@modbm/sdk';
-import { getErrorMessage } from '@modbm/shared';
+import * as api from '@herobm/sdk';
+import { getErrorMessage } from '@herobm/shared';
 import { useTranslations } from 'next-intl';
 import { useSettings } from '../SettingsProvider'; // We'll just fetch appConfig directly since SettingsContext doesn't have it
 

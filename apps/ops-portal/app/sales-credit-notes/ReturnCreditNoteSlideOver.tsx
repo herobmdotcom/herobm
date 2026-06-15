@@ -1,12 +1,12 @@
 /* eslint-disable i18next/no-literal-string, no-restricted-syntax */
 'use client';
 import React, { useState } from 'react';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import SlideOver from '@/components/shared/SlideOver';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 export default function ReturnCreditNoteSlideOver({
     isOpen,

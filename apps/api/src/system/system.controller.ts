@@ -22,7 +22,7 @@ import {
 import * as fs from 'fs';
 import * as path from 'path';
 import { SystemLogResponseDto } from './dto';
-import { getErrorMessage, SystemResource } from '@modbm/shared';
+import { getErrorMessage, SystemResource } from '@herobm/shared';
 
 /**
  * Endpoint for streaming backend logs securely to the frontend Ops Portal.

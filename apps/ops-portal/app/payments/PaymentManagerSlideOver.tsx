@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
 import { useTranslations } from 'next-intl';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { useSettings } from '@/components/SettingsProvider';
@@ -17,7 +17,7 @@ import {
   PURCHASE_INVOICE_STATE,
   SALES_CREDIT_NOTE_STATE,
   PURCHASE_DEBIT_NOTE_STATE
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import DataGrid from '@/components/DataGrid';
@@ -58,7 +58,7 @@ const ToggleCell = (p: any) => {
 };
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import GLAccountSelect from '@/components/shared/GLAccountSelect';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 interface Props {
   paymentId: string | null;

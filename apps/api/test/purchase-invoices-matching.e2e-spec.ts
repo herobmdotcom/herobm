@@ -6,7 +6,7 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
-import { PURCHASE_ORDER_STATE, MATCH_STATUS } from '@modbm/shared';
+import { PURCHASE_ORDER_STATE, MATCH_STATUS } from '@herobm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');

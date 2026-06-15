@@ -43,7 +43,7 @@ test('MCP Server Structural Integrity', async (t) => {
       'list_api_domains',
       'get_table_schema',
       'get_api_endpoints',
-      'call_modbm_api',
+      'call_herobm_api',
       'list_webhook_events',
       'get_webhook_payload_schema',
       'list_database_tables',

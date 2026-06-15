@@ -8,6 +8,7 @@ import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { BackordersService } from '../orders/backorders.service';
+import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
 import {
   purchaseOrders,
   purchaseOrderLineItems,
@@ -17,9 +18,9 @@ import {
   taxCategories,
   suppliers,
   procurementEvents,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
-import { PURCHASE_ORDER_STATE, SUPPLIER_STATE } from '@modbm/shared';
+import { PURCHASE_ORDER_STATE, SUPPLIER_STATE } from '@herobm/shared';
 
 jest.setTimeout(120000);
 
@@ -32,6 +33,8 @@ describe('PurchaseOrdersService', () => {
   let mockSuppliersService: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockTaxCategoriesService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockTaxResolutionEngine: any;
 
   const VENDOR_ID = '00000000-0000-0000-0000-000000000002';
   const PROD_ID = '00000000-0000-0000-0000-00000000000a';
@@ -80,10 +83,17 @@ describe('PurchaseOrdersService', () => {
     mockInventoryService = { recordInventoryMovement: jest.fn() };
     mockSuppliersService = {
       findOne: jest.fn().mockResolvedValue({ vendorId: VENDOR_ID }),
+      assessRisk: jest.fn().mockResolvedValue({
+        isPurchasingBlocked: false,
+        purchasingBlockReasons: [],
+      }),
     };
     mockTaxCategoriesService = {
       getDefault: jest.fn().mockResolvedValue({ taxCategoryId: TAX_CAT_ID }),
       getById: jest.fn().mockResolvedValue({ taxCategoryId: TAX_CAT_ID }),
+    };
+    mockTaxResolutionEngine = {
+      resolveTaxCategory: jest.fn().mockResolvedValue(TAX_CAT_ID),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -93,6 +103,7 @@ describe('PurchaseOrdersService', () => {
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: SuppliersService, useValue: mockSuppliersService },
         { provide: TaxCategoriesService, useValue: mockTaxCategoriesService },
+        { provide: TaxResolutionEngine, useValue: mockTaxResolutionEngine },
         {
           provide: AppConfigService,
           useValue: { homeCurrency: () => 'EUR' },
@@ -140,6 +151,27 @@ describe('PurchaseOrdersService', () => {
         PURCHASE_ORDER_STATE.ORDERED,
       );
       expect(result.stateCode).toBe(PURCHASE_ORDER_STATE.ORDERED);
+    });
+
+    it('should throw BadRequestException if purchasing is blocked', async () => {
+      const poId = '00000000-0000-0000-0000-000000000109';
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: poId,
+        orderNumber: 'PO-BLOCKED-' + Math.random(),
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        currencyCode: 'EUR',
+        stateCode: PURCHASE_ORDER_STATE.DRAFT,
+      });
+
+      mockSuppliersService.assessRisk.mockResolvedValueOnce({
+        isPurchasingBlocked: true,
+        purchasingBlockReasons: ['supplier_inactive'],
+      });
+
+      await expect(
+        service.changePurchaseOrderState(poId, PURCHASE_ORDER_STATE.ORDERED),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

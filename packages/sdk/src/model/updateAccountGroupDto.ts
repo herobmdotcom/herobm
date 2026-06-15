@@ -14,4 +14,6 @@ export interface UpdateAccountGroupDto {
   defaultRevenueAccountId?: string;
   defaultCostCenterId?: string;
   defaultActivityId?: string;
+  stateCode?: string;
+  isOnCreditHold?: boolean;
 }

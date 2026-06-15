@@ -20,14 +20,14 @@ import {
   uomDictionary,
   taxCategories,
   glJournalEntries,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq, sql } from 'drizzle-orm';
 import {
   PURCHASE_ORDER_STATE,
   PURCHASE_RETURN_STATE,
   PURCHASE_RETURN_SHIPMENT_STATE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import * as lifecycleRules from './purchase-order-lifecycle-rules';
 
 describe('PurchaseReturnsService', () => {

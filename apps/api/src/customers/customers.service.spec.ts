@@ -7,10 +7,13 @@ import {
   customers,
   masterDataEvents,
   customerGroups,
-  taxCategories,
-} from '../drizzle/modbm-core-schema';
+  taxPositions,
+} from '../drizzle/herobm-core-schema';
 import { sql } from 'drizzle-orm';
-import { CUSTOMER_STATE } from '@modbm/shared';
+import { CUSTOMER_STATE } from '@herobm/shared';
+
+import { CreditAssessmentService } from './credit-assessment.service';
+import { AppConfigService } from '../settings/app-config.service';
 
 describe('AccountsService', () => {
   const pg = setupPgliteSuite();
@@ -18,7 +21,12 @@ describe('AccountsService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AccountsService, { provide: DRIZZLE, useValue: pg.db }],
+      providers: [
+        AccountsService,
+        { provide: DRIZZLE, useValue: pg.db },
+        { provide: CreditAssessmentService, useValue: {} },
+        { provide: AppConfigService, useValue: {} },
+      ],
     }).compile();
 
     service = module.get<AccountsService>(AccountsService);
@@ -27,7 +35,7 @@ describe('AccountsService', () => {
     await pg.db.delete(masterDataEvents);
     await pg.db.delete(customers);
     await pg.db.delete(customerGroups);
-    await pg.db.delete(taxCategories);
+    await pg.db.delete(taxPositions);
   });
 
   describe('findAll', () => {
@@ -74,13 +82,12 @@ describe('AccountsService', () => {
       expect(result.data[0].name).toBe('Acme Corp');
     });
 
-    it('should join with customer groups and tax categories', async () => {
+    it('should join with customer groups and tax positions', async () => {
       const [tc] = await pg.db
-        .insert(taxCategories)
+        .insert(taxPositions)
         .values({
           code: 'GST',
           title: 'GST',
-          type: 'tax_applies',
         })
         .returning();
 
@@ -98,7 +105,7 @@ describe('AccountsService', () => {
         currencyCode: 'AUD',
         billingAddressCountry: 'AU',
         customerGroupId: ag.customerGroupId,
-        taxCategoryId: tc.taxCategoryId,
+        taxPositionId: tc.taxPositionId,
       });
 
       const result = await service.findAll();

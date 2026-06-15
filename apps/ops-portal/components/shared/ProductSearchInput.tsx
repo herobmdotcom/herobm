@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 
 /**
  * ProductSearchInput — reusable product search with dropdown autocomplete.

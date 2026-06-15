@@ -7,8 +7,8 @@ import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
 import { resolveOrderDetail } from './report-data.helper';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { taxCategories } from '../drizzle/modbm-core-schema';
-import { computeLinePrice, computeReturnCreditSummary } from '@modbm/shared';
+import { taxCategories } from '../drizzle/herobm-core-schema';
+import { computeLinePrice, computeReturnCreditSummary } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 
 @Injectable()

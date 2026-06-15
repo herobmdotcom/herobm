@@ -100,11 +100,9 @@ if [ "$NON_INTERACTIVE" = false ]; then
     echo "  1) Local native Node.js (Recommended for fullstack developers)"
     echo "  2) Full Containerization (Recommended for pure evaluation/ops)"
     read -p "Enter option [1 or 2]: " pathChoice
-    read -p "Enable PLG Stack (Prometheus/Loki/Grafana)? [y/N]: " installPlg
     read -p "Enable ERPNext Integration Stack? [y/N]: " installErpnext
 else
     pathChoice="1"
-    installPlg="n"
     installErpnext="n"
 fi
 
@@ -115,7 +113,6 @@ else
     makeTargets+=("up-fe-api")
 fi
 
-if [[ "$installPlg" =~ ^[Yy] ]]; then makeTargets+=("up-plg"); fi
 if [[ "$installErpnext" =~ ^[Yy] ]]; then makeTargets+=("up-erpnext"); fi
 
 MAKE_CMD_STRING="make ${makeTargets[*]}"
@@ -123,7 +120,7 @@ MAKE_CMD_STRING="make ${makeTargets[*]}"
 echo -e "\n\e[36m--- Startup Automation ---\e[0m"
 SYSTEMD_USER_DIR="$HOME/.config/systemd/user"
 mkdir -p "$SYSTEMD_USER_DIR"
-SERVICE_FILE="$SYSTEMD_USER_DIR/modbm.service"
+SERVICE_FILE="$SYSTEMD_USER_DIR/herobm.service"
 
 cat <<EOF > "$SERVICE_FILE"
 [Unit]
@@ -141,8 +138,8 @@ WantedBy=default.target
 EOF
 
 systemctl --user daemon-reload || true
-systemctl --user enable modbm.service || true
-echo -e "  \e[32m[OK]\e[0m Created systemd user config: modbm.service"
+systemctl --user enable herobm.service || true
+echo -e "  \e[32m[OK]\e[0m Created systemd user config: herobm.service"
 
 echo -e "\n\e[36m=== Summary ===\e[0m"
 echo -e "\n  All prerequisites verified!\n"

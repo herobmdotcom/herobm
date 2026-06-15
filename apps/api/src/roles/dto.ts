@@ -51,7 +51,7 @@ export class RoleDetailsDto {
   inherits?: string[];
 }
 
-export class SuccessResponseDto {
+export class RolesSuccessResponseDto {
   @IsOptional()
   success?: boolean;
 }

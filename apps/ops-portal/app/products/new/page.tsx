@@ -5,13 +5,13 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
 import GroupSelect from '@/components/shared/GroupSelect';
-import { PRODUCT_STATE } from '@modbm/shared';
-import { getErrorMessage } from '@modbm/shared';
+import { PRODUCT_STATE } from '@herobm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 const formatMoney = (val: string | number | undefined | null) => {
   if (!val) return '0.00';

@@ -1,7 +1,7 @@
 .PHONY: help up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e dev-docs-dbt dev-docs-schema dev-docs-api migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local prod-local verify-local
 
 define HELP_TEXT
-ModBM Makefile Help:
+HeroBM Makefile Help:
 =========================================
 Environment:
   make init-env       - Generate .env from .env.example
@@ -123,11 +123,11 @@ down-db:
 
 # Portal + API Core (The standard full-container app stack)
 up-portal-api: check-postgres-logs
-	$(COMPOSE_CMD) up -d $(ARGS) custom-api ops-portal postgres-custom redis-broker outbox-worker
+	$(COMPOSE_CMD) up -d $(ARGS) custom-api ops-portal postgres-custom redis-broker outbox-worker pipeline-runner
 
 down-portal-api:
-	$(COMPOSE_CMD) stop custom-api ops-portal postgres-custom redis-broker outbox-worker
-	-podman rm -f custom-api ops-portal postgres-custom redis-broker outbox-worker
+	$(COMPOSE_CMD) stop custom-api ops-portal postgres-custom redis-broker outbox-worker pipeline-runner
+	-podman rm -f custom-api ops-portal postgres-custom redis-broker outbox-worker pipeline-runner
 
 
 
@@ -257,9 +257,9 @@ dev-docs-api: build-api
 
 dev-generate-sdk: dev-docs-api
 	@echo "Generating TypeScript SDK..."
-	npm run generate --workspace=@modbm/sdk
+	npm run generate --workspace=@herobm/sdk
 	@echo "Building TypeScript SDK..."
-	npm run build --workspace=@modbm/sdk
+	npm run build --workspace=@herobm/sdk
 
 dev-db-generate:
 	$(if $(NAME),,$(error Error: NAME is required. Usage: make dev-db-generate NAME=migration_name))
@@ -290,14 +290,14 @@ dev-mcp:
 	node --env-file=.env apps/mcp-server/dist/index.js
 
 rebuild-api:
-	podman build -t localhost/modbm_custom-api:latest -f Dockerfile.api .
+	podman build -t localhost/herobm_custom-api:latest -f Dockerfile.api .
 	-podman stop custom-api
 	-podman rm custom-api
 	$(COMPOSE_CMD) up -d --no-build --no-deps custom-api
 	$(COMPOSE_CMD) ps
 
 rebuild-portal:
-	podman build -t localhost/modbm_ops-portal:latest -f Dockerfile.portal .
+	podman build -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
 	-podman stop ops-portal
 	-podman rm ops-portal
 	$(COMPOSE_CMD) up -d --no-build --no-deps ops-portal
@@ -332,13 +332,13 @@ test-api-e2e:
 # Debug build: runs next dev inside a container for unminified errors.
 # Use when the production portal crashes with cryptic minified errors.
 dev-portal:
-	podman build -t localhost/modbm_ops-portal:dev -f Dockerfile.portal.dev .
+	podman build -t localhost/herobm_ops-portal:dev -f Dockerfile.portal.dev .
 	-podman stop ops-portal
 	-podman rm ops-portal
-	podman run -d --name ops-portal --network modbm_default -p 127.0.0.1:4300:3000 --env-file .env localhost/modbm_ops-portal:dev
+	podman run -d --name ops-portal --network herobm_default -p 127.0.0.1:4300:3000 --env-file .env localhost/herobm_ops-portal:dev
 	@echo "Portal running in DEV mode at http://localhost:4300 (unminified errors)"
 
-# --- Migrations (modbm_core) ---
+# --- Migrations (herobm_core) ---
 
 migrate:
 	"$(VENV_PYTHON)" tools/migrate.py
@@ -493,8 +493,8 @@ cli-bootstrap:
 
 verify-db: migrate-status
 	@echo "Verifying seeded system records..."
-	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -t -A -c "SELECT 'Admin User: ' || count(*) FROM modbm_core.users WHERE username = 'admin';"
-	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -t -A -c "SELECT 'Organization: ' || count(*) FROM modbm_core.organization;"
+	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -t -A -c "SELECT 'Admin User: ' || count(*) FROM herobm_core.users WHERE username = 'admin';"
+	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -t -A -c "SELECT 'Organization: ' || count(*) FROM herobm_core.organization;"
 
 verify-all: build-all check-all verify-db test-all
 

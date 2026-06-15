@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/ban-ts-comment */
+export {};
 import * as path from 'path';
 import * as dotenv from 'dotenv';
 dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
@@ -6,6 +7,8 @@ dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 // Imports will be dynamic to allow dotenv to run first
 
 async function generateDocs() {
+  process.env.USE_PGLITE = 'true';
+  process.env.JWT_SECRET = 'dummy_secret_for_openapi_generation';
   const { NestFactory } = require('@nestjs/core');
   // @ts-ignore
   const { AppModule } = require('../app.module');
@@ -37,6 +40,7 @@ async function generateDocs() {
     .addTag('Warehouse', 'Inventory, receiving, and fulfillment')
     .addTag('Payments', 'Payment processing and reconciliation')
     .addTag('General Ledger', 'Accounting, charts, and journals')
+    .addTag('Tax', 'Tax configuration and mappings')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

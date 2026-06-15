@@ -10,7 +10,7 @@ param (
 
 $BackupDir = $HOME
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$BackupFile = Join-Path $BackupDir "modbm_db_backup_$Timestamp.sql"
+$BackupFile = Join-Path $BackupDir "herobm_db_backup_$Timestamp.sql"
 
 # Determine which .env file to load
 $EnvFile = ".env"
@@ -40,7 +40,7 @@ $DbUser = if ($env:POSTGRES_USER) { $env:POSTGRES_USER } else { "postgres" }
 $DbName = if ($env:POSTGRES_DB) { $env:POSTGRES_DB } else { "herobm" }
 
 Write-Host "=========================================" -ForegroundColor Cyan
-Write-Host " MODBM PostgreSQL Database Backup Worker " -ForegroundColor White
+Write-Host " HEROBM PostgreSQL Database Backup Worker " -ForegroundColor White
 Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Target container : postgres-custom"

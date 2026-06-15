@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 

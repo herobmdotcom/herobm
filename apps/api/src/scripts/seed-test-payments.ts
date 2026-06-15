@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { GlService } from '../gl/gl.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import { glAccounts } from '../drizzle/modbm-core-schema';
+import { glAccounts } from '../drizzle/herobm-core-schema';
 import { eq, sql } from 'drizzle-orm';
 
 async function bootstrap() {

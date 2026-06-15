@@ -7,9 +7,9 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import * as api from '@modbm/sdk';
-import { PURCHASE_RETURN_STATE } from '@modbm/shared';
-import { getErrorMessage } from '@modbm/shared';
+import * as api from '@herobm/sdk';
+import { PURCHASE_RETURN_STATE } from '@herobm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 export default function PurchaseReturnDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);

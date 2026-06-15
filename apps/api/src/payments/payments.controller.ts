@@ -1,4 +1,4 @@
-import { SystemResource } from '@modbm/shared';
+import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
   ApiOperation,
@@ -30,6 +30,8 @@ import {
   ExportAbaResponseDto,
   ConfirmRejectResponseDto,
   EmptyBodyDto,
+  GeneratePaymentRunDto,
+  GeneratePaymentRunResponseDto,
 } from './dto';
 import {
   CasbinGuard,
@@ -40,13 +42,17 @@ import { AuthUser } from '../auth/auth-user.decorator';
 import { ApiPaginatedResponse } from '../common/pagination';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+import { PaymentRunGeneratorService } from './payment-run-generator.service';
 
 @ApiTags('Payments')
 @Controller('payments')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.PAYMENTS)
 export class PaymentsController {
-  constructor(private readonly paymentsService: PaymentsService) {}
+  constructor(
+    private readonly paymentsService: PaymentsService,
+    private readonly paymentRunGeneratorService: PaymentRunGeneratorService,
+  ) {}
 
   @Get()
   @CasbinAction('read')
@@ -213,5 +219,19 @@ export class PaymentsController {
     @AuthUser() user: { username: string },
   ) {
     return this.paymentsService.rejectExported(dto.paymentIds, user.username);
+  }
+
+  @Post('generate-run')
+  @CasbinAction('write')
+  @ApiCreatedResponse({ type: GeneratePaymentRunResponseDto })
+  async generatePaymentRun(
+    @Body() dto: GeneratePaymentRunDto,
+    @AuthUser('userId') userId: string,
+  ) {
+    return await this.paymentRunGeneratorService.generatePaymentRun(
+      dto.targetDate,
+      dto.glAccountBank,
+      userId,
+    );
   }
 }

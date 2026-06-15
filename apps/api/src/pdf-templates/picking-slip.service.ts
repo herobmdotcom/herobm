@@ -17,11 +17,11 @@ import {
   transferOrders,
   transferOrderLines,
   transferOrderPicks,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import {
   SALES_ORDER_PICK_STATE,
   TRANSFER_ORDER_PICK_STATE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 // ─── Data shapes ────────────────────────────────────────────────────────────
 

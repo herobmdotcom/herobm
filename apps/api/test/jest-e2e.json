@@ -16,7 +16,7 @@
     "node_modules/(?!(uuid)/)"
   ],
   "moduleNameMapper": {
-    "^@modbm/shared(.*)$": "<rootDir>/../../../packages/shared/src$1",
+    "^@herobm/shared(.*)$": "<rootDir>/../../../packages/shared/src$1",
     "^uuid$": "<rootDir>/utils/uuid-mock.js"
   },
   "setupFiles": ["./setup-env.ts"],

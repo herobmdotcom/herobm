@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 // eslint-disable-next-line no-restricted-imports
 import { reportError, apiFetch } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 
 export default function NewReconciliationPage() {

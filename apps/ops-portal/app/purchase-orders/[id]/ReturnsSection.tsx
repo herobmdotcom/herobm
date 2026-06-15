@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { tDynamic } from '@/lib/i18n';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
-import { PURCHASE_RETURN_STATE } from '@modbm/shared';
+import * as api from '@herobm/sdk';
+import { PURCHASE_RETURN_STATE } from '@herobm/shared';
 import InitiateReturnModal from './InitiateReturnModal';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 

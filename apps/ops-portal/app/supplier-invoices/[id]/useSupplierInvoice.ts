@@ -1,11 +1,11 @@
 'use client';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { formatAmount } from '@/lib/currency';
 import { 
   PURCHASE_INVOICE_TRANSITIONS, 
@@ -14,7 +14,7 @@ import {
   isBackTransition,
   MATCH_STATUS,
   PURCHASE_INVOICE_STATE
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 export interface PurchaseInvoiceDetails {
   invoiceId: string;
@@ -30,6 +30,8 @@ export interface PurchaseInvoiceDetails {
   stateCode: string;
   notes?: string;
   createdOn: string;
+  dueDate?: string;
+  invoiceDate?: string;
   lines: {
     lineId: string;
     description: string;
@@ -146,7 +148,7 @@ export function useSupplierInvoice(id: string) {
         taxAmount: editTaxAmount || '0.00',
         notes: editNotes || null,
         vendorId: newVendorId || editVendorId || invoice.vendorId,
-      } as unknown as import('@modbm/sdk').UpdatePurchaseInvoiceDto);
+      } as unknown as import('@herobm/sdk').UpdatePurchaseInvoiceDto);
       loadInvoice();
     } catch (err: unknown) {
       alert(getErrorMessage(err) || 'Failed to update invoice');
@@ -187,6 +189,13 @@ export function useSupplierInvoice(id: string) {
 
   const handlePanelMatch = async (invoiceLineId: string, purchaseOrderLineId: string) => {
     try {
+      const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+      if (!purchaseOrderLineId || !isUUID(purchaseOrderLineId)) {
+        // eslint-disable-next-line no-restricted-syntax
+        console.error('handlePanelMatch error: purchaseOrderLineId is missing or invalid!', { invoiceLineId, purchaseOrderLineId });
+        alert(`Internal Error: The selected PO Line has an invalid or missing purchaseOrderLineId: "${purchaseOrderLineId}"`);
+        return;
+      }
       await api.invoiceDetailControllerResolveInvoiceLine(invoiceLineId, { purchaseOrderLineId });
       loadInvoice();
       const nextUnmatched = invoice?.lines.find(
@@ -201,7 +210,8 @@ export function useSupplierInvoice(id: string) {
   const updateLine = async (lineId: string, field: string, value: string) => {
     setSaving(true);
     try {
-      await api.invoiceDetailControllerUpdateInvoiceLine(id, lineId, { [field]: value });
+      const payloadValue = (field === 'pricePerUnit' || field === 'quantityInvoiced') ? parseFloat(value) : value;
+      await api.invoiceDetailControllerUpdateInvoiceLine(id, lineId, { [field]: payloadValue });
       loadInvoice();
     } catch (err: unknown) {
       alert(getErrorMessage(err) || 'Failed to update line');

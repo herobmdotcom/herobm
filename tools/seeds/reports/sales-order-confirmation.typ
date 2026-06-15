@@ -1,4 +1,4 @@
-// Sales Order Confirmation — modbm report template
+// Sales Order Confirmation — herobm report template
 // Data is loaded from a JSON file passed via sys.inputs.data
 
 #let data = json(sys.inputs.at("data"))

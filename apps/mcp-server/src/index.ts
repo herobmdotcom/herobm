@@ -20,7 +20,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const apiPort = process.env.PORT || process.env.API_PORT || '3001';
 const API_URL = process.env.API_URL || `http://127.0.0.1:${apiPort}/api`;
-const AGENT_KEY = process.env.MODBM_AGENT_KEY;
+const AGENT_KEY = process.env.HEROBM_AGENT_KEY;
 
 interface ToolMeta {
   path: string;
@@ -46,7 +46,10 @@ export const DOMAIN_MAP: Record<string, string> = {
   'Warehouse': 'warehouse',
   'General Ledger': 'general_ledger',
   'System': 'system',
-  'Payments': 'payment'
+  'Payments': 'payment',
+  'Contacts': 'contact',
+  'Delivery Addresses': 'delivery_address',
+  'Tax': 'tax'
 };
 
 async function main() {
@@ -231,8 +234,8 @@ async function main() {
       }
     },
     {
-      name: 'call_modbm_api',
-      description: 'Call a ModBM API endpoint by its exact name returned by get_api_endpoints.',
+      name: 'call_herobm_api',
+      description: 'Call a HeroBM API endpoint by its exact name returned by get_api_endpoints.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -252,7 +255,7 @@ async function main() {
   console.error(`Registered ${toolRegistry.size} operations across ${domains.length} domains`);
 
   const server = new Server(
-    { name: 'modbm-mcp-server', version: '0.1.0' },
+    { name: 'herobm-mcp-server', version: '0.1.0' },
     { capabilities: { tools: {} } }
   );
 
@@ -281,7 +284,7 @@ async function main() {
         const columns = await sql`
           SELECT column_name, data_type, is_nullable, column_default
           FROM information_schema.columns
-          WHERE table_schema IN ('public', 'modbm_core') AND table_name = ${tableName}
+          WHERE table_schema IN ('public', 'herobm_core') AND table_name = ${tableName}
           ORDER BY ordinal_position;
         `;
 
@@ -359,7 +362,7 @@ async function main() {
       };
     }
     
-    if (name === 'call_modbm_api') {
+    if (name === 'call_herobm_api') {
       const endpointName = args?.endpoint_name;
       const endpointArgs = args?.arguments || {};
       
@@ -440,7 +443,7 @@ async function main() {
         const tables = await sql`
           SELECT table_name 
           FROM information_schema.tables 
-          WHERE table_schema IN ('public', 'modbm_core') 
+          WHERE table_schema IN ('public', 'herobm_core') 
             AND table_type = 'BASE TABLE'
           ORDER BY table_name;
         `;
@@ -499,7 +502,7 @@ async function main() {
         const columns = await sql`
           SELECT column_name, data_type, is_nullable
           FROM information_schema.columns
-          WHERE table_schema IN ('public', 'modbm_core') AND table_name = ${tableName}
+          WHERE table_schema IN ('public', 'herobm_core') AND table_name = ${tableName}
         `;
         await sql.end();
 
@@ -586,7 +589,7 @@ async function main() {
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('ModBM MCP Server running on stdio');
+  console.error('HeroBM MCP Server running on stdio');
 }
 
 import { pathToFileURL } from 'url';

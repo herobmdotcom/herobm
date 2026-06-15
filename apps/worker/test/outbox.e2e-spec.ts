@@ -10,7 +10,7 @@ import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { pollOutbox, processEvent } from '../src/relay.service';
 
-import { outbox, modbmCore, accounts, webhooks } from '../src/schema';
+import { outbox, herobmCore, accounts, webhooks } from '../src/schema';
 
 describe('Worker E2E - Outbox Integration', () => {
   let pgClient: postgres.Sql;
@@ -27,7 +27,7 @@ describe('Worker E2E - Outbox Integration', () => {
     const pgDb = process.env.POSTGRES_DB || 'herobm';
 
     pgClient = postgres(`postgres://${pgUser}:${pgPass}@${pgHost}:${pgPort}/${pgDb}`);
-    db = drizzle(pgClient, { schema: { modbmCore, outbox, accounts, webhooks } });
+    db = drizzle(pgClient, { schema: { herobmCore, outbox, accounts, webhooks } });
 
     const redisHost = process.env.REDIS_HOST || 'localhost';
     const redisPassword = process.env.REDIS_PASSWORD;
@@ -132,7 +132,7 @@ describe('Worker E2E - Outbox Integration', () => {
       method: 'POST',
       headers: expect.objectContaining({
         'Content-Type': 'application/json',
-        'x-modbm-signature': expect.any(String)
+        'x-herobm-signature': expect.any(String)
       }),
       body: expect.stringContaining('"eventType":"sales_order.created"')
     }));

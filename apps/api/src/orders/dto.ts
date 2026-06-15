@@ -597,6 +597,7 @@ export class OrderQueueBaseDto {
   @ApiProperty() createdOn!: Date;
   @ApiProperty() createdBy!: string;
   @ApiPropertyOptional() currencyCode?: string | null;
+  @ApiProperty() isCreditBlocked!: boolean;
 }
 
 export class PickingQueueOrderDto extends OrderQueueBaseDto {
@@ -704,4 +705,11 @@ export class AllocationSuccessResponseDto {
 export class AllocationResolveResponseDto {
   @ApiProperty() success!: boolean;
   @ApiPropertyOptional() message?: string;
+}
+
+export class OverrideCreditHoldDto {
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({ description: 'Reason for overriding the credit hold' })
+  reason!: string;
 }

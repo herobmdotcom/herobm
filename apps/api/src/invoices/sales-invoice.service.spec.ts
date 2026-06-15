@@ -16,10 +16,10 @@ import {
   products,
   locations,
   uomDictionary,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
-import { SALES_ORDER_STATE } from '@modbm/shared';
+import { SALES_ORDER_STATE } from '@herobm/shared';
 
 jest.mock('../orders/order-lifecycle-rules', () => ({
   evaluateLifecycleRules: jest.fn().mockResolvedValue([]),
@@ -92,6 +92,7 @@ describe('SalesInvoiceService', () => {
       inventoryAccountingMode: jest.fn().mockReturnValue('periodic'),
       homeCurrency: jest.fn().mockReturnValue('AUD'),
       taxProviderMappings: jest.fn().mockReturnValue({}),
+      getAppSettingsRaw: jest.fn().mockReturnValue({}),
     };
 
     const module: TestingModule = await Test.createTestingModule({

@@ -22,14 +22,18 @@ import {
   paymentEntries,
   glJournalEntries,
   glJournalLines,
-} from '../drizzle/modbm-core-schema';
+  tradingTerms,
+} from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { calculateAuditTrail, AuditMode } from '../common/audit';
+import { calculateDueDate } from '../settings/trading-terms.utils';
+import { resolveEffectiveTradingTermsId } from '../customers/credit-control.utils';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { getCommittedPerLine } from '../orders/shipment-helpers';
 import { evaluateLifecycleRules } from '../orders/order-lifecycle-rules';
-import { computeLinePrice } from '@modbm/shared';
+import { computeLinePrice } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { OrganizationService } from '../settings/organization.service';
 import { EnrichmentService } from '../enrichment/enrichment.service';
@@ -40,7 +44,7 @@ import {
   SALES_ORDER_STATE,
   getValidStates,
   getErrorMessage,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 const VALID_INVOICE_STATES = getValidStates(SALES_INVOICE_TRANSITIONS);
 
@@ -58,7 +62,7 @@ export class SalesInvoiceService {
   ) {}
 
   /**
-   * Generates a structural sequence number for the AR invoice natively in ModBM.
+   * Generates a structural sequence number for the AR invoice natively in HeroBM.
    */
   private async generateInvoiceNumber(): Promise<string> {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -123,6 +127,8 @@ export class SalesInvoiceService {
     let billingAddressStateOrProvince: string | null = null;
     let billingAddressCity: string | null = null;
     let billingAddressLine1: string | null = null;
+    let customerTermType: string | null = null;
+    let customerTermDays: number | null = null;
 
     if (order.customerId) {
       // Find Party details to bind
@@ -145,6 +151,12 @@ export class SalesInvoiceService {
             customers.billingAddressStateOrProvince,
           billingAddressCity: customers.billingAddressCity,
           billingAddressLine1: customers.billingAddressLine1,
+          creditLimit: customers.creditLimit,
+          isOnCreditHold: customers.isOnCreditHold,
+          tradingTermsId: customers.tradingTermsId,
+          groupCreditLimit: customerGroups.creditLimit,
+          groupIsOnCreditHold: customerGroups.isOnCreditHold,
+          groupTradingTermsId: customerGroups.tradingTermsId,
         })
         .from(customers)
         .leftJoin(
@@ -171,6 +183,34 @@ export class SalesInvoiceService {
           custRows[0].billingAddressStateOrProvince;
         billingAddressCity = custRows[0].billingAddressCity;
         billingAddressLine1 = custRows[0].billingAddressLine1;
+
+        const effectiveTermsId = resolveEffectiveTradingTermsId({
+          creditLimit: custRows[0].creditLimit,
+          isOnCreditHold: custRows[0].isOnCreditHold,
+          tradingTermsId: custRows[0].tradingTermsId,
+          accountGroup: {
+            creditLimit: custRows[0].groupCreditLimit,
+            isOnCreditHold: custRows[0].groupIsOnCreditHold ?? false,
+            tradingTermsId: custRows[0].groupTradingTermsId,
+          },
+          systemDefaultTradingTermsId:
+            this.appConfig.getAppSettingsRaw()?.defaultTradingTermsId,
+        });
+
+        if (effectiveTermsId) {
+          const [term] = await this.db
+            .select()
+            .from(tradingTerms)
+            .where(eq(tradingTerms.tradingTermsId, effectiveTermsId))
+            .limit(1);
+          if (term) {
+            customerTermType = term.type as
+              | 'net'
+              | 'end_of_month'
+              | 'cash_on_delivery';
+            customerTermDays = term.days;
+          }
+        }
       }
     }
 
@@ -398,7 +438,16 @@ export class SalesInvoiceService {
 
     // 4. Begin transactional generation (invoice + GL posting are atomic)
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      // A. Create the Invoice header natively
+      const invoiceDate = new Date();
+      let dueDate = new Date();
+      if (customerTermType && customerTermDays !== null) {
+        dueDate = calculateDueDate(
+          invoiceDate,
+          customerTermType,
+          customerTermDays,
+        );
+      }
+
       const [invoice] = await tx
         .insert(salesInvoices)
         .values({
@@ -410,6 +459,8 @@ export class SalesInvoiceService {
           currencyCode: order.currencyCode,
           stateCode: SALES_INVOICE_STATE.DRAFT, // Start in draft and then transition
           notes: dto.notes,
+          invoiceDate,
+          dueDate,
           createdBy: actor,
         })
         .returning();
@@ -691,7 +742,7 @@ export class SalesInvoiceService {
   }
 
   /**
-   * Fetch a specific ModBM Sales Invoice with natively populated mappings structurally
+   * Fetch a specific HeroBM Sales Invoice with natively populated mappings structurally
    */
   async findOne(invoiceId: string) {
     const rows = await this.db
@@ -725,7 +776,7 @@ export class SalesInvoiceService {
 
     const invoice = rows[0];
 
-    // Hydrate explicitly native ModBM line mapping structurally
+    // Hydrate explicitly native HeroBM line mapping structurally
     const lines = await this.db
       .select({
         lineId: salesInvoiceLines.invoiceLineId,
@@ -754,7 +805,7 @@ export class SalesInvoiceService {
   }
 
   /**
-   * Fetch all Native ModBM Invoices strictly tied to a distinct active order
+   * Fetch all Native HeroBM Invoices strictly tied to a distinct active order
    */
   async findByOrder(salesOrderId: string) {
     const invoices = await this.db
@@ -958,7 +1009,7 @@ export class SalesInvoiceService {
       }
 
       const [updated] = await db
-        .update(salesInvoices) // @modbm-skip-audit
+        .update(salesInvoices) // @herobm-skip-audit
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .set({
           stateCode: newState,

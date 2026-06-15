@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import { formatLocationDisplay } from '@/lib/formatters';
 import { useTranslations } from 'next-intl';

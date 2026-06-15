@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import { toast } from 'react-hot-toast';
-import { CUSTOMER_STATE } from '@modbm/shared';
+import { CUSTOMER_STATE } from '@herobm/shared';
 import type { ValidState } from '@/types/states';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 export type Customer = api.AccountResponseDto & { parentCustomerName?: string | null; childAccounts?: unknown[] };
 
@@ -25,8 +25,9 @@ export function useAccount(id: string) {
   const [dto, setDto] = useState<Partial<Customer>>({});
   const [isDirty, setIsDirty] = useState(false);
 
-  /* ── Tax categories ─────────────────────────────────────────── */
-  const [taxCategories, setTaxCategories] = useState<api.TaxCategoryResponseDto[]>([]);
+  /* ── Tax positions & Trading terms ───────────────────────────── */
+  const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
+  const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
 
   const [hasDiscountRules, setHasDiscountRules] = useState(false);
 
@@ -57,7 +58,8 @@ export function useAccount(id: string) {
 
   useEffect(() => {
     loadAccount();
-    api.taxCategoriesControllerFindAll().then((res: unknown) => setTaxCategories((res as { data: unknown[] }).data as unknown as api.TaxCategoryResponseDto[])).catch(console.error);
+    api.taxPositionsControllerFindAll().then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[])).catch(console.error);
+    api.tradingTermsControllerFindAll().then((res: unknown) => setTradingTerms((res as { data: unknown[] }).data as unknown as api.TradingTermResponseDto[])).catch(console.error);
   }, [id]);
 
   /* ── Field helpers ──────────────────────────────────────────── */
@@ -169,7 +171,8 @@ export function useAccount(id: string) {
     dto,
     isDirty,
     isEditable,
-    taxCategories,
+    taxPositions,
+    tradingTerms,
     hasDiscountRules,
 
     // Field helpers

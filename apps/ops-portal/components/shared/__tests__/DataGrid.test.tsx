@@ -8,7 +8,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DataGrid from '../DataGrid';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 
 // Mock next-intl translations
 jest.mock('next-intl', () => ({

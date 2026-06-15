@@ -3,7 +3,7 @@ import { GlController } from './gl.controller';
 import { GlService } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
 import { AppConfigService } from '../settings/app-config.service';
-import { GLAccountType } from '@modbm/shared';
+import { GLAccountType } from '@herobm/shared';
 import { JwtUser } from '../auth/auth-user.decorator';
 
 /**

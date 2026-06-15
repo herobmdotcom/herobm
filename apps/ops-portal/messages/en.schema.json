@@ -237,6 +237,7 @@
   "admin.settings.labels.defaultCogs",
   "admin.settings.labels.defaultExpense",
   "admin.settings.labels.defaultFeeRevenue",
+  "admin.settings.labels.defaultDiscountsReceived",
   "admin.settings.labels.defaultGrni",
   "admin.settings.labels.defaultInventory",
   "admin.settings.labels.defaultRevenue",

@@ -10,8 +10,8 @@ import {
   IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PAYMENT_TYPE } from '@modbm/shared';
-import type { PaymentType } from '@modbm/shared';
+import { PAYMENT_TYPE } from '@herobm/shared';
+import type { PaymentType } from '@herobm/shared';
 
 export const MODES_OF_PAYMENT = [
   'Cash',
@@ -98,6 +98,11 @@ export class AllocationDto {
   @IsNumber()
   @Min(0.01)
   allocatedAmount: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  discountAmount?: number;
 }
 
 export class AllocatePaymentDto {
@@ -138,3 +143,19 @@ export class ConfirmRejectResponseDto {
   success: boolean;
 }
 export class EmptyBodyDto {}
+
+export class GeneratePaymentRunDto {
+  @IsString()
+  @IsNotEmpty()
+  targetDate: string;
+
+  @IsUUID()
+  @IsNotEmpty()
+  glAccountBank: string;
+}
+
+export class GeneratePaymentRunResponseDto {
+  generatedPayments: number;
+  totalCashAmount: number;
+  totalDiscountAmount: number;
+}

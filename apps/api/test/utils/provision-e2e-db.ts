@@ -6,7 +6,7 @@
  *
  * Flow:
  *   1. Connect to Postgres as superuser (uses the default POSTGRES_* env vars).
- *   2. DROP / CREATE a fresh database named `modbm_e2e_test`.
+ *   2. DROP / CREATE a fresh database named `herobm_e2e_test`.
  *   3. Run all SQL migrations from apps/api/migrations/ against it.
  *   4. Run the standard application seeds (users, COA, locations, etc.).
  *   5. Print the connection details so the caller can export them.
@@ -21,7 +21,7 @@ dotenv.config({ path: rootEnv });
 
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import * as schema from '../../src/drizzle/modbm-core-schema';
+import * as schema from '../../src/drizzle/herobm-core-schema';
 import {
   runStandardSeeds,
   seedCoaSettings,
@@ -30,7 +30,7 @@ import {
 } from '../../src/scripts/seed';
 import { seedTestLocations } from './test-seed';
 
-const E2E_DB_NAME = 'modbm_e2e_test';
+const E2E_DB_NAME = 'herobm_e2e_test';
 
 async function provision() {
   const host = process.env.POSTGRES_HOST || 'localhost';
@@ -82,7 +82,7 @@ async function provision() {
 
   try {
     // Create schema
-    await e2eSql`CREATE SCHEMA IF NOT EXISTS modbm_core`;
+    await e2eSql`CREATE SCHEMA IF NOT EXISTS herobm_core`;
 
     // Run migration files in order
     const migrationsDir = path.join(__dirname, '..', '..', 'migrations');
@@ -105,9 +105,9 @@ async function provision() {
 
     // Schema drift catch-up (in Drizzle schema but not yet in a migration file)
     await e2eSql.unsafe(`
-      ALTER TABLE "modbm_core"."sales_invoices"
+      ALTER TABLE "herobm_core"."sales_invoices"
         ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
-      ALTER TABLE "modbm_core"."purchase_invoices"
+      ALTER TABLE "herobm_core"."purchase_invoices"
         ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
     `);
 

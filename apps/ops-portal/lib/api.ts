@@ -16,8 +16,8 @@ export class ApiError extends Error {
   }
 }
 
-const TOKEN_KEY = 'modbm_token';
-const ROLE_KEY = 'modbm_role';
+const TOKEN_KEY = 'herobm_token';
+const ROLE_KEY = 'herobm_role';
 
 function readStorage(key: string): string | null {
   if (typeof window === 'undefined') return null;
@@ -32,12 +32,12 @@ function writeStorage(key: string, value: string | null): void {
   } catch { /* storage unavailable */ }
 }
 
-import { setSdkConfig } from '@modbm/sdk';
+import { setSdkConfig } from '@herobm/sdk';
 
 let token: string | null = readStorage(TOKEN_KEY);
 let role: string | null = readStorage(ROLE_KEY);
 
-// Wire up the new @modbm/sdk to use the portal's token and error handling
+// Wire up the new @herobm/sdk to use the portal's token and error handling
 setSdkConfig({
   baseUrl: '/api', // Using Next.js rewrites, so relative URL is correct
   getToken: () => token,

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const rawData = fs.readFileSync('c:/Users/Marcel/volz/modbm/modbm/db_writes_report.json', 'utf-8');
+const rawData = fs.readFileSync('c:/Users/Marcel/volz/herobm/herobm/db_writes_report.json', 'utf-8');
 const results = JSON.parse(rawData);
 
 let md = '# Database Writes and Events Audit\n\n';
@@ -44,5 +44,5 @@ for (const result of results) {
   md += `| ${file} | ${writesCol} | ${eventsCol} |\n`;
 }
 
-fs.writeFileSync('c:/Users/Marcel/volz/modbm/modbm/db_writes_report.md', md);
+fs.writeFileSync('c:/Users/Marcel/volz/herobm/herobm/db_writes_report.md', md);
 console.log('Markdown report generated at db_writes_report.md');

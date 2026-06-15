@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useSettings } from '@/components/SettingsProvider';
 import { getCurrency } from '@/lib/currency';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 interface QuickAdjustmentFormProps {
   reconciliationId: string;

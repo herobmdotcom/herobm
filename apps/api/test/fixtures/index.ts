@@ -14,7 +14,7 @@ import {
   glJournalEntries,
   salesInvoices,
   uomDictionary,
-} from '../../src/drizzle/modbm-core-schema';
+} from '../../src/drizzle/herobm-core-schema';
 import {
   SalesOrderState,
   ReturnState,
@@ -26,7 +26,7 @@ import {
   PURCHASE_ORDER_STATE,
   SALES_INVOICE_STATE,
   SHIPMENT_STATE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 // Ensures random order numbers during test isolation
 let _sequence = 0;

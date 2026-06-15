@@ -20,8 +20,8 @@ import {
   taxCategories,
   binContents,
   products,
-} from '../src/drizzle/modbm-core-schema';
-import { SALES_ORDER_STATE } from '@modbm/shared';
+} from '../src/drizzle/herobm-core-schema';
+import { SALES_ORDER_STATE } from '@herobm/shared';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
 
@@ -481,10 +481,10 @@ describe('API E2E — Data Pipeline Verification', () => {
   // =========================================================================
 
   describe('System Integrity — Required Seed Data', () => {
-    it('verifies that system bins (SHIPPING, RECEIVING) exist in modbm_core.bins', async () => {
+    it('verifies that system bins (SHIPPING, RECEIVING) exist in herobm_core.bins', async () => {
       const db = app.get<DrizzleDB>(DRIZZLE);
       const systemBinsRaw = await db.execute(
-        sql`SELECT * FROM modbm_core.bins WHERE bin_number IN ('SHIPPING', 'RECEIVING') AND source = 'system' AND bin_type = 'staging' AND is_unavailable = true`,
+        sql`SELECT * FROM herobm_core.bins WHERE bin_number IN ('SHIPPING', 'RECEIVING') AND source = 'system' AND bin_type = 'staging' AND is_unavailable = true`,
       );
       const systemBins = Array.isArray(systemBinsRaw)
         ? systemBinsRaw
@@ -506,7 +506,7 @@ describe('API E2E — Data Pipeline Verification', () => {
     it('verifies that the system custom line magic product exists', async () => {
       const db = app.get<DrizzleDB>(DRIZZLE);
       const magicProductsRaw = await db.execute(
-        sql`SELECT * FROM modbm_core.products WHERE product_number = 'SYSTEM-CUSTOM-LINE'`,
+        sql`SELECT * FROM herobm_core.products WHERE product_number = 'SYSTEM-CUSTOM-LINE'`,
       );
       const magicProducts = Array.isArray(magicProductsRaw)
         ? magicProductsRaw

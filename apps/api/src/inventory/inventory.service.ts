@@ -42,7 +42,7 @@ import {
   productDefaultBins,
   goodsReceived,
   goodsReceivedLines,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { randomUUID } from 'crypto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -56,14 +56,14 @@ import {
   MATCH_STATUS,
   PUTAWAY_STATUS,
   RETURN_STATE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import {
   isPickableBinSqlCondition,
   PICKABLE_BIN_TYPES,
   filterPickableBins,
   calculatePickableOnHand,
 } from './inventory-math.utils';
-import { BIN_TYPE } from '@modbm/shared';
+import { BIN_TYPE } from '@herobm/shared';
 import { UomService } from './uom.service';
 import { GlService } from '../gl/gl.service';
 import { getValuationStrategy } from './valuation';
@@ -656,13 +656,13 @@ export class InventoryService {
         l.quantity::numeric AS "change",
         COALESCE(inv.qty, 0) AS "onHand",
         e.created_by AS "actor"
-      FROM modbm_core.inventory_ledger l
-      JOIN modbm_core.inventory_entries e ON e.entry_id = l.entry_id
-      JOIN modbm_core.products p ON p.product_id = l.product_id
+      FROM herobm_core.inventory_ledger l
+      JOIN herobm_core.inventory_entries e ON e.entry_id = l.entry_id
+      JOIN herobm_core.products p ON p.product_id = l.product_id
       LEFT JOIN (
         SELECT bc.product_id, SUM(bc.actual_quantity) as qty
-        FROM modbm_core.bin_contents bc
-        JOIN modbm_core.bins b ON b.bin_id = bc.bin_id
+        FROM herobm_core.bin_contents bc
+        JOIN herobm_core.bins b ON b.bin_id = bc.bin_id
         WHERE ${isPickableBinSqlCondition('b')}
         GROUP BY bc.product_id
       ) inv ON inv.product_id = p.product_id
@@ -800,10 +800,10 @@ export class InventoryService {
         l.quantity::numeric AS "change",
         b.bin_number AS "binCode",
         loc.name AS "locationName"
-      FROM modbm_core.inventory_ledger l
-      JOIN modbm_core.products p ON p.product_id = l.product_id
-      JOIN modbm_core.bins b ON b.bin_id = l.bin_id
-      JOIN modbm_core.locations loc ON loc.location_id = l.location_id
+      FROM herobm_core.inventory_ledger l
+      JOIN herobm_core.products p ON p.product_id = l.product_id
+      JOIN herobm_core.bins b ON b.bin_id = l.bin_id
+      JOIN herobm_core.locations loc ON loc.location_id = l.location_id
       WHERE l.entry_id = ${entryId}
       ORDER BY p.name ASC
     `;

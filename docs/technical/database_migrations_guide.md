@@ -1,6 +1,6 @@
 # Database Schema & Migrations Guide
 
-The `modbm_core` database uses [Drizzle ORM](https://orm.drizzle.team/) as its source-of-truth for schema definitions. This document outlines the absolute rules for managing schema changes, handling custom Postgres logic, and squashing schemas safely.
+The `herobm_core` database uses [Drizzle ORM](https://orm.drizzle.team/) as its source-of-truth for schema definitions. This document outlines the absolute rules for managing schema changes, handling custom Postgres logic, and squashing schemas safely.
 
 ## 1. Drizzle is a Strict Sequential Ledger
 

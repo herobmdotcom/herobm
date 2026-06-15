@@ -4,11 +4,11 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
 import { MobileCardField } from '@/components/shared/DataTable';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
-import { MATCH_STATUS, PUTAWAY_STATUS } from '@modbm/shared';
+import { MATCH_STATUS, PUTAWAY_STATUS } from '@herobm/shared';
 import { toast } from 'react-hot-toast';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 interface AllocationSlideOverProps {
   isOpen: boolean;

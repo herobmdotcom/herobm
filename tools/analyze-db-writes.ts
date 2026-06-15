@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const apiSrcDir = 'c:/Users/Marcel/volz/modbm/modbm/apps/api/src';
+const apiSrcDir = 'c:/Users/Marcel/volz/herobm/herobm/apps/api/src';
 
 
 function walk(dir: string, fileList: string[] = []) {
@@ -65,5 +65,5 @@ for (const file of files) {
   }
 }
 
-fs.writeFileSync('c:/Users/Marcel/volz/modbm/modbm/db_writes_report.json', JSON.stringify(results, null, 2));
+fs.writeFileSync('c:/Users/Marcel/volz/herobm/herobm/db_writes_report.json', JSON.stringify(results, null, 2));
 console.log('Report generated at db_writes_report.json');

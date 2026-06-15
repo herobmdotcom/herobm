@@ -1,4 +1,4 @@
-CREATE TABLE "modbm_core"."integrations" (
+CREATE TABLE "herobm_core"."integrations" (
 	"integration_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"provider" text NOT NULL,
 	"config" jsonb DEFAULT '{}'::jsonb NOT NULL,

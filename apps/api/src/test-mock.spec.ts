@@ -1,5 +1,5 @@
 import { MockDrizzle } from '../test/utils/mock-drizzle';
-import { suppliers } from './drizzle/modbm-core-schema';
+import { suppliers } from './drizzle/herobm-core-schema';
 
 test('mock drizzle behavior', async () => {
   const mockDb = new MockDrizzle();

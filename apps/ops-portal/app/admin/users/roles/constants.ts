@@ -1,4 +1,4 @@
-import { SystemResource } from '@modbm/shared';
+import { SystemResource } from '@herobm/shared';
 
 export const RESOURCES = Object.values(SystemResource);
 

@@ -138,15 +138,6 @@ export default function Sidebar() {
       label: t('groups.admin'),
       items: [
         { 
-          href: '/admin/pdf-templates', 
-          label: 'PDF Templates', 
-          icon: 'picture_as_pdf',
-          subItems: [
-            { href: '/admin/pdf-templates', label: 'Templates' },
-            { href: '/admin/pdf-templates/hooks', label: 'Hooks' },
-          ]
-        },
-        { 
           href: '/admin/customer-groups', 
           label: 'Groups', 
           icon: 'folder_shared',
@@ -154,15 +145,6 @@ export default function Sidebar() {
             { href: '/admin/customer-groups', label: 'Customer Groups' },
             { href: '/admin/supplier-groups', label: 'Supplier Groups' },
             { href: '/admin/product-groups', label: 'Product Groups' },
-          ]
-        },
-        { 
-          href: '/admin/event-queue', 
-          label: 'System Health', 
-          icon: 'monitor_heart',
-          subItems: [
-            { href: '/admin/event-queue', label: t('items.eventQueue') },
-            { href: '/admin/system-logs', label: t('items.systemLogs') },
           ]
         },
         { 
@@ -174,6 +156,8 @@ export default function Sidebar() {
             { href: '/admin/settings/financial', label: t('items.financial') },
             { href: '/admin/settings/integrations', label: 'Integrations' },
             { href: '/admin/settings/license', label: 'License' },
+            { href: '/admin/settings/pdf-templates', label: 'PDF Templates' },
+            { href: '/admin/settings/pdf-hooks', label: 'PDF Hooks' },
           ]
         },
         { 
@@ -185,6 +169,12 @@ export default function Sidebar() {
             { href: '/admin/users/roles', label: 'Roles & Permissions' },
           ]
         },
+      ],
+    });
+    
+    sections.push({
+      label: 'Technical',
+      items: [
         { 
           href: '/admin/developers', 
           label: 'Developers', 
@@ -203,6 +193,15 @@ export default function Sidebar() {
             { href: '/admin/import/csv', label: 'CSV Upload' },
             { href: '/admin/import/abm', label: 'ABM Database' },
             { href: '/admin/import/odoo', label: 'Odoo Database' },
+          ]
+        },
+        { 
+          href: '/admin/event-queue', 
+          label: 'System Health', 
+          icon: 'monitor_heart',
+          subItems: [
+            { href: '/admin/event-queue', label: t('items.eventQueue') },
+            { href: '/admin/system-logs', label: t('items.systemLogs') },
           ]
         },
       ],

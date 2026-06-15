@@ -23,14 +23,19 @@
       "created": "Created",
       "actions": "Actions",
       "code": "Code",
+      "manage": "Manage",
+      "map": "Map",
+      "saveToManage": "Save to manage",
       "defActivity": "Def. Activity",
       "defApAccount": "Def. AP Customer",
       "defArAccount": "Def. AR Customer",
+      "financialDefaults": "Financial Settings",
       "defCostCenter": "Def. Cost Center",
       "defDiscount": "Def. Discount %",
       "defExpenseAccount": "Def. Expense Customer",
       "defRevAccount": "Def. Revenue Customer",
       "errors": {
+        "sourceAndDestRequired": "Source and Destination are required",
         "typeAndDateRequired": "Type and effective date are required"
       },
       "financial": "Financial",
@@ -195,7 +200,7 @@
       "definedGroups": "Defined Groups",
       "discountRules": "Discount Rules",
       "manage": "Manage",
-      "newGroup": "New Group",
+      "newGroup": "+ New Group",
       "noGroups": "No customer groups defined.",
       "notConfigured": "Not configured",
       "placeholders": {
@@ -203,7 +208,7 @@
         "name": "e.g. Wholesale"
       },
       "saveToManage": "Save to manage",
-      "subtitle": "Manage group classifications for customer customers",
+      "subtitle": "Manage group classifications for customers",
       "title": "Customer Groups",
       "toasts": {
         "created": "Group created",
@@ -226,7 +231,7 @@
         },
         "envelopeFormat": {
           "title": "Webhook Envelope Format",
-          "description": "Every webhook dispatched by ModBM follows a standard envelope structure. This guarantees that consumers always receive the core identifying information (the entity ID and type) regardless of the event that occurred."
+          "description": "Every webhook dispatched by HeroBM follows a standard envelope structure. This guarantees that consumers always receive the core identifying information (the entity ID and type) regardless of the event that occurred."
         },
         "eventTypes": {
           "title": "Event Types",
@@ -246,7 +251,7 @@
         },
         "entityTypes": {
           "title": "Entity Types",
-          "description": "The <code>entityType</code> field in the payload envelope indicates the domain object that triggered the event. ModBM supports the following core entity types:",
+          "description": "The <code>entityType</code> field in the payload envelope indicates the domain object that triggered the event. HeroBM supports the following core entity types:",
           "sales": "Sales",
           "procurement": "Procurement",
           "masterData": "Master Data",
@@ -264,10 +269,10 @@
         },
         "securityVerification": {
           "title": "Security Verification",
-          "description": "All requests contain the <code>x-modbm-signature</code> header. Calculate the HMAC-SHA256 signature using your Webhook Secret and the raw request body to verify authenticity."
+          "description": "All requests contain the <code>x-herobm-signature</code> header. Calculate the HMAC-SHA256 signature using your Webhook Secret and the raw request body to verify authenticity."
         },
         "consumingSdk": {
-          "title": "Consuming Webhooks (ModBM SDK)",
+          "title": "Consuming Webhooks (HeroBM SDK)",
           "description": "The officially recommended way to consume webhooks and verify signatures is using our Node.js SDK. It automatically handles HMAC verification and parses the standard envelope for you."
         }
       },
@@ -382,7 +387,7 @@
     "productGroups": {
       "confirmDelete": "Are you sure you want to delete this group?",
       "definedGroups": "Defined Groups",
-      "newGroup": "New Group",
+      "newGroup": "+ New Group",
       "noGroups": "No product groups defined.",
       "placeholders": {
         "code": "Code",
@@ -560,6 +565,7 @@
         "defaultCogs": "Default COGS",
         "defaultExpense": "Default Expense",
         "defaultFeeRevenue": "Default Fee Revenue",
+        "defaultDiscountsReceived": "Default Discounts Received",
         "defaultGrni": "Default GRNI",
         "defaultInventory": "Default Inventory",
         "defaultRevenue": "Default Revenue",
@@ -575,6 +581,7 @@
         "inactive": "Inactive",
         "isDefault": "Default",
         "logoUrl": "Logo URL",
+        "mappings": "Mappings",
         "name": "Name",
         "noRecordsFound": "No records found.",
         "phone": "Phone",
@@ -587,6 +594,7 @@
         "swiftBic": "SWIFT/BIC",
         "systemBase": "System Base",
         "taxNumber": "Tax Number",
+        "taxPositionMapDesc": "Define how standard Tax Categories map to final Categories for this specific Tax Position.",
         "title": "Title",
         "type": "Type",
         "website": "Website"
@@ -619,7 +627,7 @@
       },
       "queryOrPayload": "Query / Payload",
       "rates": {
-        "empty": "No exchange rates defined. Create one to get started."
+        "empty": "No currencies defined. Create one to get started."
       },
       "runTest": "Run Test",
       "saveConfiguration": "Save Configuration",
@@ -630,8 +638,9 @@
         "costCenters": "Cost Centers",
         "gl": "General Ledger",
         "macros": "Text Macros",
-        "rates": "Exchange Rates",
+        "rates": "Currencies",
         "tax": "Tax Codes",
+        "taxPositions": "Tax Positions",
         "uom": "Units of Measure"
       },
       "subtitle": "Manage company details, GL defaults, tax codes, currencies and units of measure",
@@ -890,6 +899,7 @@
       "customer": "Customer",
       "customerPO": "Customer PO",
       "date": "Date",
+      "dueDate": "Due Date",
       "deliveryAddrs": "Delivery Addrs",
       "description": "Description",
       "disc": "Disc %",
@@ -1212,6 +1222,7 @@
     "removeShipmentLine": "Remove this shipment line?"
   },
   "customers": {
+    "newTitle": "Create Customer",
     "buttons": {
       "createCustomer": "+ Create Customer"
     },
@@ -1946,6 +1957,7 @@
   },
   "payments": {
     "allAllocations": "All Allocations",
+    "generateRun": "Generate Run",
     "allocate": "Allocate",
     "confirmCount": "Confirm ({count})",
     "createEntry": "Create Entry",
@@ -2321,7 +2333,7 @@
       "createPO": "+ Create PO",
       "createReturn": "Create Return",
       "customLine": "+ Custom Line",
-      "enterSupplierBill": "Enter Supplier Bill",
+      "enterSupplierBill": "+ Enter Invoice",
       "resolveDemands": "Resolve Demands",
       "resolving": "Resolving...",
       "save": "💾 Save",
@@ -2868,7 +2880,7 @@
       "defaultTaxCategory": "Default Tax Category",
       "defaultTaxCategoryDesc": "Select the default tax category to use when a category is missing or omitted.",
       "descCompleted": "Done",
-      "descConfig": "Choose the modbm table to import data into.",
+      "descConfig": "Choose the herobm table to import data into.",
       "descFailed": "Check the logs",
       "descFinalisation": "Review the summary of data imported.",
       "descPending": "Review settings",
@@ -3172,7 +3184,7 @@
     }
   },
   "sidebar": {
-    "footer": "Phase 3 • modbm",
+    "footer": "Phase 3 • herobm",
     "groups": {
       "admin": "Admin",
       "finance": "Finance",
@@ -3438,5 +3450,22 @@
   "enrichment": {
     "nameUpdated": "Name updated",
     "taxUpdated": "Tax info updated"
+  },
+  "deliveryAddress": {
+    "addAddress": "Add Delivery Address",
+    "editAddress": "Edit Delivery Address",
+    "addressName": "Address Name",
+    "addressNamePlaceholder": "e.g. Headquarters",
+    "addressLine1": "Address Line 1 *",
+    "addressLine2": "Address Line 2",
+    "city": "City",
+    "stateOrProvince": "State / Province",
+    "postalCode": "Postal Code",
+    "country": "Country *",
+    "selectCountry": "Select Country",
+    "setAsPrimary": "Set as primary delivery address",
+    "requiredError": "Address Line 1 and Country are required",
+    "createdSuccess": "Address created",
+    "updatedSuccess": "Address updated"
   }
 }

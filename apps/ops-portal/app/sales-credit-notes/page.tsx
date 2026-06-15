@@ -5,7 +5,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DataGrid from '@/components/DataGrid';
-import { RETURN_STATE } from '@modbm/shared';
+import { RETURN_STATE } from '@herobm/shared';
 import AdHocCreditNoteSlideOver from './AdHocCreditNoteSlideOver';
 import ReturnCreditNoteSlideOver from './ReturnCreditNoteSlideOver';
 

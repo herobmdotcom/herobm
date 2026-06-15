@@ -3,7 +3,7 @@
 import React from 'react';
 
 import Link from 'next/link';
-import { MATCH_STATUS } from '@modbm/shared';
+import { MATCH_STATUS } from '@herobm/shared';
 
 interface POAllocationCellProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

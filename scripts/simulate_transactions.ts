@@ -2,7 +2,7 @@
 /**
  * ERPNext Integration Transaction Simulator
  *
- * Drives end-to-end operational cycles through the ModBM API
+ * Drives end-to-end operational cycles through the HeroBM API
  * to exercise the outbox→ERPNext sync pipeline.
  *
  * Usage:
@@ -12,8 +12,8 @@
 
 // ─── Configuration ──────────────────────────────────────────────────────────────
 
-const API_BASE = process.env.MODBM_API_URL || 'http://localhost:3001';
-const LOGIN_USER = process.env.MODBM_SIM_USER || 'admin';
+const API_BASE = process.env.HEROBM_API_URL || 'http://localhost:3001';
+const LOGIN_USER = process.env.HEROBM_SIM_USER || 'admin';
 const LOGIN_PASS = process.env.ADMIN_PASSWORD || '';
 
 if (!LOGIN_PASS) {
@@ -281,7 +281,7 @@ async function main() {
   const interval = parseInt(args.interval || '30', 10);
 
   console.log('═══════════════════════════════════════════════════════════');
-  console.log('  ModBM Transaction Simulator');
+  console.log('  HeroBM Transaction Simulator');
   console.log(`  API: ${API_BASE}`);
   console.log(`  Mode: ${mode}`);
   console.log('═══════════════════════════════════════════════════════════');

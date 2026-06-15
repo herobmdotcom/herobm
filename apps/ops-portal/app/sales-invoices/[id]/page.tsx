@@ -1,7 +1,7 @@
 import InvoiceDetailContent from './InvoiceDetailContent';
 
 export const metadata = {
-  title: 'Sales Invoice | ModBM',
+  title: 'Sales Invoice | HeroBM',
 };
 
 export default async function SalesInvoicePage(props: { params: Promise<{ id: string }> }) {

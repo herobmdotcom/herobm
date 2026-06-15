@@ -3,7 +3,7 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useCallback } from 'react';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';

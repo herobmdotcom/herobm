@@ -8,7 +8,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   reportError,
 } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
@@ -23,7 +23,7 @@ import { resolveSupplierRiskProfile } from '@/lib/supplier-risk';
 import SupplierStatusBadges from '@/components/suppliers/SupplierStatusBadges';
 import SupplierExpiries from '@/components/suppliers/SupplierExpiries';
 import { useSettings } from '@/components/SettingsProvider';
-import { SUPPLIER_STATE, getErrorMessage, CURRENCIES as _CURRENCIES, COUNTRIES, getCurrencyForCountry } from '@modbm/shared';
+import { SUPPLIER_STATE, getErrorMessage, CURRENCIES as _CURRENCIES, COUNTRIES, getCurrencyForCountry } from '@herobm/shared';
 
 interface Supplier {
   vendorId: string;
@@ -40,6 +40,7 @@ interface Supplier {
   // Overrides
   tradingTermsId?: string | null;
   earlyPaymentDiscount?: string | null;
+  earlyPaymentDiscountDays?: number | null;
   creditLimit?: string | null;
   isPurchasingBlocked?: boolean;
   purchasingBlockReason?: string | null;
@@ -62,6 +63,7 @@ interface Supplier {
 
   businessNumber: string | null;
   isTaxRegistered: boolean;
+  taxPositionId?: string | null;
 
   bankAccountName?: string | null;
   bankBsb?: string | null;
@@ -101,6 +103,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const [editCountry, setEditCountry] = useState('');
   const [editTradingTermsId, setEditTradingTermsId] = useState<string | null>(null);
   const [editEarlyPaymentDiscount, setEditEarlyPaymentDiscount] = useState<string | null>(null);
+  const [editEarlyPaymentDiscountDays, setEditEarlyPaymentDiscountDays] = useState<number | null>(null);
   const [editNotes, setEditNotes] = useState('');
   const [editCurrency, setEditCurrency] = useState(baseCurrency);
   const [editSupplierGroupId, setEditSupplierGroupId] = useState<string | null>(null);
@@ -113,12 +116,14 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
   const [editBusinessNumber, setEditBusinessNumber] = useState('');
   const [editIsTaxRegistered, setEditIsTaxRegistered] = useState(false);
+  const [editTaxPositionId, setEditTaxPositionId] = useState('');
 
   const [editBankAccountName, setEditBankAccountName] = useState('');
   const [editBankBsb, setEditBankBsb] = useState('');
   const [editBankAccountNumber, setEditBankAccountNumber] = useState('');
 
   const [availableTradingTerms, setAvailableTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
+  const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
 
   const loadSupplier = async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
@@ -127,9 +132,11 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       const dataRes: any = await Promise.all([
         api.suppliersControllerFindOne(params.id),
         api.tradingTermsControllerFindAll().catch(() => ({ data: [] })),
+        api.taxPositionsControllerFindAll().catch(() => ({ data: [] })),
       ]);
       const data = dataRes[0]?.data;
       const termsData = dataRes[1]?.data || [];
+      setTaxPositions(dataRes[2]?.data || []);
       setSupplier(data);
       setAvailableTradingTerms(termsData);
       
@@ -141,6 +148,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       setEditCountry(data.address1Country || '');
       setEditTradingTermsId(data.tradingTermsId || null);
       setEditEarlyPaymentDiscount(data.earlyPaymentDiscount || '');
+      setEditEarlyPaymentDiscountDays(data.earlyPaymentDiscountDays || null);
       setEditNotes(data.notes || '');
       
       setEditIsPurchasingBlocked(data.isPurchasingBlocked || false);
@@ -151,6 +159,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       
       setEditBusinessNumber(data.businessNumber || '');
       setEditIsTaxRegistered(data.isTaxRegistered || false);
+      setEditTaxPositionId(data.taxPositionId || '');
 
       setEditBankAccountName(data.bankAccountName || '');
       setEditBankBsb(data.bankBsb || '');
@@ -497,9 +506,11 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           <h3 className="section-heading">
             {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">payments</span>
-            {t('financials')}
+            FINANCIALS
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* ── Row 1 ── */}
+            {/* 1. Currency */}
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {tCommon('columns.currency')} *
@@ -518,28 +529,11 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 ))}
               </select>
             </div>
+
+            {/* 2. State */}
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('paymentTerms')}
-              </label>
-              <select
-                className="input"
-                value={editTradingTermsId || ''}
-                onChange={(e) => {
-                  setEditTradingTermsId(e.target.value);
-                  saveField('tradingTermsId', e.target.value, supplier.tradingTermsId || null);
-                }}
-                disabled={!isEditable || saving}
-              >
-                <option value="">{tCommon('selectEllipsis')}</option>
-                {availableTradingTerms.map(t => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {tCommon('columns.status')}
+                {tCommon('columns.state')}
               </label>
               <div
                 className="flex items-center gap-3"
@@ -575,27 +569,52 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </span>
               </div>
             </div>
+
+            {/* 3. Early Payment Discount */}
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {t('earlyPaymentDiscount')}
               </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  className="input w-full pr-8"
-                  value={editEarlyPaymentDiscount || ''}
-                  onChange={(e) => setEditEarlyPaymentDiscount(e.target.value)}
-                  onBlur={() => saveField('earlyPaymentDiscount', editEarlyPaymentDiscount || '', supplier.earlyPaymentDiscount || null)}
-                  disabled={!isEditable || saving}
-                  step="0.01"
-                  min="0"
-                  max="100"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
+              <div className="flex items-center gap-3">
+                <div className="relative w-32">
+                  <input
+                    type="number"
+                    className="input w-full pr-8"
+                    value={editEarlyPaymentDiscount || ''}
+                    onChange={(e) => setEditEarlyPaymentDiscount(e.target.value)}
+                    onBlur={() => saveField('earlyPaymentDiscount', editEarlyPaymentDiscount || '', supplier.earlyPaymentDiscount || null)}
+                    disabled={!isEditable || saving}
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    placeholder="0.00"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
+                </div>
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                  in
+                </span>
+                <div className="relative w-32">
+                  <input
+                    type="number"
+                    className="input w-full pr-12"
+                    value={editEarlyPaymentDiscountDays || ''}
+                    onChange={(e) => setEditEarlyPaymentDiscountDays(e.target.value ? Number(e.target.value) : null)}
+                    onBlur={() => saveField('earlyPaymentDiscountDays', editEarlyPaymentDiscountDays, supplier.earlyPaymentDiscountDays || null)}
+                    disabled={!isEditable || saving}
+                    step="1"
+                    min="0"
+                    placeholder="10"
+                  />
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none text-sm">days</span>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+
+            {/* ── Row 2 ── */}
+            {/* 4. Business Number */}
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {t('fields.businessNumber')}
@@ -605,7 +624,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   value={editBusinessNumber}
                   isSaving={saving}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          onEnrich={(data: Record<string, any>) => {
+                  onEnrich={(data: Record<string, any>) => {
                     if (data.name && data.name !== editName) {
                       setEditName(data.name);
                       saveField('name', data.name, supplier.name);
@@ -629,6 +648,8 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 placeholder="Enter business number..."
               />
             </div>
+
+            {/* 5. Tax Registered */}
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {t('fields.taxRegistered')}
@@ -671,6 +692,52 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   {editIsTaxRegistered ? tCommon('yes') : tCommon('no')}
                 </span>
               </div>
+            </div>
+
+            {/* 6. Tax Position */}
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {tCommon('columns.taxPosition')}
+              </label>
+              <select
+                className="input"
+                disabled={!isEditable || saving}
+                value={editTaxPositionId || ''}
+                onChange={(e) => {
+                  setEditTaxPositionId(e.target.value);
+                  saveField('taxPositionId', e.target.value, supplier.taxPositionId);
+                }}
+              >
+                <option value="">{tCommon('options.none')}</option>
+                {taxPositions.map((pos) => (
+                  <option key={pos.taxPositionId} value={pos.taxPositionId}>
+                    {pos.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* ── Row 3 ── */}
+            {/* 7. Trading Terms */}
+            <div>
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Trading Terms
+              </label>
+              <select
+                className="input"
+                value={editTradingTermsId || ''}
+                onChange={(e) => {
+                  setEditTradingTermsId(e.target.value);
+                  saveField('tradingTermsId', e.target.value, supplier.tradingTermsId || null);
+                }}
+                disabled={!isEditable || saving}
+              >
+                <option value="">{tCommon('selectEllipsis')}</option>
+                {availableTradingTerms.map((t, i) => (
+                  <option key={`${t.id}-${i}`} value={t.id}>{t.code} - {t.description}</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

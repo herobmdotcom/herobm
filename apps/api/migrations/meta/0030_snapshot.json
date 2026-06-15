@@ -4,9 +4,9 @@
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "modbm_core.activities": {
+    "herobm_core.activities": {
       "name": "activities",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "activity_id": {
           "name": "activity_id",
@@ -72,9 +72,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.api_keys": {
+    "herobm_core.api_keys": {
       "name": "api_keys",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "api_key_id": {
           "name": "api_key_id",
@@ -136,9 +136,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.app_settings": {
+    "herobm_core.app_settings": {
       "name": "app_settings",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "settings_id": {
           "name": "settings_id",
@@ -224,7 +224,7 @@
           "name": "app_settings_default_fulfillment_location_id_locations_location_id_fk",
           "tableFrom": "app_settings",
           "tableTo": "locations",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_fulfillment_location_id"
           ],
@@ -241,9 +241,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.backorders": {
+    "herobm_core.backorders": {
       "name": "backorders",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "backorder_id": {
           "name": "backorder_id",
@@ -365,7 +365,7 @@
           "name": "backorders_sales_order_id_sales_orders_sales_order_id_fk",
           "tableFrom": "backorders",
           "tableTo": "sales_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "sales_order_id"
           ],
@@ -379,7 +379,7 @@
           "name": "backorders_sales_order_line_id_sales_order_lines_sales_order_line_id_fk",
           "tableFrom": "backorders",
           "tableTo": "sales_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "sales_order_line_id"
           ],
@@ -393,7 +393,7 @@
           "name": "backorders_product_id_products_product_id_fk",
           "tableFrom": "backorders",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -407,7 +407,7 @@
           "name": "backorders_purchase_order_id_purchase_orders_purchase_order_id_fk",
           "tableFrom": "backorders",
           "tableTo": "purchase_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "purchase_order_id"
           ],
@@ -421,7 +421,7 @@
           "name": "backorders_purchase_order_line_id_purchase_order_lines_purchase_order_line_id_fk",
           "tableFrom": "backorders",
           "tableTo": "purchase_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "purchase_order_line_id"
           ],
@@ -435,7 +435,7 @@
           "name": "backorders_transfer_order_id_transfer_orders_transfer_order_id_fk",
           "tableFrom": "backorders",
           "tableTo": "transfer_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "transfer_order_id"
           ],
@@ -449,7 +449,7 @@
           "name": "backorders_transfer_order_line_id_transfer_order_lines_transfer_order_line_id_fk",
           "tableFrom": "backorders",
           "tableTo": "transfer_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "transfer_order_line_id"
           ],
@@ -466,9 +466,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.bank_statement_lines": {
+    "herobm_core.bank_statement_lines": {
       "name": "bank_statement_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "line_id": {
           "name": "line_id",
@@ -558,7 +558,7 @@
           "name": "bank_statement_lines_gl_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "bank_statement_lines",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "gl_account_id"
           ],
@@ -572,7 +572,7 @@
           "name": "bank_statement_lines_reconciliation_id_gl_reconciliations_reconciliation_id_fk",
           "tableFrom": "bank_statement_lines",
           "tableTo": "gl_reconciliations",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "reconciliation_id"
           ],
@@ -586,7 +586,7 @@
           "name": "bank_statement_lines_matched_journal_line_id_gl_journal_lines_journal_line_id_fk",
           "tableFrom": "bank_statement_lines",
           "tableTo": "gl_journal_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "matched_journal_line_id"
           ],
@@ -603,9 +603,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.bin_contents": {
+    "herobm_core.bin_contents": {
       "name": "bin_contents",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "bin_content_id": {
           "name": "bin_content_id",
@@ -647,7 +647,7 @@
           "name": "bin_contents_bin_id_bins_bin_id_fk",
           "tableFrom": "bin_contents",
           "tableTo": "bins",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "bin_id"
           ],
@@ -661,7 +661,7 @@
           "name": "bin_contents_product_id_products_product_id_fk",
           "tableFrom": "bin_contents",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -687,9 +687,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.bins": {
+    "herobm_core.bins": {
       "name": "bins",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "bin_id": {
           "name": "bin_id",
@@ -713,7 +713,7 @@
         "bin_type": {
           "name": "bin_type",
           "type": "bin_type_enum",
-          "typeSchema": "modbm_core",
+          "typeSchema": "herobm_core",
           "primaryKey": false,
           "notNull": true,
           "default": "'storage'"
@@ -779,7 +779,7 @@
           "name": "bins_zone_id_zones_zone_id_fk",
           "tableFrom": "bins",
           "tableTo": "zones",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "zone_id"
           ],
@@ -812,9 +812,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.business_reports": {
+    "herobm_core.business_reports": {
       "name": "business_reports",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "id": {
           "name": "id",
@@ -885,9 +885,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.casbin_rule": {
+    "herobm_core.casbin_rule": {
       "name": "casbin_rule",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "id": {
           "name": "id",
@@ -947,9 +947,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.cost_centers": {
+    "herobm_core.cost_centers": {
       "name": "cost_centers",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "cost_center_id": {
           "name": "cost_center_id",
@@ -1015,9 +1015,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.csv_mapping_profiles": {
+    "herobm_core.csv_mapping_profiles": {
       "name": "csv_mapping_profiles",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "profile_id": {
           "name": "profile_id",
@@ -1103,9 +1103,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.customer_groups": {
+    "herobm_core.customer_groups": {
       "name": "customer_groups",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "customer_group_id": {
           "name": "customer_group_id",
@@ -1177,7 +1177,7 @@
           "name": "customer_groups_default_ar_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "customer_groups",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_ar_account_id"
           ],
@@ -1191,7 +1191,7 @@
           "name": "customer_groups_default_revenue_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "customer_groups",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_revenue_account_id"
           ],
@@ -1205,7 +1205,7 @@
           "name": "customer_groups_trading_terms_id_trading_terms_trading_terms_id_fk",
           "tableFrom": "customer_groups",
           "tableTo": "trading_terms",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "trading_terms_id"
           ],
@@ -1219,7 +1219,7 @@
           "name": "customer_groups_default_cost_center_id_cost_centers_cost_center_id_fk",
           "tableFrom": "customer_groups",
           "tableTo": "cost_centers",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_cost_center_id"
           ],
@@ -1233,7 +1233,7 @@
           "name": "customer_groups_default_activity_id_activities_activity_id_fk",
           "tableFrom": "customer_groups",
           "tableTo": "activities",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_activity_id"
           ],
@@ -1258,9 +1258,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.customers": {
+    "herobm_core.customers": {
       "name": "customers",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "customer_id": {
           "name": "customer_id",
@@ -1486,7 +1486,7 @@
           "name": "customers_customer_group_id_customer_groups_customer_group_id_fk",
           "tableFrom": "customers",
           "tableTo": "customer_groups",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "customer_group_id"
           ],
@@ -1500,7 +1500,7 @@
           "name": "customers_tax_category_id_tax_categories_tax_category_id_fk",
           "tableFrom": "customers",
           "tableTo": "tax_categories",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "tax_category_id"
           ],
@@ -1514,7 +1514,7 @@
           "name": "customers_trading_terms_id_trading_terms_trading_terms_id_fk",
           "tableFrom": "customers",
           "tableTo": "trading_terms",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "trading_terms_id"
           ],
@@ -1551,9 +1551,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.discount_matrix": {
+    "herobm_core.discount_matrix": {
       "name": "discount_matrix",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "discount_matrix_id": {
           "name": "discount_matrix_id",
@@ -1639,7 +1639,7 @@
           "name": "discount_matrix_customer_group_id_customer_groups_customer_group_id_fk",
           "tableFrom": "discount_matrix",
           "tableTo": "customer_groups",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "customer_group_id"
           ],
@@ -1653,7 +1653,7 @@
           "name": "discount_matrix_customer_id_customers_customer_id_fk",
           "tableFrom": "discount_matrix",
           "tableTo": "customers",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "customer_id"
           ],
@@ -1667,7 +1667,7 @@
           "name": "discount_matrix_product_group_id_product_groups_product_group_id_fk",
           "tableFrom": "discount_matrix",
           "tableTo": "product_groups",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_group_id"
           ],
@@ -1706,9 +1706,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.exchange_rates": {
+    "herobm_core.exchange_rates": {
       "name": "exchange_rates",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "exchange_rate_id": {
           "name": "exchange_rate_id",
@@ -1777,9 +1777,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.financial_events": {
+    "herobm_core.financial_events": {
       "name": "financial_events",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "event_id": {
           "name": "event_id",
@@ -1834,9 +1834,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.gl_accounts": {
+    "herobm_core.gl_accounts": {
       "name": "gl_accounts",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "gl_account_id": {
           "name": "gl_account_id",
@@ -1939,9 +1939,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.gl_journal_entries": {
+    "herobm_core.gl_journal_entries": {
       "name": "gl_journal_entries",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "journal_entry_id": {
           "name": "journal_entry_id",
@@ -2023,9 +2023,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.gl_journal_lines": {
+    "herobm_core.gl_journal_lines": {
       "name": "gl_journal_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "journal_line_id": {
           "name": "journal_line_id",
@@ -2116,7 +2116,7 @@
           "name": "gl_journal_lines_journal_entry_id_gl_journal_entries_journal_entry_id_fk",
           "tableFrom": "gl_journal_lines",
           "tableTo": "gl_journal_entries",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "journal_entry_id"
           ],
@@ -2130,7 +2130,7 @@
           "name": "gl_journal_lines_gl_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "gl_journal_lines",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "gl_account_id"
           ],
@@ -2144,7 +2144,7 @@
           "name": "gl_journal_lines_reconciliation_id_gl_reconciliations_reconciliation_id_fk",
           "tableFrom": "gl_journal_lines",
           "tableTo": "gl_reconciliations",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "reconciliation_id"
           ],
@@ -2158,7 +2158,7 @@
           "name": "gl_journal_lines_cost_center_id_cost_centers_cost_center_id_fk",
           "tableFrom": "gl_journal_lines",
           "tableTo": "cost_centers",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "cost_center_id"
           ],
@@ -2172,7 +2172,7 @@
           "name": "gl_journal_lines_activity_id_activities_activity_id_fk",
           "tableFrom": "gl_journal_lines",
           "tableTo": "activities",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "activity_id"
           ],
@@ -2189,9 +2189,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.gl_match_groups": {
+    "herobm_core.gl_match_groups": {
       "name": "gl_match_groups",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "match_group_id": {
           "name": "match_group_id",
@@ -2231,7 +2231,7 @@
           "name": "gl_match_groups_rule_id_reconciliation_rules_rule_id_fk",
           "tableFrom": "gl_match_groups",
           "tableTo": "reconciliation_rules",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "rule_id"
           ],
@@ -2248,9 +2248,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.gl_reconciliations": {
+    "herobm_core.gl_reconciliations": {
       "name": "gl_reconciliations",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "reconciliation_id": {
           "name": "reconciliation_id",
@@ -2310,7 +2310,7 @@
           "name": "gl_reconciliations_gl_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "gl_reconciliations",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "gl_account_id"
           ],
@@ -2327,9 +2327,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.gl_settings": {
+    "herobm_core.gl_settings": {
       "name": "gl_settings",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "settings_id": {
           "name": "settings_id",
@@ -2452,7 +2452,7 @@
           "name": "gl_settings_default_ar_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "gl_settings",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_ar_account_id"
           ],
@@ -2466,7 +2466,7 @@
           "name": "gl_settings_default_ap_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "gl_settings",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_ap_account_id"
           ],
@@ -2480,7 +2480,7 @@
           "name": "gl_settings_default_revenue_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "gl_settings",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_revenue_account_id"
           ],
@@ -2494,7 +2494,7 @@
           "name": "gl_settings_default_cogs_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "gl_settings",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_cogs_account_id"
           ],
@@ -2508,7 +2508,7 @@
           "name": "gl_settings_default_tax_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "gl_settings",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_tax_account_id"
           ],
@@ -2522,7 +2522,7 @@
           "name": "gl_settings_default_expense_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "gl_settings",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_expense_account_id"
           ],
@@ -2536,7 +2536,7 @@
           "name": "gl_settings_default_inventory_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "gl_settings",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_inventory_account_id"
           ],
@@ -2550,7 +2550,7 @@
           "name": "gl_settings_default_grni_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "gl_settings",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_grni_account_id"
           ],
@@ -2564,7 +2564,7 @@
           "name": "gl_settings_default_shrinkage_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "gl_settings",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_shrinkage_account_id"
           ],
@@ -2578,7 +2578,7 @@
           "name": "gl_settings_default_fee_revenue_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "gl_settings",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_fee_revenue_account_id"
           ],
@@ -2595,9 +2595,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.goods_received": {
+    "herobm_core.goods_received": {
       "name": "goods_received",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "goods_received_id": {
           "name": "goods_received_id",
@@ -2670,7 +2670,7 @@
           "name": "goods_received_vendor_id_suppliers_vendor_id_fk",
           "tableFrom": "goods_received",
           "tableTo": "suppliers",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "vendor_id"
           ],
@@ -2684,7 +2684,7 @@
           "name": "goods_received_location_id_locations_location_id_fk",
           "tableFrom": "goods_received",
           "tableTo": "locations",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "location_id"
           ],
@@ -2709,9 +2709,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.goods_received_lines": {
+    "herobm_core.goods_received_lines": {
       "name": "goods_received_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "goods_received_line_id": {
           "name": "goods_received_line_id",
@@ -2771,7 +2771,7 @@
           "name": "goods_received_lines_goods_received_id_goods_received_goods_received_id_fk",
           "tableFrom": "goods_received_lines",
           "tableTo": "goods_received",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "goods_received_id"
           ],
@@ -2785,7 +2785,7 @@
           "name": "goods_received_lines_product_id_products_product_id_fk",
           "tableFrom": "goods_received_lines",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -2799,7 +2799,7 @@
           "name": "goods_received_lines_purchase_order_line_id_purchase_order_lines_purchase_order_line_id_fk",
           "tableFrom": "goods_received_lines",
           "tableTo": "purchase_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "purchase_order_line_id"
           ],
@@ -2813,7 +2813,7 @@
           "name": "goods_received_lines_purchase_order_id_purchase_orders_purchase_order_id_fk",
           "tableFrom": "goods_received_lines",
           "tableTo": "purchase_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "purchase_order_id"
           ],
@@ -2830,9 +2830,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.integrations": {
+    "herobm_core.integrations": {
       "name": "integrations",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "integration_id": {
           "name": "integration_id",
@@ -2892,9 +2892,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.inventory_entries": {
+    "herobm_core.inventory_entries": {
       "name": "inventory_entries",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "entry_id": {
           "name": "entry_id",
@@ -2977,9 +2977,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.inventory_events": {
+    "herobm_core.inventory_events": {
       "name": "inventory_events",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "event_id": {
           "name": "event_id",
@@ -3034,9 +3034,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.inventory_ledger": {
+    "herobm_core.inventory_ledger": {
       "name": "inventory_ledger",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "ledger_id": {
           "name": "ledger_id",
@@ -3110,7 +3110,7 @@
           "name": "inventory_ledger_entry_id_inventory_entries_entry_id_fk",
           "tableFrom": "inventory_ledger",
           "tableTo": "inventory_entries",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "entry_id"
           ],
@@ -3124,7 +3124,7 @@
           "name": "inventory_ledger_product_id_products_product_id_fk",
           "tableFrom": "inventory_ledger",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -3138,7 +3138,7 @@
           "name": "inventory_ledger_bin_id_bins_bin_id_fk",
           "tableFrom": "inventory_ledger",
           "tableTo": "bins",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "bin_id"
           ],
@@ -3152,7 +3152,7 @@
           "name": "inventory_ledger_location_id_locations_location_id_fk",
           "tableFrom": "inventory_ledger",
           "tableTo": "locations",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "location_id"
           ],
@@ -3166,7 +3166,7 @@
           "name": "inventory_ledger_zone_id_zones_zone_id_fk",
           "tableFrom": "inventory_ledger",
           "tableTo": "zones",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "zone_id"
           ],
@@ -3183,9 +3183,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.locations": {
+    "herobm_core.locations": {
       "name": "locations",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "location_id": {
           "name": "location_id",
@@ -3293,9 +3293,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.macros": {
+    "herobm_core.macros": {
       "name": "macros",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "macro_id": {
           "name": "macro_id",
@@ -3354,9 +3354,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.master_data_events": {
+    "herobm_core.master_data_events": {
       "name": "master_data_events",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "event_id": {
           "name": "event_id",
@@ -3411,9 +3411,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.organization": {
+    "herobm_core.organization": {
       "name": "organization",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "organization_id": {
           "name": "organization_id",
@@ -3539,9 +3539,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.outbox": {
+    "herobm_core.outbox": {
       "name": "outbox",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "outbox_id": {
           "name": "outbox_id",
@@ -3608,9 +3608,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.payment_allocations": {
+    "herobm_core.payment_allocations": {
       "name": "payment_allocations",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "allocation_id": {
           "name": "allocation_id",
@@ -3657,7 +3657,7 @@
           "name": "payment_allocations_payment_id_payment_entries_payment_id_fk",
           "tableFrom": "payment_allocations",
           "tableTo": "payment_entries",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "payment_id"
           ],
@@ -3674,9 +3674,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.payment_entries": {
+    "herobm_core.payment_entries": {
       "name": "payment_entries",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "payment_id": {
           "name": "payment_id",
@@ -3791,7 +3791,7 @@
           "name": "payment_entries_gl_account_bank_gl_accounts_gl_account_id_fk",
           "tableFrom": "payment_entries",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "gl_account_bank"
           ],
@@ -3816,9 +3816,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.pdf_template_contexts": {
+    "herobm_core.pdf_template_contexts": {
       "name": "pdf_template_contexts",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "template_id": {
           "name": "template_id",
@@ -3839,7 +3839,7 @@
           "name": "pdf_template_contexts_template_id_pdf_templates_id_fk",
           "tableFrom": "pdf_template_contexts",
           "tableTo": "pdf_templates",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "template_id"
           ],
@@ -3864,9 +3864,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.pdf_template_hooks": {
+    "herobm_core.pdf_template_hooks": {
       "name": "pdf_template_hooks",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "id": {
           "name": "id",
@@ -3907,7 +3907,7 @@
           "name": "pdf_template_hooks_report_id_pdf_templates_id_fk",
           "tableFrom": "pdf_template_hooks",
           "tableTo": "pdf_templates",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "report_id"
           ],
@@ -3932,9 +3932,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.pdf_templates": {
+    "herobm_core.pdf_templates": {
       "name": "pdf_templates",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "id": {
           "name": "id",
@@ -4010,9 +4010,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.procurement_events": {
+    "herobm_core.procurement_events": {
       "name": "procurement_events",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "event_id": {
           "name": "event_id",
@@ -4067,9 +4067,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.product_components": {
+    "herobm_core.product_components": {
       "name": "product_components",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "component_id": {
           "name": "component_id",
@@ -4113,7 +4113,7 @@
         "fractional_behavior": {
           "name": "fractional_behavior",
           "type": "fractional_behavior",
-          "typeSchema": "modbm_core",
+          "typeSchema": "herobm_core",
           "primaryKey": false,
           "notNull": true,
           "default": "'allow_fractional'"
@@ -4125,7 +4125,7 @@
           "name": "product_components_parent_product_id_products_product_id_fk",
           "tableFrom": "product_components",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "parent_product_id"
           ],
@@ -4139,7 +4139,7 @@
           "name": "product_components_child_product_id_products_product_id_fk",
           "tableFrom": "product_components",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "child_product_id"
           ],
@@ -4156,9 +4156,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.product_default_bins": {
+    "herobm_core.product_default_bins": {
       "name": "product_default_bins",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "product_default_bin_id": {
           "name": "product_default_bin_id",
@@ -4226,7 +4226,7 @@
           "name": "product_default_bins_product_id_products_product_id_fk",
           "tableFrom": "product_default_bins",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -4240,7 +4240,7 @@
           "name": "product_default_bins_location_id_locations_location_id_fk",
           "tableFrom": "product_default_bins",
           "tableTo": "locations",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "location_id"
           ],
@@ -4254,7 +4254,7 @@
           "name": "product_default_bins_bin_id_bins_bin_id_fk",
           "tableFrom": "product_default_bins",
           "tableTo": "bins",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "bin_id"
           ],
@@ -4281,9 +4281,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.product_groups": {
+    "herobm_core.product_groups": {
       "name": "product_groups",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "product_group_id": {
           "name": "product_group_id",
@@ -4335,7 +4335,7 @@
           "name": "product_groups_default_revenue_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "product_groups",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_revenue_account_id"
           ],
@@ -4349,7 +4349,7 @@
           "name": "product_groups_default_expense_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "product_groups",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_expense_account_id"
           ],
@@ -4363,7 +4363,7 @@
           "name": "product_groups_default_cost_center_id_cost_centers_cost_center_id_fk",
           "tableFrom": "product_groups",
           "tableTo": "cost_centers",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_cost_center_id"
           ],
@@ -4377,7 +4377,7 @@
           "name": "product_groups_default_activity_id_activities_activity_id_fk",
           "tableFrom": "product_groups",
           "tableTo": "activities",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_activity_id"
           ],
@@ -4402,9 +4402,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.product_suppliers": {
+    "herobm_core.product_suppliers": {
       "name": "product_suppliers",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "product_supplier_id": {
           "name": "product_supplier_id",
@@ -4529,7 +4529,7 @@
           "name": "product_suppliers_product_id_products_product_id_fk",
           "tableFrom": "product_suppliers",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -4543,7 +4543,7 @@
           "name": "product_suppliers_vendor_id_suppliers_vendor_id_fk",
           "tableFrom": "product_suppliers",
           "tableTo": "suppliers",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "vendor_id"
           ],
@@ -4576,9 +4576,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.product_uoms": {
+    "herobm_core.product_uoms": {
       "name": "product_uoms",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "product_uom_id": {
           "name": "product_uom_id",
@@ -4632,7 +4632,7 @@
           "name": "product_uoms_product_id_products_product_id_fk",
           "tableFrom": "product_uoms",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -4646,7 +4646,7 @@
           "name": "product_uoms_uom_code_uom_dictionary_uom_code_fk",
           "tableFrom": "product_uoms",
           "tableTo": "uom_dictionary",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "uom_code"
           ],
@@ -4672,9 +4672,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.products": {
+    "herobm_core.products": {
       "name": "products",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "product_id": {
           "name": "product_id",
@@ -4698,7 +4698,7 @@
         "product_type": {
           "name": "product_type",
           "type": "product_type",
-          "typeSchema": "modbm_core",
+          "typeSchema": "herobm_core",
           "primaryKey": false,
           "notNull": true,
           "default": "'inventory'"
@@ -4706,7 +4706,7 @@
         "structure_type": {
           "name": "structure_type",
           "type": "product_structure",
-          "typeSchema": "modbm_core",
+          "typeSchema": "herobm_core",
           "primaryKey": false,
           "notNull": true,
           "default": "'standard'"
@@ -4874,7 +4874,7 @@
           "name": "products_product_group_id_product_groups_product_group_id_fk",
           "tableFrom": "products",
           "tableTo": "product_groups",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_group_id"
           ],
@@ -4888,7 +4888,7 @@
           "name": "products_base_uom_uom_dictionary_uom_code_fk",
           "tableFrom": "products",
           "tableTo": "uom_dictionary",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "base_uom"
           ],
@@ -4902,7 +4902,7 @@
           "name": "products_purchase_tax_category_id_tax_categories_tax_category_id_fk",
           "tableFrom": "products",
           "tableTo": "tax_categories",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "purchase_tax_category_id"
           ],
@@ -4916,7 +4916,7 @@
           "name": "products_sales_tax_category_id_tax_categories_tax_category_id_fk",
           "tableFrom": "products",
           "tableTo": "tax_categories",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "sales_tax_category_id"
           ],
@@ -4948,9 +4948,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.purchase_debit_note_lines": {
+    "herobm_core.purchase_debit_note_lines": {
       "name": "purchase_debit_note_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "debit_note_line_id": {
           "name": "debit_note_line_id",
@@ -5003,7 +5003,7 @@
           "name": "purchase_debit_note_lines_debit_note_id_purchase_debit_notes_debit_note_id_fk",
           "tableFrom": "purchase_debit_note_lines",
           "tableTo": "purchase_debit_notes",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "debit_note_id"
           ],
@@ -5017,7 +5017,7 @@
           "name": "purchase_debit_note_lines_purchase_order_line_id_purchase_order_lines_purchase_order_line_id_fk",
           "tableFrom": "purchase_debit_note_lines",
           "tableTo": "purchase_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "purchase_order_line_id"
           ],
@@ -5034,9 +5034,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.purchase_debit_notes": {
+    "herobm_core.purchase_debit_notes": {
       "name": "purchase_debit_notes",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "debit_note_id": {
           "name": "debit_note_id",
@@ -5148,7 +5148,7 @@
           "name": "purchase_debit_notes_return_id_purchase_order_returns_return_id_fk",
           "tableFrom": "purchase_debit_notes",
           "tableTo": "purchase_order_returns",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "return_id"
           ],
@@ -5162,7 +5162,7 @@
           "name": "purchase_debit_notes_purchase_order_id_purchase_orders_purchase_order_id_fk",
           "tableFrom": "purchase_debit_notes",
           "tableTo": "purchase_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "purchase_order_id"
           ],
@@ -5176,7 +5176,7 @@
           "name": "purchase_debit_notes_vendor_id_suppliers_vendor_id_fk",
           "tableFrom": "purchase_debit_notes",
           "tableTo": "suppliers",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "vendor_id"
           ],
@@ -5210,9 +5210,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.purchase_invoice_lines": {
+    "herobm_core.purchase_invoice_lines": {
       "name": "purchase_invoice_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "invoice_line_id": {
           "name": "invoice_line_id",
@@ -5283,7 +5283,7 @@
           "name": "purchase_invoice_lines_invoice_id_purchase_invoices_invoice_id_fk",
           "tableFrom": "purchase_invoice_lines",
           "tableTo": "purchase_invoices",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "invoice_id"
           ],
@@ -5297,7 +5297,7 @@
           "name": "purchase_invoice_lines_purchase_order_line_id_purchase_order_lines_purchase_order_line_id_fk",
           "tableFrom": "purchase_invoice_lines",
           "tableTo": "purchase_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "purchase_order_line_id"
           ],
@@ -5311,7 +5311,7 @@
           "name": "purchase_invoice_lines_product_id_products_product_id_fk",
           "tableFrom": "purchase_invoice_lines",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -5325,7 +5325,7 @@
           "name": "purchase_invoice_lines_gl_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "purchase_invoice_lines",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "gl_account_id"
           ],
@@ -5342,9 +5342,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.purchase_invoice_receipts": {
+    "herobm_core.purchase_invoice_receipts": {
       "name": "purchase_invoice_receipts",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "invoice_receipt_id": {
           "name": "invoice_receipt_id",
@@ -5378,7 +5378,7 @@
           "name": "purchase_invoice_receipts_invoice_line_id_purchase_invoice_lines_invoice_line_id_fk",
           "tableFrom": "purchase_invoice_receipts",
           "tableTo": "purchase_invoice_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "invoice_line_id"
           ],
@@ -5392,7 +5392,7 @@
           "name": "purchase_invoice_receipts_goods_received_line_id_goods_received_lines_goods_received_line_id_fk",
           "tableFrom": "purchase_invoice_receipts",
           "tableTo": "goods_received_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "goods_received_line_id"
           ],
@@ -5409,9 +5409,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.purchase_invoices": {
+    "herobm_core.purchase_invoices": {
       "name": "purchase_invoices",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "invoice_id": {
           "name": "invoice_id",
@@ -5516,7 +5516,7 @@
           "name": "purchase_invoices_vendor_id_suppliers_vendor_id_fk",
           "tableFrom": "purchase_invoices",
           "tableTo": "suppliers",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "vendor_id"
           ],
@@ -5530,7 +5530,7 @@
           "name": "purchase_invoices_purchase_order_id_purchase_orders_purchase_order_id_fk",
           "tableFrom": "purchase_invoices",
           "tableTo": "purchase_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "purchase_order_id"
           ],
@@ -5560,9 +5560,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.purchase_order_lines": {
+    "herobm_core.purchase_order_lines": {
       "name": "purchase_order_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "purchase_order_line_id": {
           "name": "purchase_order_line_id",
@@ -5675,7 +5675,7 @@
           "name": "purchase_order_lines_purchase_order_id_purchase_orders_purchase_order_id_fk",
           "tableFrom": "purchase_order_lines",
           "tableTo": "purchase_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "purchase_order_id"
           ],
@@ -5689,7 +5689,7 @@
           "name": "purchase_order_lines_product_id_products_product_id_fk",
           "tableFrom": "purchase_order_lines",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -5703,7 +5703,7 @@
           "name": "purchase_order_lines_tax_category_id_tax_categories_tax_category_id_fk",
           "tableFrom": "purchase_order_lines",
           "tableTo": "tax_categories",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "tax_category_id"
           ],
@@ -5720,9 +5720,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.purchase_order_return_lines": {
+    "herobm_core.purchase_order_return_lines": {
       "name": "purchase_order_return_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "return_line_id": {
           "name": "return_line_id",
@@ -5769,7 +5769,7 @@
           "name": "purchase_order_return_lines_return_id_purchase_order_returns_return_id_fk",
           "tableFrom": "purchase_order_return_lines",
           "tableTo": "purchase_order_returns",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "return_id"
           ],
@@ -5783,7 +5783,7 @@
           "name": "purchase_order_return_lines_purchase_order_line_id_purchase_order_lines_purchase_order_line_id_fk",
           "tableFrom": "purchase_order_return_lines",
           "tableTo": "purchase_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "purchase_order_line_id"
           ],
@@ -5800,9 +5800,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.purchase_order_return_shipment_lines": {
+    "herobm_core.purchase_order_return_shipment_lines": {
       "name": "purchase_order_return_shipment_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "shipment_line_id": {
           "name": "shipment_line_id",
@@ -5836,7 +5836,7 @@
           "name": "purchase_order_return_shipment_lines_shipment_id_purchase_order_return_shipments_shipment_id_fk",
           "tableFrom": "purchase_order_return_shipment_lines",
           "tableTo": "purchase_order_return_shipments",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "shipment_id"
           ],
@@ -5850,7 +5850,7 @@
           "name": "purchase_order_return_shipment_lines_return_line_id_purchase_order_return_lines_return_line_id_fk",
           "tableFrom": "purchase_order_return_shipment_lines",
           "tableTo": "purchase_order_return_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "return_line_id"
           ],
@@ -5867,9 +5867,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.purchase_order_return_shipments": {
+    "herobm_core.purchase_order_return_shipments": {
       "name": "purchase_order_return_shipments",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "shipment_id": {
           "name": "shipment_id",
@@ -5942,7 +5942,7 @@
           "name": "purchase_order_return_shipments_return_id_purchase_order_returns_return_id_fk",
           "tableFrom": "purchase_order_return_shipments",
           "tableTo": "purchase_order_returns",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "return_id"
           ],
@@ -5956,7 +5956,7 @@
           "name": "purchase_order_return_shipments_fulfillment_location_id_locations_location_id_fk",
           "tableFrom": "purchase_order_return_shipments",
           "tableTo": "locations",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "fulfillment_location_id"
           ],
@@ -5986,9 +5986,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.purchase_order_returns": {
+    "herobm_core.purchase_order_returns": {
       "name": "purchase_order_returns",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "return_id": {
           "name": "return_id",
@@ -6049,7 +6049,7 @@
           "name": "purchase_order_returns_purchase_order_id_purchase_orders_purchase_order_id_fk",
           "tableFrom": "purchase_order_returns",
           "tableTo": "purchase_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "purchase_order_id"
           ],
@@ -6079,9 +6079,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.purchase_orders": {
+    "herobm_core.purchase_orders": {
       "name": "purchase_orders",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "purchase_order_id": {
           "name": "purchase_order_id",
@@ -6194,7 +6194,7 @@
           "name": "purchase_orders_vendor_id_suppliers_vendor_id_fk",
           "tableFrom": "purchase_orders",
           "tableTo": "suppliers",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "vendor_id"
           ],
@@ -6208,7 +6208,7 @@
           "name": "purchase_orders_delivery_location_id_locations_location_id_fk",
           "tableFrom": "purchase_orders",
           "tableTo": "locations",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "delivery_location_id"
           ],
@@ -6242,9 +6242,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.reconciliation_rules": {
+    "herobm_core.reconciliation_rules": {
       "name": "reconciliation_rules",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "rule_id": {
           "name": "rule_id",
@@ -6358,7 +6358,7 @@
           "name": "reconciliation_rules_target_gl_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "reconciliation_rules",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "target_gl_account_id"
           ],
@@ -6372,7 +6372,7 @@
           "name": "reconciliation_rules_cost_center_id_cost_centers_cost_center_id_fk",
           "tableFrom": "reconciliation_rules",
           "tableTo": "cost_centers",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "cost_center_id"
           ],
@@ -6386,7 +6386,7 @@
           "name": "reconciliation_rules_activity_id_activities_activity_id_fk",
           "tableFrom": "reconciliation_rules",
           "tableTo": "activities",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "activity_id"
           ],
@@ -6403,9 +6403,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.sales_credit_note_lines": {
+    "herobm_core.sales_credit_note_lines": {
       "name": "sales_credit_note_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "credit_note_line_id": {
           "name": "credit_note_line_id",
@@ -6458,7 +6458,7 @@
           "name": "sales_credit_note_lines_credit_note_id_sales_credit_notes_credit_note_id_fk",
           "tableFrom": "sales_credit_note_lines",
           "tableTo": "sales_credit_notes",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "credit_note_id"
           ],
@@ -6472,7 +6472,7 @@
           "name": "sales_credit_note_lines_sales_order_line_id_sales_order_lines_sales_order_line_id_fk",
           "tableFrom": "sales_credit_note_lines",
           "tableTo": "sales_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "sales_order_line_id"
           ],
@@ -6489,9 +6489,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.sales_credit_notes": {
+    "herobm_core.sales_credit_notes": {
       "name": "sales_credit_notes",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "credit_note_id": {
           "name": "credit_note_id",
@@ -6597,7 +6597,7 @@
           "name": "sales_credit_notes_return_id_sales_order_returns_return_id_fk",
           "tableFrom": "sales_credit_notes",
           "tableTo": "sales_order_returns",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "return_id"
           ],
@@ -6611,7 +6611,7 @@
           "name": "sales_credit_notes_sales_order_id_sales_orders_sales_order_id_fk",
           "tableFrom": "sales_credit_notes",
           "tableTo": "sales_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "sales_order_id"
           ],
@@ -6625,7 +6625,7 @@
           "name": "sales_credit_notes_invoice_id_sales_invoices_invoice_id_fk",
           "tableFrom": "sales_credit_notes",
           "tableTo": "sales_invoices",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "invoice_id"
           ],
@@ -6655,9 +6655,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.sales_events": {
+    "herobm_core.sales_events": {
       "name": "sales_events",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "event_id": {
           "name": "event_id",
@@ -6712,9 +6712,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.sales_invoice_lines": {
+    "herobm_core.sales_invoice_lines": {
       "name": "sales_invoice_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "invoice_line_id": {
           "name": "invoice_line_id",
@@ -6760,7 +6760,7 @@
           "name": "sales_invoice_lines_invoice_id_sales_invoices_invoice_id_fk",
           "tableFrom": "sales_invoice_lines",
           "tableTo": "sales_invoices",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "invoice_id"
           ],
@@ -6774,7 +6774,7 @@
           "name": "sales_invoice_lines_sales_order_line_id_sales_order_lines_sales_order_line_id_fk",
           "tableFrom": "sales_invoice_lines",
           "tableTo": "sales_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "sales_order_line_id"
           ],
@@ -6791,9 +6791,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.sales_invoices": {
+    "herobm_core.sales_invoices": {
       "name": "sales_invoices",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "invoice_id": {
           "name": "invoice_id",
@@ -6880,7 +6880,7 @@
           "name": "sales_invoices_sales_order_id_sales_orders_sales_order_id_fk",
           "tableFrom": "sales_invoices",
           "tableTo": "sales_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "sales_order_id"
           ],
@@ -6910,9 +6910,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.sales_order_lines": {
+    "herobm_core.sales_order_lines": {
       "name": "sales_order_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "sales_order_line_id": {
           "name": "sales_order_line_id",
@@ -7050,7 +7050,7 @@
           "name": "sales_order_lines_sales_order_id_sales_orders_sales_order_id_fk",
           "tableFrom": "sales_order_lines",
           "tableTo": "sales_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "sales_order_id"
           ],
@@ -7064,7 +7064,7 @@
           "name": "sales_order_lines_product_id_products_product_id_fk",
           "tableFrom": "sales_order_lines",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -7078,7 +7078,7 @@
           "name": "sales_order_lines_tax_category_id_tax_categories_tax_category_id_fk",
           "tableFrom": "sales_order_lines",
           "tableTo": "tax_categories",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "tax_category_id"
           ],
@@ -7092,7 +7092,7 @@
           "name": "sales_order_lines_fulfillment_location_id_locations_location_id_fk",
           "tableFrom": "sales_order_lines",
           "tableTo": "locations",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "fulfillment_location_id"
           ],
@@ -7106,7 +7106,7 @@
           "name": "sales_order_lines_parent_line_id_sales_order_lines_sales_order_line_id_fk",
           "tableFrom": "sales_order_lines",
           "tableTo": "sales_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "parent_line_id"
           ],
@@ -7123,9 +7123,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.sales_order_picks": {
+    "herobm_core.sales_order_picks": {
       "name": "sales_order_picks",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "pick_id": {
           "name": "pick_id",
@@ -7229,7 +7229,7 @@
           "name": "sales_order_picks_sales_order_id_sales_orders_sales_order_id_fk",
           "tableFrom": "sales_order_picks",
           "tableTo": "sales_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "sales_order_id"
           ],
@@ -7243,7 +7243,7 @@
           "name": "sales_order_picks_sales_order_line_id_sales_order_lines_sales_order_line_id_fk",
           "tableFrom": "sales_order_picks",
           "tableTo": "sales_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "sales_order_line_id"
           ],
@@ -7257,7 +7257,7 @@
           "name": "sales_order_picks_product_id_products_product_id_fk",
           "tableFrom": "sales_order_picks",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -7271,7 +7271,7 @@
           "name": "sales_order_picks_bin_id_bins_bin_id_fk",
           "tableFrom": "sales_order_picks",
           "tableTo": "bins",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "bin_id"
           ],
@@ -7293,9 +7293,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.sales_order_return_lines": {
+    "herobm_core.sales_order_return_lines": {
       "name": "sales_order_return_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "return_line_id": {
           "name": "return_line_id",
@@ -7356,7 +7356,7 @@
           "name": "sales_order_return_lines_return_id_sales_order_returns_return_id_fk",
           "tableFrom": "sales_order_return_lines",
           "tableTo": "sales_order_returns",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "return_id"
           ],
@@ -7370,7 +7370,7 @@
           "name": "sales_order_return_lines_sales_order_line_id_sales_order_lines_sales_order_line_id_fk",
           "tableFrom": "sales_order_return_lines",
           "tableTo": "sales_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "sales_order_line_id"
           ],
@@ -7387,9 +7387,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.sales_order_returns": {
+    "herobm_core.sales_order_returns": {
       "name": "sales_order_returns",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "return_id": {
           "name": "return_id",
@@ -7450,7 +7450,7 @@
           "name": "sales_order_returns_sales_order_id_sales_orders_sales_order_id_fk",
           "tableFrom": "sales_order_returns",
           "tableTo": "sales_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "sales_order_id"
           ],
@@ -7480,9 +7480,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.sales_order_shipment_lines": {
+    "herobm_core.sales_order_shipment_lines": {
       "name": "sales_order_shipment_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "shipment_line_id": {
           "name": "shipment_line_id",
@@ -7516,7 +7516,7 @@
           "name": "sales_order_shipment_lines_shipment_id_sales_order_shipments_shipment_id_fk",
           "tableFrom": "sales_order_shipment_lines",
           "tableTo": "sales_order_shipments",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "shipment_id"
           ],
@@ -7530,7 +7530,7 @@
           "name": "sales_order_shipment_lines_sales_order_line_id_sales_order_lines_sales_order_line_id_fk",
           "tableFrom": "sales_order_shipment_lines",
           "tableTo": "sales_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "sales_order_line_id"
           ],
@@ -7547,9 +7547,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.sales_order_shipments": {
+    "herobm_core.sales_order_shipments": {
       "name": "sales_order_shipments",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "shipment_id": {
           "name": "shipment_id",
@@ -7622,7 +7622,7 @@
           "name": "sales_order_shipments_sales_order_id_sales_orders_sales_order_id_fk",
           "tableFrom": "sales_order_shipments",
           "tableTo": "sales_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "sales_order_id"
           ],
@@ -7636,7 +7636,7 @@
           "name": "sales_order_shipments_fulfillment_location_id_locations_location_id_fk",
           "tableFrom": "sales_order_shipments",
           "tableTo": "locations",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "fulfillment_location_id"
           ],
@@ -7666,9 +7666,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.sales_orders": {
+    "herobm_core.sales_orders": {
       "name": "sales_orders",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "sales_order_id": {
           "name": "sales_order_id",
@@ -7779,7 +7779,7 @@
           "name": "sales_orders_customer_id_customers_customer_id_fk",
           "tableFrom": "sales_orders",
           "tableTo": "customers",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "customer_id"
           ],
@@ -7793,7 +7793,7 @@
           "name": "sales_orders_fulfillment_location_id_locations_location_id_fk",
           "tableFrom": "sales_orders",
           "tableTo": "locations",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "fulfillment_location_id"
           ],
@@ -7834,9 +7834,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.supplier_expiries": {
+    "herobm_core.supplier_expiries": {
       "name": "supplier_expiries",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "expiry_id": {
           "name": "expiry_id",
@@ -7896,7 +7896,7 @@
           "name": "supplier_expiries_vendor_id_suppliers_vendor_id_fk",
           "tableFrom": "supplier_expiries",
           "tableTo": "suppliers",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "vendor_id"
           ],
@@ -7913,9 +7913,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.supplier_groups": {
+    "herobm_core.supplier_groups": {
       "name": "supplier_groups",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "supplier_group_id": {
           "name": "supplier_group_id",
@@ -8019,7 +8019,7 @@
           "name": "supplier_groups_default_ap_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "supplier_groups",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_ap_account_id"
           ],
@@ -8033,7 +8033,7 @@
           "name": "supplier_groups_default_expense_account_id_gl_accounts_gl_account_id_fk",
           "tableFrom": "supplier_groups",
           "tableTo": "gl_accounts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_expense_account_id"
           ],
@@ -8047,7 +8047,7 @@
           "name": "supplier_groups_default_cost_center_id_cost_centers_cost_center_id_fk",
           "tableFrom": "supplier_groups",
           "tableTo": "cost_centers",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_cost_center_id"
           ],
@@ -8061,7 +8061,7 @@
           "name": "supplier_groups_default_activity_id_activities_activity_id_fk",
           "tableFrom": "supplier_groups",
           "tableTo": "activities",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "default_activity_id"
           ],
@@ -8075,7 +8075,7 @@
           "name": "supplier_groups_trading_terms_id_trading_terms_trading_terms_id_fk",
           "tableFrom": "supplier_groups",
           "tableTo": "trading_terms",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "trading_terms_id"
           ],
@@ -8100,9 +8100,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.suppliers": {
+    "herobm_core.suppliers": {
       "name": "suppliers",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "vendor_id": {
           "name": "vendor_id",
@@ -8329,7 +8329,7 @@
           "name": "suppliers_supplier_group_id_supplier_groups_supplier_group_id_fk",
           "tableFrom": "suppliers",
           "tableTo": "supplier_groups",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "supplier_group_id"
           ],
@@ -8343,7 +8343,7 @@
           "name": "suppliers_trading_terms_id_trading_terms_trading_terms_id_fk",
           "tableFrom": "suppliers",
           "tableTo": "trading_terms",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "trading_terms_id"
           ],
@@ -8380,9 +8380,9 @@
       },
       "isRLSEnabled": false
     },
-    "modbm_core.system_events": {
+    "herobm_core.system_events": {
       "name": "system_events",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "event_id": {
           "name": "event_id",
@@ -8437,9 +8437,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.tax_categories": {
+    "herobm_core.tax_categories": {
       "name": "tax_categories",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "tax_category_id": {
           "name": "tax_category_id",
@@ -8493,7 +8493,7 @@
             }
           ],
           "isUnique": true,
-          "where": "\"modbm_core\".\"tax_categories\".\"is_default\" = true",
+          "where": "\"herobm_core\".\"tax_categories\".\"is_default\" = true",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -8514,9 +8514,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.trading_terms": {
+    "herobm_core.trading_terms": {
       "name": "trading_terms",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "trading_terms_id": {
           "name": "trading_terms_id",
@@ -8573,9 +8573,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.transfer_order_lines": {
+    "herobm_core.transfer_order_lines": {
       "name": "transfer_order_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "transfer_order_line_id": {
           "name": "transfer_order_line_id",
@@ -8639,7 +8639,7 @@
           "name": "transfer_order_lines_transfer_order_id_transfer_orders_transfer_order_id_fk",
           "tableFrom": "transfer_order_lines",
           "tableTo": "transfer_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "transfer_order_id"
           ],
@@ -8653,7 +8653,7 @@
           "name": "transfer_order_lines_product_id_products_product_id_fk",
           "tableFrom": "transfer_order_lines",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -8670,9 +8670,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.transfer_order_picks": {
+    "herobm_core.transfer_order_picks": {
       "name": "transfer_order_picks",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "pick_id": {
           "name": "pick_id",
@@ -8776,7 +8776,7 @@
           "name": "transfer_order_picks_transfer_order_id_transfer_orders_transfer_order_id_fk",
           "tableFrom": "transfer_order_picks",
           "tableTo": "transfer_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "transfer_order_id"
           ],
@@ -8790,7 +8790,7 @@
           "name": "transfer_order_picks_transfer_order_line_id_transfer_order_lines_transfer_order_line_id_fk",
           "tableFrom": "transfer_order_picks",
           "tableTo": "transfer_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "transfer_order_line_id"
           ],
@@ -8804,7 +8804,7 @@
           "name": "transfer_order_picks_product_id_products_product_id_fk",
           "tableFrom": "transfer_order_picks",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -8818,7 +8818,7 @@
           "name": "transfer_order_picks_bin_id_bins_bin_id_fk",
           "tableFrom": "transfer_order_picks",
           "tableTo": "bins",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "bin_id"
           ],
@@ -8835,9 +8835,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.transfer_order_receipt_lines": {
+    "herobm_core.transfer_order_receipt_lines": {
       "name": "transfer_order_receipt_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "receipt_line_id": {
           "name": "receipt_line_id",
@@ -8899,7 +8899,7 @@
           "name": "transfer_order_receipt_lines_receipt_id_transfer_order_receipts_receipt_id_fk",
           "tableFrom": "transfer_order_receipt_lines",
           "tableTo": "transfer_order_receipts",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "receipt_id"
           ],
@@ -8913,7 +8913,7 @@
           "name": "transfer_order_receipt_lines_transfer_order_line_id_transfer_order_lines_transfer_order_line_id_fk",
           "tableFrom": "transfer_order_receipt_lines",
           "tableTo": "transfer_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "transfer_order_line_id"
           ],
@@ -8927,7 +8927,7 @@
           "name": "transfer_order_receipt_lines_product_id_products_product_id_fk",
           "tableFrom": "transfer_order_receipt_lines",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -8941,7 +8941,7 @@
           "name": "transfer_order_receipt_lines_bin_id_bins_bin_id_fk",
           "tableFrom": "transfer_order_receipt_lines",
           "tableTo": "bins",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "bin_id"
           ],
@@ -8958,9 +8958,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.transfer_order_receipts": {
+    "herobm_core.transfer_order_receipts": {
       "name": "transfer_order_receipts",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "receipt_id": {
           "name": "receipt_id",
@@ -9031,7 +9031,7 @@
           "name": "transfer_order_receipts_transfer_order_id_transfer_orders_transfer_order_id_fk",
           "tableFrom": "transfer_order_receipts",
           "tableTo": "transfer_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "transfer_order_id"
           ],
@@ -9056,9 +9056,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.transfer_order_shipment_lines": {
+    "herobm_core.transfer_order_shipment_lines": {
       "name": "transfer_order_shipment_lines",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "shipment_line_id": {
           "name": "shipment_line_id",
@@ -9120,7 +9120,7 @@
           "name": "transfer_order_shipment_lines_shipment_id_transfer_order_shipments_shipment_id_fk",
           "tableFrom": "transfer_order_shipment_lines",
           "tableTo": "transfer_order_shipments",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "shipment_id"
           ],
@@ -9134,7 +9134,7 @@
           "name": "transfer_order_shipment_lines_transfer_order_line_id_transfer_order_lines_transfer_order_line_id_fk",
           "tableFrom": "transfer_order_shipment_lines",
           "tableTo": "transfer_order_lines",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "transfer_order_line_id"
           ],
@@ -9148,7 +9148,7 @@
           "name": "transfer_order_shipment_lines_pick_id_transfer_order_picks_pick_id_fk",
           "tableFrom": "transfer_order_shipment_lines",
           "tableTo": "transfer_order_picks",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "pick_id"
           ],
@@ -9162,7 +9162,7 @@
           "name": "transfer_order_shipment_lines_product_id_products_product_id_fk",
           "tableFrom": "transfer_order_shipment_lines",
           "tableTo": "products",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "product_id"
           ],
@@ -9179,9 +9179,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.transfer_order_shipments": {
+    "herobm_core.transfer_order_shipments": {
       "name": "transfer_order_shipments",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "shipment_id": {
           "name": "shipment_id",
@@ -9264,7 +9264,7 @@
           "name": "transfer_order_shipments_transfer_order_id_transfer_orders_transfer_order_id_fk",
           "tableFrom": "transfer_order_shipments",
           "tableTo": "transfer_orders",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "transfer_order_id"
           ],
@@ -9289,9 +9289,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.transfer_orders": {
+    "herobm_core.transfer_orders": {
       "name": "transfer_orders",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "transfer_order_id": {
           "name": "transfer_order_id",
@@ -9389,7 +9389,7 @@
           "name": "transfer_orders_source_location_id_locations_location_id_fk",
           "tableFrom": "transfer_orders",
           "tableTo": "locations",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "source_location_id"
           ],
@@ -9403,7 +9403,7 @@
           "name": "transfer_orders_destination_location_id_locations_location_id_fk",
           "tableFrom": "transfer_orders",
           "tableTo": "locations",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "destination_location_id"
           ],
@@ -9428,9 +9428,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.uom_dictionary": {
+    "herobm_core.uom_dictionary": {
       "name": "uom_dictionary",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "uom_code": {
           "name": "uom_code",
@@ -9460,9 +9460,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.user_events": {
+    "herobm_core.user_events": {
       "name": "user_events",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "event_id": {
           "name": "event_id",
@@ -9509,7 +9509,7 @@
           "name": "user_events_user_id_users_user_id_fk",
           "tableFrom": "user_events",
           "tableTo": "users",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "user_id"
           ],
@@ -9526,9 +9526,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.user_settings": {
+    "herobm_core.user_settings": {
       "name": "user_settings",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "user_id": {
           "name": "user_id",
@@ -9571,7 +9571,7 @@
           "name": "user_settings_user_id_users_user_id_fk",
           "tableFrom": "user_settings",
           "tableTo": "users",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "user_id"
           ],
@@ -9588,9 +9588,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.users": {
+    "herobm_core.users": {
       "name": "users",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "user_id": {
           "name": "user_id",
@@ -9660,9 +9660,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.warehouse_events": {
+    "herobm_core.warehouse_events": {
       "name": "warehouse_events",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "event_id": {
           "name": "event_id",
@@ -9717,9 +9717,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.webhooks": {
+    "herobm_core.webhooks": {
       "name": "webhooks",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "webhook_id": {
           "name": "webhook_id",
@@ -9769,9 +9769,9 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "modbm_core.zones": {
+    "herobm_core.zones": {
       "name": "zones",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "columns": {
         "zone_id": {
           "name": "zone_id",
@@ -9838,7 +9838,7 @@
           "name": "zones_location_id_locations_location_id_fk",
           "tableFrom": "zones",
           "tableTo": "locations",
-          "schemaTo": "modbm_core",
+          "schemaTo": "herobm_core",
           "columnsFrom": [
             "location_id"
           ],
@@ -9873,9 +9873,9 @@
     }
   },
   "enums": {
-    "modbm_core.bin_type_enum": {
+    "herobm_core.bin_type_enum": {
       "name": "bin_type_enum",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "values": [
         "storage",
         "pick",
@@ -9886,9 +9886,9 @@
         "in_transit"
       ]
     },
-    "modbm_core.fractional_behavior": {
+    "herobm_core.fractional_behavior": {
       "name": "fractional_behavior",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "values": [
         "allow_fractional",
         "round_up",
@@ -9896,17 +9896,17 @@
         "force_multiple"
       ]
     },
-    "modbm_core.product_structure": {
+    "herobm_core.product_structure": {
       "name": "product_structure",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "values": [
         "standard",
         "kit"
       ]
     },
-    "modbm_core.product_type": {
+    "herobm_core.product_type": {
       "name": "product_type",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "values": [
         "inventory",
         "non-stock",
@@ -9916,13 +9916,13 @@
     }
   },
   "schemas": {
-    "modbm_core": "modbm_core"
+    "herobm_core": "herobm_core"
   },
   "sequences": {},
   "roles": {},
   "policies": {},
   "views": {
-    "modbm_core.dashboard_timeline": {
+    "herobm_core.dashboard_timeline": {
       "columns": {
         "event_id": {
           "name": "event_id",
@@ -9968,11 +9968,11 @@
         }
       },
       "name": "dashboard_timeline",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "isExisting": true,
       "materialized": false
     },
-    "modbm_core.inventory_levels": {
+    "herobm_core.inventory_levels": {
       "columns": {
         "inventory_level_id": {
           "name": "inventory_level_id",
@@ -10018,7 +10018,7 @@
         }
       },
       "name": "inventory_levels",
-      "schema": "modbm_core",
+      "schema": "herobm_core",
       "isExisting": true,
       "materialized": false
     }

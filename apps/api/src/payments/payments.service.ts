@@ -22,10 +22,11 @@ import {
   salesCreditNotes,
   purchaseDebitNotes,
   supplierExpiries,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
+import { SuppliersService } from '../suppliers/suppliers.service';
 import { evaluateSalesInvoiceLifecycleRules } from '../invoices/sales-invoice-lifecycle-rules';
 import { evaluatePurchaseInvoiceLifecycleRules } from '../invoices/purchase-invoice-lifecycle-rules';
 import { CreatePaymentDto, AllocatePaymentDto } from './dto';
@@ -40,8 +41,8 @@ import {
   SALES_CREDIT_NOTE_STATE,
   PURCHASE_DEBIT_NOTE_STATE,
   getValidStates,
-} from '@modbm/shared';
-import type { PaymentState } from '@modbm/shared';
+} from '@herobm/shared';
+import type { PaymentState } from '@herobm/shared';
 
 const VALID_PAYMENT_STATES = getValidStates(PAYMENT_TRANSITIONS);
 
@@ -54,6 +55,7 @@ export class PaymentsService {
     private readonly glService: GlService,
     private readonly abaGenerator: AbaGeneratorService,
     private readonly nachaGenerator: NachaGeneratorService,
+    private readonly suppliersService: SuppliersService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -198,20 +200,13 @@ export class PaymentsService {
 
       // JIT Compliance Block for Payments
       if (dto.paymentType.startsWith('supplier_') && dto.partyId) {
-        const expiredDocs = await tx
-          .select({ id: supplierExpiries.expiryId })
-          .from(supplierExpiries)
-          .where(
-            and(
-              eq(supplierExpiries.vendorId, dto.partyId),
-              sql`${supplierExpiries.expiryDate} < CURRENT_DATE`,
-            ),
-          )
-          .limit(1);
-
-        if (expiredDocs.length > 0) {
+        const risk = await this.suppliersService.assessRisk(
+          dto.partyId,
+          tx as DrizzleDB,
+        );
+        if (risk.isPaymentBlocked) {
           throw new BadRequestException(
-            'Supplier has expired compliance documentation. Cannot create payment.',
+            `Supplier is blocked for payment. Reasons: ${risk.paymentBlockReasons.join(', ')}`,
           );
         }
       }
@@ -376,6 +371,29 @@ export class PaymentsService {
 
       // 3. Post GL Journal Entry
       const amount = parseFloat(payment.totalAmount);
+
+      const [discountResult] = await tx
+        .select({
+          totalDiscount: sql<string>`SUM(${paymentAllocations.discountAmount})`,
+        })
+        .from(paymentAllocations)
+        .where(eq(paymentAllocations.paymentId, paymentId));
+
+      const totalDiscount = discountResult?.totalDiscount
+        ? parseFloat(discountResult.totalDiscount)
+        : 0;
+
+      let discountAccountId: string | null = null;
+      if (totalDiscount > 0) {
+        const settings = await this.glService.getSettings(tx);
+        discountAccountId = settings?.defaultDiscountsReceivedAccountId || null;
+        if (!discountAccountId) {
+          throw new BadRequestException(
+            'Early Payment Discount applies but no Default Discounts Received Account is configured in GL Settings.',
+          );
+        }
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const lines: any[] = [];
 
@@ -428,6 +446,17 @@ export class PaymentsService {
           memo: `Payment ${payment.paymentNumber}`,
         });
 
+        if (totalDiscount > 0 && discountAccountId) {
+          lines.push({
+            accountId: discountAccountId,
+            debit: 0,
+            credit: totalDiscount,
+            memo: `Early Payment Discount for ${payment.paymentNumber}`,
+          });
+        }
+
+        const totalApDebit = amount + totalDiscount;
+
         if (payLines.length > 0) {
           lines.push(
             ...payLines.map((pl) => {
@@ -445,7 +474,7 @@ export class PaymentsService {
         } else {
           lines.push({
             accountId: controlAccountId,
-            debit: amount,
+            debit: totalApDebit,
             credit: 0,
             memo: `Payment ${payment.paymentNumber}`,
             partyType: linePartyType,

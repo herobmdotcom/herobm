@@ -1,4 +1,4 @@
-import { resolveEffectiveDiscount, DiscountRule } from '@modbm/shared';
+import { resolveEffectiveDiscount, DiscountRule } from '@herobm/shared';
 
 describe('Pricing Utils - resolveEffectiveDiscount (most-specific-wins)', () => {
   // Helper to build a rule array

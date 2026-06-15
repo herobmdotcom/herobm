@@ -1,11 +1,11 @@
 /* eslint-disable i18next/no-literal-string, no-restricted-syntax */
 'use client';
 import React, { useState, useEffect } from 'react';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 import SlideOver from '@/components/shared/SlideOver';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 
 import CustomerSelect from '@/components/shared/CustomerSelect';
 

@@ -173,7 +173,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponseDto"
+                  "$ref": "#/components/schemas/RolesSuccessResponseDto"
                 }
               }
             }
@@ -4437,6 +4437,109 @@
         "tags": [
           "System"
         ]
+      },
+      "post": {
+        "description": "Create a new trading term",
+        "operationId": "TradingTermsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTradingTermDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradingTermResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create trading term",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/settings/trading-terms/{id}": {
+      "patch": {
+        "description": "Update an existing trading term",
+        "operationId": "TradingTermsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTradingTermDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradingTermResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update trading term",
+        "tags": [
+          "System"
+        ]
+      },
+      "delete": {
+        "description": "Delete an existing trading term",
+        "operationId": "TradingTermsController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsSuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete trading term",
+        "tags": [
+          "System"
+        ]
       }
     },
     "/settings/cost-centers": {
@@ -5622,6 +5725,58 @@
           }
         },
         "summary": "Change Order State",
+        "tags": [
+          "Sales Orders"
+        ]
+      }
+    },
+    "/sales-orders/{id}/override-credit-hold": {
+      "post": {
+        "description": "Temporarily overrides a credit hold for this specific order.",
+        "operationId": "OrdersController_overrideCreditHold",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OverrideCreditHoldDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderResponseDto"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Override Credit Hold",
         "tags": [
           "Sales Orders"
         ]
@@ -7921,7 +8076,7 @@
         },
         "summary": "List Tax Categories",
         "tags": [
-          "System"
+          "Tax"
         ]
       },
       "post": {
@@ -7952,7 +8107,7 @@
         },
         "summary": "Create Tax Category",
         "tags": [
-          "System"
+          "Tax"
         ]
       }
     },
@@ -7993,7 +8148,7 @@
         },
         "summary": "Get Tax Category",
         "tags": [
-          "System"
+          "Tax"
         ]
       },
       "patch": {
@@ -8033,7 +8188,7 @@
         },
         "summary": "Update Tax Category",
         "tags": [
-          "System"
+          "Tax"
         ]
       },
       "delete": {
@@ -8063,7 +8218,314 @@
         },
         "summary": "Delete Tax Category",
         "tags": [
-          "System"
+          "Tax"
+        ]
+      }
+    },
+    "/tax-positions/mappings": {
+      "get": {
+        "description": "Retrieves all mappings across all tax positions. In the future this may be scoped.",
+        "operationId": "TaxPositionMappingsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaxPositionMappingResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all tax position mappings (ignores path param for now)",
+        "tags": [
+          "Tax"
+        ]
+      }
+    },
+    "/tax-positions/{taxPositionId}/mappings": {
+      "post": {
+        "description": "Creates a mapping rule that translates a source tax category to a destination category for this position.",
+        "operationId": "TaxPositionMappingsController_create",
+        "parameters": [
+          {
+            "name": "taxPositionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaxPositionMappingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxPositionMappingResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new mapping for a tax position",
+        "tags": [
+          "Tax"
+        ]
+      }
+    },
+    "/tax-positions/{taxPositionId}/mappings/{sourceTaxCategoryId}": {
+      "delete": {
+        "description": "Deletes a specific tax category mapping from a tax position.",
+        "operationId": "TaxPositionMappingsController_remove",
+        "parameters": [
+          {
+            "name": "taxPositionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sourceTaxCategoryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxPositionMappingResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a mapping from a tax position",
+        "tags": [
+          "Tax"
+        ]
+      }
+    },
+    "/tax-positions": {
+      "get": {
+        "description": "Retrieves a list of all configured tax positions.",
+        "operationId": "TaxPositionsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaxPositionResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all tax positions",
+        "tags": [
+          "Tax"
+        ]
+      },
+      "post": {
+        "description": "Creates a new tax position for business context tax rules.",
+        "operationId": "TaxPositionsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTaxPositionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxPositionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new tax position",
+        "tags": [
+          "Tax"
+        ]
+      }
+    },
+    "/tax-positions/{id}": {
+      "get": {
+        "description": "Retrieves a specific tax position by its unique identifier.",
+        "operationId": "TaxPositionsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxPositionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a tax position by id",
+        "tags": [
+          "Tax"
+        ]
+      },
+      "put": {
+        "description": "Updates an existing tax position.",
+        "operationId": "TaxPositionsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTaxPositionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxPositionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a tax position",
+        "tags": [
+          "Tax"
+        ]
+      },
+      "delete": {
+        "description": "Deletes a tax position. This will also cascade delete any associated mappings.",
+        "operationId": "TaxPositionsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxPositionResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a tax position",
+        "tags": [
+          "Tax"
         ]
       }
     },
@@ -10176,118 +10638,16 @@
         ]
       }
     },
-    "/dashboard/summary": {
-      "get": {
-        "description": "Retrieves key metrics and statistics for the dashboard.",
-        "operationId": "DashboardController_getSummary",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Summary",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/dashboard/search": {
-      "get": {
-        "description": "Performs a global search across multiple entity types.",
-        "operationId": "DashboardController_search",
-        "parameters": [
-          {
-            "name": "q",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Universal Search",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/dashboard/timeline": {
-      "get": {
-        "description": "Retrieves a chronological list of recent system events.",
-        "operationId": "DashboardController_getTimeline",
-        "parameters": [
-          {
-            "name": "types",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "Get Timeline",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/telemetry/client-errors": {
+    "/payments/generate-run": {
       "post": {
-        "description": "Ingests frontend application errors for monitoring.",
-        "operationId": "TelemetryController_reportClientError",
+        "operationId": "PaymentsController_generatePaymentRun",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ClientErrorDto"
+                "$ref": "#/components/schemas/GeneratePaymentRunDto"
               }
             }
           }
@@ -10298,18 +10658,14 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EmptyBodyDto"
+                  "$ref": "#/components/schemas/GeneratePaymentRunResponseDto"
                 }
               }
             }
-          },
-          "204": {
-            "description": ""
           }
         },
-        "summary": "Report Client Error",
         "tags": [
-          "System"
+          "Payments"
         ]
       }
     },
@@ -11317,6 +11673,143 @@
         "summary": "Delete Supplier Group",
         "tags": [
           "Suppliers"
+        ]
+      }
+    },
+    "/dashboard/summary": {
+      "get": {
+        "description": "Retrieves key metrics and statistics for the dashboard.",
+        "operationId": "DashboardController_getSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Summary",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/dashboard/search": {
+      "get": {
+        "description": "Performs a global search across multiple entity types.",
+        "operationId": "DashboardController_search",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Universal Search",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/dashboard/timeline": {
+      "get": {
+        "description": "Retrieves a chronological list of recent system events.",
+        "operationId": "DashboardController_getTimeline",
+        "parameters": [
+          {
+            "name": "types",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Timeline",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/telemetry/client-errors": {
+      "post": {
+        "description": "Ingests frontend application errors for monitoring.",
+        "operationId": "TelemetryController_reportClientError",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClientErrorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmptyBodyDto"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Report Client Error",
+        "tags": [
+          "System"
         ]
       }
     },
@@ -14951,6 +15444,10 @@
     {
       "name": "General Ledger",
       "description": "Accounting, charts, and journals"
+    },
+    {
+      "name": "Tax",
+      "description": "Tax configuration and mappings"
     }
   ],
   "servers": [
@@ -15084,7 +15581,7 @@
           "permissions"
         ]
       },
-      "SuccessResponseDto": {
+      "RolesSuccessResponseDto": {
         "type": "object",
         "properties": {
           "success": {
@@ -15160,7 +15657,7 @@
           "parentCustomerId": {
             "type": "string"
           },
-          "taxCategoryId": {
+          "taxPositionId": {
             "type": "string"
           },
           "currencyCode": {
@@ -15186,6 +15683,15 @@
           },
           "isTaxRegistered": {
             "type": "boolean"
+          },
+          "creditLimit": {
+            "type": "string"
+          },
+          "isOnCreditHold": {
+            "type": "boolean"
+          },
+          "tradingTermsId": {
+            "type": "string"
           },
           "stateCode": {
             "type": "string"
@@ -15303,7 +15809,7 @@
             "type": "string",
             "format": "uuid"
           },
-          "taxCategoryId": {
+          "taxPositionId": {
             "type": "string",
             "format": "uuid"
           },
@@ -15330,6 +15836,16 @@
           },
           "isTaxRegistered": {
             "type": "boolean"
+          },
+          "creditLimit": {
+            "type": "string"
+          },
+          "isOnCreditHold": {
+            "type": "boolean"
+          },
+          "tradingTermsId": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "required": [
@@ -15383,7 +15899,7 @@
             "type": "string",
             "format": "uuid"
           },
-          "taxCategoryId": {
+          "taxPositionId": {
             "type": "string",
             "format": "uuid"
           },
@@ -15410,6 +15926,16 @@
           },
           "isTaxRegistered": {
             "type": "boolean"
+          },
+          "creditLimit": {
+            "type": "string"
+          },
+          "isOnCreditHold": {
+            "type": "boolean"
+          },
+          "tradingTermsId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },
@@ -15442,6 +15968,9 @@
             "type": "string"
           },
           "defaultActivityId": {
+            "type": "string"
+          },
+          "stateCode": {
             "type": "string"
           },
           "isOnCreditHold": {
@@ -15525,6 +16054,12 @@
           "defaultActivityId": {
             "type": "string",
             "format": "uuid"
+          },
+          "stateCode": {
+            "type": "string"
+          },
+          "isOnCreditHold": {
+            "type": "boolean"
           }
         }
       },
@@ -17937,13 +18472,96 @@
           "id": {
             "type": "string"
           },
-          "name": {
+          "code": {
             "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "days": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string"
+          },
+          "isDefaultCustomer": {
+            "type": "boolean"
+          },
+          "isDefaultSupplier": {
+            "type": "boolean"
           }
         },
         "required": [
           "id",
-          "name"
+          "code",
+          "description",
+          "days",
+          "type",
+          "isDefaultCustomer",
+          "isDefaultSupplier"
+        ]
+      },
+      "CreateTradingTermDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "days": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string"
+          },
+          "isDefaultCustomer": {
+            "type": "boolean"
+          },
+          "isDefaultSupplier": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "description",
+          "days",
+          "type"
+        ]
+      },
+      "UpdateTradingTermDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "days": {
+            "type": "number"
+          },
+          "type": {
+            "type": "string"
+          },
+          "isDefaultCustomer": {
+            "type": "boolean"
+          },
+          "isDefaultSupplier": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SettingsSuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
         ]
       },
       "CostCenterResponseDto": {
@@ -18229,6 +18847,9 @@
             "type": "string",
             "nullable": true
           },
+          "isCreditBlocked": {
+            "type": "boolean"
+          },
           "type": {
             "type": "string"
           },
@@ -18246,6 +18867,7 @@
           "stateCode",
           "createdOn",
           "createdBy",
+          "isCreditBlocked",
           "pickabilityStatus",
           "hasAllocation"
         ]
@@ -18478,6 +19100,9 @@
             "type": "string",
             "nullable": true
           },
+          "isCreditBlocked": {
+            "type": "boolean"
+          },
           "shippabilityStatus": {
             "type": "string"
           },
@@ -18495,6 +19120,7 @@
           "stateCode",
           "createdOn",
           "createdBy",
+          "isCreditBlocked",
           "shippabilityStatus",
           "totalShippableLines",
           "totalLines"
@@ -18898,6 +19524,18 @@
         },
         "required": [
           "stateCode"
+        ]
+      },
+      "OverrideCreditHoldDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Reason for overriding the credit hold"
+          }
+        },
+        "required": [
+          "reason"
         ]
       },
       "UpdateOrderLineDto": {
@@ -19867,6 +20505,95 @@
           }
         }
       },
+      "TaxPositionMappingResponseDto": {
+        "type": "object",
+        "properties": {
+          "taxPositionId": {
+            "type": "string"
+          },
+          "sourceTaxCategoryId": {
+            "type": "string"
+          },
+          "destinationTaxCategoryId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "taxPositionId",
+          "sourceTaxCategoryId",
+          "destinationTaxCategoryId"
+        ]
+      },
+      "CreateTaxPositionMappingDto": {
+        "type": "object",
+        "properties": {
+          "sourceTaxCategoryId": {
+            "type": "string"
+          },
+          "destinationTaxCategoryId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceTaxCategoryId",
+          "destinationTaxCategoryId"
+        ]
+      },
+      "TaxPositionResponseDto": {
+        "type": "object",
+        "properties": {
+          "taxPositionId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "taxPositionId",
+          "code",
+          "title",
+          "isDefault"
+        ]
+      },
+      "CreateTaxPositionDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "title"
+        ]
+      },
+      "UpdateTaxPositionDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          }
+        }
+      },
       "RunHookBodyDto": {
         "type": "object",
         "properties": {}
@@ -20552,15 +21279,19 @@
       "SyncEventsResponseDto": {
         "type": "object",
         "properties": {
-          "data": {
+          "events": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/OutboxEventDto"
             }
+          },
+          "total": {
+            "type": "number"
           }
         },
         "required": [
-          "data"
+          "events",
+          "total"
         ]
       },
       "DeleteEventsResponseDto": {
@@ -20810,6 +21541,10 @@
           "allocatedAmount": {
             "type": "number",
             "minimum": 0.01
+          },
+          "discountAmount": {
+            "type": "number",
+            "minimum": 0
           }
         },
         "required": [
@@ -20868,25 +21603,39 @@
           "success"
         ]
       },
-      "ClientErrorDto": {
+      "GeneratePaymentRunDto": {
         "type": "object",
         "properties": {
-          "message": {
+          "targetDate": {
             "type": "string"
           },
-          "stack": {
-            "type": "string"
-          },
-          "component": {
-            "type": "string"
-          },
-          "url": {
+          "glAccountBank": {
             "type": "string",
-            "format": "uri"
+            "format": "uuid"
           }
         },
         "required": [
-          "message"
+          "targetDate",
+          "glAccountBank"
+        ]
+      },
+      "GeneratePaymentRunResponseDto": {
+        "type": "object",
+        "properties": {
+          "generatedPayments": {
+            "type": "number"
+          },
+          "totalCashAmount": {
+            "type": "number"
+          },
+          "totalDiscountAmount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "generatedPayments",
+          "totalCashAmount",
+          "totalDiscountAmount"
         ]
       },
       "SupplierResponseDto": {
@@ -20944,6 +21693,10 @@
             "type": "string",
             "nullable": true
           },
+          "earlyPaymentDiscountDays": {
+            "type": "number",
+            "nullable": true
+          },
           "creditLimit": {
             "type": "string",
             "nullable": true
@@ -20997,6 +21750,10 @@
           "isTaxRegistered": {
             "type": "boolean"
           },
+          "taxPositionId": {
+            "type": "string",
+            "nullable": true
+          },
           "stateCode": {
             "type": "string",
             "nullable": true
@@ -21028,6 +21785,7 @@
           "emailAddress1",
           "tradingTermsId",
           "earlyPaymentDiscount",
+          "earlyPaymentDiscountDays",
           "creditLimit",
           "isPurchasingBlocked",
           "purchasingBlockReason",
@@ -21042,6 +21800,7 @@
           "bankAccountNumber",
           "businessNumber",
           "isTaxRegistered",
+          "taxPositionId",
           "stateCode",
           "tenantId",
           "createdAt",
@@ -21051,6 +21810,9 @@
       "CreateSupplierDto": {
         "type": "object",
         "properties": {
+          "earlyPaymentDiscountDays": {
+            "type": "number"
+          },
           "vendorNumber": {
             "type": "string"
           },
@@ -21147,6 +21909,10 @@
           },
           "isTaxRegistered": {
             "type": "boolean"
+          },
+          "taxPositionId": {
+            "type": "string",
+            "format": "uuid"
           }
         },
         "required": [
@@ -21158,6 +21924,9 @@
       "UpdateSupplierDto": {
         "type": "object",
         "properties": {
+          "earlyPaymentDiscountDays": {
+            "type": "number"
+          },
           "name": {
             "type": "string"
           },
@@ -21254,6 +22023,10 @@
           },
           "isTaxRegistered": {
             "type": "boolean"
+          },
+          "taxPositionId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },
@@ -21329,6 +22102,10 @@
             "type": "string",
             "nullable": true
           },
+          "earlyPaymentDiscountDays": {
+            "type": "number",
+            "nullable": true
+          },
           "creditLimit": {
             "type": "string",
             "nullable": true
@@ -21379,6 +22156,7 @@
           "defaultExpenseAccountId",
           "tradingTermsId",
           "earlyPaymentDiscount",
+          "earlyPaymentDiscountDays",
           "creditLimit",
           "isPurchasingBlocked",
           "purchasingBlockReason",
@@ -21395,6 +22173,9 @@
       "CreateSupplierGroupDto": {
         "type": "object",
         "properties": {
+          "earlyPaymentDiscountDays": {
+            "type": "number"
+          },
           "groupCode": {
             "type": "string"
           },
@@ -21464,6 +22245,9 @@
       "UpdateSupplierGroupDto": {
         "type": "object",
         "properties": {
+          "earlyPaymentDiscountDays": {
+            "type": "number"
+          },
           "groupCode": {
             "type": "string"
           },
@@ -21525,6 +22309,27 @@
             "format": "uuid"
           }
         }
+      },
+      "ClientErrorDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "stack": {
+            "type": "string"
+          },
+          "component": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "message"
+        ]
       },
       "CreatePurchaseOrderLineDto": {
         "type": "object",

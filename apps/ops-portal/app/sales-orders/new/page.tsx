@@ -22,14 +22,14 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import DeliveryAddressSlideOver from '@/components/shared/DeliveryAddressSlideOver';
 import { MobileCardField } from '@/components/shared/DataTable';
-import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment, resolveEffectiveDiscount } from '@modbm/shared';
-import type { DiscountRule } from '@modbm/shared';
+import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment, resolveEffectiveDiscount } from '@herobm/shared';
+import type { DiscountRule } from '@herobm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
 import { useSettings } from '@/components/SettingsProvider';
 
@@ -168,7 +168,7 @@ export default function NewOrderPage() {
   useEffect(() => {
     api.taxCategoriesControllerFindAll()
       .then((res) => {
-        settaxCategories((res.data || []).map((t: import('@modbm/sdk').TaxCategoryResponseDto) => ({ ...t, taxCategoryId: (t as unknown as {id?: string}).id || t.taxCategoryId } as unknown as TaxCategory)) );
+        settaxCategories((res.data || []).map((t: import('@herobm/sdk').TaxCategoryResponseDto) => ({ ...t, taxCategoryId: (t as unknown as {id?: string}).id || t.taxCategoryId } as unknown as TaxCategory)) );
       })
       .catch((err) => reportError(err, 'NewOrderPage'));
   }, []);

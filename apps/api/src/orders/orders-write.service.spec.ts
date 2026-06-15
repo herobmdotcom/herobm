@@ -14,7 +14,7 @@ import {
 import { AccountsService } from '../customers/customers.service';
 import { CreditAssessmentService } from '../customers/credit-assessment.service';
 import { ProductsService } from '../products/products.service';
-import { SALES_ORDER_STATE } from '@modbm/shared';
+import { SALES_ORDER_STATE } from '@herobm/shared';
 
 import { PGlite } from '@electric-sql/pglite';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
@@ -31,10 +31,10 @@ import {
   products as coreProducts,
   productComponents,
   locations,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 
-import { taxCategories } from '../drizzle/modbm-core-schema';
-import { getErrorMessage } from '@modbm/shared';
+import { taxCategories } from '../drizzle/herobm-core-schema';
+import { getErrorMessage } from '@herobm/shared';
 
 // Default GST categories used across tests
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,6 +57,8 @@ describe('OrdersWriteService', () => {
   let mockProductsService: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mocktaxService: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let mockTaxResolutionEngine: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockBackordersService: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -115,6 +117,7 @@ describe('OrdersWriteService', () => {
         currencyCode: 'EUR',
         taxCategoryId: TAX_DEFAULT.taxCategoryId,
       }),
+      assessRisk: jest.fn().mockResolvedValue({ status: 'APPROVED' }),
     };
     mockProductsService = {
       findOne: jest.fn().mockResolvedValue({
@@ -135,9 +138,30 @@ describe('OrdersWriteService', () => {
       get: jest.fn().mockResolvedValue({}),
     };
 
+    mockTaxResolutionEngine = {
+      resolveTax: jest.fn().mockResolvedValue({
+        taxCategoryId: TAX_DEFAULT.taxCategoryId,
+        rate: 10,
+        provider: 'app',
+      }),
+      resolveTaxCategory: jest.fn().mockImplementation(async (params) => {
+        if (params.manualOverrideTaxCategoryId)
+          return params.manualOverrideTaxCategoryId;
+        if (params.partyTaxPositionId) return params.partyTaxPositionId;
+        if (params.productDefaultTaxCategoryId === 'unknown-id') {
+          return TAX_DEFAULT.taxCategoryId;
+        }
+        if (params.productDefaultTaxCategoryId) {
+          return params.productDefaultTaxCategoryId;
+        }
+        return TAX_DEFAULT.taxCategoryId;
+      }),
+    };
+
     service = new OrdersWriteService(
       pg.db,
       mocktaxService,
+      mockTaxResolutionEngine,
       mockPickingService,
       mockInventoryService,
       mockAccountsService,
@@ -150,6 +174,7 @@ describe('OrdersWriteService', () => {
           .mockReturnValue('10000000-0000-0000-0000-000000000001'),
         creditLimitBehavior: jest.fn().mockReturnValue('soft'),
         taxProviderMappings: jest.fn().mockReturnValue({}),
+        getAppSettingsRaw: jest.fn().mockReturnValue({}),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -334,7 +359,7 @@ describe('OrdersWriteService', () => {
       await service.create(validDto, 'admin');
       expect(mocktaxService.getById).toHaveBeenCalledWith(
         TAX_DEFAULT.taxCategoryId,
-        expect.anything(),
+        expect.any(Object),
       );
     });
 
@@ -345,7 +370,7 @@ describe('OrdersWriteService', () => {
       await service.create(validDto, 'admin');
       expect(mocktaxService.getById).toHaveBeenCalledWith(
         TAX_ZERO.taxCategoryId,
-        expect.anything(),
+        expect.any(Object),
       );
     });
 
@@ -391,7 +416,7 @@ describe('OrdersWriteService', () => {
     it('should fall back to system default when product has unknown GST category', async () => {
       const { validDto } = await setupCreate({ productTaxId: 'unknown-id' });
       await service.create(validDto, 'admin');
-      expect(mocktaxService.getDefault).toHaveBeenCalled();
+      expect(mockTaxResolutionEngine.resolveTaxCategory).toHaveBeenCalled();
     });
 
     it('should throw native PG unique violation error (23505) if manual check is bypassed', async () => {

@@ -18,12 +18,12 @@ import {
   transferOrders,
   transferOrderLines,
   transferOrderPicks,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import {
   SALES_ORDER_STATE,
   TRANSFER_ORDER_STATE,
   CUSTOMER_STATE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 
 describe('PickingSlipService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });

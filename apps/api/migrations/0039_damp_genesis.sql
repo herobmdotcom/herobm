@@ -1,4 +1,4 @@
-UPDATE "modbm_core"."payment_entries"
+UPDATE "herobm_core"."payment_entries"
 SET "payment_type" = 
   CASE 
     WHEN "payment_type" = 'receive' AND "party_type" = 'customer' THEN 'customer_receipt'
@@ -10,4 +10,4 @@ SET "payment_type" =
     ELSE "payment_type"
   END;
 
-ALTER TABLE "modbm_core"."payment_entries" DROP COLUMN "party_type";
+ALTER TABLE "herobm_core"."payment_entries" DROP COLUMN "party_type";

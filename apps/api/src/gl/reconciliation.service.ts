@@ -15,10 +15,10 @@ import {
   glJournalEntries,
   customers,
   suppliers,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq, and, sql, isNull, lte, asc, or, not } from 'drizzle-orm';
 import { CreateReconciliationDto, CreateAdjustmentDto } from './dto';
-import { RECONCILIATION_STATE } from '@modbm/shared';
+import { RECONCILIATION_STATE } from '@herobm/shared';
 import { GlService, JournalMeta } from './gl.service';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -263,7 +263,7 @@ export class ReconciliationService {
     return finalSortedLines;
   }
 
-  // @modbm-skip-audit
+  // @herobm-skip-audit
   async toggleLine(
     reconciliationId: string,
     journalLineId: string,
@@ -385,14 +385,14 @@ export class ReconciliationService {
         );
 
         // Link the original line and the reversal line to perfectly offset each other
-        // @modbm-skip-audit
+        // @herobm-skip-audit
         await tx
           .update(glJournalLines)
           .set({ reconciliationId })
           .where(eq(glJournalLines.journalLineId, journalLineId));
 
         if (reversalLine) {
-          // @modbm-skip-audit
+          // @herobm-skip-audit
           await tx
             .update(glJournalLines)
             .set({ reconciliationId })
@@ -403,7 +403,7 @@ export class ReconciliationService {
 
         // Link the cleared portion
         if (clearedLine) {
-          // @modbm-skip-audit
+          // @herobm-skip-audit
           await tx
             .update(glJournalLines)
             .set({ reconciliationId })
@@ -412,7 +412,7 @@ export class ReconciliationService {
 
         // Ensure remaining portion is explicitly unlinked
         if (remainingLine) {
-          // @modbm-skip-audit
+          // @herobm-skip-audit
           await tx
             .update(glJournalLines)
             .set({ reconciliationId: null })
@@ -423,7 +423,7 @@ export class ReconciliationService {
       });
     } else {
       // Standard clearing / un-clearing
-      // @modbm-skip-audit
+      // @herobm-skip-audit
       await this.db
         .update(glJournalLines)
         .set({
@@ -584,7 +584,7 @@ export class ReconciliationService {
       if (newLines.length) {
         // Simple clear — just set the reconciliationId directly
         await tx
-          .update(glJournalLines) // @modbm-skip-audit
+          .update(glJournalLines) // @herobm-skip-audit
           .set({ reconciliationId: id })
           .where(eq(glJournalLines.journalLineId, newLines[0].journalLineId));
       }

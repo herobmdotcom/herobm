@@ -17,7 +17,7 @@ import {
   purchaseOrders,
   inventoryLedger,
   appSettings,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { CreateLocationDto, CreateZoneDto, CreateBinDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -42,7 +42,7 @@ export class LocationsService {
       const [settings] = await tx.select().from(appSettings).limit(1);
       if (settings && !settings.defaultFulfillmentLocationId) {
         await tx
-          .update(appSettings) // @modbm-skip-audit
+          .update(appSettings) // @herobm-skip-audit
           .set({ defaultFulfillmentLocationId: row.locationId })
           .where(eq(appSettings.settingsId, settings.settingsId));
       }

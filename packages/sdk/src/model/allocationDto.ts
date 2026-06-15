@@ -12,4 +12,6 @@ export interface AllocationDto {
   referenceId: string;
   /** @minimum 0.01 */
   allocatedAmount: number;
+  /** @minimum 0 */
+  discountAmount?: number;
 }

@@ -3,7 +3,7 @@ import 'dotenv/config';
 import { Queue, Worker, Job } from 'bullmq';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { outbox, modbmCore } from './schema';
+import { outbox, herobmCore } from './schema';
 import { eq, isNull, sql } from 'drizzle-orm';
 import express from 'express';
 import { collectDefaultMetrics, Registry, Counter } from 'prom-client';
@@ -37,7 +37,7 @@ const PORT = process.env.WORKER_PORT || process.env.PORT || 9092;
 
 // Setup DB
 const pgClient = postgres(`postgres://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${PG_DB}`);
-const db = drizzle(pgClient, { schema: { modbmCore, outbox } });
+const db = drizzle(pgClient, { schema: { herobmCore, outbox } });
 
 // Setup Mock Client (Removed)
 

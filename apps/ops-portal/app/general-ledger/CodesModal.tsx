@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 
 interface CodesModalProps {
   isOpen: boolean;

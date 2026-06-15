@@ -8,7 +8,7 @@ import {
   pdfTemplates,
   pdfTemplateHooks,
   pdfTemplateContexts,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 
 const profile = process.env.PROFILE;
 const envFile = profile ? `.env.${profile}` : '.env';

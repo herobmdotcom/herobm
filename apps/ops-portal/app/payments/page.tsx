@@ -1,7 +1,7 @@
 import PaymentsContent from './PaymentsContent';
 
 export const metadata = {
-  title: 'Payments | ModBM',
+  title: 'Payments | HeroBM',
 };
 
 export default function PaymentsPage() {

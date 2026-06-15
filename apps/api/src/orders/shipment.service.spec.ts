@@ -20,13 +20,13 @@ import {
   taxCategories,
   inventoryEntries,
   inventoryLedger,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 import {
   SALES_ORDER_STATE,
   SHIPMENT_STATE,
   SALES_ORDER_PICK_STATE,
-} from '@modbm/shared';
+} from '@herobm/shared';
 import { setupTestModule } from '../../test/utils/test-module';
 
 // Shared test data
@@ -91,14 +91,14 @@ describe('ShipmentService', () => {
 
     // Clean only transactional tables
     await pg.client.exec(`
-      TRUNCATE TABLE modbm_core.sales_order_shipment_lines CASCADE;
-      TRUNCATE TABLE modbm_core.sales_order_shipments CASCADE;
-      TRUNCATE TABLE modbm_core.sales_order_picks CASCADE;
-      TRUNCATE TABLE modbm_core.sales_order_lines CASCADE;
-      TRUNCATE TABLE modbm_core.sales_orders CASCADE;
-      TRUNCATE TABLE modbm_core.products CASCADE;
-      TRUNCATE TABLE modbm_core.inventory_ledger CASCADE;
-      TRUNCATE TABLE modbm_core.inventory_entries CASCADE;
+      TRUNCATE TABLE herobm_core.sales_order_shipment_lines CASCADE;
+      TRUNCATE TABLE herobm_core.sales_order_shipments CASCADE;
+      TRUNCATE TABLE herobm_core.sales_order_picks CASCADE;
+      TRUNCATE TABLE herobm_core.sales_order_lines CASCADE;
+      TRUNCATE TABLE herobm_core.sales_orders CASCADE;
+      TRUNCATE TABLE herobm_core.products CASCADE;
+      TRUNCATE TABLE herobm_core.inventory_ledger CASCADE;
+      TRUNCATE TABLE herobm_core.inventory_entries CASCADE;
     `);
 
     // Fetch dynamic IDs from standard seeds

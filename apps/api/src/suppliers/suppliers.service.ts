@@ -6,7 +6,7 @@ import {
   masterDataEvents,
   supplierGroups,
   supplierExpiries,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { EntityType } from '../common/event-types';
 import {
   eq,
@@ -23,11 +23,43 @@ import {
   parsePagination,
   withCursorPagination,
 } from '../common/pagination';
-import { SUPPLIER_STATE } from '@modbm/shared';
+import { SUPPLIER_STATE } from '@herobm/shared';
+import {
+  resolveSupplierRiskProfile,
+  ResolvedRiskProfile,
+} from './supplier-risk.domain';
 
 @Injectable()
 export class SuppliersService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
+
+  async assessRisk(
+    vendorId: string,
+    tx?: DrizzleDB,
+  ): Promise<ResolvedRiskProfile> {
+    const db = tx || this.db;
+    const [supplier] = await db
+      .select()
+      .from(coreSuppliers)
+      .where(eq(coreSuppliers.vendorId, vendorId));
+    if (!supplier) throw new NotFoundException('Supplier not found');
+
+    let group = null;
+    if (supplier.supplierGroupId) {
+      const [g] = await db
+        .select()
+        .from(supplierGroups)
+        .where(eq(supplierGroups.supplierGroupId, supplier.supplierGroupId));
+      group = g;
+    }
+
+    const expiries = await db
+      .select()
+      .from(supplierExpiries)
+      .where(eq(supplierExpiries.vendorId, vendorId));
+
+    return resolveSupplierRiskProfile(supplier, group, expiries);
+  }
 
   async findAll(params: PaginationQuery) {
     const { page, limit, cursor, direction, searchTerm, includeArchived } =
@@ -42,6 +74,7 @@ export class SuppliersService {
         groupPurchasingBlockReason: supplierGroups.purchasingBlockReason,
         groupIsPaymentBlocked: supplierGroups.isPaymentBlocked,
         groupPaymentBlockReason: supplierGroups.paymentBlockReason,
+        supplierGroupTaxPositionId: supplierGroups.taxPositionId,
       })
       .from(coreSuppliers)
       .leftJoin(
@@ -131,6 +164,7 @@ export class SuppliersService {
         groupPurchasingBlockReason: supplierGroups.purchasingBlockReason,
         groupIsPaymentBlocked: supplierGroups.isPaymentBlocked,
         groupPaymentBlockReason: supplierGroups.paymentBlockReason,
+        supplierGroupTaxPositionId: supplierGroups.taxPositionId,
       })
       .from(coreSuppliers)
       .leftJoin(
@@ -178,7 +212,7 @@ export class SuppliersService {
     const { page, limit, cursor, direction } = parsePagination(params);
 
     const { supplierExpiries } =
-      await import('../drizzle/modbm-core-schema.js');
+      await import('../drizzle/herobm-core-schema.js');
 
     const whereClause = eq(supplierExpiries.vendorId, vendorId);
     const qb = this.db
@@ -244,7 +278,7 @@ export class SuppliersService {
     const { page, limit, cursor, direction } = parsePagination(params);
 
     const { productSuppliers, products } =
-      await import('../drizzle/modbm-core-schema.js');
+      await import('../drizzle/herobm-core-schema.js');
 
     const whereClause = eq(productSuppliers.vendorId, vendorId);
     const qb = this.db
@@ -319,7 +353,7 @@ export class SuppliersService {
     const { page, limit, cursor, direction } = parsePagination(params);
 
     const { productSuppliers, suppliers } =
-      await import('../drizzle/modbm-core-schema.js');
+      await import('../drizzle/herobm-core-schema.js');
 
     const whereClause = eq(productSuppliers.productId, productId);
     const qb = this.db

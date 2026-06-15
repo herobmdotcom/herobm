@@ -1,8 +1,8 @@
 # Webhooks
 
-Webhooks allow you to build custom integrations that react to events in ModBM as they happen, rather than continuously polling the API for updates.
+Webhooks allow you to build custom integrations that react to events in HeroBM as they happen, rather than continuously polling the API for updates.
 
-When an event occurs in ModBM, the system will execute an HTTP POST payload to the webhook's configured target URL.
+When an event occurs in HeroBM, the system will execute an HTTP POST payload to the webhook's configured target URL.
 
 ## Configuration
 
@@ -34,15 +34,14 @@ The POST request will contain a JSON body with the event details:
 
 ### Entity Types
 
-The `entityType` field in the payload envelope indicates the domain object that triggered the event. ModBM supports the following core entity types:
+The `entityType` field in the payload envelope indicates the domain object that triggered the event. HeroBM supports the following core entity types:
 
 - **Sales**: `sales_order`, `sales_invoice`, `sales_return`
 - **Procurement**: `purchase_order`, `purchase_invoice`, `purchase_return`
-- **Master Data**: `product`, `customer`, `supplier`
-- **Warehouse**: `warehouse` (covers receipts, shipments, picking, and putaway), `transfer_order`
-- **Inventory Ledger**: `inventory_ledger`
-- **Financials**: `payment`, `general_ledger`
-- **System**: `email`
+- **Master Data**: `product`, `product_group`, `customer`, `customer_group`, `supplier`, `supplier_group`, `product_supplier`
+- **Warehouse**: `warehouse` (covers receipts, shipments, picking, and putaway), `transfer_order`, `shipment`, `location`, `zone`, `bin`, `inventory_ledger`
+- **Financials**: `payment`, `general_ledger`, `gl_account`, `gl_reconciliation`, `gl_match_group`, `bank_statement_line`, `reconciliation_rule`, `cost_center`, `exchange_rate`, `tax_category`, `tax_position`, `tax_position_mapping`
+- **System**: `email`, `user`, `webhook`, `api_key`, `app_settings`, `gl_settings`, `system`, `activity`, `business_report`, `csv_mapping_profile`, `integration`, `macro`
 
 ### Event Types
 
@@ -62,7 +61,7 @@ The `eventType` is formed by combining the `entityType` and the action (e.g., `s
 
 | Entity Type | Supported Event Actions |
 |-------------|--------------------------|
-| `sales_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted`, `auto_status_changed`, `backorders_allocated`, `credit_note_posted`, `demand_allocated`, `demand_reallocated`, `line_added`, `line_removed`, `line_updated`, `post_confirmation_line_added`, `quote_generated`, `return_created`, `return_line_added`, `return_line_removed`, `return_line_updated`, `return_updated`, `sales_invoiced`, `tax_calculated`, `updated` |
+| `sales_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted`, `auto_status_changed`, `backorders_allocated`, `credit_note_posted`, `demand_allocated`, `demand_reallocated`, `demand_unallocated`, `line_added`, `line_removed`, `line_updated`, `post_confirmation_line_added`, `quote_generated`, `return_created`, `return_line_added`, `return_line_removed`, `return_line_updated`, `return_updated`, `sales_invoiced`, `tax_calculated`, `updated` |
 | `sales_invoice` | `created`, `status_changed`, `deleted` |
 | `sales_return` | `created`, `status_changed`, `processed` |
 | `purchase_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted`, `demand_allocated`, `demand_unallocated`, `invoice_matched`, `invoice_unmatched`, `line_added`, `line_removed`, `line_updated`, `return_created`, `updated` |
@@ -85,6 +84,8 @@ The `eventType` is formed by combining the `entityType` and the action (e.g., `s
 | `reconciliation_rule` | `created`, `updated`, `deleted` |
 | `location` | `created`, `updated`, `deleted` |
 | `tax_category` | `created`, `updated`, `deleted` |
+| `tax_position` | `created`, `updated`, `deleted` |
+| `tax_position_mapping` | `created`, `deleted` |
 | `exchange_rate` | `created`, `updated`, `deleted` |
 | `cost_center` | `created`, `updated`, `deleted` |
 | `activity` | `created`, `updated`, `deleted` |
@@ -121,19 +122,19 @@ When subscribing to \`status_changed\` events, the payload will contain the new 
 
 ## Security: Verifying Webhook Signatures
 
-To ensure that the webhook was actually sent by ModBM (and not a malicious third party), every webhook request includes a cryptographic signature in the `x-modbm-signature` header.
+To ensure that the webhook was actually sent by HeroBM (and not a malicious third party), every webhook request includes a cryptographic signature in the `x-herobm-signature` header.
 
 The signature is generated using a HMAC with SHA-256 algorithm.
 
-### The Recommended Way: ModBM SDK
+### The Recommended Way: HeroBM SDK
 
-The easiest way to consume webhooks and verify signatures is to use the `@modbm/sdk/server` Node.js package. It automatically handles HMAC verification and parses the standard envelope for you.
+The easiest way to consume webhooks and verify signatures is to use the `@herobm/sdk/server` Node.js package. It automatically handles HMAC verification and parses the standard envelope for you.
 
 ```javascript
 const express = require('express');
-const { HeroBM } = require('@modbm/sdk/server');
+const { HeroBM } = require('@herobm/sdk/server');
 
-const app = new HeroBM({ webhookSecret: process.env.MODBM_WEBHOOK_SECRET });
+const app = new HeroBM({ webhookSecret: process.env.HEROBM_WEBHOOK_SECRET });
 
 // 1. Hook into standard extension points natively
 app.events.on('sales_order.created', async (event) => {
@@ -147,7 +148,7 @@ const server = express();
 // IMPORTANT: You MUST use express.raw so the SDK receives the raw bytes for verification
 server.use('/webhook', express.raw({ type: 'application/json' }), app.webhooks.expressMiddleware());
 
-server.listen(3000, () => console.log('ModBM Webhook Receiver started!'));
+server.listen(3000, () => console.log('HeroBM Webhook Receiver started!'));
 ```
 
 ### Manual Verification Steps (Without SDK)
@@ -157,8 +158,8 @@ If you are not using Node.js or prefer to handle verification manually:
 1. Get your webhook's **Secret Key** from the Developers page.
 2. Read the raw, unparsed string body of the incoming HTTP request.
 3. Compute the HMAC-SHA256 hash using the Secret Key and the raw body.
-4. Compare your computed hash to the `x-modbm-signature` header.
+4. Compare your computed hash to the `x-herobm-signature` header.
 
 ## Retries
 
-If your server responds with a non-2xx status code (e.g. 500 Internal Server Error) or times out, ModBM will mark the webhook dispatch as failed. Currently, failed webhooks are not automatically retried but can be inspected by administrators. Ensure your webhook endpoint responds quickly (e.g., within 3 seconds) and defers heavy processing to a background worker.
+If your server responds with a non-2xx status code (e.g. 500 Internal Server Error) or times out, HeroBM will mark the webhook dispatch as failed. Currently, failed webhooks are not automatically retried but can be inspected by administrators. Ensure your webhook endpoint responds quickly (e.g., within 3 seconds) and defers heavy processing to a background worker.

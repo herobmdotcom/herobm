@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import Link from 'next/link';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 

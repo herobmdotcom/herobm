@@ -3,7 +3,7 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
-import { suppliers, masterDataEvents } from '../src/drizzle/modbm-core-schema';
+import { suppliers, masterDataEvents } from '../src/drizzle/herobm-core-schema';
 import { like, sql } from 'drizzle-orm';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -41,9 +41,9 @@ describe('Suppliers (e2e)', () => {
 
     // Cleanup E2E data — events first (FK), then suppliers
     await db.execute(sql`
-      DELETE FROM modbm_core.master_data_events
+      DELETE FROM herobm_core.master_data_events
       WHERE entity_type = 'supplier' AND entity_id IN (
-        SELECT vendor_id FROM modbm_core.suppliers 
+        SELECT vendor_id FROM herobm_core.suppliers 
         WHERE vendor_number LIKE 'E2E-V-%' 
            OR vendor_number LIKE 'E2E-PATCH-%' 
            OR vendor_number LIKE 'E2E-DETAIL-%'
@@ -51,7 +51,7 @@ describe('Suppliers (e2e)', () => {
     `);
     try {
       await db.execute(sql`
-        DELETE FROM modbm_core.suppliers 
+        DELETE FROM herobm_core.suppliers 
         WHERE vendor_number LIKE 'E2E-V-%' 
            OR vendor_number LIKE 'E2E-PATCH-%' 
            OR vendor_number LIKE 'E2E-DETAIL-%'

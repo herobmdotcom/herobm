@@ -6,12 +6,12 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import { reportError } from '@/lib/api';
-import * as api from '@modbm/sdk';
+import * as api from '@herobm/sdk';
 import { useSettings } from '@/components/SettingsProvider';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import MasterDetailLayout from '@/components/shared/MasterDetailLayout';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 import AddressDisplay from '@/components/shared/AddressDisplay';
 
 // ── Types ────────────────────────────────────────────────────────
@@ -505,7 +505,7 @@ export default function ShippingPage() {
                                                             onClick={async () => {
                                                                 try {
                                                                     const { reportError } = await import('@/lib/api');
-                                                                    const api = await import('@modbm/sdk');
+                                                                    const api = await import('@herobm/sdk');
                                                                     const res = await api.pdfTemplatesControllerRunHook('shipping-docket', { shipmentId: shipment.shipmentId }, { id: shipment.shipmentId, context: 'shipment' });
                                                                     const blob = res.data as Blob;
                                                                     const url = URL.createObjectURL(blob);

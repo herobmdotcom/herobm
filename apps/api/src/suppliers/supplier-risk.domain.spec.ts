@@ -4,6 +4,7 @@ import {
   SupplierGroupProfile,
   SupplierExpiry,
 } from './supplier-risk.domain';
+import { SUPPLIER_STATE } from '@herobm/shared';
 
 describe('resolving Supplier Risk Profile', () => {
   it('should use default values if everything is empty', () => {
@@ -175,5 +176,33 @@ describe('resolving Supplier Risk Profile', () => {
     expect(result.isPurchasingBlocked).toBe(true);
     expect(result.purchasingBlockReasons).toContain('compliance_breach');
     expect(result.purchasingBlockReasons.length).toBe(1); // deduplication check
+  });
+
+  it('should block both purchasing and payment if the supplier is inactive', () => {
+    const supplier: SupplierProfile = {
+      isPurchasingBlocked: false,
+      isPaymentBlocked: false,
+      stateCode: SUPPLIER_STATE.INACTIVE,
+    };
+
+    const result = resolveSupplierRiskProfile(supplier);
+
+    expect(result.isPurchasingBlocked).toBe(true);
+    expect(result.purchasingBlockReasons).toContain('supplier_inactive');
+    expect(result.isPaymentBlocked).toBe(true);
+    expect(result.paymentBlockReasons).toContain('supplier_inactive');
+  });
+
+  it('should NOT block based on stateCode if supplier is active', () => {
+    const supplier: SupplierProfile = {
+      isPurchasingBlocked: false,
+      isPaymentBlocked: false,
+      stateCode: SUPPLIER_STATE.ACTIVE,
+    };
+
+    const result = resolveSupplierRiskProfile(supplier);
+
+    expect(result.isPurchasingBlocked).toBe(false);
+    expect(result.isPaymentBlocked).toBe(false);
   });
 });

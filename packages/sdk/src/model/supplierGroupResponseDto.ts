@@ -19,6 +19,8 @@ export interface SupplierGroupResponseDto {
   /** @nullable */
   earlyPaymentDiscount: string | null;
   /** @nullable */
+  earlyPaymentDiscountDays: number | null;
+  /** @nullable */
   creditLimit: string | null;
   isPurchasingBlocked: boolean;
   /** @nullable */

@@ -22,9 +22,9 @@ import {
   purchaseInvoiceLines,
   taxCategories,
   supplierExpiries,
-} from '../drizzle/modbm-core-schema';
+} from '../drizzle/herobm-core-schema';
 import { eq, or, ilike, desc, sql, inArray, and, asc } from 'drizzle-orm';
-import { getErrorMessage } from '@modbm/shared';
+import { getErrorMessage } from '@herobm/shared';
 import { InventoryService } from '../inventory/inventory.service';
 import {
   PaginationQuery,
@@ -44,8 +44,8 @@ import {
   BACKORDER_TRANSITIONS,
   BACKORDER_STATE,
   OPEN_PURCHASE_ORDER_STATES,
-} from '@modbm/shared';
-import type { PurchaseOrderState } from '@modbm/shared';
+} from '@herobm/shared';
+import type { PurchaseOrderState } from '@herobm/shared';
 
 export interface UnifiedPurchaseOrderRow {
   id: string;
@@ -66,6 +66,8 @@ import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { BackordersService } from '../orders/backorders.service';
 
+import { TaxResolutionEngine } from '../tax/tax-resolution.engine';
+
 @Injectable()
 export class PurchaseOrdersService {
   constructor(
@@ -73,6 +75,7 @@ export class PurchaseOrdersService {
     private readonly inventoryService: InventoryService,
     private readonly suppliersService: SuppliersService,
     private readonly taxService: TaxCategoriesService,
+    private readonly taxResolutionEngine: TaxResolutionEngine,
     private readonly appConfig: AppConfigService,
     @Inject(forwardRef(() => BackordersService))
     private readonly backordersService: BackordersService,
@@ -83,15 +86,47 @@ export class PurchaseOrdersService {
   private async resolveTaxForLine(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tx: any,
+    vendorId: string,
     productId?: string,
     taxCategoryIdOverride?: string,
   ): Promise<{ taxCategoryId: string; rate: number }> {
-    if (taxCategoryIdOverride) {
+    const supplier = await this.suppliersService.findOne(vendorId);
+
+    let productDefaultTaxCategoryId: string | null = null;
+    if (productId && productId !== '00000000-0000-0000-0000-000000000000') {
+      const pRows = await tx
+        .select({ taxCategoryId: products.purchaseTaxCategoryId })
+        .from(products)
+        .where(eq(products.productId, productId))
+        .limit(1);
+
+      if (pRows.length > 0 && pRows[0].taxCategoryId) {
+        productDefaultTaxCategoryId = pRows[0].taxCategoryId;
+      }
+    }
+
+    const resolvedTaxCategoryId =
+      await this.taxResolutionEngine.resolveTaxCategory(
+        {
+          isPurchase: true,
+          isTaxRegistered: supplier.isTaxRegistered || false,
+          partyTaxPositionId:
+            supplier.taxPositionId ||
+            ((supplier as Record<string, unknown>)
+              .supplierGroupTaxPositionId as string | undefined) ||
+            null,
+          productDefaultTaxCategoryId,
+          manualOverrideTaxCategoryId: taxCategoryIdOverride || null,
+        },
+        tx,
+      );
+
+    if (resolvedTaxCategoryId) {
       try {
         const catRows = await tx
           .select()
           .from(taxCategories)
-          .where(eq(taxCategories.taxCategoryId, taxCategoryIdOverride))
+          .where(eq(taxCategories.taxCategoryId, resolvedTaxCategoryId))
           .limit(1);
         if (catRows.length > 0) {
           return {
@@ -101,34 +136,6 @@ export class PurchaseOrdersService {
         }
       } catch (err) {
         // Ignore and fallback
-      }
-    }
-
-    if (productId && productId !== '00000000-0000-0000-0000-000000000000') {
-      const pRows = await tx
-        .select({ taxCategoryId: products.purchaseTaxCategoryId })
-        .from(products)
-        .where(eq(products.productId, productId))
-        .limit(1);
-
-      if (pRows.length > 0 && pRows[0].taxCategoryId) {
-        try {
-          const catRows = await tx
-            .select()
-            .from(taxCategories)
-            .where(eq(taxCategories.taxCategoryId, pRows[0].taxCategoryId))
-            .limit(1);
-          if (catRows.length > 0) {
-            return {
-              taxCategoryId: catRows[0].taxCategoryId,
-              rate: parseFloat(catRows[0].rate ?? '0'),
-            };
-          }
-        } catch (err) {
-          this.logger.warn(
-            `Product ${productId} had invalid tax category ID: ${pRows[0].taxCategoryId}`,
-          );
-        }
       }
     }
 
@@ -220,6 +227,7 @@ export class PurchaseOrdersService {
         for (const line of createDto.lines) {
           const { taxCategoryId, rate } = await this.resolveTaxForLine(
             tx,
+            createDto.vendorId,
             line.productId,
             line.taxCategoryId,
           );
@@ -588,28 +596,13 @@ export class PurchaseOrdersService {
         );
       }
 
-      const vendor = await this.suppliersService.findOne(existing.vendorId);
-      if (vendor.isPurchasingBlocked || vendor.groupIsPurchasingBlocked) {
+      const risk = await this.suppliersService.assessRisk(
+        existing.vendorId,
+        db,
+      );
+      if (risk.isPurchasingBlocked) {
         throw new BadRequestException(
-          'Cannot order: Supplier or Supplier Group is blocked for purchasing.',
-        );
-      }
-
-      // JIT Compliance Block for Issuance
-      const expiredDocs = await db
-        .select({ id: supplierExpiries.expiryId })
-        .from(supplierExpiries)
-        .where(
-          and(
-            eq(supplierExpiries.vendorId, existing.vendorId),
-            sql`${supplierExpiries.expiryDate} < CURRENT_DATE`,
-          ),
-        )
-        .limit(1);
-
-      if (expiredDocs.length > 0) {
-        throw new BadRequestException(
-          'Supplier has expired compliance documentation. Cannot issue purchase order.',
+          `Cannot order: Supplier purchasing is blocked. Reasons: ${risk.purchasingBlockReasons.join(', ')}`,
         );
       }
     }
@@ -783,6 +776,7 @@ export class PurchaseOrdersService {
       const disc = parseFloat(lineDto.discountPercentage || '0');
       const { taxCategoryId, rate } = await this.resolveTaxForLine(
         tx,
+        existing.vendorId,
         lineDto.productId,
         lineDto.taxCategoryId,
       );
@@ -885,6 +879,7 @@ export class PurchaseOrdersService {
 
         const resolved = await this.resolveTaxForLine(
           tx,
+          existing.vendorId,
           line.productId,
           targetGst,
         );
@@ -1018,6 +1013,8 @@ export class PurchaseOrdersService {
             const price = parseFloat(line.pricePerUnit || '0');
             const disc = parseFloat(line.discountPercentage || '0');
             const { taxCategoryId, rate } = await this.resolveTaxForLine(
+              tx,
+              existing.vendorId,
               line.productId,
               line.taxCategoryId,
             );
