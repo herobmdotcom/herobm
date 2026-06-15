@@ -13,6 +13,12 @@ make cli-up-db
 make cli-init-db
 make cli-migrate
 make cli-bootstrap
-make up
+if [ -f .startup_choice ]; then
+    CHOICE=$(cat .startup_choice)
+    make $CHOICE
+    rm .startup_choice
+else
+    make up
+fi
 
 echo -e "\e[32mFast Install Complete!\e[0m"

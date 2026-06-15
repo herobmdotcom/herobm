@@ -14,6 +14,12 @@ make cli-up-db
 make cli-init-db
 make cli-migrate
 make cli-bootstrap
-make up
+if (Test-Path ".startup_choice") {
+    $choice = Get-Content ".startup_choice"
+    Invoke-Expression "make $choice"
+    Remove-Item ".startup_choice"
+} else {
+    make up
+}
 
 Write-Host "Fast Install Complete!" -ForegroundColor Green

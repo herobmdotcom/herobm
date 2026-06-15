@@ -134,8 +134,9 @@ makeTargets=()
 if [ "$pathChoice" == "1" ]; then
     makeTargets+=("up-db")
 else
-    makeTargets+=("up-fe-api")
+    makeTargets+=("up-portal-api")
 fi
+echo "${makeTargets[*]}" > .startup_choice
 
 MAKE_CMD_STRING="make ${makeTargets[*]}"
 

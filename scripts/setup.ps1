@@ -184,9 +184,10 @@ if ($pathChoice -eq "1") {
     Write-Host "  -> Selected Local Dev path (DBs containerized, FE/API local)" -ForegroundColor Gray
 }
 else {
-    $makeTargets += "up-fe-api"
+    $makeTargets += "up-portal-api"
     Write-Host "  -> Selected Full Containerization path" -ForegroundColor Gray
 }
+$makeTargets -join " " | Out-File -FilePath ".startup_choice" -Encoding ascii
 
 $makeCmdString = "make " + ($makeTargets -join " ")
 
