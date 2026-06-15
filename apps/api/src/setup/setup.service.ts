@@ -847,6 +847,7 @@ export class SetupService {
     return new Promise((resolve, reject) => {
       this.jobResolvers[jobId] = { resolve, reject };
 
+      console.log(`[Job ${jobId}] Sending POST to pipeline-runner/run with command ${cmd}...`);
       fetch('http://pipeline-runner:8000/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -858,13 +859,19 @@ export class SetupService {
         }),
       })
         .then(async (response) => {
+          console.log(`[Job ${jobId}] pipeline-runner/run responded with status ${response.status}`);
           if (!response.ok) {
             const body = await response.text();
+            console.error(`[Job ${jobId}] Failed to trigger sidecar: ${body}`);
             delete this.jobResolvers[jobId];
             reject(new Error(`Failed to trigger sidecar: ${body}`));
+          } else {
+            // Consume the response body to free the socket
+            await response.text().catch(() => {});
           }
         })
         .catch((err) => {
+          console.error(`[Job ${jobId}] fetch to pipeline-runner/run failed completely:`, err);
           delete this.jobResolvers[jobId];
           reject(err instanceof Error ? err : new Error(String(err)));
         });
