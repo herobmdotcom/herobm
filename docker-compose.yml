@@ -128,6 +128,9 @@ services:
 
   outbox-worker:
     image: localhost/outbox-worker:latest
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
     container_name: outbox-worker
     restart: unless-stopped
     env_file: .env
