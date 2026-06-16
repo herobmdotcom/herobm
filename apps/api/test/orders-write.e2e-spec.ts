@@ -184,6 +184,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
           customerId: validCustomerId,
           name: 'E2E-OW Test Order',
           notes: 'Created by E2E test suite',
+          deliveryAddressLine1: '123 E2E Street',
           lines: [
             {
               productId: validProductId,
@@ -361,8 +362,12 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         const res = await request(app.getHttpServer())
           .patch(`/api/sales-orders/${orderId}/state`)
           .set('Authorization', `Bearer ${adminToken}`)
-          .send({ stateCode: nextState, generateBackorders: true })
-          .expect(200);
+          .send({ stateCode: nextState, generateBackorders: true });
+
+        if (res.status !== 200) {
+          console.error(`Failed to transition to ${nextState}:`, res.body);
+        }
+        expect(res.status).toBe(200);
         expect(res.body.stateCode).toBe(nextState);
       }
     });

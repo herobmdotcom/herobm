@@ -151,7 +151,7 @@ export default function ManualBankLineEntry({
                     className="text-[var(--text-muted)] hover:text-red-500"
                     title={tCommon('delete')}
                   >
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+                    { }
                   <span className="material-symbols-outlined text-[18px]">delete</span>
                   </button>
                 </td>

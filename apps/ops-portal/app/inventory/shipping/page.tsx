@@ -218,7 +218,7 @@ export default function ShippingPage() {
         <>
             {!selectedOrder ? (
                 <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                    { }
                     <span className="material-symbols-outlined text-4xl mb-2 opacity-50">local_shipping</span>
                     {t('selectOrder')}
                 </div>
@@ -262,7 +262,7 @@ export default function ShippingPage() {
                                     <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                                         {(context.order.deliveryAddressLine1) && (
                                             <div className="flex-1">
-                                                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                                                { }
                                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                                                     Delivery Address
                                                 </label>
@@ -282,7 +282,7 @@ export default function ShippingPage() {
                                         )}
                                         {context.order.shippingNotes && (
                                             <div className="flex-1">
-                                                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                                                { }
                                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                                                     Shipping Instructions
                                                 </label>
@@ -481,7 +481,7 @@ export default function ShippingPage() {
                                                     className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors gap-4 mt-2"
                                                 >
                                                     <div className="flex items-start sm:items-center gap-3">
-                                                        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                                                        { }
                                                         <span className="material-symbols-outlined text-[var(--text-muted)] text-xl mt-0.5 sm:mt-0 shrink-0">inventory_2</span>
                                                         <div className="min-w-0">
                                                             <Link href={`/shipments/${shipment.shipmentId}`} className="font-bold text-base text-[var(--text-primary)] hover:text-[var(--accent)] hover:underline break-all sm:break-normal">
@@ -593,7 +593,7 @@ export default function ShippingPage() {
                                     >
                                         <div className="flex justify-between items-start mb-1">
                                             <div className="flex items-center gap-2">
-                                                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                                                { }
                                                 <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.shippabilityStatus === 'ready' ? 'text-[var(--success)]' : 'text-[var(--warning)]'}`} style={{ fontVariationSettings: "'FILL' 1" }}>fiber_manual_record</span>
                                                 <div className="font-bold text-[var(--text-primary)] text-sm">{order.orderNumber}</div>
                                             </div>

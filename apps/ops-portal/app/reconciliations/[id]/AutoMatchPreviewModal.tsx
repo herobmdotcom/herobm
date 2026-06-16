@@ -122,7 +122,7 @@ export default function AutoMatchPreviewModal({
         disabled={confirming || !previewData || (effectiveAutoMatchedCount === 0 && effectiveSmartMatchedCount === 0)}
         className="btn btn-primary font-semibold px-4 py-2 flex items-center gap-2"
       >
-        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+        { }
         <span className="material-symbols-outlined text-[18px]">check_circle</span>
         {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
         {confirming ? tCommon('saving') : 'Confirm Auto Match'}
@@ -151,7 +151,7 @@ export default function AutoMatchPreviewModal({
               </tr>
             ))}
             {lines.length === 0 && (
-              // eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols.
+               
               <tr><td colSpan={3} className="px-5 py-8 text-center text-gray-500 italic">No lines</td></tr>
             )}
           </tbody>
@@ -204,12 +204,12 @@ export default function AutoMatchPreviewModal({
     >
       <div className="flex flex-col gap-6 p-6">
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex gap-4 items-start">
-          {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+          { }
           <span className="material-symbols-outlined text-blue-500 mt-0.5">info</span>
           <div>
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+            { }
             <h3 className="font-semibold text-blue-900 mb-1">Preview Results</h3>
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+            { }
             <p className="text-blue-800 text-sm">
               The following actions will be taken when you confirm:
             </p>
@@ -230,7 +230,7 @@ export default function AutoMatchPreviewModal({
           <>
             {previewData.proposedRuleMatches && previewData.proposedRuleMatches.length > 0 && (
               <div className="flex flex-col gap-4">
-                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+                { }
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider border-b pb-2">Proposed Rule Matches</h3>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */}
                 {previewData.proposedRuleMatches.map((m: any, i: number) => {
@@ -264,7 +264,7 @@ export default function AutoMatchPreviewModal({
 
             {previewData.smartMatches && previewData.smartMatches.length > 0 && (
               <div className="flex flex-col gap-4 mt-4">
-                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+                { }
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider border-b pb-2">Proposed Smart Matches</h3>
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */}
                 {previewData.smartMatches.map((m: any, i: number) => {

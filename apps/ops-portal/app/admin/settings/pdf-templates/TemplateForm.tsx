@@ -133,7 +133,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
               className="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-800 transition-colors flex items-center justify-center shrink-0"
               title={t('buttons.returnToList')}
             >
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+              { }
               <span className="material-symbols-outlined text-[20px]">arrow_back</span>
             </button>
             <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>
@@ -262,7 +262,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
                   onClick={() => setBrowserOpen(true)}
                   disabled={!previewVars.hookSlug}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                  { }
                   <span className="material-symbols-outlined text-[18px]">data_object</span>
                   View Data
                 </button>

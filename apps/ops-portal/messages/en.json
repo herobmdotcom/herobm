@@ -1,124 +1,366 @@
 {
   "admin": {
-    "common": {
-      "ea": "ea",
-      "confirming": "Confirming...",
-      "availability": {
-        "avail": "Avail",
-        "onHand": "On Hand",
-        "cmt": "Cmt",
-        "in": "In"
-      },
-      "enrichment": {
-        "nameUpdated": "Customer name automatically updated from provider",
-        "taxUpdated": "Tax registration automatically updated from provider"
-      },
-      "about": "About",
-      "close": "Close",
-      "configure": "Configure",
-      "cancel": "Cancel",
-      "save": "Save",
-      "delete": "Delete",
-      "prefix": "Prefix",
-      "created": "Created",
-      "actions": "Actions",
-      "code": "Code",
-      "manage": "Manage",
-      "map": "Map",
-      "saveToManage": "Save to manage",
-      "defActivity": "Def. Activity",
-      "defApAccount": "Def. AP Customer",
-      "defArAccount": "Def. AR Customer",
-      "financialDefaults": "Financial Settings",
-      "defCostCenter": "Def. Cost Center",
-      "defDiscount": "Def. Discount %",
-      "defExpenseAccount": "Def. Expense Customer",
-      "defRevAccount": "Def. Revenue Customer",
-      "errors": {
-        "sourceAndDestRequired": "Source and Destination are required",
-        "typeAndDateRequired": "Type and effective date are required"
-      },
-      "financial": "Financial",
-      "name": "Name",
-      "no": "No",
-      "noRecordsFound": "No records found",
-      "notConfigured": "Not configured",
-      "system": "System",
-      "yes": "Yes",
-      "copiedToClipboard": "Copied to clipboard",
-      "copy": "Copy"
-    },
     "businessReports": {
       "form": {
         "buttons": {
-          "save": "Save Report",
-          "saving": "Saving...",
           "delete": "Delete Report",
-          "returnToList": "Return to List"
+          "returnToList": "Return to List",
+          "save": "Save Report",
+          "saving": "Saving..."
         },
         "labels": {
-          "displayName": "Name",
-          "uniqueSlug": "System Token (Slug)",
           "dataSourceHook": "Data Source Hook",
           "description": "Description",
-          "uiConfig": "UI Configuration (JSON)"
+          "displayName": "Name",
+          "uiConfig": "UI Configuration (JSON)",
+          "uniqueSlug": "System Token (Slug)"
         },
         "placeholders": {
-          "selectDataSource": "Select a Data Source...",
           "displayName": "e.g. Sales by Customer",
+          "selectDataSource": "Select a Data Source...",
           "uniqueSlug": "e.g. sales-by-customer"
         },
+        "systemReportWarning": "This is a system report. It cannot be deleted.",
         "titles": {
           "edit": "Edit Configuration",
           "new": "New Report"
         },
         "toasts": {
           "created": "Report created",
-          "updated": "Report updated",
-          "deleted": "Report deleted",
-          "saveFailed": "Failed to save report",
+          "deleteConfirm": "Are you sure you want to delete this report?",
           "deleteFailed": "Failed to delete report",
-          "validationFailed": "Name, Slug, and Data Source Hook are required",
+          "deleted": "Report deleted",
           "invalidJson": "Invalid JSON in UI Configuration",
+          "saveFailed": "Failed to save report",
           "systemDeleteError": "System reports cannot be deleted",
-          "deleteConfirm": "Are you sure you want to delete this report?"
-        },
-        "systemReportWarning": "This is a system report. It cannot be deleted."
+          "updated": "Report updated",
+          "validationFailed": "Name, Slug, and Data Source Hook are required"
+        }
       }
     },
-    "reporting": {
-      "hooks": {
-        "toast": {
-          "success": "Updated successfully"
-        },
-        "actions": {
-          "editTemplate": "Edit Template"
-        },
-        "errors": {
-          "updateFailed": "Failed to update assignment: "
-        },
-        "importCoaModal": {
-          "importAction": "Import CoA",
-          "importing": "Importing...",
-          "loadingCharts": "Loading available charts...",
-          "noCharts": "No charts available.",
-          "selectPreset": "Select Preset"
-        },
-        "moduleTitle": "Reporting Hooks",
-        "subtitle": "Map standard actions (like printing an invoice) to specific templates.",
-        "table": {
-          "columns": {
-            "actions": "Actions",
-            "assignedTemplate": "Assigned Template",
-            "contextResolver": "Context Resolver",
-            "hookSlug": "Hook Slug"
-          },
-          "empty": "No system hooks registered in the database.",
-          "selectTemplate": "Select a template...",
-          "title": "Hook Mappings"
-        },
-        "title": "Hook Assignments"
+    "common": {
+      "about": "About",
+      "actions": "Actions",
+      "availability": {
+        "avail": "Avail",
+        "cmt": "Cmt",
+        "in": "In",
+        "onHand": "On Hand"
       },
+      "cancel": "Cancel",
+      "close": "Close",
+      "code": "Code",
+      "configure": "Configure",
+      "confirming": "Confirming...",
+      "copiedToClipboard": "Copied to clipboard",
+      "copy": "Copy",
+      "created": "Created",
+      "defActivity": "Def. Activity",
+      "defApAccount": "Def. AP Customer",
+      "defArAccount": "Def. AR Customer",
+      "defCostCenter": "Def. Cost Center",
+      "defDiscount": "Def. Discount %",
+      "defExpenseAccount": "Def. Expense Customer",
+      "defRevAccount": "Def. Revenue Customer",
+      "delete": "Delete",
+      "ea": "ea",
+      "enrichment": {
+        "nameUpdated": "Customer name automatically updated from provider",
+        "taxUpdated": "Tax registration automatically updated from provider"
+      },
+      "errors": {
+        "sourceAndDestRequired": "Source and Destination are required",
+        "typeAndDateRequired": "Type and effective date are required"
+      },
+      "financial": "Financial",
+      "financialDefaults": "Financial Settings",
+      "manage": "Manage",
+      "map": "Map",
+      "name": "Name",
+      "no": "No",
+      "noRecordsFound": "No records found",
+      "notConfigured": "Not configured",
+      "prefix": "Prefix",
+      "save": "Save",
+      "saveToManage": "Save to manage",
+      "system": "System",
+      "yes": "Yes"
+    },
+    "customerGroups": {
+      "definedGroups": "Defined Groups",
+      "discountRules": "Discount Rules",
+      "manage": "Manage",
+      "newGroup": "+ New Group",
+      "noGroups": "No customer groups defined.",
+      "notConfigured": "Not configured",
+      "placeholders": {
+        "code": "e.g. WHL",
+        "name": "e.g. Wholesale"
+      },
+      "saveToManage": "Save to manage",
+      "subtitle": "Manage group classifications for customers",
+      "title": "Customer Groups",
+      "toasts": {
+        "created": "Group created",
+        "deleted": "Group deleted",
+        "loadFailed": "Failed to load groups",
+        "requiredFields": "Code and Name are required",
+        "updated": "Group updated"
+      }
+    },
+    "developers": {
+      "addWebhook": "+ Add Webhook",
+      "allEvents": "* (All Events)",
+      "apiKeys": "API Keys",
+      "apiRateLimits": "API Rate Limits",
+      "appliesOnlyToApiKey": "Applies only to requests authenticated via API Key.",
+      "autoGenerated": "Auto-generated",
+      "cancel": "Cancel",
+      "copyApiKeyWarning": "API Key Created",
+      "createKey": "+ Create Key",
+      "customRoleSuffix": "(Custom Role)",
+      "delete": "Delete",
+      "events": "Events",
+      "maxRequestsPerMinute": "Max Requests per Minute",
+      "noApiKeysFound": "No API keys found.",
+      "noWebhooksFound": "No webhooks found.",
+      "onlyTimeSecretShown": "This is the only time the secret will be shown. Please copy it now and store it securely.",
+      "revokeKey": "Revoke",
+      "roleAdmin": "Admin (Full Access)",
+      "roleAgent": "Agent (Read/Write)",
+      "roleLabel": "Role: {role}",
+      "roleViewer": "Viewer (Read-only)",
+      "roleWebhook": "Webhook (Receiver)",
+      "save": "Save",
+      "secretKey": "Secret Key",
+      "targetUrl": "Target URL",
+      "webhooks": "Webhooks",
+      "webhooksApi": {
+        "configuration": {
+          "description": "To create a webhook, go to <a>Configuration</a>. Click <i>+ Add Webhook</i>, specify your Target URL, and select the events you wish to subscribe to.",
+          "title": "Configuration"
+        },
+        "consumingSdk": {
+          "description": "The officially recommended way to consume webhooks and verify signatures is using our Node.js SDK. It automatically handles HMAC verification and parses the standard envelope for you.",
+          "title": "Consuming Webhooks (HeroBM SDK)"
+        },
+        "entityTypes": {
+          "description": "The <code>entityType</code> field in the payload envelope indicates the domain object that triggered the event. HeroBM supports the following core entity types:",
+          "financials": "Financials",
+          "masterData": "Master Data",
+          "procurement": "Procurement",
+          "sales": "Sales",
+          "title": "Entity Types",
+          "warehouse": "Warehouse"
+        },
+        "envelopeFormat": {
+          "description": "Every webhook dispatched by HeroBM follows a standard envelope structure. This guarantees that consumers always receive the core identifying information (the entity ID and type) regardless of the event that occurred.",
+          "title": "Webhook Envelope Format"
+        },
+        "eventTypes": {
+          "business": {
+            "description": "Fired during specific business actions like physical inventory movements, payment allocations, or ledger postings.",
+            "title": "Business Operations"
+          },
+          "description": "The <code>eventType</code> is formed by combining the <code>entityType</code> and the action (e.g., <code>sales_order.created</code>).",
+          "lifecycle": {
+            "description": "Fired during basic CRUD and visibility operations.",
+            "title": "Lifecycle Events"
+          },
+          "stateMachine": {
+            "description": "Fired when an entity progresses through its workflow (e.g., Draft to Confirmed).",
+            "title": "State Machine Events"
+          },
+          "title": "Event Types"
+        },
+        "header": {
+          "subtitle": "Documentation for webhook payloads and verification",
+          "title": "Webhooks Reference"
+        },
+        "matrix": {
+          "entityType": "Entity Type",
+          "supportedEvents": "Supported Event Actions",
+          "title": "Supported Events Matrix"
+        },
+        "securityVerification": {
+          "description": "All requests contain the <code>x-herobm-signature</code> header. Calculate the HMAC-SHA256 signature using your Webhook Secret and the raw request body to verify authenticity.",
+          "title": "Security Verification"
+        },
+        "stateChangeReference": {
+          "description": "When subscribing to <code>status_changed</code> events, the payload will contain the new status of the entity. The possible states for each entity type are:",
+          "title": "State Changes Reference"
+        },
+        "title": "Docs: Webhooks"
+      }
+    },
+    "discountMatrix": {
+      "baseDiscount": "Base Default Discount",
+      "baseDiscountHint": "Applies to all product groups unless overridden below",
+      "discountPercent": "Discount %",
+      "noProductGroupRules": "No product-group-specific overrides defined.",
+      "productGroup": "Product Group",
+      "productGroupRules": "Product Group Overrides",
+      "selectProductGroup": "— Select product group —",
+      "title": "Discount Rules",
+      "toasts": {
+        "deleted": "Discount rule deleted",
+        "saved": "Discount rule saved"
+      }
+    },
+    "eventQueue": {
+      "actions": {
+        "clear": "Clear",
+        "hide": "Hide",
+        "view": "View"
+      },
+      "autoRefresh": "Auto-refresh (5s)",
+      "columns": {
+        "actions": "Actions",
+        "aggregate": "Aggregate",
+        "eventType": "Event Type",
+        "failed": "Failed",
+        "payload": "Payload",
+        "pending": "Pending",
+        "processed": "Processed",
+        "processedAt": "Processed At",
+        "status": "Status",
+        "timestamp": "Timestamp",
+        "total": "Total"
+      },
+      "confirmClear": "Clear all pending \"{type}\" events from the outbox?",
+      "drawer": {
+        "errorLabel": "Error:",
+        "loading": "Loading events...",
+        "noEvents": "No events of this type found."
+      },
+      "errors": {
+        "clearFailed": "Failed to clear events",
+        "loadFailed": "Failed to load sync data"
+      },
+      "eventTypes": "Event Types",
+      "loading": "Loading event queue...",
+      "noEvents": "No outbox events found. Generate invoices to see sync activity.",
+      "recentEvents": "Recent Events ({count})",
+      "refresh": "Refresh",
+      "status": {
+        "allSynced": "All synced",
+        "errors": "{count} Error(s)",
+        "pending": "{count} pending"
+      },
+      "subtitle": "Visibility into external system synchronization events",
+      "summary": {
+        "failed": "Failed",
+        "pending": "Pending",
+        "processed": "Processed",
+        "total": "Total Events"
+      },
+      "title": "Event Queue"
+    },
+    "integrations": {
+      "addRule": "+ Add Rule",
+      "availableIntegrations": "Available Integrations",
+      "close": "Close",
+      "configuration": "Configuration",
+      "configure": "Configure",
+      "externalDataProvider": "External Data Provider",
+      "loadingIntegrations": "Loading integrations...",
+      "noIntegrationsFound": "No integrations found.",
+      "queryOrPayload": "Query or Payload (JSON)",
+      "routingRules": "Routing Rules",
+      "runTest": "Run Test",
+      "saveConfiguration": "Save Configuration",
+      "testConnection": "Test Connection",
+      "testFailed": "Test Failed",
+      "testSuccessful": "Test Successful",
+      "testing": "Testing..."
+    },
+    "productGroups": {
+      "confirmDelete": "Are you sure you want to delete this group?",
+      "definedGroups": "Defined Groups",
+      "newGroup": "+ New Group",
+      "noGroups": "No product groups defined.",
+      "placeholders": {
+        "code": "Code",
+        "name": "Name"
+      },
+      "subtitle": "Manage group classifications for products and inventory",
+      "title": "Product Groups",
+      "toasts": {
+        "created": "Group created",
+        "deleted": "Group deleted",
+        "loadFailed": "Failed to load groups",
+        "requiredFields": "Code and Name are required",
+        "updated": "Group updated"
+      }
+    },
+    "reconciliations": {
+      "addAdjustment": "+ Adjustment",
+      "addLine": "+ Line",
+      "addManualLines": "Add Manual Bank Lines",
+      "allLinesMatched": "All bank statement lines are matched!",
+      "amount": "Amount",
+      "applyMatch": "Apply Match",
+      "autoMatch": "Auto Match",
+      "autoMatchNoResults": "No rule-based matches found.",
+      "autoMatchedSuccess": "Auto-matched {count} items.",
+      "bankStatementLine": "Bank Statement Line",
+      "bankStatementLines": "Statement",
+      "cleared": "Cleared",
+      "confirmMatch": "Confirm Match",
+      "confirming": "Confirming...",
+      "createEntry": "Create Entry",
+      "date": "Date",
+      "deposit": "Deposit",
+      "description": "Description",
+      "findMatch": "Find Match",
+      "import": "Import",
+      "journalEntry": "Journal Entry",
+      "ledger": "Ledger",
+      "ledgerAmount": "Ledger Amount",
+      "ledgerEntries": "Ledger",
+      "ledgerLines": "Ledger Lines",
+      "linesCreated": "Lines created successfully",
+      "manualEntryHelp": "Use this form to quickly enter manual bank lines. Press 'Tab' on the amount field of the last row to automatically add a new row. Empty rows will be ignored on save.",
+      "match": "Match",
+      "matchAuto": "Auto-Matched",
+      "matchBy": "By",
+      "matchConfirmError": "Failed to confirm match",
+      "matchDetailsTitle": "Match Details",
+      "matchManual": "Manual Match",
+      "matchRule": "Rule: {ruleName}",
+      "matchSource": "Source",
+      "memo": "Memo",
+      "noAutoMatchDescription": "Search for an existing transaction in your ledger, or create a new journal entry to reconcile this bank line.",
+      "noAutoMatchFound": "No Automatic Match Found",
+      "noBankLinesFound": "No bank lines found for this match",
+      "noLedgerLinesFound": "No ledger lines found for this match",
+      "noLines": "No bank lines available",
+      "noMemoProvided": "No memo provided",
+      "noUnmatchedLines": "No unmatched ledger lines available.",
+      "noValidLines": "Please enter at least one valid line with a date, description, and amount.",
+      "profiles": "Profiles",
+      "reconciled": "Reconciled",
+      "reconciliationActions": "Reconciliation Actions",
+      "reference": "Reference",
+      "searchLedger": "Search Ledger",
+      "selectBankLine": "Select a bank line from the list to view details or apply a match.",
+      "selectSingleRowToSplit": "Select a single row to split",
+      "selectedBank": "Selected Bank",
+      "selectedLedger": "Selected Ledger",
+      "showAllLines": "Show all lines",
+      "split": "Split",
+      "splitEntry": "Split",
+      "statement": "Statement",
+      "statementLines": "Statement Lines",
+      "suggestedMatch": "Suggested Match",
+      "systemMatchFound": "System Match Found",
+      "undoMatch": "Undo Match",
+      "undoMatchSuccess": "Match undone successfully",
+      "unmatched": "Unmatched",
+      "variance": "Variance",
+      "withdrawal": "Withdrawal"
+    },
+    "reporting": {
       "errors": {
         "loading": "Loading template data...",
         "notFound": "Error: Template not found or unauthorized access logging in."
@@ -191,286 +433,42 @@
         "searchPlaceholder": "Search Typst templates...",
         "totalCount": "Total Templates"
       },
+      "hooks": {
+        "actions": {
+          "editTemplate": "Edit Template"
+        },
+        "errors": {
+          "updateFailed": "Failed to update assignment: "
+        },
+        "importCoaModal": {
+          "importAction": "Import CoA",
+          "importing": "Importing...",
+          "loadingCharts": "Loading available charts...",
+          "noCharts": "No charts available.",
+          "selectPreset": "Select Preset"
+        },
+        "moduleTitle": "Reporting Hooks",
+        "subtitle": "Map standard actions (like printing an invoice) to specific templates.",
+        "table": {
+          "columns": {
+            "actions": "Actions",
+            "assignedTemplate": "Assigned Template",
+            "contextResolver": "Context Resolver",
+            "hookSlug": "Hook Slug"
+          },
+          "empty": "No system hooks registered in the database.",
+          "selectTemplate": "Select a template...",
+          "title": "Hook Mappings"
+        },
+        "title": "Hook Assignments",
+        "toast": {
+          "success": "Updated successfully"
+        }
+      },
       "title": "PDF Templates",
       "toast": {
         "success": "Success"
       }
-    },
-    "customerGroups": {
-      "definedGroups": "Defined Groups",
-      "discountRules": "Discount Rules",
-      "manage": "Manage",
-      "newGroup": "+ New Group",
-      "noGroups": "No customer groups defined.",
-      "notConfigured": "Not configured",
-      "placeholders": {
-        "code": "e.g. WHL",
-        "name": "e.g. Wholesale"
-      },
-      "saveToManage": "Save to manage",
-      "subtitle": "Manage group classifications for customers",
-      "title": "Customer Groups",
-      "toasts": {
-        "created": "Group created",
-        "deleted": "Group deleted",
-        "loadFailed": "Failed to load groups",
-        "requiredFields": "Code and Name are required",
-        "updated": "Group updated"
-      }
-    },
-    "developers": {
-      "webhooksApi": {
-        "title": "Docs: Webhooks",
-        "header": {
-          "title": "Webhooks Reference",
-          "subtitle": "Documentation for webhook payloads and verification"
-        },
-        "configuration": {
-          "title": "Configuration",
-          "description": "To create a webhook, go to <a>Configuration</a>. Click <i>+ Add Webhook</i>, specify your Target URL, and select the events you wish to subscribe to."
-        },
-        "envelopeFormat": {
-          "title": "Webhook Envelope Format",
-          "description": "Every webhook dispatched by HeroBM follows a standard envelope structure. This guarantees that consumers always receive the core identifying information (the entity ID and type) regardless of the event that occurred."
-        },
-        "eventTypes": {
-          "title": "Event Types",
-          "description": "The <code>eventType</code> is formed by combining the <code>entityType</code> and the action (e.g., <code>sales_order.created</code>).",
-          "lifecycle": {
-            "title": "Lifecycle Events",
-            "description": "Fired during basic CRUD and visibility operations."
-          },
-          "stateMachine": {
-            "title": "State Machine Events",
-            "description": "Fired when an entity progresses through its workflow (e.g., Draft to Confirmed)."
-          },
-          "business": {
-            "title": "Business Operations",
-            "description": "Fired during specific business actions like physical inventory movements, payment allocations, or ledger postings."
-          }
-        },
-        "entityTypes": {
-          "title": "Entity Types",
-          "description": "The <code>entityType</code> field in the payload envelope indicates the domain object that triggered the event. HeroBM supports the following core entity types:",
-          "sales": "Sales",
-          "procurement": "Procurement",
-          "masterData": "Master Data",
-          "warehouse": "Warehouse",
-          "financials": "Financials"
-        },
-        "matrix": {
-          "title": "Supported Events Matrix",
-          "entityType": "Entity Type",
-          "supportedEvents": "Supported Event Actions"
-        },
-        "stateChangeReference": {
-          "title": "State Changes Reference",
-          "description": "When subscribing to <code>status_changed</code> events, the payload will contain the new status of the entity. The possible states for each entity type are:"
-        },
-        "securityVerification": {
-          "title": "Security Verification",
-          "description": "All requests contain the <code>x-herobm-signature</code> header. Calculate the HMAC-SHA256 signature using your Webhook Secret and the raw request body to verify authenticity."
-        },
-        "consumingSdk": {
-          "title": "Consuming Webhooks (HeroBM SDK)",
-          "description": "The officially recommended way to consume webhooks and verify signatures is using our Node.js SDK. It automatically handles HMAC verification and parses the standard envelope for you."
-        }
-      },
-      "allEvents": "* (All Events)",
-      "addWebhook": "+ Add Webhook",
-      "apiKeys": "API Keys",
-      "apiRateLimits": "API Rate Limits",
-      "appliesOnlyToApiKey": "Applies only to requests authenticated via API Key.",
-      "autoGenerated": "Auto-generated",
-      "copyApiKeyWarning": "API Key Created",
-      "createKey": "+ Create Key",
-      "customRoleSuffix": "(Custom Role)",
-      "events": "Events",
-      "maxRequestsPerMinute": "Max Requests per Minute",
-      "noApiKeysFound": "No API keys found.",
-      "noWebhooksFound": "No webhooks found.",
-      "revokeKey": "Revoke",
-      "roleAdmin": "Admin (Full Access)",
-      "roleAgent": "Agent (Read/Write)",
-      "roleLabel": "Role: {role}",
-      "roleViewer": "Viewer (Read-only)",
-      "roleWebhook": "Webhook (Receiver)",
-      "secretKey": "Secret Key",
-      "targetUrl": "Target URL",
-      "webhooks": "Webhooks",
-      "save": "Save",
-      "cancel": "Cancel",
-      "delete": "Delete",
-      "onlyTimeSecretShown": "This is the only time the secret will be shown. Please copy it now and store it securely."
-    },
-    "discountMatrix": {
-      "baseDiscount": "Base Default Discount",
-      "baseDiscountHint": "Applies to all product groups unless overridden below",
-      "discountPercent": "Discount %",
-      "noProductGroupRules": "No product-group-specific overrides defined.",
-      "productGroup": "Product Group",
-      "productGroupRules": "Product Group Overrides",
-      "selectProductGroup": "— Select product group —",
-      "title": "Discount Rules",
-      "toasts": {
-        "deleted": "Discount rule deleted",
-        "saved": "Discount rule saved"
-      }
-    },
-    "eventQueue": {
-      "actions": {
-        "clear": "Clear",
-        "hide": "Hide",
-        "view": "View"
-      },
-      "autoRefresh": "Auto-refresh (5s)",
-      "columns": {
-        "actions": "Actions",
-        "aggregate": "Aggregate",
-        "eventType": "Event Type",
-        "failed": "Failed",
-        "payload": "Payload",
-        "pending": "Pending",
-        "processed": "Processed",
-        "processedAt": "Processed At",
-        "status": "Status",
-        "timestamp": "Timestamp",
-        "total": "Total"
-      },
-      "confirmClear": "Clear all pending \"{type}\" events from the outbox?",
-      "drawer": {
-        "errorLabel": "Error:",
-        "loading": "Loading events...",
-        "noEvents": "No events of this type found."
-      },
-      "errors": {
-        "clearFailed": "Failed to clear events",
-        "loadFailed": "Failed to load sync data"
-      },
-      "eventTypes": "Event Types",
-      "loading": "Loading event queue...",
-      "noEvents": "No outbox events found. Generate invoices to see sync activity.",
-      "recentEvents": "Recent Events ({count})",
-      "refresh": "Refresh",
-      "status": {
-        "allSynced": "All synced",
-        "errors": "{count} Error(s)",
-        "pending": "{count} pending"
-      },
-      "subtitle": "Visibility into external system synchronization events",
-      "summary": {
-        "failed": "Failed",
-        "pending": "Pending",
-        "processed": "Processed",
-        "total": "Total Events"
-      },
-      "title": "Event Queue"
-    },
-    "integrations": {
-      "addRule": "+ Add Rule",
-      "availableIntegrations": "Available Integrations",
-      "configuration": "Configuration",
-      "externalDataProvider": "External Data Provider",
-      "loadingIntegrations": "Loading integrations...",
-      "noIntegrationsFound": "No integrations found.",
-      "queryOrPayload": "Query or Payload (JSON)",
-      "routingRules": "Routing Rules",
-      "runTest": "Run Test",
-      "saveConfiguration": "Save Configuration",
-      "testConnection": "Test Connection",
-      "testFailed": "Test Failed",
-      "testSuccessful": "Test Successful",
-      "testing": "Testing...",
-      "close": "Close",
-      "configure": "Configure"
-    },
-    "productGroups": {
-      "confirmDelete": "Are you sure you want to delete this group?",
-      "definedGroups": "Defined Groups",
-      "newGroup": "+ New Group",
-      "noGroups": "No product groups defined.",
-      "placeholders": {
-        "code": "Code",
-        "name": "Name"
-      },
-      "subtitle": "Manage group classifications for products and inventory",
-      "title": "Product Groups",
-      "toasts": {
-        "created": "Group created",
-        "deleted": "Group deleted",
-        "loadFailed": "Failed to load groups",
-        "requiredFields": "Code and Name are required",
-        "updated": "Group updated"
-      }
-    },
-    "reconciliations": {
-      "profiles": "Profiles",
-      "import": "Import",
-      "allLinesMatched": "All bank statement lines are matched!",
-      "applyMatch": "Apply Match",
-      "autoMatch": "Auto Match",
-      "autoMatchedSuccess": "Auto-matched {count} items.",
-      "autoMatchNoResults": "No rule-based matches found.",
-      "bankStatementLine": "Bank Statement Line",
-      "confirmMatch": "Confirm Match",
-      "confirming": "Confirming...",
-      "createEntry": "Create Entry",
-      "deposit": "Deposit",
-      "findMatch": "Find Match",
-      "journalEntry": "Journal Entry",
-      "ledgerAmount": "Ledger Amount",
-      "matchDetailsTitle": "Match Details",
-      "undoMatch": "Undo Match",
-      "undoMatchSuccess": "Match undone successfully",
-      "matchSource": "Source",
-      "matchManual": "Manual Match",
-      "matchRule": "Rule: {ruleName}",
-      "matchAuto": "Auto-Matched",
-      "matchBy": "By",
-      "memo": "Memo",
-      "addLine": "Line",
-      "addAdjustment": "Adjustment",
-      "split": "Split",
-      "selectSingleRowToSplit": "Select a single row to split",
-      "statementLines": "Statement Lines",
-      "ledgerLines": "Ledger Lines",
-      "noBankLinesFound": "No bank lines found for this match",
-      "noLedgerLinesFound": "No ledger lines found for this match",
-      "matchConfirmError": "Failed to confirm match",
-      "noAutoMatchDescription": "Search for an existing transaction in your ledger, or create a new journal entry to reconcile this bank line.",
-      "noAutoMatchFound": "No Automatic Match Found",
-      "noUnmatchedLines": "No unmatched ledger lines available.",
-      "noMemoProvided": "No memo provided",
-      "reconciliationActions": "Reconciliation Actions",
-      "searchLedger": "Search Ledger",
-      "selectBankLine": "Select a bank line from the list to view details or apply a match.",
-      "suggestedMatch": "Suggested Match",
-      "systemMatchFound": "System Match Found",
-      "unmatched": "Unmatched",
-      "withdrawal": "Withdrawal",
-      "reconciled": "Reconciled",
-      "addLine": "+ Line",
-      "addAdjustment": "+ Adjustment",
-      "splitEntry": "Split",
-      "noLines": "No bank lines available",
-      "ledgerEntries": "Ledger",
-      "selectedBank": "Selected Bank",
-      "selectedLedger": "Selected Ledger",
-      "variance": "Variance",
-      "match": "Match",
-      "showAllLines": "Show all lines",
-      "noValidLines": "Please enter at least one valid line with a date, description, and amount.",
-      "linesCreated": "Lines created successfully",
-      "addManualLines": "Add Manual Bank Lines",
-      "manualEntryHelp": "Use this form to quickly enter manual bank lines. Press 'Tab' on the amount field of the last row to automatically add a new row. Empty rows will be ignored on save.",
-      "date": "Date",
-      "description": "Description",
-      "reference": "Reference",
-      "amount": "Amount",
-      "bankStatementLines": "Statement",
-      "cleared": "Cleared",
-      "statement": "Statement",
-      "ledger": "Ledger"
     },
     "roles": {
       "allow": "Allow",
@@ -479,15 +477,14 @@
       "inheritsFrom": "Inherits From:",
       "inheritsLabel": "Inherits:",
       "notApplicable": "N/A",
-      "roles": "Roles",
-      "saveRole": "Save Role",
-      "unset": "Unset",
-      "title": "Roles & Permissions",
       "resource": "Resource",
-      "saveChanges": "Save Changes"
+      "roles": "Roles",
+      "saveChanges": "Save Changes",
+      "saveRole": "Save Role",
+      "title": "Roles & Permissions",
+      "unset": "Unset"
     },
     "settings": {
-      "addRow": "+ Add Row",
       "actions": {
         "actions": "Actions",
         "addChild": "+ Child",
@@ -506,6 +503,7 @@
       "activities": {
         "empty": "No activities defined. Create one to get started."
       },
+      "addRow": "+ Add Row",
       "configuration": "Configuration",
       "confirmations": {
         "deleteActivity": "Are you sure you want to delete this activity?",
@@ -576,9 +574,9 @@
         "defaultAp": "Default Accounts Payable",
         "defaultAr": "Default Accounts Receivable",
         "defaultCogs": "Default COGS",
+        "defaultDiscountsReceived": "Default Discounts Received",
         "defaultExpense": "Default Expense",
         "defaultFeeRevenue": "Default Fee Revenue",
-        "defaultDiscountsReceived": "Default Discounts Received",
         "defaultGrni": "Default GRNI",
         "defaultInventory": "Default Inventory",
         "defaultRevenue": "Default Revenue",
@@ -659,9 +657,9 @@
       "subtitle": "Manage company details, GL defaults, tax codes, currencies and units of measure",
       "tax": {
         "empty": "No tax codes defined. Create one to get started.",
-        "percentage": "Percentage",
+        "exempt": "Exempt",
         "fixed": "Fixed",
-        "exempt": "Exempt"
+        "percentage": "Percentage"
       },
       "taxTypes": {
         "exempt": "Exempt",
@@ -747,8 +745,8 @@
         "limit": "Limit:",
         "limits": {
           "100": "100 lines",
-          "500": "500 lines",
           "1000": "1000 lines",
+          "500": "500 lines",
           "5000": "5000 lines"
         },
         "service": "Service:",
@@ -835,6 +833,15 @@
       }
     }
   },
+  "allocation": {
+    "eligiblePOs": "Eligible POs"
+  },
+  "availability": {
+    "avail": "Avail",
+    "cmt": "Cmt",
+    "in": "In",
+    "onHand": "On Hand"
+  },
   "bins": {
     "columns": {
       "baseQty": "Base Qty",
@@ -855,26 +862,15 @@
     "title": "Bin Contents"
   },
   "common": {
-    "adjustStock": "Adjust stock",
-    "copiedToClipboard": "Copied to clipboard",
-    "copy": "Copy",
-    "rawPhone": "Raw: {phone}",
     "actions": "Actions",
-    "costCenter": "Cost Center",
     "activity": "Activity",
-    "pinnedReports": "Pinned Reports",
-    "moveStock": "Move Stock",
-    "cannotMoveCrossLocation": "Cannot move items across different locations",
-    "noBinsFound": "No bins found in this location",
-    "reconciliationRules": "Reconciliation Rules",
-    "noData": "No data available.",
-    "chartTooLarge": "This chart contains too much data to render optimally ({count} points). Please apply filters to narrow down your results.",
     "activityTimeline": "Activity Timeline",
     "add": "Add",
     "address": {
       "city": "City",
       "country": "Country"
     },
+    "adjustStock": "Adjust stock",
     "auth": {
       "invalidCredentials": "Invalid credentials",
       "loading": "Loading...",
@@ -891,12 +887,15 @@
     },
     "by": "by",
     "cancel": "Cancel",
+    "cannotMoveCrossLocation": "Cannot move items across different locations",
+    "chartTooLarge": "This chart contains too much data to render optimally ({count} points). Please apply filters to narrow down your results.",
+    "close": "Close",
     "columns": {
       "activityTimeline": "Activity Timeline",
       "address": "Address",
-      "billingAddress": "Billing Address",
       "address2": "Address 2",
       "available": "Avail",
+      "billingAddress": "Billing Address",
       "city": "City",
       "code": "Code",
       "committed": "Committed",
@@ -912,11 +911,11 @@
       "customer": "Customer",
       "customerPO": "Customer PO",
       "date": "Date",
-      "dueDate": "Due Date",
       "deliveryAddrs": "Delivery Addrs",
       "description": "Description",
       "disc": "Disc %",
       "discountPct": "Discount %",
+      "dueDate": "Due Date",
       "email": "Email",
       "fax": "Fax",
       "group": "Group",
@@ -956,9 +955,13 @@
       "type": "Type",
       "vendor": "Vendor"
     },
+    "configure": "Configure",
     "confirm": "Confirm",
     "confirmDelete": "Are you sure you want to delete this item?",
+    "copiedToClipboard": "Copied to clipboard",
+    "copy": "Copy",
     "copying": "Copying...",
+    "costCenter": "Cost Center",
     "create": "Create",
     "created": "Created",
     "custom": "custom",
@@ -966,6 +969,7 @@
     "delete": "Delete",
     "deleted": "Deleted",
     "dismiss": "dismiss",
+    "ea": "EA",
     "edit": "Edit",
     "enrichment": {
       "nameUpdated": "Supplier name automatically updated from provider",
@@ -1073,15 +1077,18 @@
       "rowCountLabel": "Rows",
       "rows": "{count} rows"
     },
+    "in": "In",
     "itemsCount": "{count} items",
     "legacyRecordImported": "This is a read-only legacy record imported from ABM. Changes must be made in the source system.",
     "loading": "Loading...",
     "loadingEllipsis": "Loading...",
     "location": "Location",
     "memo": "Memo",
+    "moveStock": "Move Stock",
     "na": "N/A",
     "no": "No",
-    "optional": "Optional",
+    "noBinsFound": "No bins found in this location",
+    "noData": "No data available.",
     "noEvents": "No events recorded",
     "noMatchingResults": "No matching results",
     "none": "(None)",
@@ -1093,6 +1100,7 @@
     },
     "notesCardHeading": "Notes",
     "notesCardPlaceholder": "Internal notes",
+    "optional": "Optional",
     "options": {
       "none": "(None)"
     },
@@ -1115,6 +1123,7 @@
     "pageNotFound": "Page Not Found",
     "pageNotFoundDescription": "The page you are looking for does not exist.",
     "pending": "Pending",
+    "pinnedReports": "Pinned Reports",
     "placeholders": {
       "number": "e.g., P-1000",
       "quantity": "0"
@@ -1126,9 +1135,45 @@
       "placeholder": "Search product...",
       "typeMinChars": "Type at least 2 characters..."
     },
+    "products": {
+      "cards": {
+        "classification": "Classification",
+        "identity": "Identity",
+        "taxation": "Taxation"
+      },
+      "columns": {
+        "externalTaxCode": "External Tax Code"
+      },
+      "storage": {
+        "toastLinkUpdated": "Bin configuration updated"
+      },
+      "structureType": "Structure",
+      "structures": {
+        "kit": "Kit",
+        "standard": "Standard"
+      },
+      "tabs": {
+        "kitComponents": "Kit Components"
+      },
+      "types": {
+        "freight": "Freight"
+      }
+    },
+    "purchaseOrders": {
+      "placeholders": {
+        "searchProduct": "Search Product"
+      }
+    },
+    "rawPhone": "Raw: {phone}",
+    "reconciliationRules": "Reconciliation Rules",
     "resolving": "Resolving...",
+    "resource": "Resource",
     "save": "Save",
+    "saveChanges": "Save Changes",
     "saving": "Saving...",
+    "saving') : t('buttons": {
+      "submitBill": "Submit Bill"
+    },
     "select": "Select",
     "selectEllipsis": "Select...",
     "selectNone": "(None)",
@@ -1186,44 +1231,7 @@
     "unknown": "Unknown",
     "unknownProduct": "Unknown Product",
     "updated": "Updated",
-    "yes": "Yes",
-    "resource": "Resource",
-    "saveChanges": "Save Changes",
-    "close": "Close",
-    "configure": "Configure",
-    "ea": "EA",
-    "products": {
-      "tabs": {
-        "kitComponents": "Kit Components"
-      },
-      "storage": {
-        "toastLinkUpdated": "Bin configuration updated"
-      },
-      "cards": {
-        "identity": "Identity",
-        "classification": "Classification",
-        "taxation": "Taxation"
-      },
-      "types": {
-        "freight": "Freight"
-      },
-      "structureType": "Structure",
-      "structures": {
-        "standard": "Standard",
-        "kit": "Kit"
-      },
-      "columns": {
-        "externalTaxCode": "External Tax Code"
-      }
-    },
-    "purchaseOrders": {
-      "placeholders": {
-        "searchProduct": "Search Product"
-      }
-    },
-    "saving') : t('buttons": {
-      "submitBill": "Submit Bill"
-    }
+    "yes": "Yes"
   },
   "confirm": {
     "archiveOrder": "Are you sure you want to archive this order?",
@@ -1234,8 +1242,10 @@
     "removeReturnLine": "Remove this return line?",
     "removeShipmentLine": "Remove this shipment line?"
   },
+  "custom": "Custom",
+  "customItem": "Custom Item",
   "customers": {
-    "newTitle": "Create Customer",
+    "billing": "Billing",
     "buttons": {
       "createCustomer": "+ Create Customer"
     },
@@ -1246,34 +1256,37 @@
       "discountPct": "Customer Discount %"
     },
     "company": "Customer",
-    "billing": "Billing",
-    "contacts": "Contacts",
-    "deliveryAddresses": "Delivery Addresses",
     "contactManagement": {
-      "primaryBadge": "Primary",
       "addContact": "Add Contact",
-      "editContact": "Edit Contact",
-      "deleteContact": "Delete Contact",
       "confirmDeleteContact": "Are you sure you want to delete this contact? This action cannot be undone.",
       "contactAdded": "Contact added successfully",
-      "contactUpdated": "Contact updated successfully",
       "contactDeleted": "Contact deleted successfully",
+      "contactUpdated": "Contact updated successfully",
+      "deleteContact": "Delete Contact",
+      "editContact": "Edit Contact",
+      "email": "Email",
       "errors": {
         "firstNameRequired": "First Name is required",
         "lastNameRequired": "Last Name is required"
       },
       "firstName": "First Name",
-      "lastName": "Last Name",
+      "isPrimary": "Primary Contact",
       "jobTitle": "Job Title",
-      "email": "Email",
-      "phone": "Phone",
+      "lastName": "Last Name",
       "mobile": "Mobile",
-      "isPrimary": "Primary Contact"
+      "phone": "Phone",
+      "primaryBadge": "Primary"
+    },
+    "contacts": "Contacts",
+    "deliveryAddresses": "Delivery Addresses",
+    "enrichment": {
+      "nameUpdated": "Name updated",
+      "taxUpdated": "Tax updated"
     },
     "fields": {
-      "billingEmail": "Billing Email",
       "accountNumber": "Account Number",
       "bankAccountName": "Bank Account Name",
+      "billingEmail": "Billing Email",
       "businessNumber": "Business Number",
       "childAccounts": "Child Accounts ({count})",
       "discountRules": "Discount Rules",
@@ -1285,6 +1298,7 @@
     "generalInfo": "General Information",
     "invoices": "Invoices",
     "management": "Customer Management",
+    "newTitle": "Create Customer",
     "orders": "Orders",
     "overview": "Overview",
     "placeholders": {
@@ -1295,36 +1309,13 @@
     "pricingCurrency": "Pricing & Currency",
     "subtitle": "Manage customer customers",
     "title": "Customers",
-    "totalAccounts": "TOTAL ACCOUNTS",
-    "enrichment": {
-      "nameUpdated": "Name updated",
-      "taxUpdated": "Tax updated"
-    }
-  },
-  "reporting": {
-    "dashboard": {
-      "errorLoading": "There was an error loading the business reports. They might not be configured correctly.",
-      "goToConfig": "Go to Configuration",
-      "loading": "Loading Business Reports...",
-      "noReports": "There are currently no business reports available to view.",
-      "noReportsTitle": "No Reports Available"
-    },
-    "dateRange": {
-      "fixedDates": "Fixed Dates",
-      "relative": "Relative",
-      "latest": "Latest",
-      "lastFull": "Last full",
-      "days": "Days",
-      "months": "Months",
-      "years": "Years"
-    }
+    "totalAccounts": "TOTAL ACCOUNTS"
   },
   "dashboard": {
     "managePinnedReports": "Manage Pinned Reports",
     "noPinnedReports": "You haven't pinned any reports yet. Click the settings icon to add some.",
     "noSavedReports": "You don't have any saved report views yet. Go to the Reporting section to save some!",
     "pinnedReports": "Pinned Reports",
-    "reportSettingsDescription": "Select which saved report views you want to pin to your dashboard.",
     "quickActions": {
       "createPurchaseDesc": "Restock inventory from supplier",
       "createPurchaseOrder": "Create Purchase Order",
@@ -1332,7 +1323,7 @@
       "createSalesOrder": "Create Sales Order",
       "title": "Quick Actions"
     },
-    "viewFull": "View Full",
+    "reportSettingsDescription": "Select which saved report views you want to pin to your dashboard.",
     "search": {
       "noResults": "No results found",
       "placeholder": "Search products, customers, orders, suppliers...",
@@ -1366,72 +1357,95 @@
       "settings": "Timeline Settings",
       "title": "Recent Events",
       "types": {
-        "sales_order": {
-          "created": "Sales Order created",
-          "status_changed": "Sales Order status changed",
-          "deleted": "Sales Order deleted"
+        "customer": {
+          "created": "Customer created",
+          "updated": "Customer updated"
         },
-        "sales_invoice": {
-          "created": "Sales Invoice created",
-          "status_changed": "Sales Invoice status changed"
+        "email": {
+          "failed": "Email failed",
+          "queued": "Email queued",
+          "sent": "Email sent"
         },
-        "sales_return": {
-          "created": "Sales Return created",
-          "status_changed": "Sales Return status changed"
+        "general_ledger": {
+          "entry_posted": "Journal entry posted"
         },
-        "purchase_order": {
-          "created": "Purchase Order created",
-          "status_changed": "Purchase Order status changed",
-          "deleted": "Purchase Order deleted"
+        "inventory_ledger": {
+          "entry_posted": "Ledger entry posted"
+        },
+        "payment": {
+          "allocated": "Payment allocated",
+          "cancelled": "Payment cancelled",
+          "submitted": "Payment submitted"
         },
         "purchase_invoice": {
           "created": "Purchase Invoice created",
           "status_changed": "Purchase Invoice status changed"
         },
+        "purchase_order": {
+          "created": "Purchase Order created",
+          "deleted": "Purchase Order deleted",
+          "status_changed": "Purchase Order status changed"
+        },
         "purchase_return": {
           "created": "Purchase Return created",
           "status_changed": "Purchase Return status changed"
         },
-        "customer": {
-          "created": "Customer created",
-          "updated": "Customer updated"
+        "sales_invoice": {
+          "created": "Sales Invoice created",
+          "status_changed": "Sales Invoice status changed"
         },
+        "sales_order": {
+          "created": "Sales Order created",
+          "deleted": "Sales Order deleted",
+          "status_changed": "Sales Order status changed"
+        },
+        "sales_return": {
+          "created": "Sales Return created",
+          "status_changed": "Sales Return status changed"
+        },
+        "stock_adjusted": "Stock adjusted",
         "supplier": {
           "created": "Supplier created",
           "updated": "Supplier updated"
         },
-        "warehouse": {
-          "receipt_created": "Receipt created",
-          "receipt_status_changed": "Receipt status changed",
-          "goods_received": "Goods received",
-          "shipment_created": "Shipment created",
-          "shipment_status_changed": "Shipment status changed",
-          "shipment_dispatched": "Shipment dispatched"
-        },
-        "inventory_ledger": {
-          "entry_posted": "Ledger entry posted"
-        },
-        "stock_adjusted": "Stock adjusted",
         "transfer_order": {
           "created": "Transfer Order created",
           "status_changed": "Transfer Order status changed"
         },
-        "payment": {
-          "submitted": "Payment submitted",
-          "allocated": "Payment allocated",
-          "cancelled": "Payment cancelled"
-        },
-        "general_ledger": {
-          "entry_posted": "Journal entry posted"
-        },
-        "email": {
-          "queued": "Email queued",
-          "sent": "Email sent",
-          "failed": "Email failed"
+        "warehouse": {
+          "goods_received": "Goods received",
+          "receipt_created": "Receipt created",
+          "receipt_status_changed": "Receipt status changed",
+          "shipment_created": "Shipment created",
+          "shipment_dispatched": "Shipment dispatched",
+          "shipment_status_changed": "Shipment status changed"
         }
       }
     },
-    "title": "Dashboard"
+    "title": "Dashboard",
+    "viewFull": "View Full"
+  },
+  "deliveryAddress": {
+    "addAddress": "Add Delivery Address",
+    "addressLine1": "Address Line 1 *",
+    "addressLine2": "Address Line 2",
+    "addressName": "Address Name",
+    "addressNamePlaceholder": "e.g. Headquarters",
+    "city": "City",
+    "country": "Country *",
+    "createdSuccess": "Address created",
+    "editAddress": "Edit Delivery Address",
+    "postalCode": "Postal Code",
+    "requiredError": "Address Line 1 and Country are required",
+    "selectCountry": "Select Country",
+    "setAsPrimary": "Set as primary delivery address",
+    "stateOrProvince": "State / Province",
+    "updatedSuccess": "Address updated"
+  },
+  "ea": "ea",
+  "enrichment": {
+    "nameUpdated": "Name updated",
+    "taxUpdated": "Tax info updated"
   },
   "fulfillment": {
     "columns": {
@@ -1456,167 +1470,12 @@
     },
     "title": "Picking & Shipping"
   },
-  "gl": {
+  "generalLedger": {
     "reconciliations": {
-      "matchingConditions": "Matching Conditions",
-      "effect": "Effect",
-      "confirming": "Confirming...",
-      "addRule": "+ Add Rule",
-      "ruleCreated": "Rule Created",
-      "ruleUpdated": "Rule Updated",
-      "ruleDeleted": "Rule Deleted",
-      "allAccounts": "All Accounts",
-      "allBankAccounts": "All Bank Accounts",
-      "amountColumn": "Amount Column",
-      "autoMatchedLines": "{count} lines were auto-reconciled by rules.",
-      "autoMatch": "Auto Match",
-      "autoMatchedSuccess": "Auto-matched {count} items.",
-      "autoMatchNoResults": "No rule-based matches found.",
-      "bankAccount": "Bank Account",
-      "bankAccountOptional": "Bank Account (Optional)",
-      "bankStatementMatch": "Bank Statement Match",
-      "chooseFile": "Choose File",
-      "clearedBalance": "Cleared Balance",
-      "columns": {
-        "cleared": "Cleared?",
-        "credit": "Credit",
-        "glAccount": "Account",
-        "date": "Date",
-        "debit": "Debit",
-        "entryNo": "Entry No.",
-        "memo": "Memo",
-        "party": "Party",
-        "statementBalance": "Statement Balance",
-        "statementDate": "Statement Date",
-        "status": "Status"
-      },
-      "condition": "Condition",
-      "conditionType": "Condition Type",
-      "partyType": "Party Type",
-      "party": "Party",
-      "customer": "Customer",
-      "supplier": "Supplier",
-      "minAmount": "Min Amount",
-      "maxAmount": "Max Amount",
-      "targetGlAccount": "Target GL Account",
-      "conditionValue": "Condition Value",
-      "confirmDiscard": "Are you sure you want to discard this draft reconciliation?",
-      "confirmPost": "Are you sure you want to post this reconciliation? This cannot be undone.",
-      "create": "Start Reconciling",
-      "createError": "Failed to create reconciliation",
-      "createNewProfile": "Create new profile...",
-      "createNewRule": "Create New Rule",
-      "createdBy": "Created By",
-      "creating": "Creating...",
-      "csvFile": "CSV File",
-      "glAccount": "Account",
-      "dateColumn": "Date Column",
-      "descriptionColumn": "Description Column",
-      "descriptionContains": "Description Contains",
-      "descriptionExactMatch": "Description Exact Match",
-      "descriptionStartsWith": "Description Starts With",
-      "descriptionCondition": "Description Condition",
-      "anyDescription": "(Any Description)",
-      "typeCondition": "Type Condition",
-      "payeeCondition": "Payee Condition",
-      "anyPayee": "(Any Payee)",
-      "detailsTitle": "Reconciliation Details",
-      "discard": "Discard",
-      "discardError": "Failed to discard reconciliation",
-      "discardSuccess": "Reconciliation discarded successfully",
-      "done": "Done",
-      "egStripePayout": "e.g. STRIPE PAYOUT",
-      "import": "Import",
-      "importBankStatement": "Import Bank Statement",
-      "importComplete": "Import complete",
-      "importStatement": "Import Statement",
-      "importStatementFromCsvOptional": "Import Statement from CSV (Optional)",
-      "importing": "Importing...",
-      "ledgerLines": "Ledger Lines",
-      "linesAutoReconciled": "{count} lines were auto-reconciled by rules.",
-      "linesQueued": "{count} lines were queued for manual reconciliation.",
-      "loading": "Loading...",
-      "newReconciliation": "New Reconciliation",
-      "next": "Next",
-      "noFileSelected": "No file selected",
-      "noRulesDefinedYet": "No rules defined yet.",
-      "none": "None",
-      "notFound": "Reconciliation not found",
-      "openingBalance": "Opening Balance",
-      "parsing": "Parsing...",
-      "journalEntry": "Journal Entry",
-      "addLine": "+ Line",
-      "addAdjustment": "+ Adjustment",
-      "postError": "Failed to post reconciliation",
-      "postReconciliation": "Post Reconciliation",
-      "postSuccess": "Reconciliation posted successfully",
-      "posting": "Posting...",
-      "profileName": "Profile Name",
-      "quickAdjustment": "Quick Adjustment",
-      "quickAdjustmentForm": {
-        "amount": "Amount",
-        "createAndReconcile": "Create & Reconcile",
-        "creating": "Creating...",
-        "date": "Date",
-        "failedToCreateError": "Failed to create adjustment",
-        "memo": "Memo",
-        "memoPlaceholder": "e.g., Monthly Account Keeping Fee",
-        "moneyIn": "Money In (e.g. Interest)",
-        "moneyOut": "Money Out (e.g. Bank Fee)",
-        "offsetAccount": "Offset Account",
-        "requiredFieldsError": "Please fill out all required fields",
-        "selectAccount": "Select an account...",
-        "title": "Quick Adjustment",
-        "type": "Type"
-      },
-      "reconciliationLabel": "Reconciliation: {glAccount}",
-      "reconciliationRules": "Reconciliation Rules",
-      "referenceColumn": "Reference Column (Optional)",
-      "rows": "Rows",
-      "savedProfile": "Saved Profile",
-      "select": "Select...",
-      "selectAccount": "Select an account...",
-      "selectProfile": "Select an Import Profile",
-      "selectAccountPlaceholder": "Select Account...",
-      "selectAnAccount": "Select an account...",
-      "splitEntry": "Split Entry",
-      "splitEntryForm": {
-        "amountToClear": "Amount to Clear Now",
-        "confirmSplit": "Confirm Split",
-        "credit": "Credit",
-        "date": "Date",
-        "debit": "Debit",
-        "failedToSplitError": "Failed to split entry",
-        "invalidAmountError": "Split amount must be greater than 0 and less than the total line amount.",
-        "memo": "Memo",
-        "party": "Party",
-        "splitSuccess": "Entry successfully split and cleared!",
-        "splitting": "Splitting...",
-        "title": "Split Entry",
-        "total": "Total"
-      },
-      "statementBalance": "Statement Balance",
-      "statementDate": "Statement Date",
-      "statementDateLabel": "Statement Date: {date}",
-      "status": "Status",
-      "targetGl": "Target GL",
-      "targetGlAccountTag": "Target GL Account (Tag to)",
-      "title": "Bank Reconciliations",
-      "toggleError": "Failed to toggle line",
-      "tooltips": {
-        "back": "Back",
-        "clickToClear": "Click to clear",
-        "clickToUnclear": "Click to unclear",
-        "selectRowToSplit": "Select a row to split",
-        "splitRowDisabled": "Cannot split an already cleared row"
-      },
-      "unmatchedLines": "{count} lines were queued for manual reconciliation.",
-      "variance": "Variance",
-      "varianceMustBeZero": "Variance must be zero to post",
-      "opening": "Opening",
-      "cleared": "Cleared",
-      "statement": "Statement"
-    },
+      "confirming": "Confirming..."
+    }
+  },
+  "gl": {
     "codes": {
       "accountingCodes": "Accounting Codes",
       "button": "Codes",
@@ -1636,10 +1495,10 @@
       "columns": {
         "balance": "Balance",
         "credit": "Credit",
-        "glAccount": "Account",
         "date": "Date",
         "debit": "Debit",
         "entryNumber": "Entry #",
+        "glAccount": "Account",
         "memo": "Memo"
       },
       "fromDate": "From",
@@ -1653,10 +1512,10 @@
       "columns": {
         "createdBy": "Created By",
         "credit": "Credit",
-        "glAccount": "Account",
         "date": "Date",
         "debit": "Debit",
         "entryNumber": "Entry #",
+        "glAccount": "Account",
         "memo": "Memo",
         "party": "Party",
         "partyType": "Party Type",
@@ -1696,6 +1555,166 @@
       "unbalancedWarning": "Entry is unbalanced by {amount}"
     },
     "loading": "Loading...",
+    "reconciliations": {
+      "addAdjustment": "+ Adjustment",
+      "addLine": "+ Line",
+      "addRule": "+ Add Rule",
+      "allAccounts": "All Accounts",
+      "allBankAccounts": "All Bank Accounts",
+      "amountColumn": "Amount Column",
+      "anyDescription": "(Any Description)",
+      "anyPayee": "(Any Payee)",
+      "autoMatch": "Auto Match",
+      "autoMatchNoResults": "No rule-based matches found.",
+      "autoMatchedLines": "{count} lines were auto-reconciled by rules.",
+      "autoMatchedSuccess": "Auto-matched {count} items.",
+      "bankAccount": "Bank Account",
+      "bankAccountOptional": "Bank Account (Optional)",
+      "bankStatementMatch": "Bank Statement Match",
+      "chooseFile": "Choose File",
+      "cleared": "Cleared",
+      "clearedBalance": "Cleared Balance",
+      "columns": {
+        "cleared": "Cleared?",
+        "credit": "Credit",
+        "date": "Date",
+        "debit": "Debit",
+        "entryNo": "Entry No.",
+        "glAccount": "Account",
+        "memo": "Memo",
+        "party": "Party",
+        "statementBalance": "Statement Balance",
+        "statementDate": "Statement Date",
+        "status": "Status"
+      },
+      "condition": "Condition",
+      "conditionType": "Condition Type",
+      "conditionValue": "Condition Value",
+      "confirmDiscard": "Are you sure you want to discard this draft reconciliation?",
+      "confirmPost": "Are you sure you want to post this reconciliation? This cannot be undone.",
+      "confirming": "Confirming...",
+      "create": "Start Reconciling",
+      "createError": "Failed to create reconciliation",
+      "createNewProfile": "Create new profile...",
+      "createNewRule": "Create New Rule",
+      "createdBy": "Created By",
+      "creating": "Creating...",
+      "csvFile": "CSV File",
+      "customer": "Customer",
+      "dateColumn": "Date Column",
+      "descriptionColumn": "Description Column",
+      "descriptionCondition": "Description Condition",
+      "descriptionContains": "Description Contains",
+      "descriptionExactMatch": "Description Exact Match",
+      "descriptionStartsWith": "Description Starts With",
+      "detailsTitle": "Reconciliation Details",
+      "discard": "Discard",
+      "discardError": "Failed to discard reconciliation",
+      "discardSuccess": "Reconciliation discarded successfully",
+      "done": "Done",
+      "effect": "Effect",
+      "egStripePayout": "e.g. STRIPE PAYOUT",
+      "glAccount": "Account",
+      "import": "Import",
+      "importBankStatement": "Import Bank Statement",
+      "importComplete": "Import complete",
+      "importStatement": "Import Statement",
+      "importStatementFromCsvOptional": "Import Statement from CSV (Optional)",
+      "importing": "Importing...",
+      "journalEntry": "Journal Entry",
+      "ledgerLines": "Ledger Lines",
+      "linesAutoReconciled": "{count} lines were auto-reconciled by rules.",
+      "linesQueued": "{count} lines were queued for manual reconciliation.",
+      "loading": "Loading...",
+      "matchingConditions": "Matching Conditions",
+      "maxAmount": "Max Amount",
+      "minAmount": "Min Amount",
+      "newReconciliation": "New Reconciliation",
+      "next": "Next",
+      "noFileSelected": "No file selected",
+      "noRulesDefinedYet": "No rules defined yet.",
+      "none": "None",
+      "notFound": "Reconciliation not found",
+      "opening": "Opening",
+      "openingBalance": "Opening Balance",
+      "parsing": "Parsing...",
+      "party": "Party",
+      "partyType": "Party Type",
+      "payeeCondition": "Payee Condition",
+      "postError": "Failed to post reconciliation",
+      "postReconciliation": "Post Reconciliation",
+      "postSuccess": "Reconciliation posted successfully",
+      "posting": "Posting...",
+      "profileName": "Profile Name",
+      "quickAdjustment": "Quick Adjustment",
+      "quickAdjustmentForm": {
+        "amount": "Amount",
+        "createAndReconcile": "Create & Reconcile",
+        "creating": "Creating...",
+        "date": "Date",
+        "failedToCreateError": "Failed to create adjustment",
+        "memo": "Memo",
+        "memoPlaceholder": "e.g., Monthly Account Keeping Fee",
+        "moneyIn": "Money In (e.g. Interest)",
+        "moneyOut": "Money Out (e.g. Bank Fee)",
+        "offsetAccount": "Offset Account",
+        "requiredFieldsError": "Please fill out all required fields",
+        "selectAccount": "Select an account...",
+        "title": "Quick Adjustment",
+        "type": "Type"
+      },
+      "reconciliationLabel": "Reconciliation: {glAccount}",
+      "reconciliationRules": "Reconciliation Rules",
+      "referenceColumn": "Reference Column (Optional)",
+      "rows": "Rows",
+      "ruleCreated": "Rule Created",
+      "ruleDeleted": "Rule Deleted",
+      "ruleUpdated": "Rule Updated",
+      "savedProfile": "Saved Profile",
+      "select": "Select...",
+      "selectAccount": "Select an account...",
+      "selectAccountPlaceholder": "Select Account...",
+      "selectAnAccount": "Select an account...",
+      "selectProfile": "Select an Import Profile",
+      "splitEntry": "Split Entry",
+      "splitEntryForm": {
+        "amountToClear": "Amount to Clear Now",
+        "confirmSplit": "Confirm Split",
+        "credit": "Credit",
+        "date": "Date",
+        "debit": "Debit",
+        "failedToSplitError": "Failed to split entry",
+        "invalidAmountError": "Split amount must be greater than 0 and less than the total line amount.",
+        "memo": "Memo",
+        "party": "Party",
+        "splitSuccess": "Entry successfully split and cleared!",
+        "splitting": "Splitting...",
+        "title": "Split Entry",
+        "total": "Total"
+      },
+      "statement": "Statement",
+      "statementBalance": "Statement Balance",
+      "statementDate": "Statement Date",
+      "statementDateLabel": "Statement Date: {date}",
+      "status": "Status",
+      "supplier": "Supplier",
+      "targetGl": "Target GL",
+      "targetGlAccount": "Target GL Account",
+      "targetGlAccountTag": "Target GL Account (Tag to)",
+      "title": "Bank Reconciliations",
+      "toggleError": "Failed to toggle line",
+      "tooltips": {
+        "back": "Back",
+        "clickToClear": "Click to clear",
+        "clickToUnclear": "Click to unclear",
+        "selectRowToSplit": "Select a row to split",
+        "splitRowDisabled": "Cannot split an already cleared row"
+      },
+      "typeCondition": "Type Condition",
+      "unmatchedLines": "{count} lines were queued for manual reconciliation.",
+      "variance": "Variance",
+      "varianceMustBeZero": "Variance must be zero to post"
+    },
     "trialBalance": {
       "accountTypes": {
         "asset": "Asset",
@@ -1735,6 +1754,7 @@
     },
     "buttons": {
       "allLocations": "All locations",
+      "backToReceiving": "Back to Receiving",
       "cancel": "Cancel",
       "cancelReceiptTooltip": "Cancel the entire receipt for the selected lines",
       "match": "Match",
@@ -1742,18 +1762,7 @@
       "newReception": "Receive Goods",
       "quarantine": "Quarantine",
       "unquarantine": "Unquarantine",
-      "viewQuarantine": "View Quarantine",
-      "backToReceiving": "Back to Receiving"
-    },
-    "quarantine": {
-      "title": "Quarantine Items",
-      "unquarantineTitle": "Unquarantine Items",
-      "cancel": "Cancel",
-      "destinationBin": "Destination Bin",
-      "reasonOptional": "Reason (Optional)",
-      "noBinsFound": "No quarantine bins found in this location. The system will auto-resolve if possible, or fail.",
-      "selectBin": "Select a destination bin",
-      "noAvailableBins": "No available destination bins found in this location. Please create a receiving or storage bin first."
+      "viewQuarantine": "View Quarantine"
     },
     "columns": {
       "allocate": "Allocate",
@@ -1807,6 +1816,16 @@
       "searchProduct": "Search or scan product...",
       "selectLocation": "Select Receiving Location...",
       "selectSupplier": "Select Supplier..."
+    },
+    "quarantine": {
+      "cancel": "Cancel",
+      "destinationBin": "Destination Bin",
+      "noAvailableBins": "No available destination bins found in this location. Please create a receiving or storage bin first.",
+      "noBinsFound": "No quarantine bins found in this location. The system will auto-resolve if possible, or fail.",
+      "reasonOptional": "Reason (Optional)",
+      "selectBin": "Select a destination bin",
+      "title": "Quarantine Items",
+      "unquarantineTitle": "Unquarantine Items"
     },
     "return": {
       "description": "Description",
@@ -1975,15 +1994,19 @@
     },
     "title": "Inventory"
   },
+  "lineItemPrefix": "Line Item Prefix",
+  "matching": {
+    "unmatched": "Unmatched"
+  },
   "payments": {
     "allAllocations": "All Allocations",
-    "generateRun": "Generate Run",
     "allocate": "Allocate",
     "confirmCount": "Confirm ({count})",
     "createEntry": "Create Entry",
     "customer": "Customer",
     "date": "Date",
     "exportAba": "Export ABA ({count})",
+    "generateRun": "Generate Run",
     "loadingEllipsis": "Loading...",
     "manager": {
       "buttons": {
@@ -2096,6 +2119,7 @@
     "unallocatedOnly": "Unallocated Only",
     "view": "View"
   },
+  "pending": "Pending",
   "picking": {
     "actions": {
       "done": "Done",
@@ -2180,6 +2204,75 @@
       "stockSpecificallyOrdered": "Stock was specifically ordered for this line"
     },
     "unavailable": "Unavailable"
+  },
+  "portal": {
+    "addAddress": "Add Address",
+    "addLine": "Add Line",
+    "addressLine2": "Address Line 2",
+    "amount": "Amount",
+    "apply": "Apply",
+    "applyNewLicense": "Apply New License",
+    "applying": "Applying...",
+    "autoSelectByBudget": "Auto-select by Budget",
+    "bankAccount": "Bank Account",
+    "bankDetails": "Bank Details",
+    "cancel": "Cancel",
+    "creditHold": "Credit Hold",
+    "creditLimit": "Credit Limit",
+    "creditLines": "Credit Lines",
+    "customer": "Customer",
+    "description": "Description",
+    "discount": "Discount",
+    "dueDate": "Due Date",
+    "dueThisWeek": "Due This Week",
+    "eligibleForEarlyPaymentDiscount": "Eligible for Early Payment Discount",
+    "expiresAt": "Expires At",
+    "findingEligibleInvoices": "Finding eligible invoices...",
+    "generatePaymentRun": "Generate Payment Run",
+    "generateRun": "Generate Run",
+    "generating": "Generating...",
+    "glAccount": "GL Account",
+    "gracePeriodEnds": "Grace Period Ends",
+    "hierarchy": "Hierarchy",
+    "internalNote": "Internal Note / Reason",
+    "invoice": "Invoice",
+    "invoices": "invoices",
+    "issueCreditNote": "Issue Credit Note",
+    "issuing": "Issuing...",
+    "licenseType": "License Type",
+    "licensed": "Licensed",
+    "no": "No",
+    "noContactsFound": "No contacts found.",
+    "noDeliveryAddressesFound": "No delivery addresses found.",
+    "noHold": "No Hold",
+    "noLinesAdded": "No lines added.",
+    "noLinesFound": "No lines found.",
+    "noTitle": "No Title",
+    "noUnpaidInvoices": "No unpaid invoices found.",
+    "notAvailable": "Not available",
+    "onHold": "On Hold",
+    "order": "Order:",
+    "otherInvoices": "Other Invoices",
+    "pasteLicenseKey": "Paste your new license key below. Make sure it was issued for your exact System ID ({systemId}).",
+    "product": "Product",
+    "qtyToCredit": "Qty to Credit",
+    "readOnly": "Read-Only",
+    "returnItemsToCredit": "Return Items to Credit",
+    "select": "Select",
+    "selectBankAccount": "Select a Bank Account",
+    "status": "Status",
+    "supplier": "Supplier",
+    "systemDefault": "System Default",
+    "systemDetails": "System Details",
+    "systemId": "System ID",
+    "targetDate": "Target Date",
+    "toPay": "To Pay",
+    "total": "Total:",
+    "totalSelected": "Total Selected",
+    "tradingTerms": "Trading Terms",
+    "trial": "Trial",
+    "trialExpiring": "Trial Expiring",
+    "yes": "Yes"
   },
   "products": {
     "addComponent": "Add Component",
@@ -2366,12 +2459,12 @@
       "amount": "Amount",
       "available": "Available",
       "billed": "Billed",
-      "expectedDate": "Expected Date",
       "committed": "Committed",
       "date": "Date",
       "description": "Description",
       "details": "Details",
       "discountPct": "Disc %",
+      "expectedDate": "Expected Date",
       "fee": "Fee",
       "invoiceNumber": "System Bill No.",
       "issueType": "Issue Type",
@@ -2637,6 +2730,24 @@
     "unnamedCustomer": "Unnamed customer",
     "untitledOrder": "Untitled order"
   },
+  "reporting": {
+    "dashboard": {
+      "errorLoading": "There was an error loading the business reports. They might not be configured correctly.",
+      "goToConfig": "Go to Configuration",
+      "loading": "Loading Business Reports...",
+      "noReports": "There are currently no business reports available to view.",
+      "noReportsTitle": "No Reports Available"
+    },
+    "dateRange": {
+      "days": "Days",
+      "fixedDates": "Fixed Dates",
+      "lastFull": "Last full",
+      "latest": "Latest",
+      "months": "Months",
+      "relative": "Relative",
+      "years": "Years"
+    }
+  },
   "salesInvoices": {
     "columns": {
       "amount": "Amount",
@@ -2668,6 +2779,12 @@
       "others": "In Stock (Other)",
       "shortage": "Stock Shortage"
     },
+    "availabilityTable": {
+      "avail": "Avail",
+      "cmt": "Cmt",
+      "in": "In",
+      "onHand": "On Hand"
+    },
     "backToOrders": "← Back to Orders",
     "backordersTab": "Backorders",
     "buttons": {
@@ -2676,11 +2793,11 @@
       "calculateTaxes": "Calculate Taxes",
       "confirmationPdf": "Confirmation PDF",
       "copyOrder": "Copy Order",
+      "createCreditNote": "Create Credit Note",
       "createInvoice": "Create Invoice",
       "createOrder": "+ Create Order",
       "createQuote": "Create Quote",
       "createReturn": "Create Return",
-      "createCreditNote": "Create Credit Note",
       "customLine": "+ Custom Line",
       "generate": "Generate",
       "generateInvoice": "Generate Invoice",
@@ -2714,6 +2831,7 @@
       "lineNumber": "#",
       "location": "Location",
       "name": "Name",
+      "onHand": "On Hand",
       "orderNumber": "Order No.",
       "ordered": "Ordered",
       "picked": "Picked",
@@ -2732,10 +2850,14 @@
       "tax": "Tax",
       "type": "Type",
       "unitPrice": "Unit Price",
-      "uom": "UOM",
-      "onHand": "On Hand"
+      "uom": "UOM"
     },
     "createTitle": "Create Sales Order",
+    "customers": {
+      "invoices": "Invoices",
+      "orders": "Orders",
+      "overview": "Overview"
+    },
     "demandedQty": "{qty} demanded",
     "discountPercent": "{disc}% disc",
     "discrepancies": {
@@ -2745,6 +2867,7 @@
       "shortageOf": "Shortage of {qty} units",
       "title": "Part Availability Discrepancies"
     },
+    "ea": "EA",
     "errors": {
       "acknowledgeShortages": "Please review and acknowledge the part availability shortages before confirming.",
       "failedToAddLine": "Failed to add line",
@@ -2836,19 +2959,7 @@
     },
     "unnamedCustomer": "Unnamed customer",
     "untitledOrder": "Untitled order",
-    "virtualFulfillmentBypass": "N/A",
-    "ea": "EA",
-    "availabilityTable": {
-      "avail": "Avail",
-      "onHand": "On Hand",
-      "cmt": "Cmt",
-      "in": "In"
-    },
-    "customers": {
-      "overview": "Overview",
-      "orders": "Orders",
-      "invoices": "Invoices"
-    }
+    "virtualFulfillmentBypass": "N/A"
   },
   "schemaBuilder": {
     "addField": "+ Add Field",
@@ -2875,7 +2986,6 @@
   },
   "setup": {
     "dataImport": {
-      "taxFormat": "{name} ({rate}%) - {code}",
       "abm": "Back",
       "back": "Back",
       "buttons": {
@@ -2950,6 +3060,7 @@
       "systemBaseCurrencyDesc": "Confirm the base currency to be used for transactions imported from this ABM instance.",
       "systemBaseCurrencyDescOdoo": "Confirm the base currency to be used for transactions imported from this Odoo instance.",
       "targetTable": "Target Table",
+      "taxFormat": "{name} ({rate}%) - {code}",
       "title": {
         "completed": "Data Import Complete",
         "failed": "Data Import Failed",
@@ -3261,12 +3372,12 @@
     },
     "compliance": {
       "blockNotes": "Block Notes",
+      "blocked": "Blocked",
       "groupInherited": "Group Inherited ({reason})",
+      "noBlock": "No block",
       "notesPlaceholder": "Internal notes regarding blocking...",
       "paymentBlock": "Payment Block",
       "purchasingBlock": "Purchasing Block",
-      "blocked": "Blocked",
-      "noBlock": "No block",
       "reason": "Reason",
       "reasons": {
         "compliance_breach": "Compliance Breach",
@@ -3377,6 +3488,7 @@
       "currentlyBlocked": "Currently Blocked"
     }
   },
+  "taxNeedsToBeCalculated": "Tax needs to be calculated",
   "toast": {
     "accountCreated": "Customer created successfully",
     "accountUpdated": "Customer updated successfully",
@@ -3443,133 +3555,5 @@
     "subtitleFlow": "From {source} to {destination}",
     "title": "Transfer Orders",
     "transferTitle": "Transfer {number}"
-  },
-  "generalLedger": {
-    "reconciliations": {
-      "confirming": "Confirming..."
-    }
-  },
-  "ea": "ea",
-  "allocation": {
-    "eligiblePOs": "Eligible POs"
-  },
-  "taxNeedsToBeCalculated": "Tax needs to be calculated",
-  "pending": "Pending",
-  "custom": "Custom",
-  "availability": {
-    "avail": "Avail",
-    "onHand": "On Hand",
-    "cmt": "Cmt",
-    "in": "In"
-  },
-  "customItem": "Custom Item",
-  "matching": {
-    "unmatched": "Unmatched"
-  },
-  "lineItemPrefix": "Line Item Prefix",
-  "enrichment": {
-    "nameUpdated": "Name updated",
-    "taxUpdated": "Tax info updated"
-  },
-  "deliveryAddress": {
-    "addAddress": "Add Delivery Address",
-    "editAddress": "Edit Delivery Address",
-    "addressName": "Address Name",
-    "addressNamePlaceholder": "e.g. Headquarters",
-    "addressLine1": "Address Line 1 *",
-    "addressLine2": "Address Line 2",
-    "city": "City",
-    "stateOrProvince": "State / Province",
-    "postalCode": "Postal Code",
-    "country": "Country *",
-    "selectCountry": "Select Country",
-    "setAsPrimary": "Set as primary delivery address",
-    "requiredError": "Address Line 1 and Country are required",
-    "createdSuccess": "Address created",
-    "updatedSuccess": "Address updated"
-  },
-  "portal": {
-    "customer": "Customer",
-    "internalNote": "Internal Note / Reason",
-    "creditLines": "Credit Lines",
-    "addLine": "Add Line",
-    "description": "Description",
-    "glAccount": "GL Account",
-    "amount": "Amount",
-    "select": "Select",
-    "noLinesAdded": "No lines added.",
-    "total": "Total:",
-    "order": "Order:",
-    "returnItemsToCredit": "Return Items to Credit",
-    "product": "Product",
-    "qtyToCredit": "Qty to Credit",
-    "noLinesFound": "No lines found.",
-    "bankAccount": "Bank Account",
-    "selectBankAccount": "Select a Bank Account",
-    "autoSelectByBudget": "Auto-select by Budget",
-    "apply": "Apply",
-    "noUnpaidInvoices": "No unpaid invoices found.",
-    "totalSelected": "Total Selected",
-    "cancel": "Cancel",
-    "issueCreditNote": "Issue Credit Note",
-    "issuing": "Issuing...",
-    "generating": "Generating...",
-    "generateRun": "Generate Run",
-    "findingEligibleInvoices": "Finding eligible invoices...",
-    "noTitle": "No Title",
-    "noContactsFound": "No contacts found.",
-    "addAddress": "Add Address",
-    "noDeliveryAddressesFound": "No delivery addresses found.",
-    "creditHold": "Credit Hold",
-    "onHold": "On Hold",
-    "noHold": "No Hold",
-    "yes": "Yes",
-    "no": "No",
-    "tradingTerms": "Trading Terms",
-    "systemDefault": "System Default",
-    "creditLimit": "Credit Limit",
-    "addressLine2": "Address Line 2",
-    "bankDetails": "Bank Details",
-    "hierarchy": "Hierarchy",
-    "systemDetails": "System Details",
-    "systemId": "System ID",
-    "status": "Status",
-    "readOnly": "Read-Only",
-    "licensed": "Licensed",
-    "trial": "Trial",
-    "trialExpiring": "Trial Expiring",
-    "licenseType": "License Type",
-    "applyNewLicense": "Apply New License",
-    "pasteLicenseKey": "Paste your new license key below. Make sure it was issued for your exact System ID ({systemId}).",
-    "noContactsFound": "No contacts found.",
-    "addAddress": "Add Address",
-    "noDeliveryAddressesFound": "No delivery addresses found.",
-    "creditHold": "Credit Hold",
-    "tradingTerms": "Trading Terms",
-    "systemDefault": "System Default",
-    "creditLimit": "Credit Limit",
-    "bankDetails": "Bank Details",
-    "hierarchy": "Hierarchy",
-    "gracePeriodEnds": "Grace Period Ends",
-    "expiresAt": "Expires At",
-    "applying": "Applying...",
-    "noTitle": "No Title",
-    "onHold": "On Hold",
-    "noHold": "No Hold",
-    "yes": "Yes",
-    "no": "No",
-    "addressLine2": "Address Line 2",
-    "notAvailable": "Not available",
-    "invoice": "Invoice",
-    "supplier": "Supplier",
-    "dueDate": "Due Date",
-    "discount": "Discount",
-    "toPay": "To Pay",
-    "targetDate": "Target Date",
-    "dueThisWeek": "Due This Week",
-    "eligibleForEarlyPaymentDiscount": "Eligible for Early Payment Discount",
-    "otherInvoices": "Other Invoices",
-    "invoices": "invoices",
-    "generatePaymentRun": "Generate Payment Run"
   }
 }

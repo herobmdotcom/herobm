@@ -343,7 +343,7 @@ export default function RolesPage() {
                     onClick={() => toggleRole(roleItem.role)}
                   >
                     <div className="flex items-center gap-4">
-                      {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                      { }
                       <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 text-[var(--accent)] ${expandedRoles[roleItem.role] || editingRole === roleItem.role ? 'rotate-90' : ''}`}>
                         chevron_right
                       </span>

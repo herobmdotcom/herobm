@@ -83,7 +83,7 @@ export default function LicensePage() {
                     title="Copy to clipboard"
                   >
         
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                    { }
                     <span className="material-symbols-outlined text-sm">content_copy</span>
                   </button>
                 </div>

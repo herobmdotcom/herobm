@@ -363,7 +363,7 @@ export function PaymentRunGeneratorSlideOver({
         {/* Footer */}
         <div className="p-4 border-t border-gray-200 flex justify-between items-center">
           <div className="font-medium text-gray-900">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Untranslated punctuation */}
+            { }
             {t('totalSelected')}: ${totalSelectedCash.toFixed(2)} ({selectedInvoiceIds.size} {t('invoices')})
           </div>
           <div className="flex gap-3">

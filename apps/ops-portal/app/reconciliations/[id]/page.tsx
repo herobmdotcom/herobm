@@ -224,7 +224,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
   }, [reconciliation?.status, t]);
 
   if (loading) return <div className="p-4">{t('loading')}</div>;
-  // eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon).
+   
   if (fetchError) return <div className="p-4 text-red-500">Error: {fetchError}</div>;
   if (!reconciliation) return <div className="p-4">{t('notFound')}</div>;
 

@@ -432,7 +432,7 @@ function POCandidatesList({
               className="flex justify-between"
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                { }
                 <span className="material-symbols-outlined" style={{ fontSize: 18, transition: 'transform 0.15s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', color: 'var(--text-muted)' }}>
                   chevron_right
                 </span>

@@ -200,7 +200,7 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
                   className="text-gray-400 hover:text-red-500"
                   onClick={() => handleRemoveLine(index)}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                  { }
                   <span className="material-symbols-outlined">delete</span>
                 </button>
               </div>

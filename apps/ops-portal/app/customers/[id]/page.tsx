@@ -533,7 +533,7 @@ export default function AccountDetailPage({
               <div className="flex items-start justify-between mb-4">
                 <h3 className="section-heading m-0">
                   { }
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                  { }
                   <span className="material-symbols-outlined">group</span>
                   {t("customers.contacts")}
                 </h3>
@@ -558,7 +558,7 @@ export default function AccountDetailPage({
                             title={t("customers.contactManagement.editContact")}
                           >
                             { }
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                            { }
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
                           <button
@@ -568,7 +568,7 @@ export default function AccountDetailPage({
                             title={t("customers.contactManagement.deleteContact")}
                           >
                             { }
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                            { }
                             <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
                         </div>
@@ -582,7 +582,7 @@ export default function AccountDetailPage({
                         {contact.phone && (
                           <div className="flex items-center gap-1.5 text-sm text-gray-600">
                             { }
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                            { }
                             <span className="material-symbols-outlined text-[14px] text-gray-400">phone</span>
                             <a href={`tel:${contact.phone}`} className="hover:text-[var(--accent)] transition-colors">{contact.phone}</a>
                           </div>
@@ -590,7 +590,7 @@ export default function AccountDetailPage({
                         {contact.mobile && (
                           <div className="flex items-center gap-1.5 text-sm text-gray-600">
                             { }
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                            { }
                             <span className="material-symbols-outlined text-[14px] text-gray-400">smartphone</span>
                             <a href={`tel:${contact.mobile}`} className="hover:text-[var(--accent)] transition-colors">{contact.mobile}</a>
                           </div>
@@ -600,7 +600,7 @@ export default function AccountDetailPage({
                     {contact.email && (
                       <div className="flex items-center gap-1.5 text-sm text-gray-600 mt-1.5">
                         { }
-                        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                        { }
                         <span className="material-symbols-outlined text-[14px] text-gray-400">mail</span>
                         <a href={`mailto:${contact.email}`} className="text-[var(--accent)] hover:underline truncate">
                           {contact.email}
@@ -625,7 +625,7 @@ export default function AccountDetailPage({
               <div className="flex justify-between items-center mb-4">
                 <h3 className="section-heading mb-0">
                   { }
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                  { }
                   <span className="material-symbols-outlined">local_shipping</span>
                   {t("customers.deliveryAddresses")}
                 </h3>
@@ -648,7 +648,7 @@ export default function AccountDetailPage({
                             title="Edit Address"
                           >
                             { }
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                            { }
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
                           <button
@@ -658,7 +658,7 @@ export default function AccountDetailPage({
                             title="Delete Address"
                           >
                             { }
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                            { }
                             <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
                         </div>
@@ -694,7 +694,7 @@ export default function AccountDetailPage({
             <div id="info-section" className="card">
               <h3 className="section-heading">
                 { }
-                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                { }
                 <span className="material-symbols-outlined">info</span>
                 {t("customers.generalInfo")}
               </h3>
@@ -827,7 +827,7 @@ export default function AccountDetailPage({
             <div id="pricing-section" className="card">
               <h3 className="section-heading">
                 { }
-                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                { }
                 <span className="material-symbols-outlined">payments</span>
                 FINANCIALS
               </h3>
@@ -1183,7 +1183,7 @@ export default function AccountDetailPage({
             <div id="address-section" className="card">
               <h3 className="section-heading">
                 { }
-                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                { }
                 <span className="material-symbols-outlined">location_on</span>
                 {t("customers.billing")}
               </h3>
@@ -1324,7 +1324,7 @@ export default function AccountDetailPage({
             <div id="bank-section" className="card h-fit">
               <h3 className="section-heading">
                 { }
-                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                { }
                 <span className="material-symbols-outlined">
                   account_balance
                 </span>
@@ -1395,7 +1395,7 @@ export default function AccountDetailPage({
               <div id="hierarchy-section" className="card h-fit">
                 <h3 className="section-heading">
                   { }
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                  { }
                   <span className="material-symbols-outlined">
                     account_tree
                   </span>
@@ -1430,7 +1430,7 @@ export default function AccountDetailPage({
                             </div>
                           </div>
                           { }
-                          {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                          { }
                           <span className="material-symbols-outlined text-[var(--text-muted)]">
                             chevron_right
                           </span>

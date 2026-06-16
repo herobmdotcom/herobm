@@ -83,7 +83,7 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                     className={`flex items-center justify-center h-10 w-10 rounded-lg transition-all ${isActive ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-white border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'}`}
                     title="Filters"
                 >
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
+                    { }
                     <span className="material-symbols-outlined text-[20px]">filter_list</span>
                 </button>
                 {open && (

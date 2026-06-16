@@ -288,7 +288,7 @@ export default function ProductDetailPage() {
           className="btn btn-xs btn-ghost text-red-500 hover:bg-red-50 px-2 h-7 min-h-7"
           title={t('suppliers.buttons.unlinkSupplier')}
         >
-          {/* eslint-disable-next-line i18next/no-literal-string -- Complex UI state, DTO typing, or Material Icon */}
+          { }
           <span className="material-symbols-outlined text-[16px]">link_off</span>
         </button>
       )
@@ -501,7 +501,7 @@ export default function ProductDetailPage() {
                         onClick={() => setIsAddSupplierOpen(true)}
                         disabled={!isEditable}
                       >
-                        {/* eslint-disable-next-line i18next/no-literal-string -- Complex UI state, DTO typing, or Material Icon */}
+                        { }
                         <span className="material-symbols-outlined text-[16px]">add_link</span>
                         {t('products.supplierModal.title')}
                       </button>
@@ -737,7 +737,7 @@ export default function ProductDetailPage() {
                                     title={tCommon('buttons.save')}
                                     disabled={saving}
                                   >
-                                    {/* eslint-disable-next-line i18next/no-literal-string -- Complex UI state, DTO typing, or Material Icon */}
+                                    { }
                                     <span className="material-symbols-outlined text-[16px]">check</span>
                                   </button>
                                 </div>
@@ -776,7 +776,7 @@ export default function ProductDetailPage() {
                                       }}
                                       className="p-1 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
                                     >
-                                      {/* eslint-disable-next-line i18next/no-literal-string -- Complex UI state, DTO typing, or Material Icon */}
+                                      { }
                                       <span className="material-symbols-outlined text-[16px]">edit</span>
                                     </button>
                                     {bin.isDefault && (
@@ -793,7 +793,7 @@ export default function ProductDetailPage() {
                                         }}
                                         className="p-1 hover:bg-red-50 rounded text-red-500 transition-colors"
                                       >
-                                        {/* eslint-disable-next-line i18next/no-literal-string -- Complex UI state, DTO typing, or Material Icon */}
+                                        { }
                                         <span className="material-symbols-outlined text-[16px]">delete</span>
                                       </button>
                                     )}
@@ -955,7 +955,7 @@ export default function ProductDetailPage() {
           {/* Pricing & Financials Card */}
           <div id="pricing-section" className="card">
             <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Complex UI state, DTO typing, or Material Icon */}
+              { }
               <span className="material-symbols-outlined">payments</span>
               {t('products.pricing')}
             </h3>
@@ -1056,7 +1056,7 @@ export default function ProductDetailPage() {
           {/* Taxation Card */}
           <div className="card">
             <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Complex UI state, DTO typing, or Material Icon */}
+              { }
               <span className="material-symbols-outlined">account_balance</span>
               {t('products.cards.taxation')}
             </h3>

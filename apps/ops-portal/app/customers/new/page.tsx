@@ -105,7 +105,7 @@ export default function NewAccountPage() {
             {/* General Info Card */}
             <div className="card">
               <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                { }
                 <span className="material-symbols-outlined">info</span>
                 {t('customers.generalInfo')}
               </h3>
@@ -206,7 +206,7 @@ export default function NewAccountPage() {
             {/* Pricing & Currency Card */}
             <div className="card">
               <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                { }
               <span className="material-symbols-outlined">payments</span>
               FINANCIALS
             </h3>

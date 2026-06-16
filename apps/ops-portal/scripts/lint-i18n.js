@@ -121,6 +121,15 @@ files.forEach(file => {
   });
 });
 
+// Run ESLint on en.json to enforce duplicate key and alphabetical sorting checks
+try {
+  console.log('\nRunning ESLint on en.json to check for duplicates and sorting...');
+  require('child_process').execSync('npx eslint messages/en.json --max-warnings=0', { stdio: 'inherit', cwd: rootDir });
+} catch (e) {
+  console.error('\x1b[31m[ERROR] en.json failed ESLint checks (duplicate keys or unsorted keys).\x1b[0m');
+  errorsFound = true;
+}
+
 if (errorsFound) {
   console.error('\n\x1b[31m❌ i18n Linting Failed: Found missing translation keys. Please add them to messages/en.json\x1b[0m');
   process.exit(1);

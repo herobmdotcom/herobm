@@ -150,7 +150,7 @@ export default function BankMatchingView({
         if (params.data.isReconciled) {
           return (
             <div className="flex items-center h-full relative cursor-pointer">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+              { }
               <span className="material-symbols-outlined text-[18px] text-[var(--success)] absolute -left-[30px]">check</span>
               {params.value}
             </div>
@@ -203,7 +203,7 @@ export default function BankMatchingView({
         if (params.data.isCleared) {
           return (
             <div className="flex items-center h-full relative cursor-pointer">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+              { }
               <span className="material-symbols-outlined text-[18px] text-[var(--success)] absolute -left-[30px]">check</span>
               {params.value}
             </div>
@@ -478,7 +478,7 @@ export default function BankMatchingView({
             </div>
             
             <div className="text-[var(--text-muted)] flex items-center justify-center">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+              { }
               <span className="material-symbols-outlined text-[24px]">compare_arrows</span>
             </div>
 
@@ -501,7 +501,7 @@ export default function BankMatchingView({
             className="px-8 py-3 bg-[var(--accent)] text-white font-medium rounded-lg hover:brightness-110 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {matching ? tCommon('saving') : t('match')}
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+            { }
             <span className="material-symbols-outlined text-[20px]">done_all</span>
           </button>
         </div>

@@ -168,7 +168,7 @@ export default function InternalTransferModal({
           >
             {isSubmitting ? (
               <>
-                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                { }
                 <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
                 {t('demands.creating')}
               </>

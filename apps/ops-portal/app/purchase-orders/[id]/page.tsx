@@ -381,7 +381,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <div id="details-section" className="card">
             <div className="flex justify-between items-center mb-4">
               <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                { }
                 <span className="material-symbols-outlined">receipt_long</span>
                 {tPurchase('orderDetails')}
               </h3>

@@ -295,7 +295,7 @@ export default function NewPurchaseOrderPage() {
           {/* Order header */}
           <div className="card">
           <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+            { }
             <span className="material-symbols-outlined">receipt_long</span>
             {t('purchaseOrders.orderDetails')}
           </h3>

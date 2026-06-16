@@ -296,11 +296,11 @@ export default function RulesEnginePage() {
       render: (row: any) => (
         <div className="flex justify-end gap-1">
           <button className="btn btn-sm btn-ghost btn-circle" onClick={() => handleOpenEdit(row)}>
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+            { }
             <span className="material-symbols-outlined text-[18px]">edit</span>
           </button>
           <button className="btn btn-sm btn-ghost btn-circle text-red-500 hover:text-red-700" onClick={() => handleDeleteRule(row)}>
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+            { }
             <span className="material-symbols-outlined text-[18px]">delete</span>
           </button>
         </div>
@@ -333,11 +333,11 @@ export default function RulesEnginePage() {
           </div>
 
           <div className="card bg-[var(--bg-primary)] p-6 border border-[var(--border)] rounded-xl max-w-2xl">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+            { }
             <h3 className="section-heading flex items-center gap-2 mb-6">Smart Match Parameters</h3>
             <div className="space-y-6">
               <div>
-                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+                { }
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                   Date Tolerance (Days)
                 </label>
@@ -367,9 +367,9 @@ export default function RulesEnginePage() {
         title={editingRule?.ruleId ? 'Edit Rule' : 'Add Rule'}
         footer={
           <div className="flex justify-end gap-2">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+            { }
             <button type="button" className="btn btn-ghost" onClick={handleCloseModal}>Cancel</button>
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+            { }
             <button type="submit" form="ruleForm" className="btn btn-primary">Save</button>
           </div>
         }
@@ -589,7 +589,7 @@ export default function RulesEnginePage() {
             </div>
             
             {/* Hidden submit button to allow Enter key submission, but SlideOver footer "Save" button triggers handleSaveModal */}
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+            { }
             <button type="submit" className="hidden">Submit</button>
           </form>
         )}

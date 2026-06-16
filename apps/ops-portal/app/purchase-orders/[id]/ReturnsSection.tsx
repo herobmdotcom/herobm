@@ -374,7 +374,7 @@ export default function ReturnsSection({
             letterSpacing: '0.05em', margin: 0
           }}
         >
-          {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+          { }
           <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>assignment_return</span>
           Returns
           <span style={{ fontSize: 11, fontWeight: 400 }}>({returns.length})</span>

@@ -118,7 +118,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
           >
             {saving ? (
               <>
-                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                { }
                 <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
               </>
             ) : null}

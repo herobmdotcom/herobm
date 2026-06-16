@@ -1167,14 +1167,14 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                 {/* Delivery section */}
                 <div className="card">
                     <h3 className="section-heading mb-4">
-                        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                        { }
                         <span className="material-symbols-outlined">local_shipping</span>
                         Delivery
                     </h3>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                         <div className="flex flex-col gap-4">
                             <div className="mt-2">
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                            { }
                             <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                                 Delivery Address
                             </label>
@@ -1248,7 +1248,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         </div>
 
                         <div className="mt-2">
-                                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                                { }
                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                                     Shipping Instructions
                                 </label>

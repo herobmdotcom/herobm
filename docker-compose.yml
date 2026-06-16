@@ -31,20 +31,7 @@ services:
     image: docker.io/library/postgres:16-alpine
     container_name: postgres-custom
     restart: unless-stopped
-    command:
-      - "postgres"
-      - "-c"
-      - "logging_collector=on"
-      - "-c"
-      - "log_directory=/var/log/postgresql"
-      - "-c"
-      - "log_filename=postgres.log"
-      - "-c"
-      - "log_truncate_on_rotation=on"
-      - "-c"
-      - "log_rotation_age=1d"
-      - "-c"
-      - "log_rotation_size=10MB"
+    command: ["postgres"]
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -54,7 +41,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./configs/postgres:/docker-entrypoint-initdb.d:ro
-      - ./logs:/var/log/postgresql
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 10s

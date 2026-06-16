@@ -49,14 +49,21 @@ export default tseslint.config(
     rules: {
       '@eslint-community/eslint-comments/require-description': ['error', { ignore: ['eslint-enable'] }],
       'i18next/no-literal-string': ['error', {
-        markupOnly: true,
-        ignoreAttribute: ['aria-hidden'],
-        // Ignore strings that consist entirely of emoji / variation selectors or 'use client' directive
-        ignore: [
-          '^[\\p{Emoji}\\p{Emoji_Component}\\uFE0E\\uFE0F\\u200D\\s]+$',
-          'use client',
-          '^([a-z]+_[a-z_]+|info|group|delete|edit|phone|smartphone|mail|payments|print|check)$'
-        ],
+        mode: 'jsx-text-only',
+        'jsx-attributes': {
+          exclude: ['className', 'styleName', 'style', 'type', 'key', 'id', 'width', 'height', 'aria-hidden'],
+        },
+        words: {
+          exclude: [
+            /[0-9!\-\/:\-@\[-`{-~]+/,
+            /[A-Z_-]+/,
+            /^[\p{Emoji}\p{Emoji_Component}\uFE0E\uFE0F\u200D\s✅🚚❌📦]+$/u,
+            /^use client$/,
+            /^([a-z]+_[a-z_]+|info|group|delete|edit|phone|smartphone|mail|payments|print|check|settings)$/,
+            /^[—\-\.\+←→·%\$\(\)\"\'\,\s\&×•]+$/,
+            /^(&times;|&bull;)$/
+          ]
+        }
       }],
       '@typescript-eslint/no-explicit-any': 'error',
       'no-restricted-imports': ['error', {

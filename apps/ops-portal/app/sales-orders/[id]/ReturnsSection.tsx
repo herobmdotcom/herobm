@@ -123,7 +123,7 @@ export default function ReturnsSection({
         <div className="card">
             <div className="flex items-center justify-between mb-2">
                 <h3 className="section-heading">
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                    { }
                     <span className="material-symbols-outlined">assignment_return</span>
                     {tSales('returnsHeading')}
                 </h3>
@@ -148,7 +148,7 @@ export default function ReturnsSection({
                 <div style={{ marginBottom: 16, padding: 16, borderRadius: 8, background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                     <div className="flex items-center justify-between mb-3">
                         <strong style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                            { }
                             <span className="material-symbols-outlined text-[16px]">assignment_return</span>
                             {tSales('newReturn')}
                         </strong>
@@ -606,7 +606,7 @@ export default function ReturnsSection({
 
                                 {ret.creditNoteNumber && (
                                     <div className="flex items-center gap-2 mb-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                                        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                                        { }
                         <span className="material-symbols-outlined" style={{ fontSize: 14 }}>receipt_long</span>
                                         <span style={{ fontWeight: 600 }}>{tSales('returns.creditNote')}:</span>
                                         <span>{ret.creditNoteNumber}</span>
@@ -820,7 +820,7 @@ export default function ReturnsSection({
                                                             }}
                                                             title={t('salesOrders.buttons.removeReturnLine')}
                                                         >
-                                                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                                                            { }
                                                             <span className="material-symbols-outlined text-[16px]">delete</span>
                                                         </button>
                                                     )}

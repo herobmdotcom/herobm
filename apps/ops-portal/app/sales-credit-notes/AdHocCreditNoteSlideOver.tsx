@@ -186,7 +186,7 @@ export default function AdHocCreditNoteSlideOver({
                                             onClick={() => handleRemoveLine(index)}
                                             disabled={lines.length === 1}
                                         >
-                                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                                            { }
                                             <span className="material-symbols-outlined text-sm">delete</span>
                                         </button>
                                     </td>

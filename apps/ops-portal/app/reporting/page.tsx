@@ -40,7 +40,7 @@ export default function ReportingDashboard() {
   if (hasNoReports) {
     return (
       <div className="p-12 flex flex-col items-center justify-center h-full text-center mt-12">
-        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+        { }
         <span className="material-symbols-outlined text-[64px] mb-4" style={{ color: 'var(--text-muted)' }}>bar_chart</span>
         <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>{t('noReportsTitle')}</h2>
         <p className="text-sm mb-6 max-w-md" style={{ color: 'var(--text-muted)' }}>

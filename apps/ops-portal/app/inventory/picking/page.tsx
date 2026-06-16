@@ -311,7 +311,7 @@ export default function PickingPage() {
                             </div>
                         ) : filteredOrders.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
-                                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                                { }
                                 <span className="material-symbols-outlined text-4xl mb-2 opacity-50">inventory_2</span>
                                 {t('noOrders', { tab: activeTab })}
                             </div>
@@ -329,7 +329,7 @@ export default function PickingPage() {
                                                     /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
                                                     <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-[var(--success)]' : order.pickabilityStatus === 'partial' ? 'text-[var(--warning)]' : 'text-[var(--danger)]'}`} title={t('tooltips.allocated')} style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
                                                 ) : (
-                                                    /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
+                                                     
                                                     <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-[var(--success)]' : order.pickabilityStatus === 'partial' ? 'text-[var(--warning)]' : 'text-[var(--danger)]'}`} style={{ fontVariationSettings: "'FILL' 1" }}>fiber_manual_record</span>
                                                 )}
                                                 <div className="font-bold text-[var(--text-primary)] text-sm">{order.orderNumber}</div>
@@ -381,7 +381,7 @@ export default function PickingPage() {
                                             <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>
                                         )}
                                         <span className="hidden sm:inline">{t('pickingSlipPdf')}</span>
-                                        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                                        { }
                                         <span className="sm:hidden material-symbols-outlined text-[16px]">print</span>
                                     </button>
                                     <span className="bg-[var(--accent)] text-white text-xs font-bold px-2 py-0.5 rounded-full">
@@ -797,7 +797,7 @@ export default function PickingPage() {
                                                             </td>
                                                             <td>
                                                                 <span className="ml-2 text-xs font-bold text-[var(--text-muted)] inline-flex items-center">
-                                                                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                                                                    { }
                                                                     <span className="material-symbols-outlined text-[14px] mr-1">local_shipping</span>
                                                                     {t('statuses.dispatched')}
                                                                 </span>
@@ -816,7 +816,7 @@ export default function PickingPage() {
                                                             </div>
                                                             <div className="flex flex-col items-end gap-2 shrink-0">
                                                                 <span className="text-xs font-bold text-[var(--text-muted)] inline-flex items-center">
-                                                                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                                                                    { }
                                                                     <span className="material-symbols-outlined text-[14px] mr-1">local_shipping</span>
                                                                     {t('statuses.dispatched')}
                                                                 </span>

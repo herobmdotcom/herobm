@@ -79,7 +79,7 @@ export default function PinnedReportWidget({ slug, configId, name }: PinnedRepor
   if (!reportConfig || !uiConfig) {
     return (
       <div className="rounded-2xl border bg-[var(--bg-card)] border-[var(--border)] p-6 h-[400px] flex items-center justify-center">
-        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+        { }
         <span className="text-red-500 font-medium text-sm">Failed to load report configuration.</span>
       </div>
     );

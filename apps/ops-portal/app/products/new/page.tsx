@@ -248,7 +248,7 @@ export default function NewProductPage() {
           {/* Pricing & Financials Card */}
           <div className="card">
             <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+              { }
               <span className="material-symbols-outlined">payments</span>
               {t('products.pricing')}
             </h3>
@@ -329,7 +329,7 @@ export default function NewProductPage() {
           {/* Taxation Card */}
           <div className="card">
             <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+              { }
               <span className="material-symbols-outlined">account_balance</span>
               {t('products.cards.taxation')}
             </h3>

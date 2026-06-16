@@ -345,7 +345,7 @@ export default function UsersPage() {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+              { }
               <span className="material-symbols-outlined">group</span>
               {t('title')}
               <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>

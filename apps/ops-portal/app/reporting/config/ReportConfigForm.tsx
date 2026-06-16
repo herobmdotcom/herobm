@@ -202,7 +202,7 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
                   onClick={() => setBrowserOpen(true)}
                   disabled={!formData.dataSourceHook}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                  { }
                   <span className="material-symbols-outlined text-[18px]">data_object</span>
                   View Data
                 </button>

@@ -174,7 +174,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
       <div className="flex flex-col gap-3">
         <div className="card">
           <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+            { }
             <span className="material-symbols-outlined">receipt_long</span>
             Invoice Details
           </h3>

@@ -305,7 +305,7 @@ export default function PutawayPage() {
                                 </>
                             ) : (
                                 <>
-                                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                                    { }
                                     <span className="material-symbols-outlined text-[18px]">done_all</span>
                                     {t('putaway.confirmPutaway')}
                                 </>
@@ -356,7 +356,7 @@ export default function PutawayPage() {
                             </div>
                         ) : pendingLines.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
-                                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                                { }
                                 <span className="material-symbols-outlined text-4xl mb-2 opacity-50">inventory_2</span>
                                 {t('putaway.noItemsPending')}
                             </div>

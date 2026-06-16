@@ -84,7 +84,6 @@ export default function DashboardContent() {
               <div className="w-full">
                 <div className="flex items-center justify-between mb-6 border-b pb-4" style={{ borderColor: 'var(--border)' }}>
                   <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] opacity-50" style={{ color: 'var(--text-primary)' }}>
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                     <span className="material-symbols-outlined text-[16px]">push_pin</span>
                     {t('pinnedReports')}
                   </div>
@@ -93,7 +92,7 @@ export default function DashboardContent() {
                     className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
                     title={t('managePinnedReports')}
                   >
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                    { }
                     <span className="material-symbols-outlined text-[18px] text-[var(--accent)] group-hover:rotate-90 transition-transform duration-300">settings</span>
                   </button>
                 </div>
@@ -132,7 +131,7 @@ export default function DashboardContent() {
                     className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 group-hover:scale-110"
                     style={{ background: 'rgba(0, 107, 92, 0.08)' }}
                   >
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                    { }
                     <span className="material-symbols-outlined text-2xl" style={{ color: 'var(--accent)' }}>receipt_long</span>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -157,7 +156,7 @@ export default function DashboardContent() {
                     className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 group-hover:scale-110"
                     style={{ background: 'rgba(0, 107, 92, 0.08)' }}
                   >
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                    { }
                     <span className="material-symbols-outlined text-2xl" style={{ color: 'var(--accent)' }}>local_shipping</span>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -185,7 +184,7 @@ export default function DashboardContent() {
                   className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
                   title={tTimeline('settings')}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                  { }
                   <span className="material-symbols-outlined text-[18px] text-[var(--accent)] group-hover:rotate-90 transition-transform duration-300">settings</span>
                 </button>
               </div>

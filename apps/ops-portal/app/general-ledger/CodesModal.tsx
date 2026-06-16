@@ -188,7 +188,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
           {/* Left: Title & Icon */}
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="w-10 h-10 rounded-xl bg-[var(--bg-primary)] flex items-center justify-center shrink-0">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exception for Material Symbol icon name */}
+              { }
               <span className="material-symbols-outlined text-[var(--accent)]">menu_book</span>
             </div>
             <h2 className="text-xl font-bold text-[var(--text-primary)] truncate" style={{ fontFamily: 'Manrope, sans-serif' }}>
@@ -206,7 +206,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
               className="flex items-center justify-center p-1.5 hover:bg-[var(--bg-primary)] rounded-lg transition-all text-[var(--text-muted)] hover:text-[var(--accent)] active:scale-90"
               title="Copy to clipboard"
             >
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exception for Material Symbol icon name */}
+              { }
               <span className="material-symbols-outlined text-xl !leading-none">content_copy</span>
             </button>
           </div>

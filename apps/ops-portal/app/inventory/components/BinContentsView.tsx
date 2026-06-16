@@ -197,7 +197,7 @@ export default function BinContentsView() {
             className="input"
             style={{ width: '200px' }}
           >
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+            { }
             <option value="">All Locations</option>
             {locations.map((loc) => (
               <option key={loc.locationId} value={loc.code}>

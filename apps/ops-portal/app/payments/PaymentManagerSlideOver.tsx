@@ -513,7 +513,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
               className="btn btn-secondary btn-sm p-1 min-w-0"
               title={t('manager.buttons.previousPayment')}
             >
-              {/* eslint-disable-next-line i18next/no-literal-string -- FIXME */}
+              { }
               <span className="material-symbols-outlined text-[18px]">chevron_left</span>
             </button>
             <button 
@@ -522,7 +522,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
               className="btn btn-secondary btn-sm p-1 min-w-0"
               title={t('manager.buttons.nextPayment')}
             >
-              {/* eslint-disable-next-line i18next/no-literal-string -- FIXME */}
+              { }
               <span className="material-symbols-outlined text-[18px]">chevron_right</span>
             </button>
           </div>
@@ -632,7 +632,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                   />
                   {form.glAccountBank && (
                     <div className="mt-1.5 flex items-center gap-1.5 px-1">
-                      {/* eslint-disable-next-line i18next/no-literal-string -- FIXME */}
+                      { }
                       <span className="material-symbols-outlined text-[14px] text-[var(--text-muted)]">payments</span>
                       <span className="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-wider">
                         {t('manager.labels.settlementCurrency')}: <span className="text-[var(--accent)]">{form.currencyCode}</span>
@@ -716,7 +716,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                     disabled={form.lines.length === 1}
                                     title={form.lines.length === 1 ? "At least one line is required" : "Remove Line"}
                                   >
-                                    {/* eslint-disable-next-line i18next/no-literal-string -- FIXME */}
+                                    { }
                             <span className="material-symbols-outlined text-[16px]">delete</span>
                                   </button>
                                 </td>
@@ -1029,7 +1029,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                       </>
                     ) : (
                       <div className="flex flex-col items-center justify-center flex-1 opacity-50 border border-dashed border-gray-300 rounded-xl m-4 bg-gray-50/50">
-                        {/* eslint-disable-next-line i18next/no-literal-string -- FIXME */}
+                        { }
                           <span className="material-symbols-outlined text-4xl mb-4 text-gray-400">receipt_long</span>
                         <p className="text-sm font-medium text-gray-600">{t('manager.messages.noOutstandingInvoices')}</p>
                       </div>

@@ -305,7 +305,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                           style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                            { }
                             <span className="material-symbols-outlined" style={{ fontSize: 18, transition: 'transform 0.15s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', color: 'var(--text-muted)' }}>
                               chevron_right
                             </span>

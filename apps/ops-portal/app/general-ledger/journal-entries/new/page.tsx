@@ -298,7 +298,7 @@ export default function NewJournalEntryPage() {
                         disabled={lines.length <= 2}
                         className="p-1.5 text-red-500 hover:bg-red-50 rounded disabled:opacity-30 disabled:hover:bg-transparent"
                       >
-                        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                        { }
                         <span className="material-symbols-outlined text-[16px]">delete</span>
                       </button>
                     </td>

@@ -227,7 +227,7 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
           {step === 3 && results && (
             <div className="space-y-4 text-center py-6">
               <div className="flex justify-center items-center gap-2 mb-2">
-                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
+                { }
                 <span className="material-symbols-outlined text-[24px] text-[var(--success)]">check_circle</span>
                 <h3 className="text-lg font-bold text-[var(--text-primary)]">{t('importComplete')}</h3>
               </div>

@@ -102,7 +102,7 @@ export default function PartialAllocationModal({
           </div>
           
           <div>
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+            { }
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">
               Discount Amount
             </label>

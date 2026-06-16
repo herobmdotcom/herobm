@@ -276,9 +276,9 @@ export default function IntegrationsSettingsPage() {
               <InlineSettingsTable<TaxRule>
                 title={
                   <h3 className="section-heading !mb-0 flex items-center gap-2">
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                    { }
                     <span className="material-symbols-outlined">account_balance</span>
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                    { }
                     <span>Tax Engines</span>
                   </h3>
                 }
@@ -326,9 +326,9 @@ export default function IntegrationsSettingsPage() {
               <InlineSettingsTable<EnrichmentRule>
                 title={
                   <h3 className="section-heading !mb-0 flex items-center gap-2">
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                    { }
                     <span className="material-symbols-outlined">data_exploration</span>
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                    { }
                     <span>Data Enrichment</span>
                   </h3>
                 }
@@ -408,7 +408,7 @@ export default function IntegrationsSettingsPage() {
                       onClick={() => toggleProvider(p)}
                     >
                       <div className="flex items-center gap-4">
-                        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                        { }
                         <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 text-[var(--accent)] ${isExpanded ? 'rotate-90' : ''}`}>
                           chevron_right
                         </span>

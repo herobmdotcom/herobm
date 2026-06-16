@@ -460,7 +460,7 @@ export default function SystemSettingsPage() {
         <div id="bank-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+              { }
               <span className="material-symbols-outlined">account_balance</span>
               {tSettings('sections.bank')}
             </h3>
@@ -592,7 +592,7 @@ export default function SystemSettingsPage() {
           <InlineSettingsTable
             title={
               <h3 className="section-heading !mb-0 flex items-center gap-2">
-                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                { }
                 <span className="material-symbols-outlined">text_snippet</span>
                 {tSettings('sections.macros')}
               </h3>

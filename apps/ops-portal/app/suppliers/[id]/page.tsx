@@ -408,7 +408,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         {/* General Info Card */}
         <div id="info-section" className="card">
           <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+            { }
             <span className="material-symbols-outlined">info</span>
             {t('generalInfo')}
           </h3>
@@ -505,7 +505,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         {/* Financials Card */}
         <div id="financials-section" className="card">
           <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+            { }
             <span className="material-symbols-outlined">payments</span>
             FINANCIALS
           </h3>
@@ -592,9 +592,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
                 </div>
-                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                { }
                 <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                  in
+                  {tCommon('in')}
                 </span>
                 <div className="relative w-32">
                   <input
@@ -721,7 +721,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             {/* ── Row 3 ── */}
             {/* 7. Trading Terms */}
             <div>
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+              { }
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 Trading Terms
               </label>
@@ -746,7 +746,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         {/* Contact & Location Card — full width */}
         <div id="contact-section" className="card">
           <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+            { }
             <span className="material-symbols-outlined">location_on</span>
             {t('contactLocation')}
           </h3>
@@ -809,7 +809,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         {/* Bank Details Card */}
         <div id="bank-section" className="card">
           <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+            { }
             <span className="material-symbols-outlined">account_balance</span>
             Bank Details
           </h3>

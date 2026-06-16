@@ -1289,9 +1289,6 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v3: 'allow',
     },
   );
-
-  const isProduction = process.env.NODE_ENV === 'production';
-
   const toInsert = policies.filter(
     (p: {
       ptype?: string;
@@ -1302,10 +1299,6 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v4?: string | null;
       v5?: string | null;
     }) => {
-      // In production, we only seed the admin role
-      if (isProduction && p.v0 !== 'admin') {
-        return false;
-      }
       const key = [
         p.ptype || '',
         p.v0 || '',
