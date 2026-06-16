@@ -211,6 +211,7 @@ sync-table:
 
 transform:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform SOURCE=abm|odoo))
+	"$(DBT)" seed --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 transform-seed:
