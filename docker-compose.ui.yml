@@ -6,6 +6,7 @@ services:
     ports:
       - "4305:3000"
     environment:
+      NODE_OPTIONS: "--dns-result-order=ipv4first"
       API_URL: "http://custom-api-test:3000"
       PORT: "3000"
     networks:

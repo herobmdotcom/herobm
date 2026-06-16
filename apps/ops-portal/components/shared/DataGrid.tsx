@@ -1130,10 +1130,10 @@ export default function DataGrid<T>({
   };
 
   const gridContent = (
-    <div className="flex-1 lg:min-h-0 flex flex-col relative w-full lg:h-full">
+    <div className={`flex-1 flex flex-col relative w-full ${domLayout === 'autoHeight' ? '' : 'lg:min-h-0 lg:h-full'}`}>
       {renderPaginationControls(false)}
-      <div className="hidden lg:block flex-1 min-h-0 w-full h-full relative">
-        <div className={`${gridTheme} absolute inset-0`}>
+      <div className={`hidden lg:block flex-1 w-full relative ${domLayout === 'autoHeight' ? '' : 'min-h-0 h-full'}`}>
+        <div className={`${gridTheme} ${domLayout === 'autoHeight' ? 'w-full' : 'absolute inset-0'}`}>
           <AgGridReact<T>
             ref={gridRef}
             rowData={data}
@@ -1286,7 +1286,7 @@ export default function DataGrid<T>({
   }
 
   return (
-    <div className="flex flex-col lg:h-full lg:bg-white relative">
+    <div className={`flex flex-col lg:bg-white relative ${domLayout === 'autoHeight' ? '' : 'lg:h-full'}`}>
       {renderHeader ? (
         renderHeader!({ searchInput: searchInputNode, optionsButton: optionsButtonNode, rowCount: displayedRowCount, loading })
       ) : (

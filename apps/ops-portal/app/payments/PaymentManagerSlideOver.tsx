@@ -181,7 +181,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
   // Load outstanding invoices for allocation
   const loadOutstandingInvoices = useCallback(async () => {
-    if (!data || data.stateCode !== PAYMENT_STATE.SUBMITTED) return;
+    if (!data || data.stateCode !== PAYMENT_STATE.DRAFT) return;
 
     if (parseFloat(data.unallocatedAmount) <= 0) {
       setOutstandingInvoices([]);
@@ -266,7 +266,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
   }, [data]);
 
   useEffect(() => {
-    if (data?.stateCode === PAYMENT_STATE.SUBMITTED) {
+    if (data?.stateCode === PAYMENT_STATE.DRAFT) {
       loadOutstandingInvoices();
     }
   }, [data?.stateCode, data?.unallocatedAmount, loadOutstandingInvoices]);
@@ -538,7 +538,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       width="max-w-3xl"
       footer={!paymentId ? (
         <div className="flex items-center justify-end gap-3 w-full">
-          <button type="button" className="btn btn-ghost" onClick={onClose} disabled={submitting}>
+          <button type="button" className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50" onClick={onClose} disabled={submitting}>
             {tCommon('cancel')}
           </button>
           <button type="submit" form="create-payment-form" className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm" disabled={submitting}>

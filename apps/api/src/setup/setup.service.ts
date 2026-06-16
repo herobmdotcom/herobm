@@ -61,8 +61,9 @@ export class SetupService {
 
   async getResumeState() {
     try {
-      const result = await this.db.execute(sql`SELECT table_name FROM _raw_abm._resume_state`);
-      const tables = result.map((row: any) => row.table_name.toUpperCase());
+      const result = await this.db.execute(sql`SELECT table_name FROM raw_abm._resume_state`);
+      const rows = (result as any).rows || result;
+      const tables = rows.map((row: any) => row.table_name.toUpperCase());
       return { completedTables: tables };
     } catch (e) {
       return { completedTables: [] };
@@ -71,8 +72,9 @@ export class SetupService {
 
   async getResumeStateOdoo() {
     try {
-      const result = await this.db.execute(sql`SELECT table_name FROM _raw_odoo._resume_state`);
-      const tables = result.map((row: any) => row.table_name.toLowerCase());
+      const result = await this.db.execute(sql`SELECT table_name FROM raw_odoo._resume_state`);
+      const rows = (result as any).rows || result;
+      const tables = rows.map((row: any) => row.table_name.toLowerCase());
       return { completedTables: tables };
     } catch (e) {
       return { completedTables: [] };

@@ -50,6 +50,12 @@ pipelines/abm_transform/logs/
 # Test coverage
 coverage/
 
+# Playwright
+.playwright/
+playwright-report/
+test-results/
+.auth/
+
 # Temp data files
 events*.json
 

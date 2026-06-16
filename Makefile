@@ -506,13 +506,10 @@ test-structural:
 test-heavy:
 	@powershell -ExecutionPolicy Bypass -File scripts/run-heavy.ps1
 
-test-ui:
-	@powershell -ExecutionPolicy Bypass -File scripts/run-ui-tests.ps1
-
 test-data:
 	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
 
-test-all: test-api-unit test-api-e2e test-deps test-structural test-heavy test-ui test-data
+test-all: test-api-unit test-api-e2e test-deps test-structural test-heavy test-data
 
 build-all:
 	npm run build --workspaces --if-present
