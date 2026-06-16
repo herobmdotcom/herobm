@@ -305,6 +305,13 @@ rebuild-portal:
 	$(COMPOSE_CMD) up -d --no-build --no-deps ops-portal
 	$(COMPOSE_CMD) ps
 
+rebuild-pipeline:
+	podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .
+	-podman stop pipeline-runner
+	-podman rm pipeline-runner
+	$(COMPOSE_CMD) up -d --no-build --no-deps pipeline-runner
+	$(COMPOSE_CMD) ps
+
 USE_PGLITE ?= true
 
 ifeq ($(USE_PGLITE),true)
