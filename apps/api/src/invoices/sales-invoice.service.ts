@@ -333,6 +333,7 @@ export class SalesInvoiceService {
       // We allow strict bounds locally natively
       // If there are rounding issues we may need to tune this, but mathematically
       // we check for precision mathematically:
+      console.log('VALIDATING LINE:', line.salesOrderLineId, 'isPhysical:', isPhysical, 'productType:', line.productType, 'shippedQty:', shippedQty, 'qtyToInvoice:', qtyToInvoice, 'orderedQty:', orderedQty);
       if (prevInvoicedQty + qtyToInvoice > shippedQty + 0.001) {
         throw new BadRequestException(
           `Cannot invoice more than shipped quantity for line ${line.lineNumber}. Requested: ${qtyToInvoice}, Remaining Shipped: ${Math.max(0, shippedQty - prevInvoicedQty)}`,

@@ -46,11 +46,12 @@ describe('API E2E — Sales Invoices', () => {
     validCustomerId = customers.body.data[0].customerId;
 
     const products = await request(app.getHttpServer())
-      .get('/api/products?productType=inventory&limit=2')
+      .get('/api/products?limit=50')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    validProductId1 = products.body.data[0].productId;
-    validProductId2 = products.body.data[1]?.productId || validProductId1;
+    const invProducts = products.body.data.filter((p: any) => p.productType === 'inventory');
+    validProductId1 = invProducts[0].productId;
+    validProductId2 = invProducts[1]?.productId || validProductId1;
   }, 120_000);
 
   afterAll(async () => {
@@ -247,6 +248,7 @@ describe('API E2E — Sales Invoices', () => {
           lines: [{ salesOrderLineId: testLineId, quantityToInvoice: 2 }],
         });
 
+      if (badInvoiceRes.status !== 400) console.log('BAD INVOICE RES:', badInvoiceRes.body);
       expect(badInvoiceRes.status).toBe(400);
       expect(badInvoiceRes.body.message).toMatch(
         /Cannot invoice more than shipped quantity/,

@@ -30,6 +30,7 @@ services:
   postgres-custom:
     image: docker.io/library/postgres:16-alpine
     container_name: postgres-custom
+    hostname: postgres-custom
     restart: unless-stopped
     command: ["postgres"]
     environment:
@@ -52,7 +53,9 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - app-net
+      app-net:
+        aliases:
+          - postgres-custom
 
   custom-api:
     image: localhost/herobm_custom-api:latest

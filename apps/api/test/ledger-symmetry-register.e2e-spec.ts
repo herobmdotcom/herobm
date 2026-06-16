@@ -115,6 +115,7 @@ describe('API E2E — Ledger Symmetry Register', () => {
           .set('Authorization', `Bearer ${ctx.adminToken}`)
           .send({ stateCode: 'quoted' })
           .expect(200);
+
         await request(app.getHttpServer())
           .patch(`/api/sales-orders/${ctx.salesOrderId}/state`)
           .set('Authorization', `Bearer ${ctx.adminToken}`)
