@@ -25,3 +25,8 @@ logs/
 
 # Temp files
 /tmp/
+**/test-results/
+**/playwright-report/
+**/.playwright/
+.venv/
+scratch/
