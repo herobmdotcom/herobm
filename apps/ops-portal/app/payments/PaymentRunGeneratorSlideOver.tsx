@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
 import { toast } from 'react-hot-toast';
 import * as api from '@herobm/sdk';
+import { getErrorMessage } from '@herobm/shared';
 
 interface PaymentRunGeneratorSlideOverProps {
   open: boolean;
@@ -61,7 +62,7 @@ export function PaymentRunGeneratorSlideOver({
         toast('No eligible invoices found to generate payments for.', { icon: 'ℹ️' });
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to generate payment run');
+      toast.error(getErrorMessage(err) || 'Failed to generate payment run');
     } finally {
       setGenerating(false);
     }

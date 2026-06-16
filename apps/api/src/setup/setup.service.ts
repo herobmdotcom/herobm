@@ -97,7 +97,7 @@ export class SetupService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          command: 'python3',
+          command: 'python',
           args: ['pipelines/abm_extract/preview.py'],
           env: envOverride,
         }),
@@ -160,7 +160,7 @@ export class SetupService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          command: 'python3',
+          command: 'python',
           args: ['pipelines/odoo_extract/preview.py'],
           env: envOverride,
         }),
