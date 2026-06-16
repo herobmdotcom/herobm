@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e dev-docs-dbt dev-docs-schema dev-docs-api migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local prod-local verify-local
+.PHONY: help up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e dev-docs-dbt dev-docs-schema dev-docs-api migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local prod-local verify-local test-pipeline
 
 define HELP_TEXT
 HeroBM Makefile Help:
@@ -53,8 +53,8 @@ help:
 ifeq ($(OS),Windows_NT)
   ACTIVE_PROFILE := $(strip $(shell type .active_profile 2>nul))
   COMPOSE_OVERRIDE =
-  DBT = $(CURDIR)/.venv/Scripts/dbt
-  VENV_PYTHON = $(CURDIR)/.venv/Scripts/python
+  DBT ?= $(CURDIR)/.venv/Scripts/dbt
+  VENV_PYTHON ?= $(CURDIR)/.venv/Scripts/python
   PYTHON_CMD = python
   INIT_ENV_CMD = $(PYTHON_CMD) scripts/init_env.py
   DEV_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
@@ -65,8 +65,8 @@ ifeq ($(OS),Windows_NT)
 else
   ACTIVE_PROFILE := $(strip $(shell cat .active_profile 2>/dev/null))
   COMPOSE_OVERRIDE =
-  DBT = $(CURDIR)/.venv/bin/dbt
-  VENV_PYTHON = $(CURDIR)/.venv/bin/python
+  DBT ?= $(CURDIR)/.venv/bin/dbt
+  VENV_PYTHON ?= $(CURDIR)/.venv/bin/python
   PYTHON_CMD = python3
   INIT_ENV_CMD = $(PYTHON_CMD) scripts/init_env.py
   DEV_LOCAL_CMD = bash scripts/dev-local.sh
@@ -407,32 +407,6 @@ check-lint:
 	@npm run lint -w apps/ops-portal
 	@npm run lint:oas -w apps/api
 
-check-all: check-types check-lint
-
-test-deps:
-	python infra/tests/test_dependency_completeness.py
-
-test-single:
-	@npx tsx infra/test-utils/run-single.ts $(TEST)
-
-test-structural:
-	@python infra/tests/test_docker_env_alignment.py
-	@npx tsx infra/test-utils/run-structural.ts
-
-test-heavy:
-	@npm run test:e2e -w apps/ops-portal
-	@npx tsx infra/test-utils/run-heavy.ts
-
-test-data:
-	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
-
-test-all: test-api-unit test-api-e2e test-deps test-structural test-heavy test-data
-
-build-all:
-	npm run build --workspaces --if-present
-
-clean-dev:
-	$(CLEAN_BUILD_CMD)
 	npm install
 	$(MAKE) build-shared
 
@@ -508,3 +482,33 @@ verify-db: migrate-status
 verify-all: build-all check-all verify-db test-all
 
 verify-fast: check-all test-api-unit test-deps test-structural test-api-e2e
+
+test-pipeline:
+	@powershell -ExecutionPolicy Bypass -File scripts/test-pipeline.ps1
+
+check-all: check-types check-lint
+
+test-deps:
+	python infra/tests/test_dependency_completeness.py
+
+test-single:
+	@npx tsx infra/test-utils/run-single.ts $(TEST)
+
+test-structural:
+	@python infra/tests/test_docker_env_alignment.py
+	@npx tsx infra/test-utils/run-structural.ts
+
+test-heavy:
+	@npm run test:e2e -w apps/ops-portal
+	@powershell -ExecutionPolicy Bypass -File scripts/run-heavy.ps1
+
+test-data:
+	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
+
+test-all: test-api-unit test-api-e2e test-deps test-structural test-heavy test-data
+
+build-all:
+	npm run build --workspaces --if-present
+
+clean-dev:
+	$(CLEAN_BUILD_CMD)

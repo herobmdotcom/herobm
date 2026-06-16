@@ -1,3 +1,4 @@
+name: herobm
 services:
   ops-portal:
     image: localhost/herobm_ops-portal:latest
@@ -174,6 +175,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-herobm}
       WEBHOOK_URL: "http://custom-api:3001/internal/setup/webhook"
+      VENV_PYTHON: "python3"
+      DBT: "dbt"
     volumes:
       - ./logs:/app/logs
     depends_on:
