@@ -28,37 +28,22 @@ jest.mock('@/lib/api', () => ({
 
 jest.mock('@herobm/sdk', () => ({
     __esModule: true,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ordersControllerFindOne: (...args: any[]) => mockSdkFetch(...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     orderPickingControllerGetPickingSummary: (...args: any[]) => mockSdkFetch('/picking', ...args),
     inventoryControllerFindAllLocations: () => mockSdkFetch('/locations'),
     taxCategoriesControllerFindAll: () => mockSdkFetch('/tax-categories'),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ordersControllerUpdate: (...args: any[]) => mockSdkMutate('update', ...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ordersControllerChangeState: (...args: any[]) => mockSdkMutate('changeState', ...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ordersControllerUpdateLine: (...args: any[]) => mockSdkMutate('updateLine', ...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ordersControllerCreate: (...args: any[]) => mockSdkMutate('create', ...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ordersControllerArchive: (...args: any[]) => mockSdkMutate('archive', ...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ordersControllerUnarchive: (...args: any[]) => mockSdkMutate('unarchive', ...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ordersControllerRemoveLine: (...args: any[]) => mockSdkMutate('removeLine', ...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ordersControllerAddLine: (...args: any[]) => mockSdkMutate('addLine', ...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ordersControllerAddPostConfirmationLine: (...args: any[]) => mockSdkMutate('addPostConfirmationLine', ...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     inventoryControllerFindByProductIdsBulk: (...args: any[]) => mockSdkMutate('inventoryBulk', ...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     orderShipmentsControllerFindShipments: (...args: any[]) => mockSdkFetch('/shipments', ...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     orderReturnsControllerFindReturns: (...args: any[]) => mockSdkFetch('/returns', ...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     salesInvoiceControllerGetSalesInvoices: (...args: any[]) => mockSdkFetch('/invoices', ...args),
 }));
 
@@ -415,7 +400,7 @@ describe('useOrder — mutations', () => {
     });
 
     it('addLineFromProduct rejects duplicates with toast error', async () => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- Inline require used to mock or verify toast triggers in local tests.
         const { toast } = require('react-hot-toast');
 
         const { result } = renderHook(() => useOrder('so-001'));

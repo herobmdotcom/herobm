@@ -1,0 +1,61 @@
+name: herobm-test
+services:
+  pipeline-runner-test:
+    image: localhost/herobm_pipeline-test:latest
+    container_name: pipeline-runner-test
+    environment:
+      POSTGRES_HOST: postgres-custom
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
+      WEBHOOK_URL: "http://custom-api-test:3000/internal/setup/webhook"
+      VENV_PYTHON: "python3"
+      DBT: "dbt"
+    networks:
+      - app-net
+
+  custom-api-test:
+    image: localhost/herobm_api-test:latest
+    container_name: custom-api-test
+    ports:
+      - "3005:3000"
+    environment:
+      POSTGRES_HOST: postgres-custom
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
+      REDIS_HOST: redis-broker
+      PIPELINE_RUNNER_URL: http://pipeline-runner-test:8000
+    networks:
+      - app-net
+
+  worker-test:
+    image: localhost/herobm_worker-test:latest
+    container_name: worker-test
+    environment:
+      POSTGRES_HOST: postgres-custom
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
+      REDIS_HOST: redis-broker
+    networks:
+      - app-net
+    extra_hosts:
+      - "host.containers.internal:host-gateway"
+
+  maildev-test:
+    image: maildev/maildev
+    container_name: maildev-test
+    ports:
+      - "1081:1080"
+      - "1026:1025"
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    name: herobm_app-net
+    external: true

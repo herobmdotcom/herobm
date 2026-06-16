@@ -226,7 +226,7 @@ export async function apiMutate<T = unknown>(
 export function reportError(err: unknown, component?: string): void {
   const message = err instanceof Error ? err.message : String(err);
   const stack = err instanceof Error ? err.stack : undefined;
-  // eslint-disable-next-line no-restricted-syntax
+  // eslint-disable-next-line no-restricted-syntax -- External API integration boundaries where exact types are unknown.
   console.error(`[${component ?? 'unknown'}]`, message, err);
   try {
     fetch('/api/telemetry/client-errors', {

@@ -10,11 +10,42 @@ import { MATCH_STATUS, PUTAWAY_STATUS } from '@herobm/shared';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '@herobm/shared';
 
+export interface GoodsReceivedLine {
+  goodsReceivedLineId: string;
+  matchStatus: string;
+  putawayStatus?: string;
+  productId: string;
+  vendorId: string;
+  quantityReceived: string;
+  locationId?: string;
+  productNumber?: string | null;
+  productName?: string | null;
+  vendorName?: string | null;
+  receiptNumber?: string | null;
+  locationName?: string | null;
+}
+
+export interface PendingPOLine {
+  purchaseOrderId: string;
+  purchaseOrderLineId: string;
+  orderNumber: string;
+  deliveryLocationId?: string | null;
+  locationName?: string | null;
+  quantity: string;
+  quantityReceived: string;
+}
+
+interface POGroup {
+  purchaseOrderId: string;
+  orderNumber: string;
+  locationName?: string | null;
+  lines: PendingPOLine[];
+}
+
 interface AllocationSlideOverProps {
   isOpen: boolean;
   onClose: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  grLines: Record<string, any>[];
+  grLines: GoodsReceivedLine[];
   onRefresh: () => void;
 }
 
@@ -22,8 +53,7 @@ interface AllocationSlideOverProps {
  * Per-line state: tracks the fetched PO candidates and which POs are expanded.
  */
 interface LineState {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  pendingLines: any[];
+  pendingLines: PendingPOLine[];
   loading: boolean;
   expandedPOs: Set<string>;
   allocated: boolean; // true once successfully allocated
@@ -33,8 +63,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
   const t = useTranslations('goodsReceived');
   const [lineStates, setLineStates] = useState<Map<string, LineState>>(new Map());
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [localLines, setLocalLines] = useState<Record<string, any>[]>([]);
+  const [localLines, setLocalLines] = useState<GoodsReceivedLine[]>([]);
   // Track which line IDs have already been fetched to avoid the stale-closure race condition
   const fetchedRef = useRef<Set<string>>(new Set());
 
@@ -85,11 +114,9 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
         productId: line.productId, 
         vendorId: line.vendorId 
       })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .then((data: any) => {
-          const lines = Array.isArray(data) ? data : data.data || [];
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const poIds = [...new Set(lines.map((l: any) => l.purchaseOrderId))] as string[];
+        .then((data: unknown) => {
+          const lines = (Array.isArray(data) ? data : (data as { data?: PendingPOLine[] })?.data || []) as PendingPOLine[];
+          const poIds = [...new Set(lines.map((l) => l.purchaseOrderId))] as string[];
 
           setLineStates((prev) => {
             const next = new Map(prev);
@@ -131,8 +158,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
     });
   }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const markAllocated = useCallback((lineId: string, allocatedQty: string, splitLine?: any) => {
+  const markAllocated = useCallback((lineId: string, allocatedQty: string, splitLine?: GoodsReceivedLine) => {
     setLineStates((prev) => {
       const next = new Map(prev);
       const state = next.get(lineId);
@@ -169,8 +195,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
     });
   }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleAllocate = useCallback(async (grLine: any, poLine: any, qtyStr: string) => {
+  const handleAllocate = useCallback(async (grLine: GoodsReceivedLine, poLine: PendingPOLine, qtyStr: string) => {
     const originalQuantity = parseFloat(grLine.quantityReceived || '0');
     const qty = parseFloat(qtyStr);
     if (isNaN(qty) || qty <= 0 || qty > originalQuantity) {
@@ -193,14 +218,14 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
       // The API returns { success: true, splitLine: { ... } } if a split occurred
       const splitLineData = result?.data?.splitLine;
       
-      let splitLine = null;
+      let splitLine: GoodsReceivedLine | undefined = undefined;
       if (splitLineData) {
         // Construct the new line using details from the original line
         splitLine = {
           ...grLine,
-          goodsReceivedLineId: splitLineData.goodsReceivedLineId,
-          quantityReceived: splitLineData.quantityReceived,
-          matchStatus: splitLineData.matchStatus,
+          goodsReceivedLineId: splitLineData.goodsReceivedLineId as string,
+          quantityReceived: splitLineData.quantityReceived as string,
+          matchStatus: splitLineData.matchStatus as string,
         };
       }
 
@@ -273,7 +298,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                   className={`transition-colors rounded-lg border p-3 flex flex-col shadow-sm ${isActive ? 'bg-[var(--bg-card-hover)] border-[var(--accent)]' : 'bg-[var(--bg-card)] border-[var(--border)]'}`}
                 >
                   <div className="flex justify-between items-start gap-2 mb-2 cursor-pointer" onClick={() => setActiveLineId(line.goodsReceivedLineId)}>
-                    <div className="font-semibold text-sm text-[var(--accent)]">
+                     <div className="font-semibold text-sm text-[var(--accent)]">
                       {line.productNumber || '—'}
                     </div>
                     <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">
@@ -297,7 +322,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                     } />
                   </div>
                   {isActive && state && !state.allocated && (
-                    <div className="mt-4 pt-4 border-t border-[rgba(196,198,205,0.4)]">
+                    <div className="mt-4 pt-4 border-t border-slate-200">
                       <h4 className="text-xs font-bold mb-3 uppercase tracking-wider text-[var(--text-secondary)]">{t('allocation.eligiblePOs')}</h4>
                       <POCandidatesList grLine={line} state={state} toggleExpand={toggleExpand} handleAllocate={handleAllocate} />
                     </div>
@@ -355,19 +380,16 @@ function POCandidatesList({
   toggleExpand,
   handleAllocate
 }: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  grLine: any;
+  grLine: GoodsReceivedLine;
   state: LineState;
   toggleExpand: (lineId: string, poId: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  handleAllocate: (grLine: any, poLine: any, qtyStr: string) => void;
+  handleAllocate: (grLine: GoodsReceivedLine, poLine: PendingPOLine, qtyStr: string) => void;
 }) {
   const t = useTranslations('goodsReceived');
   const originalQuantity = parseFloat(grLine.quantityReceived || '0');
 
   // Group pending lines by PO
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const poGroups = new Map<string, any>();
+  const poGroups = new Map<string, POGroup>();
   for (const line of state.pendingLines) {
     if (!poGroups.has(line.purchaseOrderId)) {
       poGroups.set(line.purchaseOrderId, {
@@ -407,9 +429,10 @@ function POCandidatesList({
             <button
               onClick={() => toggleExpand(grLine.goodsReceivedLineId, group.purchaseOrderId)}
               style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+              className="flex justify-between"
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                 <span className="material-symbols-outlined" style={{ fontSize: 18, transition: 'transform 0.15s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', color: 'var(--text-muted)' }}>
                   chevron_right
                 </span>
@@ -441,8 +464,7 @@ function POCandidatesList({
                       </tr>
                     </thead>
                     <tbody>
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                      {group.lines.map((poLine: any) => (
+                      {group.lines.map((poLine: PendingPOLine) => (
                         <POLineRow
                           key={poLine.purchaseOrderLineId}
                           line={poLine}
@@ -454,8 +476,7 @@ function POCandidatesList({
                   </table>
                 </div>
                 <div className="lg:hidden flex flex-col w-full divide-y divide-[var(--border)]">
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                  {group.lines.map((poLine: any) => (
+                  {group.lines.map((poLine: PendingPOLine) => (
                     <POLineMobileCard
                       key={poLine.purchaseOrderLineId}
                       line={poLine}
@@ -473,8 +494,7 @@ function POCandidatesList({
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function POLineRow({ line, originalQuantity, onAllocate }: { line: any; originalQuantity: number; onAllocate: (qty: string) => void }) {
+function POLineRow({ line, originalQuantity, onAllocate }: { line: PendingPOLine; originalQuantity: number; onAllocate: (qty: string) => void }) {
   const t = useTranslations('goodsReceived');
   const ordered = parseFloat(line.quantity || '0');
   const received = parseFloat(line.quantityReceived || '0');
@@ -519,8 +539,7 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: any; original
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function POLineMobileCard({ line, originalQuantity, onAllocate }: { line: any; originalQuantity: number; onAllocate: (qty: string) => void }) {
+function POLineMobileCard({ line, originalQuantity, onAllocate }: { line: PendingPOLine; originalQuantity: number; onAllocate: (qty: string) => void }) {
   const t = useTranslations('goodsReceived');
   const ordered = parseFloat(line.quantity || '0');
   const received = parseFloat(line.quantityReceived || '0');

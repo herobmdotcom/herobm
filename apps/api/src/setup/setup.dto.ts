@@ -260,6 +260,14 @@ export class ImportSummaryDto {
   orders: number;
 }
 
+export class ActiveJobDto {
+  @ApiProperty({ required: false, nullable: true })
+  jobId: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  type: string | null;
+}
+
 export class CsvMetadataDto {
   @IsString()
   id: string;

@@ -71,7 +71,7 @@ const MOCK_SHIPMENT_LINE = {
 describe('ShipmentService', () => {
   const pg = setupPgliteSuite();
   let service: ShipmentService;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockInventoryService: any;
 
   beforeEach(async () => {
@@ -346,7 +346,7 @@ describe('ShipmentService', () => {
     it('should reject updating a cancelled shipment', async () => {
       await pg.db
         .update(salesOrderShipments)
-        .set({ stateCode: SHIPMENT_STATE.CANCELLED })
+        .set({ stateCode: SHIPMENT_STATE.CANCELLED as any })
         .where(
           eq(
             salesOrderShipments.shipmentId,
@@ -407,7 +407,6 @@ describe('ShipmentService', () => {
     async function setupWithState(currentState: string) {
       await pg.db
         .update(salesOrderShipments)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .set({ stateCode: currentState as any })
         .where(
           eq(

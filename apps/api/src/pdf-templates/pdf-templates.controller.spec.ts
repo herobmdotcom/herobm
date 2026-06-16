@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import type { JwtUser } from '../auth/auth-user.decorator';
 import { PdfTemplatesController } from './pdf-templates.controller';
 import { PdfTemplatesService } from './pdf-templates.service';
 import { UnauthorizedException } from '@nestjs/common';
@@ -6,8 +7,7 @@ import type { Response } from 'express';
 
 describe('PdfTemplatesController', () => {
   let controller: PdfTemplatesController;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockPdfTemplatesService: any;
+  let mockPdfTemplatesService: Record<string, jest.Mock>;
   let mockRes: Partial<Response>;
 
   beforeEach(async () => {
@@ -46,8 +46,7 @@ describe('PdfTemplatesController', () => {
         'hook1',
         '123',
         'sales',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
+        {} as JwtUser,
         mockRes as Response,
       );
 
@@ -73,15 +72,19 @@ describe('PdfTemplatesController', () => {
           'hook1',
           '',
           'sales',
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          {} as any,
+          {} as JwtUser,
           mockRes as Response,
         ),
       ).rejects.toThrow(UnauthorizedException);
 
       await expect(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        controller.runHook('hook1', '123', '', {} as any, mockRes as Response),
+        controller.runHook(
+          'hook1',
+          '123',
+          '',
+          {} as JwtUser,
+          mockRes as Response,
+        ),
       ).rejects.toThrow(UnauthorizedException);
     });
   });
@@ -126,8 +129,7 @@ describe('PdfTemplatesController', () => {
     it('should generate preview pdf buffer and send', async () => {
       await controller.preview(
         { template: 't', mockData: {} },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
+        {} as JwtUser,
         mockRes as Response,
       );
 

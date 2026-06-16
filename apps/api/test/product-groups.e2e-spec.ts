@@ -3,8 +3,7 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('Product Groups (e2e)', () => {
   let app: INestApplication;
@@ -61,8 +60,9 @@ describe('Product Groups (e2e)', () => {
     expect(listRes.status).toBe(200);
     expect(Array.isArray(listRes.body)).toBe(true);
     expect(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      listRes.body.find((g: any) => g.productGroupId === groupId),
+      listRes.body.find(
+        (g: { productGroupId: string }) => g.productGroupId === groupId,
+      ),
     ).toBeDefined();
 
     // 3. Read single group

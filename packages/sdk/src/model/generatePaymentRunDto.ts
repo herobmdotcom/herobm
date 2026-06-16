@@ -9,4 +9,5 @@
 export interface GeneratePaymentRunDto {
   targetDate: string;
   glAccountBank: string;
+  invoiceIds: string[];
 }

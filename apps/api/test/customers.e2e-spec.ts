@@ -3,8 +3,7 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('Accounts (e2e)', () => {
   let app: INestApplication;
@@ -93,7 +92,7 @@ describe('Accounts (e2e)', () => {
       .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        address1Country: 'AU',
+        billingAddressCountry: 'AU',
         customerNumber,
         name: 'E2E Test Customer',
         emailAddress1: 'e2e@example.com',
@@ -109,7 +108,7 @@ describe('Accounts (e2e)', () => {
       .post('/api/customers')
       .set('Authorization', `Bearer ${viewerToken}`)
       .send({
-        address1Country: 'AU',
+        billingAddressCountry: 'AU',
         customerNumber: 'FAIL-CUST-001',
         name: 'Unauthorized Customer',
       });
@@ -123,7 +122,7 @@ describe('Accounts (e2e)', () => {
       .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        address1Country: 'AU',
+        billingAddressCountry: 'AU',
         customerNumber: `PATCH-CUST-${Date.now()}`,
         name: 'Before Patch',
       });

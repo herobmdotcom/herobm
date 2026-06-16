@@ -6,6 +6,7 @@ import { tDynamic } from '@/lib/i18n';
 import * as api from '@herobm/sdk';
 import { GOODS_RECEIVED_STATE } from '@herobm/shared';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
+import type { OrderLine, OrderEvent } from './types';
 
 interface ReceptionLine {
   receptionLineId: string;
@@ -31,6 +32,13 @@ interface Reception {
   createdBy: string;
   lines: ReceptionLine[];
   destination?: ReceptionDestination;
+}
+
+interface PriceWarningPayload {
+  purchaseOrderLineId?: string;
+  poPrice?: string;
+  invoicePrice?: string;
+  receptionId?: string;
 }
 
 function ReceptionStateBadge({ state }: { state: string }) {
@@ -62,10 +70,8 @@ function ReceptionCard({
   currencyCode,
 }: {
   reception: Reception;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  orderLines: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  events: any[];
+  orderLines: OrderLine[];
+  events: OrderEvent[];
   currencyCode?: string;
 }) {
   const tPurchase = useTranslations('purchaseOrders');
@@ -92,7 +98,7 @@ function ReceptionCard({
 
         return locWarning ? (
           <div style={{ padding: '8px 12px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 6, marginBottom: 12, fontSize: 12, color: '#b45309', display: 'flex', alignItems: 'center', gap: 8 }}>
-             {/* eslint-disable-next-line i18next/no-literal-string */}
+             {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
              <strong>{tPurchase('locationWarningPrefix')}</strong> {tPurchase('locationWarning')}
           </div>
@@ -150,18 +156,19 @@ function ReceptionCard({
                     <td>{orderLine?.productDescription || rl.productDescription || '—'}</td>
                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                       {(() => {
-                        const relatedEvents = events?.filter(e => e.payload && e.payload.receptionId === reception.receptionId) || [];
-                        const priceWarning = relatedEvents.find(e => e.eventType === 'price_discrepancy_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
+                        const relatedEvents = events?.filter(e => e.payload && (e.payload as PriceWarningPayload).receptionId === reception.receptionId) || [];
+                        const priceWarning = relatedEvents.find(e => e.eventType === 'price_discrepancy_warning' && (e.payload as PriceWarningPayload)?.purchaseOrderLineId === rl.purchaseOrderLineId);
                         
                         if (priceWarning) {
+                          const payload = priceWarning.payload as PriceWarningPayload;
                           return (
                             <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }} title="Price discrepancy warning">
                               <span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: 11, color: 'var(--text-muted)' }}>
-                                {parseFloat(priceWarning.payload.poPrice).toFixed(2)}
+                                {parseFloat(payload.poPrice || '0').toFixed(2)}
                               </span>
                               <strong style={{ fontSize: 12 }}>
                                 {currencyCode ? `${currencyCode} ` : ''}
-                                {parseFloat(priceWarning.payload.invoicePrice).toFixed(2)}
+                                {parseFloat(payload.invoicePrice || '0').toFixed(2)}
                               </strong>
                             </div>
                           );
@@ -206,9 +213,9 @@ function ReceptionCard({
               (ol) => ol.purchaseOrderLineId === rl.purchaseOrderLineId,
             );
             
-            const relatedEvents = events?.filter(e => e.payload && e.payload.receptionId === reception.receptionId) || [];
-            const priceWarning = relatedEvents.find(e => e.eventType === 'price_discrepancy_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
-            const qtyWarning = relatedEvents.find(e => e.eventType === 'over_received_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
+            const relatedEvents = events?.filter(e => e.payload && (e.payload as PriceWarningPayload).receptionId === reception.receptionId) || [];
+            const priceWarning = relatedEvents.find(e => e.eventType === 'price_discrepancy_warning' && (e.payload as PriceWarningPayload)?.purchaseOrderLineId === rl.purchaseOrderLineId);
+            const qtyWarning = relatedEvents.find(e => e.eventType === 'over_received_warning' && (e.payload as PriceWarningPayload)?.purchaseOrderLineId === rl.purchaseOrderLineId);
             
             return (
               <MobileLineItemCard
@@ -230,11 +237,11 @@ function ReceptionCard({
                     value: priceWarning ? (
                       <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: 6 }} title="Price discrepancy warning">
                         <span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: 11, color: 'var(--text-muted)' }}>
-                          {parseFloat(priceWarning.payload.poPrice).toFixed(2)}
+                          {parseFloat((priceWarning.payload as PriceWarningPayload).poPrice || '0').toFixed(2)}
                         </span>
                         <strong style={{ fontSize: 12 }}>
                           {currencyCode ? `${currencyCode} ` : ''}
-                          {parseFloat(priceWarning.payload.invoicePrice).toFixed(2)}
+                          {parseFloat((priceWarning.payload as PriceWarningPayload).invoicePrice || '0').toFixed(2)}
                         </strong>
                       </div>
                     ) : (
@@ -268,10 +275,8 @@ export default function ReceivingSection({
   currencyCode,
 }: {
   orderId: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  orderLines: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  events: any[];
+  orderLines: OrderLine[];
+  events: OrderEvent[];
   currencyCode?: string;
 }) {
   const [receptions, setReceptions] = useState<Reception[]>([]);
@@ -288,8 +293,7 @@ export default function ReceivingSection({
         const lines = (res.data )?.data || [];
         
         // Extract unique reception IDs
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const grIds = Array.from(new Set<string>(lines.map((l: any) => l.goodsReceivedId)));
+        const grIds = Array.from(new Set<string>(lines.map((l: { goodsReceivedId: string }) => l.goodsReceivedId)));
         
         // Fetch full data including lines for each setup
         const detailedReceptions = await Promise.all(
@@ -325,7 +329,7 @@ export default function ReceivingSection({
             letterSpacing: '0.05em', margin: 0
           }}
         >
-          {/* eslint-disable-next-line i18next/no-literal-string */}
+          {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
           <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>move_to_inbox</span>
           Receiving
           <span style={{ fontSize: 11, fontWeight: 400 }}>({receptions.length})</span>
@@ -352,7 +356,7 @@ export default function ReceivingSection({
                 const received = parseFloat(line.quantityReceived || '0');
                 const remaining = Math.max(0, ordered - received);
                 return (
-                  <tr key={line.purchaseOrderLineId || line.salesOrderLineId}>
+                  <tr key={line.purchaseOrderLineId}>
                     <td style={{ fontWeight: 600, fontSize: 12 }}>
                       {line.productNumber || line.productId?.substring(0, 8) || '—'}
                     </td>
@@ -376,7 +380,7 @@ export default function ReceivingSection({
             
             return (
               <MobileLineItemCard
-                key={line.purchaseOrderLineId || line.salesOrderLineId}
+                key={line.purchaseOrderLineId}
                 title={line.productNumber || line.productId?.substring(0, 8) || '—'}
                 subtitle={line.productDescription || '—'}
                 topRightBadge={`#${idx + 1}`}

@@ -7,11 +7,18 @@ import * as api from '@herobm/sdk';
 import { PURCHASE_RETURN_STATE } from '@herobm/shared';
 import { getErrorMessage } from '@herobm/shared';
 
-interface ShipReturnSlideOverProps {
+export interface ShipReturnSlideOverProps {
   isOpen: boolean;
   onClose: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  returnRecord: Record<string, any>;
+  returnRecord: {
+    purchaseOrderId: string;
+    returnId: string;
+    orderNumber: string;
+    vendorName: string;
+    stateCode: string;
+    notes?: string | null;
+    returnNumber: string;
+  };
   onRefresh: () => void;
 }
 
@@ -21,8 +28,7 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
   const tShipments = useTranslations('shipments');
   
   const [loading, setLoading] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [returnDetails, setReturnDetails] = useState<any | null>(null);
+  const [returnDetails, setReturnDetails] = useState<api.PurchaseReturnResponseDto | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,9 +37,8 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
       setLoading(true);
       setError(null);
       api.purchaseReturnsControllerFindReturn(returnRecord.purchaseOrderId, returnRecord.returnId)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .then((res: any) => {
-          setReturnDetails(res.data ? res.data : res);
+        .then((res) => {
+          setReturnDetails(res.data ? res.data : (res as unknown as api.PurchaseReturnResponseDto));
           setLoading(false);
         })
         .catch((err: unknown) => {
@@ -124,8 +129,7 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
                   </tr>
                 </thead>
                 <tbody>
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                  {returnDetails.lines.map((line: any) => (
+                  {returnDetails.lines.map((line) => (
                     <tr key={line.returnLineId}>
                       <td>{tShipments('returns.lineNum', { id: line.purchaseOrderLineId.substring(0, 8) })}</td>
                       <td className="text-right">{parseFloat(line.quantityReturned)}</td>

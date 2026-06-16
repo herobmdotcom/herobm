@@ -5,6 +5,7 @@ import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '@herobm/shared';
 import PhoneInput from 'react-phone-number-input';
+import type { Country } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 
 // PhoneInput will throw if value is truthy but doesn't start with +
@@ -23,8 +24,7 @@ interface ContactSlideOverProps {
   entityId: string;
   entityType: 'customer';
   contactId?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  existingData?: Record<string, any>;
+  existingData?: Partial<api.ContactResponseDto>;
   defaultCountry?: string;
   onSaved: () => void;
 }
@@ -209,14 +209,13 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
             </label>
             <PhoneInput
               international
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              defaultCountry={defaultCountry as any}
+              defaultCountry={defaultCountry as Country}
               className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
               value={parseInitialPhone(dto.phone)}
               onChange={(value) => setDto({ ...dto, phone: value || '' })}
             />
             {dto.phone && !dto.phone.startsWith('+') && (
-              // eslint-disable-next-line no-restricted-syntax
+              // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon).
               <p className="text-xs text-orange-500 mt-1">{'Raw: '}{dto.phone}</p>
             )}
           </div>
@@ -226,14 +225,13 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
             </label>
             <PhoneInput
               international
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              defaultCountry={defaultCountry as any}
+              defaultCountry={defaultCountry as Country}
               className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
               value={parseInitialPhone(dto.mobile)}
               onChange={(value) => setDto({ ...dto, mobile: value || '' })}
             />
             {dto.mobile && !dto.mobile.startsWith('+') && (
-              // eslint-disable-next-line no-restricted-syntax
+              // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon).
               <p className="text-xs text-orange-500 mt-1">{'Raw: '}{dto.mobile}</p>
             )}
           </div>

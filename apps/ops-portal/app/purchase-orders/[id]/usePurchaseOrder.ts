@@ -100,8 +100,7 @@ export function usePurchaseOrder(id: string) {
   const visibleTransitions = useMemo(() => {
     if (!order) return [];
     const anyReceived = order.lines.some(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (l: any) => parseFloat(l.quantityReceived || '0') > 0,
+      (l) => parseFloat(l.quantityReceived || '0') > 0,
     );
     return [...allowedTransitions]
       .filter(state => ![PURCHASE_ORDER_STATE.RECEIVED, PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED, PURCHASE_ORDER_STATE.INVOICED].some(s => s === state))
@@ -137,8 +136,10 @@ export function usePurchaseOrder(id: string) {
 
   /* ── Data loaders ───────────────────────────────────────────── */
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const loadOrder = async (autoTransitions?: any[], showSpinner = true) => {
+  const loadOrder = async (
+    autoTransitions?: { ruleName: string; from: string; to: string; reason: string; }[],
+    showSpinner = true
+  ) => {
     if (showSpinner) setLoading(true);
     try {
       const res = await api.purchaseOrdersControllerFindOne(id);

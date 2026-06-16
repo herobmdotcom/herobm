@@ -1,4 +1,4 @@
-/* eslint-disable i18next/no-literal-string, no-restricted-syntax */
+/* eslint-disable i18next/no-literal-string, no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */
 'use client';
 
 import React from 'react';

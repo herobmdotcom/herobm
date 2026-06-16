@@ -36,15 +36,20 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter());
 
   // Debug middleware to log bodies
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  app.use((req: any, res: any, next: any) => {
-    if (req.method === 'PATCH' && req.url.includes('/api/customers/')) {
-      console.log('--- INCOMING PATCH BODY TO', req.url, '---');
-      console.log(req.body);
-      console.log('-----------------------------------');
-    }
-    next();
-  });
+  app.use(
+    (
+      req: { method: string; url: string; body: unknown },
+      res: unknown,
+      next: () => void,
+    ) => {
+      if (req.method === 'PATCH' && req.url.includes('/api/customers/')) {
+        console.log('--- INCOMING PATCH BODY TO', req.url, '---');
+        console.log(req.body);
+        console.log('-----------------------------------');
+      }
+      next();
+    },
+  );
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -95,11 +100,16 @@ async function bootstrap() {
   //   - Prometheus scrapes via internal monitoring-net (custom-api:3001)
   //   - No credentials or PII are exposed via prom-client default metrics
   const httpAdapter = app.getHttpAdapter();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  httpAdapter.get('/metrics', async (_req: any, res: any) => {
-    res.set('Content-Type', register.contentType);
-    res.end(await register.metrics());
-  });
+  httpAdapter.get(
+    '/metrics',
+    async (
+      _req: unknown,
+      res: { set: (k: string, v: string) => void; end: (data: string) => void },
+    ) => {
+      res.set('Content-Type', register.contentType);
+      res.end(await register.metrics());
+    },
+  );
 
   const port = process.env.PORT ?? process.env.API_PORT ?? 3001;
   await app.listen(port);

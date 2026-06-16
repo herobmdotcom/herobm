@@ -9,8 +9,7 @@ import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
 import JsonBrowserModal from '@/components/shared/JsonBrowserModal';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function TemplateForm({ initialData, isNew }: { initialData?: Record<string, any>, isNew?: boolean }) {
+export function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unknown>, isNew?: boolean }) {
   const t = useTranslations('admin.reporting.form');
   const [formData, setFormData] = useState({
     name: (initialData?.name as string) || '',
@@ -97,9 +96,11 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
     if (!previewVars.hookSlug) return;
     try {
       const res = await api.pdfTemplatesControllerGetRandomId(previewVars.hookSlug);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((res as any).data?.id || (res as any).id) {
-        setPreviewVars(p => ({ ...p, entityId: (res.data as unknown as { id: string }).id as string }));
+      const resData = res.data as unknown as { id?: string } | undefined;
+      const resDirect = res as unknown as { id?: string } | undefined;
+      const newId = resData?.id || resDirect?.id;
+      if (newId) {
+        setPreviewVars(p => ({ ...p, entityId: newId }));
       }
     } catch (err) {
       reportError(err, 'TemplateForm.randomizeId');
@@ -111,10 +112,11 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
     if (newHookSlug) {
       // Automatically fetch a random ID when changing hooks
       api.pdfTemplatesControllerGetRandomId(newHookSlug)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .then((res: any) => {
-          const newId = res.data?.id || res.id;
-          if (newId) setPreviewVars(p => ({ ...p, hookSlug: newHookSlug, entityId: newId as string }));
+        .then((res) => {
+          const resData = res.data as unknown as { id?: string } | undefined;
+          const resDirect = res as unknown as { id?: string } | undefined;
+          const newId = resData?.id || resDirect?.id;
+          if (newId) setPreviewVars(p => ({ ...p, hookSlug: newHookSlug, entityId: newId }));
         })
         .catch(() => {});
     }
@@ -131,7 +133,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
               className="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-800 transition-colors flex items-center justify-center shrink-0"
               title={t('buttons.returnToList')}
             >
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined text-[20px]">arrow_back</span>
             </button>
             <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>
@@ -171,7 +173,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
                   <span className="truncate pr-4 text-sm text-gray-700 font-semibold">
                     {formData.contexts.length > 0 ? formData.contexts.join(', ') : <span className="text-gray-400 font-normal">{t('placeholders.selectContexts')}</span>}
                   </span>
-                  {/* eslint-disable-next-line no-restricted-syntax */}
+                  {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                   <span className="material-symbols-outlined text-gray-400 text-[18px]">{contextsOpen ? 'expand_less' : 'expand_more'}</span>
                 </div>
                 
@@ -260,7 +262,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
                   onClick={() => setBrowserOpen(true)}
                   disabled={!previewVars.hookSlug}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                   <span className="material-symbols-outlined text-[18px]">data_object</span>
                   View Data
                 </button>

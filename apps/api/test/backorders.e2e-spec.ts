@@ -3,8 +3,7 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('Backorders Workflow (e2e)', () => {
   let app: INestApplication;
@@ -95,6 +94,7 @@ describe('Backorders Workflow (e2e)', () => {
         fulfillmentLocationId: locationId,
         customerId: customerId,
         orderNumber: `SO-BO-${Date.now()}`,
+        deliveryAddressLine1: 'Test Address',
         lines: [],
       })
       .expect(201);

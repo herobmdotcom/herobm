@@ -75,8 +75,7 @@ describe('GlController', () => {
     });
 
     it('should return flat list for unknown format values', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await controller.getAccounts('whatever' as any);
+      await controller.getAccounts('whatever' as unknown as 'tree');
       expect(glService.getAccountsList).toHaveBeenCalled();
       expect(glService.getChartOfAccounts).not.toHaveBeenCalled();
     });
@@ -227,8 +226,11 @@ describe('GlController', () => {
         actor: 'admin',
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await controller.createManualJournalEntry(body as any);
+      await controller.createManualJournalEntry(
+        body as unknown as Parameters<
+          typeof controller.createManualJournalEntry
+        >[0],
+      );
 
       expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {
         sourceType: 'manual',
@@ -248,8 +250,11 @@ describe('GlController', () => {
         ],
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await controller.createManualJournalEntry(body as any);
+      await controller.createManualJournalEntry(
+        body as unknown as Parameters<
+          typeof controller.createManualJournalEntry
+        >[0],
+      );
 
       expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {
         sourceType: 'manual',
@@ -318,8 +323,9 @@ describe('GlController', () => {
 
   describe('POST /gl/seed', () => {
     it('should use default filename when not specified', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await controller.seedChartOfAccounts({} as any);
+      await controller.seedChartOfAccounts(
+        {} as unknown as Parameters<typeof controller.seedChartOfAccounts>[0],
+      );
       expect(coaLoader.loadFromFile).toHaveBeenCalledWith('au_standard.json');
     });
 
@@ -334,8 +340,9 @@ describe('GlController', () => {
     });
 
     it('should return loader result', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await controller.seedChartOfAccounts({} as any);
+      const result = await controller.seedChartOfAccounts(
+        {} as unknown as Parameters<typeof controller.seedChartOfAccounts>[0],
+      );
       expect(result).toEqual({ created: 30, skipped: false });
     });
   });

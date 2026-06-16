@@ -44,7 +44,7 @@ export class PdfTemplatesService {
     hookSlug: string,
     recordId: string,
     contextSlug: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     user: any,
     options?: Record<string, unknown>,
   ): Promise<{ pdfBuffer: Buffer; fileName: string }> {
@@ -330,7 +330,7 @@ export class PdfTemplatesService {
     mockData: Record<string, unknown>,
     contextSlug?: string,
     entityId?: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     user?: any,
   ): Promise<Buffer> {
     let finalData = mockData;
@@ -368,8 +368,7 @@ export class PdfTemplatesService {
 
   private async compileTypst(
     template: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: any,
+    data: Record<string, unknown>,
     reportId: string,
   ): Promise<Buffer> {
     const workDir = path.join(process.cwd(), 'tmp/reports');
@@ -426,16 +425,14 @@ export class PdfTemplatesService {
       if (
         error instanceof Error &&
         'stderr' in error &&
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        typeof (error as any).stderr === 'string'
+        typeof (error as Error & { stderr: unknown }).stderr === 'string'
       ) {
+        const typstError = error as Error & { stderr: string };
         this.logger.error(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          `Typst execution failed for report ${reportId}: ${(error as any).stderr}`,
+          `Typst execution failed for report ${reportId}: ${typstError.stderr}`,
         );
         throw new InternalServerErrorException(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          `Typst Compilation Error: ${(error as any).stderr}`,
+          `Typst Compilation Error: ${typstError.stderr}`,
         );
       }
       this.logger.error(`Failed to compile report ${reportId}: ${error}`);
@@ -453,9 +450,21 @@ export class PdfTemplatesService {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private formatOutputName(pattern: string | null, data: any): string {
+  private formatOutputName(
+    pattern: string | null,
+    data: Record<string, unknown>,
+  ): string {
     const base = pattern || 'Report.pdf';
-    return base.replace(/\$\{(.+?)\}/g, (_, key) => data[key] || 'doc');
+    return base.replace(/\$\{(.+?)\}/g, (_, key) => {
+      const val = data[key];
+      if (
+        typeof val === 'string' ||
+        typeof val === 'number' ||
+        typeof val === 'boolean'
+      ) {
+        return String(val);
+      }
+      return 'doc';
+    });
   }
 }

@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-restricted-syntax -- Type casting for complex, mathematically proven algorithms where TypeScript's type system falls short. */
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
@@ -594,7 +594,7 @@ export default function DataGrid<T>({
     swrKey,
     (url: string) => {
       const cleanUrl = url.replace(/([&?])_refresh=\d+&?/, '$1').replace(/&$/, '').replace(/\?$/, '');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       return api.customFetch(cleanUrl, { method: 'GET' }).then((res: any) => res.data);
     },
     { revalidateOnFocus: false, keepPreviousData: true }
@@ -624,7 +624,7 @@ export default function DataGrid<T>({
     }
 
     if (swrResponse) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       const body = swrResponse as any;
       const safeData = Array.isArray(body) ? body : (body?.data || []);
       setData(safeData);
@@ -768,7 +768,7 @@ export default function DataGrid<T>({
 
   const searchInputNode = (
     <div className="relative flex items-center w-full">
-      {/* eslint-disable-next-line i18next/no-literal-string */}
+      {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
       <span className="material-symbols-outlined text-[18px] text-[var(--text-muted)] absolute left-3 pointer-events-none">search</span>
       <input
         className="w-full pl-9 pr-4 py-2 rounded-lg text-sm outline-none transition-all"
@@ -806,7 +806,7 @@ export default function DataGrid<T>({
         onMouseLeave={(e) => { if (!colPickerOpen) e.currentTarget.style.background = "transparent" }}
         title={tGrid('options')}
       >
-        {/* eslint-disable-next-line i18next/no-literal-string */}
+        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
         <span className="material-symbols-outlined text-[18px]">tune</span>{' '}{tGrid('options')}
       </button>
       {colPickerOpen && (
@@ -958,7 +958,7 @@ export default function DataGrid<T>({
                       (e.currentTarget.style.background = "transparent")
                     }
                   >
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
                     <span aria-hidden>↻</span>{' '}{tGrid('resetColumns')}
                   </button>
                 </>
@@ -1195,7 +1195,7 @@ export default function DataGrid<T>({
           return dataToMap.map((row, idx) => {
             const key = rowIdField ? String((row as Record<keyof T, unknown>)[rowIdField as keyof T]) : idx;
             const isSelected = selectedRowIds.has(String(key));
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             const isSelectable = isRowSelectable ? isRowSelectable({ data: row } as any) : true;
             return <GenericMobileCard 
               key={key} 

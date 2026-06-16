@@ -204,10 +204,9 @@ export default function NewOrderPage() {
     setCustomerTaxPosition(a.taxPosition ?? null);
 
     api.accountsControllerFindOne(a.customerId)
-      .then((res: unknown) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const customer = (res as any).data;
-        setCustomerDeliveryAddresses(customer.deliveryAddresses || []);
+      .then((res) => {
+        const customer = res.data;
+        setCustomerDeliveryAddresses((customer.deliveryAddresses as unknown as api.DeliveryAddressResponseDto[]) || []);
         setCustomerCountry(customer.billingAddressCountry || undefined);
       })
       .catch(() => {
@@ -260,8 +259,7 @@ export default function NewOrderPage() {
         unitOfMeasure: p.baseUom || 'EA',
         fulfillmentLocationId,
         baseUom: p.baseUom,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        productUoms: p.productUoms as any,
+        productUoms: p.productUoms as LineItem['productUoms'],
         productGroupId: p.productGroupId || null,
       },
     ]);
@@ -411,7 +409,7 @@ export default function NewOrderPage() {
         {/* Order header */}
         <div className="card">
           <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined">receipt_long</span>
             {tSales('salesOrders.orderDetails')}
           </h3>
@@ -535,7 +533,7 @@ export default function NewOrderPage() {
         <div className="card">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
             <h3 className="section-heading !mb-0 shrink-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined">list</span>
               {tSales('salesOrders.lineItems')}
             </h3>
@@ -925,14 +923,14 @@ export default function NewOrderPage() {
         {/* Delivery section */}
         <div className="card">
           <h3 className="section-heading mb-4">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined">local_shipping</span>
             Delivery
           </h3>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             <div className="flex flex-col gap-4">
               <div className="mt-2">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                   Delivery Address
                 </label>
@@ -977,7 +975,7 @@ export default function NewOrderPage() {
                   <div>
                     <PhoneInput
                       international
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                       defaultCountry={customerCountry as any}
                       className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
                       value={parseInitialPhone(deliveryPhone)}
@@ -992,7 +990,7 @@ export default function NewOrderPage() {
               </div>
 
               <div className="mt-2">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                   Shipping Instructions
                 </label>

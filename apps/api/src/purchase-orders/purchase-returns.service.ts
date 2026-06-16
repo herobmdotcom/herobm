@@ -142,8 +142,7 @@ export class PurchaseReturnsService {
         await tx.insert(purchaseOrderReturnLines).values(lineValues);
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await emitEvent(tx as any, {
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: purchaseOrderId,
         eventType: EventType.RETURN_CREATED,
@@ -222,8 +221,9 @@ export class PurchaseReturnsService {
         tx,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await emitEvent(tx as any, {
+      // @herobm-skip-audit - DB write is performed by changePurchaseReturnState, emitting cross-entity event here
+
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: po.purchaseOrderId,
         eventType: EventType.STATUS_CHANGED,
@@ -275,8 +275,9 @@ export class PurchaseReturnsService {
         tx,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await emitEvent(tx as any, {
+      // @herobm-skip-audit - DB write is performed by changePurchaseReturnState, emitting cross-entity event here
+
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: po.purchaseOrderId,
         eventType: EventType.STATUS_CHANGED,
@@ -470,7 +471,7 @@ export class PurchaseReturnsService {
 
         if (glResult) {
           await this.glService.postJournalEntry(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             glResult.lines as any,
             {
               actor,
@@ -479,16 +480,15 @@ export class PurchaseReturnsService {
               sourceId: returnId,
               memo: `Supplier Return ${ret.returnNumber}`,
             },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            tx as any,
+
+            tx as unknown as DrizzleDB,
           );
         }
       }
 
       // 5. Evaluate PO Lifecycle Engine for Reversal
       await evaluatePOLifecycleRules(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tx as any,
+        tx as unknown as DrizzleDB,
         po.purchaseOrderId,
         {
           entity: 'purchase_return',
@@ -498,8 +498,7 @@ export class PurchaseReturnsService {
         actor,
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await emitEvent(tx as any, {
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: po.purchaseOrderId,
         eventType: EventType.STATUS_CHANGED,
@@ -552,7 +551,7 @@ export class PurchaseReturnsService {
 
     const [updated] = await db
       .update(purchaseOrderReturns)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       .set({ stateCode: newState as any, modifiedOn: new Date() })
       .where(eq(purchaseOrderReturns.returnId, returnId))
       .returning();

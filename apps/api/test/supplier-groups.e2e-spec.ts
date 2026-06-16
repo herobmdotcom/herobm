@@ -3,8 +3,7 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('Supplier Groups (e2e)', () => {
   let app: INestApplication;
@@ -64,8 +63,9 @@ describe('Supplier Groups (e2e)', () => {
     expect(listRes.status).toBe(200);
     expect(Array.isArray(listRes.body)).toBe(true);
     expect(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      listRes.body.find((g: any) => g.supplierGroupId === groupId),
+      listRes.body.find(
+        (g: { supplierGroupId: string }) => g.supplierGroupId === groupId,
+      ),
     ).toBeDefined();
 
     // 3. Read single group
@@ -93,8 +93,11 @@ describe('Supplier Groups (e2e)', () => {
       .get('/api/suppliers?limit=1000&orderDirection=desc')
       .set('Authorization', `Bearer ${adminToken}`);
     const foundAcc = supplierListRes.body.data.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (a: any) => a.vendorId === createSupplierRes.body.vendorId,
+      (a: {
+        vendorId: string;
+        supplierGroupCode: string;
+        supplierGroupName: string;
+      }) => a.vendorId === createSupplierRes.body.vendorId,
     );
     expect(foundAcc).toBeDefined();
     expect(foundAcc.supplierGroupCode).toBe(groupCode);

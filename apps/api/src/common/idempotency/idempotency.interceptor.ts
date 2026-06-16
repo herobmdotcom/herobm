@@ -14,6 +14,7 @@ import { DRIZZLE } from '../../drizzle/drizzle.module';
 import type { DrizzleDB } from '../../drizzle/drizzle.module';
 import * as schema from '../../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
+import type { Column } from 'drizzle-orm';
 import { IDEMPOTENT_KEY, IdempotentConfig } from './idempotent.decorator';
 
 @Injectable()
@@ -79,8 +80,11 @@ export class IdempotencyInterceptor implements NestInterceptor {
     id: string,
   ): Promise<unknown> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const table = (schema as any)[config.queryKey];
+      const schemaRecord = schema as unknown as Record<
+        string,
+        Record<string, Column>
+      >;
+      const table = schemaRecord[config.queryKey];
       if (!table) {
         this.logger.error(
           `Table ${config.queryKey} not found in schema export.`,
@@ -96,8 +100,11 @@ export class IdempotencyInterceptor implements NestInterceptor {
       }
 
       // Perform a dynamic relational query
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await (this.db.query as any)[config.queryKey].findFirst({
+      const dbQuery = this.db.query as Record<
+        string,
+        { findFirst: (args: unknown) => Promise<unknown> }
+      >;
+      const result = await dbQuery[config.queryKey].findFirst({
         where: eq(column, id),
       });
 

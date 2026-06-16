@@ -6,6 +6,17 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
 import { useSettings } from '@/components/SettingsProvider';
+import type { ColDef, ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
+
+interface CreditNoteHistoryRow {
+  creditNoteId: string;
+  creditNoteNumber: string;
+  createdOn: string;
+  notes: string;
+  totalAmount: number;
+  currencyCode?: string;
+  stateCode: string;
+}
 
 export default function CreditNotesHistoryPage() {
     const { baseCurrency } = useSettings();
@@ -13,28 +24,23 @@ export default function CreditNotesHistoryPage() {
     const tStates = useTranslations('common.states');
     useDocumentTitle('Credit Notes Ledger');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleRowClicked = useCallback((row: any) => {
+    const handleRowClicked = useCallback((row: CreditNoteHistoryRow) => {
         // Future feature: show credit note details
     }, []);
 
     const gridEndpoint = `/api/sales-credit-notes`;
     
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const gridColumns: any[] = [
+    const gridColumns: ColDef<CreditNoteHistoryRow>[] = [
         { field: 'creditNoteId', headerName: 'ID', hide: true },
         { field: 'creditNoteNumber', headerName: 'CN Number', width: 180 },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { field: 'createdOn', headerName: tCommon('columns.date'), width: 160, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: tCommon('columns.date'), width: 160, valueFormatter: (p: ValueFormatterParams<CreditNoteHistoryRow>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
         { field: 'notes', headerName: 'Notes', flex: 1, minWidth: 200 },
         { field: 'totalAmount', headerName: 'Total Credit', type: 'numericColumn', width: 150,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            valueGetter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
+            valueGetter: (params: ValueGetterParams<CreditNoteHistoryRow>) => {
                 if (!params.data?.totalAmount) return null;
-                return parseFloat(params.data.totalAmount);
+                return parseFloat(params.data.totalAmount.toString());
             },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
+            valueFormatter: (params: ValueFormatterParams<CreditNoteHistoryRow>) => {
                 if (!params.value || params.value === 0) return '—';
                 return formatAmount(params.value, params.data?.currencyCode || baseCurrency);
             },
@@ -43,12 +49,11 @@ export default function CreditNotesHistoryPage() {
             field: 'stateCode', 
             headerName: tCommon('columns.state'), 
             width: 140,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
+            valueFormatter: (params: ValueFormatterParams<CreditNoteHistoryRow>) => {
                 if (!params.value) return '';
                 const s = String(params.value).toLowerCase();
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                return tStates.has(s as any) ? tStates(s as any) : String(params.value);
+                const key = s as unknown as Parameters<typeof tStates>[0];
+                return tStates.has(key) ? tStates(key) : String(params.value);
             }
         },
     ];

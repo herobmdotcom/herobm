@@ -6,6 +6,7 @@ import {
   ServiceClass,
   TransactionCode,
   batchCodeFromString,
+  BatchCode,
 } from 'nacha-cheese';
 
 export interface NachaTransaction {
@@ -47,8 +48,7 @@ export class NachaGeneratorService {
       transactionTypes: ServiceClass.CreditDebit,
       originCompanyName: context.companyName,
       originIdentification: context.companyId,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      code: batchCodeFromString('PPD') as any, // Prearranged Payment and Deposit
+      code: batchCodeFromString('PPD') as BatchCode, // Prearranged Payment and Deposit
       description: context.description,
       effectiveEntryDate: context.processDate,
       originDfi: context.immediateDestination.slice(0, 8),

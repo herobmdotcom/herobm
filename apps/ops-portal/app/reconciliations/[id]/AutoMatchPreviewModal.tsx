@@ -22,9 +22,9 @@ export default function AutoMatchPreviewModal({
   onConfirmSuccess: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [ledgerLines, setLedgerLines] = useState<Record<string, any>[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [accounts, setAccounts] = useState<Record<string, any>[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(false);
   const [ignoredLineIds, setIgnoredLineIds] = useState<string[]>([]);
@@ -64,7 +64,7 @@ export default function AutoMatchPreviewModal({
         dryRun: false,
         ignoredStatementLineIds: ignoredLineIds.length > 0 ? ignoredLineIds : undefined
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       const data = res.data as any;
       if (data.autoMatchedCount > 0 || data.smartMatchedCount > 0) {
         const msgs = [];
@@ -122,9 +122,9 @@ export default function AutoMatchPreviewModal({
         disabled={confirming || !previewData || (effectiveAutoMatchedCount === 0 && effectiveSmartMatchedCount === 0)}
         className="btn btn-primary font-semibold px-4 py-2 flex items-center gap-2"
       >
-        {/* eslint-disable-next-line i18next/no-literal-string */}
+        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
         <span className="material-symbols-outlined text-[18px]">check_circle</span>
-        {/* eslint-disable-next-line no-restricted-syntax */}
+        {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
         {confirming ? tCommon('saving') : 'Confirm Auto Match'}
       </button>
     </div>
@@ -151,7 +151,7 @@ export default function AutoMatchPreviewModal({
               </tr>
             ))}
             {lines.length === 0 && (
-              // eslint-disable-next-line i18next/no-literal-string
+              // eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols.
               <tr><td colSpan={3} className="px-5 py-8 text-center text-gray-500 italic">No lines</td></tr>
             )}
           </tbody>
@@ -160,7 +160,7 @@ export default function AutoMatchPreviewModal({
     </div>
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const renderLedgerTable = (lines: any[]) => (
     <div className="space-y-3">
       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('ledgerLines')}</h3>
@@ -204,21 +204,21 @@ export default function AutoMatchPreviewModal({
     >
       <div className="flex flex-col gap-6 p-6">
         <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex gap-4 items-start">
-          {/* eslint-disable-next-line i18next/no-literal-string */}
+          {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
           <span className="material-symbols-outlined text-blue-500 mt-0.5">info</span>
           <div>
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
             <h3 className="font-semibold text-blue-900 mb-1">Preview Results</h3>
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
             <p className="text-blue-800 text-sm">
               The following actions will be taken when you confirm:
             </p>
             <ul className="list-disc list-inside text-sm text-blue-800 mt-2 space-y-1">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
               <li><strong>{effectiveAutoMatchedCount}</strong> lines will be matched using rules.</li>
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
               <li><strong>{effectiveSmartMatchedCount}</strong> lines will be matched using smart matches.</li>
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
               <li><strong>{effectiveUnmatchedCount}</strong> lines will remain unmatched.</li>
             </ul>
           </div>
@@ -230,9 +230,9 @@ export default function AutoMatchPreviewModal({
           <>
             {previewData.proposedRuleMatches && previewData.proposedRuleMatches.length > 0 && (
               <div className="flex flex-col gap-4">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider border-b pb-2">Proposed Rule Matches</h3>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */}
                 {previewData.proposedRuleMatches.map((m: any, i: number) => {
                   const isIgnored = ignoredLineIds.includes(m.bankLineId);
                   return (
@@ -264,9 +264,9 @@ export default function AutoMatchPreviewModal({
 
             {previewData.smartMatches && previewData.smartMatches.length > 0 && (
               <div className="flex flex-col gap-4 mt-4">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
                 <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider border-b pb-2">Proposed Smart Matches</h3>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */}
                 {previewData.smartMatches.map((m: any, i: number) => {
                   const matchedLedgerLines = ledgerLines.filter(l => m.journalLineIds.includes(l.journalLineId));
                   const isIgnored = m.bankLineIds.some((id: string) => ignoredLineIds.includes(id));

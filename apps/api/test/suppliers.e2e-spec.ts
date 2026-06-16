@@ -6,13 +6,12 @@ import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { suppliers, masterDataEvents } from '../src/drizzle/herobm-core-schema';
 import { like, sql } from 'drizzle-orm';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import request from 'supertest';
 
 describe('Suppliers (e2e)', () => {
   let app: INestApplication;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let db: any;
+  let db: NodePgDatabase;
   let adminToken: string;
 
   beforeAll(async () => {
@@ -92,8 +91,7 @@ describe('Suppliers (e2e)', () => {
 
     expect(res.body.data).toBeDefined();
     expect(res.body.data.length).toBeGreaterThanOrEqual(1);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const found = res.body.data.find((s: any) =>
+    const found = res.body.data.find((s: { vendorNumber: string }) =>
       s.vendorNumber.startsWith('E2E-V-'),
     );
     expect(found).toBeDefined();

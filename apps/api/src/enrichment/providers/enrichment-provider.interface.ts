@@ -1,6 +1,5 @@
 export interface EnrichmentResult {
   isValid: boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: Record<string, unknown>;
 }
 
@@ -27,9 +26,7 @@ export interface IEnrichmentProvider {
    * @returns EnrichmentResult
    */
   lookup(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: string | Record<string, unknown>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     config?: Record<string, unknown>,
   ): Promise<EnrichmentResult>;
 
@@ -42,9 +39,7 @@ export interface IEnrichmentProvider {
    * Optional: Record a formal transaction to the provider (for stateful API engines like tax providers)
    */
   recordTransaction?(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: Record<string, unknown>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     config?: Record<string, unknown>,
   ): Promise<EnrichmentResult>;
 
@@ -52,9 +47,7 @@ export interface IEnrichmentProvider {
    * Optional: Reverse a previously recorded formal transaction
    */
   recordRefund?(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: Record<string, unknown>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     config?: Record<string, unknown>,
   ): Promise<EnrichmentResult>;
 }

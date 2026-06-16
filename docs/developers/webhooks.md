@@ -54,7 +54,7 @@ The `eventType` is formed by combining the `entityType` and the action (e.g., `s
 - **Business Operations**:
   - `processed`: Fired when a return or adjustment is finalized.
   - `dispatched` / `received`: Fired upon physical inventory movements.
-  - `submitted` / `allocated` / `cancelled`: Fired for payments.
+  - `submitted` / `allocated` / `payment_cancelled`: Fired for payments.
   - `posted`: Fired when a journal entry is posted to the general ledger.
 
 ### Supported Events Matrix
@@ -76,7 +76,7 @@ The `eventType` is formed by combining the `entityType` and the action (e.g., `s
 | `customer_group` | `created`, `updated`, `deleted` |
 | `supplier` | `created`, `updated`, `archived`, `unarchived`, `added_expiry`, `deleted_expiry`, `status_changed`, `updated_expiry` |
 | `supplier_group` | `created`, `updated`, `deleted` |
-| `payment` | `submitted`, `allocated`, `cancelled`, `payment_allocated`, `status_changed`, `created`, `updated` |
+| `payment` | `submitted`, `allocated`, `payment_cancelled`, `payment_allocated`, `status_changed`, `created`, `updated` |
 | `general_ledger` | `entry_posted` |
 | `gl_reconciliation` | `created`, `updated`, `deleted` |
 | `gl_match_group` | `created`, `deleted` |

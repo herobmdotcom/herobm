@@ -1764,15 +1764,12 @@ export const userSettings = herobmCore.table('user_settings', {
   userId: uuid('user_id')
     .primaryKey()
     .references(() => users.userId, { onDelete: 'cascade' }),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   dashboardConfig: jsonb('dashboard_config')
     .$type<Record<string, unknown>>()
     .default({}),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   reportConfigs: jsonb('report_configs')
     .$type<Record<string, unknown>>()
     .default({}),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   preferences: jsonb('preferences')
     .$type<Record<string, unknown>>()
     .default({}),
@@ -2024,7 +2021,6 @@ export const glAccounts = herobmCore.table(
     isSystem: boolean('is_system').notNull().default(false), // prevents deletion
     isBankAccount: boolean('is_bank_account').notNull().default(false), // determines if it appears in payment/recon modules
     currencyCode: text('currency_code').notNull(), // GL customers can have different currencies
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}), // stores bank numbers, BSBs, routing, SWIFT, etc.
     isActive: boolean('is_active').notNull().default(true),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -2221,7 +2217,6 @@ export const pdfTemplates = herobmCore.table('pdf_templates', {
   name: text('name').notNull(),
   description: text('description'),
   template: text('template').notNull(),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mockData: jsonb('mock_data').$type<Record<string, unknown>>(),
   contextResolver: text('context_resolver'),
   outputNamePattern: text('output_name_pattern').default('Report.pdf'),
@@ -2260,7 +2255,6 @@ export const businessReports = herobmCore.table('business_reports', {
   name: text('name').notNull(),
   description: text('description'),
   dataSourceHook: text('data_source_hook').notNull(),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   uiConfig: jsonb('ui_config')
     .$type<Record<string, unknown>>()
     .notNull()

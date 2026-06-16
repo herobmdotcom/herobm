@@ -72,10 +72,8 @@ export function setupPgliteSuite(opts?: {
     jest.setTimeout(30000);
   }
   const context = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    _db: null as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    _client: null as any,
+    _db: null as DrizzleDB | null,
+    _client: null as PGlite | null,
     get db() {
       if (!this._db)
         throw new Error('PGLite context.db accessed before it is initialized');
@@ -93,8 +91,7 @@ export function setupPgliteSuite(opts?: {
   // Suites that skip seeds need fresh DBs per-test since they insert
   // their own reference data (uom_dictionary, tax_categories, etc.)
   if (opts?.skipSeeds) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let suiteSnapshot: any;
+    let suiteSnapshot: Blob;
 
     beforeAll(async () => {
       const memory = await createMemoryDb(opts);
@@ -106,7 +103,7 @@ export function setupPgliteSuite(opts?: {
       const client = new PGlite({ loadDataDir: suiteSnapshot });
       await client.waitReady;
       const db = drizzle(client, { schema });
-      context._db = db;
+      context._db = db as unknown as DrizzleDB;
       context._client = client;
     });
 
@@ -134,7 +131,7 @@ export function setupPgliteSuite(opts?: {
     const client = new PGlite({ loadDataDir: snapshot });
     await client.waitReady;
     const db = drizzle(client, { schema });
-    context._db = db;
+    context._db = db as unknown as DrizzleDB;
     context._client = client;
   });
 
@@ -142,14 +139,14 @@ export function setupPgliteSuite(opts?: {
     // Truncate transactional tables to restore seed-only state.
     // Using CASCADE handles any FK dependencies we may have missed.
     try {
-      await context._client.exec(
+      await context._client!.exec(
         `TRUNCATE ${TRANSACTIONAL_TABLES.join(', ')} CASCADE`,
       );
     } catch (e: unknown) {
       // Fallback: truncate tables one-by-one if the batch fails
       for (const table of TRANSACTIONAL_TABLES) {
         try {
-          await context._client.exec(`TRUNCATE ${table} CASCADE`);
+          await context._client!.exec(`TRUNCATE ${table} CASCADE`);
         } catch {
           // Table may not exist — skip
         }
@@ -164,7 +161,7 @@ export function setupPgliteSuite(opts?: {
       ['herobm_core.account_events', 'fail_on_test'],
     ]) {
       try {
-        await context._client.exec(
+        await context._client!.exec(
           `ALTER TABLE ${table} DROP CONSTRAINT IF EXISTS ${constraint}`,
         );
       } catch {
@@ -174,7 +171,7 @@ export function setupPgliteSuite(opts?: {
   });
 
   afterAll(async () => {
-    if (context._client) {
+    if (context._client!) {
       await context._client.close();
     }
     context._db = null;

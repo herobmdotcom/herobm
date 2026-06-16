@@ -11,12 +11,22 @@ import toast from 'react-hot-toast';
 import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';
 import POAllocationCell from './POAllocationCell';
-import AllocationSlideOver from './AllocationSlideOver';
+import AllocationSlideOver, { GoodsReceivedLine } from './AllocationSlideOver';
+import type { ColDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
 import { GOODS_RECEIVED_STATE, PUTAWAY_STATUS, MATCH_STATUS } from '@herobm/shared';
 import { getErrorMessage } from '@herobm/shared';
 import QuarantineModal from './QuarantineModal';
 
-function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, days, setDays, t, tCommon, defaultLocId }: { locations: unknown[], selectedLocationId: string, setSelectedLocationId: (v: string) => void, days: string, setDays: (v: string) => void, t: ReturnType<typeof useTranslations>, tCommon: ReturnType<typeof useTranslations>, defaultLocId: string }) {
+interface ReceivingGridRow extends GoodsReceivedLine {
+    goodsReceivedId?: string | null;
+    stateCode?: string | null;
+    createdOn?: string | number | null;
+    orderNumber?: string | null;
+    packingSlipNumber?: string | null;
+    notes?: string | null;
+}
+
+function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, days, setDays, t, tCommon, defaultLocId }: { locations: api.InventoryLocationResponseDto[], selectedLocationId: string, setSelectedLocationId: (v: string) => void, days: string, setDays: (v: string) => void, t: ReturnType<typeof useTranslations>, tCommon: ReturnType<typeof useTranslations>, defaultLocId: string }) {
     const [open, setOpen] = useState(false);
     const ref = React.useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -45,8 +55,7 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                         className="input text-sm w-48"
                     >
                         <option value="">{t('buttons.allLocations')}</option>
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        {locations.map((loc: any) => (
+                        {locations.map((loc) => (
                             <option key={loc.locationId} value={loc.locationId}>
                                 {loc.code} - {loc.name}
                             </option>
@@ -74,7 +83,7 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                     className={`flex items-center justify-center h-10 w-10 rounded-lg transition-all ${isActive ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-white border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'}`}
                     title="Filters"
                 >
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
                     <span className="material-symbols-outlined text-[20px]">filter_list</span>
                 </button>
                 {open && (
@@ -90,8 +99,7 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                                 className="input text-sm w-full"
                             >
                                 <option value="">{t('buttons.allLocations')}</option>
-                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                {locations.map((loc: any) => (
+                                {locations.map((loc) => (
                                     <option key={loc.locationId} value={loc.locationId}>
                                         {loc.code} - {loc.name}
                                     </option>
@@ -144,8 +152,7 @@ export default function GoodsReceivedListPage() {
 
     const [slideOverOpen, setSlideOverOpen] = useState(false);
     const [quarantineModalOpen, setQuarantineModalOpen] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [selectedRows, setSelectedRows] = useState<any[]>([]);
+    const [selectedRows, setSelectedRows] = useState<ReceivingGridRow[]>([]);
 
     const handleAllocate = useCallback(() => {
         if (selectedRows.length === 0) return;
@@ -211,8 +218,7 @@ export default function GoodsReceivedListPage() {
 
     const gridEndpoint = isReadyDays ? `/api/goods-received/lines?days=${days}&limit=0${selectedLocationId ? `&locationId=${selectedLocationId}` : ''}` : undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const gridColumns: any[] = useMemo(() => [
+    const gridColumns: ColDef<ReceivingGridRow>[] = useMemo(() => [
         {
             field: 'receiptNumber',
             headerName: t('columns.receiptNo'),
@@ -225,8 +231,7 @@ export default function GoodsReceivedListPage() {
             field: 'putawayStatus',
             headerName: 'Putaway Status',
             width: 140,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => {
+            valueFormatter: (p: ValueFormatterParams<ReceivingGridRow>) => {
                 if (!p.value) return '';
                 if (p.data?.stateCode === GOODS_RECEIVED_STATE.CANCELLED) return 'Cancelled';
                 if (p.value === PUTAWAY_STATUS.COMPLETED) return 'Completed';
@@ -237,16 +242,14 @@ export default function GoodsReceivedListPage() {
             }
         },
         { field: 'createdOn', headerName: tCommon('columns.date'), width: 110, 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
+            valueFormatter: (p: ValueFormatterParams<ReceivingGridRow>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
         { field: 'vendorName', headerName: t('columns.supplier'), width: 160 },
         { field: 'locationName', headerName: tCommon('columns.location'), width: 140 },
         { 
             field: 'productNumber', 
             headerName: tCommon('columns.product'), 
             width: 240,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            cellRenderer: (p: import("ag-grid-community").ICellRendererParams<any>) => {
+            cellRenderer: (p: ICellRendererParams<ReceivingGridRow>) => {
                 if (!p.data) return null;
                 return (
                     <div style={{ lineHeight: '1.2', padding: '4px 0' }}>
@@ -267,8 +270,7 @@ export default function GoodsReceivedListPage() {
             field: 'orderNumber',
             headerName: 'PO Match',
             width: 220,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            cellRenderer: (p: import("ag-grid-community").ICellRendererParams<any>) => <POAllocationCell data={p.data} />
+            cellRenderer: (p: ICellRendererParams<ReceivingGridRow>) => <POAllocationCell data={p.data} />
         },
 
         { field: 'packingSlipNumber', headerName: t('columns.packingSlip'), width: 140 },

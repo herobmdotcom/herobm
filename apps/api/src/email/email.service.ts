@@ -5,11 +5,11 @@ import {
   systemEvents,
 } from '../drizzle/herobm-core-schema';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { EntityType, EventType } from '../common/event-types';
+import { EntityType, EventType, EntityTypeValue } from '../common/event-types';
 import { emitEvent } from '../common/emit-event';
 
 export interface QueueEmailParams {
-  entityType?: string;
+  entityType?: EntityTypeValue;
   entityId?: string;
   toAddress: string;
   replyTo?: string;
@@ -65,8 +65,7 @@ export class EmailService {
     if (params.entityType && params.entityId) {
       // @sync-ignore
       await emitEvent(tx, {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        entityType: params.entityType as any,
+        entityType: params.entityType,
         entityId: params.entityId,
         eventType: `email.${EventType.QUEUED}`,
         entityDisplayName: `Email to ${params.toAddress}`,

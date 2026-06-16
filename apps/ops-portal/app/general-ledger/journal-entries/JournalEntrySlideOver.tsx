@@ -65,8 +65,7 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
     setLoading(true);
     api.glControllerGetJournalEntry(entry.journalEntryId)
       .then((res) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const detail = res.data as any;
+        const detail = res.data as unknown as { lines?: JournalLine[] };
         setLines(detail.lines || []);
       })
       .catch((err) => reportError(err, 'JournalEntrySlideOver'))

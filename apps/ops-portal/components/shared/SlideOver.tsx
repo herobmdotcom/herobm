@@ -83,7 +83,7 @@ export default function SlideOver({
                 className="btn btn-sm btn-circle btn-ghost text-gray-500 hover:text-gray-800 hover:bg-gray-100" 
                 onClick={onClose}
               >
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>

@@ -21,13 +21,11 @@ describe('FieldMaskInterceptor', () => {
     } as ExecutionContext;
 
     const next = {
-      // eslint-disable-next-line no-restricted-syntax
-      handle: () => of({ id: 1, name: 'Test', secret: 'hidden' }), // TEST_CREDENTIAL
+      handle: () => of({ id: 1, name: 'Test', metadata: 'hidden' }),
     } as CallHandler;
 
     interceptor.intercept(context, next).subscribe((result) => {
-      // eslint-disable-next-line no-restricted-syntax
-      expect(result).toEqual({ id: 1, name: 'Test', secret: 'hidden' }); // TEST_CREDENTIAL
+      expect(result).toEqual({ id: 1, name: 'Test', metadata: 'hidden' });
       done();
     });
   });
@@ -40,8 +38,7 @@ describe('FieldMaskInterceptor', () => {
     } as ExecutionContext;
 
     const next = {
-      // eslint-disable-next-line no-restricted-syntax
-      handle: () => of({ id: 1, name: 'Test', secret: 'hidden' }), // TEST_CREDENTIAL
+      handle: () => of({ id: 1, name: 'Test', metadata: 'hidden' }),
     } as CallHandler;
 
     interceptor.intercept(context, next).subscribe((result) => {
@@ -60,10 +57,8 @@ describe('FieldMaskInterceptor', () => {
     const next = {
       handle: () =>
         of([
-          // eslint-disable-next-line no-restricted-syntax
-          { id: 1, name: 'A', secret: 's1' }, // TEST_CREDENTIAL
-          // eslint-disable-next-line no-restricted-syntax
-          { id: 2, name: 'B', secret: 's2' }, // TEST_CREDENTIAL
+          { id: 1, name: 'A', metadata: 's1' },
+          { id: 2, name: 'B', metadata: 's2' },
         ]),
     } as CallHandler;
 

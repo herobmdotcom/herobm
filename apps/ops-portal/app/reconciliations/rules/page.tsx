@@ -41,15 +41,15 @@ export default function RulesEnginePage() {
 
   const [rules, setRules] = useState<api.ReconciliationRuleResponseDto[]>([]);
   const [glAccounts, setGlAccounts] = useState<api.GlAccountResponseDto[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [settings, setSettings] = useState<Record<string, any> | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [costCenters, setCostCenters] = useState<Record<string, any>[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [activities, setActivities] = useState<Record<string, any>[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [customers, setCustomers] = useState<Record<string, any>[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [suppliers, setSuppliers] = useState<Record<string, any>[]>([]);
   
   const [loading, setLoading] = useState(false);
@@ -81,9 +81,9 @@ export default function RulesEnginePage() {
       const custData = custRes.data as { items?: unknown[] } | unknown[];
       const suppData = suppRes.data as { items?: unknown[] } | unknown[];
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       setCustomers((Array.isArray(custData) ? custData : custData?.items || []) as Record<string, any>[]);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       setSuppliers((Array.isArray(suppData) ? suppData : suppData?.items || []) as Record<string, any>[]);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -92,7 +92,7 @@ export default function RulesEnginePage() {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const handleSaveRule = async (row: any, isNew: boolean) => {
     if (!row.conditionValue || !row.targetGlAccountId) {
       throw new Error('Condition Value and Target Account are required');
@@ -114,7 +114,7 @@ export default function RulesEnginePage() {
         partyId: row.partyId || undefined,
         memo: row.memo || undefined,
         priority: 10
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       } as any);
       toast.success(t('ruleCreated') || 'Rule created');
     } else {
@@ -134,14 +134,14 @@ export default function RulesEnginePage() {
         partyId: row.partyId || undefined,
         memo: row.memo || undefined,
         priority: 10
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       } as any);
       toast.success(t('ruleUpdated') || 'Rule updated');
     }
     await loadData();
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const handleDeleteRule = async (row: any) => {
     if (!confirm('Are you sure you want to delete this rule?')) return;
     try {
@@ -164,7 +164,7 @@ export default function RulesEnginePage() {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const bankAccs = glAccounts.filter(a => (a as any).isBankAccount);
 
   const handleOpenAdd = () => {
@@ -176,7 +176,7 @@ export default function RulesEnginePage() {
     setIsModalOpen(true);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const handleOpenEdit = (rule: any) => {
     setEditingRule({ 
       ...rule, 
@@ -203,12 +203,12 @@ export default function RulesEnginePage() {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const columns: DataTableColumn<any>[] = useMemo(() => [
     {
       id: 'matchingConditions',
       header: t('matchingConditions'),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       render: (r: any) => {
         let bankStr = t('allBankAccounts');
         if (r.glAccountIds && r.glAccountIds.length > 0) {
@@ -253,7 +253,7 @@ export default function RulesEnginePage() {
     {
       id: 'effect',
       header: t('effect'),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       render: (r: any) => {
         const targetAcc = glAccounts.find(a => a.glAccountId === r.targetGlAccountId);
         const cc = costCenters.find(c => c.costCenterId === r.costCenterId);
@@ -292,15 +292,15 @@ export default function RulesEnginePage() {
       header: '',
       align: 'right',
       width: '100px',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       render: (row: any) => (
         <div className="flex justify-end gap-1">
           <button className="btn btn-sm btn-ghost btn-circle" onClick={() => handleOpenEdit(row)}>
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
             <span className="material-symbols-outlined text-[18px]">edit</span>
           </button>
           <button className="btn btn-sm btn-ghost btn-circle text-red-500 hover:text-red-700" onClick={() => handleDeleteRule(row)}>
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
             <span className="material-symbols-outlined text-[18px]">delete</span>
           </button>
         </div>
@@ -326,18 +326,18 @@ export default function RulesEnginePage() {
             <DataTable
               columns={columns}
               data={rules}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
               keyExtractor={(r: any) => r.ruleId}
               emptyMessage={t('noRulesDefinedYet')}
             />
           </div>
 
           <div className="card bg-[var(--bg-primary)] p-6 border border-[var(--border)] rounded-xl max-w-2xl">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
             <h3 className="section-heading flex items-center gap-2 mb-6">Smart Match Parameters</h3>
             <div className="space-y-6">
               <div>
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                   Date Tolerance (Days)
                 </label>
@@ -367,9 +367,9 @@ export default function RulesEnginePage() {
         title={editingRule?.ruleId ? 'Edit Rule' : 'Add Rule'}
         footer={
           <div className="flex justify-end gap-2">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
             <button type="button" className="btn btn-ghost" onClick={handleCloseModal}>Cancel</button>
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
             <button type="submit" form="ruleForm" className="btn btn-primary">Save</button>
           </div>
         }
@@ -589,7 +589,7 @@ export default function RulesEnginePage() {
             </div>
             
             {/* Hidden submit button to allow Enter key submission, but SlideOver footer "Save" button triggers handleSaveModal */}
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
             <button type="submit" className="hidden">Submit</button>
           </form>
         )}

@@ -27,13 +27,13 @@ jest.setTimeout(120000);
 describe('PurchaseOrdersService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: PurchaseOrdersService;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockInventoryService: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockSuppliersService: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockTaxCategoriesService: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockTaxResolutionEngine: any;
 
   const VENDOR_ID = '00000000-0000-0000-0000-000000000002';

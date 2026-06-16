@@ -6,14 +6,23 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
-import type { ColDef } from 'ag-grid-community';
+import type { ColDef, ValueFormatterParams } from 'ag-grid-community';
+
+interface ReportConfigRow {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  dataSourceHook?: string;
+  isSystem?: boolean;
+}
 
 export default function BusinessReportsConfigPage() {
   useDocumentTitle('Configuration');
   const router = useRouter();
   const t = useTranslations('admin.reporting');
 
-  const columns = useMemo<ColDef[]>(() => [
+  const columns = useMemo<ColDef<ReportConfigRow>[]>(() => [
     { field: 'name', headerName: 'Report Name', flex: 1, minWidth: 200 },
     { field: 'slug', headerName: 'System Token', width: 200 },
     { field: 'description', headerName: 'Description', flex: 2, minWidth: 250 },
@@ -22,13 +31,11 @@ export default function BusinessReportsConfigPage() {
       field: 'isSystem',
       headerName: 'System Core',
       width: 150,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      valueFormatter: (p: any) => p.value ? 'Yes' : 'No',
+      valueFormatter: (p: ValueFormatterParams) => p.value ? 'Yes' : 'No',
     }
   ], []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleRowClicked = useCallback((row: any) => {
+  const handleRowClicked = useCallback((row: ReportConfigRow) => {
     router.push(`/reporting/config/${row.id}`);
   }, [router]);
 

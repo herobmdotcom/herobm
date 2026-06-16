@@ -49,7 +49,7 @@ export default function POLineSearchInput({
     
     api.purchaseOrdersControllerFindPendingLines(params as Parameters<typeof api.purchaseOrdersControllerFindPendingLines>[0])
       .then((res) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         const lines = res.data as any;
         setAllLines(lines);
         setResults(lines);

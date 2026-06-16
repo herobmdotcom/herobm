@@ -14,7 +14,7 @@ import {
   glMatchGroups,
   reconciliationRules,
 } from '../drizzle/herobm-core-schema';
-import { eq, and, desc, inArray } from 'drizzle-orm';
+import { eq, and, desc, inArray, SQL } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateBankStatementLineDto } from './dto/bank-statement.dto';
 import { GlService } from './gl.service';
@@ -29,13 +29,15 @@ export class BankStatementService {
   ) {}
 
   async getLines(glAccountId: string, isReconciled?: boolean) {
-    let conditions = eq(bankStatementLines.glAccountId, glAccountId);
+    let conditions: SQL<unknown> | undefined = eq(
+      bankStatementLines.glAccountId,
+      glAccountId,
+    );
     if (isReconciled !== undefined) {
       conditions = and(
         conditions,
         eq(bankStatementLines.isReconciled, isReconciled),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ) as any;
+      );
     }
 
     const lines = await this.db

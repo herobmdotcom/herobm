@@ -6,6 +6,7 @@ import {
   IsUUID,
   IsNumber,
   IsNotEmpty,
+  IsDateString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -139,6 +140,10 @@ export class CreateStandaloneInvoiceDto {
 
   @IsString()
   currencyCode!: string;
+
+  @IsOptional()
+  @IsDateString()
+  invoiceDate?: string;
 
   @IsNumber()
   totalAmount!: number;

@@ -6,9 +6,9 @@ import {
   users,
 } from '../../src/drizzle/herobm-core-schema';
 import * as bcrypt from 'bcrypt';
+import { SeedDB } from '../../src/scripts/seed';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function seedTestLocations(db: any, dryRun = false) {
+export async function seedTestLocations(db: SeedDB, dryRun = false) {
   if (dryRun) {
     console.log('  [DRY RUN] Would seed test location: MAIN');
     return;
@@ -79,10 +79,11 @@ export async function seedTestLocations(db: any, dryRun = false) {
   console.log("  Seeded test 'MAIN' location, zone, and bins");
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function seedTestUsers(db: any, dryRun = false) {
+export async function seedTestUsers(db: SeedDB, dryRun = false) {
   if (dryRun) {
-    console.log('  [DRY RUN] Would seed test users: viewer, sales, finance, warehouse, procurement, system, restricted_user');
+    console.log(
+      '  [DRY RUN] Would seed test users: viewer, sales, finance, warehouse, procurement, system, restricted_user',
+    );
     return;
   }
 
@@ -95,14 +96,12 @@ export async function seedTestUsers(db: any, dryRun = false) {
     .values({
       username: 'viewer',
       passwordHash: viewerHash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'viewer' as any,
+      role: 'viewer',
       isActive: true,
     })
     .onConflictDoUpdate({
       target: users.username,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      set: { passwordHash: viewerHash, role: 'viewer' as any, isActive: true },
+      set: { passwordHash: viewerHash, role: 'viewer', isActive: true },
     });
 
   await db
@@ -110,14 +109,12 @@ export async function seedTestUsers(db: any, dryRun = false) {
     .values({
       username: 'sales',
       passwordHash: salesHash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'sales' as any,
+      role: 'sales',
       isActive: true,
     })
     .onConflictDoUpdate({
       target: users.username,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      set: { passwordHash: salesHash, role: 'sales' as any, isActive: true },
+      set: { passwordHash: salesHash, role: 'sales', isActive: true },
     });
 
   const financeHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
@@ -126,16 +123,14 @@ export async function seedTestUsers(db: any, dryRun = false) {
     .values({
       username: 'finance',
       passwordHash: financeHash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'finance' as any,
+      role: 'finance',
       isActive: true,
     })
     .onConflictDoUpdate({
       target: users.username,
       set: {
         passwordHash: financeHash,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        role: 'finance' as any,
+        role: 'finance',
         isActive: true,
       },
     });
@@ -146,16 +141,14 @@ export async function seedTestUsers(db: any, dryRun = false) {
     .values({
       username: 'warehouse',
       passwordHash: warehouseHash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'warehouse' as any,
+      role: 'warehouse',
       isActive: true,
     })
     .onConflictDoUpdate({
       target: users.username,
       set: {
         passwordHash: warehouseHash,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        role: 'warehouse' as any,
+        role: 'warehouse',
         isActive: true,
       },
     });
@@ -166,16 +159,14 @@ export async function seedTestUsers(db: any, dryRun = false) {
     .values({
       username: 'procurement',
       passwordHash: procurementHash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'procurement' as any,
+      role: 'procurement',
       isActive: true,
     })
     .onConflictDoUpdate({
       target: users.username,
       set: {
         passwordHash: procurementHash,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        role: 'procurement' as any,
+        role: 'procurement',
         isActive: true,
       },
     });
@@ -186,14 +177,12 @@ export async function seedTestUsers(db: any, dryRun = false) {
     .values({
       username: 'system',
       passwordHash: systemHash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'system' as any,
+      role: 'system',
       isActive: true,
     })
     .onConflictDoUpdate({
       target: users.username,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      set: { passwordHash: systemHash, role: 'system' as any, isActive: true },
+      set: { passwordHash: systemHash, role: 'system', isActive: true },
     });
 
   const restrictedHash = await bcrypt.hash('password', 10); // TEST_CREDENTIAL
@@ -202,16 +191,14 @@ export async function seedTestUsers(db: any, dryRun = false) {
     .values({
       username: 'restricted_user',
       passwordHash: restrictedHash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'restricted_user' as any,
+      role: 'restricted_user',
       isActive: true,
     })
     .onConflictDoUpdate({
       target: users.username,
       set: {
         passwordHash: restrictedHash,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        role: 'restricted_user' as any,
+        role: 'restricted_user',
         isActive: true,
       },
     });

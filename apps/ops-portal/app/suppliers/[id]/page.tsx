@@ -9,7 +9,7 @@ import {
   reportError,
 } from '@/lib/api';
 import * as api from '@herobm/sdk';
-import ActivityTimeline from '@/components/shared/ActivityTimeline';
+import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -128,15 +128,18 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const loadSupplier = async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const dataRes: any = await Promise.all([
+      const [supplierRes, termsRes, taxPositionsRes] = await Promise.all([
         api.suppliersControllerFindOne(params.id),
-        api.tradingTermsControllerFindAll().catch(() => ({ data: [] })),
-        api.taxPositionsControllerFindAll().catch(() => ({ data: [] })),
-      ]);
-      const data = dataRes[0]?.data;
-      const termsData = dataRes[1]?.data || [];
-      setTaxPositions(dataRes[2]?.data || []);
+        api.tradingTermsControllerFindAll().catch(() => ({ data: [] as api.TradingTermResponseDto[] } as unknown as api.tradingTermsControllerFindAllResponse)),
+        api.taxPositionsControllerFindAll().catch(() => ({ data: [] as api.TaxPositionResponseDto[] } as unknown as api.taxPositionsControllerFindAllResponse)),
+      ]) as unknown as [
+        { data: Supplier },
+        { data: api.TradingTermResponseDto[] },
+        { data: api.TaxPositionResponseDto[] }
+      ];
+      const data = supplierRes?.data;
+      const termsData = termsRes?.data || [];
+      setTaxPositions(taxPositionsRes?.data || []);
       setSupplier(data);
       setAvailableTradingTerms(termsData);
       
@@ -254,7 +257,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         return tStates.has(s as never) ? tStates(s as never) : String(p.value);
       } 
     },
-  ], [t]);
+  ], [t, tStates]);
 
   if (loading) {
     return (
@@ -282,8 +285,6 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   }
 
   const isEditable = supplier.stateCode !== SUPPLIER_STATE.ARCHIVED;
-
-
 
   const visibleSections = [
     {
@@ -350,8 +351,8 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       )}
 
       {activeTab === 'products' && (
-        <div className="flex-1 min-h-0 flex flex-col w-full h-full pb-6">
-          <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+        <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
+          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
             <DataGrid 
                 endpoint={`/api/suppliers/${encodeURIComponent(params.id)}/products`}
                 columns={productColumns}
@@ -407,7 +408,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         {/* General Info Card */}
         <div id="info-section" className="card">
           <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined">info</span>
             {t('generalInfo')}
           </h3>
@@ -504,7 +505,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         {/* Financials Card */}
         <div id="financials-section" className="card">
           <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined">payments</span>
             FINANCIALS
           </h3>
@@ -591,7 +592,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
                 </div>
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                 <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
                   in
                 </span>
@@ -607,7 +608,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     min="0"
                     placeholder="10"
                   />
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none text-sm">days</span>
                 </div>
               </div>
@@ -623,16 +624,16 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   country={supplier.address1Country || ''}
                   value={editBusinessNumber}
                   isSaving={saving}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  onEnrich={(data: Record<string, any>) => {
-                    if (data.name && data.name !== editName) {
-                      setEditName(data.name);
-                      saveField('name', data.name, supplier.name);
+                  onEnrich={(data: Record<string, unknown>) => {
+                    const enriched = data as { name?: string; isTaxRegistered?: boolean };
+                    if (enriched.name && enriched.name !== editName) {
+                      setEditName(enriched.name);
+                      saveField('name', enriched.name, supplier.name);
                       toast.success(tCommon('enrichment.nameUpdated'));
                     }
-                    if (data.isTaxRegistered !== undefined && data.isTaxRegistered !== editIsTaxRegistered) {
-                      setEditIsTaxRegistered(data.isTaxRegistered);
-                      saveField('isTaxRegistered', data.isTaxRegistered, supplier.isTaxRegistered);
+                    if (enriched.isTaxRegistered !== undefined && enriched.isTaxRegistered !== editIsTaxRegistered) {
+                      setEditIsTaxRegistered(enriched.isTaxRegistered);
+                      saveField('isTaxRegistered', enriched.isTaxRegistered, supplier.isTaxRegistered);
                       toast.success(tCommon('enrichment.taxUpdated'));
                     }
                   }}
@@ -720,7 +721,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             {/* ── Row 3 ── */}
             {/* 7. Trading Terms */}
             <div>
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 Trading Terms
               </label>
@@ -745,7 +746,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         {/* Contact & Location Card — full width */}
         <div id="contact-section" className="card">
           <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined">location_on</span>
             {t('contactLocation')}
           </h3>
@@ -808,7 +809,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         {/* Bank Details Card */}
         <div id="bank-section" className="card">
           <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined">account_balance</span>
             Bank Details
           </h3>
@@ -858,12 +859,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           </div>
         </div>
 
-
-        {/* Activity Timeline — full width */}
         {/* Activity Timeline — full width */}
         <div id="activity-section" className="card">
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-        <ActivityTimeline events={(supplier as any).events || []} />
+          <ActivityTimeline events={(supplier.events || []) as TimelineEvent[]} />
         </div>
 
         <div className="flex justify-end pt-2">
@@ -889,7 +887,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         <div className="flex flex-col gap-3">
           <div className="card">
             <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined">gavel</span>
               {t('compliance.title')}
             </h3>

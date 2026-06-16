@@ -42,8 +42,7 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
     }
   }, [open]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleAddProduct = (product: any) => {
+  const handleAddProduct = (product: { productId: string; productNumber: string; name: string }) => {
     // Check if product already exists
     const existingIndex = lines.findIndex(l => l.productId === product.productId);
     if (existingIndex >= 0) {
@@ -201,7 +200,7 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
                   className="text-gray-400 hover:text-red-500"
                   onClick={() => handleRemoveLine(index)}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                   <span className="material-symbols-outlined">delete</span>
                 </button>
               </div>

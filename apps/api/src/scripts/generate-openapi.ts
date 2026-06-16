@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/ban-ts-comment -- External API integration boundaries where exact types are unknown. */
 export {};
 import * as path from 'path';
 import * as dotenv from 'dotenv';

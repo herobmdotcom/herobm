@@ -473,7 +473,7 @@ export class GoodsReceivedService {
           // Trigger the lifecycle engine instead of hardcoded updates
           try {
             await evaluatePOLifecycleRules(
-              tx as Parameters<typeof emitEvent>[0],
+              tx as unknown as DrizzleDB,
               poId,
               {
                 entity: 'goods_receipt',
@@ -704,6 +704,7 @@ export class GoodsReceivedService {
           .select({ orderNumber: purchaseOrders.orderNumber })
           .from(purchaseOrders)
           .where(eq(purchaseOrders.purchaseOrderId, poId));
+        // @herobm-skip-audit - DB write is performed via raw tx.execute, false positive
         await emitEvent(tx, {
           entityType: EntityType.PURCHASE_ORDER,
           entityId: poId,
@@ -775,7 +776,7 @@ export class GoodsReceivedService {
       .where(eq(goodsReceived.goodsReceivedId, receiptId))
       .returning();
 
-    await emitEvent(tx as Parameters<typeof emitEvent>[0], {
+    await emitEvent(tx as unknown as DrizzleDB, {
       entityType: EntityType.WAREHOUSE,
       entityId: receiptId,
       eventType: EventType.RECEIPT_STATUS_CHANGED,

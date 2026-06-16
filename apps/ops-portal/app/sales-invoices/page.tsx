@@ -22,7 +22,7 @@ export default function GlobalInvoicesPage() {
     const invoiceFilter = searchParams.get('invoice') || '';
     const [days, setDays, isReady] = usePersistedFilter('sales-invoices-days', '90');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const handleRowClicked = useCallback((row: any) => {
         if (row.invoiceId) {
             router.push(`/sales-invoices/${row.invoiceId}`);
@@ -33,21 +33,21 @@ export default function GlobalInvoicesPage() {
     const gridEndpoint = !isReady ? undefined : (invoiceFilter
         ? `/api/sales-invoices?invoiceId=${encodeURIComponent(invoiceFilter)}&limit=0`
         : `/api/sales-invoices?days=${days}&limit=0`);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const gridColumns: any[] = [
         { field: 'invoiceId', headerName: 'ID', hide: true },
         { field: 'invoiceNumber', headerName: t('columns.invoiceNumber'), width: 180 },
         { field: 'orderNumber', headerName: t('columns.orderNumber'), width: 160 },
         { field: 'customerName', headerName: t('columns.customer'), width: 250 },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         { field: 'createdOn', headerName: t('columns.date'), width: 200, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value).toLocaleDateString() : '' },
         { field: 'totalAmount', headerName: t('columns.amount'), type: 'numericColumn', width: 150,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             valueGetter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
                 if (!params.data?.totalAmount) return null;
                 return parseFloat(params.data.totalAmount);
             },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
                 if (!params.value || params.value === 0) return '—';
                 return formatAmount(params.value, params.data?.currencyCode || baseCurrency);
@@ -57,11 +57,11 @@ export default function GlobalInvoicesPage() {
             field: 'stateCode', 
             headerName: t('columns.state'), 
             width: 140,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
                 if (!params.value) return '';
                 const s = String(params.value).toLowerCase();
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                 return tStates.has(s as any) ? tStates(s as any) : String(params.value);
             }
         },

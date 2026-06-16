@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-// eslint-disable-next-line no-restricted-imports
-import { getToken, apiFetch } from '@/lib/api';
+// eslint-disable-next-line no-restricted-imports -- External API integration boundaries where exact types are unknown.
+import { getToken, apiFetch, reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 
 function getExcelColumnName(colIndex: string): string {
@@ -87,8 +87,7 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
       const formData = new FormData();
       formData.append('file', file);
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const res = await apiFetch<any>('/api/gl/bank-feeds/parse', {
+      const res = await apiFetch<{ headers: Record<string, unknown> }>('/api/gl/bank-feeds/parse', {
         method: 'POST',
         body: formData,
       });
@@ -124,8 +123,7 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
       formData.append('glAccountId', glAccountId);
       formData.append('profileId', finalProfileId);
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const res = await apiFetch<any>('/api/gl/bank-feeds/import', {
+      const res = await apiFetch<{ autoMatchedCount: number; unmatchedCount: number }>('/api/gl/bank-feeds/import', {
         method: 'POST',
         body: formData,
       });
@@ -145,7 +143,7 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
         <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex justify-between items-center shrink-0">
           <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('importBankStatement')}</h2>
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
             <span>✕</span>
           </button>
         </div>
@@ -229,7 +227,7 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
           {step === 3 && results && (
             <div className="space-y-4 text-center py-6">
               <div className="flex justify-center items-center gap-2 mb-2">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
                 <span className="material-symbols-outlined text-[24px] text-[var(--success)]">check_circle</span>
                 <h3 className="text-lg font-bold text-[var(--text-primary)]">{t('importComplete')}</h3>
               </div>

@@ -87,8 +87,7 @@ export default function POMatchingPanel({
     api.purchaseOrdersControllerFindPendingLines({ vendorId } as Parameters<typeof api.purchaseOrdersControllerFindPendingLines>[0])
       .then((res) => {
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const lines = res.data as any;
+        const lines = res.data as unknown as PendingPOLine[];
         setRawLines(lines);
         // Auto-expand all POs if 3 or fewer, otherwise expand the first
         const poIds = [...new Set(lines.map((l: PendingPOLine) => l.purchaseOrderId))] as string[];
@@ -181,11 +180,11 @@ export default function POMatchingPanel({
       {/* Header */}
       <div className="flex items-center justify-between mb-4" style={{ flexShrink: 0 }}>
         <h3 className="section-heading" style={{ marginBottom: 0 }}>
-          {/* eslint-disable-next-line i18next/no-literal-string */}
+          {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
           <span className="material-symbols-outlined">link</span>
           {t('matching.panelTitle')}
         </h3>
-        {/* eslint-disable i18next/no-literal-string */}
+        {/* eslint-disable i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
         <button
           onClick={onClose}
           className="btn btn-secondary btn-sm"
@@ -222,7 +221,7 @@ export default function POMatchingPanel({
             flexShrink: 0,
           }}
         >
-          {/* eslint-disable-next-line i18next/no-literal-string */}
+          {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
           <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: 'middle', marginRight: 4 }}>
             arrow_back
           </span>
@@ -348,7 +347,7 @@ function POCard({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* eslint-disable i18next/no-literal-string */}
+          {/* eslint-disable i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
           <span
             className="material-symbols-outlined"
             style={{
@@ -529,7 +528,6 @@ function POCard({
                         <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>—</span>
                       ) : (
                         <>
-                          {/* eslint-disable i18next/no-literal-string */}
                           <button
                             className="btn btn-primary btn-sm"
                             style={{
@@ -549,9 +547,8 @@ function POCard({
                                 : t('matching.matchButton')
                             }
                           >
-                            Match
+                            {t('matching.matchButton')}
                           </button>
-                          {/* eslint-enable i18next/no-literal-string */}
                         </>
                       )}
                     </td>

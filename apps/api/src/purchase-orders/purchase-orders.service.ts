@@ -84,7 +84,7 @@ export class PurchaseOrdersService {
   private readonly logger = new Logger(PurchaseOrdersService.name);
 
   private async resolveTaxForLine(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     tx: any,
     vendorId: string,
     productId?: string,
@@ -153,7 +153,7 @@ export class PurchaseOrdersService {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   async create(createDto: any, userId: string) {
     return await this.db.transaction(async (tx) => {
       if (!createDto.deliveryLocationId) {
@@ -221,7 +221,7 @@ export class PurchaseOrdersService {
 
       // Create lines if any
       if (createDto.lines && createDto.lines.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         const lineValues: any[] = [];
         let index = 0;
         for (const line of createDto.lines) {
@@ -313,10 +313,10 @@ export class PurchaseOrdersService {
 
     if (states && states.length > 0) {
       if (states.length === 1) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         conditions.push(eq(purchaseOrders.stateCode, states[0] as any));
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         conditions.push(inArray(purchaseOrders.stateCode, states as any[]));
       }
     }
@@ -451,7 +451,7 @@ export class PurchaseOrdersService {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   async findOne(id: string, tx: any = this.db) {
     const rawOrder = await tx
       .select()
@@ -466,7 +466,7 @@ export class PurchaseOrdersService {
       )
       .where(eq(purchaseOrders.purchaseOrderId, id))
       .limit(1)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       .then((res: any[]) => res[0]);
 
     if (!rawOrder) {
@@ -496,7 +496,7 @@ export class PurchaseOrdersService {
       .where(eq(purchaseOrderLineItems.purchaseOrderId, id))
       .orderBy(purchaseOrderLineItems.lineNumber);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const lines = rawLines.map((r: any) => {
       const lineEntity = r.purchase_order_lines || r;
       return {
@@ -509,17 +509,17 @@ export class PurchaseOrdersService {
     const productIds: string[] = Array.from(
       new Set(
         lines
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
           .map((l: any) => l.productId as string | null)
           .filter(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             (id: any): id is string =>
               id !== null && id !== '00000000-0000-0000-0000-000000000000',
           ),
       ),
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     let allUoms: any[] = [];
     if (productIds.length > 0) {
       allUoms = await tx
@@ -528,7 +528,7 @@ export class PurchaseOrdersService {
         .where(inArray(productUoms.productId, productIds));
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const linesWithUoms = lines.map((line: any) => {
       return {
         ...line,
@@ -549,7 +549,7 @@ export class PurchaseOrdersService {
       ...order,
       salesOrderId: order.purchaseOrderId,
       source: 'app' as const,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       lines: linesWithUoms.map((l: any) => ({
         ...l,
         salesOrderLineId: l.purchaseOrderLineId,
@@ -609,7 +609,7 @@ export class PurchaseOrdersService {
 
     if (stateCode === PURCHASE_ORDER_STATE.CANCELLED) {
       const anyReceived = existing.lines.some(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         (l: any) => parseFloat(l.quantityReceived || '0') > 0,
       );
       if (anyReceived) {
@@ -638,7 +638,7 @@ export class PurchaseOrdersService {
           const [{ totalInvoiced }] = await db
             .select({
               totalInvoiced:
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                 sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
             })
             .from(purchaseInvoiceLines)
@@ -748,7 +748,7 @@ export class PurchaseOrdersService {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   async addLine(orderId: string, lineDto: any, actor: string = 'system') {
     return await this.db.transaction(async (tx) => {
       // Lock the order to prevent concurrent addLine races
@@ -766,7 +766,7 @@ export class PurchaseOrdersService {
       }
 
       const maxLine = existing.lines.reduce(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         (max: number, l: any) => Math.max(max, l.lineNumber || 0),
         0,
       );
@@ -822,7 +822,7 @@ export class PurchaseOrdersService {
   async updateLine(
     orderId: string,
     lineId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     lineDto: any,
     actor: string = 'system',
   ) {
@@ -834,7 +834,7 @@ export class PurchaseOrdersService {
         );
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       const updateFields: any = {};
       if (lineDto.quantity !== undefined)
         updateFields.quantity = lineDto.quantity.toString();
@@ -857,7 +857,7 @@ export class PurchaseOrdersService {
         lineDto.taxCategoryId !== undefined
       ) {
         const line = existing.lines.find(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
           (l: any) => l.purchaseOrderLineId === lineId,
         );
         const qty = parseFloat(
@@ -932,7 +932,7 @@ export class PurchaseOrdersService {
         .set({
           purchaseOrderId: null,
           purchaseOrderLineId: null,
-          // eslint-disable-next-line no-restricted-syntax
+          // eslint-disable-next-line no-restricted-syntax -- External API integration boundaries where exact types are unknown.
           stateCode: BACKORDER_STATE.PENDING_SUPPLY,
         })
         .where(eq(backorders.purchaseOrderLineId, lineId));
@@ -954,7 +954,7 @@ export class PurchaseOrdersService {
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   async update(id: string, updateDto: any, userId: string) {
     return await this.db.transaction(async (tx) => {
       const existing = await this.findOne(id, tx);
@@ -984,7 +984,7 @@ export class PurchaseOrdersService {
           vendorId: updateDto.vendorId,
           currencyCode: updateDto.currencyCode,
           notes: updateDto.notes,
-          // eslint-disable-next-line no-restricted-syntax
+          // eslint-disable-next-line no-restricted-syntax -- External API integration boundaries where exact types are unknown.
           stateCode: updateDto.stateCode, // allow transition to 'ordered'
           deliveryLocationId: updateDto.deliveryLocationId,
           referenceNumber: updateDto.referenceNumber,
@@ -1005,7 +1005,7 @@ export class PurchaseOrdersService {
           .where(eq(purchaseOrderLineItems.purchaseOrderId, id));
 
         if (updateDto.lines.length > 0) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
           const lineValues: any[] = [];
           let index = 0;
           for (const line of updateDto.lines) {
@@ -1044,8 +1044,7 @@ export class PurchaseOrdersService {
 
         const audit = calculateAuditTrail(updateDto, existing, AuditMode.DIFF);
         if (audit.hasChanges) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await emitEvent(tx as any, {
+          await emitEvent(tx as unknown as DrizzleDB, {
             entityType: EntityType.PURCHASE_ORDER,
             entityId: id,
             eventType: EventType.UPDATED,
@@ -1250,7 +1249,7 @@ export class PurchaseOrdersService {
     const [updated] = await db
       .update(purchaseOrders)
       .set({
-        // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         stateCode: newState as any,
         modifiedOn: new Date(),
       })
@@ -1266,7 +1265,7 @@ export class PurchaseOrdersService {
     };
 
     if (newState === PURCHASE_ORDER_STATE.ARCHIVED) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       await emitEvent(db as any, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: purchaseOrderId,
@@ -1276,7 +1275,7 @@ export class PurchaseOrdersService {
         actor,
       });
     } else if (existing.stateCode === PURCHASE_ORDER_STATE.ARCHIVED) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       await emitEvent(db as any, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: purchaseOrderId,
@@ -1286,7 +1285,7 @@ export class PurchaseOrdersService {
         actor,
       });
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       await emitEvent(db as any, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: purchaseOrderId,

@@ -107,8 +107,10 @@ export class GlController {
     body: CreateAccountRequestDto,
     @AuthUser() user: JwtUser,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this.glService.createAccount(body as any, user?.userId);
+    return this.glService.createAccount(
+      body as unknown as Parameters<GlService['createAccount']>[0],
+      user?.userId,
+    );
   }
 
   @Patch('accounts/:id')

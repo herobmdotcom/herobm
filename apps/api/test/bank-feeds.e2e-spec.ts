@@ -102,13 +102,14 @@ describe('BankFeedsController (e2e)', () => {
 
   it('should get mapping profiles', async () => {
     const res = await request(app.getHttpServer())
-      .get(`/api/gl/bank-feeds/profiles/${bankAccountId}`)
+      .get(`/api/gl/bank-feeds/profiles`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
     expect(Array.isArray(res.body)).toBe(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(res.body.find((p: any) => p.profileId === profileId)).toBeDefined();
+    expect(
+      res.body.find((p: { profileId: string }) => p.profileId === profileId),
+    ).toBeDefined();
   });
 
   it('should update a mapping profile', async () => {
@@ -146,13 +147,14 @@ describe('BankFeedsController (e2e)', () => {
       .expect(200);
 
     const res = await request(app.getHttpServer())
-      .get(`/api/gl/bank-feeds/profiles/${bankAccountId}`)
+      .get(`/api/gl/bank-feeds/profiles`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
     expect(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      res.body.find((p: any) => p.profileId === tempProfileId),
+      res.body.find(
+        (p: { profileId: string }) => p.profileId === tempProfileId,
+      ),
     ).toBeUndefined();
   });
 

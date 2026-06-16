@@ -160,7 +160,7 @@ export class TransferService {
           .set({
             transferOrderId,
             transferOrderLineId,
-            // eslint-disable-next-line no-restricted-syntax
+            // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
             stateCode: BACKORDER_STATE.AWAITING_RECEIPT,
           })
           .where(eq(backorders.backorderId, line.backorderId));
@@ -449,6 +449,7 @@ export class TransferService {
         .select({ orderNumber: transferOrders.orderNumber })
         .from(transferOrders)
         .where(eq(transferOrders.transferOrderId, transferOrderId));
+      // @herobm-skip-audit - DB write is performed by changePickState, emitting cross-entity event here
       await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.TRANSFER_ORDER,
         entityId: transferOrderId,
@@ -576,7 +577,7 @@ export class TransferService {
         // D. Mark pick as shipped
         await tx
           .update(transferOrderPicks)
-          // eslint-disable-next-line no-restricted-syntax
+          // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
           .set({ stateCode: TRANSFER_ORDER_PICK_STATE.SHIPPED as string })
           .where(eq(transferOrderPicks.pickId, pick.pickId));
 
@@ -736,7 +737,7 @@ export class TransferService {
       // Mark shipment as cancelled
       await tx
         .update(transferOrderShipments)
-        // eslint-disable-next-line no-restricted-syntax
+        // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
         .set({ stateCode: TRANSFER_ORDER_STATE.CANCELLED })
         .where(eq(transferOrderShipments.shipmentId, shipmentId));
 
@@ -1363,7 +1364,6 @@ export class TransferService {
     return { success: true };
   }
 
-  // @herobm-skip-audit
   async addLine(id: string, dto: CreateTransferOrderLineDto, actor: string) {
     const [existing] = await this.db
       .select({
@@ -1388,10 +1388,18 @@ export class TransferService {
       quantity: dto.quantity,
     });
 
+    await emitEvent(this.db, {
+      entityType: EntityType.TRANSFER_ORDER,
+      entityId: id,
+      eventType: EventType.LINE_ADDED,
+      entityDisplayName: existing.orderNumber,
+      payload: { action: 'addLine', lineId },
+      actor,
+    });
+
     return { lineId };
   }
 
-  // @herobm-skip-audit
   async updateLine(
     id: string,
     lineId: string,
@@ -1399,7 +1407,10 @@ export class TransferService {
     actor: string,
   ) {
     const [existing] = await this.db
-      .select({ stateCode: transferOrders.stateCode })
+      .select({
+        stateCode: transferOrders.stateCode,
+        orderNumber: transferOrders.orderNumber,
+      })
       .from(transferOrders)
       .where(eq(transferOrders.transferOrderId, id));
 
@@ -1415,14 +1426,25 @@ export class TransferService {
         .update(transferOrderLines)
         .set({ quantity: dto.quantity })
         .where(eq(transferOrderLines.transferOrderLineId, lineId));
+
+      await emitEvent(this.db, {
+        entityType: EntityType.TRANSFER_ORDER,
+        entityId: id,
+        eventType: EventType.LINE_UPDATED,
+        entityDisplayName: existing.orderNumber,
+        payload: { action: 'updateLine', lineId },
+        actor,
+      });
     }
     return { success: true };
   }
 
-  // @herobm-skip-audit
   async removeLine(id: string, lineId: string, actor: string) {
     const [existing] = await this.db
-      .select({ stateCode: transferOrders.stateCode })
+      .select({
+        stateCode: transferOrders.stateCode,
+        orderNumber: transferOrders.orderNumber,
+      })
       .from(transferOrders)
       .where(eq(transferOrders.transferOrderId, id));
 
@@ -1436,6 +1458,15 @@ export class TransferService {
     await this.db
       .delete(transferOrderLines)
       .where(eq(transferOrderLines.transferOrderLineId, lineId));
+
+    await emitEvent(this.db, {
+      entityType: EntityType.TRANSFER_ORDER,
+      entityId: id,
+      eventType: EventType.LINE_REMOVED,
+      entityDisplayName: existing.orderNumber,
+      payload: { action: 'removeLine', lineId },
+      actor,
+    });
 
     return { success: true };
   }
@@ -1463,7 +1494,7 @@ export class TransferService {
         .set({
           transferOrderId: null,
           transferOrderLineId: null,
-          // eslint-disable-next-line no-restricted-syntax
+          // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
           stateCode: BACKORDER_STATE.PENDING_SUPPLY,
         })
         .where(eq(backorders.transferOrderId, id));

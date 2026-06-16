@@ -17,7 +17,7 @@ export default function PurchaseReturnDetailPage({ params }: { params: Promise<{
   const tCommon = useTranslations('common');
   const t = useTranslations('purchaseOrders.returns');
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [returnDetails, setReturnDetails] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +56,7 @@ export default function PurchaseReturnDetailPage({ params }: { params: Promise<{
       setSubmitting(true);
       setError(null);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       const lines = returnDetails.lines.map((line: any) => ({
         purchaseOrderLineId: line.purchaseOrderLineId,
         quantityInvoiced: line.quantityReturned,
@@ -177,7 +177,7 @@ export default function PurchaseReturnDetailPage({ params }: { params: Promise<{
                   </tr>
                 </thead>
                 <tbody>
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */}
                   {returnDetails.lines.map((line: any) => {
                     const price = parseFloat(linePrices[line.returnLineId] || '0');
                     const total = parseFloat(line.quantityReturned) * price;

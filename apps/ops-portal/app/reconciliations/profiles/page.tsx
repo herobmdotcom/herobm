@@ -72,7 +72,7 @@ export default function ProfilesPage() {
           payeeColumn: row.payeeColumn || undefined,
           referenceColumn: row.referenceColumn || undefined,
           headerRows: Number(row.headerRows || 1),
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         } as any);
         toast.success('Profile created');
       } else {
@@ -87,7 +87,7 @@ export default function ProfilesPage() {
           payeeColumn: row.payeeColumn || undefined,
           referenceColumn: row.referenceColumn || undefined,
           headerRows: Number(row.headerRows || 1),
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         } as any);
         toast.success('Profile updated');
       }

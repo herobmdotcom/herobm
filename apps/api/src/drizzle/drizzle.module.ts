@@ -40,15 +40,13 @@ export type DrizzleDB = PostgresJsDatabase<typeof schema>;
     {
       provide: DRIZZLE,
       inject: [POSTGRES_CLIENT],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      useFactory: (client: any) => drizzle(client, { schema }),
+      useFactory: (client: postgres.Sql) => drizzle(client, { schema }),
     },
   ],
   exports: [DRIZZLE],
 })
 export class DrizzleModule implements OnApplicationShutdown {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(@Inject(POSTGRES_CLIENT) private readonly client: any) {}
+  constructor(@Inject(POSTGRES_CLIENT) private readonly client: postgres.Sql) {}
 
   async onApplicationShutdown() {
     await this.client.end();

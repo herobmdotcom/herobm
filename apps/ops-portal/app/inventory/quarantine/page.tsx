@@ -11,7 +11,7 @@ import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';
 import UnquarantineModal from './UnquarantineModal';
 
-function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, t, tCommon, defaultLocId }: { locations: unknown[], selectedLocationId: string, setSelectedLocationId: (v: string) => void, t: ReturnType<typeof useTranslations>, tCommon: ReturnType<typeof useTranslations>, defaultLocId: string }) {
+function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, t, tCommon, defaultLocId }: { locations: api.InventoryLocationResponseDto[], selectedLocationId: string, setSelectedLocationId: (v: string) => void, t: ReturnType<typeof useTranslations>, tCommon: ReturnType<typeof useTranslations>, defaultLocId: string }) {
     const [open, setOpen] = useState(false);
     const ref = React.useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -40,8 +40,7 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                         className="input text-sm w-48"
                     >
                         <option value="">{t('buttons.allLocations')}</option>
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        {locations.map((loc: any) => (
+                        {locations.map((loc) => (
                             <option key={loc.locationId} value={loc.locationId}>
                                 {loc.code} - {loc.name}
                             </option>
@@ -55,7 +54,7 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                     className={`flex items-center justify-center h-10 w-10 rounded-lg transition-all ${isActive ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-white border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'}`}
                     title="Filters"
                 >
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                     <span className="material-symbols-outlined text-[20px]">filter_list</span>
                 </button>
                 {open && (
@@ -71,8 +70,7 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                                 className="input text-sm w-full"
                             >
                                 <option value="">{t('buttons.allLocations')}</option>
-                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                {locations.map((loc: any) => (
+                                {locations.map((loc) => (
                                     <option key={loc.locationId} value={loc.locationId}>
                                         {loc.code} - {loc.name}
                                     </option>
@@ -142,7 +140,7 @@ export default function QuarantineListPage() {
                     quantity: (row.actualQuantity || '0') as string,
                     reason,
                     targetBinId,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                     sourceType: 'manual' as any
                 });
                 toast.success('Line unquarantined successfully');
@@ -159,7 +157,7 @@ export default function QuarantineListPage() {
 
     const gridEndpoint = `/api/inventory/bins?binType=quarantine&limit=0${selectedLocationNo ? `&locationNo=${selectedLocationNo}` : ''}`;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const gridColumns: any[] = useMemo(() => [
         { field: 'binContentId', headerName: tCommon('columns.id'), hide: true },
         { 
@@ -178,7 +176,7 @@ export default function QuarantineListPage() {
             headerName: tCommon('columns.quantity'), 
             width: 120,
             cellStyle: { textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => {
                 return `${p.value} ${p.data?.baseUom || ''}`;
             }

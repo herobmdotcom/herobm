@@ -10,8 +10,15 @@ import { getErrorMessage } from '@herobm/shared';
 import JsonBrowserModal from '@/components/shared/JsonBrowserModal';
 
 interface ReportConfigFormProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  initialData?: Record<string, any>;
+  initialData?: {
+    id?: string;
+    name?: string;
+    slug?: string;
+    description?: string;
+    dataSourceHook?: string;
+    uiConfig?: Record<string, unknown>;
+    isSystem?: boolean;
+  };
 }
 
 export default function ReportConfigForm({ initialData }: ReportConfigFormProps) {
@@ -88,8 +95,8 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
       } else {
         const res = await api.businessReportsControllerCreateReport(payload);
         toast.success(t('toasts.created'));
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        router.push(`/reporting/config/${(res as any).data?.id || (res as any).id}`);
+        const createdReport = res as { data?: { id?: string }; id?: string };
+        router.push(`/reporting/config/${createdReport.data?.id || createdReport.id}`);
         return;
       }
       
@@ -195,7 +202,7 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
                   onClick={() => setBrowserOpen(true)}
                   disabled={!formData.dataSourceHook}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                   <span className="material-symbols-outlined text-[18px]">data_object</span>
                   View Data
                 </button>

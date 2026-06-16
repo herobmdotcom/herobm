@@ -7,7 +7,7 @@ import * as bcrypt from 'bcrypt';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { users } from '../drizzle/herobm-core-schema';
 
-// eslint-disable-next-line no-restricted-syntax
+// eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols.
 const TEST_PASSWORD = 'test-admin-pw-xyz'; // TEST_CREDENTIAL
 const TEST_HASH = bcrypt.hashSync(TEST_PASSWORD, 10);
 

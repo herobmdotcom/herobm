@@ -65,7 +65,7 @@ export const autoReceiveWhenFullyReceived: POLifecycleRule = {
         PURCHASE_ORDER_STATE.ORDERED,
         PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
         PURCHASE_ORDER_STATE.DRAFT,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       ].includes(order.stateCode as any)
     )
       return null;
@@ -94,7 +94,7 @@ export const autoReceiveWhenFullyReceived: POLifecycleRule = {
       .set({ stateCode: PURCHASE_ORDER_STATE.RECEIVED, modifiedOn: new Date() })
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     await emitEvent(db as any, {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: poId,
@@ -142,7 +142,7 @@ export const autoPartiallyReceiveWhenSomeReceived: POLifecycleRule = {
     if (
       !order ||
       ![PURCHASE_ORDER_STATE.ORDERED, PURCHASE_ORDER_STATE.DRAFT].includes(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         order.stateCode as any,
       )
     )
@@ -181,7 +181,7 @@ export const autoPartiallyReceiveWhenSomeReceived: POLifecycleRule = {
       })
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     await emitEvent(db as any, {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: poId,
@@ -230,7 +230,7 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
         PURCHASE_ORDER_STATE.INVOICED,
         PURCHASE_ORDER_STATE.CANCELLED,
         PURCHASE_ORDER_STATE.CLOSED_SHORT,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       ].includes(order.stateCode as any)
     )
       return null;
@@ -265,7 +265,7 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
       const [{ totalPostedInvoiced }] = await db
         .select({
           totalPostedInvoiced:
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
         })
         .from(purchaseInvoiceLines)
@@ -297,7 +297,7 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
       .set({ stateCode: PURCHASE_ORDER_STATE.INVOICED, modifiedOn: new Date() })
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     await emitEvent(db as any, {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: poId,
@@ -345,7 +345,7 @@ export const autoRevertToPartiallyReceivedOnReturn: POLifecycleRule = {
         PURCHASE_ORDER_STATE.RECEIVED,
         PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
         PURCHASE_ORDER_STATE.INVOICED, // maybe? But if invoiced, we probably have a debit note process
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       ].includes(order.stateCode as any)
     )
       return null;
@@ -393,13 +393,13 @@ export const autoRevertToPartiallyReceivedOnReturn: POLifecycleRule = {
     await db
       .update(purchaseOrders)
       .set({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         stateCode: newState as any,
         modifiedOn: new Date(),
       })
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     await emitEvent(db as any, {
       entityType: EntityType.PURCHASE_ORDER,
       entityId: poId,

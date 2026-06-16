@@ -5,6 +5,10 @@ import {
   InjectThrottlerStorage,
   ThrottlerStorage,
 } from '@nestjs/throttler';
+import type {
+  ThrottlerModuleOptions,
+  ThrottlerRequest,
+} from '@nestjs/throttler';
 import { Inject } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
 import { appSettings } from '../drizzle/herobm-core-schema';
@@ -13,8 +17,7 @@ import { Reflector } from '@nestjs/core';
 @Injectable()
 export class ApiThrottlerGuard extends ThrottlerGuard {
   constructor(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    @InjectThrottlerOptions() options: any,
+    @InjectThrottlerOptions() options: ThrottlerModuleOptions,
     @InjectThrottlerStorage() storageService: ThrottlerStorage,
     reflector: Reflector,
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
@@ -22,8 +25,9 @@ export class ApiThrottlerGuard extends ThrottlerGuard {
     super(options, storageService, reflector);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected async handleRequest(requestProps: any): Promise<boolean> {
+  protected async handleRequest(
+    requestProps: ThrottlerRequest,
+  ): Promise<boolean> {
     const { context, throttler } = requestProps;
     const req = context.switchToHttp().getRequest();
     const isApiKey = !!req.headers['x-api-key'];

@@ -33,11 +33,11 @@ import * as lifecycleRules from './purchase-order-lifecycle-rules';
 describe('PurchaseReturnsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: PurchaseReturnsService;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockInventoryService: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockGlService: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockAppConfig: any;
 
   const VENDOR_ID = '00000000-0000-0000-0000-000000000001';
@@ -241,11 +241,9 @@ describe('PurchaseReturnsService', () => {
       // Expect DR GRNI (amount = 5 * $10 = $50), CR Inventory
       expect(glCallLines).toHaveLength(2);
       expect(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         glCallLines.find((l: any) => l.accountId === 'grni-acc').debit,
       ).toBe(50);
       expect(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         glCallLines.find((l: any) => l.accountId === 'inv-acc').credit,
       ).toBe(50);
 

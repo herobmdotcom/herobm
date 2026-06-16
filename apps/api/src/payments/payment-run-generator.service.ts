@@ -9,7 +9,7 @@ import {
   suppliers,
   glSettings,
 } from '../drizzle/herobm-core-schema';
-import { eq, and, sql, isNull, inArray, lte } from 'drizzle-orm';
+import { eq, and, sql, isNull, inArray, lte, or, isNotNull } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { PAYMENT_STATE, PAYMENT_TYPE } from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
@@ -23,6 +23,7 @@ export class PaymentRunGeneratorService {
     targetDate: string,
     glAccountBank: string,
     actor: string,
+    invoiceIds: string[],
   ) {
     return await this.db.transaction(async (tx) => {
       const [settings] = await tx.select().from(glSettings).limit(1);
@@ -32,9 +33,8 @@ export class PaymentRunGeneratorService {
         );
       }
 
-      // Query unpaid purchase invoices due on or before target date
-      // that belong to suppliers who are not payment blocked
-      const dueInvoices = await tx
+      // Fetch only the selected invoices
+      const selectedInvoices = await tx
         .select({
           invoiceId: purchaseInvoices.invoiceId,
           supplierId: purchaseInvoices.vendorId,
@@ -49,14 +49,13 @@ export class PaymentRunGeneratorService {
         .innerJoin(suppliers, eq(purchaseInvoices.vendorId, suppliers.vendorId))
         .where(
           and(
-            eq(purchaseInvoices.stateCode, 'POSTED'), // Ensure it's posted
+            eq(purchaseInvoices.stateCode, 'POSTED'),
             sql`${purchaseInvoices.outstandingAmount} > 0`,
-            lte(purchaseInvoices.dueDate, new Date(targetDate)),
-            eq(suppliers.isPaymentBlocked, false),
+            inArray(purchaseInvoices.invoiceId, invoiceIds),
           ),
         );
 
-      if (dueInvoices.length === 0) {
+      if (selectedInvoices.length === 0) {
         return {
           generatedPayments: 0,
           totalCashAmount: 0,
@@ -64,68 +63,51 @@ export class PaymentRunGeneratorService {
         };
       }
 
-      // Group invoices by supplier
-      const invoicesBySupplier = new Map<string, typeof dueInvoices>();
-      for (const inv of dueInvoices) {
-        if (!invoicesBySupplier.has(inv.supplierId)) {
-          invoicesBySupplier.set(inv.supplierId, []);
-        }
-        invoicesBySupplier.get(inv.supplierId)!.push(inv);
-      }
-
       let generatedPayments = 0;
       let totalCashAmount = 0;
       let totalDiscountAmount = 0;
 
-      for (const [supplierId, invoices] of invoicesBySupplier.entries()) {
+      for (const inv of selectedInvoices) {
         const paymentId = uuidv4();
-        let paymentTotalCash = 0;
-        let paymentTotalDiscount = 0;
+        const unallocated = Number(inv.outstandingAmount);
+        let discountAmount = 0;
 
-        const allocationsToCreate = [];
+        // Check if discount applies
+        if (inv.earlyPaymentDiscount && inv.earlyPaymentDiscountDays !== null) {
+          const discountPercent = Number(inv.earlyPaymentDiscount);
+          if (discountPercent > 0) {
+            const invoiceDate = new Date(
+              inv.invoiceDate as string | number | Date,
+            );
+            const discountDeadlineDate = new Date(invoiceDate);
+            discountDeadlineDate.setDate(
+              discountDeadlineDate.getDate() + inv.earlyPaymentDiscountDays,
+            );
 
-        for (const inv of invoices) {
-          const unallocated = Number(inv.outstandingAmount);
-          let discountAmount = 0;
-
-          // Check if discount applies
-          if (
-            inv.earlyPaymentDiscount &&
-            inv.earlyPaymentDiscountDays !== null
-          ) {
-            const discountPercent = Number(inv.earlyPaymentDiscount);
-            if (discountPercent > 0) {
-              const invoiceDate = new Date(
-                inv.invoiceDate as string | number | Date,
-              );
-              const discountDeadlineDate = new Date(invoiceDate);
-              discountDeadlineDate.setDate(
-                discountDeadlineDate.getDate() + inv.earlyPaymentDiscountDays,
-              );
-
-              if (new Date(targetDate) <= discountDeadlineDate) {
-                // Discount applies
-                discountAmount = (unallocated * discountPercent) / 100;
-              }
+            if (new Date(targetDate) <= discountDeadlineDate) {
+              // Discount applies
+              discountAmount = (unallocated * discountPercent) / 100;
             }
           }
+        }
 
-          const cashAmount = unallocated - discountAmount;
+        const cashAmount = unallocated - discountAmount;
 
-          paymentTotalCash += cashAmount;
-          paymentTotalDiscount += discountAmount;
+        totalCashAmount += cashAmount;
+        totalDiscountAmount += discountAmount;
 
-          allocationsToCreate.push({
+        const allocationsToCreate = [
+          {
             allocationId: uuidv4(),
             paymentId: paymentId,
             referenceType: 'purchase_invoice',
             referenceId: inv.invoiceId,
             allocatedAmount: cashAmount.toFixed(2),
             discountAmount: discountAmount.toFixed(2),
-          });
-        }
+          },
+        ];
 
-        if (paymentTotalCash > 0) {
+        if (cashAmount > 0) {
           // Create Draft Payment
           const paymentNumber = `PAY-${Date.now().toString().slice(-6)}-${generatedPayments + 1}`;
           const [payment] = await tx
@@ -134,10 +116,10 @@ export class PaymentRunGeneratorService {
               paymentId,
               paymentNumber,
               paymentType: PAYMENT_TYPE.SUPPLIER_PAYMENT,
-              partyId: supplierId,
+              partyId: inv.supplierId,
               paymentDate: new Date(targetDate),
               modeOfPayment: 'EFT',
-              totalAmount: paymentTotalCash.toFixed(2),
+              totalAmount: cashAmount.toFixed(2),
               unallocatedAmount: '0', // We are fully allocating it immediately
               stateCode: PAYMENT_STATE.DRAFT,
               currencyCode: settings.baseCurrency,
@@ -147,8 +129,7 @@ export class PaymentRunGeneratorService {
 
           await tx.insert(paymentAllocations).values(allocationsToCreate);
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await emitEvent(tx as any, {
+          await emitEvent(tx, {
             entityType: EntityType.PAYMENT,
             entityId: paymentId,
             eventType: EventType.CREATED,
@@ -161,8 +142,6 @@ export class PaymentRunGeneratorService {
           });
 
           generatedPayments++;
-          totalCashAmount += paymentTotalCash;
-          totalDiscountAmount += paymentTotalDiscount;
         }
       }
 
@@ -171,6 +150,89 @@ export class PaymentRunGeneratorService {
         totalCashAmount,
         totalDiscountAmount,
       };
+    });
+  }
+
+  async getPaymentRunCandidates(targetDate: string) {
+    return await this.db.transaction(async (tx) => {
+      // Query unpaid purchase invoices due on or before target date + 7 days
+      // or those that have an early payment discount opportunity
+      const dueInvoices = await tx
+        .select({
+          invoiceId: purchaseInvoices.invoiceId,
+          invoiceNumber: purchaseInvoices.invoiceNumber,
+          supplierId: purchaseInvoices.vendorId,
+          supplierName: suppliers.name,
+          dueDate: purchaseInvoices.dueDate,
+          invoiceDate: purchaseInvoices.invoiceDate,
+          totalAmount: purchaseInvoices.totalAmount,
+          outstandingAmount: purchaseInvoices.outstandingAmount,
+          earlyPaymentDiscount: suppliers.earlyPaymentDiscount,
+          earlyPaymentDiscountDays: suppliers.earlyPaymentDiscountDays,
+        })
+        .from(purchaseInvoices)
+        .innerJoin(suppliers, eq(purchaseInvoices.vendorId, suppliers.vendorId))
+        .where(
+          and(
+            eq(purchaseInvoices.stateCode, 'POSTED'), // Ensure it's posted
+            sql`${purchaseInvoices.outstandingAmount} > 0`,
+            eq(suppliers.isPaymentBlocked, false),
+            or(
+              // Allow a slightly wider window to show "Other" candidates, maybe everything unpaid
+              // The user wants "Other" as well, so we should just fetch ALL unpaid posted invoices
+              // and categorize them in JS!
+              // Wait, let's just fetch all unpaid invoices for unblocked suppliers.
+              sql`1=1`,
+            ),
+          ),
+        );
+
+      const target = new Date(targetDate);
+      const candidates = [];
+
+      for (const inv of dueInvoices) {
+        const unallocated = Number(inv.outstandingAmount);
+        let discountAmount = 0;
+        let hasDiscountOpportunity = false;
+
+        // Check if discount applies
+        if (inv.earlyPaymentDiscount && inv.earlyPaymentDiscountDays !== null) {
+          const discountPercent = Number(inv.earlyPaymentDiscount);
+          if (discountPercent > 0) {
+            const invoiceDate = new Date(
+              inv.invoiceDate as string | number | Date,
+            );
+            const discountDeadlineDate = new Date(invoiceDate);
+            discountDeadlineDate.setDate(
+              discountDeadlineDate.getDate() + inv.earlyPaymentDiscountDays,
+            );
+
+            if (target <= discountDeadlineDate) {
+              discountAmount = (unallocated * discountPercent) / 100;
+              hasDiscountOpportunity = true;
+            }
+          }
+        }
+
+        const cashAmount = unallocated - discountAmount;
+
+        // Due soon: Due date is within 7 days of target date, or already past due
+        const dueSoonThreshold = new Date(target);
+        dueSoonThreshold.setDate(dueSoonThreshold.getDate() + 7);
+        const invDueDate = new Date(inv.dueDate as string | number | Date);
+
+        const isDueSoon = invDueDate <= dueSoonThreshold;
+
+        candidates.push({
+          ...inv,
+          cashAmount,
+          discountAmount,
+          hasDiscountOpportunity,
+          isDueSoon,
+        });
+      }
+
+      return candidates;
     });
   }
 }

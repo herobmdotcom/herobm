@@ -42,7 +42,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
     const properties = value.properties || {};
     const requiredList = Array.isArray(value.required) ? value.required : [];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const newFields: FieldDef[] = Object.entries(properties).map(([k, schema]: [string, any]) => {
       let type: FieldDef['type'] = 'string';
       if (schema.enum) type = 'enum';
@@ -64,7 +64,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
   }, [value]);
 
   const updateSchema = (newFields: FieldDef[]) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const properties: Record<string, any> = {};
     const required: string[] = [];
 
@@ -274,7 +274,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                     title={t('editField')}
                     onClick={(e) => { e.stopPropagation(); setEditingSnapshot(field); setEditingFieldId(field.id); }}
                   >
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                     <span className="material-symbols-outlined text-[16px]">edit</span>
                   </button>
                   <button 
@@ -282,7 +282,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                     title={t('removeField')}
                     onClick={(e) => handleRemoveField(field.id, e)}
                   >
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                     <span className="material-symbols-outlined text-[16px]">delete</span>
                   </button>
                 </div>

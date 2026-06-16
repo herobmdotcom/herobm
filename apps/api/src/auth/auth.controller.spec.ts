@@ -15,10 +15,9 @@ import { AuthService } from './auth.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let service: any;
+  let service: jest.Mocked<AuthService>;
 
-  // eslint-disable-next-line no-restricted-syntax
+  // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols.
   const mockToken = { access_token: 'jwt.token.here' }; // TEST_CREDENTIAL
 
   beforeEach(async () => {
@@ -41,10 +40,11 @@ describe('AuthController', () => {
     it('should return a JWT token for valid credentials', async () => {
       const result = await controller.login({
         username: 'admin',
-        // eslint-disable-next-line no-restricted-syntax
+        // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols.
         password: 'password123', // TEST_CREDENTIAL
       });
       expect(result).toEqual(mockToken);
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- Jest assertion
       expect(service.login).toHaveBeenCalledWith('admin', 'password123');
     });
 
@@ -53,14 +53,15 @@ describe('AuthController', () => {
         new UnauthorizedException('Invalid credentials'),
       );
       await expect(
-        // eslint-disable-next-line no-restricted-syntax
+        // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols.
         controller.login({ username: 'bad', password: 'wrong' }), // TEST_CREDENTIAL
       ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should pass username and password from DTO body', async () => {
-      // eslint-disable-next-line no-restricted-syntax
+      // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols.
       await controller.login({ username: 'viewer', password: 'REDACTED' }); // TEST_CREDENTIAL
+      // eslint-disable-next-line @typescript-eslint/unbound-method -- Jest assertion
       expect(service.login).toHaveBeenCalledWith('viewer', 'REDACTED');
     });
   });

@@ -58,8 +58,11 @@ export class MockGlService {
  * Helper to bootstrap a TestingModuleBuilder with standardized core mocks
  * to prevent cascading DI failures.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function setupTestModule(providers: any[] = []): TestingModuleBuilder {
+import { Provider } from '@nestjs/common';
+
+export function setupTestModule(
+  providers: Provider[] = [],
+): TestingModuleBuilder {
   return Test.createTestingModule({
     providers: [
       { provide: DRIZZLE, useClass: MockDrizzle },

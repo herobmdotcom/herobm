@@ -36,8 +36,7 @@ export default function SupplierGroupsAdmin() {
         api.activitiesControllerFindAll().then(r => r.data || []),
         api.taxPositionsControllerFindAll().then(r => r.data || [])
       ]);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sorted = [...data].sort((a: any, b: any) => 
+      const sorted = [...data].sort((a, b) => 
         a.name.localeCompare(b.name, undefined, { numeric: true })
       );
       setRawGroups(sorted);
@@ -63,17 +62,12 @@ export default function SupplierGroupsAdmin() {
     }));
   }, [rawGroups]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const glAccountOptions = useMemo(() => glAccounts.map((a: any) => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` })), [glAccounts]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const costCenterOptions = useMemo(() => costCenters.map((c: any) => ({ value: c.costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const activityOptions = useMemo(() => activities.map((a: any) => ({ value: a.activityId, label: `${a.code} - ${a.name}` })), [activities]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const taxPositionOptions = useMemo(() => taxPositions.map((p: any) => ({ value: p.taxPositionId, label: p.title })), [taxPositions]);
+  const glAccountOptions = useMemo(() => glAccounts.map((a: api.GlAccountResponseDto) => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` })), [glAccounts]);
+  const costCenterOptions = useMemo(() => costCenters.map((c) => ({ value: (c as unknown as { costCenterId: string }).costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
+  const activityOptions = useMemo(() => activities.map((a) => ({ value: (a as unknown as { activityId: string }).activityId, label: `${a.code} - ${a.name}` })), [activities]);
+  const taxPositionOptions = useMemo(() => taxPositions.map((p: api.TaxPositionResponseDto) => ({ value: p.taxPositionId, label: p.title })), [taxPositions]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const columns: InlineTableColumn<any>[] = useMemo(() => [
+  const columns: InlineTableColumn<Partial<api.SupplierGroupResponseDto> & { isActivePurchasing?: boolean; isActivePayment?: boolean }>[] = useMemo(() => [
     { key: 'groupCode', title: tc('code'), type: 'text', placeholder: t('placeholders.code'), width: 100 },
     { key: 'name', title: tc('name'), type: 'text', placeholder: t('placeholders.name') },
     { 
@@ -98,8 +92,10 @@ export default function SupplierGroupsAdmin() {
     { key: 'isActivePayment', title: t('payment'), type: 'boolean', width: 80 }
   ], [tc, t]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleSave = async (payload: any, isNew: boolean) => {
+  const handleSave = async (
+    payload: Partial<api.SupplierGroupResponseDto> & { supplierGroupId?: string; isActivePurchasing?: boolean; isActivePayment?: boolean; taxPositionId?: string | null },
+    isNew: boolean
+  ) => {
     if (!payload.groupCode || !payload.name) {
       toast.error(t('toasts.requiredFields'));
       throw new Error(t('toasts.requiredFields'));
@@ -116,15 +112,15 @@ export default function SupplierGroupsAdmin() {
         earlyPaymentDiscountDays: payload.earlyPaymentDiscountDays || null,
         isPurchasingBlocked: !payload.isActivePurchasing,
         isPaymentBlocked: !payload.isActivePayment,
-      };
+      } as api.UpdateSupplierGroupDto & { isActivePurchasing?: boolean; isActivePayment?: boolean };
       
       delete formattedPayload.isActivePurchasing;
       delete formattedPayload.isActivePayment;
 
       if (!isNew) {
-        await api.supplierGroupsControllerUpdate(payload.supplierGroupId, formattedPayload);
+        await api.supplierGroupsControllerUpdate(payload.supplierGroupId || '', formattedPayload as api.UpdateSupplierGroupDto);
       } else {
-        await api.supplierGroupsControllerCreate(formattedPayload);
+        await api.supplierGroupsControllerCreate(formattedPayload as unknown as api.CreateSupplierGroupDto);
       }
       loadData();
     } catch (err: unknown) {
@@ -134,11 +130,10 @@ export default function SupplierGroupsAdmin() {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleDelete = async (payload: any) => {
+  const handleDelete = async (payload: Partial<api.SupplierGroupResponseDto> & { supplierGroupId?: string }) => {
     if(!confirm(t('confirmDelete'))) return;
     try {
-      await api.supplierGroupsControllerRemove(payload.supplierGroupId);
+      await api.supplierGroupsControllerRemove(payload.supplierGroupId || '');
       toast.success(t('toasts.deleted'));
       loadData();
     } catch (err: unknown) {
@@ -163,8 +158,7 @@ export default function SupplierGroupsAdmin() {
           title={<span style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>{t('definedGroups')}</span>}
           columns={columns}
           data={groups}
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          rowKey={(row: any) => row.supplierGroupId}
+          rowKey={(row) => row.supplierGroupId || row.id || ''}
           onSave={handleSave}
           onDelete={handleDelete}
           onAdd={() => ({
@@ -175,7 +169,7 @@ export default function SupplierGroupsAdmin() {
             defaultCostCenterId: '',
             defaultActivityId: '',
             earlyPaymentDiscount: '',
-            earlyPaymentDiscountDays: '',
+            earlyPaymentDiscountDays: undefined,
             isActivePurchasing: true,
             isActivePayment: true,
           })}

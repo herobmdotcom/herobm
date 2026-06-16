@@ -5,9 +5,16 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DataGrid from '@/components/DataGrid';
-import type { ColDef } from 'ag-grid-community';
+import type { ColDef, ValueFormatterParams, ICellRendererParams } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import JournalEntrySlideOver, { JournalEntry } from './JournalEntrySlideOver';
+
+interface JournalEntryRow extends JournalEntry {
+  partyType?: string | null;
+  partyId?: string | null;
+  partyName?: string | null;
+  sourceNumber?: string | null;
+}
 
 export default function JournalEntriesPage() {
   const t = useTranslations('gl.journalEntries');
@@ -54,16 +61,14 @@ export default function JournalEntriesPage() {
       field: 'entryDate', 
       headerName: t('columns.date'), 
       width: 120,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : ''
+      valueFormatter: (p: ValueFormatterParams<JournalEntryRow>) => p.value ? new Date(p.value as string).toLocaleDateString() : ''
     },
     {
       field: 'partyName',
       headerName: t('columns.party'),
       width: 200,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      cellRenderer: (p: any) => {
-        if (!p.value) return <span className="text-gray-400">{t('na')}</span>;
+      cellRenderer: (p: ICellRendererParams<JournalEntryRow>) => {
+        if (!p.value || !p.data) return <span className="text-gray-400">{t('na')}</span>;
         const link = p.data.partyType === 'customer' 
           ? `/accounts/${p.data.partyId}` 
           : `/suppliers/${p.data.partyId}`;
@@ -82,16 +87,14 @@ export default function JournalEntriesPage() {
       field: 'sourceType', 
       headerName: t('columns.source'), 
       width: 150,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      valueFormatter: (p: any) => p.value ? sourceLabel(p.value) : ''
+      valueFormatter: (p: ValueFormatterParams<JournalEntryRow>) => p.value ? sourceLabel(p.value as string) : ''
     },
     {
       field: 'sourceNumber',
       headerName: t('sourceDocument'),
       width: 160,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      cellRenderer: (p: any) => {
-        if (!p.value) return null;
+      cellRenderer: (p: ICellRendererParams<JournalEntryRow>) => {
+        if (!p.value || !p.data) return null;
         let link = '';
         if (p.data.sourceType === 'sales_invoice') link = `/sales-invoices/${p.data.sourceId}`;
         if (p.data.sourceType === 'purchase_invoice') link = `/procurement/invoices/${p.data.sourceId}`;
@@ -127,7 +130,7 @@ export default function JournalEntriesPage() {
 
   return (
     <>
-      <DataGrid<JournalEntry>
+      <DataGrid<JournalEntryRow>
         endpoint={endpoint}
         columns={columns}
         gridKey="gl-journal-entries"

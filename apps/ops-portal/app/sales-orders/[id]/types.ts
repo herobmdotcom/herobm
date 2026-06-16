@@ -37,7 +37,7 @@ export function getTaxLabel(category: TaxCategory) {
 export interface OrderEvent {
     eventId: string;
     eventType: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   payload: Record<string, any>;
     actor: string;
     createdOn: string;

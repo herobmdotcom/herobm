@@ -20,11 +20,11 @@ interface InvoicesSectionProps {
 
     invoices: SalesInvoice[];
     taxCategories: TaxCategory[];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   pickingSummary: Record<string, any> | null;
     setError: (msg: string) => void;
     loadInvoices: () => Promise<void>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   loadOrder: (autoTransitions?: Record<string, any>[], showSpinner?: boolean) => Promise<void>;
 }
 
@@ -89,16 +89,15 @@ export default function InvoicesSection({
         <div id="invoices-section" className="card">
             <div className="flex items-center justify-between mb-2">
                 <h3 className="section-heading">
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                     <span className="material-symbols-outlined">request_quote</span>
                     Invoices
                 </h3>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {['shipped', 'picking'].includes(order.stateCode as any) && !showCreateInvoice && (
+                {['shipped', 'picking'].includes(order.stateCode) && !showCreateInvoice && (
                     <button
                         className="btn btn-secondary btn-sm"
                         disabled={(() => {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                             const totalShipped = pickingSummary?.lines?.reduce((sum: number, pl: any) => sum + parseFloat(pl.quantityShipped || '0'), 0) || 0;
                             return totalShipped === 0;
                         })()}
@@ -113,7 +112,7 @@ export default function InvoicesSection({
                 <div style={{ marginBottom: 16, padding: 16, borderRadius: 8, background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                     <div className="flex items-center justify-between mb-3">
                         <strong style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                             <span className="material-symbols-outlined text-[16px]">request_quote</span>
                             New Invoice
                         </strong>
@@ -121,7 +120,7 @@ export default function InvoicesSection({
                             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16 }}
                             onClick={handleCancel}
                         >
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                             <span aria-hidden>✕</span>
                         </button>
                     </div>
@@ -143,7 +142,7 @@ export default function InvoicesSection({
                         ]}
                         renderCustomRow={(nl, idx) => {
                             const origLine = order.lines.find(l => l.salesOrderLineId === nl.salesOrderLineId);
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                             const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === nl.salesOrderLineId);
                             const pickedQty = pLine && pLine.quantityPicked != null ? parseFloat(pLine.quantityPicked) : 0;
                             const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
@@ -182,7 +181,7 @@ export default function InvoicesSection({
                         }}
                         mobileCard={(nl, idx) => {
                             const origLine = order.lines.find(l => l.salesOrderLineId === nl.salesOrderLineId);
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                             const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === nl.salesOrderLineId);
                             const pickedQty = pLine && pLine.quantityPicked != null ? parseFloat(pLine.quantityPicked) : 0;
                             const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
@@ -423,7 +422,7 @@ export default function InvoicesSection({
                 {invoices.length === 0 && (
                     <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
                         {(() => {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                             const totalShipped = pickingSummary?.lines?.reduce((sum: number, pl: any) => sum + parseFloat(pl.quantityShipped || '0'), 0) || 0;
                             if (totalShipped === 0) {
                                 return tSales('noProductsShippedYet');

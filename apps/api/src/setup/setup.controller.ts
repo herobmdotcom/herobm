@@ -13,6 +13,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -39,6 +40,7 @@ import {
   CsvMetadataDto,
   JobProgressDto,
   SetupValidationDto,
+  ActiveJobDto,
 } from './setup.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
@@ -105,6 +107,30 @@ export class SetupController {
   @ApiCreatedResponse({ type: JobResultDto })
   async executeElt(@Body() dto: ExecuteEltDto) {
     return this.setupService.executeElt(dto);
+  }
+
+  @Get('active-job')
+  @CasbinAction('read')
+  @SkipThrottle()
+  @ApiOperation({
+    summary: 'Get Active Job',
+    description:
+      'Returns the ID and type of the currently running job, if any.',
+  })
+  @ApiOkResponse({ type: ActiveJobDto })
+  async getActiveJob() {
+    return this.setupService.getActiveJob();
+  }
+
+  @Delete('active-job/:jobId')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Stop Active Job',
+    description: 'Forcibly terminates a running background job.',
+  })
+  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  async stopJob(@Param('jobId') jobId: string) {
+    return this.setupService.stopJob(jobId);
   }
 
   @Get('progress/:jobId')

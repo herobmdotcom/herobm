@@ -152,6 +152,27 @@ export class GeneratePaymentRunDto {
   @IsUUID()
   @IsNotEmpty()
   glAccountBank: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  invoiceIds: string[];
+}
+
+export class PaymentRunCandidateResponseDto {
+  invoiceId: string;
+  invoiceNumber: string;
+  supplierId: string;
+  supplierName: string;
+  dueDate: string | Date;
+  invoiceDate: string | Date;
+  totalAmount: string | number;
+  outstandingAmount: string | number;
+  earlyPaymentDiscount: string | null;
+  earlyPaymentDiscountDays: number | null;
+  cashAmount: number;
+  discountAmount: number;
+  hasDiscountOpportunity: boolean;
+  isDueSoon: boolean;
 }
 
 export class GeneratePaymentRunResponseDto {

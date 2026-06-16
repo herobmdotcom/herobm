@@ -18,12 +18,12 @@ const replacements = [
   [/toast\.success\('Allocations saved'\)/g, "toast.success(t('manager.messages.allocationsSaved'))"],
   [/Reverse\s*<\/button>/g, "{t('manager.buttons.reverse')}</button>"],
   [/title="Previous Payment"/g, "title={t('manager.buttons.previousPayment')}"],
-  [/<span className="material-symbols-outlined text-\[18px\]">chevron_left<\/span>/g, "{/* eslint-disable-next-line i18next/no-literal-string */}\n              <span className=\"material-symbols-outlined text-[18px]\">chevron_left</span>"],
+  [/<span className="material-symbols-outlined text-\[18px\]">chevron_left<\/span>/g, "{/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}\n              <span className=\"material-symbols-outlined text-[18px]\">chevron_left</span>"],
   [/title="Next Payment"/g, "title={t('manager.buttons.nextPayment')}"],
-  [/<span className="material-symbols-outlined text-\[18px\]">chevron_right<\/span>/g, "{/* eslint-disable-next-line i18next/no-literal-string */}\n              <span className=\"material-symbols-outlined text-[18px]\">chevron_right</span>"],
+  [/<span className="material-symbols-outlined text-\[18px\]">chevron_right<\/span>/g, "{/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}\n              <span className=\"material-symbols-outlined text-[18px]\">chevron_right</span>"],
   [/'New Payment Entry'/g, "t('manager.newEntry')"],
   [/\? 'Customer Receipt' : 'Supplier Payment'/g, "? t('manager.options.customerReceipt') : t('manager.options.supplierPayment')"],
-  [/<span className="material-symbols-outlined animate-spin text-3xl mb-2">sync<\/span>/g, "{/* eslint-disable-next-line i18next/no-literal-string */}\n            <span className=\"material-symbols-outlined animate-spin text-3xl mb-2\">sync</span>"],
+  [/<span className="material-symbols-outlined animate-spin text-3xl mb-2">sync<\/span>/g, "{/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}\n            <span className=\"material-symbols-outlined animate-spin text-3xl mb-2\">sync</span>"],
   [/Type<\/label>/g, "{t('manager.labels.type')}</label>"],
   [/<option value="receive">Customer Receipt<\/option>/g, "<option value=\"receive\">{t('manager.options.customerReceipt')}</option>"],
   [/<option value="pay">Supplier Payment<\/option>/g, "<option value=\"pay\">{t('manager.options.supplierPayment')}</option>"],
@@ -51,12 +51,12 @@ const replacements = [
   [/>Memo<\/th>/g, ">{t('manager.columns.memo')}</th>"],
   [/>Total<\/td>/g, ">{t('manager.messages.total')}</td>"],
   [/No ledger lines found for this entry\./g, "{t('manager.messages.noLedgerLines')}"],
-  [/<span className="material-symbols-outlined">history<\/span>/g, "{/* eslint-disable-next-line i18next/no-literal-string */}\n                          <span className=\"material-symbols-outlined\">history</span>"],
+  [/<span className="material-symbols-outlined">history<\/span>/g, "{/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}\n                          <span className=\"material-symbols-outlined\">history</span>"],
   [/Allocation History<\/h3>/g, "{t('manager.messages.allocationHistory')}</h3>"],
   [/>Invoice<\/th>/g, ">{t('manager.columns.invoice')}</th>"],
   [/>Type<\/th>/g, ">{t('manager.columns.type')}</th>"],
   [/>Allocated Amount<\/th>/g, ">{t('manager.columns.allocatedAmount')}</th>"],
-  [/<span className="material-symbols-outlined animate-spin text-3xl mb-4">sync<\/span>/g, "{/* eslint-disable-next-line i18next/no-literal-string */}\n                        <span className=\"material-symbols-outlined animate-spin text-3xl mb-4\">sync</span>"],
+  [/<span className="material-symbols-outlined animate-spin text-3xl mb-4">sync<\/span>/g, "{/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}\n                        <span className=\"material-symbols-outlined animate-spin text-3xl mb-4\">sync</span>"],
   [/Loading outstanding invoices\.\.\./g, "{t('manager.messages.loadingInvoices')}"],
   [/>Payment Unallocated<\/div>/g, ">{t('manager.labels.paymentUnallocated')}</div>"],
   [/>Total Outstanding<\/div>/g, ">{t('manager.labels.totalOutstanding')}</div>"],
@@ -65,7 +65,7 @@ const replacements = [
   [/title=\{!selectedInvoice \? "Select a row to allocate partially" : ""\}/g, "title={!selectedInvoice ? t('manager.messages.selectRowForPartial') : \"\"}"],
   [/>Partial<\/button>/g, ">{t('manager.messages.partial')}</button>"],
   [/No outstanding invoices to allocate/g, "{t('manager.messages.noOutstandingInvoices')}"],
-  [/<span className="material-symbols-outlined text-4xl mb-4 text-gray-400">receipt_long<\/span>/g, "{/* eslint-disable-next-line i18next/no-literal-string */}\n                          <span className=\"material-symbols-outlined text-4xl mb-4 text-gray-400\">receipt_long</span>"]
+  [/<span className="material-symbols-outlined text-4xl mb-4 text-gray-400">receipt_long<\/span>/g, "{/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}\n                          <span className=\"material-symbols-outlined text-4xl mb-4 text-gray-400\">receipt_long</span>"]
 ];
 
 replacements.forEach(([search, replace]) => {

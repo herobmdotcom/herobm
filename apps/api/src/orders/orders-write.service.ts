@@ -292,8 +292,7 @@ export class OrdersWriteService {
         productId: product.productId,
         salesTaxCategoryId: product.salesTaxCategoryId ?? null,
         productType: product.productType ?? 'inventory',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        structureType: (product as any).structureType ?? 'standard',
+        structureType: product.structureType ?? 'standard',
         listPrice: product.listPrice ?? '0',
       };
     } catch (err) {
@@ -426,12 +425,9 @@ export class OrdersWriteService {
         isOnCreditHold: customer.isOnCreditHold,
         tradingTermsId: customer.tradingTermsId,
         accountGroup: {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          creditLimit: (customer as any).accountGroupCreditLimit,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          isOnCreditHold: (customer as any).accountGroupIsOnCreditHold,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          tradingTermsId: (customer as any).accountGroupTradingTermsId,
+          creditLimit: customer.customerGroupCreditLimit,
+          isOnCreditHold: customer.customerGroupIsOnCreditHold ?? false,
+          tradingTermsId: customer.customerGroupTradingTermsId,
         },
         systemDefaultTradingTermsId:
           this.appConfig.getAppSettingsRaw()?.defaultTradingTermsId,
@@ -475,8 +471,7 @@ export class OrdersWriteService {
         .returning();
 
       // Insert line items — resolve GST per line (product × customer)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const lineValues: any[] = [];
+      const lineValues: (typeof salesOrderLineItems.$inferInsert)[] = [];
       let currentLineNumber = 1;
       for (let idx = 0; idx < dto.lines.length; idx++) {
         const line = dto.lines[idx];
@@ -636,7 +631,9 @@ export class OrdersWriteService {
 
       // Assert Credit / State Safety before saving
       let orderTotal = 0;
-      lineValues.forEach((lv) => (orderTotal += parseFloat(lv.totalAmount)));
+      lineValues.forEach(
+        (lv) => (orderTotal += parseFloat(lv.totalAmount || '0')),
+      );
       await this.assertAccountStanding(
         dto.customerId,
         orderTotal,
@@ -755,10 +752,10 @@ export class OrdersWriteService {
       newState === SALES_ORDER_STATE.CONFIRMED
     ) {
       if (
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (existing.customFields as any)?.taxIsStale === true ||
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (existing.customFields as any)?.taxIsStale === 'true'
+        (existing.customFields as Record<string, unknown>)?.taxIsStale ===
+          true ||
+        (existing.customFields as Record<string, unknown>)?.taxIsStale ===
+          'true'
       ) {
         try {
           await this.triggerTaxCalculation(id, actor);
@@ -778,7 +775,6 @@ export class OrdersWriteService {
     // Assert Credit / State Safety for forward progressions
     if (
       newState === SALES_ORDER_STATE.CONFIRMED ||
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       newState === ('allocated' as string) ||
       newState === SALES_ORDER_STATE.PICKING
     ) {
@@ -842,7 +838,6 @@ export class OrdersWriteService {
         await tx
           .update(backorders)
           .set({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             stateCode: SALES_ORDER_STATE.CANCELLED as string,
             modifiedOn: new Date(),
           })
@@ -852,7 +847,7 @@ export class OrdersWriteService {
       const [updated] = await tx
         .update(salesOrders)
         .set({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle string/enum mismatch
           stateCode: newState as any,
           discrepanciesAcknowledged:
             discrepanciesAcknowledged !== undefined
@@ -957,11 +952,8 @@ export class OrdersWriteService {
       .orderBy(sql`${salesEvents.createdOn} DESC`)
       .limit(1);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const previousState =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ((lastEvent[0]?.payload as any)?.from as string) ||
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ((lastEvent[0]?.payload as Record<string, unknown>)?.from as string) ||
       (SALES_ORDER_STATE.CANCELLED as string);
 
     return await this.changeSalesOrderState(id, previousState, actor);
@@ -1032,8 +1024,15 @@ export class OrdersWriteService {
         const unitPrice = parseFloat(l.pricePerUnit || '0');
         const discountPct = parseFloat(l.discountPercentage || '0');
         const discountAmt = unitPrice * (discountPct / 100) * qty;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const payloadLine: any = {
+        const payloadLine: {
+          id: string;
+          product_identifier: string | null;
+          description: string | null;
+          quantity: number;
+          unit_price: number;
+          discount: number;
+          product_tax_code?: string | null;
+        } = {
           id: l.salesOrderLineId,
           product_identifier: l.productNumber,
           description: l.productDescription,
@@ -1055,17 +1054,25 @@ export class OrdersWriteService {
       );
     }
 
-    const taxData = res.data;
+    const taxData = res.data as
+      | {
+          amount_to_collect?: number;
+          breakdown?: {
+            line_items?: Array<{
+              id: string;
+              tax_collectable?: number;
+            }>;
+          };
+        }
+      | null
+      | undefined;
 
     await this.db.transaction(async (tx: DrizzleDB) => {
       for (const l of lines) {
         let taxAmt = 0;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((taxData as any).breakdown?.line_items) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const match = (taxData as any).breakdown.line_items.find(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (i: any) => i.id === l.salesOrderLineId,
+        if (taxData?.breakdown?.line_items) {
+          const match = taxData.breakdown.line_items.find(
+            (i) => i.id === l.salesOrderLineId,
           );
           if (match) {
             taxAmt = match.tax_collectable || 0;
@@ -1091,10 +1098,12 @@ export class OrdersWriteService {
       await emitEvent(tx, {
         entityType: EntityType.SALES_ORDER,
         entityId: id,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         eventType: EventType.TAX_CALCULATED,
         entityDisplayName: order.orderNumber,
-        payload: { provider: taxProvider, totalTax: taxData.amount_to_collect },
+        payload: {
+          provider: taxProvider,
+          totalTax: taxData?.amount_to_collect,
+        },
         actor,
       });
     });
@@ -1151,8 +1160,7 @@ export class OrdersWriteService {
         SALES_ORDER_STATE.INVOICED,
         SALES_ORDER_STATE.SHIPPED,
         SALES_ORDER_STATE.CANCELLED,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ].includes(order.stateCode as any)
+      ].includes(order.stateCode as any) // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
     ) {
       throw new BadRequestException(
         `Cannot add lines to order in state '${order.stateCode}'`,
@@ -1221,10 +1229,8 @@ export class OrdersWriteService {
       }
 
       const parentLineId = randomUUID();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const insertValues: any[] = [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let parentLine: any = null;
+      const insertValues: (typeof salesOrderLineItems.$inferInsert)[] = [];
+      let parentLine: typeof salesOrderLineItems.$inferInsert | null = null;
 
       if (isKit) {
         const parentPriceToUse = parentPrice > 0 ? parentPrice.toString() : '0';
@@ -1370,8 +1376,7 @@ export class OrdersWriteService {
 
     if (
       [SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.CANCELLED].includes(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        order.stateCode as any,
+        order.stateCode as any, // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
       )
     ) {
       throw new BadRequestException(
@@ -1434,10 +1439,8 @@ export class OrdersWriteService {
       }
 
       const parentLineId = randomUUID();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const insertValues: any[] = [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let parentLine: any = null;
+      const insertValues: (typeof salesOrderLineItems.$inferInsert)[] = [];
+      let parentLine: typeof salesOrderLineItems.$inferInsert | null = null;
 
       if (isKit) {
         const parentPriceToUse = parentPrice > 0 ? parentPrice.toString() : '0';
@@ -1592,15 +1595,13 @@ export class OrdersWriteService {
         SALES_ORDER_STATE.INVOICED,
         SALES_ORDER_STATE.SHIPPED,
         SALES_ORDER_STATE.CANCELLED,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ].includes(order.stateCode as any)
+      ].includes(order.stateCode as any) // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
     ) {
       const isPostConfLine = existingLine.isPostConfirmation === true;
       if (
         !isPostConfLine ||
         [SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.CANCELLED].includes(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          order.stateCode as any,
+          order.stateCode as any, // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
         )
       ) {
         throw new BadRequestException(
@@ -1740,15 +1741,13 @@ export class OrdersWriteService {
         SALES_ORDER_STATE.INVOICED,
         SALES_ORDER_STATE.SHIPPED,
         SALES_ORDER_STATE.CANCELLED,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ].includes(order.stateCode as any)
+      ].includes(order.stateCode as any) // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
     ) {
       const isPostConfLine = existingLine.isPostConfirmation === true;
       if (
         !isPostConfLine ||
         [SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.CANCELLED].includes(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          order.stateCode as any,
+          order.stateCode as any, // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
         )
       ) {
         throw new BadRequestException(
@@ -1866,8 +1865,7 @@ export class OrdersWriteService {
       ),
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let allUoms: any[] = [];
+    let allUoms: (typeof productUoms.$inferSelect)[] = [];
     if (productIds.length > 0) {
       allUoms = await this.db
         .select()

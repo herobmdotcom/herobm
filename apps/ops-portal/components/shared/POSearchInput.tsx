@@ -47,9 +47,9 @@ export default function POSearchInput({
   const searchPOs = useCallback(async (term: string, vId?: string) => {
     setLoading(true);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       const res = await api.purchaseOrdersControllerFindAll({ search: term || undefined, vendorId: vId, limit: 20 } as any);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       setResults(((res.data as any)?.data || res.data || []));
     } catch {
       setResults([]);

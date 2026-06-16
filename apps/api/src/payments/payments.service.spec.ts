@@ -40,8 +40,7 @@ describe('PaymentsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: PaymentsService;
   let glService: GlService;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockSuppliersService: any;
+  let mockSuppliersService: { assessRisk: jest.Mock };
 
   // Shared GL customers
   let bankAccountId: string;
@@ -270,7 +269,6 @@ describe('PaymentsService', () => {
     });
 
     it('should throw BadRequestException if supplier is blocked for payment', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockSuppliersService.assessRisk.mockResolvedValueOnce({
         isPaymentBlocked: true,
         paymentBlockReasons: ['supplier_inactive'],
@@ -695,7 +693,7 @@ describe('PaymentsService', () => {
   describe('allocatePayment', () => {
     let salesOrderId: string;
     let invoiceId: string;
-    let submittedPaymentId: string;
+    let draftPaymentId: string;
 
     async function seedInvoiceAndPayment(
       invoiceAmount = 1000,
@@ -709,8 +707,7 @@ describe('PaymentsService', () => {
         customerId,
         currencyCode: 'AUD',
         fulfillmentLocationId: locationId,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        stateCode: SALES_ORDER_STATE.SHIPPED as any,
+        stateCode: SALES_ORDER_STATE.SHIPPED,
       });
 
       // Create an invoiced sales invoice
@@ -741,15 +738,14 @@ describe('PaymentsService', () => {
         'admin',
       );
 
-      await service.submitPaymentEntry(payment.paymentId, 'admin');
-      submittedPaymentId = payment.paymentId;
+      draftPaymentId = payment.paymentId;
     }
 
     it('should allocate payment fully and mark invoice as paid', async () => {
       await seedInvoiceAndPayment(1000, 1000);
 
       const result = await service.allocatePayment(
-        submittedPaymentId,
+        draftPaymentId,
         {
           allocations: [
             {
@@ -765,6 +761,9 @@ describe('PaymentsService', () => {
       // Payment should be fully allocated
       expect(parseFloat(result.unallocatedAmount)).toBe(0);
 
+      // Now submit the payment to apply allocations to invoices
+      await service.submitPaymentEntry(draftPaymentId, 'admin');
+
       // Invoice should be paid
       const [inv] = await pg.db
         .select()
@@ -778,7 +777,7 @@ describe('PaymentsService', () => {
       await seedInvoiceAndPayment(1000, 500);
 
       const result = await service.allocatePayment(
-        submittedPaymentId,
+        draftPaymentId,
         {
           allocations: [
             {
@@ -792,6 +791,9 @@ describe('PaymentsService', () => {
       );
 
       expect(parseFloat(result.unallocatedAmount)).toBe(0);
+
+      // Submit
+      await service.submitPaymentEntry(draftPaymentId, 'admin');
 
       // Invoice should be partially paid
       const [inv] = await pg.db
@@ -807,7 +809,7 @@ describe('PaymentsService', () => {
 
       await expect(
         service.allocatePayment(
-          submittedPaymentId,
+          draftPaymentId,
           {
             allocations: [
               {
@@ -819,7 +821,7 @@ describe('PaymentsService', () => {
           },
           'admin',
         ),
-      ).rejects.toThrow('Cannot allocate more than the unallocated amount');
+      ).rejects.toThrow('Cannot allocate more than the total payment amount');
     });
 
     it('should reject over-allocation beyond invoice outstanding', async () => {
@@ -827,7 +829,7 @@ describe('PaymentsService', () => {
 
       await expect(
         service.allocatePayment(
-          submittedPaymentId,
+          draftPaymentId,
           {
             allocations: [
               {
@@ -839,7 +841,9 @@ describe('PaymentsService', () => {
           },
           'admin',
         ),
-      ).rejects.toThrow('Cannot allocate more than outstanding');
+      ).rejects.toThrow(
+        'Cannot allocate more than remaining outstanding amount on invoice',
+      );
     });
 
     it('should reject allocation against a draft invoice', async () => {
@@ -853,7 +857,7 @@ describe('PaymentsService', () => {
 
       await expect(
         service.allocatePayment(
-          submittedPaymentId,
+          draftPaymentId,
           {
             allocations: [
               {
@@ -922,7 +926,7 @@ describe('PaymentsService', () => {
       ).rejects.toThrow('Only submitted payments can be cancelled');
     });
 
-    it('should reject cancelling a payment with allocations', async () => {
+    it('should successfully cancel a payment with allocations and restore outstanding balance', async () => {
       // Seed invoice + payment + allocate
       const soId = randomUUID();
       await pg.db.insert(salesOrders).values({
@@ -931,8 +935,7 @@ describe('PaymentsService', () => {
         customerId,
         currencyCode: 'AUD',
         fulfillmentLocationId: locationId,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        stateCode: SALES_ORDER_STATE.SHIPPED as any,
+        stateCode: SALES_ORDER_STATE.SHIPPED,
       });
 
       const invId = randomUUID();
@@ -961,7 +964,6 @@ describe('PaymentsService', () => {
         'admin',
       );
 
-      await service.submitPaymentEntry(payment.paymentId, 'admin');
       await service.allocatePayment(
         payment.paymentId,
         {
@@ -975,10 +977,17 @@ describe('PaymentsService', () => {
         },
         'admin',
       );
+      await service.submitPaymentEntry(payment.paymentId, 'admin');
 
-      await expect(
-        service.cancelPayment(payment.paymentId, 'admin'),
-      ).rejects.toThrow('Cannot cancel a payment that has allocations');
+      // Now cancel it
+      await service.cancelPayment(payment.paymentId, 'admin');
+
+      // Verify invoice outstanding amount was restored to 1000
+      const [inv] = await pg.db
+        .select()
+        .from(salesInvoices)
+        .where(eq(salesInvoices.invoiceId, invId));
+      expect(parseFloat(inv.outstandingAmount)).toBe(1000);
     });
 
     it('should successfully reverse a Direct Payment and net out to 0', async () => {
@@ -1120,8 +1129,7 @@ describe('PaymentsService', () => {
         customerId,
         currencyCode: 'AUD',
         fulfillmentLocationId: locationId,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        stateCode: SALES_ORDER_STATE.SHIPPED as any,
+        stateCode: SALES_ORDER_STATE.SHIPPED,
       });
 
       const invId = randomUUID();
@@ -1150,7 +1158,6 @@ describe('PaymentsService', () => {
         'admin',
       );
 
-      await service.submitPaymentEntry(payment.paymentId, 'admin');
       await service.allocatePayment(
         payment.paymentId,
         {
@@ -1164,6 +1171,7 @@ describe('PaymentsService', () => {
         },
         'admin',
       );
+      await service.submitPaymentEntry(payment.paymentId, 'admin');
 
       const detail = await service.findOne(payment.paymentId);
       expect(detail.partyName).toBe('Test Customer');

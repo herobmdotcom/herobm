@@ -52,8 +52,7 @@ export default function ProductsContent() {
       valueFormatter: (params: ValueFormatterParams) => {
         if (!params.value) return '';
         const s = String(params.value).toLowerCase();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return tStates.has(s as any) ? tStates(s as any) : String(params.value);
+        return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(params.value);
       }
     },
     { field: 'notes', headerName: tCommon('columns.notes'), width: 150, hide: true },

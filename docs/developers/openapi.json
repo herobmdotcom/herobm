@@ -10339,6 +10339,74 @@
         ]
       }
     },
+    "/payments/run-candidates": {
+      "get": {
+        "description": "Fetch eligible invoices for a payment run on a target date.",
+        "operationId": "PaymentsController_getPaymentRunCandidates",
+        "parameters": [
+          {
+            "name": "targetDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentRunCandidateResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Payment Run Candidates",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/payments/generate-run": {
+      "post": {
+        "description": "Generates a new payment run batch for eligible supplier invoices.",
+        "operationId": "PaymentsController_generatePaymentRun",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratePaymentRunDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratePaymentRunResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Generate Payment Run",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
     "/payments/{id}": {
       "get": {
         "description": "Retrieve detailed information for a specific payment.",
@@ -10375,6 +10443,36 @@
           }
         },
         "summary": "Find Payment",
+        "tags": [
+          "Payments"
+        ]
+      },
+      "delete": {
+        "description": "Permanently deletes a payment in the DRAFT state.",
+        "operationId": "PaymentsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment successfully deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmRejectResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove Draft Payment",
         "tags": [
           "Payments"
         ]
@@ -10633,37 +10731,6 @@
           }
         },
         "summary": "Reject Exported Payments",
-        "tags": [
-          "Payments"
-        ]
-      }
-    },
-    "/payments/generate-run": {
-      "post": {
-        "operationId": "PaymentsController_generatePaymentRun",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GeneratePaymentRunDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GeneratePaymentRunResponseDto"
-                }
-              }
-            }
-          }
-        },
         "tags": [
           "Payments"
         ]
@@ -13353,6 +13420,61 @@
           }
         },
         "summary": "Execute ELT Job",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/setup/active-job": {
+      "get": {
+        "description": "Returns the ID and type of the currently running job, if any.",
+        "operationId": "SetupController_getActiveJob",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveJobDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Active Job",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/setup/active-job/{jobId}": {
+      "delete": {
+        "description": "Forcibly terminates a running background job.",
+        "operationId": "SetupController_stopJob",
+        "parameters": [
+          {
+            "name": "jobId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stop Active Job",
         "tags": [
           "System"
         ]
@@ -21070,6 +21192,9 @@
           "currencyCode": {
             "type": "string"
           },
+          "invoiceDate": {
+            "type": "string"
+          },
           "totalAmount": {
             "type": "number"
           },
@@ -21455,6 +21580,113 @@
           "partyName"
         ]
       },
+      "PaymentRunCandidateResponseDto": {
+        "type": "object",
+        "properties": {
+          "invoiceId": {
+            "type": "string"
+          },
+          "invoiceNumber": {
+            "type": "string"
+          },
+          "supplierId": {
+            "type": "string"
+          },
+          "supplierName": {
+            "type": "string"
+          },
+          "dueDate": {
+            "type": "object"
+          },
+          "invoiceDate": {
+            "type": "object"
+          },
+          "totalAmount": {
+            "type": "object"
+          },
+          "outstandingAmount": {
+            "type": "object"
+          },
+          "earlyPaymentDiscount": {
+            "type": "string",
+            "nullable": true
+          },
+          "earlyPaymentDiscountDays": {
+            "type": "number",
+            "nullable": true
+          },
+          "cashAmount": {
+            "type": "number"
+          },
+          "discountAmount": {
+            "type": "number"
+          },
+          "hasDiscountOpportunity": {
+            "type": "boolean"
+          },
+          "isDueSoon": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "invoiceId",
+          "invoiceNumber",
+          "supplierId",
+          "supplierName",
+          "dueDate",
+          "invoiceDate",
+          "totalAmount",
+          "outstandingAmount",
+          "earlyPaymentDiscount",
+          "earlyPaymentDiscountDays",
+          "cashAmount",
+          "discountAmount",
+          "hasDiscountOpportunity",
+          "isDueSoon"
+        ]
+      },
+      "GeneratePaymentRunDto": {
+        "type": "object",
+        "properties": {
+          "targetDate": {
+            "type": "string"
+          },
+          "glAccountBank": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "invoiceIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "targetDate",
+          "glAccountBank",
+          "invoiceIds"
+        ]
+      },
+      "GeneratePaymentRunResponseDto": {
+        "type": "object",
+        "properties": {
+          "generatedPayments": {
+            "type": "number"
+          },
+          "totalCashAmount": {
+            "type": "number"
+          },
+          "totalDiscountAmount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "generatedPayments",
+          "totalCashAmount",
+          "totalDiscountAmount"
+        ]
+      },
       "PaymentLineDto": {
         "type": "object",
         "properties": {
@@ -21567,6 +21799,17 @@
           "allocations"
         ]
       },
+      "ConfirmRejectResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
       "BatchPaymentActionDto": {
         "type": "object",
         "properties": {
@@ -21590,52 +21833,6 @@
         },
         "required": [
           "fileContent"
-        ]
-      },
-      "ConfirmRejectResponseDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "success"
-        ]
-      },
-      "GeneratePaymentRunDto": {
-        "type": "object",
-        "properties": {
-          "targetDate": {
-            "type": "string"
-          },
-          "glAccountBank": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "required": [
-          "targetDate",
-          "glAccountBank"
-        ]
-      },
-      "GeneratePaymentRunResponseDto": {
-        "type": "object",
-        "properties": {
-          "generatedPayments": {
-            "type": "number"
-          },
-          "totalCashAmount": {
-            "type": "number"
-          },
-          "totalDiscountAmount": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "generatedPayments",
-          "totalCashAmount",
-          "totalDiscountAmount"
         ]
       },
       "SupplierResponseDto": {
@@ -23379,6 +23576,19 @@
         "required": [
           "jobId"
         ]
+      },
+      "ActiveJobDto": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string",
+            "nullable": true
+          }
+        }
       },
       "JobProgressDto": {
         "type": "object",

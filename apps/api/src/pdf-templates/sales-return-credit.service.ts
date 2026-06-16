@@ -11,6 +11,47 @@ import { taxCategories } from '../drizzle/herobm-core-schema';
 import { computeLinePrice, computeReturnCreditSummary } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 
+export interface SalesReturnCreditData {
+  header: {
+    orderNumber: string;
+    customerName: string;
+    customerOrderNumber: string;
+    orderDate: string;
+    currencyCode: string;
+    name: string;
+  };
+  returnMeta: {
+    returnNumber: string;
+    state: string;
+    creditNoteNumber: string | null;
+    creditNoteState: string | null;
+    notes: string;
+  };
+  lines: Array<{
+    lineNumber: number;
+    productNumber: string;
+    description: string;
+    quantity: string;
+    pricePerUnit: string;
+    discountPercentage: string;
+    taxRate: string;
+    tax: string;
+    reason: string;
+    fee: string;
+    amount: string;
+    totalAmount: string;
+    unitOfMeasure: string;
+  }>;
+  summary: {
+    subtotal: string;
+    totalTax: string;
+    totalCredit: string;
+    totalFees: string;
+    netCredit: string;
+  };
+  generatedAt: string;
+}
+
 @Injectable()
 export class SalesReturnCreditService {
   constructor(
@@ -31,8 +72,10 @@ export class SalesReturnCreditService {
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async assembleData(returnId: string, source?: string): Promise<any> {
+  async assembleData(
+    returnId: string,
+    source?: string,
+  ): Promise<SalesReturnCreditData> {
     const ret = await this.returnsWriteService.findOne(returnId);
     if (!ret) {
       throw new NotFoundException(`Return ${returnId} not found`);
@@ -48,10 +91,8 @@ export class SalesReturnCreditService {
     const taxRateMap = await this.buildtaxRateMap();
 
     // Map order lines by id
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const orderLineMap = new Map<string, any>(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      orderDetail.lines.map((l: any) => [l.salesOrderLineId, l]),
+    const orderLineMap = new Map(
+      orderDetail.lines.map((l) => [l.salesOrderLineId, l]),
     );
 
     const lines = [];
@@ -78,11 +119,13 @@ export class SalesReturnCreditService {
       if (orderLine.taxCategoryId && taxRateMap.has(orderLine.taxCategoryId)) {
         taxRate = taxRateMap.get(orderLine.taxCategoryId)!;
       } else if (
-        parseFloat(orderLine.amount || '0') > 0 &&
-        parseFloat(orderLine.tax || '0') > 0
+        parseFloat(orderLine.amount ?? '0') > 0 &&
+        parseFloat(orderLine.tax ?? '0') > 0
       ) {
         taxRate =
-          (parseFloat(orderLine.tax) / parseFloat(orderLine.amount)) * 100;
+          (parseFloat(orderLine.tax ?? '0') /
+            parseFloat(orderLine.amount ?? '0')) *
+          100;
       }
 
       const pricing = computeLinePrice({
@@ -131,10 +174,7 @@ export class SalesReturnCreditService {
       const creditNotes = await this.creditNoteService.findByOrder(
         ret.salesOrderId,
       );
-      const matchingCn = creditNotes.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (cn: any) => cn.returnId === returnId,
-      );
+      const matchingCn = creditNotes.find((cn) => cn.returnId === returnId);
       if (matchingCn) {
         creditNoteNumber = matchingCn.creditNoteNumber;
         creditNoteState = matchingCn.stateCode;

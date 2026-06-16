@@ -13,8 +13,7 @@ interface OutboxEvent {
   entityType: string;
   entityId: string;
   eventType: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload: any;
+  payload: unknown;
   createdOn: string;
   processedAt: string | null;
   lastError: string | null;
@@ -445,7 +444,7 @@ export default function EventQueueDashboard() {
                             </span>
                           </td>
                           <td style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */}
                             {(evt as any).aggregateType}:{(evt as any).aggregateId?.substring(0, 8)}
                           </td>
                           <td style={{ fontSize: 11, fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>

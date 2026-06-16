@@ -1,6 +1,5 @@
 import { getTableName } from 'drizzle-orm';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractTableName(table: any): string {
   if (typeof table === 'string') return table;
   try {
@@ -13,9 +12,7 @@ function extractTableName(table: any): string {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function createMockQueryBuilder(resolveDataFn: () => any) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const qb: any = {
     where: jest.fn().mockReturnThis(),
     innerJoin: jest.fn().mockReturnThis(),
@@ -41,11 +38,10 @@ function createMockQueryBuilder(resolveDataFn: () => any) {
 }
 
 export class MockDrizzle {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private tableMocks = new Map<string, any[] | (() => any[])>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   private defaultMock: any[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   public _selectQb: any;
 
   constructor() {
@@ -56,7 +52,7 @@ export class MockDrizzle {
    * Mocks the return value of a query when it targets a specific table.
    * Use the Drizzle schema object (e.g., `schema.products`) or string name.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   onTable(table: any, data: any[] | (() => any[])) {
     const tableName = extractTableName(table);
     this.tableMocks.set(tableName, data);
@@ -69,12 +65,10 @@ export class MockDrizzle {
       return typeof mock === 'function' ? mock() : mock;
     }
     return typeof this.defaultMock === 'function'
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this.defaultMock as any)()
+      ? (this.defaultMock as any)()
       : this.defaultMock;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setDefault(data: any[]) {
     this.defaultMock = data;
     return this;
@@ -90,7 +84,6 @@ export class MockDrizzle {
 
     const qb = createMockQueryBuilder(() => this.resolveMock(currentTable));
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     qb.from = jest.fn().mockImplementation((table: any) => {
       currentTable = extractTableName(table);
       return qb;
@@ -99,7 +92,6 @@ export class MockDrizzle {
     return qb;
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   insert = jest.fn().mockImplementation((table: any) => {
     const currentTable = extractTableName(table);
     return createMockQueryBuilder(() => {
@@ -108,7 +100,6 @@ export class MockDrizzle {
     });
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   update = jest.fn().mockImplementation((table: any) => {
     const currentTable = extractTableName(table);
     return createMockQueryBuilder(() => {
@@ -117,7 +108,6 @@ export class MockDrizzle {
     });
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   delete = jest.fn().mockImplementation((table: any) => {
     const currentTable = extractTableName(table);
     return createMockQueryBuilder(() => {
@@ -126,7 +116,6 @@ export class MockDrizzle {
     });
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   transaction = jest.fn().mockImplementation(async (cb: any) => {
     // In a transaction, we just pass this same instance, or a clone that shares mocks
     return cb(this);

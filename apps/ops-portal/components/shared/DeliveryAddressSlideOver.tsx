@@ -1,4 +1,4 @@
-/* eslint-disable i18next/no-literal-string */
+/* eslint-disable i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
@@ -224,7 +224,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
             </label>
             <PhoneInput
               international
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
               defaultCountry={defaultCountry as any}
               className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
               value={parseInitialPhone(dto.recipientPhone)}

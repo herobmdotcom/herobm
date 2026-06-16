@@ -112,8 +112,11 @@ export interface EmitEventParams {
  * This is the ONLY function that should write to the outbox table.
  */
 export async function emitEvent(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tx: any,
+  tx: {
+    insert: (table: unknown) => {
+      values: (payload: unknown) => Promise<unknown>;
+    };
+  },
   params: EmitEventParams,
 ): Promise<void> {
   let targetTable = EVENT_TABLE_MAP[params.entityType];
@@ -147,7 +150,7 @@ export async function emitEvent(
   }
 
   // 1. Write to the domain audit table
-  const insertPayload: any = {
+  const insertPayload: Record<string, unknown> = {
     eventType: params.eventType,
     entityDisplayName: params.entityDisplayName,
     payload: params.payload,

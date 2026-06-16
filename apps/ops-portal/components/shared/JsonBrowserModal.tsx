@@ -28,7 +28,7 @@ export default function JsonBrowserModal({ isOpen, onClose, hookSlug, type }: Js
         : api.dataSourcesControllerGetSampleReport(hookSlug);
 
       fetchPromise
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         .then((res: any) => {
           setData(res.data?.data || res.data || res);
           setIsMockData(res.data?.isMockData === true || res.isMockData === true);
@@ -53,7 +53,7 @@ export default function JsonBrowserModal({ isOpen, onClose, hookSlug, type }: Js
       <div className="flex flex-col gap-4 h-full">
         {isMockData && (
           <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md flex items-start gap-3">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
             <span className="material-symbols-outlined text-amber-500 mt-0.5">warning</span>
             <div>
               <h4 className="text-sm font-bold text-amber-800">{t('jsonBrowser.sampleData')}</h4>
@@ -67,7 +67,7 @@ export default function JsonBrowserModal({ isOpen, onClose, hookSlug, type }: Js
         <div className="flex-1 bg-[#282c34] text-[#abb2bf] rounded-lg p-4 font-mono text-xs overflow-auto shadow-inner border border-gray-700">
           {loading ? (
             <div className="flex items-center justify-center h-full text-gray-400">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
               <span className="material-symbols-outlined animate-spin mr-2">autorenew</span>
               Loading...
             </div>

@@ -17,8 +17,7 @@ import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
 import { SALES_ORDER_STATE } from '@herobm/shared';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('API E2E — Sales Portal Write Endpoints', () => {
   let app: INestApplication;
@@ -227,8 +226,8 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
       // Verify line amount was computed correctly
       const lineA = res.body.lines.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (l: any) => l.productDescription === 'Test Product A',
+        (l: { productDescription: string }) =>
+          l.productDescription === 'Test Product A',
       );
       expect(lineA).toBeDefined();
       // 10 × 25.50 × (1 − 0.05) = 242.25
@@ -325,8 +324,10 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
           .set('Authorization', `Bearer ${adminToken}`)
           .expect(200);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const shipLines: any[] = [];
+        const shipLines: {
+          salesOrderLineId: string;
+          quantityShipped: number;
+        }[] = [];
         for (const line of detail.body.lines) {
           await request(app.getHttpServer())
             .post(
@@ -372,8 +373,9 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const eventTypes = res.body.events.map((e: any) => e.eventType);
+      const eventTypes = res.body.events.map(
+        (e: { eventType: string }) => e.eventType,
+      );
       expect(eventTypes).toContain('created');
       expect(eventTypes).toContain('updated');
       expect(eventTypes).toContain('line_added');
@@ -383,8 +385,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
       // Should have status_changed + auto_status_changed events covering full lifecycle
       const statusChanges = res.body.events.filter(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (e: any) =>
+        (e: { eventType: string }) =>
           e.eventType === 'status_changed' ||
           e.eventType === 'auto_status_changed',
       );
@@ -526,8 +527,10 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
             .set('Authorization', `Bearer ${adminToken}`)
             .expect(200);
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const shipLines: any[] = [];
+          const shipLines: {
+            salesOrderLineId: string;
+            quantityShipped: number;
+          }[] = [];
           for (const line of detail.body.lines) {
             const pickRes = await request(app.getHttpServer())
               .post(
@@ -668,8 +671,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       // We created orders in previous tests, should have at least 1
       expect(res.body.data.length).toBeGreaterThan(0);
       // Verify the listing contains our app-created orders
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const appOrders = res.body.data.filter((o: any) =>
+      const appOrders = res.body.data.filter((o: { orderNumber?: string }) =>
         o.orderNumber?.startsWith('ORD-'),
       );
       expect(appOrders.length).toBeGreaterThan(0);

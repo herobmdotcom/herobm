@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import DataGrid from '@/components/DataGrid';
-import type { ColDef } from 'ag-grid-community';
+import type { ColDef, ValueGetterParams } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import { formatCompositeQuantity } from '@herobm/shared';
 import { reportError } from '@/lib/api';
@@ -17,6 +17,26 @@ interface Location {
   name: string;
 }
 
+interface BinContentRow {
+  binContentId: string;
+  binId: string;
+  binNumber: string;
+  zoneCode: string;
+  locationNo: string;
+  locationName: string;
+  productId: string;
+  productNumber: string;
+  productName: string;
+  actualQuantity: string;
+  productUoms: unknown[];
+  baseUom: string;
+  baseQuantity: number;
+  isConsignment: boolean;
+  isBonded: boolean;
+  isUnavailable: boolean;
+  binType: string;
+}
+
 export default function BinContentsView() {
   const tCommon = useTranslations('common');
   const tBins = useTranslations('bins');
@@ -25,8 +45,7 @@ export default function BinContentsView() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocationCode, setSelectedLocationCode] = useState<string | null>(null);
   const [locationsLoaded, setLocationsLoaded] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [selectedRows, setSelectedRows] = useState<Record<string, any>[]>([]);
+  const [selectedRows, setSelectedRows] = useState<BinContentRow[]>([]);
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -65,11 +84,11 @@ export default function BinContentsView() {
       headerName: 'Box Qty', 
       width: 130, 
       type: 'rightAligned',
-      valueGetter: (params) => {
+      valueGetter: (params: ValueGetterParams<BinContentRow>) => {
         if (!params.data || !params.data.actualQuantity) return '0';
         return formatCompositeQuantity(
           parseFloat(params.data.actualQuantity),
-          params.data.productUoms || [],
+          (params.data.productUoms || []) as any[] /* eslint-disable-line @typescript-eslint/no-explicit-any -- DTO typing does not exactly match frontend local definitions */,
           params.data.baseUom || 'EA'
         );
       }
@@ -81,8 +100,7 @@ export default function BinContentsView() {
     { field: 'binType', headerName: tBins('columns.binType'), width: 90 },
   ], [tCommon, tBins]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleSelectionChanged = (rows: any[]) => {
+  const handleSelectionChanged = (rows: BinContentRow[]) => {
     setSelectedRows(rows);
   };
 
@@ -93,8 +111,10 @@ export default function BinContentsView() {
 
   const canMove = selectedRows.length > 0 && selectedRows.every(r => r.locationNo === selectedLocationId);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleMoveSubmit = async (lines: any[], reason: string) => {
+  const handleMoveSubmit = async (
+    lines: { productId: string; sourceBinId: string; targetBinId: string; quantity: string }[],
+    reason: string
+  ) => {
     try {
       await api.inventoryControllerMoveStock({
         lines,
@@ -105,12 +125,14 @@ export default function BinContentsView() {
       setSelectedRows([]);
     } catch (err) {
       reportError(err, 'BinContentsView.moveStock');
-      throw err; // rethrow so modal stays open on error if we want, or handle inside modal
+      throw err;
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleAdjustSubmit = async (lines: any[], reason: string) => {
+  const handleAdjustSubmit = async (
+    lines: { productId: string; sourceBinId: string; quantity: string }[],
+    reason: string
+  ) => {
     try {
       await api.inventoryControllerAdjustStock({
         lines: lines.map(l => ({
@@ -133,7 +155,7 @@ export default function BinContentsView() {
 
   return (
     <>
-      <DataGrid
+      <DataGrid<BinContentRow>
         endpoint={binsEndpoint}
         columns={columns}
         gridKey={`ops-bins-${refreshKey}`}
@@ -175,7 +197,7 @@ export default function BinContentsView() {
             className="input"
             style={{ width: '200px' }}
           >
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <option value="">All Locations</option>
             {locations.map((loc) => (
               <option key={loc.locationId} value={loc.code}>

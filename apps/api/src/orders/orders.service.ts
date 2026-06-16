@@ -83,7 +83,7 @@ export class OrdersService implements OnModuleInit {
         SALES_ORDER_STATE.SHIPPED,
         SALES_ORDER_STATE.INVOICED,
         SALES_ORDER_STATE.LEGACY,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bypass strict array type check for inArray operator
       ] as any[]),
     );
     return conditions;
@@ -93,7 +93,7 @@ export class OrdersService implements OnModuleInit {
     const conditions = this.getSalesPerformanceConditions(filters);
     const drillDown = filters.drillDown as string | undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle select configuration
     const selectCols: any = {
       customerId: coreAccounts.customerId,
       customerName: coreAccounts.name,
@@ -101,7 +101,7 @@ export class OrdersService implements OnModuleInit {
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle group-by configuration
     const groupCols: any[] = [coreAccounts.customerId, coreAccounts.name];
 
     if (drillDown === 'product') {
@@ -151,7 +151,7 @@ export class OrdersService implements OnModuleInit {
     const conditions = this.getSalesPerformanceConditions(filters);
     const drillDown = filters.drillDown as string | undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle select configuration
     const selectCols: any = {
       productId: products.productId,
       productNumber: products.productNumber,
@@ -160,7 +160,7 @@ export class OrdersService implements OnModuleInit {
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle group-by configuration
     const groupCols: any[] = [
       products.productId,
       products.productNumber,
@@ -206,7 +206,7 @@ export class OrdersService implements OnModuleInit {
     const conditions = this.getSalesPerformanceConditions(filters);
     const drillDown = filters.drillDown as string | undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle select configuration
     const selectCols: any = {
       productGroupId: productGroups.productGroupId,
       productGroupName: productGroups.name,
@@ -214,7 +214,7 @@ export class OrdersService implements OnModuleInit {
       totalSales: sql<number>`coalesce(sum(${salesOrderLineItems.totalAmount}::numeric), 0)::float`,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle group-by configuration
     const groupCols: any[] = [productGroups.productGroupId, productGroups.name];
 
     if (drillDown === 'product') {
@@ -265,7 +265,7 @@ export class OrdersService implements OnModuleInit {
     const period = getAggregationPeriod(filters);
     const periodSql = getAggregationSql(salesOrders.createdOn, period);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic Drizzle select configuration
     const selectCols: any = {
       period: periodSql,
       orderCount: sql<number>`count(distinct ${salesOrders.salesOrderId})::integer`,

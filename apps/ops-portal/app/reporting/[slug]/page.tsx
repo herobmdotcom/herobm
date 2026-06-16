@@ -1,4 +1,4 @@
-/* eslint-disable */
+/* eslint-disable -- Highly dynamic reporting engine rendering requires bypassing strict linting */
 // @ts-nocheck
 'use client';
 
@@ -267,7 +267,7 @@ export default function ReportViewer() {
                   if (!configs || (configs as any[]).length === 0) return null;
                   return (
                     <optgroup key={rSlug} label={rName}>
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      { }
                       {(configs as any[]).map((c) => (
                         <option key={c.id} value={`${rSlug}|${c.id}`}>{c.name}</option>
                       ))}
@@ -331,7 +331,7 @@ export default function ReportViewer() {
         <div className="flex flex-wrap items-end gap-4 p-4 border-b border-[rgba(196,198,205,0.4)] bg-[#f2f4f6]">
           {uiConfig.filters && uiConfig.filters.length > 0 && (
             <>
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              { }
               {uiConfig.filters.some((f: any) => f.name === 'fromDate') && uiConfig.filters.some((f: any) => f.name === 'toDate') && (
                 <div className="flex flex-col">
                   <DateRangeFilter 
@@ -341,7 +341,7 @@ export default function ReportViewer() {
                   />
                 </div>
               )}
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              { }
               {uiConfig.filters.filter((f: any) => f.name !== 'fromDate' && f.name !== 'toDate').map((f: any) => (
                 <div key={f.name} className="flex flex-col">
                   <label className="text-[11px] font-bold tracking-wider uppercase mb-1.5" style={{ color: 'var(--text-muted)' }}>{f.label}</label>
@@ -368,7 +368,7 @@ export default function ReportViewer() {
                 }}
               >
                 <option value="">None</option>
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                { }
                 {drillDownOptions.map((opt: any) => (
                   <option key={opt.id} value={opt.id}>{opt.label}</option>
                 ))}

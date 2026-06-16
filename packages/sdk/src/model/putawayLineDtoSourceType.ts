@@ -9,7 +9,6 @@
 export type PutawayLineDtoSourceType = typeof PutawayLineDtoSourceType[keyof typeof PutawayLineDtoSourceType];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const PutawayLineDtoSourceType = {
   goods_receipt: 'goods_receipt',
   sales_return: 'sales_return',

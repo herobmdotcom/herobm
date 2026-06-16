@@ -23,21 +23,18 @@ export default function ReportingPage() {
       field: 'lastModifiedOn',
       headerName: t('grid.columns.lastModified'),
       width: 150,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '—',
+      valueFormatter: (p: { value?: string | null }) => p.value ? new Date(p.value).toLocaleDateString() : '—',
     },
     {
       field: 'createdOn',
       headerName: t('grid.columns.createdOn'),
       width: 150,
       hide: true,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '—',
+      valueFormatter: (p: { value?: string | null }) => p.value ? new Date(p.value).toLocaleDateString() : '—',
     },
   ], []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleRowClicked = useCallback((row: any) => {
+  const handleRowClicked = useCallback((row: { id: string }) => {
     router.push(`/admin/settings/pdf-templates/${row.id}`);
   }, [router]);
 

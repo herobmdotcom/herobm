@@ -4,7 +4,7 @@ import { useMemo, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
-import type { ColDef } from 'ag-grid-community';
+import type { ColDef, CellStyle } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import LedgerEntrySlideOver from './LedgerEntrySlideOver';
 
@@ -51,12 +51,11 @@ function LedgerViewContent() {
       headerName: tInventory('columns.qtyChange'), 
       width: 140, 
       type: 'numericColumn',
-      cellStyle: (params) => {
+      cellStyle: (params): CellStyle | undefined => {
         const val = parseFloat(params.value || '0');
         if (val > 0) return { color: '#006b5c', fontWeight: 'bold' };
         if (val < 0) return { color: '#b45309', fontWeight: 'bold' };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return { fontWeight: '500' } as any;
+        return { fontWeight: '500' };
       },
       valueFormatter: (p: { value?: unknown }) => {
         const val = parseFloat((p.value as string) || '0');

@@ -6,10 +6,8 @@ describe('AllExceptionsFilter', () => {
   let filter: AllExceptionsFilter;
   let errorSpy: jest.SpyInstance;
   let warnSpy: jest.SpyInstance;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockResponse: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockRequest: any;
+  let mockResponse: { status: jest.Mock; json: jest.Mock };
+  let mockRequest: { method: string; url: string };
   let mockHost: ArgumentsHost;
 
   beforeEach(() => {
@@ -30,8 +28,7 @@ describe('AllExceptionsFilter', () => {
         getRequest: () => mockRequest,
         getResponse: () => mockResponse,
       }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any;
+    } as unknown as ArgumentsHost;
   });
 
   afterEach(() => {

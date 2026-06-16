@@ -187,12 +187,7 @@ export class ProductsController {
     @Body() dto: AddProductUomDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.productsWriteService.addUom(
-      productId,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      dto as any,
-      user.username,
-    );
+    return this.productsWriteService.addUom(productId, dto, user.username);
   }
 
   @Delete(':id/uoms/:uomId')
@@ -226,8 +221,7 @@ export class ProductsController {
   ) {
     return this.productsWriteService.linkDefaultBin(
       productId,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      dto as any,
+      dto,
       user.username,
     );
   }
@@ -275,7 +269,7 @@ export class ProductsController {
   ) {
     return this.productsWriteService.addComponent(
       productId,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       dto as any,
       user.username,
     );
@@ -299,7 +293,7 @@ export class ProductsController {
     return this.productsWriteService.updateComponent(
       productId,
       componentId,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       dto as any,
       user.username,
     );

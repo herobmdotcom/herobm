@@ -20,8 +20,7 @@ export default function GlobalPurchaseInvoicesPage() {
     const invoiceFilter = searchParams.get('invoiceId') || '';
     const [days, setDays, isReady] = usePersistedFilter('supplier-invoices-days', '90');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleRowClicked = useCallback((row: any) => {
+    const handleRowClicked = useCallback((row: { invoiceId?: string }) => {
         if (row.invoiceId) {
             router.push(`/supplier-invoices/${row.invoiceId}`);
         }
@@ -32,41 +31,35 @@ export default function GlobalPurchaseInvoicesPage() {
         ? `/api/purchase-invoices?invoiceId=${encodeURIComponent(invoiceFilter)}&limit=0`
         : `/api/purchase-invoices?days=${days}&limit=0`);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const gridColumns: any[] = [
+    const gridColumns: Record<string, unknown>[] = [
         { field: 'invoiceId', headerName: 'ID', hide: true },
         { field: 'invoiceNumber', headerName: t('columns.invoiceNumber'), width: 180 },
         { field: 'supplierInvoiceNumber', headerName: t('columns.supplierInvoiceNumber'), width: 220 },
         { field: 'vendorName', headerName: t('columns.vendor'), width: 250 },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { field: 'createdOn', headerName: t('columns.date'), width: 200, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<any>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
+        { field: 'createdOn', headerName: t('columns.date'), width: 200, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
         { 
             field: 'totalAmount', 
             headerName: t('columns.amount'), 
             type: 'numericColumn', 
             width: 150,
              
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            valueGetter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
+            valueGetter: (params: import("ag-grid-community").ValueFormatterParams<{ totalAmount?: string | number }>) => {
                 if (!params.data?.totalAmount) return null;
-                return parseFloat(params.data.totalAmount);
+                return parseFloat(String(params.data.totalAmount));
             },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
+            valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<{ currencyCode?: string }>) => {
                 if (!params.value || params.value === 0) return '—';
-                return formatAmount(params.value, params.data?.currencyCode || baseCurrency);
+                return formatAmount(params.value as number, params.data?.currencyCode || baseCurrency);
             },
         },
         { 
             field: 'stateCode', 
             headerName: t('columns.state'), 
             width: 140,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<any>) => {
+            valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<Record<string, unknown>>) => {
                 if (!params.value) return '';
                 const s = String(params.value).toLowerCase();
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                return tStates.has(s as any) ? tStates(s as any) : String(params.value);
+                return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(params.value);
             }
         },
     ];

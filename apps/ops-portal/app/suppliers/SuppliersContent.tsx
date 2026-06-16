@@ -6,7 +6,6 @@ import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
-import { resolveSupplierRiskProfile } from '@/lib/supplier-risk';
 
 interface UnifiedSupplierRow {
   vendorId: string;
@@ -20,6 +19,10 @@ interface UnifiedSupplierRow {
   address1Country: string;
   currencyCode: string;
   stateCode: string;
+  isPurchasingBlocked?: boolean;
+  groupIsPurchasingBlocked?: boolean;
+  isPaymentBlocked?: boolean;
+  groupIsPaymentBlocked?: boolean;
 }
 
 export default function SuppliersContent() {
@@ -53,13 +56,11 @@ export default function SuppliersContent() {
       field: 'stateCode',
       headerName: tCommon('columns.status'),
       width: 250,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      valueFormatter: (params: any) => {
+      valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<UnifiedSupplierRow>) => {
         if (!params.value || !params.data) return '';
         
         const s = String(params.value).toLowerCase();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let stateText = tStates.has(s as any) ? tStates(s as any) : String(params.value);
+        let stateText = tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(params.value);
         
         const blocks = [];
         if (params.data.isPurchasingBlocked || params.data.groupIsPurchasingBlocked) {
@@ -86,7 +87,7 @@ export default function SuppliersContent() {
       },
     },
     { field: 'productCount', headerName: tSuppliers('columns.productCount'), width: 100, type: 'numericColumn', hide: true },
-  ], [tCommon, tSuppliers]);
+  ], [tCommon, tStates, tSuppliers]);
 
   const handleRowClicked = useCallback((supplier: UnifiedSupplierRow) => {
     router.push(`/suppliers/${supplier.vendorId}`);

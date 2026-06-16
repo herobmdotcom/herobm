@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-restricted-syntax -- External API integration boundaries where exact types are unknown. */
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';

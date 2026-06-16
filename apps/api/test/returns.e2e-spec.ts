@@ -22,8 +22,7 @@ import {
   SALES_CREDIT_NOTE_STATE,
 } from '@herobm/shared';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('API E2E — Sales Order Returns', () => {
   let app: INestApplication;
@@ -139,6 +138,7 @@ describe('API E2E — Sales Order Returns', () => {
 
         customerId: validCustomerId,
         name: 'E2E-RET Test Order',
+        deliveryAddressLine1: 'Test Address',
         lines: [
           {
             productId: validProductId,
@@ -184,8 +184,8 @@ describe('API E2E — Sales Order Returns', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const shipLines: any[] = [];
+    const shipLines: { salesOrderLineId: string; quantityShipped: string }[] =
+      [];
     for (const line of detail.body.lines) {
       await request(app.getHttpServer())
         .post(
@@ -222,8 +222,9 @@ describe('API E2E — Sales Order Returns', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const lineIds = detailFinal.body.lines.map((l: any) => l.salesOrderLineId);
+    const lineIds = detailFinal.body.lines.map(
+      (l: { salesOrderLineId: string }) => l.salesOrderLineId,
+    );
     return { orderId, lineIds };
   }
 

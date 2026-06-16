@@ -23,8 +23,7 @@ import {
   PURCHASE_ORDER_STATE,
 } from '@herobm/shared';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('Archive E2E — Full Round-Trip', () => {
   let app: INestApplication;
@@ -104,8 +103,9 @@ describe('Archive E2E — Full Round-Trip', () => {
       .get('/api/tax-categories')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const hasDefault = taxRes.body.some((t: any) => t.isDefault === true);
+    const hasDefault = taxRes.body.some(
+      (t: { isDefault?: boolean }) => t.isDefault === true,
+    );
     if (!hasDefault) {
       await request(app.getHttpServer())
         .post('/api/tax-categories')
@@ -148,7 +148,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .post('/api/customers')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          address1Country: 'AU',
+          billingAddressCountry: 'AU',
           customerNumber: `E2E-ARCH-ACCT-${Date.now()}`,
           name: 'E2E Archive Test Account',
         })
@@ -180,8 +180,9 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ids = res.body.data.map((a: any) => a.customerId);
+      const ids = res.body.data.map(
+        (a: { customerId: string }) => a.customerId,
+      );
       expect(ids).not.toContain(customerId);
     });
 
@@ -191,8 +192,10 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const found = res.body.data.find((a: any) => a.customerId === customerId);
+      const found = res.body.data.find(
+        (a: { customerId: string; stateCode: string }) =>
+          a.customerId === customerId,
+      );
       expect(found).toBeDefined();
       expect(found.stateCode).toBe(CUSTOMER_STATE.ARCHIVED);
     });
@@ -212,8 +215,9 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ids = res.body.data.map((a: any) => a.customerId);
+      const ids = res.body.data.map(
+        (a: { customerId: string }) => a.customerId,
+      );
       expect(ids).toContain(customerId);
     });
   });
@@ -296,8 +300,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ids = res.body.data.map((o: any) => o.id);
+      const ids = res.body.data.map((o: { id: string }) => o.id);
       expect(ids).not.toContain(orderId);
     });
 
@@ -307,8 +310,9 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const found = res.body.data.find((o: any) => o.id === orderId);
+      const found = res.body.data.find(
+        (o: { id: string; stateCode: string }) => o.id === orderId,
+      );
       expect(found).toBeDefined();
       expect(found.stateCode).toBe(CUSTOMER_STATE.ARCHIVED);
     });
@@ -412,8 +416,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ids = res.body.data.map((o: any) => o.id);
+      const ids = res.body.data.map((o: { id: string }) => o.id);
       expect(ids).not.toContain(poId);
     });
 
@@ -423,8 +426,9 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const found = res.body.data.find((o: any) => o.id === poId);
+      const found = res.body.data.find(
+        (o: { id: string; stateCode: string }) => o.id === poId,
+      );
       expect(found).toBeDefined();
       expect(found.stateCode).toBe(CUSTOMER_STATE.ARCHIVED);
     });
@@ -445,8 +449,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const found = res.body.data.find((o: any) => o.id === poId);
+      const found = res.body.data.find((o: { id: string }) => o.id === poId);
       expect(found).toBeDefined();
     });
   });
@@ -488,8 +491,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ids = res.body.data.map((p: any) => p.productId);
+      const ids = res.body.data.map((p: { productId: string }) => p.productId);
       expect(ids).not.toContain(productId);
     });
 
@@ -501,8 +503,10 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const found = res.body.data.find((p: any) => p.productId === productId);
+      const found = res.body.data.find(
+        (p: { productId: string; stateCode: string }) =>
+          p.productId === productId,
+      );
       expect(found).toBeDefined();
       expect(found.stateCode).toBe(PRODUCT_STATE.ARCHIVED);
     });
@@ -554,8 +558,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ids = res.body.data.map((s: any) => s.vendorId);
+      const ids = res.body.data.map((s: { vendorId: string }) => s.vendorId);
       expect(ids).not.toContain(vendorId);
     });
 

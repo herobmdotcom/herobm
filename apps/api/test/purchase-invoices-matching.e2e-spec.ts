@@ -8,8 +8,7 @@ import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { PURCHASE_ORDER_STATE, MATCH_STATUS } from '@herobm/shared';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
   let app: INestApplication;

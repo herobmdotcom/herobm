@@ -65,9 +65,8 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
   const loadShipment = () => {
     setLoading(true);
     (api.globalShipmentsControllerFindOne(id) )
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then((res: any) => {
-        setShipment(res.data ? res.data : res);
+      .then((res) => {
+        setShipment(res.data ? (res.data as unknown as ShipmentDetail) : (res as unknown as ShipmentDetail));
         setLoading(false);
       })
       .catch((err: unknown) => {
@@ -134,7 +133,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
                   tCommon('resolving')
                 ) : (
                   <>
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                     <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
                     {tCommon('cancel')}
                   </>
@@ -150,7 +149,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
         <div id="details-section" className="card">
           <div className="flex items-center justify-between mb-4 gap-4">
             <h3 className="section-heading flex items-center gap-2 truncate">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined shrink-0">local_shipping</span>
               <span className="truncate">{t('shipmentDetails')}</span>
             </h3>
@@ -219,7 +218,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                 {shipment.deliveryAddressLine1 && (
                     <div className="flex-1">
-                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                         <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                             Delivery Address
                         </label>
@@ -239,7 +238,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
                 )}
                 {shipment.shippingNotes && (
                     <div className="flex-1">
-                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                         <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                             Shipping Instructions
                         </label>
@@ -256,7 +255,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
         <div id="lines-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading flex items-center gap-2">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined shrink-0">list_alt</span>
               <span>{t('lineItems')}</span>
             </h3>

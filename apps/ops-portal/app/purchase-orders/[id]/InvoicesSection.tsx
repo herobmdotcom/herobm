@@ -22,7 +22,7 @@ interface InvoicesSectionProps {
     taxCategories: TaxCategory[];
     setError: (msg: string) => void;
     loadInvoices: () => Promise<void>;
-    loadOrder: (autoTransitions?: Record<string, unknown>[], showSpinner?: boolean) => Promise<void>;
+    loadOrder: (autoTransitions?: { ruleName: string; from: string; to: string; reason: string; }[], showSpinner?: boolean) => Promise<void>;
 }
 
 export default function InvoicesSection({
@@ -51,7 +51,7 @@ export default function InvoicesSection({
         <div id="Invoices-section" className="card">
             <div className="flex items-center justify-between mb-2">
                 <h3 className="section-heading">
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                     <span className="material-symbols-outlined">request_quote</span>
                     Supplier Invoices
                 </h3>

@@ -43,7 +43,7 @@ export function FrontendEnrichmentDecorator({
       try {
         setLoadingConfig(true);
         const res = await api.appConfigControllerGet();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         const config = res.data as any;
         const mappings = config.enrichmentProviderMappings || {};
         const mappedProvider = mappings[field]?.[country];
@@ -95,7 +95,7 @@ export function FrontendEnrichmentDecorator({
             field,
             country,
             query: value,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
           }) as any,
           new Promise((resolve) => setTimeout(resolve, 300)) // Ensure spinner is visible for at least 300ms
         ]);
@@ -138,28 +138,28 @@ export function FrontendEnrichmentDecorator({
       title={provider ? tEnrichment('providedBy', { provider }) : ''}
     >
       {status === 'pending' && (
-        /* eslint-disable-next-line i18next/no-literal-string */
+        /* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */
         <span className="material-symbols-outlined text-[14px] text-amber-500 cursor-help" title={tEnrichment('willVerifyOnSave')}>
           pending
         </span>
       )}
       
       {status === 'loading' && (
-        /* eslint-disable-next-line i18next/no-literal-string */
+        /* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */
         <span className="material-symbols-outlined text-[14px] text-blue-500 animate-spin">
           sync
         </span>
       )}
       
       {status === 'success' && (
-        /* eslint-disable-next-line i18next/no-literal-string */
+        /* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */
         <span className="material-symbols-outlined text-[14px] text-emerald-500 cursor-help" title={tEnrichment('verified')}>
           check_circle
         </span>
       )}
       
       {status === 'error' && (
-        /* eslint-disable-next-line i18next/no-literal-string */
+        /* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */
         <span className="material-symbols-outlined text-[14px] text-red-500 cursor-help" title={tEnrichment('verificationFailed', { errorMsg })}>
           error
         </span>

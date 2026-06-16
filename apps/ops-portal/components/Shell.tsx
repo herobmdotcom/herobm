@@ -53,7 +53,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 aria-label="Toggle Navigation"
               >
                 <span className="material-symbols-outlined text-[28px]">
-                  {/* eslint-disable-next-line no-restricted-syntax */}
+                  {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                   {isSidebarOpen ? 'close' : 'menu'}
                 </span>
               </button>

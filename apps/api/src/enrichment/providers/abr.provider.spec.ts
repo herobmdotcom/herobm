@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/unbound-method */
+/* eslint-disable @typescript-eslint/unbound-method -- Unbound methods are commonly used in Jest assertions and mock setups without issue. */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AbrProvider } from './abr.provider';
 import { IntegrationLoggerService } from '../../common/integration-logger.service';
@@ -42,7 +42,8 @@ describe('AbrProvider', () => {
   });
 
   describe('lookup', () => {
-    // eslint-disable-next-line no-restricted-syntax
+    // Hardcoded API key used purely for mock testing.
+    // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols.
     const mockConfig = { apiKey: 'test-guid' }; // TEST_CREDENTIAL
 
     it('should throw error if API key is missing', async () => {

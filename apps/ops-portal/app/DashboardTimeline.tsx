@@ -52,20 +52,19 @@ function getEventStyle(eventType: string) {
   return EVENT_ICONS[eventType] || { icon: 'event', color: 'var(--text-primary)', bg: 'var(--bg-hover)', path: '#' };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatRelativeTime(dateString: string, t: any) {
+function formatRelativeTime(dateString: string, t: ReturnType<typeof useTranslations>) {
   const d = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
   const diffSecs = Math.floor(diffMs / 1000);
   
-  if (diffSecs < 60) return t('relativeUnits.justNow');
+  if (diffSecs < 60) return (t as any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Required because next-intl generic types result in deep instantiation errors */)('relativeUnits.justNow');
   const diffMins = Math.floor(diffSecs / 60);
-  if (diffMins < 60) return t('relativeUnits.m', { count: diffMins });
+  if (diffMins < 60) return (t as any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Required because next-intl generic types result in deep instantiation errors */)('relativeUnits.m', { count: diffMins });
   const diffHrs = Math.floor(diffMins / 60);
-  if (diffHrs < 24) return t('relativeUnits.h', { count: diffHrs });
+  if (diffHrs < 24) return (t as any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Required because next-intl generic types result in deep instantiation errors */)('relativeUnits.h', { count: diffHrs });
   const diffDays = Math.floor(diffHrs / 24);
-  return t('relativeUnits.d', { count: diffDays });
+  return (t as any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Required because next-intl generic types result in deep instantiation errors */)('relativeUnits.d', { count: diffDays });
 }
 
 export default function DashboardTimeline({ enabledEvents }: Props) {
@@ -122,7 +121,7 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
   if (events.length === 0) {
     return (
       <div className="p-8 text-center text-[14px] opacity-60 rounded-2xl border flex flex-col items-center justify-center gap-2" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
-        {/* eslint-disable-next-line i18next/no-literal-string */}
+        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
         <span className="material-symbols-outlined text-[32px] opacity-50">history</span>
         {t('empty')}
       </div>

@@ -80,13 +80,11 @@ export class AccountsWriteService {
       'notes',
     ];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sanitizedDto: any = {};
+    const sanitizedDto: Record<string, unknown> = {};
+    const recordDto = dto as unknown as Record<string, unknown>;
     for (const key of allowedKeys) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (key in dto && (dto as any)[key] !== undefined) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        sanitizedDto[key] = (dto as any)[key];
+      if (key in dto && recordDto[key as string] !== undefined) {
+        sanitizedDto[key as string] = recordDto[key as string];
       }
     }
 
@@ -103,8 +101,7 @@ export class AccountsWriteService {
           } as typeof coreAccounts.$inferInsert)
           .returning();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await emitEvent(tx as any, {
+        await emitEvent(tx, {
           entityType: EntityType.CUSTOMER,
           entityId: customer.customerId,
           eventType: EventType.CREATED,
@@ -116,8 +113,9 @@ export class AccountsWriteService {
         return customer;
       });
     } catch (e: unknown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pgCode = (e as any).code || (e as any).cause?.code;
+      const pgCode =
+        (e as { code?: string; cause?: { code?: string } }).code ||
+        (e as { code?: string; cause?: { code?: string } }).cause?.code;
       if (pgCode === '23505') {
         throw new ConflictException(
           `Customer number '${dto.customerNumber}' already exists`,
@@ -171,13 +169,15 @@ export class AccountsWriteService {
       'notes',
     ];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sanitizedDto: any = {};
+    const sanitizedDto: Record<string, unknown> = {};
     for (const key of allowedKeys) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (key in dto && (dto as any)[key] !== undefined) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        sanitizedDto[key] = (dto as any)[key];
+      if (
+        key in dto &&
+        (dto as Record<string, unknown>)[key as string] !== undefined
+      ) {
+        sanitizedDto[key as string] = (dto as Record<string, unknown>)[
+          key as string
+        ];
       }
     }
 
@@ -205,8 +205,7 @@ export class AccountsWriteService {
           changedKeys.length === 1 && changedKeys[0] === 'stateCode';
 
         if (isStatusOnly) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await emitEvent(tx as any, {
+          await emitEvent(tx, {
             entityType: EntityType.CUSTOMER,
             entityId: id,
             eventType: EventType.STATUS_CHANGED,
@@ -218,8 +217,7 @@ export class AccountsWriteService {
             actor,
           });
         } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await emitEvent(tx as any, {
+          await emitEvent(tx, {
             entityType: EntityType.CUSTOMER,
             entityId: id,
             eventType: EventType.UPDATED,
@@ -330,15 +328,13 @@ export class AccountsWriteService {
     const [updated] = await db
       .update(coreAccounts)
       .set({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        stateCode: newState as any, // eslint-disable-line
+        stateCode: newState,
         modifiedOn: new Date(),
       })
       .where(eq(coreAccounts.customerId, customerId))
       .returning();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const targetTx = tx || (this.db as any);
+    const targetTx = tx || this.db;
     const eventPayload = { from: currentState, to: newState };
 
     if (newState === CUSTOMER_STATE.ARCHIVED) {

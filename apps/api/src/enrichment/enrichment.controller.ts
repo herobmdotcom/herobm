@@ -132,7 +132,8 @@ export class EnrichmentController {
   @ApiBody({ type: Object }) // BYPASS-TYPING-TEST
   async updateConfig(
     @Query('provider') provider: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // The config body is an untyped JSON payload whose structure depends on the specific enrichment provider.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     @Body() config: Record<string, any>,
   ) {
     return this.enrichmentService.updateConfig(provider, config);

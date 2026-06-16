@@ -80,7 +80,6 @@ export class LicenseService {
 
     if (!rawApp || !systemId) {
       return {
-        // eslint-disable-next-line no-restricted-syntax
         state: 'read_only',
         type: 'none',
         expiresAt: null,
@@ -110,7 +109,6 @@ export class LicenseService {
 
     if (this.isSystemCompromised) {
       return {
-        // eslint-disable-next-line no-restricted-syntax
         state: 'read_only',
         type: 'none',
         expiresAt: null,
@@ -156,7 +154,7 @@ export class LicenseService {
       try {
         if (decoded.type === 'perpetual') {
           return {
-            // eslint-disable-next-line no-restricted-syntax
+            // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- License State).
             state: 'active',
             type: 'perpetual',
             expiresAt: null,
@@ -172,7 +170,7 @@ export class LicenseService {
 
           if (nowMs < expMs) {
             return {
-              // eslint-disable-next-line no-restricted-syntax
+              // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- License State).
               state: 'active',
               type: 'trial',
               expiresAt: new Date(expMs),
@@ -189,7 +187,6 @@ export class LicenseService {
               (graceEndMs - nowMs) / (1000 * 60 * 60 * 24),
             );
             return {
-              // eslint-disable-next-line no-restricted-syntax
               state: 'warning',
               type: 'trial',
               expiresAt: new Date(expMs),
@@ -200,7 +197,6 @@ export class LicenseService {
           }
 
           return {
-            // eslint-disable-next-line no-restricted-syntax
             state: 'read_only',
             type: 'trial',
             expiresAt: new Date(expMs),
@@ -224,7 +220,7 @@ export class LicenseService {
 
     if (nowMs < warnStartMs) {
       return {
-        // eslint-disable-next-line no-restricted-syntax
+        // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- License State).
         state: 'active',
         type: 'none',
         expiresAt: new Date(readOnlyStartMs),
@@ -238,7 +234,6 @@ export class LicenseService {
         (readOnlyStartMs - nowMs) / (1000 * 60 * 60 * 24),
       );
       return {
-        // eslint-disable-next-line no-restricted-syntax
         state: 'warning',
         type: 'none',
         expiresAt: new Date(readOnlyStartMs),
@@ -248,7 +243,6 @@ export class LicenseService {
     }
 
     return {
-      // eslint-disable-next-line no-restricted-syntax
       state: 'read_only',
       type: 'none',
       expiresAt: new Date(readOnlyStartMs),

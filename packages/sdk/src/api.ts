@@ -14,6 +14,7 @@ import type {
   AccountsControllerFindAll200,
   AccountsControllerFindAllParams,
   AccountsControllerFindOneParams,
+  ActiveJobDto,
   ActivitiesControllerFindAllParams,
   ActivityResponseDto,
   AddProductComponentDto,
@@ -240,9 +241,11 @@ import type {
   PaginatedJournalEntriesDto,
   ParseCsvResponseDto,
   PaymentResponseDto,
+  PaymentRunCandidateResponseDto,
   PaymentsControllerFindAll200,
   PaymentsControllerFindAllParams,
   PaymentsControllerFindOneParams,
+  PaymentsControllerGetPaymentRunCandidatesParams,
   PdfTemplatesControllerRunHookParams,
   PendingPutawayResponseDto,
   PickLineDto,
@@ -308,6 +311,7 @@ import type {
   SettingsSuccessResponseDto,
   SetupControllerExecuteCsv201,
   SetupControllerExecuteCsvBody,
+  SetupControllerStopJob200,
   SetupValidationDto,
   ShipmentResponseDto,
   ShippingContextDto,
@@ -10582,6 +10586,84 @@ export const paymentsControllerCreate = async (createPaymentDto: CreatePaymentDt
 
 
 /**
+ * Fetch eligible invoices for a payment run on a target date.
+ * @summary Get Payment Run Candidates
+ */
+export type paymentsControllerGetPaymentRunCandidatesResponse200 = {
+  data: PaymentRunCandidateResponseDto[]
+  status: 200
+}
+    
+export type paymentsControllerGetPaymentRunCandidatesResponseSuccess = (paymentsControllerGetPaymentRunCandidatesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type paymentsControllerGetPaymentRunCandidatesResponse = (paymentsControllerGetPaymentRunCandidatesResponseSuccess)
+
+export const getPaymentsControllerGetPaymentRunCandidatesUrl = (params: PaymentsControllerGetPaymentRunCandidatesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/payments/run-candidates?${stringifiedParams}` : `/payments/run-candidates`
+}
+
+export const paymentsControllerGetPaymentRunCandidates = async (params: PaymentsControllerGetPaymentRunCandidatesParams, options?: RequestInit): Promise<paymentsControllerGetPaymentRunCandidatesResponse> => {
+  
+  return customFetch<paymentsControllerGetPaymentRunCandidatesResponse>(getPaymentsControllerGetPaymentRunCandidatesUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+export type paymentsControllerGeneratePaymentRunResponse201 = {
+  data: GeneratePaymentRunResponseDto
+  status: 201
+}
+    
+export type paymentsControllerGeneratePaymentRunResponseSuccess = (paymentsControllerGeneratePaymentRunResponse201) & {
+  headers: Headers;
+};
+;
+
+export type paymentsControllerGeneratePaymentRunResponse = (paymentsControllerGeneratePaymentRunResponseSuccess)
+
+export const getPaymentsControllerGeneratePaymentRunUrl = () => {
+
+
+  
+
+  return `/payments/generate-run`
+}
+
+export const paymentsControllerGeneratePaymentRun = async (generatePaymentRunDto: GeneratePaymentRunDto, options?: RequestInit): Promise<paymentsControllerGeneratePaymentRunResponse> => {
+  
+  return customFetch<paymentsControllerGeneratePaymentRunResponse>(getPaymentsControllerGeneratePaymentRunUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      generatePaymentRunDto,)
+  }
+);}
+
+
+
+/**
  * Retrieve detailed information for a specific payment.
  * @summary Find Payment
  */
@@ -10620,6 +10702,43 @@ export const paymentsControllerFindOne = async (id: string,
   {      
     ...options,
     method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Permanently deletes a payment in the DRAFT state.
+ * @summary Remove Draft Payment
+ */
+export type paymentsControllerRemoveResponse200 = {
+  data: ConfirmRejectResponseDto
+  status: 200
+}
+    
+export type paymentsControllerRemoveResponseSuccess = (paymentsControllerRemoveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type paymentsControllerRemoveResponse = (paymentsControllerRemoveResponseSuccess)
+
+export const getPaymentsControllerRemoveUrl = (id: string,) => {
+
+
+  
+
+  return `/payments/${id}`
+}
+
+export const paymentsControllerRemove = async (id: string, options?: RequestInit): Promise<paymentsControllerRemoveResponse> => {
+  
+  return customFetch<paymentsControllerRemoveResponse>(getPaymentsControllerRemoveUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
     
     
   }
@@ -10891,40 +11010,6 @@ export const paymentsControllerRejectExported = async (batchPaymentActionDto: Ba
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       batchPaymentActionDto,)
-  }
-);}
-
-
-
-export type paymentsControllerGeneratePaymentRunResponse201 = {
-  data: GeneratePaymentRunResponseDto
-  status: 201
-}
-    
-export type paymentsControllerGeneratePaymentRunResponseSuccess = (paymentsControllerGeneratePaymentRunResponse201) & {
-  headers: Headers;
-};
-;
-
-export type paymentsControllerGeneratePaymentRunResponse = (paymentsControllerGeneratePaymentRunResponseSuccess)
-
-export const getPaymentsControllerGeneratePaymentRunUrl = () => {
-
-
-  
-
-  return `/payments/generate-run`
-}
-
-export const paymentsControllerGeneratePaymentRun = async (generatePaymentRunDto: GeneratePaymentRunDto, options?: RequestInit): Promise<paymentsControllerGeneratePaymentRunResponse> => {
-  
-  return customFetch<paymentsControllerGeneratePaymentRunResponse>(getPaymentsControllerGeneratePaymentRunUrl(),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      generatePaymentRunDto,)
   }
 );}
 
@@ -13339,6 +13424,80 @@ export const setupControllerExecuteElt = async (executeEltDto: ExecuteEltDto, op
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       executeEltDto,)
+  }
+);}
+
+
+
+/**
+ * Returns the ID and type of the currently running job, if any.
+ * @summary Get Active Job
+ */
+export type setupControllerGetActiveJobResponse200 = {
+  data: ActiveJobDto
+  status: 200
+}
+    
+export type setupControllerGetActiveJobResponseSuccess = (setupControllerGetActiveJobResponse200) & {
+  headers: Headers;
+};
+;
+
+export type setupControllerGetActiveJobResponse = (setupControllerGetActiveJobResponseSuccess)
+
+export const getSetupControllerGetActiveJobUrl = () => {
+
+
+  
+
+  return `/setup/active-job`
+}
+
+export const setupControllerGetActiveJob = async ( options?: RequestInit): Promise<setupControllerGetActiveJobResponse> => {
+  
+  return customFetch<setupControllerGetActiveJobResponse>(getSetupControllerGetActiveJobUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Forcibly terminates a running background job.
+ * @summary Stop Active Job
+ */
+export type setupControllerStopJobResponse200 = {
+  data: SetupControllerStopJob200
+  status: 200
+}
+    
+export type setupControllerStopJobResponseSuccess = (setupControllerStopJobResponse200) & {
+  headers: Headers;
+};
+;
+
+export type setupControllerStopJobResponse = (setupControllerStopJobResponseSuccess)
+
+export const getSetupControllerStopJobUrl = (jobId: string,) => {
+
+
+  
+
+  return `/setup/active-job/${jobId}`
+}
+
+export const setupControllerStopJob = async (jobId: string, options?: RequestInit): Promise<setupControllerStopJobResponse> => {
+  
+  return customFetch<setupControllerStopJobResponse>(getSetupControllerStopJobUrl(jobId),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
   }
 );}
 

@@ -4,8 +4,7 @@
 import '../test/setup-env';
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../src/app.module';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 async function main() {
   const mod = await Test.createTestingModule({

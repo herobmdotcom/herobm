@@ -38,7 +38,7 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
     <div id="allocations-section" className="card">
       <div className="flex justify-between items-center mb-4">
         <h3 className="section-heading">
-          {/* eslint-disable-next-line i18next/no-literal-string */}
+          {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
           <span className="material-symbols-outlined">link</span>
           {t('allocationsSection.title')}
         </h3>

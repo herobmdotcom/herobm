@@ -47,28 +47,28 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const leaves: any[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const walk = (nodes: any[]) => {
+    interface GLAccountNode {
+      glAccountId: string;
+      accountCode: string;
+      isGroup: boolean;
+      children?: GLAccountNode[];
+    }
+
+    const leaves: GLAccountNode[] = [];
+    const walk = (nodes: GLAccountNode[]) => {
       for (const n of nodes) {
         if (!n.isGroup) leaves.push(n);
         if (n.children) walk(n.children);
       }
     };
-    walk(accRes.body);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    walk(accRes.body as GLAccountNode[]);
+
     arAccountId =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      leaves.find((a: any) => a.accountCode === '1200')?.glAccountId ||
-      leaves[0].glAccountId;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      leaves.find((a: GLAccountNode) => a.accountCode === '1200')
+        ?.glAccountId || leaves[0].glAccountId;
     salesAccountId =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      leaves.find((a: any) => a.accountCode === '4100')?.glAccountId ||
-      leaves[1].glAccountId;
+      leaves.find((a: GLAccountNode) => a.accountCode === '4100')
+        ?.glAccountId || leaves[1].glAccountId;
   }, 120_000);
 
   afterAll(async () => {

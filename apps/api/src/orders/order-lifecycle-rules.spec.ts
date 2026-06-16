@@ -62,12 +62,11 @@ describe('Order Lifecycle Rules', () => {
     jest.clearAllMocks();
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async function seedOrder(state: any) {
+  async function seedOrder(state: string) {
     await pg.db.insert(salesOrders).values({
       salesOrderId: ORDER_ID,
       orderNumber: 'ORD-001',
-      stateCode: state,
+      stateCode: state as any,
       fulfillmentLocationId: LOCATION_ID,
       currencyCode: 'AUD',
     });

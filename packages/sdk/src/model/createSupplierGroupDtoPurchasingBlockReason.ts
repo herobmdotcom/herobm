@@ -9,7 +9,7 @@
 export type CreateSupplierGroupDtoPurchasingBlockReason = typeof CreateSupplierGroupDtoPurchasingBlockReason[keyof typeof CreateSupplierGroupDtoPurchasingBlockReason];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+// eslint-disable-next-line @typescript-eslint/no-redeclare -- External API integration boundaries where exact types are unknown.
 export const CreateSupplierGroupDtoPurchasingBlockReason = {
   compliance_breach: 'compliance_breach',
   quality_issues: 'quality_issues',

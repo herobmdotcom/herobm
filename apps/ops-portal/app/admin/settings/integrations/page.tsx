@@ -16,8 +16,7 @@ interface ProviderConfig {
   name: string;
   type?: 'enrichment' | 'tax_engine';
   supportedCountries?: string[] | 'global';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  schema: Record<string, any>;
+  schema: Record<string, unknown>;
 }
 
 type TaxRule = { id: string; country: string; provider: string };
@@ -34,8 +33,7 @@ export default function IntegrationsSettingsPage() {
   const [providers, setProviders] = useState<ProviderConfig[]>([]);
   
   const [expandedProvider, setExpandedProvider] = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [configData, setConfigData] = useState<Record<string, any>>({});
+  const [configData, setConfigData] = useState<Record<string, unknown>>({});
   const [saving, setSaving] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(false);
 
@@ -62,15 +60,14 @@ export default function IntegrationsSettingsPage() {
       ]);
       setProviders((provRes.data as unknown as ProviderConfig[]) || []);
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const config = configRes.data as any;
+      const config = configRes.data;
       setAppConfig(config);
       
-      const taxMappingRaw = (config.taxProviderMappings as Record<string, string>) || {};
+      const taxMappingRaw = (config?.taxProviderMappings as unknown as Record<string, string>) || {};
       const taxRulesArr = Object.entries(taxMappingRaw).map(([country, provider]) => ({ id: country, country, provider }));
       setTaxRules(taxRulesArr);
 
-      const enrichmentMappingRaw = (config.enrichmentProviderMappings as Record<string, Record<string, string>>) || {};
+      const enrichmentMappingRaw = (config?.enrichmentProviderMappings as unknown as Record<string, Record<string, string>>) || {};
       const enrichmentRulesArr: EnrichmentRule[] = [];
       Object.entries(enrichmentMappingRaw).forEach(([field, countryMap]) => {
         Object.entries(countryMap).forEach(([country, provider]) => {
@@ -98,10 +95,8 @@ export default function IntegrationsSettingsPage() {
     });
 
     return {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      taxProviderMappings: newTaxMappings as any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      enrichmentProviderMappings: newEnrichmentMappings as any
+      taxProviderMappings: newTaxMappings as unknown as api.AppConfigResponseDtoTaxProviderMappings,
+      enrichmentProviderMappings: newEnrichmentMappings as unknown as api.AppConfigResponseDtoEnrichmentProviderMappings
     };
   };
 
@@ -175,11 +170,10 @@ export default function IntegrationsSettingsPage() {
     try {
       setLoadingConfig(true);
       const res = await api.enrichmentControllerGetConfig({ provider: provider.name });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = (res.data as Record<string, any>) || {};
+      const data = (res.data as Record<string, unknown>) || {};
       setConfigData(data);
       if (data.testPayload) {
-        setTestPayload(typeof data.testPayload === 'object' ? JSON.stringify(data.testPayload, null, 2) : data.testPayload);
+        setTestPayload(typeof data.testPayload === 'object' ? JSON.stringify(data.testPayload, null, 2) : (data.testPayload as string));
       } else if ((provider.schema?.properties as Record<string, Record<string, unknown>>)?.testPayload?.default) {
         const props = provider.schema.properties as Record<string, Record<string, unknown>>;
         setTestPayload((props?.testPayload?.default as string) || '');
@@ -231,21 +225,18 @@ export default function IntegrationsSettingsPage() {
       if (isJson && typeof payload === 'object') {
         const res = await api.enrichmentControllerTestLookupPost({ payload }, { provider: providerName });
         // The API returns 200/201 but the payload might indicate a provider error via isValid
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const isSuccess = res.data?.isValid !== false && !(res.data?.data as any)?.error;
+        const isSuccess = res.data?.isValid !== false && !(res.data?.data as { error?: unknown })?.error;
         setTestResult({ success: isSuccess, data: res.data });
       } else {
         const res = await api.enrichmentControllerTestLookup({ provider: providerName, query: testPayload });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const isSuccess = res.data?.isValid !== false && !(res.data?.data as any)?.error;
+        const isSuccess = res.data?.isValid !== false && !(res.data?.data as { error?: unknown })?.error;
         setTestResult({ success: isSuccess, data: res.data });
       }
       // Auto-save the test payload to the DB if we're testing
       if (testPayload.trim()) {
          try {
            const currentConfigRes = await api.enrichmentControllerGetConfig({ provider: providerName });
-           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-           const currentData = (currentConfigRes.data as Record<string, any>) || {};
+           const currentData = (currentConfigRes.data as Record<string, unknown>) || {};
            await api.enrichmentControllerUpdateConfig(
              { ...currentData, testPayload },
              { provider: providerName }
@@ -285,9 +276,9 @@ export default function IntegrationsSettingsPage() {
               <InlineSettingsTable<TaxRule>
                 title={
                   <h3 className="section-heading !mb-0 flex items-center gap-2">
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                     <span className="material-symbols-outlined">account_balance</span>
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                     <span>Tax Engines</span>
                   </h3>
                 }
@@ -335,9 +326,9 @@ export default function IntegrationsSettingsPage() {
               <InlineSettingsTable<EnrichmentRule>
                 title={
                   <h3 className="section-heading !mb-0 flex items-center gap-2">
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                     <span className="material-symbols-outlined">data_exploration</span>
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                     <span>Data Enrichment</span>
                   </h3>
                 }
@@ -395,7 +386,7 @@ export default function IntegrationsSettingsPage() {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined">extension</span>
               {tInt('availableIntegrations')}
             </h3>
@@ -417,7 +408,7 @@ export default function IntegrationsSettingsPage() {
                       onClick={() => toggleProvider(p)}
                     >
                       <div className="flex items-center gap-4">
-                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                         <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 text-[var(--accent)] ${isExpanded ? 'rotate-90' : ''}`}>
                           chevron_right
                         </span>
@@ -454,8 +445,7 @@ export default function IntegrationsSettingsPage() {
                                   const displaySchema = { ...p.schema };
                                   if (displaySchema.properties) {
                                     displaySchema.properties = { ...displaySchema.properties };
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                    delete (displaySchema.properties as any).testPayload;
+                                    delete (displaySchema.properties as Record<string, unknown>).testPayload;
                                   }
                                   return (
                                     <DynamicForm

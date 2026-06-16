@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TelemetryController } from './telemetry.controller';
 import { Logger, BadRequestException } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ClientErrorDto } from './dto';
 
 describe('TelemetryController', () => {
   let controller: TelemetryController;
@@ -55,16 +56,14 @@ describe('TelemetryController', () => {
   });
 
   it('should throw BadRequestException when message is missing', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(() => controller.reportClientError({} as any)).toThrow(
-      BadRequestException,
-    );
+    expect(() =>
+      controller.reportClientError({} as unknown as ClientErrorDto),
+    ).toThrow(BadRequestException);
   });
 
   it('should throw BadRequestException when body is null', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(() => controller.reportClientError(null as any)).toThrow(
-      BadRequestException,
-    );
+    expect(() =>
+      controller.reportClientError(null as unknown as ClientErrorDto),
+    ).toThrow(BadRequestException);
   });
 });

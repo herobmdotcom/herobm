@@ -58,7 +58,7 @@ export function useOrder(id: string) {
     useEffect(() => {
         api.inventoryControllerFindAllLocations()
             .then((res) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                 const payload = (res as any).data;
                 const arr = Array.isArray(payload) ? payload : (payload?.data || []);
                 setLocations(arr as api.InventoryLocationResponseDto[]);
@@ -106,14 +106,14 @@ export function useOrder(id: string) {
     const [invoices, setInvoices] = useState<SalesInvoice[]>([]);
     const [invoicing, setInvoicing] = useState(false);
     const [showCreateInvoice, setShowCreateInvoice] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const [pickingSummary, setPickingSummary] = useState<any | null>(null);
     const [newInvoiceNotes, setNewInvoiceNotes] = useState('');
     const [newInvoiceLines, setNewInvoiceLines] = useState<NewInvoiceLine[]>([]);
 
     /* ── Data loaders ────────────────────────────────────────────── */
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const loadOrder = async (autoTransitions?: any[], showSpinner = true) => {
         if (showSpinner) setLoading(true);
         try {
@@ -145,10 +145,9 @@ export function useOrder(id: string) {
 
             if (orderData?.customerId) {
                 api.accountsControllerFindOne(orderData.customerId)
-                    .then((res: unknown) => {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const customer = (res as any).data;
-                        setCustomerDeliveryAddresses(customer.deliveryAddresses || []);
+                    .then((res) => {
+                        const customer = res.data;
+                        setCustomerDeliveryAddresses((customer.deliveryAddresses as unknown as api.DeliveryAddressResponseDto[]) || []);
                         setCustomerCountry(customer.billingAddressCountry || undefined);
                     })
                     .catch(() => {
@@ -224,8 +223,7 @@ export function useOrder(id: string) {
         setInventoryLoading(true);
         api.inventoryControllerFindByProductIdsBulk({ productIds })
             .then((res: unknown) => setInventoryData(((res as { data: unknown[] }).data) as InventoryLevel[]))
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .catch((err: any) => reportError(err, 'OrderDetailPage'))
+            .catch((err: unknown) => reportError(err, 'OrderDetailPage'))
             .finally(() => setInventoryLoading(false));
     }, [activeTab, order]);
 
@@ -257,7 +255,7 @@ export function useOrder(id: string) {
 
     /* ── Mutations ───────────────────────────────────────────────── */
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const saveHeader = async (overrides?: any) => {
         if (!headerDirty && !overrides) return;
         setSaving(true);
@@ -296,7 +294,7 @@ export function useOrder(id: string) {
             toast(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as Parameters<typeof tCommon>[0]) }), { icon: '🔄' });
             await loadOrder(undefined, false);
         } catch (err: unknown) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             const anyErr = err as any;
             const isApiError = anyErr && (anyErr.status === 409 || anyErr.name === 'ApiError');
             if (isApiError && anyErr.data?.message === 'INVENTORY_GAP') {
@@ -390,7 +388,7 @@ export function useOrder(id: string) {
         }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const updateLineFields = async (lineId: string, payload: Record<string, any>) => {
         setSaving(true);
         try {
@@ -417,7 +415,7 @@ export function useOrder(id: string) {
         }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const addLineFromProduct = async (p: Record<string, any>) => {
         if (!order) return;
         const exists = order.lines.some((l) => l.productId === p.productId);

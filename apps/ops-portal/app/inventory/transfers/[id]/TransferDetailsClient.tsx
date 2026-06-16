@@ -99,7 +99,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                   onClick={handleCancelShipment}
                   disabled={saving}
                 >
-                  {/* eslint-disable-next-line no-restricted-syntax */}
+                  {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                   <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>{'close'}</span>
                   {tTransfers('cancelShipment')}
                 </button>
@@ -110,7 +110,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                   onClick={handleCancelOrder}
                   disabled={saving}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                   <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
                   {tCommon('cancel')}
                 </button>
@@ -180,7 +180,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined">inventory_2</span>
               {tTransfers('lineItems')}
             </h3>

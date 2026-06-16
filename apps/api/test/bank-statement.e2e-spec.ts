@@ -96,10 +96,11 @@ describe('BankStatementController (e2e)', () => {
 
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThanOrEqual(2);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(res.body.some((l: any) => l.description === 'Test Line 1')).toBe(
-      true,
-    );
+    expect(
+      res.body.some(
+        (l: { description: string }) => l.description === 'Test Line 1',
+      ),
+    ).toBe(true);
   });
 
   it('should match multiple lines perfectly', async () => {
@@ -111,12 +112,10 @@ describe('BankStatementController (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     const bankLine1 = linesRes.body.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (l: any) => l.description === 'Test Line 1',
+      (l: { description: string }) => l.description === 'Test Line 1',
     );
     const bankLine2 = linesRes.body.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (l: any) => l.description === 'Test Line 2',
+      (l: { description: string }) => l.description === 'Test Line 2',
     );
 
     expect(bankLine1).toBeDefined();

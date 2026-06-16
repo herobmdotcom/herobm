@@ -88,8 +88,8 @@ describe('InventoryService', () => {
               .fn()
               .mockImplementation(async (pid, lines) => {
                 return lines.reduce(
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  (acc: number, l: any) => acc + (l.quantity || 0),
+                  (acc: number, l: { quantity?: number }) =>
+                    acc + (l.quantity || 0),
                   0,
                 );
               }),
@@ -125,8 +125,12 @@ describe('InventoryService', () => {
       };
 
       await pg.db.transaction(async (tx) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await service.recordInventoryMovement(tx as any, params);
+        await service.recordInventoryMovement(
+          tx as unknown as Parameters<
+            typeof service.recordInventoryMovement
+          >[0],
+          params,
+        );
       });
 
       // Verify header
@@ -172,8 +176,12 @@ describe('InventoryService', () => {
       };
 
       await pg.db.transaction(async (tx) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await service.recordInventoryMovement(tx as any, params);
+        await service.recordInventoryMovement(
+          tx as unknown as Parameters<
+            typeof service.recordInventoryMovement
+          >[0],
+          params,
+        );
       });
 
       const bins_data = await pg.db
@@ -213,8 +221,10 @@ describe('InventoryService', () => {
         reason: 'Consolidation',
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await service.moveStock(params as any, 'admin');
+      await service.moveStock(
+        params as unknown as Parameters<typeof service.moveStock>[0],
+        'admin',
+      );
 
       // Verify emitEvent called at least twice (one for ledger, one for warehouse)
       expect(emitEvent).toHaveBeenCalledWith(
@@ -331,8 +341,7 @@ describe('InventoryService', () => {
       const result = await service.findAllLocations();
       expect(result.length).toBeGreaterThan(0);
       for (const loc of result) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        expect((loc as any).availableQty).toBeUndefined();
+        expect((loc as { availableQty?: number }).availableQty).toBeUndefined();
       }
     });
 
@@ -360,19 +369,21 @@ describe('InventoryService', () => {
       });
 
       const result = await service.findAllLocations(PRODUCT_ID);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const main = (result as any[]).find((l) => l.locationId === LOCATION_ID);
+      const main = (
+        result as { locationId: string; availableQty?: number }[]
+      ).find((l) => l.locationId === LOCATION_ID);
       expect(main).toBeDefined();
-      expect(main.availableQty).toBe(42);
+      expect(main!.availableQty).toBe(42);
     });
 
     it('returns 0 availableQty for locations with no stock of the product', async () => {
       const result = await service.findAllLocations(PRODUCT_ID);
       // The seeded LOCATION_ID has nothing in bin_contents for this product
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const main = (result as any[]).find((l) => l.locationId === LOCATION_ID);
+      const main = (
+        result as { locationId: string; availableQty?: number }[]
+      ).find((l) => l.locationId === LOCATION_ID);
       expect(main).toBeDefined();
-      expect(main.availableQty).toBe(0);
+      expect(main!.availableQty).toBe(0);
     });
   });
 });

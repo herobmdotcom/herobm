@@ -5,6 +5,7 @@ import i18nextPlugin from 'eslint-plugin-i18next';
 import reactPlugin from 'eslint-plugin-react';
 import jsoncPlugin from 'eslint-plugin-jsonc';
 import * as jsoncParser from 'jsonc-eslint-parser';
+import eslintComments from '@eslint-community/eslint-plugin-eslint-comments';
 
 export default tseslint.config(
   {
@@ -43,13 +44,19 @@ export default tseslint.config(
     plugins: {
       i18next: i18nextPlugin,
       react: reactPlugin,
+      '@eslint-community/eslint-comments': eslintComments
     },
     rules: {
+      '@eslint-community/eslint-comments/require-description': ['error', { ignore: ['eslint-enable'] }],
       'i18next/no-literal-string': ['error', {
         markupOnly: true,
         ignoreAttribute: ['aria-hidden'],
-        // Ignore strings that consist entirely of emoji / variation selectors
-        ignore: ['^[\\p{Emoji}\\p{Emoji_Component}\\uFE0E\\uFE0F\\u200D\\s]+$'],
+        // Ignore strings that consist entirely of emoji / variation selectors or 'use client' directive
+        ignore: [
+          '^[\\p{Emoji}\\p{Emoji_Component}\\uFE0E\\uFE0F\\u200D\\s]+$',
+          'use client',
+          '^([a-z]+_[a-z_]+|info|group|delete|edit|phone|smartphone|mail|payments|print|check)$'
+        ],
       }],
       '@typescript-eslint/no-explicit-any': 'error',
       'no-restricted-imports': ['error', {
@@ -104,6 +111,13 @@ export default tseslint.config(
           message: "ADV-072: Do not use 'defaultValue' in translation calls. Systematically add all strings to en.json."
         }
       ]
+    },
+  },
+  {
+    files: ['**/*.spec.ts', '**/*.spec.tsx', '**/*.test.ts', '**/*.test.tsx', 'e2e/**'],
+    rules: {
+      'i18next/no-literal-string': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 );

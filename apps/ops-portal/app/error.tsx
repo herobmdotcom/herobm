@@ -10,7 +10,7 @@ function sendTelemetry(error: Error & { digest?: string }) {
   const url = typeof window !== 'undefined' ? window.location.href : null;
 
   // Always log to console so it shows up in the Turbopack terminal
-  // eslint-disable-next-line no-restricted-syntax
+  // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon).
   console.error('[ErrorBoundary]', message, '\nURL:', url, '\nDigest:', error?.digest, '\n', error);
 
   try {

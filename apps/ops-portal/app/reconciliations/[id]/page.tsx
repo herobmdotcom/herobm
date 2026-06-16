@@ -3,7 +3,7 @@
 import React, { use, useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import DataGrid from '@/components/DataGrid';
-import type { ColDef } from 'ag-grid-community';
+import type { ColDef, ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
 import QuickAdjustmentModal from './QuickAdjustmentModal';
 import SplitEntryModal from './SplitEntryModal';
 import MatchDetailsModal from './MatchDetailsModal';
@@ -17,8 +17,28 @@ import { useTranslations } from 'next-intl';
 import BankMatchingView from './BankMatchingView';
 import { getErrorMessage } from '@herobm/shared';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const ToggleCell = (p: any) => {
+interface UnreconciledLine {
+  journalLineId: string;
+  entryDate: string;
+  debit: number | string;
+  credit: number | string;
+  memo: string;
+  entryMemo?: string;
+  entryNumber?: string;
+  partyName?: string;
+  partyId?: string;
+  isCleared: boolean;
+}
+
+interface ToggleCellParams extends ICellRendererParams {
+  data: UnreconciledLine;
+  context: {
+    handleToggle: (lineId: string, isCleared: boolean) => void;
+    isPosted: boolean;
+  };
+}
+
+const ToggleCell = (p: ToggleCellParams) => {
   const t = useTranslations('gl.reconciliations');
   const data = p.data;
   const context = p.context;
@@ -71,8 +91,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
   const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [previewData, setPreviewData] = useState<api.AutoMatchResponseDto | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [selectedRow, setSelectedRow] = useState<Record<string, any> | null>(null);
+  const [selectedRow, setSelectedRow] = useState<UnreconciledLine | null>(null);
 
   const fetchDetails = useCallback(async () => {
     try {
@@ -178,8 +197,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
         field: 'partyName', 
         headerName: t('columns.party'), 
         width: 150,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        valueGetter: (p: any) => p.data?.partyName || p.data?.partyId || ''
+        valueGetter: (p: ValueGetterParams<UnreconciledLine>) => p.data?.partyName || p.data?.partyId || ''
       },
       { field: 'memo', headerName: t('columns.memo'), flex: 1 },
       { 
@@ -206,7 +224,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
   }, [reconciliation?.status, t]);
 
   if (loading) return <div className="p-4">{t('loading')}</div>;
-  // eslint-disable-next-line i18next/no-literal-string
+  // eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon).
   if (fetchError) return <div className="p-4 text-red-500">Error: {fetchError}</div>;
   if (!reconciliation) return <div className="p-4">{t('notFound')}</div>;
 
@@ -250,8 +268,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
                         reconciliationId: reconciliation.reconciliationId,
                         dryRun: true,
                       });
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      const data = res.data as any;
+                      const data = res.data;
                       if (data.autoMatchedCount > 0 || data.smartMatchedCount > 0) {
                         setPreviewData(data);
                         setPreviewModalOpen(true);
@@ -318,7 +335,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
           reconciliation={reconciliation} 
           onUpdate={() => { fetchDetails(); setRefreshKey(k => k + 1); }} 
           onQuickAdjustment={() => setAdjustmentModalOpen(true)}
-          onSplitEntry={(line) => { setSelectedRow(line); setSplitModalOpen(true); }}
+          onSplitEntry={(line) => { setSelectedRow(line as unknown as UnreconciledLine); setSplitModalOpen(true); }}
           onImportClick={() => setIsImportModalOpen(true)}
         />
       </div>

@@ -6,7 +6,7 @@
       "localStorage": [
         {
           "name": "herobm_token",
-          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3NDFhODU5MS02MWU4LTRhZGYtYWYyNi02OTVlYTY4OWI1ZGYiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzgxMjc3MDk5LCJleHAiOjE3ODEzMDU4OTl9.ZprIRMmtx0hC9HVdLtqzEFA_gWTk5ANiP7feyGiOUbY"
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYzdlMDA5MS03NTRmLTRkYWItYTQ0MC02ZTY3OTU2NTljMDQiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzgxNTk5NTYyLCJleHAiOjE3ODE2MjgzNjJ9.F7XiNTLd4W_B0QQplr4SXVXy1DtSU9Qi2FtDAG27KQQ"
         },
         {
           "name": "herobm_role",

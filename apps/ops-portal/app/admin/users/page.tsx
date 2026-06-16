@@ -132,11 +132,10 @@ export default function UsersPage() {
 
   const save = async () => {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const payload: any = {
-        role: form.role,
-        displayName: form.displayName || null,
-        email: form.email || null,
+      const payload: Partial<api.CreateUserDto & api.UpdateUserDto> = {
+        role: form.role as api.CreateUserDtoRole,
+        displayName: form.displayName || undefined,
+        email: form.email || undefined,
       };
       if (form.password) payload.password = form.password;
 
@@ -146,10 +145,10 @@ export default function UsersPage() {
           return;
         }
         payload.username = form.username;
-        await api.usersControllerCreate(payload);
+        await api.usersControllerCreate(payload as api.CreateUserDto);
         toast.success(t('toasts.created'));
       } else if (editingId) {
-        await api.usersControllerUpdate(editingId, payload);
+        await api.usersControllerUpdate(editingId, payload as api.UpdateUserDto);
         toast.success(t('toasts.updated'));
       }
       cancel();
@@ -184,8 +183,7 @@ export default function UsersPage() {
 
   const isSelf = (userId: string) => currentUserId === userId;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const renderRow = (isEdit: boolean, data: any, key: string) => (
+  const renderRow = (isEdit: boolean, data: User, key: string) => (
     <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
       {/* Username */}
       <td>
@@ -347,7 +345,7 @@ export default function UsersPage() {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined">group</span>
               {t('title')}
               <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
@@ -378,7 +376,7 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {creating && renderRow(true, {}, 'new-user')}
+                {creating && renderRow(true, {} as User, 'new-user')}
                 {users.map(user =>
                   editingId === user.userId
                     ? renderRow(true, user, user.userId)

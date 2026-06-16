@@ -8,7 +8,7 @@ import { PURCHASE_INVOICE_STATE } from '@herobm/shared';
 export interface PurchaseInvoiceLifecycleTrigger {
   entity: 'payment';
   id: string;
-  action: 'allocated' | 'unallocated';
+  action: 'allocated' | 'unallocated' | 'cancelled';
 }
 
 export interface AutoTransitionResult {
@@ -81,7 +81,7 @@ export const autoTransitionPurchaseInvoiceBasedOnOutstandingAmount: PurchaseInvo
       // 4. Execute transition
       await db
         .update(purchaseInvoices)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         .set({ stateCode: targetState as any, modifiedOn: new Date() })
         .where(eq(purchaseInvoices.invoiceId, invoiceId));
 

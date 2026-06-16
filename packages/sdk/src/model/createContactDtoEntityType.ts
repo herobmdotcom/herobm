@@ -9,7 +9,7 @@
 export type CreateContactDtoEntityType = typeof CreateContactDtoEntityType[keyof typeof CreateContactDtoEntityType];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+// eslint-disable-next-line @typescript-eslint/no-redeclare -- External API integration boundaries where exact types are unknown.
 export const CreateContactDtoEntityType = {
   customer: 'customer',
 } as const;

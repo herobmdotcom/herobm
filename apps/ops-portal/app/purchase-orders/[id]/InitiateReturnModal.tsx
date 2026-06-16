@@ -16,7 +16,7 @@ export default function InitiateReturnModal({
   isOpen: boolean;
   onClose: () => void;
   orderId: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   orderLines: any[];
   onSuccess: () => void;
 }) {

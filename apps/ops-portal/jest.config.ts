@@ -17,6 +17,5 @@ const config: Config = {
   testPathIgnorePatterns: ['<rootDir>/e2e/'],
 };
 
-// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
 export default createJestConfig(config as any);

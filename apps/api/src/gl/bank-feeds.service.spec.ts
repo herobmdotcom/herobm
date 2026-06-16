@@ -5,9 +5,9 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 
 describe('BankFeedsService', () => {
   let service: BankFeedsService;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // FIXME: Replace `any` with proper mock types (e.g. `jest.MockedObjectDeep`)
   let dbMock: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // FIXME: Replace `any` with proper mock types
   let glServiceMock: any;
 
   beforeEach(async () => {
@@ -71,7 +71,7 @@ describe('BankFeedsService', () => {
       dbMock.from.mockReturnThis();
       dbMock.where.mockReturnThis();
       dbMock.orderBy.mockReturnThis();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // FIXME: Type callback parameters properly
       dbMock.transaction.mockImplementation(async (cb: any) => {
         return cb(dbMock);
       });
@@ -282,23 +282,23 @@ describe('BankFeedsService', () => {
       dbMock.where.mockReturnThis();
       dbMock.orderBy.mockReturnThis();
       dbMock.limit.mockReturnThis();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // FIXME: Type callback parameters properly
       dbMock.transaction.mockImplementation(async (cb: any) => {
         return cb(dbMock);
       });
     });
 
     const setupMocks = (
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // FIXME: Use strict typings for test setup arrays
       rules: any[],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // FIXME: Use strict typings for test setup arrays
       lines: any[],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // FIXME: Use strict typings for test setup objects
       settings: any = { bankMatchDateToleranceDays: 7 },
     ) => {
       jest
         .spyOn(service, 'getReconciliationRules')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // FIXME: Replace `any` cast with proper type matching the resolved value
         .mockResolvedValue(rules as any);
       dbMock.limit.mockResolvedValueOnce([settings]);
       dbMock.where.mockResolvedValueOnce([{ code: '1000-BANK' }]);

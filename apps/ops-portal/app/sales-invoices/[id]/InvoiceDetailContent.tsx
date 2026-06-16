@@ -67,7 +67,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
       <div className="flex flex-col gap-3">
         <div className="card">
           <h3 className="section-heading flex items-center gap-2 mb-4">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined shrink-0">receipt_long</span>
             <span>{t('invoiceDetails')}</span>
           </h3>
@@ -134,7 +134,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading flex items-center gap-2">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined shrink-0">list</span>
               <span>{t('lineItems')}</span>
             </h3>
@@ -266,7 +266,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading flex items-center gap-2">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined shrink-0">payments</span>
               <span>{t('paymentAllocations')}</span>
             </h3>

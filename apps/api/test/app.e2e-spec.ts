@@ -22,8 +22,7 @@ import {
   products,
 } from '../src/drizzle/herobm-core-schema';
 import { SALES_ORDER_STATE } from '@herobm/shared';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('API E2E — Data Pipeline Verification', () => {
   let app: INestApplication;
@@ -125,13 +124,13 @@ describe('API E2E — Data Pipeline Verification', () => {
             })
             .onConflictDoNothing();
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const error = err as Record<string, unknown>;
         console.error(
           'FAILED TO INSERT E2E MOCK DATA:',
-          err.message,
-          err.name,
-          err.code,
+          error.message,
+          error.name,
+          error.code,
           err,
         );
       }
@@ -164,7 +163,7 @@ describe('API E2E — Data Pipeline Verification', () => {
     it('POST /api/auth/login — invalid password returns 401', async () => {
       await request(app.getHttpServer())
         .post('/api/auth/login')
-        // eslint-disable-next-line no-restricted-syntax
+        // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Test credentials).
         .send({ username: 'admin', password: 'wrongpassword' }) // TEST_CREDENTIAL
         .expect(401);
     });
@@ -172,7 +171,7 @@ describe('API E2E — Data Pipeline Verification', () => {
     it('POST /api/auth/login — unknown user returns 401', async () => {
       await request(app.getHttpServer())
         .post('/api/auth/login')
-        // eslint-disable-next-line no-restricted-syntax
+        // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Test credentials).
         .send({ username: 'nobody', password: 'REDACTED' }) // TEST_CREDENTIAL
         .expect(401);
     });
@@ -488,19 +487,20 @@ describe('API E2E — Data Pipeline Verification', () => {
       );
       const systemBins = Array.isArray(systemBinsRaw)
         ? systemBinsRaw
-        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (systemBinsRaw as any).rows || [];
+        : (systemBinsRaw as { rows?: unknown[] }).rows || [];
 
       // Verify that the system-defined staging bins are present
       expect(systemBins.length).toBeGreaterThanOrEqual(2);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(systemBins.some((b: any) => b.bin_number === 'SHIPPING')).toBe(
-        true,
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(systemBins.some((b: any) => b.bin_number === 'RECEIVING')).toBe(
-        true,
-      );
+      expect(
+        (systemBins as { bin_number?: string }[]).some(
+          (b) => b.bin_number === 'SHIPPING',
+        ),
+      ).toBe(true);
+      expect(
+        (systemBins as { bin_number?: string }[]).some(
+          (b) => b.bin_number === 'RECEIVING',
+        ),
+      ).toBe(true);
     });
 
     it('verifies that the system custom line magic product exists', async () => {
@@ -510,8 +510,8 @@ describe('API E2E — Data Pipeline Verification', () => {
       );
       const magicProducts = Array.isArray(magicProductsRaw)
         ? magicProductsRaw
-        : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (magicProductsRaw as any).rows || [];
+        : (magicProductsRaw as { rows?: { product_number: string }[] }).rows ||
+          [];
 
       expect(magicProducts.length).toBe(1);
       expect(magicProducts[0].product_number).toBe('SYSTEM-CUSTOM-LINE');

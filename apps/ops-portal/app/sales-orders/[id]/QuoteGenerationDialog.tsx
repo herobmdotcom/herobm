@@ -47,8 +47,7 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
     try {
       const res = await api.macrosControllerFindAll({ macroType: 'text_template' } );
       const data = res.data;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const textMacros = data.filter((m: any) => m.macroType === 'text_template');
+      const textMacros = data.filter((m: Macro) => m.macroType === 'text_template') as Macro[];
       setMacros(textMacros);
     } catch (err: unknown) {
       setError(getErrorMessage(err) || 'Failed to load macros');
@@ -87,7 +86,7 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
           <h2 className="text-xl font-bold text-gray-900">{t('generateQuoteTitle')}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
@@ -149,7 +148,7 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
             >
               {generating && (
                 <>
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                   <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
                 </>
               )}

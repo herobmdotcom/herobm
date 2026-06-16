@@ -18,6 +18,16 @@ import { AppConfigService } from './app-config.service';
 import { AppConfigResponseDto, UpdateAppConfigDto } from './dto';
 import { EncryptionService } from '../common/encryption.service';
 
+interface AppConfigResponse {
+  smtpPass?: string;
+  smtpPassEncrypted?: string | null;
+  [key: string]: unknown;
+}
+
+interface UpdatePayload extends Partial<UpdateAppConfigDto> {
+  smtpPassEncrypted?: string;
+}
+
 @Controller('settings/app')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
@@ -36,8 +46,7 @@ export class AppConfigController {
     const settings = this.appConfigService.getAppSettingsRaw();
     if (!settings) return {};
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response: any = { ...settings };
+    const response = { ...settings } as AppConfigResponse;
     if (response.smtpPassEncrypted) {
       response.smtpPass = '********';
     }
@@ -56,8 +65,7 @@ export class AppConfigController {
     dto: UpdateAppConfigDto,
     @AuthUser() user: JwtUser,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updatePayload: any = { ...dto };
+    const updatePayload: UpdatePayload = { ...dto };
     if (updatePayload.smtpPass) {
       updatePayload.smtpPassEncrypted = this.encryptionService.encrypt(
         updatePayload.smtpPass,
@@ -69,8 +77,7 @@ export class AppConfigController {
       updatePayload,
       user?.userId,
     );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response: any = { ...updated };
+    const response = { ...updated } as AppConfigResponse;
     if (response.smtpPassEncrypted) {
       response.smtpPass = '********';
     }

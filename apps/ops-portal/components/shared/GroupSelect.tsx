@@ -34,18 +34,18 @@ export default function GroupSelect({
     let active = true;
     setLoading(true);
     
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const fetchMap: Record<string, any> = {
       customer: api.accountGroupsControllerFindAll,
       product: api.productGroupsControllerFindAll,
       supplier: api.supplierGroupsControllerFindAll,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     fetchMap[type]().then((data: any) => {
         if (active) setGroups(data.data);
       })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       .catch((err: any) => reportError(`Failed to fetch ${type} groups:`, err))
       .finally(() => {
         if (active) setLoading(false);

@@ -1,4 +1,4 @@
-/* eslint-disable i18next/no-literal-string, no-restricted-syntax */
+/* eslint-disable i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -13,15 +13,28 @@ interface Option {
   label: string;
 }
 
-export interface FinancialDefaultsSlideOverProps {
+export type FinancialDefaultsGroupData = {
+  stateCode?: string | null;
+  isOnCreditHold?: boolean | null;
+  defaultArAccountId?: string | null;
+  earlyPaymentDiscount?: number | string | null;
+  earlyPaymentDiscountDays?: number | string | null;
+  defaultApAccountId?: string | null;
+  defaultRevenueAccountId?: string | null;
+  defaultExpenseAccountId?: string | null;
+  defaultCostCenterId?: string | null;
+  defaultActivityId?: string | null;
+  taxPositionId?: string | null;
+  [key: string]: unknown;
+};
+
+export interface FinancialDefaultsSlideOverProps<T extends FinancialDefaultsGroupData = FinancialDefaultsGroupData> {
   isOpen: boolean;
   onClose: () => void;
   groupType: GroupType;
   ownerLabel: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: any; // the current group row data
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onSave: (data: any) => Promise<void>;
+  data: T | null; // the current group row data
+  onSave: (data: T) => Promise<void>;
   
   glAccountOptions: Option[];
   costCenterOptions: Option[];
@@ -29,7 +42,7 @@ export interface FinancialDefaultsSlideOverProps {
   taxPositionOptions?: Option[];
 }
 
-export default function FinancialDefaultsSlideOver({
+export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGroupData = FinancialDefaultsGroupData>({
   isOpen,
   onClose,
   groupType,
@@ -40,12 +53,11 @@ export default function FinancialDefaultsSlideOver({
   costCenterOptions,
   activityOptions,
   taxPositionOptions = []
-}: FinancialDefaultsSlideOverProps) {
+}: FinancialDefaultsSlideOverProps<T>) {
   const tc = useTranslations('admin.common');
   const tGlobal = useTranslations('common');
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [formData, setFormData] = useState<any>({});
+  const [formData, setFormData] = useState<Partial<T>>({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -54,15 +66,14 @@ export default function FinancialDefaultsSlideOver({
     }
   }, [isOpen, data]);
 
-  const handleChange = (field: string, value: string | boolean | number | null) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setFormData((prev: any) => ({ ...prev, [field]: value }));
+  const handleChange = (field: keyof FinancialDefaultsGroupData, value: string | boolean | number | null) => {
+    setFormData((prev) => ({ ...prev, [field]: value } as Partial<T>));
   };
 
   const handleSave = async () => {
     try {
       setSaving(true);
-      await onSave(formData);
+      await onSave(formData as T);
       onClose();
     } finally {
       setSaving(false);
@@ -99,21 +110,21 @@ export default function FinancialDefaultsSlideOver({
               <select
                 className="input"
                 style={{ width: 'auto' }}
-                // eslint-disable-next-line no-restricted-syntax
+                 
                 value={formData.stateCode || CUSTOMER_STATE.ACTIVE}
                 onChange={(e) => handleChange('stateCode', e.target.value)}
                 disabled={saving}
               >
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                { }
                 <option value={CUSTOMER_STATE.ACTIVE}>Active</option>
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                { }
                 <option value={CUSTOMER_STATE.INACTIVE}>Inactive</option>
               </select>
             </div>
 
             <div className="flex items-center justify-between mb-4">
               <label className="block text-sm font-medium text-gray-700">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                { }
                 Credit Hold
               </label>
               <div
@@ -176,7 +187,7 @@ export default function FinancialDefaultsSlideOver({
           <div>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                { }
                 Early Payment Discount
               </label>
               <div className="flex items-center gap-3">
@@ -193,7 +204,7 @@ export default function FinancialDefaultsSlideOver({
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
                 </div>
                 <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  { }
                   in
                 </span>
                 <div className="relative w-32">
@@ -206,7 +217,7 @@ export default function FinancialDefaultsSlideOver({
                     disabled={saving}
                     placeholder="10"
                   />
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  { }
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none text-sm">days</span>
                 </div>
               </div>

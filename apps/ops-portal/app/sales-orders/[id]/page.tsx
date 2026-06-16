@@ -58,6 +58,22 @@ import type { ProductUom } from '@herobm/shared';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 
+interface BackorderItem {
+    productId?: string;
+    productNumber?: string;
+    quantity?: string;
+    stateCode: string;
+    purchaseOrderId?: string;
+    purchaseOrderNumber?: string;
+    salesOrderId?: string;
+    orderNumber?: string;
+    name?: string;
+    createdOn: string;
+    lineNumber?: number | string;
+    salesOrderLineId?: string;
+    purchaseOrderState?: string;
+}
+
 function isBackTransition(
     from: string, to: string,
     lifecycle: Record<string, number> = ORDER_LIFECYCLE,
@@ -98,7 +114,7 @@ function EventIcon({ type }: { type: string }) {
         return_line_updated: '✏️',
         return_line_removed: '🗑️',
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     return <span className="mr-2" style={{ fontSize: '1.2rem', lineHeight: 1 }} title={t(type as any)}>{icons[type] || '📌'}</span>;
 }
 
@@ -250,8 +266,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
         order.lines, 
         inventoryData.map(inv => ({ 
             productId: inv.productId, 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            locationId: inv.locationId as any, 
+            locationId: inv.locationId, 
             quantityAvailable: inv.quantityAvailable 
         })), 
         order.fulfillmentLocationId
@@ -273,8 +288,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                           }
                         }}
                         isSaving={saving}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        badges={order.stateCode ? <StateBadge state={order.stateCode as any} /> : ''}
+                        badges={order.stateCode ? <StateBadge state={order.stateCode as ValidState} /> : ''}
                         nav={<PageNav sections={visibleSections} />}
                         actions={
                             <>
@@ -300,7 +314,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                             >
                                                 {state === SALES_ORDER_STATE.CANCELLED ? (
                                                     <>
-                                                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                                                         <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
                                                         {tCommon('cancel')}
                                                     </>
@@ -349,8 +363,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         editNotes={editNotes}
                         setEditNotes={setEditNotes}
                         saveHeader={saveHeader}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        locations={locations as any}
+                        locations={locations}
                         copyOrder={copyOrder}
                         copying={copying}
                         onQuoteClick={() => setShowQuoteDialog(true)}
@@ -467,7 +480,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     {activeTab === 'lines' ? (() => {
                         const hasActionColumn = isOrderLinesEditable || (order.lines || []).some((l: OrderLine) => l.isPostConfirmation && isOrderDetailsEditable) || isPostConfirmationAddingEnabled;
 
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                         const lineColumns: any[] = [
                             {
                                 id: 'lineNumber',
@@ -537,7 +550,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 style={{ fontSize: 14, color: 'var(--danger)', position: isEditable ? 'absolute' : 'relative', left: isEditable ? -16 : undefined, top: isEditable ? '50%' : undefined, transform: isEditable ? 'translateY(-50%)' : undefined, verticalAlign: !isEditable ? 'middle' : undefined, marginRight: !isEditable ? 4 : 0, zIndex: 1 }}
                                                 title={tSales('availabilityStatus.shortage')}
                                             >
-                                                {/* eslint-disable-next-line no-restricted-syntax */}
+                                                {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                                                 {'warning'}
                                             </span>
                                         </>
@@ -579,10 +592,9 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 align: 'right',
                                 render: (line: OrderLine) => {
                                     const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
+                                    const defaultUom = line.baseUom || 'EA';
                                     if (isEditable) {
-                                        const uoms: ProductUom[] = line.productUoms || [];
-                                        const defaultUom = line.baseUom || 'EA';
-                                        const selectOptions = uoms.length > 0 ? uoms : [{ uomCode: defaultUom, ratio: 1 }];
+                                        const selectOptions: ProductUom[] = (line.productUoms || []).length > 0 ? (line.productUoms as ProductUom[]) : [{ uomCode: defaultUom, ratio: 1 }];
                                         return (
                                             <select
                                                 className="input"
@@ -592,11 +604,9 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     const newVal = e.target.value;
                                                     const oldVal = line.unitOfMeasure || defaultUom;
                                                     if (newVal !== oldVal) {
-                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                        const oldO = selectOptions.find((o: any) => o.uomCode === oldVal);
+                                                        const oldO = selectOptions.find((o) => o.uomCode === oldVal);
                                                         const oldRatio = typeof oldO?.ratio === 'string' ? parseFloat(oldO.ratio) : (oldO?.ratio || 1);
-                                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                        const newO = selectOptions.find((o: any) => o.uomCode === newVal);
+                                                        const newO = selectOptions.find((o) => o.uomCode === newVal);
                                                         const newRatio = typeof newO?.ratio === 'string' ? parseFloat(newO.ratio) : (newO?.ratio || 1);
                                                         const newPrice = calculateUomPriceAdjustment(line.pricePerUnit || 0, oldRatio, newRatio);
                                                         updateLineFields(line.salesOrderLineId, {
@@ -606,14 +616,13 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     }
                                                 }}
                                             >
-                                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                {selectOptions.map((o: any) => (
+                                                {selectOptions.map((o) => (
                                                     <option key={o.uomCode} value={o.uomCode}>{o.uomCode}</option>
                                                 ))}
                                             </select>
                                         );
                                     }
-                                    // eslint-disable-next-line no-restricted-syntax
+                                    // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., UOM default).
                                     return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{line.unitOfMeasure || line.baseUom || 'EA'}</span>;
                                 }
                             },
@@ -690,7 +699,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 style={{ background: 'none', border: 'none', padding: 0, cursor: saving ? 'default' : 'pointer', color: 'var(--accent)', display: 'flex' }}
                                                 title={tSales('buttons.calculateTaxes')}
                                             >
-                                                {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon string constant. */}
                                                 <span className={`material-symbols-outlined ${saving ? 'animate-spin' : ''}`} style={{ fontSize: '16px' }}>sync</span>
                                             </button>
                                         )}
@@ -844,8 +853,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                                                     {formatAmount(subtotal, order.currencyCode || 'EUR')}
                                                 </td>
-                                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                {(isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
+                                                {(isOrderLinesEditable || (order.lines || []).some((l: OrderLine) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
                                             </tr>
                                             <tr className="hidden lg:table-row">
                                                 <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
@@ -854,8 +862,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                                                     {isStale ? <span className="badge badge-warning text-xs font-normal" style={{ marginLeft: 'auto' }}>{tCommon('pending')}</span> : formatAmount(totalTax, order.currencyCode || 'EUR')}
                                                 </td>
-                                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                {(isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
+                                                {(isOrderLinesEditable || (order.lines || []).some((l: OrderLine) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
                                             </tr>
                                             <tr className="hidden lg:table-row" style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
                                                 <td colSpan={8} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
@@ -864,11 +871,8 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
                                                     {isStale ? <span className="badge badge-warning text-xs font-normal" style={{ marginLeft: 'auto' }}>{tCommon('pending')}</span> : formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}
                                                 </td>
-                                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                {(isOrderLinesEditable || (order.lines || []).some((l: any) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
+                                                {(isOrderLinesEditable || (order.lines || []).some((l: OrderLine) => l.isPostConfirmation && isOrderDetailsEditable)) && <td></td>}
                                             </tr>
-                                            {/* button moved to header */}
-                                            {/* Mobile summary rows - hidden on lg, visible on mobile because the footer is wrapped in a normal div */}
                                             <tr className="lg:hidden">
                                                 <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tCommon('subtotal')}</td>
                                                 <td className="py-1 text-sm font-semibold text-right tabular-nums">{formatAmount(subtotal, order.currencyCode || 'EUR')}</td>
@@ -881,7 +885,6 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <td className="py-2 text-sm font-bold text-[var(--accent)] text-right pr-4">{tCommon('total')}</td>
                                                 <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums">{isStale ? <span className="badge badge-warning text-[10px] font-normal" style={{ display: 'inline-block' }}>{tCommon('pending')}</span> : formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}</td>
                                             </tr>
-                                            {/* button moved to header */}
                                         </>
                                     );
                                 })() : null
@@ -889,7 +892,6 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         />
                         );
                     })() : activeTab === 'availability' ? (
-                        /* Availability tab */
                         inventoryLoading ? (
                             <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>{tSales('loadingInventory')}</p>
                         ) : (
@@ -899,24 +901,13 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 columns={[
                                     { header: tSales('columns.lineNumber'), width: 40 },
                                     { header: tSales('columns.product') },
-                                    { header: tSales('columns.description') },
-                                    { header: tSales('columns.ordered'), width: 90, align: 'right' },
-                                    { header: tSales('columns.fulfillment'), width: 140, align: 'left' },
-                                    { header: tSales('columns.location'), width: 100, align: 'right' },
-                                    { header: tSales('columns.onHand'), width: 90, align: 'right' },
-                                    { header: tSales('columns.committed'), width: 90, align: 'right' },
-                                    { header: tSales('columns.incoming'), width: 90, align: 'right' },
-                                    { header: tSales('columns.available'), width: 90, align: 'right' },
-                                    { header: tSales('columns.status'), width: 70, align: 'center' }
                                 ]}
                                 renderCustomRow={(line: OrderLine, idx: number) => {
                                     const lineInventory = inventoryData.filter(
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        (inv: any) => inv.productId === line.productId && line.productId !== '00000000-0000-0000-0000-000000000000',
+                                        (inv) => inv.productId === line.productId && line.productId !== '00000000-0000-0000-0000-000000000000',
                                     );
                                     const totalAvail = lineInventory.reduce(
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        (sum: number, inv: any) => sum + parseFloat(inv.quantityAvailable || '0'), 0,
+                                        (sum: number, inv) => sum + parseFloat(inv.quantityAvailable || '0'), 0,
                                     );
                                     const gap = gapMap.get(line.salesOrderLineId);
                                     const canFulfil = !gap;
@@ -932,7 +923,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <td>
                                                     {line.productDescription || '—'}
                                                     <span className="ml-2 badge badge-sm badge-draft">
-                                                        {/* eslint-disable-next-line no-restricted-syntax */}
+                                                        {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., fallback value). */}
                                                         {line.productType || 'custom'}
                                                     </span>
                                                 </td>
@@ -966,8 +957,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     </td>
                                                     <td style={{ textAlign: 'center' }}>❌</td>
                                                 </tr>
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                            ) : lineInventory.map((inv: any, idx: number) => (
+                                            ) : lineInventory.map((inv, idx: number) => (
                                                 <tr key={`${line.salesOrderLineId}-${inv.locationId}`}>
                                                     {idx === 0 && (
                                                         <>
@@ -1015,12 +1005,10 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 }}
                                 mobileCard={(line: OrderLine) => {
                                     const lineInventory = inventoryData.filter(
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        (inv: any) => inv.productId === line.productId && line.productId !== '00000000-0000-0000-0000-000000000000',
+                                        (inv) => inv.productId === line.productId && line.productId !== '00000000-0000-0000-0000-000000000000',
                                     );
                                     const totalAvail = lineInventory.reduce(
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                        (sum: number, inv: any) => sum + parseFloat(inv.quantityAvailable || '0'), 0,
+                                        (sum: number, inv) => sum + parseFloat(inv.quantityAvailable || '0'), 0,
                                     );
                                     const gap = gapMap.get(line.salesOrderLineId);
                                     const canFulfil = !gap;
@@ -1059,8 +1047,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     
                                                     <div className="mt-3 flex flex-col gap-2">
                                                         <span className="text-xs font-medium text-slate-500">{tSales('columns.location')}:</span>
-                                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                                        {lineInventory.map((inv: any) => (
+                                                        {lineInventory.map((inv) => (
                                                             <div key={inv.locationId} className="bg-slate-50 rounded p-2 text-xs flex flex-col gap-1 border border-slate-100">
                                                                 <div className="flex justify-between font-medium">
                                                                     <span className={inv.locationId === order.fulfillmentLocationId ? 'text-[var(--accent)]' : ''}>{inv.locationName}</span>
@@ -1084,9 +1071,8 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         /* Backorders tab */
                         <div>
                             <DataTable
-                                data={order.backorders || []}
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                keyExtractor={(bo: any, idx: number) => bo.salesOrderLineId || bo.purchaseOrderId || idx}
+                                data={(order.backorders || []) as BackorderItem[]}
+                                keyExtractor={(bo, idx: number) => bo.salesOrderLineId || bo.purchaseOrderId || idx}
                                 emptyMessage={tSales('noBackordersFound')}
                                 columns={[
                                     { header: tSales('columns.lineNumber') },
@@ -1095,8 +1081,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     { header: tSales('columns.status') },
                                     { header: tSales('columns.demandDate') },
                                 ]}
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                renderCustomRow={(bo: any, bo_idx: number) => {
+                                renderCustomRow={(bo, bo_idx: number) => {
                                     const isPo = !!bo.purchaseOrderId;
                                     const displayOrderNumber = isPo ? bo.purchaseOrderNumber || '—' : '—';
                                     const displayStatus = isPo ? bo.purchaseOrderState || PURCHASE_ORDER_STATE.DRAFT : bo.stateCode || BACKORDER_STATE.PENDING_SUPPLY;
@@ -1116,7 +1101,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                             </td>
                                             <td>
                                                 {bo.productNumber || '—'}
-                                                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tSales('demandedQty', { qty: bo.quantity })}</div>
+                                                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tSales('demandedQty', { qty: bo.quantity || '0' })}</div>
                                             </td>
                                             <td style={{ color: isPo ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 400 }}>{displayOrderNumber}</td>
                                             <td>
@@ -1133,8 +1118,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         </tr>
                                     );
                                 }}
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                mobileCard={(bo: any) => {
+                                mobileCard={(bo) => {
                                     const isPo = !!bo.purchaseOrderId;
                                     const displayOrderNumber = isPo ? bo.purchaseOrderNumber || '—' : '—';
                                     
@@ -1161,7 +1145,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <MobileCardField label={tSales('columns.demandDate')} value={
                                                     new Date(bo.createdOn).toLocaleDateString()
                                                 } />
-                                                <MobileCardField label={tSales('demandedQty', { qty: bo.quantity })} value={
+                                                <MobileCardField label={tSales('demandedQty', { qty: bo.quantity || '0' })} value={
                                                     isPo ? (
                                                         <div className="flex flex-col gap-1 items-end mt-1">
                                                             <span className="badge badge-sm badge-success">{tSales('allocated')}</span>
@@ -1183,14 +1167,14 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                 {/* Delivery section */}
                 <div className="card">
                     <h3 className="section-heading mb-4">
-                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                         <span className="material-symbols-outlined">local_shipping</span>
                         Delivery
                     </h3>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                         <div className="flex flex-col gap-4">
                             <div className="mt-2">
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                             <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                                 Delivery Address
                             </label>
@@ -1247,7 +1231,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 <div>
                                     <PhoneInput
                                         international
-                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                                         defaultCountry={customerCountry as any}
                                         disabled={!isOrderDetailsEditable}
                                         className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
@@ -1264,7 +1248,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         </div>
 
                         <div className="mt-2">
-                                {/* eslint-disable-next-line i18next/no-literal-string */}
+                                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                                     Shipping Instructions
                                 </label>
@@ -1391,7 +1375,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                             <h2 className="text-xl font-bold text-gray-900">{tSales('discrepancies.title')}</h2>
                             <button onClick={() => setShowDiscrepancyModal(false)} className="text-gray-400 hover:text-gray-600">
-                                {/* eslint-disable-next-line i18next/no-literal-string */}
+                                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>
@@ -1412,8 +1396,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     <tbody className="divide-y divide-gray-200 bg-white">
                                         {order.lines
                                             .filter(l => gapMap.has(l.salesOrderLineId))
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                            .map((line: any) => {
+                                            .map((line) => {
                                                 const gap = gapMap.get(line.salesOrderLineId);
                                                 return (
                                                     <tr key={line.salesOrderLineId} className="hover:bg-gray-50 transition-colors">

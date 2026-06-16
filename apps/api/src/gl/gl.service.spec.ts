@@ -54,8 +54,8 @@ describe('GlService', () => {
   describe('postJournalEntry — balance invariant', () => {
     it('should reject null/undefined lines', async () => {
       await expect(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        service.postJournalEntry(null as any, { sourceType: 'manual' }),
+        // @ts-expect-error -- intentionally testing invalid input
+        service.postJournalEntry(null, { sourceType: 'manual' }),
       ).rejects.toThrow(BadRequestException);
     });
 

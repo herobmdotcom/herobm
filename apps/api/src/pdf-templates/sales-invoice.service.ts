@@ -69,12 +69,9 @@ export class SalesInvoiceService {
       ]),
     );
 
-    // Filter order lines to only those present on this invoice, using invoiced quantities
     const filteredLines = orderDetail.lines
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .filter((l: any) => invLineMap.has(l.salesOrderLineId))
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map((l: any) => {
+      .filter((l) => invLineMap.has(l.salesOrderLineId))
+      .map((l) => {
         const inv = invLineMap.get(l.salesOrderLineId)!;
         const originalQty = parseFloat(l.quantity || '1');
         const invoicedQty = parseFloat(inv.quantity);

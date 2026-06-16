@@ -53,8 +53,7 @@ export class SuppliersWriteService {
         })
         .returning();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await emitEvent(tx as any, {
+      await emitEvent(tx, {
         entityType: EntityType.SUPPLIER,
         entityId: supplier.vendorId,
         eventType: EventType.CREATED,
@@ -103,8 +102,7 @@ export class SuppliersWriteService {
           audit.changes.stateCode !== undefined &&
           Object.keys(audit.changes).length === 1
         ) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await emitEvent(tx as any, {
+          await emitEvent(tx, {
             entityType: EntityType.SUPPLIER,
             entityId: id,
             eventType: EventType.STATUS_CHANGED,
@@ -116,8 +114,7 @@ export class SuppliersWriteService {
             actor,
           });
         } else {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await emitEvent(tx as any, {
+          await emitEvent(tx, {
             entityType: EntityType.SUPPLIER,
             entityId: id,
             eventType: EventType.UPDATED,
@@ -220,8 +217,7 @@ export class SuppliersWriteService {
 
     const [updated] = await db
       .update(coreSuppliers)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .set({ stateCode: newState as any, modifiedOn: new Date() })
+      .set({ stateCode: newState, modifiedOn: new Date() })
       .where(eq(coreSuppliers.vendorId, vendorId))
       .returning();
 
@@ -232,8 +228,7 @@ export class SuppliersWriteService {
     };
 
     if (newState === SUPPLIER_STATE.ARCHIVED) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await emitEvent(targetTx as any, {
+      await emitEvent(targetTx as unknown as Parameters<typeof emitEvent>[0], {
         entityType: EntityType.SUPPLIER,
         entityId: vendorId,
         eventType: EventType.ARCHIVED,
@@ -242,8 +237,7 @@ export class SuppliersWriteService {
         actor,
       });
     } else if (currentState === SUPPLIER_STATE.ARCHIVED) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await emitEvent(targetTx as any, {
+      await emitEvent(targetTx as unknown as Parameters<typeof emitEvent>[0], {
         entityType: EntityType.SUPPLIER,
         entityId: vendorId,
         eventType: EventType.UNARCHIVED,
@@ -252,8 +246,7 @@ export class SuppliersWriteService {
         actor,
       });
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await emitEvent(targetTx as any, {
+      await emitEvent(targetTx as unknown as Parameters<typeof emitEvent>[0], {
         entityType: EntityType.SUPPLIER,
         entityId: vendorId,
         eventType: EventType.STATUS_CHANGED,
@@ -291,8 +284,7 @@ export class SuppliersWriteService {
       })
       .returning();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await emitEvent(this.db as any, {
+    await emitEvent(this.db as unknown as Parameters<typeof emitEvent>[0], {
       entityType: EntityType.SUPPLIER,
       entityId: vendorId,
       eventType: EventType.ADDED_EXPIRY,
@@ -327,8 +319,12 @@ export class SuppliersWriteService {
     if (existing.length === 0)
       throw new NotFoundException('Expiry not found on this vendor');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateData: any = { modifiedOn: sql`NOW()` };
+    const updateData: {
+      modifiedOn: ReturnType<typeof sql>;
+      expiryType?: 'insurance' | 'tax_certificate' | 'trial_period' | 'other';
+      expiryDate?: string;
+      notes?: string;
+    } = { modifiedOn: sql`NOW()` };
     if (dto.expiryType !== undefined) updateData.expiryType = dto.expiryType;
     if (dto.expiryDate !== undefined) updateData.expiryDate = dto.expiryDate;
     if (dto.notes !== undefined) updateData.notes = dto.notes;
@@ -339,8 +335,7 @@ export class SuppliersWriteService {
       .where(eq(supplierExpiries.expiryId, expiryId))
       .returning();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await emitEvent(this.db as any, {
+    await emitEvent(this.db as unknown as Parameters<typeof emitEvent>[0], {
       entityType: EntityType.SUPPLIER,
       entityId: vendorId,
       eventType: EventType.UPDATED_EXPIRY,
@@ -374,8 +369,7 @@ export class SuppliersWriteService {
       .delete(supplierExpiries)
       .where(eq(supplierExpiries.expiryId, expiryId));
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await emitEvent(this.db as any, {
+    await emitEvent(this.db as unknown as Parameters<typeof emitEvent>[0], {
       entityType: EntityType.SUPPLIER,
       entityId: vendorId,
       eventType: EventType.DELETED_EXPIRY,

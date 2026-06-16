@@ -67,18 +67,6 @@ export class SalesQuoteService {
     if (quoteIntroText) {
       this.logger.log('Macro text received: ' + quoteIntroText);
       data.quoteIntroText = quoteIntroText;
-      await this.db.transaction(async (tx) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await emitEvent(tx as any, {
-          entityType: EntityType.SALES_ORDER,
-          entityId: orderId,
-          eventType: EventType.QUOTE_GENERATED,
-          entityDisplayName: data.header.orderNumber,
-          payload: { quoteIntroText: quoteIntroText },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          actor: options?.user ? (options.user as any).userId : undefined,
-        });
-      });
     }
 
     return data;

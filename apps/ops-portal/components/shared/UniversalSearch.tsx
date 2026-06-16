@@ -54,7 +54,7 @@ export default function UniversalSearch() {
     }
     try {
       const res = await api.dashboardControllerSearch({ q: term });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       const payload = res.data as Record<string, unknown> | any[];
       setResults((Array.isArray(payload) ? payload : (payload.results as SearchResult[])) || []);
     } catch {
@@ -122,7 +122,7 @@ export default function UniversalSearch() {
           className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[20px]"
           style={{ color: 'var(--text-muted)' }}
         >
-          {/* eslint-disable-next-line no-restricted-syntax */}
+          {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
           {'search'}
         </span>
         <input
@@ -218,7 +218,7 @@ export default function UniversalSearch() {
                         className="material-symbols-outlined text-[16px]"
                         style={{ color: 'var(--text-muted)', opacity: isActive ? 1 : 0 }}
                       >
-                        {/* eslint-disable-next-line no-restricted-syntax */}
+                        {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
                         {'arrow_forward'}
                       </span>
                     </div>

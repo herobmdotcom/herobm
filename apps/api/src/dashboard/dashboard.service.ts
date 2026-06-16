@@ -278,8 +278,7 @@ export class DashboardService {
     `;
 
     const result = await this.db.execute(fullQuery);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rows = (result as any).rows ?? result;
+    const rows = (result as { rows?: unknown[] }).rows ?? result;
     return { events: rows as unknown as TimelineEvent[] };
   }
 }

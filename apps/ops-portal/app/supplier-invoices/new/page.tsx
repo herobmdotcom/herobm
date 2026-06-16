@@ -63,7 +63,7 @@ export default function NewPurchaseInvoicePage() {
   useEffect(() => {
     if (initialPurchaseOrderId) {
       Promise.all([
-        api.purchaseOrdersControllerFindOne(initialPurchaseOrderId).then(r => r.data),
+        api.purchaseOrdersControllerFindOne(initialPurchaseOrderId).then(r => r.data as unknown as OrderDetail),
         api.purchaseInvoiceControllerGetPurchaseBills(initialPurchaseOrderId).then(r => r.data),
       ]).then(([order, invoicesRes]) => {
         setVendorId(order.vendorId || '');
@@ -72,18 +72,19 @@ export default function NewPurchaseInvoicePage() {
         }
         setCurrencyCode(order.currencyCode || baseCurrency || '');
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const invoices = ((invoicesRes as any).data || []) ;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const linesToInvoice = calculatePurchaseInvoiceableQuantities(order.lines as any[], invoices);
+        const invoices = (
+          Array.isArray(invoicesRes)
+            ? invoicesRes
+            : (invoicesRes as Record<string, unknown>)?.data || []
+        ) as unknown as PurchaseInvoice[];
+        const linesToInvoice = calculatePurchaseInvoiceableQuantities(order.lines, invoices);
         
         const prefilledLines: LineItem[] = linesToInvoice.map(lti => {
           const poLine = order.lines?.find(l => l.purchaseOrderLineId === lti.purchaseOrderLineId);
           return {
             key: ++lineKey,
             productId: poLine?.productId || '',
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            productNumber: poLine ? (poLine as any).productNumber || poLine?.productId?.substring(0,8) : '',
+            productNumber: poLine ? poLine.productNumber || poLine.productId.substring(0,8) : '',
             productDescription: poLine?.productDescription || '',
             quantityInvoiced: lti.defaultQty,
             pricePerUnit: poLine?.pricePerUnit || '0',
@@ -221,7 +222,7 @@ export default function NewPurchaseInvoicePage() {
         <div className="flex flex-col gap-3">
           <div className="card">
             <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined">receipt_long</span>
               Invoice Details
             </h3>
@@ -296,7 +297,7 @@ export default function NewPurchaseInvoicePage() {
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="section-heading !mb-0">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                 <span className="material-symbols-outlined">list</span>
                 {t('lineItems')}
               </h3>

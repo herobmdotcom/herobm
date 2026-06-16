@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { DrizzleDB, DRIZZLE } from '../src/drizzle/drizzle.module';
 import { apiKeys, webhooks, outbox } from '../src/drizzle/herobm-core-schema';
@@ -14,15 +13,11 @@ import { WebhookReceiver } from '../../../packages/sdk/src/server/WebhookReceive
 describe('Events (e2e)', () => {
   let app: INestApplication;
   let db: DrizzleDB;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let server: any;
   const rawKey = 'super-secret-events-key-' + Date.now();
   let webhookSecret: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let expressApp: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let expressServer: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let receivedPayload: any = null;
 
   beforeAll(async () => {
@@ -113,7 +108,6 @@ describe('Events (e2e)', () => {
       },
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await processEvent(mockJob as any, db);
 
     // Give the async fetch inside processEvent a tiny moment to complete and hit our Express server

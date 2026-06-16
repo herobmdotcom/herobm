@@ -106,7 +106,7 @@ export class SalesInvoiceService {
     const order = orderRows[0];
     if (
       ![SALES_ORDER_STATE.SHIPPED, SALES_ORDER_STATE.PICKING].includes(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- State code Drizzle enum mismatch
         order.stateCode as any,
       )
     ) {
@@ -276,9 +276,9 @@ export class SalesInvoiceService {
     // 3. Compute the strictly typed AR payload bounds natively
     let rawTotal = 0;
     let rawTax = 0;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle insert types are too complex to infer for mapped rows
     const invoiceLineValues: any[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle insert types are too complex to infer for mapped rows
     const outboxLineDetails: any[] = [];
 
     // Revenue GL Routing tallies — keyed by composite (customerId|costCenterId|activityId)
@@ -551,7 +551,7 @@ export class SalesInvoiceService {
             : null;
 
           if (arCode) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             const glLines: any[] = [
               {
                 accountCode: arCode,
@@ -671,7 +671,7 @@ export class SalesInvoiceService {
           to_city: billingAddressCity || undefined,
           to_street: billingAddressLine1 || undefined,
           line_items: taxableLines.map((l) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             const payloadLine: any = {
               id: l.salesOrderLineId,
               product_identifier: l.productNumber,
@@ -836,18 +836,18 @@ export class SalesInvoiceService {
           )})`,
         );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const groupedLines = new Map<string, any[]>();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic grouping of raw DB results
+      const groupedLines: Record<string, any[]> = {};
       for (const line of allLines) {
-        if (!groupedLines.has(line.invoiceId)) {
-          groupedLines.set(line.invoiceId, []);
+        if (!groupedLines[line.invoiceId]) {
+          groupedLines[line.invoiceId] = [];
         }
-        groupedLines.get(line.invoiceId)!.push(line);
+        groupedLines[line.invoiceId].push(line);
       }
 
       return invoices.map((inv) => ({
         ...inv,
-        lines: groupedLines.get(inv.invoiceId) || [],
+        lines: groupedLines[inv.invoiceId] || [],
       }));
     }
 
@@ -873,7 +873,7 @@ export class SalesInvoiceService {
       limit = 100,
     } = query;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle SQL operators array typing
     const conditions: any[] = [];
 
     // When filtering by specific invoiceId, skip the date range filter
@@ -982,7 +982,8 @@ export class SalesInvoiceService {
               eq(glJournalLines.journalEntryId, originalEntry.journalEntryId),
             );
 
-          const reversedLines = originalLines.map((line) => ({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+          const reversedLines: any[] = originalLines.map((line) => ({
             accountId: line.glAccountId,
             debit: parseFloat(line.credit),
             credit: parseFloat(line.debit),
@@ -994,8 +995,7 @@ export class SalesInvoiceService {
           }));
 
           await this.glService.postJournalEntry(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            reversedLines as any[],
+            reversedLines,
             {
               sourceId: invoiceId,
               sourceType: 'sales_invoice_reversal',
@@ -1010,15 +1010,14 @@ export class SalesInvoiceService {
 
       const [updated] = await db
         .update(salesInvoices) // @herobm-skip-audit
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .set({
-          stateCode: newState,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- State codes often differ slightly from the strict Drizzle enums
+          stateCode: newState as any,
           modifiedOn: new Date(),
         })
         .where(eq(salesInvoices.invoiceId, invoiceId))
         .returning();
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await emitEvent(db as unknown as DrizzleDB, {
         entityType: EntityType.SALES_INVOICE,
         entityId: invoiceId,

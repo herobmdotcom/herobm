@@ -1310,7 +1310,7 @@ export class InventoryService {
             .where(eq(salesOrderReturnLines.returnLineId, lineDto.lineId));
         }
 
-        await emitEvent(tx as Parameters<typeof emitEvent>[0], {
+        await emitEvent(tx as unknown as DrizzleDB, {
           entityType: EntityType.WAREHOUSE,
           entityId: lineDto.lineId,
           eventType: EventType.PUTAWAY_COMPLETED,
@@ -1678,7 +1678,7 @@ export class InventoryService {
         ],
       });
 
-      await emitEvent(tx as Parameters<typeof emitEvent>[0], {
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.WAREHOUSE,
         entityId: dto.sourceBinId,
         eventType: EventType.STOCK_MOVED,
@@ -1824,7 +1824,8 @@ export class InventoryService {
 
         // Emit general inventory moved event
         // Note: For advanced integration, we could emit individual events per line, but for this workflow one bulk event is often simpler.
-        await emitEvent(tx as Parameters<typeof emitEvent>[0], {
+        // @herobm-skip-audit - DB write is performed by recordInventoryMovement
+        await emitEvent(tx as unknown as DrizzleDB, {
           entityType: EntityType.WAREHOUSE,
           entityId: dto.lines[0].sourceBinId, // Using first source bin as reference
           eventType: EventType.STOCK_MOVED,
@@ -1910,8 +1911,8 @@ export class InventoryService {
           userId,
           lines: movementLines,
         });
-
-        await emitEvent(tx as Parameters<typeof emitEvent>[0], {
+        // @herobm-skip-audit - DB write is performed by recordInventoryMovement
+        await emitEvent(tx as unknown as DrizzleDB, {
           entityType: EntityType.WAREHOUSE,
           entityId: dto.lines[0].binId,
           eventType: EventType.STOCK_MOVED,

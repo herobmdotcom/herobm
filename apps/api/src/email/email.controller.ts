@@ -58,8 +58,19 @@ export class EmailController {
     const conditions = [];
     if (entityType) conditions.push(eq(emailOutbox.entityType, entityType));
     if (entityId) conditions.push(eq(emailOutbox.entityId, entityId));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (status) conditions.push(eq(emailOutbox.status, status as any));
+    if (status) {
+      conditions.push(
+        eq(
+          emailOutbox.status,
+          status as unknown as
+            | 'pending'
+            | 'sending'
+            | 'sent'
+            | 'failed'
+            | 'dismissed',
+        ),
+      );
+    }
 
     return this.db
       .select({

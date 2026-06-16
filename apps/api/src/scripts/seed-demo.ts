@@ -56,7 +56,7 @@ function randomDate(start: Date, end: Date) {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
 async function wipeDatabase(db: any) {
   console.log('Wiping existing database tables (CASCADE)...');
   await db.execute(
@@ -89,7 +89,7 @@ interface MasterData {
   prods: { id: string; number: string; name: string; price: number }[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
 async function seedMasterData(db: any): Promise<MasterData> {
   console.log(
     'Seeding Master Data (Locations, Suppliers, Customers, Products)...',
@@ -238,7 +238,7 @@ async function seedMasterData(db: any): Promise<MasterData> {
   return { locs, sups, custs, prods };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
 async function generateTransactions(db: any, data: MasterData) {
   console.log('Generating historical transactions (12 months)...');
   const now = new Date();
@@ -314,8 +314,9 @@ async function generateTransactions(db: any, data: MasterData) {
           zoneId: location.zoneId,
           quantity: qty.toString(),
         })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .catch((e: any) => console.error('Ledger error:', e.message));
+        .catch((e: unknown) =>
+          console.error('Ledger error:', (e as Error).message),
+        );
 
       // Update binContents
       const existingBin = await db
@@ -336,8 +337,9 @@ async function generateTransactions(db: any, data: MasterData) {
             productId: prod.id,
             actualQuantity: qty.toString(),
           })
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .catch((e: any) => console.error('Bin contents error:', e.message));
+          .catch((e: unknown) =>
+            console.error('Bin contents error:', (e as Error).message),
+          );
       }
     }
   }

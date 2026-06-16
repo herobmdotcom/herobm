@@ -8,7 +8,7 @@ import { SALES_INVOICE_STATE } from '@herobm/shared';
 export interface SalesInvoiceLifecycleTrigger {
   entity: 'payment';
   id: string;
-  action: 'allocated' | 'unallocated';
+  action: 'allocated' | 'unallocated' | 'cancelled';
 }
 
 export interface AutoTransitionResult {
@@ -81,7 +81,7 @@ export const autoTransitionSalesInvoiceBasedOnOutstandingAmount: SalesInvoiceLif
       // 4. Execute transition
       await db
         .update(salesInvoices)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic state assignment bypasses strict Drizzle schema enums
         .set({ stateCode: targetState as any, modifiedOn: new Date() })
         .where(eq(salesInvoices.invoiceId, invoiceId));
 

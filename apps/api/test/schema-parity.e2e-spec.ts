@@ -11,8 +11,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 describe('Database Schema Parity (e2e)', () => {
   let app: INestApplication;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let db: NodePgDatabase<any>;
+  let db: NodePgDatabase<typeof schema>;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await (
@@ -31,8 +30,7 @@ describe('Database Schema Parity (e2e)', () => {
   it('should successfully select from all declared schema entities to ensure Postgres schema parity', async () => {
     // Drizzle table/view instances store internal configuration in `_` with a name
     const entities = Object.entries(schema)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map(([key, value]) => ({ key, entity: value as any }))
+      .map(([key, value]) => ({ key, entity: value as PgTable | PgView }))
       .filter(({ entity }) => {
         return entity && (is(entity, PgTable) || is(entity, PgView));
       });
@@ -44,11 +42,11 @@ describe('Database Schema Parity (e2e)', () => {
     for (const { key, entity } of entities) {
       try {
         await db.select().from(entity).limit(1);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (err: any) {
+      } catch (err) {
+        const error = err as Error & { cause?: Error };
         // Collect errors instead of failing immediately to provide a comprehensive report
         errors.push(
-          `[${key}] ${err.stack || err.message} CAUSE: ${err.cause ? err.cause.stack || err.cause.message : 'no cause'}`,
+          `[${key}] ${error.stack || error.message} CAUSE: ${error.cause ? error.cause.stack || error.cause.message : 'no cause'}`,
         );
       }
     }

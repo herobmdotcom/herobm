@@ -75,8 +75,7 @@ export class ExchangeRatesService {
         return rows[0];
       });
     } catch (err: unknown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((err as any)?.code === '23505') {
+      if ((err as { code?: string })?.code === '23505') {
         throw new BadRequestException(
           `Exchange rate for currency '${dto.currencyCode}' already exists`,
         );

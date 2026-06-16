@@ -21,15 +21,10 @@ const mockOrderReturnsControllerCreateReturn = jest.fn().mockResolvedValue({});
 const mockSalesCreditNotesControllerCreateCreditNote = jest.fn().mockResolvedValue({});
 jest.mock('@herobm/sdk', () => ({
     __esModule: true,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     orderReturnsControllerChangeReturnState: (...args: any[]) => mockOrderReturnsControllerChangeReturnState(...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     orderReturnsControllerUpdateReturnLine: (...args: any[]) => mockOrderReturnsControllerUpdateReturnLine(...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     orderReturnsControllerRemoveReturnLine: (...args: any[]) => mockOrderReturnsControllerRemoveReturnLine(...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     orderReturnsControllerCreateReturn: (...args: any[]) => mockOrderReturnsControllerCreateReturn(...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     salesCreditNotesControllerCreateCreditNote: (...args: any[]) => mockSalesCreditNotesControllerCreateCreditNote(...args),
     pdfTemplatesControllerRunHook: jest.fn().mockResolvedValue({ data: new Blob(['pdf'], { type: 'application/pdf' }) })
 }));

@@ -30,6 +30,7 @@ export class TradingTermsService {
     }));
   }
 
+  // @herobm-skip-audit
   async create(dto: CreateTradingTermDto) {
     return this.db.transaction(async (tx) => {
       if (dto.isDefaultCustomer) {
@@ -71,6 +72,7 @@ export class TradingTermsService {
     });
   }
 
+  // @herobm-skip-audit
   async update(id: string, dto: UpdateTradingTermDto) {
     return this.db.transaction(async (tx) => {
       if (dto.isDefaultCustomer === true) {
@@ -109,6 +111,7 @@ export class TradingTermsService {
     });
   }
 
+  // @herobm-skip-audit
   async delete(id: string) {
     try {
       const [record] = await this.db

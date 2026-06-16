@@ -57,8 +57,7 @@ export class CostCentersService {
         return rows[0];
       });
     } catch (err: unknown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((err as any)?.code === '23505') {
+      if ((err as { code?: string })?.code === '23505') {
         throw new BadRequestException(
           `Cost center code '${dto.code}' already exists`,
         );
@@ -115,8 +114,7 @@ export class CostCentersService {
 
         return { deleted: true };
       } catch (err: unknown) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((err as any)?.code === '23503') {
+        if ((err as { code?: string })?.code === '23503') {
           throw new BadRequestException(
             `Cannot delete cost center '${existing.code}' because it is in use by journal entries.`,
           );

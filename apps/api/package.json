@@ -61,6 +61,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.4.5",
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^9.18.0",
     "@jest/globals": "^30.0.0",

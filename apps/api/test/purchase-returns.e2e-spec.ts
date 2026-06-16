@@ -16,8 +16,7 @@ import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { PURCHASE_ORDER_STATE, PURCHASE_RETURN_STATE } from '@herobm/shared';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('API E2E — Purchase Order Returns', () => {
   let app: INestApplication;
@@ -146,8 +145,9 @@ describe('API E2E — Purchase Order Returns', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const lineIds = detail.body.lines.map((l: any) => l.purchaseOrderLineId);
+    const lineIds = detail.body.lines.map(
+      (l: { purchaseOrderLineId: string }) => l.purchaseOrderLineId,
+    );
 
     // Receive the items to ensure they are returnable
     await request(app.getHttpServer())

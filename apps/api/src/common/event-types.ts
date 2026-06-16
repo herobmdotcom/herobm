@@ -138,7 +138,6 @@ export const EventType = {
   SHIPMENT_LINE_REMOVED: 'shipment_line_removed',
 
   // ── Quote domain ──────────────────────────────────────────────────
-  QUOTE_GENERATED: 'quote_generated',
 
   // ── Supplier domain ─────────────────────────────────────────────────
   ADDED_EXPIRY: 'added_expiry',
@@ -221,6 +220,7 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'payment.payment_allocated',
   'payment.status_changed',
   'payment.updated',
+  'payment.payment_cancelled',
   'product.archived',
   'product.created',
   'product.status_changed',
@@ -234,6 +234,7 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'product_supplier.linked',
   'product_supplier.unlinked',
   'purchase_invoice.status_changed',
+  'purchase_invoice.updated',
   'purchase_order.archived',
   'purchase_order.created',
   'purchase_order.demand_allocated',
@@ -264,7 +265,7 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'sales_order.line_removed',
   'sales_order.line_updated',
   'sales_order.post_confirmation_line_added',
-  'sales_order.quote_generated',
+
   'sales_order.return_created',
   'sales_order.return_line_added',
   'sales_order.return_line_removed',

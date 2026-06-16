@@ -4,10 +4,8 @@ export enum AuditMode {
 }
 
 export interface AuditTrail {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  changes: Record<string, any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  previousValues: Record<string, any>;
+  changes: Record<string, unknown>;
+  previousValues: Record<string, unknown>;
   hasChanges: boolean;
 }
 
@@ -18,23 +16,22 @@ export interface AuditTrail {
  * @param existing The current state of the record
  * @param mode AuditMode.DIFF (only log actual changes) or AuditMode.FULL (log everything in DTO)
  */
-export function calculateAuditTrail(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  dto: Record<string, any>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  existing: Record<string, any>,
+export function calculateAuditTrail<T extends object, U extends object>(
+  dto: T,
+  existing: U,
   mode: AuditMode = AuditMode.DIFF,
 ): AuditTrail {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const changes: Record<string, any> = {};
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const previousValues: Record<string, any> = {};
+  const changes: Record<string, unknown> = {};
+  const previousValues: Record<string, unknown> = {};
   let hasChanges = false;
 
+  const existingRecord = existing as unknown as Record<string, unknown>;
+
   for (const [key, value] of Object.entries(dto)) {
-    const original = existing[key];
+    const original = existingRecord[key];
 
     // Normalized comparison (handles null vs undefined vs empty string)
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string -- Object default stringification is intentionally used here as a fallback
     const isDifferent = String(value ?? '') !== String(original ?? '');
 
     if (mode === AuditMode.FULL || isDifferent) {
@@ -48,6 +45,8 @@ export function calculateAuditTrail(
     changes,
     previousValues,
     hasChanges:
-      mode === AuditMode.FULL ? Object.keys(dto).length > 0 : hasChanges,
+      mode === AuditMode.FULL
+        ? Object.keys(dto as Record<string, unknown>).length > 0
+        : hasChanges,
   };
 }

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-require-imports -- Inline require used to mock or verify package calls in local tests. */
 /**
  * InvoicesSection.test.tsx
  *
@@ -35,7 +35,6 @@ jest.mock('@/lib/currency', () => ({
 
 const mockCalcInvoiceable = jest.fn().mockReturnValue([]);
 jest.mock('@/lib/sales-order-utils', () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     calculateInvoiceableQuantities: (...args: any[]) => mockCalcInvoiceable(...args),
 }));
 

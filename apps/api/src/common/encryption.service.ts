@@ -72,10 +72,8 @@ export class EncryptionService {
   /**
    * Utility to encrypt all string values in an object at the top level
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  encryptConfig(config: Record<string, any>): Record<string, any> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const encrypted: Record<string, any> = {};
+  encryptConfig(config: Record<string, unknown>): Record<string, unknown> {
+    const encrypted: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(config)) {
       if (typeof value === 'string' && value.length > 0) {
         encrypted[key] = this.encrypt(value);
@@ -89,10 +87,8 @@ export class EncryptionService {
   /**
    * Utility to decrypt all string values in an object at the top level
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  decryptConfig(config: Record<string, any>): Record<string, any> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const decrypted: Record<string, any> = {};
+  decryptConfig(config: Record<string, unknown>): Record<string, unknown> {
+    const decrypted: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(config)) {
       if (typeof value === 'string' && value.includes(':')) {
         const dec = this.decrypt(value);

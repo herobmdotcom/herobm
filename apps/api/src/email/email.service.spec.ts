@@ -18,8 +18,9 @@ describe('EmailService', () => {
     const mockReturning = jest.fn().mockResolvedValue([{ id: 'mock-id' }]);
     const mockValues = jest.fn().mockReturnValue({ returning: mockReturning });
     const mockInsert = jest.fn().mockReturnValue({ values: mockValues });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const mockTx = { insert: mockInsert } as any;
+    const mockTx = { insert: mockInsert } as unknown as Parameters<
+      typeof service.queueEmail
+    >[0];
 
     await service.queueEmail(mockTx, {
       toAddress: 'test@example.com',

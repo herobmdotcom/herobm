@@ -73,7 +73,6 @@ export class BusinessReportsController {
   @ApiOkResponse({ type: [Object] }) // BYPASS-TYPING-TEST
   async runReport(
     @Param('slug') slug: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     @Body() filters: Record<string, unknown>,
     @AuthUser() user: JwtUser,
   ) {

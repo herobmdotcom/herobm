@@ -99,10 +99,8 @@ export function useSupplierInvoice(id: string) {
   const loadInvoice = () => {
     setLoading(true);
     api.invoiceDetailControllerGetPurchaseBillDetails(id)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .then((res: any) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const data = (res as any).data ? (res as any).data : res;
+      .then((res) => {
+        const data = (res.data ? res.data : res) as unknown as PurchaseInvoiceDetails;
         setInvoice(data);
         setEditSupplierInvoiceNumber(data.supplierInvoiceNumber || '');
         setEditReceiptFilename(data.receiptFilename || '');
@@ -191,7 +189,7 @@ export function useSupplierInvoice(id: string) {
     try {
       const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
       if (!purchaseOrderLineId || !isUUID(purchaseOrderLineId)) {
-        // eslint-disable-next-line no-restricted-syntax
+        // eslint-disable-next-line no-restricted-syntax -- Intentional diagnostic logging for complex UI state
         console.error('handlePanelMatch error: purchaseOrderLineId is missing or invalid!', { invoiceLineId, purchaseOrderLineId });
         alert(`Internal Error: The selected PO Line has an invalid or missing purchaseOrderLineId: "${purchaseOrderLineId}"`);
         return;

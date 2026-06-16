@@ -15,8 +15,7 @@ import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
   let app: INestApplication;
@@ -26,7 +25,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
   let validCustomerId: string;
   let validProductId: string;
   let secondProductId: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let db: any;
 
   beforeAll(async () => {
@@ -152,8 +151,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
           },
         ],
       })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .expect((r: any) => {
+      .expect((r) => {
         if (r.status !== 201) console.error('Order creation failed:', r.body);
       })
       .expect(201);
@@ -166,8 +164,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
         .patch(`/api/sales-orders/${orderId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ stateCode: state, generateBackorders: false })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .expect((r: any) => {
+        .expect((r) => {
           if (r.status !== 200)
             console.error(`State change to ${state} failed:`, r.body);
         })
@@ -179,8 +176,9 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const lineIds = detail.body.lines.map((l: any) => l.salesOrderLineId);
+    const lineIds = detail.body.lines.map(
+      (l: { salesOrderLineId: string }) => l.salesOrderLineId,
+    );
     return { orderId, lineIds };
   }
 
@@ -199,22 +197,19 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
     quantity: string,
     expectStatus = 201,
   ) {
-    return (
-      request(app.getHttpServer())
-        .post(`/api/sales-orders/${orderId}/picking/lines/${lineId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ binId, quantity })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .expect((r: any) => {
-          if (r.status !== expectStatus) {
-            console.error(
-              `pickLine expected ${expectStatus}, got ${r.status}:`,
-              r.body,
-            );
-          }
-        })
-        .expect(expectStatus)
-    );
+    return request(app.getHttpServer())
+      .post(`/api/sales-orders/${orderId}/picking/lines/${lineId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ binId, quantity })
+      .expect((r) => {
+        if (r.status !== expectStatus) {
+          console.error(
+            `pickLine expected ${expectStatus}, got ${r.status}:`,
+            r.body,
+          );
+        }
+      })
+      .expect(expectStatus);
   }
 
   // =========================================================================
@@ -259,8 +254,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
 
       expect(summary.body.fullyPickedLines).toBe(0);
       const line1 = summary.body.lines.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (l: any) => l.salesOrderLineId === lineIds[0],
+        (l: { salesOrderLineId: string }) => l.salesOrderLineId === lineIds[0],
       );
       expect(line1.remaining).toBe('3');
       expect(line1.quantityPicked).toBe('7');
@@ -284,8 +278,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
         .expect(200);
 
       const line1 = summary.body.lines.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (l: any) => l.salesOrderLineId === lineIds[0],
+        (l: { salesOrderLineId: string }) => l.salesOrderLineId === lineIds[0],
       );
       expect(line1.quantityPicked).toBe('10');
       expect(line1.remaining).toBe('0');
@@ -315,8 +308,9 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
 
       // 3 picks total: 7 + 3 for line 1, 5 for line 2
       expect(picks.length).toBe(3);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(picks.every((p: any) => p.state_code === 'picked')).toBe(true);
+      expect(
+        picks.every((p: { state_code: string }) => p.state_code === 'picked'),
+      ).toBe(true);
     });
 
     it('inventory ledger entries created for each pick', async () => {
@@ -608,8 +602,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       const res = await request(app.getHttpServer())
         .post(`/api/sales-orders/${orderId}/shipments/${shipmentId}/cancel`)
         .set('Authorization', `Bearer ${adminToken}`)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .expect((r: any) => {
+        .expect((r) => {
           if (r.status !== 201) console.error(r.body);
         })
         .expect(201);

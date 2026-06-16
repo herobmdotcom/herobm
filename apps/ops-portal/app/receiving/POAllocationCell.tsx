@@ -1,13 +1,16 @@
 'use client';
 
 import React from 'react';
-
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { MATCH_STATUS } from '@herobm/shared';
 
 interface POAllocationCellProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: Record<string, any>;
+  data: {
+    matchStatus?: string | null;
+    purchaseOrderId?: string | null;
+    orderNumber?: string | null;
+  } | undefined;
 }
 
 /**
@@ -15,6 +18,8 @@ interface POAllocationCellProps {
  * Read-only display: shows the linked PO number or "Unallocated".
  */
 export default function POAllocationCell({ data }: POAllocationCellProps) {
+  const t = useTranslations('goodsReceived');
+
   if (!data) return null;
 
   if (data.matchStatus === MATCH_STATUS.MATCHED) {
@@ -33,8 +38,7 @@ export default function POAllocationCell({ data }: POAllocationCellProps) {
 
   return (
     <div className="flex items-center justify-start w-full h-full">
-      {/* eslint-disable-next-line i18next/no-literal-string */}
-      <span className="text-[var(--text-muted)] text-xs">Unmatched</span>
+      <span className="text-[var(--text-muted)] text-xs">{t('matchStatus.unmatched')}</span>
     </div>
   );
 }

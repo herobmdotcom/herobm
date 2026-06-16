@@ -1,4 +1,3 @@
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { randomUUID as uuidv4 } from 'crypto';
 import {
   customers,
@@ -31,7 +30,6 @@ import {
 // Ensures random order numbers during test isolation
 let _sequence = 0;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createTestCustomer(db: any, opts?: { name?: string }) {
   const customerId = uuidv4();
   await db.insert(customers).values({
@@ -45,7 +43,6 @@ export async function createTestCustomer(db: any, opts?: { name?: string }) {
 }
 
 export async function createTestProduct(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
   opts?: {
     type?: 'inventory' | 'non-stock' | 'service' | 'kit';
@@ -81,7 +78,6 @@ export async function createTestProduct(
 }
 
 export async function createTestSalesOrder(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
   opts: {
     customerId: string;
@@ -107,7 +103,6 @@ export async function createTestSalesOrder(
 }
 
 export async function createTestSalesOrderLine(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
   opts: {
     salesOrderId: string;
@@ -136,7 +131,6 @@ export async function createTestSalesOrderLine(
 }
 
 export async function createTestReturn(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
   opts: {
     salesOrderId: string;
@@ -157,7 +151,6 @@ export async function createTestReturn(
 }
 
 export async function createTestReturnLine(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
   opts: {
     returnId: string;
@@ -180,7 +173,6 @@ export async function createTestReturnLine(
   return { returnLineId };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createTestSupplier(db: any, opts?: { name?: string }) {
   // Uses the same `customers` table as customers, but conceptually a supplier.
   const customerId = uuidv4();
@@ -189,13 +181,11 @@ export async function createTestSupplier(db: any, opts?: { name?: string }) {
     customerNumber: `SUPP-TEST-${++_sequence}`,
     name: opts?.name || 'Test Supplier',
     currencyCode: 'AUD', // fixture
-    address1Country: 'AU',
   });
   return { customerId };
 }
 
 export async function createTestPurchaseOrder(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
   opts: {
     supplierId: string;
@@ -213,14 +203,12 @@ export async function createTestPurchaseOrder(
     deliveryLocationId: opts.locationId,
     stateCode: opts.state || PURCHASE_ORDER_STATE.DRAFT,
     currencyCode: 'AUD', // fixture
-    source: 'app',
   });
 
   return { purchaseOrderId, orderNumber };
 }
 
 export async function createTestGlEntry(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
   opts: {
     sourceId: string;
@@ -235,7 +223,6 @@ export async function createTestGlEntry(
     entryNumber,
     sourceId: opts.sourceId,
     sourceType: opts.sourceType,
-    status: 'posted',
     entryDate: new Date().toISOString(),
   });
 
@@ -243,7 +230,6 @@ export async function createTestGlEntry(
 }
 
 export async function createTestInvoice(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
   opts: {
     salesOrderId: string;
@@ -266,7 +252,6 @@ export async function createTestInvoice(
 }
 
 export async function createTestShipment(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
   opts: {
     salesOrderId: string;
@@ -290,7 +275,6 @@ export async function createTestShipment(
 }
 
 export async function createTestShipmentLine(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   db: any,
   opts: {
     shipmentId: string;

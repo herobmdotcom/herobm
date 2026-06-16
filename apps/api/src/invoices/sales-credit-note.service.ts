@@ -253,7 +253,7 @@ export class SalesCreditNoteService {
           )
           .where(eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId))
           .limit(1)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle select intersection is too complex for static inference
           .then((r: any[]) => r[0]);
 
         if (!orderLine) continue;
@@ -364,7 +364,7 @@ export class SalesCreditNoteService {
       }
 
       // 8. Post the GL journal entry (reverse of sales invoice)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       const glLines: any[] = [
         {
           accountCode: revCode,
@@ -420,7 +420,7 @@ export class SalesCreditNoteService {
       );
 
       // Record Refund in External Engine if applicable
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Order DTO missing taxProvider in strict types
       const orderTaxProvider = (order as any).taxProvider;
       if (
         orderTaxProvider &&
@@ -462,7 +462,7 @@ export class SalesCreditNoteService {
           to_city: billingAddressCity,
           to_street: billingAddressLine1,
           line_items: taxableLines.map((l) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             const payloadLine: any = {
               id: l.salesOrderLineId,
               product_identifier: l.productNumber,
@@ -516,11 +516,11 @@ export class SalesCreditNoteService {
       // Mark the return as PROCESSED
       await innerTx
         .update(salesOrderReturns)
-        // eslint-disable-next-line no-restricted-syntax
+        // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
         .set({ stateCode: RETURN_STATE.PROCESSED, modifiedOn: new Date() })
         .where(eq(salesOrderReturns.returnId, returnId));
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle transaction type mismatch with Outbox emitter
       await emitEvent(innerTx as any, {
         entityType: EntityType.SALES_ORDER,
         entityId: ret.salesOrderId,
@@ -537,7 +537,7 @@ export class SalesCreditNoteService {
       });
 
       // 9. Outbox event
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle transaction type mismatch with Outbox emitter
       await emitEvent(innerTx as any, {
         entityType: EntityType.SALES_ORDER,
         entityId: ret.salesOrderId,
@@ -652,9 +652,9 @@ export class SalesCreditNoteService {
     if (!arAcct) throw new BadRequestException('AR account not found');
 
     let totalCreditAmount = 0;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Array of anonymous complex objects to be inserted
     const glLines: any[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Array of anonymous complex objects to be inserted
     const cnLineValues: any[] = [];
 
     for (const line of dto.lines) {
@@ -675,7 +675,6 @@ export class SalesCreditNoteService {
         .from(glAccounts)
         .where(eq(glAccounts.glAccountId, line.accountId));
       if (!acct)
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new BadRequestException(`Account ${line.accountId} not found`);
 
       glLines.push({
@@ -734,6 +733,15 @@ export class SalesCreditNoteService {
       },
       innerTx,
     );
+
+    await emitEvent(innerTx as unknown as DrizzleDB, {
+      entityType: EntityType.SALES_INVOICE,
+      entityId: creditNote.creditNoteId,
+      eventType: EventType.CREDIT_NOTE_POSTED,
+      entityDisplayName: creditNoteNumber,
+      payload: {},
+      actor,
+    });
 
     this.logger.log(
       `Ad-hoc credit note ${creditNoteNumber} posted for customer ${customerId}: credit=${totalCreditAmount}`,

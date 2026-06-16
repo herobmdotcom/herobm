@@ -283,8 +283,7 @@ export class PurchaseDebitNotesService {
         ];
 
         await this.glService.postJournalEntry(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          glLines as any[],
+          glLines as Parameters<GlService['postJournalEntry']>[0],
           {
             actor,
             entryDate: new Date().toISOString().slice(0, 10),
@@ -349,7 +348,7 @@ export class PurchaseDebitNotesService {
     const [updated] = await db
       .update(purchaseDebitNotes)
       .set({
-        // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-explicit-any -- Dynamic state transition from state machine logic bypasses strict Drizzle schema enums
         stateCode: newState as any,
         modifiedOn: new Date(),
       })

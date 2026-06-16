@@ -1,9 +1,14 @@
 import { TaxResolutionEngine } from './tax-resolution.engine';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
 
 describe('TaxResolutionEngine', () => {
   let engine: TaxResolutionEngine;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockDb: any;
+  let mockDb: {
+    select: jest.Mock;
+    from: jest.Mock;
+    where: jest.Mock;
+    limit: jest.Mock;
+  };
 
   beforeEach(() => {
     mockDb = {
@@ -12,7 +17,7 @@ describe('TaxResolutionEngine', () => {
       where: jest.fn().mockReturnThis(),
       limit: jest.fn().mockReturnValue([]),
     };
-    engine = new TaxResolutionEngine(mockDb);
+    engine = new TaxResolutionEngine(mockDb as unknown as DrizzleDB);
   });
 
   it('1. Manual override takes highest precedence', async () => {

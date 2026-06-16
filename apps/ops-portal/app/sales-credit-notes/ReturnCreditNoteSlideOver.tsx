@@ -1,4 +1,4 @@
-/* eslint-disable i18next/no-literal-string, no-restricted-syntax */
+
 'use client';
 import React, { useState } from 'react';
 import * as api from '@herobm/sdk';
@@ -16,11 +16,12 @@ export default function ReturnCreditNoteSlideOver({
 }: {
     isOpen: boolean;
     onClose: () => void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     returnRecord: any | null;
     onSuccess: () => void;
 }) {
     const tCommon = useTranslations('common');
+    const t = useTranslations('portal');
     const [saving, setSaving] = useState(false);
     const [notes, setNotes] = useState('');
 
@@ -67,9 +68,9 @@ export default function ReturnCreditNoteSlideOver({
                         disabled={saving}
                     >
                         {saving ? (
-                            <><span className="loading loading-spinner loading-sm mr-2" />Issuing...</>
+                            <><span className="loading loading-spinner loading-sm mr-2" />{t('issuing')}</>
                         ) : (
-                            'Issue Credit Note'
+                            t('issueCreditNote')
                         )}
                     </button>
                 </div>
@@ -77,14 +78,14 @@ export default function ReturnCreditNoteSlideOver({
         >
             <div className="flex flex-col gap-4">
                 <div>
-                    <span className="text-sm text-[var(--text-secondary)] mr-2">Order:</span>
+                    <span className="text-sm text-[var(--text-secondary)] mr-2">{t('order')}</span>
                     <Link href={`/sales-orders/${returnRecord.salesOrderId}`} className="text-sm font-medium text-[var(--accent)] hover:underline" onClick={onClose}>
                         {returnRecord.orderNumber}
                     </Link>
                 </div>
 
                 <div className="form-control w-full">
-                    <label className="label text-sm font-medium">Internal Note / Reason</label>
+                    <label className="label text-sm font-medium">{t('internalNote')}</label>
                     <textarea 
                         className="textarea textarea-bordered w-full"
                         placeholder="Reason for issuing credit note..."
@@ -96,18 +97,18 @@ export default function ReturnCreditNoteSlideOver({
 
                 <div className="mt-4 border border-[var(--border-color)] rounded-xl overflow-hidden bg-[var(--bg-secondary)] shadow-sm">
                     <div className="p-3 border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
-                        <span className="font-medium text-sm">Return Items to Credit</span>
+                        <span className="font-medium text-sm">{t('returnItemsToCredit')}</span>
                     </div>
                     <table className="table-lines w-full text-sm">
                         <thead>
                             <tr>
-                                <th style={{ textAlign: 'left' }}>Product</th>
-                                <th style={{ textAlign: 'left' }}>Description</th>
-                                <th style={{ textAlign: 'right' }}>Qty to Credit</th>
+                                <th style={{ textAlign: 'left' }}>{t('product')}</th>
+                                <th style={{ textAlign: 'left' }}>{t('description')}</th>
+                                <th style={{ textAlign: 'right' }}>{t('qtyToCredit')}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */}
                             {(returnRecord.lines || []).map((line: any) => (
                                 <tr key={line.returnLineId}>
                                     <td className="font-semibold">
@@ -121,7 +122,7 @@ export default function ReturnCreditNoteSlideOver({
                             ))}
                             {(!returnRecord.lines || returnRecord.lines.length === 0) && (
                                 <tr>
-                                    <td colSpan={3} className="text-center py-4 text-[var(--text-muted)]">No lines found.</td>
+                                    <td colSpan={3} className="text-center py-4 text-[var(--text-muted)]">{t('noLinesFound')}</td>
                                 </tr>
                             )}
                         </tbody>

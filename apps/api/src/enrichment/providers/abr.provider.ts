@@ -45,9 +45,7 @@ export class AbrProvider implements IEnrichmentProvider {
   }
 
   async lookup(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: string | Record<string, unknown>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     config?: Record<string, unknown>,
   ): Promise<EnrichmentResult> {
     const cleanAbn =

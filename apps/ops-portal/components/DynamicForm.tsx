@@ -2,11 +2,11 @@ import React from 'react';
 import { FormField } from './shared/FormField';
 
 export interface DynamicFormProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   schema: Record<string, any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   data: Record<string, any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   onChange: (data: Record<string, any>) => void;
   readOnly?: boolean;
 }
@@ -20,7 +20,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ schema, data, onChange
     return null; // Return nothing if the schema isn't a valid object schema
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const handleChange = (key: string, value: any) => {
     if (readOnly) return;
     onChange({ ...data, [key]: value });
@@ -32,7 +32,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({ schema, data, onChange
   return (
     <div className="flex flex-col gap-4">
       {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         Object.entries(properties).map(([key, propSchema]: [string, any]) => {
         const isRequired = required.includes(key);
         const title = propSchema.title || key;

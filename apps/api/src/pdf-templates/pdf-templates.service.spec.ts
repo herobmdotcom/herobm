@@ -42,8 +42,7 @@ jest.mock('child_process', () => ({
     const cb = args[args.length - 1];
     if (cmd.includes('fail_binary')) {
       const err = new Error('Typst error');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (err as any).stderr = 'Compiler failed';
+      (err as Error & { stderr?: string }).stderr = 'Compiler failed';
       cb(err, '', 'Compiler failed');
     } else {
       cb(null, 'Compiled', '');
@@ -54,9 +53,7 @@ jest.mock('child_process', () => ({
 describe('PdfTemplatesService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: PdfTemplatesService;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockRegistry: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockEnforcer: any;
 
   const TEST_REPORT_ID = '00000000-0000-0000-0000-000000000001';

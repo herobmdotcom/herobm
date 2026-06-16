@@ -55,7 +55,6 @@ export class FieldMaskInterceptor implements NestInterceptor {
         };
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const filtered: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(data)) {
         if (fields.has(key)) {

@@ -6,6 +6,21 @@ import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import SlideOver from '@/components/shared/SlideOver';
 
+interface LocationZoneBin {
+  binId: string;
+  binNumber: string;
+}
+
+interface LocationZone {
+  code: string;
+  bins?: LocationZoneBin[];
+}
+
+interface LocationData {
+  code: string;
+  zones?: LocationZone[];
+}
+
 interface MoveStockModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -40,18 +55,15 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
       const locNo = selectedLines[0].locationNo;
       api.inventoryControllerFindAllLocations()
         .then((res) => {
-          const locs = res.data || [];
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const loc = locs.find((l: any) => l.code === locNo) as any;
+          const locs = (res.data || []) as unknown as LocationData[];
+          const loc = locs.find((l) => l.code === locNo);
           if (loc && loc.zones) {
             const availableBins: typeof bins = [];
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            loc.zones.forEach((z: any) => {
+            loc.zones.forEach((z) => {
               // Block moving into system handling bins
               if (z.code === 'HANDLING') return;
               if (z.bins) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                z.bins.forEach((b: any) => {
+                z.bins.forEach((b) => {
                   availableBins.push({ ...b, zoneCode: z.code });
                 });
               }
@@ -107,7 +119,7 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
         disabled={submitting || loading || (bins.length > 0 && !targetBinId)}
         className="btn btn-primary font-bold"
       >
-        {/* eslint-disable-next-line no-restricted-syntax */}
+        {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
         {submitting ? tCommon('saving') : 'Move'}
       </button>
     </div>
@@ -131,7 +143,7 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
           <form id="move-stock-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="flex flex-col gap-6">
             
             <div className="flex flex-col gap-2">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
                 Selected Items
               </label>
@@ -140,13 +152,13 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
                 <table className="w-full text-sm text-left">
                   <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider hidden sm:table-header-group">
                     <tr>
-                      {/* eslint-disable-next-line i18next/no-literal-string */}
+                      {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                       <th className="px-4 py-2">Product</th>
-                      {/* eslint-disable-next-line i18next/no-literal-string */}
+                      {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                       <th className="px-4 py-2">Source Bin</th>
-                      {/* eslint-disable-next-line i18next/no-literal-string */}
+                      {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                       <th className="px-4 py-2">Recorded Qty</th>
-                      {/* eslint-disable-next-line i18next/no-literal-string */}
+                      {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                       <th className="px-4 py-2">Move Qty</th>
                     </tr>
                   </thead>
@@ -159,17 +171,17 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
                             <span className="font-semibold sm:font-normal">{line.productName}</span>
                           </td>
                           <td className="px-0 sm:px-4 py-1 sm:py-3 text-[#041627] flex items-center justify-between sm:table-cell">
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                             <span className="sm:hidden text-xs text-gray-500 font-bold uppercase">Source:</span>
                             <span>{line.sourceBinNumber}</span>
                           </td>
                           <td className="px-0 sm:px-4 py-1 sm:py-3 text-[#041627] flex items-center justify-between sm:table-cell">
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                             <span className="sm:hidden text-xs text-gray-500 font-bold uppercase">Recorded:</span>
                             <span>{originalLine?.quantity || 0}</span>
                           </td>
                           <td className="px-0 sm:px-4 py-2 sm:py-3 flex items-center justify-between sm:table-cell">
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                             <span className="sm:hidden text-xs text-gray-500 font-bold uppercase">Move Qty:</span>
                             <div className="flex items-center gap-2">
                               <input 
@@ -198,7 +210,7 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
             </div>
 
             <div className="flex flex-col gap-1.5">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
                 Destination Bin
               </label>
@@ -211,7 +223,7 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
                 >
                   {bins.map(b => (
                     <option key={b.binId} value={b.binId}>
-                      {/* eslint-disable-next-line i18next/no-literal-string */}
+                      {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                       {b.binNumber} (Zone: {b.zoneCode})
                     </option>
                   ))}
@@ -224,7 +236,7 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
             </div>
 
             <div className="flex flex-col gap-1.5">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
                 Reason (Optional)
               </label>

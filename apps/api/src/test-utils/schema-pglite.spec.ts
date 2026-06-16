@@ -7,10 +7,13 @@ describe('Schema PGLite Test', () => {
     const result = await pg.client.query(
       'SELECT count(*) as count FROM herobm_core.tax_categories',
     );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    console.log('Tax categories count:', (result.rows[0] as any).count);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    expect(Number((result.rows[0] as any).count)).toBeGreaterThan(0);
+    console.log(
+      'Tax categories count:',
+      (result.rows[0] as { count: string | number }).count,
+    );
+    expect(
+      Number((result.rows[0] as { count: string | number }).count),
+    ).toBeGreaterThan(0);
   });
 
   it('should run many queries on a seeded table', async () => {
@@ -18,8 +21,9 @@ describe('Schema PGLite Test', () => {
       const result = await pg.client.query(
         'SELECT count(*) as count FROM herobm_core.tax_categories',
       );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(Number((result.rows[0] as any).count)).toBeGreaterThan(0);
+      expect(
+        Number((result.rows[0] as { count: string | number }).count),
+      ).toBeGreaterThan(0);
     }
   });
 });

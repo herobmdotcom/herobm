@@ -6,6 +6,24 @@ import Link from 'next/link';
 import SlideOver from '@/components/shared/SlideOver';
 import { getErrorMessage } from '@herobm/shared';
 
+interface ReturnLine {
+    returnLineId: string;
+    productId?: string;
+    productNumber?: string;
+    productDescription?: string;
+    quantityReturned: string;
+    quantityReceived?: string;
+}
+
+interface ReturnRecord {
+    returnId?: string;
+    salesOrderId?: string;
+    locationId?: string;
+    returnNumber?: string;
+    orderNumber?: string;
+    lines?: ReturnLine[];
+}
+
 export default function ReceiveReturnSlideOver({
     isOpen,
     onClose,
@@ -14,8 +32,7 @@ export default function ReceiveReturnSlideOver({
 }: {
     isOpen: boolean;
     onClose: () => void;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    returnRecord: any | null;
+    returnRecord: ReturnRecord | null;
     onRefresh: () => void;
 }) {
     const tCommon = useTranslations('common');
@@ -39,14 +56,12 @@ export default function ReceiveReturnSlideOver({
     const handleConfirm = async () => {
         setSaving(true);
         try {
-            const linesToReceive = returnRecord.lines
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((line: any) => ({
+            const linesToReceive = (returnRecord.lines || [])
+                .map((line: ReturnLine) => ({
                     returnLineId: line.returnLineId,
                     quantityReceived: lineQuantities[line.returnLineId] || '0',
                 }))
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .filter((l: any) => parseFloat(l.quantityReceived) > 0);
+                .filter((l: { returnLineId: string; quantityReceived: string }) => parseFloat(l.quantityReceived) > 0);
 
             if (linesToReceive.length > 0) {
                 await api.orderReturnsControllerReceiveReturn((returnRecord.salesOrderId as string), (returnRecord.returnId as string), {
@@ -65,8 +80,7 @@ export default function ReceiveReturnSlideOver({
         }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const hasInvalidQuantities = (returnRecord.lines || []).some((l: any) => {
+    const hasInvalidQuantities = (returnRecord.lines || []).some((l: ReturnLine) => {
         const val = parseFloat(lineQuantities[l.returnLineId] || '0');
         const max = parseFloat(l.quantityReturned) - parseFloat(l.quantityReceived || '0');
         return val < 0 || val > max || isNaN(val);
@@ -117,8 +131,7 @@ export default function ReceiveReturnSlideOver({
                     </tr>
                 </thead>
                 <tbody>
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {(returnRecord.lines || []).map((line: any) => (
+                    {(returnRecord.lines || []).map((line: ReturnLine) => (
                         <tr key={line.returnLineId}>
                             <td className="text-sm font-semibold">
                                 {line.productId ? (

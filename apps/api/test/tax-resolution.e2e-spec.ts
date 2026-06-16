@@ -5,8 +5,7 @@ import { register } from 'prom-client';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('API E2E — Tax Resolution engine', () => {
   let app: INestApplication;
@@ -32,16 +31,18 @@ describe('API E2E — Tax Resolution engine', () => {
 
     const db = app.get(DRIZZLE);
 
-    // Get a valid customer and product
-    const customerRes = await db.execute(
-      sql`SELECT customer_id FROM herobm_core.customers LIMIT 1`,
-    );
-    validCustomerId = customerRes[0].customer_id;
+    // Get a valid customer and product using endpoints
+    const customersRes = await request(app.getHttpServer())
+      .get('/api/customers?limit=1')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    validCustomerId = customersRes.body.data[0].customerId;
 
-    const productRes = await db.execute(
-      sql`SELECT product_id FROM herobm_core.products LIMIT 1`,
-    );
-    validProductId = productRes[0].product_id;
+    const productsRes = await request(app.getHttpServer())
+      .get('/api/products?limit=1')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    validProductId = productsRes.body.data[0].productId;
   });
 
   afterAll(async () => {
@@ -57,9 +58,11 @@ describe('API E2E — Tax Resolution engine', () => {
     const createPayload = {
       fulfillmentLocationId: locationId,
       customerId: validCustomerId,
-      customerReference: 'TAX-E2E',
+      currencyCode: 'AUD',
       salesRepId: null,
       shipToId: null,
+      deliveryAddressLine1: 'Test Address',
+      customerReference: 'TAX-E2E',
       lines: [
         {
           productId: validProductId,

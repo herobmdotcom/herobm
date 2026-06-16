@@ -23,7 +23,7 @@ export default function GlobalError({
     const message = error?.message ?? String(error);
     const stack = error?.stack;
 
-    // eslint-disable-next-line no-restricted-syntax
+    // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon).
     console.error('[GlobalError]', message, error);
 
     try {

@@ -243,8 +243,7 @@ export class PdfTemplatesController {
   ) {
     const pdfBuffer = await this.pdfTemplatesService.renderPreview(
       body.template,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      body.mockData as any,
+      body.mockData || {},
       body.hookSlug,
       body.entityId,
       user,

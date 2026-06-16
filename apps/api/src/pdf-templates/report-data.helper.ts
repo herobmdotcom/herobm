@@ -18,8 +18,7 @@ export async function resolveOrderDetail(
   _ordersService: unknown,
   orderId: string,
   _source?: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-): Promise<any> {
+): Promise<Awaited<ReturnType<OrdersWriteService['findOne']>>> {
   return ordersWriteService.findOne(orderId);
 }
 
@@ -29,17 +28,17 @@ export async function resolveOrderDetail(
 
 interface RawOrderLine {
   lineNumber: number;
-  productNumber?: string;
-  productId?: string;
-  productDescription?: string;
+  productNumber?: string | null;
+  productId?: string | null;
+  productDescription?: string | null;
   quantity: string;
   pricePerUnit: string;
-  discountPercentage?: string;
-  taxCategoryId?: string;
-  tax?: string;
-  amount?: string;
-  totalAmount?: string;
-  unitOfMeasure?: string;
+  discountPercentage?: string | null;
+  taxCategoryId?: string | null;
+  tax?: string | null;
+  amount?: string | null;
+  totalAmount?: string | null;
+  unitOfMeasure?: string | null;
 }
 
 /**
@@ -53,12 +52,12 @@ interface RawOrderLine {
  */
 export function assembleOrderData(
   orderDetail: {
-    orderNumber?: string;
-    customerName?: string;
-    customerOrderNumber?: string;
-    createdOn?: string;
-    currencyCode?: string;
-    name?: string;
+    orderNumber?: string | null;
+    customerName?: string | null;
+    customerOrderNumber?: string | null;
+    createdOn?: string | Date | null;
+    currencyCode?: string | null;
+    name?: string | null;
     lines: RawOrderLine[];
   },
   fallbackCurrency: string,

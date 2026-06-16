@@ -30,14 +30,14 @@ export default function UnquarantineModal({ isOpen, onClose, onSubmit, locationI
       api.inventoryControllerFindAllLocations()
         .then((res) => {
           const locs = res.data || [];
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
           const loc = locs.find(l => l.locationId === locationId) as any;
           if (loc && loc.zones) {
             const availableBins: { binId: string; binNumber: string; binType: string }[] = [];
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             loc.zones.forEach((z: any) => {
               if (z.bins) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                 z.bins.forEach((b: any) => {
                   if (b.binType !== BIN_TYPE.QUARANTINE) {
                     availableBins.push(b);

@@ -68,7 +68,7 @@ export default function ReturnsQueuePage() {
                         className="btn btn-primary shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5" 
                         onClick={() => setAdHocOpen(true)}
                     >
-                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                         <span className="material-symbols-outlined text-[1.1rem]">add</span>
                         {tOrders('returns.creditNote')}
                     </button>

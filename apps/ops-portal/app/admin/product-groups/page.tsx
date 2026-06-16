@@ -52,15 +52,11 @@ export default function ProductGroupsAdmin() {
 
   useEffect(() => { loadData(); }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const glAccountOptions = useMemo(() => glAccounts.map((a: any) => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` })), [glAccounts]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const costCenterOptions = useMemo(() => costCenters.map((c: any) => ({ value: c.costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const activityOptions = useMemo(() => activities.map((a: any) => ({ value: a.activityId, label: `${a.code} - ${a.name}` })), [activities]);
+  const glAccountOptions = useMemo(() => glAccounts.map((a: api.GlAccountResponseDto) => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` })), [glAccounts]);
+  const costCenterOptions = useMemo(() => costCenters.map((c) => ({ value: (c as unknown as { costCenterId: string }).costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
+  const activityOptions = useMemo(() => activities.map((a) => ({ value: (a as unknown as { activityId: string }).activityId, label: `${a.code} - ${a.name}` })), [activities]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const columns: InlineTableColumn<any>[] = useMemo(() => [
+  const columns: InlineTableColumn<Partial<api.ProductGroupResponseDto>>[] = useMemo(() => [
     { key: 'groupCode', title: tc('code'), type: 'text', placeholder: t('placeholders.code'), width: 100 },
     { key: 'name', title: tc('name'), type: 'text', placeholder: t('placeholders.name') },
     { 
@@ -83,8 +79,7 @@ export default function ProductGroupsAdmin() {
     }
   ], [tc, t]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleSave = async (payload: any, isNew: boolean) => {
+  const handleSave = async (payload: Partial<api.ProductGroupResponseDto> & { productGroupId?: string }, isNew: boolean) => {
     if (!payload.groupCode || !payload.name) {
       toast.error(t('toasts.requiredFields'));
       throw new Error(t('toasts.requiredFields'));
@@ -97,13 +92,13 @@ export default function ProductGroupsAdmin() {
         defaultRevenueAccountId: payload.defaultRevenueAccountId || null,
         defaultCostCenterId: payload.defaultCostCenterId || null,
         defaultActivityId: payload.defaultActivityId || null,
-      };
+      } as api.UpdateProductGroupDto;
 
       if (!isNew) {
-        await api.productGroupsControllerUpdate(payload.productGroupId, formattedPayload);
+        await api.productGroupsControllerUpdate(payload.productGroupId || '', formattedPayload);
         toast.success(t('toasts.updated'));
       } else {
-        await api.productGroupsControllerCreate(formattedPayload);
+        await api.productGroupsControllerCreate(formattedPayload as unknown as api.CreateProductGroupDto);
         toast.success(t('toasts.created'));
       }
       loadData();
@@ -113,11 +108,10 @@ export default function ProductGroupsAdmin() {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleDelete = async (payload: any) => {
+  const handleDelete = async (payload: Partial<api.ProductGroupResponseDto> & { productGroupId?: string }) => {
     if(!confirm(t('confirmDelete'))) return;
     try {
-      await api.productGroupsControllerRemove(payload.productGroupId);
+      await api.productGroupsControllerRemove(payload.productGroupId || '');
       toast.success(t('toasts.deleted'));
       loadData();
     } catch (err: unknown) {

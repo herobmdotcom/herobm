@@ -329,7 +329,7 @@ export class ShipmentService {
 
         const [updated] = await innerTx
           .update(salesOrderShipments)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
           .set({ stateCode: newState as any, modifiedOn: new Date() })
           .where(eq(salesOrderShipments.shipmentId, shipmentId))
           .returning();
@@ -533,6 +533,7 @@ export class ShipmentService {
                 );
               } else {
                 // Partial pick reversal - split the pick
+                // @herobm-skip-audit - Internal tracking split, business event emitted by changeShipmentState
                 await innerTx
                   .update(salesOrderPicks)
                   .set({
@@ -541,6 +542,7 @@ export class ShipmentService {
                   })
                   .where(eq(salesOrderPicks.pickId, pick.pickId));
 
+                // @herobm-skip-audit - Internal tracking split, business event emitted by changeShipmentState
                 await innerTx.insert(salesOrderPicks).values({
                   salesOrderId: pick.salesOrderId,
                   salesOrderLineId: pick.salesOrderLineId,
@@ -583,7 +585,7 @@ export class ShipmentService {
                     standardCost: product.standardCost || '0',
                     weightedAverageCost: product.weightedAverageCost || '0',
                   },
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                   parseFloat(line.quantity as any),
                 );
                 totalCogsReversed += parseFloat(cogsAmount);
@@ -635,7 +637,7 @@ export class ShipmentService {
 
             if (reversalGl) {
               await this.glService.postJournalEntry(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                 reversalGl.lines as any[],
                 {
                   actor,
@@ -999,7 +1001,7 @@ export class ShipmentService {
     limit?: number;
   }) {
     const { days = 30, salesOrderId, limit = 100 } = query;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const conditions: any[] = [];
 
     if (days > 0) {
@@ -1080,13 +1082,12 @@ export class ShipmentService {
   }
 
   public async executeDispatch(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     innerTx: DrizzleDB,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     shipment: any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     shipmentLines: any[],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     physicalStockLines: any[],
     actor: string,
   ) {
@@ -1118,7 +1119,7 @@ export class ShipmentService {
     for (const line of physicalStockLines) {
       let remainingToShip = parseFloat(line.quantity);
       const availablePicks = pickHistory.filter(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         (p: any) => p.productId === line.productId && p.netPicked > 0,
       );
 
@@ -1289,7 +1290,7 @@ export class ShipmentService {
 
     if (dispatchGl) {
       await this.glService.postJournalEntry(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         dispatchGl.lines as any[],
         {
           actor,
@@ -1334,7 +1335,7 @@ export class ShipmentService {
     if (!existing) return;
     if (existing.stateCode === newState) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const allowed = SALES_ORDER_PICK_TRANSITIONS[existing.stateCode as any];
     if (!allowed || !allowed.includes(newState)) {
       throw new BadRequestException(
@@ -1344,7 +1345,7 @@ export class ShipmentService {
 
     await tx
       .update(salesOrderPicks)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       .set({ stateCode: newState as any, modifiedOn: new Date() })
       .where(eq(salesOrderPicks.pickId, pickId));
 

@@ -17,12 +17,12 @@ export function EventIcon({ type }: { type: string }) {
   const typeLower = (type || '').toLowerCase();
 
   // Common emoji mappings
-  // eslint-disable-next-line i18next/no-literal-string
+  // eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon).
   if (typeLower.includes('warning') || typeLower.includes('discrepancy')) return <span>⚠️</span>;
   if (typeLower.includes('receive') || typeLower.includes('reception')) return <span>📥</span>;
   if (typeLower.includes('shipment')) return <span>🚚</span>;
   if (typeLower.includes('picking')) return <span>📦</span>;
-  // eslint-disable-next-line i18next/no-literal-string
+  // eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon).
   if (typeLower.includes('return')) return <span aria-hidden>↩️</span>;
   if (typeLower.includes('auto_status')) return <span>⚡</span>;
   if (typeLower.includes('price')) return <span>💰</span>;
@@ -101,7 +101,7 @@ export default function ActivityTimeline({
             letterSpacing: '0.05em',
           }}
         >
-          {/* eslint-disable-next-line i18next/no-literal-string */}
+          {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
           <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>history</span> {displayTitle}
         </h3>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -123,7 +123,7 @@ export default function ActivityTimeline({
         }}
       >
         <span className="details-chevron" style={{ fontSize: 10, transition: 'transform 200ms' }}>▶</span>
-        {/* eslint-disable-next-line i18next/no-literal-string */}
+        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
         <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>history</span> {displayTitle}
         <span style={{ fontSize: 11, fontWeight: 400 }}>({events.length})</span>
       </summary>

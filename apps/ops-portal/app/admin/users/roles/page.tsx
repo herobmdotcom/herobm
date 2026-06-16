@@ -124,11 +124,9 @@ export default function RolesPage() {
 
     try {
       await api.rolesControllerSetPermissions(targetRole, {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        permissions: permissionsToSave as any,
+        permissions: permissionsToSave as api.PermissionDto[],
         inherits: formInherits,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any);
+      });
       toast.success(isCreating ? 'Role created' : 'Permissions updated');
       cancel();
       loadRoles();
@@ -245,8 +243,7 @@ export default function RolesPage() {
                         <select 
                           className="input !py-0.5 !px-1 text-xs h-7 w-[80px] text-center"
                           value={localVal}
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          onChange={(e) => handlePermissionChange(res, act, e.target.value as any)}
+                          onChange={(e) => handlePermissionChange(res, act, e.target.value as 'allow' | 'deny' | '')}
                         >
                           <option value="">{t('unset')}</option>
                           <option value="allow">{t('allow')}</option>
@@ -287,7 +284,7 @@ export default function RolesPage() {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined">security</span>
               {t('roles')}
             </h3>
@@ -302,7 +299,7 @@ export default function RolesPage() {
                 <div className="border border-[var(--border)] rounded p-4 bg-[var(--bg-secondary)]">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-4">
-                      {/* eslint-disable-next-line i18next/no-literal-string */}
+                      {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                       <span className="material-symbols-outlined text-muted">badge</span>
                       <input 
                         type="text" 
@@ -346,7 +343,7 @@ export default function RolesPage() {
                     onClick={() => toggleRole(roleItem.role)}
                   >
                     <div className="flex items-center gap-4">
-                      {/* eslint-disable-next-line i18next/no-literal-string */}
+                      {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                       <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 text-[var(--accent)] ${expandedRoles[roleItem.role] || editingRole === roleItem.role ? 'rotate-90' : ''}`}>
                         chevron_right
                       </span>

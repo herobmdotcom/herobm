@@ -12,10 +12,10 @@ describe('Invoices Controllers', () => {
   let purchaseController: PurchaseInvoiceController;
   let detailController: InvoiceDetailController;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockSalesService: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let mockPurchaseService: any;
+  let mockSalesService: Partial<Record<keyof SalesInvoiceService, jest.Mock>>;
+  let mockPurchaseService: Partial<
+    Record<keyof PurchaseInvoiceService, jest.Mock>
+  >;
 
   beforeEach(async () => {
     mockSalesService = {
@@ -55,8 +55,9 @@ describe('Invoices Controllers', () => {
 
   describe('SalesInvoiceController', () => {
     it('should create a sales invoice', async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const dto: any = { lines: [] };
+      const dto = { lines: [] } as unknown as Parameters<
+        SalesInvoiceController['createSalesInvoice']
+      >[1];
       const req = { user: { username: 'test-user' } };
 
       const result = await salesController.createSalesInvoice(
@@ -76,8 +77,9 @@ describe('Invoices Controllers', () => {
     it('should create a sales invoice with fallback actor if user missing', async () => {
       const result = await salesController.createSalesInvoice(
         'order-1',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {} as any,
+        {} as unknown as Parameters<
+          SalesInvoiceController['createSalesInvoice']
+        >[1],
         {},
       );
       expect(mockSalesService.createInvoice).toHaveBeenCalledWith(

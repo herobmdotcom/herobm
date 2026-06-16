@@ -33,12 +33,12 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
     try {
       setLoading(true);
       const data = await api.suppliersControllerFindSupplierExpiries(vendorId);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let payload = (data as any)?.data || data || [];
-      if (payload && !Array.isArray(payload) && Array.isArray(payload.data)) {
-        payload = payload.data;
+      const dataObj = data as unknown as Record<string, unknown>;
+      let payload = (dataObj?.data || data || []) as unknown;
+      if (payload && !Array.isArray(payload) && typeof payload === 'object' && 'data' in payload && Array.isArray((payload as Record<string, unknown>).data)) {
+        payload = (payload as Record<string, unknown>).data;
       }
-      setExpiries(payload as unknown as Expiry[]);
+      setExpiries(payload as Expiry[]);
     } catch (err: unknown) {
       toast.error(tCommon('errors.failedToLoadExpiries') + ': ' + getErrorMessage(err));
     } finally {

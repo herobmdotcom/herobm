@@ -10,7 +10,7 @@ import {
   CASBIN_ACTION,
   SKIP_CASBIN,
 } from './casbin.guard';
-import { newEnforcer } from 'casbin';
+import { Enforcer, newEnforcer } from 'casbin';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -39,10 +39,9 @@ function resolveCasbinAsset(filename: string): string {
  * Helper to build a mock ExecutionContext with configurable metadata and request.
  */
 function createMockContext(opts: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   user?: { userId: string; username: string; role: string } | null;
-}): ExecutionContext {
+}): ExecutionContext & { __metadata: Record<string, unknown> } {
   const handler = jest.fn();
   const classRef = jest.fn();
 
@@ -59,20 +58,14 @@ function createMockContext(opts: {
     __handler: handler,
     __classRef: classRef,
   } as unknown as ExecutionContext & {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    __metadata: Record<string, any>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    __handler: any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    __classRef: any;
+    __metadata: Record<string, unknown>;
   };
 }
 
 describe('CasbinGuard', () => {
   let guard: CasbinGuard;
   let reflector: Reflector;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let enforcer: any;
+  let enforcer: Enforcer;
 
   beforeAll(async () => {
     const modelPath = resolveCasbinAsset('model.conf');
@@ -96,8 +89,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       const result = await guard.canActivate(ctx);
@@ -115,8 +107,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
@@ -131,8 +122,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
@@ -147,8 +137,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
@@ -168,8 +157,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       await expect(guard.canActivate(ctx)).rejects.toThrow(
@@ -191,8 +179,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       const result = await guard.canActivate(ctx);
@@ -211,8 +198,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
@@ -230,8 +216,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       const result = await guard.canActivate(ctx);
@@ -250,8 +235,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       const result = await guard.canActivate(ctx);
@@ -270,8 +254,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
@@ -291,8 +274,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       const result = await guard.canActivate(ctx);
@@ -311,8 +293,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
@@ -330,8 +311,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       const result = await guard.canActivate(ctx);
@@ -350,8 +330,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       const result = await guard.canActivate(ctx);
@@ -370,8 +349,7 @@ describe('CasbinGuard', () => {
       jest
         .spyOn(reflector, 'getAllAndOverride')
         .mockImplementation((key: string) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return (ctx as any).__metadata[key];
+          return ctx.__metadata[key];
         });
 
       await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
@@ -390,8 +368,7 @@ describe('CasbinGuard', () => {
         jest
           .spyOn(reflector, 'getAllAndOverride')
           .mockImplementation((key: string) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return (ctx as any).__metadata[key];
+            return ctx.__metadata[key];
           });
 
         const result = await guard.canActivate(ctx);
@@ -416,8 +393,7 @@ describe('CasbinGuard', () => {
         jest
           .spyOn(reflector, 'getAllAndOverride')
           .mockImplementation((key: string) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return (ctx as any).__metadata[key];
+            return ctx.__metadata[key];
           });
 
         await expect(guard.canActivate(ctx)).rejects.toThrow(
@@ -441,8 +417,7 @@ describe('CasbinGuard', () => {
         jest
           .spyOn(reflector, 'getAllAndOverride')
           .mockImplementation((key: string) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return (ctx as any).__metadata[key];
+            return ctx.__metadata[key];
           });
 
         const result = await guard.canActivate(ctx);

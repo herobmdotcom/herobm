@@ -1,4 +1,4 @@
-/* eslint-disable i18next/no-literal-string, no-restricted-syntax */
+
 'use client';
 import React, { useState, useEffect } from 'react';
 import * as api from '@herobm/sdk';
@@ -19,6 +19,7 @@ export default function AdHocCreditNoteSlideOver({
     onSuccess: () => void;
 }) {
     const tCommon = useTranslations('common');
+    const t = useTranslations('portal');
     const [saving, setSaving] = useState(false);
     const [customerId, setCustomerId] = useState('');
     const [notes, setNotes] = useState('');
@@ -66,8 +67,7 @@ export default function AdHocCreditNoteSlideOver({
                 customerId,
                 notes,
                 lines: formattedLines,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            } as any); // using any for quick SDK type bypass just in case
+            });
 
             toast.success('Credit note issued successfully');
             onSuccess();
@@ -97,9 +97,9 @@ export default function AdHocCreditNoteSlideOver({
                         disabled={saving || isInvalid}
                     >
                         {saving ? (
-                            <><span className="loading loading-spinner loading-sm mr-2" />Issuing...</>
+                            <><span className="loading loading-spinner loading-sm mr-2" />{t('issuing')}</>
                         ) : (
-                            'Issue Credit Note'
+                            t('issueCreditNote')
                         )}
                     </button>
                 </div>
@@ -107,7 +107,7 @@ export default function AdHocCreditNoteSlideOver({
         >
             <div className="flex flex-col gap-4">
                 <div className="form-control w-full">
-                    <label className="label text-sm font-medium">Customer</label>
+                    <label className="label text-sm font-medium">{t('customer')}</label>
                     <CustomerSelect
                         value={customerId}
                         onChange={(acc) => setCustomerId(acc?.customerId || '')}
@@ -117,7 +117,7 @@ export default function AdHocCreditNoteSlideOver({
                 </div>
 
                 <div className="form-control w-full">
-                    <label className="label text-sm font-medium">Internal Note / Reason</label>
+                    <label className="label text-sm font-medium">{t('internalNote')}</label>
                     <textarea 
                         className="textarea textarea-bordered w-full"
                         placeholder="Reason for issuing credit note..."
@@ -129,18 +129,19 @@ export default function AdHocCreditNoteSlideOver({
 
                 <div className="mt-4 border border-[var(--border-color)] rounded-xl overflow-hidden bg-[var(--bg-secondary)] shadow-sm">
                     <div className="flex justify-between items-center p-3 border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
-                        <span className="font-medium">Credit Lines</span>
+                        <span className="font-medium">{t('creditLines')}</span>
                         <button onClick={handleAddLine} className="btn btn-xs btn-outline">
-                            <span className="material-symbols-outlined text-sm">add</span> Add Line
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
+                            <span className="material-symbols-outlined text-sm">add</span> {t('addLine')}
                         </button>
                     </div>
                     
                     <table className="table-lines w-full">
                         <thead>
                             <tr>
-                                <th style={{ textAlign: 'left' }}>Description</th>
-                                <th style={{ textAlign: 'left', width: '180px' }}>GL Account</th>
-                                <th style={{ textAlign: 'right', width: '120px' }}>Amount</th>
+                                <th style={{ textAlign: 'left' }}>{t('description')}</th>
+                                <th style={{ textAlign: 'left', width: '180px' }}>{t('glAccount')}</th>
+                                <th style={{ textAlign: 'right', width: '120px' }}>{t('amount')}</th>
                                 <th style={{ width: '40px' }}></th>
                             </tr>
                         </thead>
@@ -162,7 +163,7 @@ export default function AdHocCreditNoteSlideOver({
                                             value={line.accountId}
                                             onChange={e => handleLineChange(index, 'accountId', e.target.value)}
                                         >
-                                            <option value="" disabled>Select</option>
+                                            <option value="" disabled>{t('select')}</option>
                                             {accounts.map(a => (
                                                 <option key={a.glAccountId} value={a.glAccountId}>{a.name} ({a.accountCode})</option>
                                             ))}
@@ -185,6 +186,7 @@ export default function AdHocCreditNoteSlideOver({
                                             onClick={() => handleRemoveLine(index)}
                                             disabled={lines.length === 1}
                                         >
+                                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                             <span className="material-symbols-outlined text-sm">delete</span>
                                         </button>
                                     </td>
@@ -193,7 +195,7 @@ export default function AdHocCreditNoteSlideOver({
                             {lines.length === 0 && (
                                 <tr>
                                     <td colSpan={4} className="text-center py-4 text-sm text-[var(--text-muted)]">
-                                        No lines added.
+                                        {t('noLinesAdded')}
                                     </td>
                                 </tr>
                             )}
@@ -202,7 +204,7 @@ export default function AdHocCreditNoteSlideOver({
                     
                     {lines.length > 0 && (
                         <div className="p-3 bg-[var(--bg-primary)] border-t border-[var(--border-color)] flex justify-end">
-                            <span className="font-medium mr-4">Total:</span>
+                            <span className="font-medium mr-4">{t('total')}</span>
                             <span className="font-bold font-mono">
                                 {lines.reduce((sum, l) => sum + (parseFloat(l.amount) || 0), 0).toFixed(2)}
                             </span>

@@ -41,6 +41,7 @@ export default function AdminImportPage() {
   const [abmLocations, setAbmLocations] = useState<{ code: string; name: string }[]>([]);
   const [abmTaxCategories, setAbmTaxCategories] = useState<{ code: string; name: string; rate: number }[]>([]);
   const [importSummary, setImportSummary] = useState<{products: number, customers: number, orders: number} | null>(null);
+  const [stopping, setStopping] = useState(false);
   
   const jobIdRef = useRef<string | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
@@ -59,6 +60,18 @@ export default function AdminImportPage() {
     const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
     isAutoScrollRef.current = scrollHeight - scrollTop - clientHeight < 60;
   };
+
+  useEffect(() => {
+    api.setupControllerGetActiveJob()
+      .then((res) => {
+        if (res.data.jobId && res.data.type === 'abm') {
+          jobIdRef.current = res.data.jobId;
+          setStep('executing');
+          startPolling(res.data.jobId);
+        }
+      })
+      .catch(console.error);
+  }, []);
 
   useEffect(() => {
     if (step === 'preview') {
@@ -158,6 +171,18 @@ export default function AdminImportPage() {
     }
   };
 
+  const handleStopJob = async () => {
+    if (!jobIdRef.current) return;
+    try {
+      setStopping(true);
+      await api.setupControllerStopJob(jobIdRef.current);
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err) || 'Failed to stop job');
+    } finally {
+      setStopping(false);
+    }
+  };
+
   const startPolling = (jobId: string) => {
     pollTimerRef.current = setInterval(async () => {
       try {
@@ -168,15 +193,25 @@ export default function AdminImportPage() {
              setLogs([`--- Initializing ABM Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`, ...progress.logs]);
           }
           
-          if (progress.status === 'completed') {
+          if (progress.status === 'completed' || progress.status === 'done') {
             setStatus('completed');
             clearInterval(pollTimerRef.current);
+            try {
+              const stateRes = await api.setupControllerGetResumeState();
+              const count = stateRes.data.completedTables?.length || 0;
+              setLogs(prev => [...prev, `✅ Extraction finished. Successfully extracted ${count} tables.`]);
+            } catch(e) { /* ignore */ }
           } else if (progress.status === 'failed') {
             setStatus('failed');
             // Extract error from logs if available, else generic error
             const errorLog = progress.logs?.find((l: string) => l.includes('[ERROR]')) || 'Execution failed on backend.';
             setErrorMsg(errorLog);
             clearInterval(pollTimerRef.current);
+            try {
+              const stateRes = await api.setupControllerGetResumeState();
+              const count = stateRes.data.completedTables?.length || 0;
+              setLogs(prev => [...prev, `⏹️ Job stopped or failed. Safely extracted ${count} tables before terminating.`]);
+            } catch(e) { /* ignore */ }
           }
         }
       } catch (err: unknown) {
@@ -436,7 +471,17 @@ export default function AdminImportPage() {
           <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
           <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
           <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
-          <div className="ml-4 text-slate-400 text-xs font-medium">{t('sections.terminal')}</div>
+          <div className="ml-4 text-slate-400 text-xs font-medium flex-1">{t('sections.terminal')}</div>
+          {status === 'running' && (
+            <button 
+              onClick={handleStopJob}
+              disabled={stopping}
+              className="px-3 py-1 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded font-bold text-xs transition-colors border border-red-500/20 disabled:opacity-50"
+            >
+              {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+              {stopping ? 'Stopping...' : 'Stop Job'}
+            </button>
+          )}
         </div>
         <div 
           ref={scrollContainerRef} 

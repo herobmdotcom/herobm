@@ -42,7 +42,7 @@ export default function SupplierStatusBadges({ profile, stateCode, mode = 'grid'
   if (profile.isPaymentBlocked) {
     badges.push(
       <span key="payment-blocked" className="badge badge-sm badge-warning flex items-center gap-1">
-        {/* eslint-disable-next-line i18next/no-literal-string */}
+        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
         <span className="material-symbols-outlined text-[14px]">block</span>
         {tSupplier('statusBadges.paymentBlocked')}
       </span>
@@ -53,7 +53,7 @@ export default function SupplierStatusBadges({ profile, stateCode, mode = 'grid'
   if (profile.isPurchasingBlocked) {
     badges.push(
       <span key="purchase-blocked" className="badge badge-sm badge-danger flex items-center gap-1">
-        {/* eslint-disable-next-line i18next/no-literal-string */}
+        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
         <span className="material-symbols-outlined text-[14px]">block</span>
         {tSupplier('statusBadges.purchaseBlocked')}
       </span>

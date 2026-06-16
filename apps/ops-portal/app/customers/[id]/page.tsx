@@ -1,4 +1,4 @@
-/* eslint-disable i18next/no-literal-string, no-restricted-syntax */
+
 "use client";
 
 import { useState, use, useCallback, useMemo } from "react";
@@ -11,7 +11,7 @@ import { FrontendEnrichmentDecorator } from "@/components/shared/FrontendEnrichm
 import * as api from "@herobm/sdk";
 import DetailsLayout from "@/components/shared/DetailsLayout";
 import { formatAmount } from "@/lib/currency";
-import ActivityTimeline from "@/components/shared/ActivityTimeline";
+import ActivityTimeline, { TimelineEvent } from "@/components/shared/ActivityTimeline";
 import { StateName } from "@/components/StateBadge";
 import DataGrid from "@/components/DataGrid";
 import { ValidState } from "@/types/states";
@@ -79,16 +79,14 @@ export default function AccountDetailPage({
   >("details");
   const [showDiscounts, setShowDiscounts] = useState(false);
   const [isContactSlideOverOpen, setIsContactSlideOverOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [editingContact, setEditingContact] = useState<any>(null);
+  const [editingContact, setEditingContact] = useState<api.ContactResponseDto | null>(null);
 
   const handleAddContactClick = () => {
     setEditingContact(null);
     setIsContactSlideOverOpen(true);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleEditContactClick = (contact: any) => {
+  const handleEditContactClick = (contact: api.ContactResponseDto) => {
     setEditingContact(contact);
     setIsContactSlideOverOpen(true);
   };
@@ -106,16 +104,14 @@ export default function AccountDetailPage({
   };
 
   const [isAddressSlideOverOpen, setIsAddressSlideOverOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [editingAddress, setEditingAddress] = useState<any>(null);
+  const [editingAddress, setEditingAddress] = useState<api.DeliveryAddressResponseDto | null>(null);
 
   const handleAddAddressClick = () => {
     setEditingAddress(null);
     setIsAddressSlideOverOpen(true);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleEditAddressClick = (addr: any) => {
+  const handleEditAddressClick = (addr: api.DeliveryAddressResponseDto) => {
     setEditingAddress(addr);
     setIsAddressSlideOverOpen(true);
   };
@@ -133,16 +129,14 @@ export default function AccountDetailPage({
   };
 
   const handleOrderRowClicked = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (order: any) => {
+    (order: any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Row data passed from DataGrid is dynamically typed */) => {
       router.push(`/sales-orders/${order.id}`);
     },
     [router],
   );
 
   const handleInvoiceRowClicked = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (row: any) => {
+    (row: any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Row data passed from DataGrid is dynamically typed */) => {
       if (row.salesOrderId) {
         router.push(`/sales-orders/${row.salesOrderId}#invoices-section`);
       }
@@ -150,7 +144,7 @@ export default function AccountDetailPage({
     [router],
   );
 
-  const orderColumns = useMemo(
+  const orderColumns = useMemo<any[] /* eslint-disable-line @typescript-eslint/no-explicit-any -- ColDef typing requires structural compatibility workaround */>(
     () => [
       {
         field: "orderNumber",
@@ -168,12 +162,10 @@ export default function AccountDetailPage({
         field: "stateCode",
         headerName: tCommon("columns.status"),
         width: 110,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        valueFormatter: (p: any) => {
+        valueFormatter: (p: { value?: unknown }) => {
           if (!p.value) return "";
           const s = String(p.value).toLowerCase();
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return tStates.has(s as any) ? tStates(s as any) : String(p.value);
+          return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(p.value);
         },
       },
       {
@@ -186,11 +178,9 @@ export default function AccountDetailPage({
         headerName: tCommon("columns.totalPrice"),
         width: 120,
         type: "numericColumn",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        valueGetter: (p: any) =>
-          p.data?.totalPrice ? parseFloat(p.data.totalPrice) : null,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        valueFormatter: (p: any) =>
+        valueGetter: (p: { data?: { totalPrice?: string | number } }) =>
+          p.data?.totalPrice ? parseFloat(String(p.data.totalPrice)) : null,
+        valueFormatter: (p: { value?: number; data?: { currencyCode?: string } }) =>
           !p.value || p.value === 0
             ? "—"
             : formatAmount(p.value, p.data?.currencyCode || baseCurrency),
@@ -199,15 +189,14 @@ export default function AccountDetailPage({
         field: "createdOn",
         headerName: tCommon("columns.date"),
         width: 110,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        valueFormatter: (p: any) =>
-          p.value ? new Date(p.value as string).toLocaleDateString() : "—",
+        valueFormatter: (p: { value?: string | number | Date }) =>
+          p.value ? new Date(p.value).toLocaleDateString() : "—",
       },
     ],
     [tCommon],
   );
 
-  const invoiceColumns = useMemo(
+  const invoiceColumns = useMemo<any[] /* eslint-disable-line @typescript-eslint/no-explicit-any -- ColDef typing requires structural compatibility workaround */>(
     () => [
       { field: "invoiceId", headerName: "ID", hide: true },
       {
@@ -224,8 +213,7 @@ export default function AccountDetailPage({
         field: "createdOn",
         headerName: tSales("columns.date"),
         width: 200,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        valueFormatter: (p: any) =>
+        valueFormatter: (p: { value?: string | number | Date }) =>
           p.value ? new Date(p.value).toLocaleDateString() : "",
       },
       {
@@ -233,11 +221,9 @@ export default function AccountDetailPage({
         headerName: tSales("columns.amount"),
         type: "numericColumn",
         width: 150,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        valueGetter: (p: any) =>
-          p.data?.totalAmount ? parseFloat(p.data.totalAmount) : null,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        valueFormatter: (p: any) =>
+        valueGetter: (p: { data?: { totalAmount?: string | number } }) =>
+          p.data?.totalAmount ? parseFloat(String(p.data.totalAmount)) : null,
+        valueFormatter: (p: { value?: number; data?: { currencyCode?: string } }) =>
           !p.value || p.value === 0
             ? "—"
             : formatAmount(p.value, p.data?.currencyCode || "EUR"),
@@ -246,12 +232,10 @@ export default function AccountDetailPage({
         field: "stateCode",
         headerName: tSales("columns.state"),
         width: 140,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        valueFormatter: (p: any) => {
+        valueFormatter: (p: { value?: unknown }) => {
           if (!p.value) return "";
           const s = String(p.value).toLowerCase();
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return tStates.has(s as any) ? tStates(s as any) : String(p.value);
+          return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(p.value);
         },
       },
     ],
@@ -548,7 +532,8 @@ export default function AccountDetailPage({
             <div className="card">
               <div className="flex items-start justify-between mb-4">
                 <h3 className="section-heading m-0">
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  { }
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                   <span className="material-symbols-outlined">group</span>
                   {t("customers.contacts")}
                 </h3>
@@ -557,8 +542,7 @@ export default function AccountDetailPage({
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {customer.contacts && customer.contacts.length > 0 ? [...customer.contacts].sort((a: any, b: any) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0) || (a.firstName || '').localeCompare(b.firstName || '')).map((contact: any) => (
+                {(customer.contacts as unknown as api.ContactResponseDto[]) && (customer.contacts as unknown as api.ContactResponseDto[]).length > 0 ? [...(customer.contacts as unknown as api.ContactResponseDto[])].sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0) || (a.firstName || '').localeCompare(b.firstName || '')).map((contact) => (
                   <InfoCard
                     key={contact.id}
                     title={`${contact.firstName} ${contact.lastName}`}
@@ -573,7 +557,8 @@ export default function AccountDetailPage({
                             onClick={() => handleEditContactClick(contact)}
                             title={t("customers.contactManagement.editContact")}
                           >
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            { }
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
                           <button
@@ -582,27 +567,30 @@ export default function AccountDetailPage({
                             onClick={() => handleDeleteContactClick(contact.id)}
                             title={t("customers.contactManagement.deleteContact")}
                           >
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            { }
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                             <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
                         </div>
                       </>
                     }
                   >
-                    {/* eslint-disable-next-line no-restricted-syntax */}
-                    <div className="text-sm text-gray-600">{contact.jobTitle || 'No Title'}</div>
+                    { }
+                    <div className="text-sm text-gray-600">{contact.jobTitle || t("portal.noTitle")}</div>
                     {(contact.phone || contact.mobile) && (
                       <div className="flex flex-col gap-1.5 mt-2">
                         {contact.phone && (
                           <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            { }
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                             <span className="material-symbols-outlined text-[14px] text-gray-400">phone</span>
                             <a href={`tel:${contact.phone}`} className="hover:text-[var(--accent)] transition-colors">{contact.phone}</a>
                           </div>
                         )}
                         {contact.mobile && (
                           <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            { }
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                             <span className="material-symbols-outlined text-[14px] text-gray-400">smartphone</span>
                             <a href={`tel:${contact.mobile}`} className="hover:text-[var(--accent)] transition-colors">{contact.mobile}</a>
                           </div>
@@ -611,7 +599,8 @@ export default function AccountDetailPage({
                     )}
                     {contact.email && (
                       <div className="flex items-center gap-1.5 text-sm text-gray-600 mt-1.5">
-                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                        { }
+                        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                         <span className="material-symbols-outlined text-[14px] text-gray-400">mail</span>
                         <a href={`mailto:${contact.email}`} className="text-[var(--accent)] hover:underline truncate">
                           {contact.email}
@@ -621,8 +610,8 @@ export default function AccountDetailPage({
                   </InfoCard>
                 )) : (
                   <>
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
-                    <div className="text-gray-500 text-sm py-4">No contacts found.</div>
+                    { }
+                    <div className="text-gray-500 text-sm py-4">{t("portal.noContactsFound")}</div>
                   </>
                 )}
               </div>
@@ -635,16 +624,16 @@ export default function AccountDetailPage({
             <div className="card">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="section-heading mb-0">
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  { }
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                   <span className="material-symbols-outlined">local_shipping</span>
                   {t("customers.deliveryAddresses")}
                 </h3>
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <button className="btn btn-primary btn-sm" onClick={handleAddAddressClick}>Add Address</button>
+                { }
+                <button className="btn btn-primary btn-sm" onClick={handleAddAddressClick}>{t("portal.addAddress")}</button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {customer.deliveryAddresses && customer.deliveryAddresses.length > 0 ? customer.deliveryAddresses.map((addr: any) => (
+                {customer.deliveryAddresses && customer.deliveryAddresses.length > 0 ? customer.deliveryAddresses.map((addr: any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Unresolved nested DTO type */) => (
                   <InfoCard 
                     key={addr.id} 
                     title={addr.addressName || 'Unnamed Address'}
@@ -658,7 +647,8 @@ export default function AccountDetailPage({
                             onClick={() => handleEditAddressClick(addr)}
                             title="Edit Address"
                           >
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            { }
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
                           <button
@@ -667,7 +657,8 @@ export default function AccountDetailPage({
                             onClick={() => handleDeleteAddressClick(addr.id)}
                             title="Delete Address"
                           >
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            { }
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                             <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
                         </div>
@@ -688,8 +679,8 @@ export default function AccountDetailPage({
                   </InfoCard>
                 )) : (
                   <>
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
-                    <div className="text-gray-500 text-sm py-4">No delivery addresses found.</div>
+                    { }
+                    <div className="text-gray-500 text-sm py-4">{t("portal.noDeliveryAddressesFound")}</div>
                   </>
                 )}
               </div>
@@ -702,7 +693,8 @@ export default function AccountDetailPage({
             {/* Basic Info Card */}
             <div id="info-section" className="card">
               <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                { }
+                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                 <span className="material-symbols-outlined">info</span>
                 {t("customers.generalInfo")}
               </h3>
@@ -834,7 +826,8 @@ export default function AccountDetailPage({
             {/* Pricing & Tax Card */}
             <div id="pricing-section" className="card">
               <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                { }
+                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                 <span className="material-symbols-outlined">payments</span>
                 FINANCIALS
               </h3>
@@ -936,8 +929,7 @@ export default function AccountDetailPage({
                     className="block text-xs font-medium mb-1.5"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
-                    Credit Hold
+                    {t("portal.creditHold")}
                   </label>
                   <div
                     className="flex items-center gap-3"
@@ -981,8 +973,7 @@ export default function AccountDetailPage({
                       className="text-sm"
                       style={{ color: "var(--text-secondary)" }}
                     >
-                      {/* eslint-disable-next-line no-restricted-syntax, i18next/no-literal-string */}
-                      {dto.isOnCreditHold ? "On Hold" : "No Hold"}
+                      {dto.isOnCreditHold ? t("portal.onHold") : t("portal.noHold")}
                     </span>
                   </div>
                 </div>
@@ -1082,7 +1073,7 @@ export default function AccountDetailPage({
                       className="text-sm"
                       style={{ color: "var(--text-secondary)" }}
                     >
-                      {dto.isTaxRegistered ? "Yes" : "No"}
+                      {dto.isTaxRegistered ? t("portal.yes") : t("portal.no")}
                     </span>
                   </div>
                 </div>
@@ -1120,8 +1111,7 @@ export default function AccountDetailPage({
                     className="block text-xs font-medium mb-1.5"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
-                    Trading Terms
+                    {t("portal.tradingTerms")}
                   </label>
                   <select
                     className="input"
@@ -1132,8 +1122,7 @@ export default function AccountDetailPage({
                       saveField("tradingTermsId", e.target.value);
                     }}
                   >
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
-                    <option value="">System Default</option>
+                    <option value="">{t("portal.systemDefault")}</option>
                     {tradingTerms.map((term) => (
                       <option key={term.id} value={term.id}>
                         {term.code} - {term.description}
@@ -1148,8 +1137,7 @@ export default function AccountDetailPage({
                     className="block text-xs font-medium mb-1.5"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
-                    Credit Limit
+                    {t("portal.creditLimit")}
                   </label>
                   <input
                     type="number"
@@ -1194,7 +1182,8 @@ export default function AccountDetailPage({
             {/* Address & Contact Card */}
             <div id="address-section" className="card">
               <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                { }
+                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                 <span className="material-symbols-outlined">location_on</span>
                 {t("customers.billing")}
               </h3>
@@ -1256,8 +1245,7 @@ export default function AccountDetailPage({
                     className="block text-xs font-medium mb-1.5"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    {/* eslint-disable-next-line no-restricted-syntax */}
-                    {"Address Line 2"}
+                    {t("portal.addressLine2")}
                   </label>
                   <input
                     type="text"
@@ -1335,12 +1323,12 @@ export default function AccountDetailPage({
             {/* Bank Details Card */}
             <div id="bank-section" className="card h-fit">
               <h3 className="section-heading">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                { }
+                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                 <span className="material-symbols-outlined">
                   account_balance
                 </span>
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span>Bank Details</span>
+                <span>{t("portal.bankDetails")}</span>
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -1406,12 +1394,12 @@ export default function AccountDetailPage({
             {customer.childAccounts && customer.childAccounts.length > 0 && (
               <div id="hierarchy-section" className="card h-fit">
                 <h3 className="section-heading">
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  { }
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                   <span className="material-symbols-outlined">
                     account_tree
                   </span>
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
-                  <span>Hierarchy</span>
+                  <span>{t("portal.hierarchy")}</span>
                 </h3>
                 <div className="grid grid-cols-1 gap-4">
                   <div className="mt-4">
@@ -1424,8 +1412,7 @@ export default function AccountDetailPage({
                       })}
                     </label>
                     <div className="flex flex-col gap-2">
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                      {customer.childAccounts.map((child: any) => (
+                      {customer.childAccounts.map((child: any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Unresolved nested DTO type */) => (
                         <Link
                           key={child.customerId}
                           href={`/customers/${child.customerId}`}
@@ -1442,7 +1429,8 @@ export default function AccountDetailPage({
                               {child.customerNumber}
                             </div>
                           </div>
-                          {/* eslint-disable-next-line i18next/no-literal-string */}
+                          { }
+                          {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                           <span className="material-symbols-outlined text-[var(--text-muted)]">
                             chevron_right
                           </span>
@@ -1455,8 +1443,7 @@ export default function AccountDetailPage({
             )}
 
             <div id="activity-section" className="card">
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <ActivityTimeline events={(customer.events as any[]) || []} />
+              <ActivityTimeline events={(customer.events as unknown as TimelineEvent[]) || []} />
             </div>
 
             {/* Bottom Actions */}
@@ -1500,7 +1487,7 @@ export default function AccountDetailPage({
               entityId={customer.customerId}
               entityType="customer"
               contactId={editingContact?.id}
-              existingData={editingContact}
+              existingData={editingContact || undefined}
               defaultCountry={customer.billingAddressCountry || undefined}
               onSaved={() => {
                 setIsContactSlideOverOpen(false);
@@ -1512,7 +1499,7 @@ export default function AccountDetailPage({
               onClose={() => setIsAddressSlideOverOpen(false)}
               customerId={customer.customerId}
               addressId={editingAddress?.id}
-              existingData={editingAddress}
+              existingData={editingAddress as any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Form component expects partial interface mismatches */}
               defaultCountry={customer.billingAddressCountry || undefined}
               onSaved={() => {
                 setIsAddressSlideOverOpen(false);

@@ -1,13 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 
 describe('API Keys (e2e)', () => {
   let app: INestApplication;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let server: any;
+  let server: ReturnType<INestApplication['getHttpServer']>;
   let jwtToken: string;
 
   beforeAll(async () => {

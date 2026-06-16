@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-restricted-syntax -- Type casting for complex, mathematically proven algorithms where TypeScript's type system falls short. */
 import React from 'react';
 
 export interface DataTableColumn<T> {

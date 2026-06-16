@@ -105,8 +105,7 @@ export default function NewJournalEntryPage() {
 
     const payloadLines = lines.map(line => ({
       accountCode: line.accountCode,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      partyType: line.partyType === 'none' ? undefined : (line.partyType as any),
+      partyType: line.partyType === 'none' ? undefined : (line.partyType as 'customer' | 'supplier'),
       partyId: line.partyId || undefined,
       debit: parseFloat(line.debit) || 0,
       credit: parseFloat(line.credit) || 0,
@@ -117,7 +116,7 @@ export default function NewJournalEntryPage() {
       await api.glControllerCreateManualJournalEntry({
         entryDate: date,
         memo: memo || undefined,
-        lines: payloadLines,
+        lines: payloadLines as any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Required to map partial form state to SDK expected properties */,
       });
       router.push('/general-ledger/journal-entries');
     } catch (err) {
@@ -186,7 +185,7 @@ export default function NewJournalEntryPage() {
         <div className="card">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
             <h3 className="section-heading !mb-0 shrink-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined">list</span>
               {t('lines')}
             </h3>
@@ -299,7 +298,7 @@ export default function NewJournalEntryPage() {
                         disabled={lines.length <= 2}
                         className="p-1.5 text-red-500 hover:bg-red-50 rounded disabled:opacity-30 disabled:hover:bg-transparent"
                       >
-                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                         <span className="material-symbols-outlined text-[16px]">delete</span>
                       </button>
                     </td>

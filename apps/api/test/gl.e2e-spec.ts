@@ -7,8 +7,7 @@ import { INestApplication } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('API E2E — General Ledger', () => {
   let app: INestApplication;
@@ -50,7 +49,6 @@ describe('API E2E — General Ledger', () => {
         .expect(200);
 
       // Find two non-group (leaf) accounts to post to
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const walk = (nodes: any[], leaves: any[]) => {
         for (const node of nodes) {
           if (!node.isGroup) leaves.push(node);
@@ -60,7 +58,6 @@ describe('API E2E — General Ledger', () => {
         }
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const leaves: any[] = [];
       walk(accountsRes.body, leaves);
 
@@ -132,11 +129,9 @@ describe('API E2E — General Ledger', () => {
       const trialBalance = res.body;
 
       const debitNode = trialBalance.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (node: any) => node.account_code === debitAccountCode,
       );
       const creditNode = trialBalance.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (node: any) => node.account_code === creditAccountCode,
       );
 

@@ -3,8 +3,7 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('Locations & Topography (e2e)', () => {
   let app: INestApplication;
@@ -120,12 +119,10 @@ describe('Locations & Topography (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`);
 
     const myLoc = inventoryRes.body.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (l: any) => l.locationId === locationId,
     );
     if (!myLoc) throw new Error('Location not found in full list');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handlingZone = myLoc.zones.find((z: any) => z.code === 'HANDLING');
     if (handlingZone) {
       // 10.1 Delete auto-bins

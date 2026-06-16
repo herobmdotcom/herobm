@@ -2,8 +2,7 @@ import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('Credit Control Lifecycle (e2e)', () => {
   let app: INestApplication;
@@ -80,6 +79,7 @@ describe('Credit Control Lifecycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         customerId,
+        deliveryAddressLine1: 'Test Address',
         lines: [
           {
             productDescription: 'Test item',
@@ -124,6 +124,7 @@ describe('Credit Control Lifecycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         customerId,
+        deliveryAddressLine1: 'Test Address',
         lines: [
           {
             productDescription: 'Test item 2',

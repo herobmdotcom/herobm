@@ -1,17 +1,18 @@
-/* eslint-disable i18next/no-literal-string, no-restricted-syntax */
+
 'use client';
 
+import { useTranslations } from 'next-intl';
 import React, { useState } from 'react';
 import { useLicense } from '@/components/LicenseProvider';
-import { licenseControllerApplyLicense } from '@herobm/sdk';
+import { licenseControllerApplyLicense, LicenseStatusDtoState, LicenseStatusDtoType } from '@herobm/sdk';
 import toast from 'react-hot-toast';
-import { useTranslations } from 'next-intl';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
 import PageNav from '@/components/shared/PageNav';
 import { useRouter } from 'next/navigation';
 
 export default function LicensePage() {
+  const tPortal = useTranslations('portal');
   const { status, isLoading, reloadStatus } = useLicense();
   const [licenseKey, setLicenseKey] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,15 +58,13 @@ export default function LicensePage() {
       <div className="flex flex-col gap-6">
         <div id="system-details" className="card">
           <h3 className="section-heading mb-4">
-
-            <span className="material-symbols-outlined">info</span>
-            System Details
+            {tPortal('systemDetails')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  System ID
+                  {tPortal('systemId')}
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -84,6 +83,7 @@ export default function LicensePage() {
                     title="Copy to clipboard"
                   >
         
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                     <span className="material-symbols-outlined text-sm">content_copy</span>
                   </button>
                 </div>
@@ -92,30 +92,31 @@ export default function LicensePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Status
+                    {tPortal('status')}
                   </label>
                   <div className="flex items-center h-10 text-sm gap-2">
-                    {status?.state === 'read_only' && (
-                      <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider">Read-Only</span>
+                    {/* Replace raw strings with imported enums */}
+                    {status?.state === LicenseStatusDtoState.read_only && (
+                      <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider">{tPortal('readOnly')}</span>
                     )}
-                    {status?.state !== 'read_only' && status?.type === 'perpetual' && (
-                      <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider">Licensed</span>
+                    {status?.state !== LicenseStatusDtoState.read_only && status?.type === LicenseStatusDtoType.perpetual && (
+                      <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider">{tPortal('licensed')}</span>
                     )}
-                    {status?.state === 'active' && status?.type !== 'perpetual' && (
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider">Trial</span>
+                    {status?.state === LicenseStatusDtoState.active && status?.type !== LicenseStatusDtoType.perpetual && (
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider">{tPortal('trial')}</span>
                     )}
-                    {status?.state === 'warning' && status?.type !== 'perpetual' && (
-                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider">Trial Expiring</span>
+                    {status?.state === LicenseStatusDtoState.warning && status?.type !== LicenseStatusDtoType.perpetual && (
+                      <span className="px-2 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider">{tPortal('trialExpiring')}</span>
                     )}
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    License Type
+                    {tPortal('licenseType')}
                   </label>
-                  <div className="flex items-center h-10 capitalize font-medium text-sm">
-                    {status?.type || 'None'}
+                  <div className="text-sm font-semibold mt-1 bg-[var(--bg-primary)] px-3 py-2 rounded-lg border border-[var(--border-color)]">
+                    {status?.type || tPortal('notAvailable')}
                   </div>
                 </div>
               </div>
@@ -123,7 +124,7 @@ export default function LicensePage() {
               {status?.expiresAt && (
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {status.type === 'none' ? 'Grace Period Ends' : 'Expires At'}
+                    {status.type === LicenseStatusDtoType.none ? tPortal('gracePeriodEnds') : tPortal('expiresAt')}
                   </label>
                   <div className="flex items-center h-10 text-sm">
                     {new Date(status.expiresAt).toLocaleDateString()}
@@ -142,12 +143,10 @@ export default function LicensePage() {
 
         <div id="apply-license" className="card">
           <h3 className="section-heading mb-4">
-
-            <span className="material-symbols-outlined">vpn_key</span>
-            Apply New License
+            {tPortal('applyNewLicense')}
           </h3>
           <p className="text-sm text-slate-500 mb-4">
-            Paste your new license key below. Make sure it was issued for your exact System ID ({status?.systemId}).
+            {tPortal('pasteLicenseKey', { systemId: status?.systemId || '' })}
           </p>
           
           <textarea
@@ -163,7 +162,7 @@ export default function LicensePage() {
               disabled={!licenseKey.trim() || isSubmitting}
               className="btn btn-primary disabled:opacity-50"
             >
-              {isSubmitting ? 'Applying...' : 'Apply License'}
+              {isSubmitting ? tPortal('applying') : tPortal('applyNewLicense')}
             </button>
           </div>
         </div>

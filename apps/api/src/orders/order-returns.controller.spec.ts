@@ -5,7 +5,7 @@ import { RETURN_STATE } from '@herobm/shared';
 
 describe('OrderReturnsController', () => {
   let controller: OrderReturnsController;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let returnsService: any;
 
   const mockReturn = {
@@ -66,12 +66,12 @@ describe('OrderReturnsController', () => {
       };
       const result = await controller.createReturn(
         'uuid-1',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         body as any,
         mockUser,
       );
       expect(result).toEqual(mockReturn);
-      expect(returnsService.createReturn).toHaveBeenCalledWith(
+      expect(jest.mocked(returnsService.createReturn)).toHaveBeenCalledWith(
         'uuid-1',
         body,
         'admin',
@@ -83,7 +83,9 @@ describe('OrderReturnsController', () => {
     it('should call returnsService.findByOrder with orderId', async () => {
       const result = await controller.findReturns('uuid-1');
       expect(result).toEqual([mockReturn]);
-      expect(returnsService.findByOrder).toHaveBeenCalledWith('uuid-1');
+      expect(jest.mocked(returnsService.findByOrder)).toHaveBeenCalledWith(
+        'uuid-1',
+      );
     });
   });
 
@@ -91,7 +93,9 @@ describe('OrderReturnsController', () => {
     it('should call returnsService.findOne with returnId', async () => {
       const result = await controller.findReturn('uuid-1', 'ret-uuid-1');
       expect(result).toEqual(mockReturn);
-      expect(returnsService.findOne).toHaveBeenCalledWith('ret-uuid-1');
+      expect(jest.mocked(returnsService.findOne)).toHaveBeenCalledWith(
+        'ret-uuid-1',
+      );
     });
   });
 
@@ -105,7 +109,7 @@ describe('OrderReturnsController', () => {
         mockUser,
       );
       expect(result).toEqual(mockReturn);
-      expect(returnsService.updateReturn).toHaveBeenCalledWith(
+      expect(jest.mocked(returnsService.updateReturn)).toHaveBeenCalledWith(
         'ret-uuid-1',
         body,
         'admin',
@@ -118,12 +122,14 @@ describe('OrderReturnsController', () => {
       const result = await controller.changeReturnState(
         'uuid-1',
         'ret-uuid-1',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         { stateCode: RETURN_STATE.CONFIRMED } as any,
         mockUser,
       );
       expect(result.stateCode).toBe(RETURN_STATE.CONFIRMED);
-      expect(returnsService.changeReturnState).toHaveBeenCalledWith(
+      expect(
+        jest.mocked(returnsService.changeReturnState),
+      ).toHaveBeenCalledWith(
         'ret-uuid-1',
         RETURN_STATE.CONFIRMED,
         'admin',
@@ -142,12 +148,12 @@ describe('OrderReturnsController', () => {
       const result = await controller.addReturnLine(
         'uuid-1',
         'ret-uuid-1',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         body as any,
         mockUser,
       );
       expect(result).toEqual(mockReturnLine);
-      expect(returnsService.addReturnLine).toHaveBeenCalledWith(
+      expect(jest.mocked(returnsService.addReturnLine)).toHaveBeenCalledWith(
         'ret-uuid-1',
         body,
         'admin',
@@ -166,7 +172,7 @@ describe('OrderReturnsController', () => {
         mockUser,
       );
       expect(result).toEqual(mockReturnLine);
-      expect(returnsService.updateReturnLine).toHaveBeenCalledWith(
+      expect(jest.mocked(returnsService.updateReturnLine)).toHaveBeenCalledWith(
         'ret-uuid-1',
         'retline-uuid-1',
         body,
@@ -183,7 +189,7 @@ describe('OrderReturnsController', () => {
         'retline-uuid-1',
         mockUser,
       );
-      expect(returnsService.removeReturnLine).toHaveBeenCalledWith(
+      expect(jest.mocked(returnsService.removeReturnLine)).toHaveBeenCalledWith(
         'ret-uuid-1',
         'retline-uuid-1',
         'admin',

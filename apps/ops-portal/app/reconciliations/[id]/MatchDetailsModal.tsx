@@ -21,11 +21,11 @@ export default function MatchDetailsModal({
   onClose: () => void;
   onUnmatchSuccess: () => void;
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [bankLines, setBankLines] = useState<Record<string, any>[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [ledgerLines, setLedgerLines] = useState<Record<string, any>[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [matchMetadata, setMatchMetadata] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
   const [unmatching, setUnmatching] = useState(false);
@@ -98,7 +98,7 @@ export default function MatchDetailsModal({
         disabled={loading || unmatching || !matchGroupId}
         className="btn btn-danger font-semibold px-4 py-2 flex items-center gap-2"
       >
-        {/* eslint-disable-next-line i18next/no-literal-string */}
+        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
         <span className="material-symbols-outlined text-[18px]">undo</span>
         {unmatching ? tCommon('saving') : t('undoMatch')}
       </button>

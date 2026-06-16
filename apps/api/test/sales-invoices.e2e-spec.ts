@@ -4,8 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('API E2E — Sales Invoices', () => {
   let app: INestApplication;
@@ -74,6 +73,7 @@ describe('API E2E — Sales Invoices', () => {
           fulfillmentLocationId: locationId,
           customerId: validCustomerId,
           name: 'E2E Partial Invoice Test',
+          deliveryAddressLine1: 'Test Address',
           lines: [
             {
               productId: validProductId1,
@@ -193,6 +193,7 @@ describe('API E2E — Sales Invoices', () => {
           fulfillmentLocationId: locationId,
           customerId: validCustomerId,
           name: 'E2E Unshipped Invoice Test',
+          deliveryAddressLine1: 'Test Address',
           lines: [
             {
               productId: validProductId1,
@@ -262,8 +263,14 @@ describe('API E2E — Sales Invoices', () => {
       expect(res.body.length).toBeGreaterThan(0);
 
       const found = res.body.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (inv: any) => inv.invoiceId === createdInvoiceId,
+        (inv: {
+          invoiceId: string;
+          salesOrderId: string;
+          customerId: string;
+          customerName: string;
+          orderNumber: string;
+          totalAmount: string;
+        }) => inv.invoiceId === createdInvoiceId,
       );
       expect(found).toBeDefined();
       expect(found.salesOrderId).toBe(orderId);
@@ -281,8 +288,9 @@ describe('API E2E — Sales Invoices', () => {
 
       expect(Array.isArray(res.body)).toBe(true);
       expect(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        res.body.every((inv: any) => inv.customerId === validCustomerId),
+        res.body.every(
+          (inv: { customerId: string }) => inv.customerId === validCustomerId,
+        ),
       ).toBe(true);
     });
 
@@ -306,8 +314,8 @@ describe('API E2E — Sales Invoices', () => {
         .expect(200);
 
       const je = glRes.body.data.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (j: any) => j.sourceId === createdInvoiceId,
+        (j: { sourceId: string; journalEntryId: string }) =>
+          j.sourceId === createdInvoiceId,
       );
       if (!je) {
         console.error('FAILED TO FIND JE. ID:', createdInvoiceId);
@@ -325,8 +333,10 @@ describe('API E2E — Sales Invoices', () => {
       const lines = detailRes.body.lines;
       expect(lines.length).toBeGreaterThanOrEqual(2);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const arLine = lines.find((l: any) => l.partyId === validCustomerId);
+      const arLine = lines.find(
+        (l: { partyId: string; partyType: string; debit: string }) =>
+          l.partyId === validCustomerId,
+      );
       expect(arLine).toBeDefined();
       expect(arLine.partyType).toBe('customer');
       expect(parseFloat(arLine.debit)).toBeGreaterThan(19.0); // 20 + tax

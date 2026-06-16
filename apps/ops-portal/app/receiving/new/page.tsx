@@ -129,18 +129,16 @@ function ReceivingFlow() {
 
     try {
       const result = await api.goodsReceivedControllerCreate(payload);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const returnedLines = (result.data as any)?.lines || [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mapped: CompletedLine[] = returnedLines.map((l: any) => ({
-        goodsReceivedLineId: l.goodsReceivedLineId,
-        productId: l.productId,
-        productNumber: l.productNumber || l.productId.substring(0, 8),
-        productName: l.productName || l.productDescription || '',
-        quantityReceived: l.quantityReceived,
-        matchStatus: l.matchStatus || MATCH_STATUS.UNMATCHED,
-        orderNumber: l.orderNumber,
-        purchaseOrderId: l.purchaseOrderId,
+      const returnedLines = (result.data as { lines?: Record<string, unknown>[] })?.lines || [];
+      const mapped: CompletedLine[] = returnedLines.map((l) => ({
+        goodsReceivedLineId: String(l.goodsReceivedLineId),
+        productId: String(l.productId),
+        productNumber: String(l.productNumber || String(l.productId).substring(0, 8)),
+        productName: String(l.productName || l.productDescription || ''),
+        quantityReceived: String(l.quantityReceived),
+        matchStatus: String(l.matchStatus || MATCH_STATUS.UNMATCHED),
+        orderNumber: l.orderNumber ? String(l.orderNumber) : undefined,
+        purchaseOrderId: l.purchaseOrderId ? String(l.purchaseOrderId) : undefined,
       }));
 
       setCompletedLines(mapped);
@@ -490,7 +488,7 @@ function ReceivingFlow() {
                             style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
                             onClick={() => removeDraftLine(line.id)}
                           >
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                             <span>✕</span>
                           </button>
                         </td>
@@ -520,7 +518,7 @@ function ReceivingFlow() {
                           style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
                           onClick={() => removeDraftLine(line.id)}
                         >
-                          {/* eslint-disable-next-line i18next/no-literal-string */}
+                          {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                           <span>✕</span>
                         </button>
                       </div>

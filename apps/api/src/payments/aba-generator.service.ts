@@ -145,7 +145,7 @@ export class AbaGeneratorService {
     padLeft = false,
   ): string {
     // Sanitize to ASCII
-    // eslint-disable-next-line no-control-regex
+    // eslint-disable-next-line no-control-regex -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols.
     let sanitized = val.replace(/[^\x00-\x7F]/g, '').toUpperCase();
     if (sanitized.length > length) {
       sanitized = sanitized.substring(0, length);

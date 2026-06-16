@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, and, gte } from 'drizzle-orm';
+import { eq, sql, and, gte, SQL } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -30,6 +30,7 @@ import { SuppliersService } from '../suppliers/suppliers.service';
 import { evaluateSalesInvoiceLifecycleRules } from '../invoices/sales-invoice-lifecycle-rules';
 import { evaluatePurchaseInvoiceLifecycleRules } from '../invoices/purchase-invoice-lifecycle-rules';
 import { CreatePaymentDto, AllocatePaymentDto } from './dto';
+import { JournalLineDto } from '../gl/dto';
 import { AbaGeneratorService } from './aba-generator.service';
 import { NachaGeneratorService } from './nacha-generator.service';
 import { inArray } from 'drizzle-orm';
@@ -87,8 +88,7 @@ export class PaymentsService {
   }
 
   async findAll(days?: string, allocation?: string) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const whereClauses: any[] = [];
+    const whereClauses: SQL[] = [];
 
     if (days && days !== '0') {
       const dateLimit = new Date();
@@ -162,6 +162,7 @@ export class PaymentsService {
         referenceType: paymentAllocations.referenceType,
         referenceId: paymentAllocations.referenceId,
         allocatedAmount: paymentAllocations.allocatedAmount,
+        discountAmount: paymentAllocations.discountAmount,
         createdOn: paymentAllocations.createdOn,
         invoiceNumber: sql<string>`COALESCE(${salesInvoices.invoiceNumber}, ${purchaseInvoices.invoiceNumber})`,
       })
@@ -195,8 +196,9 @@ export class PaymentsService {
 
   async createPaymentEntry(dto: CreatePaymentDto, actor: string) {
     return await this.db.transaction(async (tx) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const paymentNumber = await this.generatePaymentNumber(tx as any);
+      const paymentNumber = await this.generatePaymentNumber(
+        tx as unknown as DrizzleDB,
+      );
 
       // JIT Compliance Block for Payments
       if (dto.paymentType.startsWith('supplier_') && dto.partyId) {
@@ -245,13 +247,11 @@ export class PaymentsService {
         return await this.submitPaymentEntry(
           payment.paymentId,
           actor,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          tx as any,
+          tx as unknown as DrizzleDB,
         );
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await emitEvent(tx as any, {
+      await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.PAYMENT,
         entityId: payment.paymentId,
         eventType: EventType.CREATED,
@@ -394,10 +394,10 @@ export class PaymentsService {
         }
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const lines: any[] = [];
+      const lines: JournalLineDto[] = [];
 
-      const linePartyId = linePartyType ? payment.partyId : null;
+      const linePartyId =
+        (linePartyType ? payment.partyId : undefined) ?? undefined;
       const isReceipt = [
         'customer_receipt',
         'supplier_refund',
@@ -429,7 +429,7 @@ export class PaymentsService {
           );
         } else {
           lines.push({
-            accountId: controlAccountId,
+            accountId: controlAccountId ?? undefined,
             debit: 0,
             credit: amount,
             memo: `Payment ${payment.paymentNumber}`,
@@ -473,7 +473,7 @@ export class PaymentsService {
           );
         } else {
           lines.push({
-            accountId: controlAccountId,
+            accountId: controlAccountId ?? undefined,
             debit: totalApDebit,
             credit: 0,
             memo: `Payment ${payment.paymentNumber}`,
@@ -493,6 +493,93 @@ export class PaymentsService {
         },
         tx,
       );
+
+      // Process allocations (decrement outstanding amounts and emit events)
+      const allocations = await tx
+        .select()
+        .from(paymentAllocations)
+        .where(eq(paymentAllocations.paymentId, paymentId));
+
+      for (const alloc of allocations) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+        let targetTable: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+        let targetIdCol: any;
+
+        switch (alloc.referenceType) {
+          case 'sales_invoice':
+            targetTable = salesInvoices;
+            targetIdCol = salesInvoices.invoiceId;
+            break;
+          case 'purchase_invoice':
+            targetTable = purchaseInvoices;
+            targetIdCol = purchaseInvoices.invoiceId;
+            break;
+          case 'sales_credit_note':
+            targetTable = salesCreditNotes;
+            targetIdCol = salesCreditNotes.creditNoteId;
+            break;
+          case 'purchase_debit_note':
+            targetTable = purchaseDebitNotes;
+            targetIdCol = purchaseDebitNotes.debitNoteId;
+            break;
+        }
+
+        if (targetTable) {
+          const [doc] = await tx
+            .select()
+            .from(targetTable)
+            .where(eq(targetIdCol, alloc.referenceId))
+            .for('update');
+
+          if (doc) {
+            const outstanding = parseFloat(doc.outstandingAmount);
+            const newOutstanding =
+              outstanding - parseFloat(alloc.allocatedAmount);
+
+            await tx
+              .update(targetTable)
+              .set({
+                outstandingAmount: newOutstanding.toString(),
+                modifiedOn: new Date(),
+              })
+              .where(eq(targetIdCol, alloc.referenceId));
+
+            // Evaluate Invoice Lifecycle
+            if (alloc.referenceType === 'sales_invoice') {
+              await evaluateSalesInvoiceLifecycleRules(
+                tx as unknown as DrizzleDB,
+                alloc.referenceId,
+                { entity: 'payment', id: paymentId, action: 'allocated' },
+                actor,
+              );
+            } else if (alloc.referenceType === 'purchase_invoice') {
+              await evaluatePurchaseInvoiceLifecycleRules(
+                tx as unknown as DrizzleDB,
+                alloc.referenceId,
+                { entity: 'payment', id: paymentId, action: 'allocated' },
+                actor,
+              );
+            }
+
+            // Emit allocation event
+            await emitEvent(tx as unknown as DrizzleDB, {
+              entityType: EntityType.PAYMENT,
+              entityId: paymentId,
+              eventType: EventType.PAYMENT_ALLOCATED,
+              entityDisplayName: payment.paymentNumber,
+              payload: {
+                allocationId: alloc.allocationId,
+                referenceType: alloc.referenceType,
+                referenceId: alloc.referenceId,
+                allocatedAmount: alloc.allocatedAmount,
+                newOutstandingBalance: newOutstanding,
+              },
+              actor,
+            });
+          }
+        }
+      }
 
       // 6. Update state
       const updated = await this.changePaymentState(
@@ -514,6 +601,7 @@ export class PaymentsService {
     }
   }
 
+  // @herobm-skip-audit
   async allocatePayment(
     paymentId: string,
     dto: AllocatePaymentDto,
@@ -529,12 +617,17 @@ export class PaymentsService {
 
       if (!payment)
         throw new NotFoundException(`Payment ${paymentId} not found`);
-      if (payment.stateCode !== PAYMENT_STATE.SUBMITTED)
+      if (payment.stateCode !== PAYMENT_STATE.DRAFT)
         throw new BadRequestException(
-          `Payment must be ${PAYMENT_STATE.SUBMITTED} to allocate`,
+          `Payment must be ${PAYMENT_STATE.DRAFT} to allocate`,
         );
 
-      let unallocatedAmount = parseFloat(payment.unallocatedAmount);
+      // Clear existing allocations for this draft payment
+      await tx
+        .delete(paymentAllocations)
+        .where(eq(paymentAllocations.paymentId, paymentId));
+
+      let unallocatedAmount = parseFloat(payment.totalAmount);
 
       // Calculate total allocation requested
       const totalRequested = dto.allocations.reduce(
@@ -543,20 +636,19 @@ export class PaymentsService {
       );
       if (totalRequested > unallocatedAmount + 0.001) {
         throw new BadRequestException(
-          `Cannot allocate more than the unallocated amount (${unallocatedAmount})`,
+          `Cannot allocate more than the total payment amount (${unallocatedAmount})`,
         );
       }
 
       // Process each allocation
       for (const alloc of dto.allocations) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         let targetTable: any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         let targetIdCol: any;
         let targetIdLabel: string;
         let draftState: string;
         let cancelledState: string;
-        const targetStateCodeCol: string = 'stateCode';
 
         switch (alloc.referenceType) {
           case 'sales_invoice':
@@ -611,71 +703,47 @@ export class PaymentsService {
           );
         }
 
+        // Sum other draft allocations to prevent over-allocation across multiple drafts
+        const otherDrafts = await tx
+          .select({ allocated: paymentAllocations.allocatedAmount })
+          .from(paymentAllocations)
+          .innerJoin(
+            paymentEntries,
+            eq(paymentAllocations.paymentId, paymentEntries.paymentId),
+          )
+          .where(
+            and(
+              eq(paymentAllocations.referenceId, alloc.referenceId),
+              eq(paymentEntries.stateCode, PAYMENT_STATE.DRAFT),
+              // Exclude the current payment ID
+              sql`${paymentAllocations.paymentId} != ${paymentId}`,
+            ),
+          );
+
+        const otherDraftAllocated = otherDrafts.reduce(
+          (sum, d) => sum + parseFloat(d.allocated),
+          0,
+        );
         const outstanding = parseFloat(doc.outstandingAmount);
-        if (alloc.allocatedAmount > outstanding + 0.001) {
+
+        if (alloc.allocatedAmount > outstanding - otherDraftAllocated + 0.001) {
           throw new BadRequestException(
-            `Cannot allocate more than outstanding amount on ${targetIdLabel}`,
+            `Cannot allocate more than remaining outstanding amount on ${targetIdLabel} (Outstanding: ${outstanding}, Pending in other drafts: ${otherDraftAllocated})`,
           );
         }
 
-        // 3. Create allocation record
-        const [allocationRecord] = await tx
-          .insert(paymentAllocations)
-          .values({
-            paymentId,
-            referenceType: alloc.referenceType,
-            referenceId: alloc.referenceId,
-            allocatedAmount: alloc.allocatedAmount.toString(),
-          })
-          .returning();
-
-        // 4. Decrement balances
-        const newOutstanding = outstanding - alloc.allocatedAmount;
-        await tx
-          .update(targetTable)
-          .set({
-            outstandingAmount: newOutstanding.toString(),
-            modifiedOn: new Date(),
-          })
-          .where(eq(targetIdCol, alloc.referenceId));
+        // 3. Create allocation record (does NOT decrement outstandingAmount yet)
+        await tx.insert(paymentAllocations).values({
+          paymentId,
+          referenceType: alloc.referenceType,
+          referenceId: alloc.referenceId,
+          allocatedAmount: alloc.allocatedAmount.toString(),
+          discountAmount: alloc.discountAmount
+            ? alloc.discountAmount.toString()
+            : null,
+        });
 
         unallocatedAmount -= alloc.allocatedAmount;
-
-        // 5. Evaluate Invoice Lifecycle (only for invoices)
-        if (alloc.referenceType === 'sales_invoice') {
-          await evaluateSalesInvoiceLifecycleRules(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            tx as any,
-            alloc.referenceId,
-            { entity: 'payment', id: paymentId, action: 'allocated' },
-            actor,
-          );
-        } else if (alloc.referenceType === 'purchase_invoice') {
-          await evaluatePurchaseInvoiceLifecycleRules(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            tx as any,
-            alloc.referenceId,
-            { entity: 'payment', id: paymentId, action: 'allocated' },
-            actor,
-          );
-        }
-
-        // 6. Emit allocation event
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await emitEvent(tx as any, {
-          entityType: EntityType.PAYMENT,
-          entityId: paymentId,
-          eventType: EventType.PAYMENT_ALLOCATED,
-          entityDisplayName: payment.paymentNumber,
-          payload: {
-            allocationId: allocationRecord.allocationId,
-            referenceType: alloc.referenceType,
-            referenceId: alloc.referenceId,
-            allocatedAmount: alloc.allocatedAmount,
-            newOutstandingBalance: newOutstanding,
-          },
-          actor,
-        });
       }
 
       // Update payment unallocated amount
@@ -689,6 +757,41 @@ export class PaymentsService {
         .returning();
 
       return updatedPayment;
+    });
+  }
+
+  // @herobm-skip-audit
+  async removePayment(paymentId: string) {
+    return await this.db.transaction(async (tx) => {
+      const [payment] = await tx
+        .select()
+        .from(paymentEntries)
+        .where(eq(paymentEntries.paymentId, paymentId))
+        .for('update');
+
+      if (!payment) {
+        throw new NotFoundException(`Payment ${paymentId} not found`);
+      }
+
+      if (payment.stateCode !== PAYMENT_STATE.DRAFT) {
+        throw new BadRequestException(
+          'Only draft payments can be permanently deleted. Submitted or Posted payments must be cancelled.',
+        );
+      }
+
+      await tx
+        .delete(paymentAllocations)
+        .where(eq(paymentAllocations.paymentId, paymentId));
+
+      await tx
+        .delete(paymentLines)
+        .where(eq(paymentLines.paymentId, paymentId));
+
+      await tx
+        .delete(paymentEntries)
+        .where(eq(paymentEntries.paymentId, paymentId));
+
+      return { success: true };
     });
   }
 
@@ -711,16 +814,75 @@ export class PaymentsService {
         );
       }
 
-      // 2. Check for existing allocations
-      const existingAllocations = await tx
-        .select({ allocationId: paymentAllocations.allocationId })
+      // 2. Revert allocations
+      const allocations = await tx
+        .select()
         .from(paymentAllocations)
         .where(eq(paymentAllocations.paymentId, paymentId));
 
-      if (existingAllocations.length > 0) {
-        throw new BadRequestException(
-          'Cannot cancel a payment that has allocations. Remove allocations first.',
-        );
+      for (const alloc of allocations) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+        let targetTable: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+        let targetIdCol: any;
+
+        switch (alloc.referenceType) {
+          case 'sales_invoice':
+            targetTable = salesInvoices;
+            targetIdCol = salesInvoices.invoiceId;
+            break;
+          case 'purchase_invoice':
+            targetTable = purchaseInvoices;
+            targetIdCol = purchaseInvoices.invoiceId;
+            break;
+          case 'sales_credit_note':
+            targetTable = salesCreditNotes;
+            targetIdCol = salesCreditNotes.creditNoteId;
+            break;
+          case 'purchase_debit_note':
+            targetTable = purchaseDebitNotes;
+            targetIdCol = purchaseDebitNotes.debitNoteId;
+            break;
+        }
+
+        if (targetTable) {
+          const [doc] = await tx
+            .select()
+            .from(targetTable)
+            .where(eq(targetIdCol, alloc.referenceId))
+            .for('update');
+
+          if (doc) {
+            const outstanding = parseFloat(doc.outstandingAmount);
+            const newOutstanding =
+              outstanding + parseFloat(alloc.allocatedAmount);
+
+            await tx
+              .update(targetTable)
+              .set({
+                outstandingAmount: newOutstanding.toString(),
+                modifiedOn: new Date(),
+              })
+              .where(eq(targetIdCol, alloc.referenceId));
+
+            // Evaluate Invoice Lifecycle
+            if (alloc.referenceType === 'sales_invoice') {
+              await evaluateSalesInvoiceLifecycleRules(
+                tx as unknown as DrizzleDB,
+                alloc.referenceId,
+                { entity: 'payment', id: paymentId, action: 'cancelled' },
+                actor,
+              );
+            } else if (alloc.referenceType === 'purchase_invoice') {
+              await evaluatePurchaseInvoiceLifecycleRules(
+                tx as unknown as DrizzleDB,
+                alloc.referenceId,
+                { entity: 'payment', id: paymentId, action: 'cancelled' },
+                actor,
+              );
+            }
+          }
+        }
       }
 
       // 3. Reverse the GL journal entry
@@ -785,9 +947,9 @@ export class PaymentsService {
       }
 
       // Reverse: swap debit/credit from original
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const reversalLines: any[] = [];
-      const linePartyId = linePartyType ? payment.partyId : null;
+      const reversalLines: JournalLineDto[] = [];
+      const linePartyId =
+        (linePartyType ? payment.partyId : undefined) ?? undefined;
       const isReceipt = [
         'customer_receipt',
         'supplier_refund',
@@ -818,7 +980,7 @@ export class PaymentsService {
           );
         } else {
           reversalLines.push({
-            accountId: controlAccountId,
+            accountId: controlAccountId ?? undefined,
             debit: amount,
             credit: 0,
             memo: `Reversal: ${payment.paymentNumber}`,
@@ -850,7 +1012,7 @@ export class PaymentsService {
           );
         } else {
           reversalLines.push({
-            accountId: controlAccountId,
+            accountId: controlAccountId ?? undefined,
             debit: 0,
             credit: amount,
             memo: `Reversal: ${payment.paymentNumber}`,
@@ -878,6 +1040,15 @@ export class PaymentsService {
         actor,
         tx,
       );
+
+      await emitEvent(tx as unknown as DrizzleDB, {
+        entityType: EntityType.PAYMENT,
+        entityId: paymentId,
+        eventType: EventType.PAYMENT_CANCELLED,
+        entityDisplayName: payment.paymentNumber,
+        payload: { paymentId },
+        actor,
+      });
 
       return updated;
     });
@@ -930,8 +1101,7 @@ export class PaymentsService {
 
       if (!bankGl) throw new NotFoundException('GL Account Bank not found');
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const meta = (bankGl.metadata || {}) as any;
+      const meta = (bankGl.metadata || {}) as Record<string, string>;
       if (!meta.abaUserName || !meta.abaUserId || !meta.bankName) {
         throw new BadRequestException(
           'Company Bank GL Account metadata is missing ABA details (abaUserName, abaUserId, bankName)',
@@ -984,8 +1154,7 @@ export class PaymentsService {
           p.paymentId,
           PAYMENT_STATE.EXPORTED,
           actor,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          tx as any,
+          tx as unknown as DrizzleDB,
         );
 
         await tx
@@ -996,8 +1165,7 @@ export class PaymentsService {
           })
           .where(eq(paymentEntries.paymentId, p.paymentId));
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await emitEvent(tx as any, {
+        await emitEvent(tx as unknown as DrizzleDB, {
           entityType: EntityType.PAYMENT,
           entityId: p.paymentId,
           eventType: EventType.UPDATED,
@@ -1057,8 +1225,7 @@ export class PaymentsService {
 
       if (!bankGl) throw new NotFoundException('GL Account Bank not found');
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const meta = (bankGl.metadata || {}) as any;
+      const meta = (bankGl.metadata || {}) as Record<string, string>;
       if (
         !meta.companyId ||
         !meta.immediateDestination ||
@@ -1108,8 +1275,7 @@ export class PaymentsService {
           p.paymentId,
           PAYMENT_STATE.EXPORTED,
           actor,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          tx as any,
+          tx as unknown as DrizzleDB,
         );
 
         await tx
@@ -1120,8 +1286,7 @@ export class PaymentsService {
           })
           .where(eq(paymentEntries.paymentId, p.paymentId));
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await emitEvent(tx as any, {
+        await emitEvent(tx as unknown as DrizzleDB, {
           entityType: EntityType.PAYMENT,
           entityId: p.paymentId,
           eventType: EventType.UPDATED,
@@ -1189,8 +1354,7 @@ export class PaymentsService {
       .where(eq(paymentEntries.paymentId, paymentId))
       .returning();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await emitEvent(tx as any, {
+    await emitEvent(tx as unknown as DrizzleDB, {
       entityType: EntityType.PAYMENT,
       entityId: paymentId,
       eventType: EventType.STATUS_CHANGED,

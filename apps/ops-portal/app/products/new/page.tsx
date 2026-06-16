@@ -55,13 +55,12 @@ export default function NewProductPage() {
     setSubmitting(true);
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const payload: any = { ...dto };
+      const payload: Record<string, unknown> = { ...dto };
       if (!payload.purchaseTaxCategoryId) delete payload.purchaseTaxCategoryId;
       if (!payload.salesTaxCategoryId) delete payload.salesTaxCategoryId;
       if (!payload.productGroupId) delete payload.productGroupId;
 
-      const res = await api.productsControllerCreate(payload);
+      const res = await api.productsControllerCreate(payload as unknown as api.CreateProductDto);
       const product = res.data;
       toast.success(t('toast.productCreated'));
       router.push(`/products/${product.id}`);
@@ -117,7 +116,7 @@ export default function NewProductPage() {
           {/* Identity Card */}
           <div className="card">
             <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined">badge</span>
               {t('products.cards.identity')}
             </h3>
@@ -182,7 +181,7 @@ export default function NewProductPage() {
           {/* Classification Card */}
           <div className="card">
             <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined">category</span>
               {t('products.cards.classification')}
             </h3>
@@ -249,7 +248,7 @@ export default function NewProductPage() {
           {/* Pricing & Financials Card */}
           <div className="card">
             <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined">payments</span>
               {t('products.pricing')}
             </h3>
@@ -330,7 +329,7 @@ export default function NewProductPage() {
           {/* Taxation Card */}
           <div className="card">
             <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined">account_balance</span>
               {t('products.cards.taxation')}
             </h3>
@@ -389,7 +388,7 @@ export default function NewProductPage() {
           {/* Notes Card */}
           <div className="card">
             <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined">notes</span>
               {t('common.notesCardHeading')}
             </h3>

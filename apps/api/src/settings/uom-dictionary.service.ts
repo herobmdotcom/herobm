@@ -57,8 +57,7 @@ export class UomDictionaryService {
 
       return rows[0];
     } catch (err: unknown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((err as any)?.code === '23505') {
+      if ((err as { code?: string })?.code === '23505') {
         throw new BadRequestException(
           `UOM code '${dto.uomCode}' already exists`,
         );
@@ -110,8 +109,7 @@ export class UomDictionaryService {
 
       return { deleted: true };
     } catch (err: unknown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((err as any)?.code === '23503') {
+      if ((err as { code?: string })?.code === '23503') {
         throw new BadRequestException(
           `Cannot delete UOM '${code}' because it is assigned to one or more products. Remove the assignments first.`,
         );

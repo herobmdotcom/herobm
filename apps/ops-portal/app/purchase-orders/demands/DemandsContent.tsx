@@ -1,13 +1,13 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState } from 'react';
 import DataGrid from '@/components/DataGrid';
 import DraftPOsModal from './DraftPOsModal';
 import LinkToPOSlideOver from './LinkToPOSlideOver';
 import ReallocateModal from './ReallocateModal';
 import InternalTransferModal from './InternalTransferModal';
 import StockElsewhereCell from './StockElsewhereCell';
-import type { ColDef, ICellRendererParams } from 'ag-grid-community';
+import type { ColDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
@@ -72,8 +72,7 @@ export default function DemandsContent() {
       field: 'purchaseOrderState',
       headerName: 'Status',
       width: 160,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      valueFormatter: (params: any) => {
+      valueFormatter: (params: ValueFormatterParams<DemandRow>) => {
         if (!params.data?.purchaseOrderId) {
           return tPurchase('demandsContent.pendingSupply');
         }

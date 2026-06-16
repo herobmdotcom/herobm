@@ -3,8 +3,7 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { register } from 'prom-client';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
   let app: INestApplication;
@@ -58,7 +57,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        address1Country: 'AU',
+        billingAddressCountry: 'AU',
         customerNumber: `CUST-ADV085-${Date.now()}`,
         name: 'ADV-085 Test Customer',
         currencyCode: 'AUD',
@@ -120,6 +119,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
         fulfillmentLocationId: locationId,
         customerId: customerId,
         orderNumber: `SO-ADV085-${Date.now()}`,
+        deliveryAddressLine1: 'Test Address',
         lines: [],
       });
     expect(soRes.status).toBe(201);
@@ -162,8 +162,8 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .expect(200);
 
     const backorder = openDemandsRes.body.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (d: any) => d.salesOrderId === salesOrderId && d.productId === productId,
+      (d: { salesOrderId: string; productId: string }) =>
+        d.salesOrderId === salesOrderId && d.productId === productId,
     );
     expect(backorder).toBeDefined();
     const backorderId = backorder.id;
@@ -232,8 +232,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .expect(200);
 
     const finalBackorder = finalAllocRes.body.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (d: any) => d.id === backorderId,
+      (d: { id: string }) => d.id === backorderId,
     );
 
     expect(finalBackorder).toBeDefined();
@@ -272,6 +271,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
         fulfillmentLocationId: locationId,
         customerId: customerId,
         orderNumber: `SO-ADV085-P-${Date.now()}`,
+        deliveryAddressLine1: 'Test Address',
         lines: [
           { productId: pProductId, quantity: 10, pricePerUnit: '100.00' },
         ],
@@ -298,8 +298,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .expect(200);
 
     const backorder = openDemandsRes.body.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (d: any) => d.productId === pProductId,
+      (d: { productId: string }) => d.productId === pProductId,
     );
     const backorderId = backorder.id;
 
@@ -353,12 +352,10 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .expect(200);
 
     const receivedPart = finalAllocRes.body.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (d: any) => d.stateCode === 'received_reserved',
+      (d: { stateCode: string }) => d.stateCode === 'received_reserved',
     );
     const awaitingPart = finalAllocRes.body.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (d: any) => d.stateCode === 'awaiting_receipt',
+      (d: { stateCode: string }) => d.stateCode === 'awaiting_receipt',
     );
 
     expect(receivedPart).toBeDefined();

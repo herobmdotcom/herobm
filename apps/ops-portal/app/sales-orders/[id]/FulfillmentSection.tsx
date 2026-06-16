@@ -94,7 +94,7 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
         <div id="fulfillment-section" className="card">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="section-heading">
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
             <span className="material-symbols-outlined">local_shipping</span>
                     {t('title')}
                 </h3>

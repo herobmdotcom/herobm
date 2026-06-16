@@ -144,7 +144,7 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
             <p className="text-sm text-gray-500 mt-1">{t('demands.reviewDraftPosDesc')}</p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
@@ -159,7 +159,7 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
                   </span>
                   {group.vendorId ? `Supplier: ${group.vendorName}` : t('demands.unassignedActionRequired')}
                   <span className="mx-2 text-gray-300">|</span>
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                   <span className="material-symbols-outlined text-[16px] text-gray-400">location_on</span>
                   <span className="font-normal text-gray-600 ml-1">{t('demands.deliverTo')} {group.locationName || t('demands.unknown')}</span>
                 </h3>
@@ -233,7 +233,7 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
             className="btn btn-primary flex items-center gap-2"
           >
             {loading && (
-              /* eslint-disable-next-line i18next/no-literal-string */
+              /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
               <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
             )}
             {t('demands.createDraftPos')}

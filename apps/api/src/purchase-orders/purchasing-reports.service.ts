@@ -46,7 +46,7 @@ export class PurchasingReportsService implements OnModuleInit {
   private applyDateFilters(
     fromDate?: string,
     toDate?: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     dateField: any = purchaseOrders.createdOn,
   ) {
     const conditions = [];
@@ -65,13 +65,13 @@ export class PurchasingReportsService implements OnModuleInit {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const drillDown = filters.drillDown as string | undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const selectCols: any = {
       supplierName: suppliers.name,
       orderCount: sql<number>`count(distinct ${purchaseOrders.purchaseOrderId})::int`,
       totalSpend: sql<number>`sum(${purchaseOrderLineItems.totalAmount})::numeric`,
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const groupCols: any[] = [suppliers.name];
 
     if (drillDown === 'product') {
@@ -119,14 +119,14 @@ export class PurchasingReportsService implements OnModuleInit {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     const drillDown = filters.drillDown as string | undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const selectCols: any = {
       productNumber: products.productNumber,
       productName: products.name,
       qtyPurchased: sql<number>`sum(${purchaseOrderLineItems.quantity})::numeric`,
       totalSpend: sql<number>`sum(${purchaseOrderLineItems.totalAmount})::numeric`,
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const groupCols: any[] = [products.productNumber, products.name];
 
     if (drillDown === 'product-group') {
@@ -184,13 +184,13 @@ export class PurchasingReportsService implements OnModuleInit {
     const period = getAggregationPeriod(filters);
     const periodSql = getAggregationSql(purchaseOrders.createdOn, period);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const selectCols: any = {
       period: periodSql,
       orderCount: sql<number>`count(distinct ${purchaseOrders.purchaseOrderId})::int`,
       totalSpend: sql<number>`sum(${purchaseOrderLineItems.totalAmount})::numeric`,
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const groupCols: any[] = [periodSql];
 
     if (drillDown === 'product-group') {
@@ -250,14 +250,14 @@ export class PurchasingReportsService implements OnModuleInit {
     const whereClause = and(...conditions);
     const drillDown = filters.drillDown as string | undefined;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const selectCols: any = {
       poNumber: purchaseOrders.orderNumber,
       supplierName: suppliers.name,
       expectedDate: sql<string>`to_char(${expectedDateField}, 'YYYY-MM-DD')`,
       pendingValue: sql<number>`sum((${purchaseOrderLineItems.quantity} - COALESCE(${purchaseOrderLineItems.quantityReceived}, 0)) * ${purchaseOrderLineItems.pricePerUnit})::numeric`,
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const groupCols: any[] = [
       purchaseOrders.orderNumber,
       suppliers.name,

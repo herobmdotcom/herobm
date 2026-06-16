@@ -5,12 +5,22 @@ import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
 
+interface ReconciliationLine {
+  journalLineId: string;
+  isCleared: boolean;
+  entryDate?: string;
+  partyName?: string;
+  partyId?: string;
+  memo?: string;
+  debit?: number | string;
+  credit?: number | string;
+}
+
 interface SplitEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
   reconciliationId: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  selectedLine: Record<string, any>;
+  selectedLine: ReconciliationLine;
   onSuccess: () => void;
 }
 
@@ -75,7 +85,7 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
             onClick={onClose}
             className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1"
           >
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span>✕</span>
           </button>
         </div>

@@ -9,11 +9,16 @@ import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
 
+interface BankLine {
+  date?: string;
+  amount?: number;
+  description?: string;
+}
+
 interface QuickAdjustmentFormProps {
   reconciliationId: string;
   onSuccess: (journalLineId?: string) => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  bankLine?: Record<string, any>;
+  bankLine?: BankLine;
 }
 
 export default function QuickAdjustmentForm({
@@ -60,13 +65,11 @@ export default function QuickAdjustmentForm({
       const res = await api.reconciliationControllerCreateAdjustment(reconciliationId, {
         date,
         amount: Number(amount),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        type: type as any,
+        type: type as unknown as Record<string, never>,
         offsetAccountId,
         memo
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      onSuccess((res.data as any)?.journalLineId);
+      onSuccess(res.data?.journalLineId);
       // Reset form if not prefilled
       if (!bankLine) {
         setAmount('');

@@ -51,7 +51,7 @@ export default function SystemSettingsPage() {
   const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
 
   // ── Organization state ─────────────────────────────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state
   const [orgForm, setOrgForm] = useState<Partial<api.OrganizationResponseDto> & Record<string, any>>({});
   const [orgLoading, setOrgLoading] = useState(true);
   const [orgSaving, setOrgSaving] = useState(false);
@@ -75,7 +75,7 @@ export default function SystemSettingsPage() {
 
   const updateOrgField = (field: string, value: unknown) => {
     setOrgForm((prev: unknown) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state
       const p = (prev as Record<string, any>) || {};
       if (p[field] === value) return p;
       setIsOrgDirty(true);
@@ -93,8 +93,8 @@ export default function SystemSettingsPage() {
     setIsOrgDirty(false);
     try {
       setOrgSaving(true);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const payload: Record<string, any> = { ...orgForm };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state
+      const payload: Record<string, any> = { ...orgForm };
       Object.keys(payload).forEach(key => {
         if (payload[key] === '') payload[key] = null;
       });
@@ -124,8 +124,8 @@ export default function SystemSettingsPage() {
 
   const updateAppField = async (field: string, value: unknown) => {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setAppForm((prev: unknown) => ({ ...(prev as Record<string, any>), [field]: value }));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state
+      setAppForm((prev: unknown) => ({ ...(prev as Record<string, any>), [field]: value }));
       await api.appConfigControllerUpdate({ [field]: value });
       toast.success(t('common.updated'));
     } catch (err: unknown) {
@@ -272,7 +272,7 @@ export default function SystemSettingsPage() {
         {/* ── Company Information ────────────────────────────────────────── */}
         <div id="org-section" className="card">
           <h3 className="section-heading mb-4">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined">business</span>
             {tSettings('sections.company')}
           </h3>
@@ -460,7 +460,7 @@ export default function SystemSettingsPage() {
         <div id="bank-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined">account_balance</span>
               {tSettings('sections.bank')}
             </h3>
@@ -537,7 +537,7 @@ export default function SystemSettingsPage() {
         {/* ── Warehouse Settings ────────────────────────────────────────── */}
         <div id="warehouse-settings-section" className="card">
           <h3 className="section-heading mb-4">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined">warehouse</span>
             Warehouse Settings
           </h3>
@@ -571,15 +571,14 @@ export default function SystemSettingsPage() {
           <InlineSettingsTable
             title={
               <h3 className="section-heading !mb-0 flex items-center gap-2">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                 <span className="material-symbols-outlined">straighten</span>
                 {tSettings('sections.uom')}
               </h3>
             }
             columns={uomColumns}
             data={uoms}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          rowKey={(row: any) => row.uomCode}
+          rowKey={(row: UomEntry) => row.uomCode}
             onSave={handleUomSave}
             onDelete={handleUomDelete}
             onAdd={() => ({ uomCode: '', description: '' })}
@@ -593,15 +592,14 @@ export default function SystemSettingsPage() {
           <InlineSettingsTable
             title={
               <h3 className="section-heading !mb-0 flex items-center gap-2">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                 <span className="material-symbols-outlined">text_snippet</span>
                 {tSettings('sections.macros')}
               </h3>
             }
             columns={macroColumns}
             data={macros}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          rowKey={(row: any) => row.macroId}
+          rowKey={(row: Macro) => row.macroId}
             onSave={handleMacroSave}
             onDelete={handleMacroDelete}
             onAdd={() => ({ name: '', macroType: 'text_template', content: '' } as Macro)}
@@ -612,7 +610,7 @@ export default function SystemSettingsPage() {
 
         <div className="flex justify-end mt-8">
           <button className="btn btn-secondary" onClick={flushCache}>
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined mr-2">sync</span>
             Flush settings cache
           </button>

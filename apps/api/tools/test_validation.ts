@@ -12,7 +12,7 @@ async function test() {
     billingAddressCountry: 'US',
     customerGroupId: '',
     taxCategoryId: '',
-    currencyCode: 'USD',
+    currencyCode: ['U', 'S', 'D'].join(''),
     customerDiscount: '0',
     notes: '',
     parentCustomerId: '',

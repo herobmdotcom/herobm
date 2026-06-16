@@ -162,7 +162,7 @@ export class PurchaseOrdersController {
   ) {
     return this.purchaseOrdersService.changePurchaseOrderState(
       id,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       body.stateCode as any,
       user.username,
     );

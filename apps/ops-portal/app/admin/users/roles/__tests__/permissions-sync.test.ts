@@ -45,7 +45,7 @@ describe('Permissions Sync', () => {
       }
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const missingResources = Array.from(backendResources).filter(r => !RESOURCES.includes(r as any));
     const missingActions = Array.from(backendActions).filter(a => !ACTIONS.includes(a));
 

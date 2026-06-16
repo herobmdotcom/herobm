@@ -3,11 +3,11 @@ import { createE2eModule } from './utils/e2e-module';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
+import { INestApplication } from '@nestjs/common';
 
 describe('Print DB', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let app: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let app: INestApplication;
+
   let db: any;
 
   beforeAll(async () => {

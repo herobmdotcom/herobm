@@ -45,7 +45,7 @@ export default function TimelineSettingsSlideOver({ isOpen, onClose, enabledEven
           className="w-4 h-4 rounded text-accent focus:ring-accent"
         />
         <span className="text-[14px]" style={{ color: 'var(--text-primary)' }}>
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
           {t(`types.${event}` as any)}
         </span>
       </label>

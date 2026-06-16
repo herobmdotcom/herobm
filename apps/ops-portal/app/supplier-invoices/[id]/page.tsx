@@ -174,7 +174,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
       <div className="flex flex-col gap-3">
         <div className="card">
           <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined">receipt_long</span>
             Invoice Details
           </h3>
@@ -293,7 +293,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
           <div className="card" style={{ flex: 1, minWidth: 0 }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="section-heading" style={{ marginBottom: 0 }}>
-                {/* eslint-disable-next-line i18next/no-literal-string */}
+                {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                 <span className="material-symbols-outlined">list</span>
                 {t('lineItems')}
               </h3>
@@ -734,7 +734,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                   <h2 className="text-xl font-bold text-gray-900">{t('invoiceDiscrepancies')}</h2>
                   <button onClick={() => setShowDiscrepancyModal(false)} className="text-gray-400 hover:text-gray-600">
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                     <span className="material-symbols-outlined">close</span>
                   </button>
                 </div>

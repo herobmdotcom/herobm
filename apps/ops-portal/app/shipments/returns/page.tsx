@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';
-import ShipReturnSlideOver from './ShipReturnSlideOver';
+import ShipReturnSlideOver, { ShipReturnSlideOverProps } from './ShipReturnSlideOver';
 import { PURCHASE_RETURN_STATE } from '@herobm/shared';
 
 export default function ShipmentsReturnsPage() {
@@ -15,11 +15,10 @@ export default function ShipmentsReturnsPage() {
     const [refreshKey, setRefreshKey] = useState(0);
 
     const [slideOverOpen, setSlideOverOpen] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [selectedReturn, setSelectedReturn] = useState<Record<string, any> | null>(null);
+    const [selectedReturn, setSelectedReturn] = useState<ShipReturnSlideOverProps['returnRecord'] | null>(null);
 
     const handleShip = useCallback((returnRecord: Record<string, unknown>) => {
-        setSelectedReturn(returnRecord);
+        setSelectedReturn(returnRecord as unknown as ShipReturnSlideOverProps['returnRecord']);
         setSlideOverOpen(true);
     }, []);
 
@@ -75,7 +74,7 @@ export default function ShipmentsReturnsPage() {
               <ShipReturnSlideOver 
                   isOpen={slideOverOpen} 
                   onClose={handleSlideOverClose} 
-                  returnRecord={selectedReturn as Record<string, unknown>} 
+                  returnRecord={selectedReturn!} 
                   onRefresh={triggerRefresh} 
               />
             )}

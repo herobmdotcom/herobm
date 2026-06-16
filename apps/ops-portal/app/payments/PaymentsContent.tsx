@@ -13,6 +13,7 @@ import PaymentManagerSlideOver from './PaymentManagerSlideOver';
 import { PaymentRunGeneratorSlideOver } from './PaymentRunGeneratorSlideOver';
 import { PAYMENT_STATE } from '@herobm/shared';
 import { reportError } from '@/lib/api';
+import { ValidState } from '@/types/states';
 
 interface UnifiedPayment {
   paymentId: string;
@@ -90,8 +91,7 @@ export default function PaymentsContent() {
       valueFormatter: (params: { value?: unknown }) => {
         if (!params.value) return '';
         const s = String(params.value).toLowerCase();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return tStates.has(s as any) ? tStates(s as any) : String(params.value);
+        return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(params.value);
       },
     },
     {
@@ -99,10 +99,11 @@ export default function PaymentsContent() {
       width: 140,
       valueGetter: (params: { data?: UnifiedPayment }) => {
         if (!params.data) return null;
+        if (params.data.paymentType?.startsWith('direct_')) return '—';
         const total = parseFloat(params.data.totalAmount);
         const unalloc = parseFloat(params.data.unallocatedAmount);
         if (unalloc === total) return 'Unallocated';
-        if (unalloc > 0) return 'Partial';
+        if (unalloc > 0) return 'Partially Allocated';
         return 'Fully Allocated';
       }
     },
@@ -159,8 +160,7 @@ export default function PaymentsContent() {
       const response = await api.paymentsControllerExportAba({ paymentIds: selectedPayments.map(p => p.paymentId) });
       
       // Download the file
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const blob = new Blob([(response as any)?.fileContent], { type: 'text/plain' });
+      const blob = new Blob([response.data?.fileContent || ''], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -183,8 +183,7 @@ export default function PaymentsContent() {
     try {
       const response = await api.paymentsControllerExportNacha({ paymentIds: selectedPayments.map(p => p.paymentId) });
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const blob = new Blob([(response as any)?.fileContent], { type: 'text/plain' });
+      const blob = new Blob([response.data?.fileContent || ''], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

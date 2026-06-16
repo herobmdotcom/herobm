@@ -31,16 +31,16 @@ export default function BankMatchingView({
   onImportClick,
   refreshTrigger
 }: { 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   reconciliation: Record<string, any>, 
   onUpdate: () => void,
   onQuickAdjustment: () => void,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   onSplitEntry: (line: Record<string, any>) => void,
   onImportClick: () => void,
   refreshTrigger?: number
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [bankLines, setBankLines] = useState<Record<string, any>[]>([]);
   const [unreconciledLines, setUnreconciledLines] = useState<UnreconciledLine[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,19 +121,19 @@ export default function BankMatchingView({
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const onBankSelectionChanged = (rows: any[]) => {
     setSelectedBankLines(new Set(rows.map(r => r.lineId)));
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const onJournalSelectionChanged = (rows: any[]) => {
     setSelectedJournalLines(new Set(rows.map(r => r.journalLineId)));
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const isBankRowSelectable = (node: any) => !node.data.isReconciled;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const isJournalRowSelectable = (node: any) => !node.data.isCleared;
 
   const bankColumns = useMemo<ColDef[]>(() => [
@@ -141,16 +141,16 @@ export default function BankMatchingView({
       field: 'date', 
       headerName: t('date'), 
       width: 140, 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       checkboxSelection: (params: any) => !params.data.isReconciled, 
       headerCheckboxSelection: true,
       cellClass: 'overflow-visible-cell',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       cellRenderer: (params: any) => {
         if (params.data.isReconciled) {
           return (
             <div className="flex items-center h-full relative cursor-pointer">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
               <span className="material-symbols-outlined text-[18px] text-[var(--success)] absolute -left-[30px]">check</span>
               {params.value}
             </div>
@@ -164,7 +164,7 @@ export default function BankMatchingView({
       headerName: t('amount'), 
       width: 140, 
       type: 'numericColumn',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       valueFormatter: (p: any) => p.value ? formatCurrency(p.value) : '' 
     },
     { 
@@ -174,7 +174,7 @@ export default function BankMatchingView({
       wrapText: true,
       autoHeight: true,
       cellStyle: { lineHeight: '1.4', padding: '8px 16px' },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       cellRenderer: (params: any) => {
         const line = params.data;
         return (
@@ -194,16 +194,16 @@ export default function BankMatchingView({
       field: 'entryDate', 
       headerName: t('date'), 
       width: 140, 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       checkboxSelection: (params: any) => !params.data.isCleared, 
       headerCheckboxSelection: true,
       cellClass: 'overflow-visible-cell',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       cellRenderer: (params: any) => {
         if (params.data.isCleared) {
           return (
             <div className="flex items-center h-full relative cursor-pointer">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
               <span className="material-symbols-outlined text-[18px] text-[var(--success)] absolute -left-[30px]">check</span>
               {params.value}
             </div>
@@ -217,9 +217,9 @@ export default function BankMatchingView({
       headerName: t('amount'), 
       width: 140, 
       type: 'numericColumn',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       valueGetter: (params: any) => Number(params.data.debit) - Number(params.data.credit),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       valueFormatter: (p: any) => formatCurrency(p.value) 
     },
     { 
@@ -229,9 +229,9 @@ export default function BankMatchingView({
       wrapText: true,
       autoHeight: true,
       cellStyle: { lineHeight: '1.4', padding: '8px 16px' },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       valueGetter: (params: any) => params.data.memo || params.data.entryMemo || 'Journal Entry',
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       cellRenderer: (params: any) => {
         const line = params.data;
         return (
@@ -478,7 +478,7 @@ export default function BankMatchingView({
             </div>
             
             <div className="text-[var(--text-muted)] flex items-center justify-center">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
               <span className="material-symbols-outlined text-[24px]">compare_arrows</span>
             </div>
 
@@ -501,7 +501,7 @@ export default function BankMatchingView({
             className="px-8 py-3 bg-[var(--accent)] text-white font-medium rounded-lg hover:brightness-110 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {matching ? tCommon('saving') : t('match')}
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
             <span className="material-symbols-outlined text-[20px]">done_all</span>
           </button>
         </div>

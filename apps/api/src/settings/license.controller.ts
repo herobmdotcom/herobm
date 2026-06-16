@@ -27,7 +27,7 @@ import { ThrottlerGuard } from '@nestjs/throttler';
  * ============================================================================
  */
 export class LicenseStatusDto implements LicenseStatus {
-  // eslint-disable-next-line no-restricted-syntax
+  // eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Swagger Metadata).
   @ApiProperty({ enum: ['active', 'warning', 'read_only'] })
   state!: 'active' | 'warning' | 'read_only';
 

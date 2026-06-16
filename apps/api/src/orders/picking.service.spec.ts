@@ -31,9 +31,9 @@ import {
 describe('PickingService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: PickingService;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockInventoryService: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let mockShipmentService: any;
 
   const ORDER_ID = '00000000-0000-0000-0000-000000000001';
@@ -134,7 +134,6 @@ describe('PickingService', () => {
     service = module.get<PickingService>(PickingService);
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async function seedOrder(state: any = SALES_ORDER_STATE.PICKING) {
     await pg.db.insert(salesOrders).values({
       salesOrderId: ORDER_ID,

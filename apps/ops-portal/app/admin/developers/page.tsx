@@ -67,7 +67,7 @@ export default function DevelopersPage() {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic field updates from input components bypass strict type checking
   const updateAppField = async (field: string, value: any) => {
     try {
       setAppForm((prev: unknown) => ({ ...((prev as Record<string, unknown>) || {}), [field]: value }));
@@ -157,7 +157,7 @@ export default function DevelopersPage() {
         {/* ── Rate Limits ────────────────────────────────────────────────── */}
         <div id="rate-limits" className="card">
           <h3 className="section-heading mb-4">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
             <span className="material-symbols-outlined">speed</span>
             {tDev('apiRateLimits')}
           </h3>
@@ -181,15 +181,15 @@ export default function DevelopersPage() {
         {/* ── API Keys ───────────────────────────────────────────────────── */}
         <div id="api-keys" className="card relative">
           <h3 className="section-heading mb-4">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
             <span className="material-symbols-outlined">key</span>
             {tDev('apiKeys')}
           </h3>
           <InlineSettingsTable
             data={apiKeys || []}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- InlineSettingsTable uses generic any rows to support mixed entity types
             rowKey={(r: any) => r.apiKeyId}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- InlineSettingsTable uses generic any rows to support mixed entity types
             onSave={async (row: any, isNew: boolean) => {
               if (isNew) {
                 const res = await api.apiKeysControllerCreate({ name: row.name, role: row.role });
@@ -199,7 +199,7 @@ export default function DevelopersPage() {
               }
             }}
              
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- InlineSettingsTable uses generic any rows to support mixed entity types
             onDelete={async (row: any) => {
               if (!confirm('Are you sure you want to revoke this API key?')) return;
               await api.apiKeysControllerRevoke(row.apiKeyId);
@@ -207,7 +207,7 @@ export default function DevelopersPage() {
               await loadKeys();
             }}
              
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- InlineSettingsTable uses generic any rows to support mixed entity types
             onAdd={() => ({ name: '', role: 'agent', prefix: 'Will be generated...', createdOn: new Date().toISOString() } as any)}
             canEdit={() => false}
             canDelete={() => true}
@@ -244,7 +244,7 @@ export default function DevelopersPage() {
                 key: 'createdOn',
                 title: tCommon('created'),
                 type: 'custom',
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- InlineSettingsTable uses generic any rows to support mixed entity types
                 render: (row: any) => <span>{new Date(row.createdOn).toLocaleDateString()}</span>
               }
             ]}
@@ -255,7 +255,7 @@ export default function DevelopersPage() {
             <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
               <div className="bg-[var(--bg-card)] rounded-lg shadow-2xl max-w-lg w-full p-6 border border-[var(--border)] relative">
                 <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-[var(--warning)]">
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                   <span className="material-symbols-outlined text-[24px]">warning</span>
                   {tDev('copyApiKeyWarning')}
                 </h3>
@@ -290,17 +290,17 @@ export default function DevelopersPage() {
         {/* ── Webhooks ───────────────────────────────────────────────────── */}
         <div id="webhooks" className="card">
           <h3 className="section-heading mb-4">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
+            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
             <span className="material-symbols-outlined">webhook</span>
             {tDev('webhooks')}
           </h3>
           <InlineSettingsTable
             data={webhooks || []}
              
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- InlineSettingsTable uses generic any rows to support mixed entity types
             rowKey={(r: any) => r.webhookId}
              
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- InlineSettingsTable uses generic any rows to support mixed entity types
             onSave={async (row: any, isNew: boolean) => {
               if (isNew) {
                 await api.webhooksControllerCreate({
@@ -312,7 +312,7 @@ export default function DevelopersPage() {
               }
             }}
              
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- InlineSettingsTable uses generic any rows to support mixed entity types
             onDelete={async (row: any) => {
               if (!confirm('Are you sure you want to delete this webhook?')) return;
               await api.webhooksControllerRemove(row.webhookId);
@@ -320,7 +320,7 @@ export default function DevelopersPage() {
               await loadWebhooks();
             }}
              
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- InlineSettingsTable uses generic any rows to support mixed entity types
             onAdd={() => ({ targetUrl: '', eventTypes: '', secretKey: tDev('autoGenerated') } as any)}
             canEdit={() => false}
             canDelete={() => true}
@@ -338,7 +338,7 @@ export default function DevelopersPage() {
                 title: tDev('events'),
                 type: 'text',
                  
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- InlineSettingsTable uses generic any rows to support mixed entity types
                 render: (row: any, isEditing: boolean, onChange?: (val: any) => void) => {
                   const currentEvents = Array.isArray(row.eventTypes) ? row.eventTypes : (row.eventTypes || '').split(',').map((e: string) => e.trim()).filter(Boolean);
                   if (isEditing) {
@@ -388,7 +388,7 @@ export default function DevelopersPage() {
                 type: 'text',
                 disabled: true,
                  
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- InlineSettingsTable uses generic any rows to support mixed entity types
                 render: (row: any) => <span className="font-mono text-xs">{row.secretKey}</span>
               }
             ]}

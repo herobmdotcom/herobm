@@ -94,7 +94,7 @@ export default function OrderDetailsCard({
         <div className="card">
             <div className="flex items-center justify-between gap-4 mb-4">
                 <h2 className="section-heading mb-0">
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                     <span className="material-symbols-outlined">
                         receipt_long
                     </span>
@@ -105,7 +105,7 @@ export default function OrderDetailsCard({
                         className="btn btn-secondary btn-sm px-2"
                         onClick={() => setMenuOpen(!menuOpen)}
                     >
-                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                         <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                             more_vert
                         </span>

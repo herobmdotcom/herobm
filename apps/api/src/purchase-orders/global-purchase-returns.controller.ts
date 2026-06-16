@@ -1,4 +1,4 @@
-import { SystemResource } from '@herobm/shared';
+import { SystemResource, PurchaseReturnState } from '@herobm/shared';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -90,20 +90,20 @@ export class GlobalPurchaseReturnsController {
           purchaseOrders.purchaseOrderId,
         ),
       )
-      .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId));
+      .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
+      .$dynamic();
 
     if (stateCodeStr) {
       const states = stateCodeStr.split(',');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       query = query.where(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        inArray(purchaseOrderReturns.stateCode, states as any[]),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ) as any;
+        inArray(
+          purchaseOrderReturns.stateCode,
+          states as PurchaseReturnState[],
+        ),
+      );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    query = query.orderBy(desc(purchaseOrderReturns.createdOn)) as any;
+    query = query.orderBy(desc(purchaseOrderReturns.createdOn));
 
     const data = await query;
 

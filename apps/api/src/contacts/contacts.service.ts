@@ -61,8 +61,7 @@ export class ContactsService {
     }
 
     throw new BadRequestException(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      `Unsupported entity type: ${String((dto as any).entityType)}`,
+      `Unsupported entity type: ${String((dto as unknown as Record<string, unknown>).entityType)}`,
     );
   }
 
@@ -135,8 +134,9 @@ export class ContactsService {
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private mapToDto(record: any): ContactResponseDto {
+  private mapToDto(
+    record: typeof customerContacts.$inferSelect,
+  ): ContactResponseDto {
     return {
       id: record.id,
       firstName: record.firstName || '',

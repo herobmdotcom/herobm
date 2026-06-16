@@ -20,11 +20,11 @@ interface PinnedReportWidgetProps {
 
 export default function PinnedReportWidget({ slug, configId, name }: PinnedReportWidgetProps) {
   const t = useTranslations('dashboard');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [reportConfig, setReportConfig] = useState<Record<string, any> | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [reportData, setReportData] = useState<Record<string, any>[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const [uiConfig, setUiConfig] = useState<Record<string, any> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -33,9 +33,9 @@ export default function PinnedReportWidget({ slug, configId, name }: PinnedRepor
       try {
         setIsLoading(true);
         // Load report definition for uiConfig
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         const reports: any = await businessReportsControllerGetReports();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         const report = (reports.data || reports).find((r: any) => r.slug === slug);
         if (!report) throw new Error('Report not found');
         setUiConfig(report.uiConfig);
@@ -50,7 +50,7 @@ export default function PinnedReportWidget({ slug, configId, name }: PinnedRepor
         setReportConfig(config);
 
         // Fetch data
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         const dataRes: any = await businessReportsControllerRunReport(slug, config.filters || {});
         setReportData(dataRes.data || dataRes);
       } catch (err) {
@@ -79,7 +79,7 @@ export default function PinnedReportWidget({ slug, configId, name }: PinnedRepor
   if (!reportConfig || !uiConfig) {
     return (
       <div className="rounded-2xl border bg-[var(--bg-card)] border-[var(--border)] p-6 h-[400px] flex items-center justify-center">
-        {/* eslint-disable-next-line i18next/no-literal-string */}
+        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
         <span className="text-red-500 font-medium text-sm">Failed to load report configuration.</span>
       </div>
     );

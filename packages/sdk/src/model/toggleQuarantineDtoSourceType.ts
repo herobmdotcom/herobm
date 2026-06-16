@@ -9,7 +9,7 @@
 export type ToggleQuarantineDtoSourceType = typeof ToggleQuarantineDtoSourceType[keyof typeof ToggleQuarantineDtoSourceType];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+// eslint-disable-next-line @typescript-eslint/no-redeclare -- External API integration boundaries where exact types are unknown.
 export const ToggleQuarantineDtoSourceType = {
   goods_receipt: 'goods_receipt',
   sales_return: 'sales_return',

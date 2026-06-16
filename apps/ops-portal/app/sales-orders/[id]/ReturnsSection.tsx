@@ -44,9 +44,9 @@ interface ReturnsSectionProps {
     setShowCreateReturn: (v: boolean) => void;
     setError: (msg: string) => void;
     loadReturns: () => Promise<void>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
   loadOrder: (autoTransitions?: Record<string, any>[], showSpinner?: boolean) => Promise<void>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
   pickingSummary?: Record<string, any> | null;
     taxCategories: TaxCategory[];
     locations: api.InventoryLocationResponseDto[];
@@ -123,7 +123,7 @@ export default function ReturnsSection({
         <div className="card">
             <div className="flex items-center justify-between mb-2">
                 <h3 className="section-heading">
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                     <span className="material-symbols-outlined">assignment_return</span>
                     {tSales('returnsHeading')}
                 </h3>
@@ -132,7 +132,7 @@ export default function ReturnsSection({
                     SALES_ORDER_STATE.SHIPPED, 
                     SALES_ORDER_STATE.INVOICED, 
                     SALES_ORDER_STATE.LEGACY
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                 ].includes(order.stateCode as any) && (
                     <button
                         className="btn btn-secondary btn-sm"
@@ -148,7 +148,7 @@ export default function ReturnsSection({
                 <div style={{ marginBottom: 16, padding: 16, borderRadius: 8, background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                     <div className="flex items-center justify-between mb-3">
                         <strong style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                             <span className="material-symbols-outlined text-[16px]">assignment_return</span>
                             {tSales('newReturn')}
                         </strong>
@@ -156,7 +156,7 @@ export default function ReturnsSection({
                             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16 }}
                             onClick={handleCancel}
                         >
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                             <span aria-hidden>✕</span>
                         </button>
                     </div>
@@ -172,7 +172,7 @@ export default function ReturnsSection({
 
                     <DataTable
                         data={order.lines}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                         keyExtractor={(line: any) => line.salesOrderLineId}
                         columns={[
                             { header: tSales('columns.lineNumber'), width: 40 },
@@ -183,11 +183,11 @@ export default function ReturnsSection({
                             { header: tSales('columns.reason'), width: 180 },
                             { header: tSales('columns.fee'), width: 140, align: 'right' }
                         ]}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                         renderCustomRow={(line: any, idx: number) => {
                             const rl = newReturnLines[idx];
                             if (!rl) return null;
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                             const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === line.salesOrderLineId);
                             const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
                             return (
@@ -284,11 +284,11 @@ export default function ReturnsSection({
                                 </tr>
                             );
                         }}
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                         mobileCard={(line: any, idx: number) => {
                             const rl = newReturnLines[idx];
                             if (!rl) return null;
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                             const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === line.salesOrderLineId);
                             const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
                             return (
@@ -606,7 +606,7 @@ export default function ReturnsSection({
 
                                 {ret.creditNoteNumber && (
                                     <div className="flex items-center gap-2 mb-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                                        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                         <span className="material-symbols-outlined" style={{ fontSize: 14 }}>receipt_long</span>
                                         <span style={{ fontWeight: 600 }}>{tSales('returns.creditNote')}:</span>
                                         <span>{ret.creditNoteNumber}</span>
@@ -615,7 +615,7 @@ export default function ReturnsSection({
 
                                 <DataTable
                                     data={ret.lines}
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                                     keyExtractor={(rl: any) => rl.returnLineId}
                                     columns={[
                                         { header: tSales('columns.product'), width: 150 },
@@ -629,7 +629,7 @@ export default function ReturnsSection({
                                         { header: tSales('columns.amount'), width: 100, align: 'right' },
                                         ...(isRetEditable ? [{ header: '', width: 50 }] : [])
                                     ]}
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                                     renderCustomRow={(rl: any) => {
                                         const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
                                         const disc = parseFloat(origLine?.discountPercentage || '0');
@@ -782,7 +782,7 @@ export default function ReturnsSection({
                                             </tr>
                                         );
                                     }}
-                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                                     mobileCard={(rl: any) => {
                                         const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
                                         const disc = parseFloat(origLine?.discountPercentage || '0');
@@ -820,7 +820,7 @@ export default function ReturnsSection({
                                                             }}
                                                             title={t('salesOrders.buttons.removeReturnLine')}
                                                         >
-                                                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                                             <span className="material-symbols-outlined text-[16px]">delete</span>
                                                         </button>
                                                     )}

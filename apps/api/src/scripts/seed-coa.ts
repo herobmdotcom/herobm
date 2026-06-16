@@ -19,7 +19,7 @@ const db = drizzle(queryClient);
 
 // Instantiate the CoaLoaderService directly, bypassing full NestJS bootstrap
 // for speed during testing and initialization.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
 const loader = new CoaLoaderService(db as any);
 
 async function seed() {

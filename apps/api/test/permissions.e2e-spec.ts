@@ -1,7 +1,6 @@
 import { TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 import { createE2eModule } from './utils/e2e-module';
 
 describe('Permissions & RBAC (e2e)', () => {
@@ -58,7 +57,7 @@ describe('Permissions & RBAC (e2e)', () => {
       .post('/api/customers')
       .set('Authorization', `Bearer ${viewerToken}`)
       .send({
-        address1Country: 'AU',
+        billingAddressCountry: 'AU',
         name: 'Test Customer',
       })
       .expect(403);
@@ -69,7 +68,7 @@ describe('Permissions & RBAC (e2e)', () => {
       .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        address1Country: 'AU',
+        billingAddressCountry: 'AU',
         customerNumber: 'CUST-ADMIN-TEST',
         name: 'Test Customer Admin',
       })
@@ -123,10 +122,9 @@ describe('Permissions & RBAC (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    // Remove webhooks write
     const restoredPermissions = getRes.body.permissions.filter(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (p: any) => !(p.resource === 'webhooks' && p.action === 'write'),
+      (p: { resource: string; action: string }) =>
+        !(p.resource === 'webhooks' && p.action === 'write'),
     );
 
     // Admin removes webhooks write from viewer
@@ -157,8 +155,9 @@ describe('Permissions & RBAC (e2e)', () => {
       .expect(200);
 
     expect(Array.isArray(res.body)).toBe(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const viewerRole = res.body.find((r: any) => r.role === 'viewer');
+    const viewerRole = res.body.find(
+      (r: { role: string; permissions: unknown[] }) => r.role === 'viewer',
+    );
     expect(viewerRole).toBeDefined();
     expect(Array.isArray(viewerRole.permissions)).toBe(true);
   });

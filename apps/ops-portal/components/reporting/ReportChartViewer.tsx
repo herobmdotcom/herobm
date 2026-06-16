@@ -36,7 +36,7 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
     if (!activeDrillDown || activeDrillDown.field === config.xAxisField) {
       const isTimeAxis = config.xAxisField === 'period' || config.xAxisField === 'yearMonth' || config.xAxisField.toLowerCase().includes('date') || config.xAxisField.toLowerCase().includes('month');
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       let sortedData = [...chartData].sort((a: any, b: any) => {
         if (isTimeAxis) {
           return String(a[config.xAxisField] || '').localeCompare(String(b[config.xAxisField] || ''));
@@ -50,9 +50,9 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
           const topItems = sortedData.slice(0, MAX_ITEMS);
           const otherItems = sortedData.slice(MAX_ITEMS);
           
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
           const otherRow: any = { [config.xAxisField]: 'Other' };
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
           otherRow[config.yAxisField] = otherItems.reduce((acc: number, row: any) => acc + (Number(row[config.yAxisField]) || 0), 0);
           
           sortedData = [...topItems, otherRow];
@@ -66,11 +66,11 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
     const primaryAxis = isTimeDrillDown ? activeDrillDown.field : config.xAxisField;
     const seriesAxis = isTimeDrillDown ? config.xAxisField : activeDrillDown.field;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const grouped = new Map<string, any>();
     const seriesKeys = new Set<string>();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     chartData.forEach((row: any) => {
       const pVal = String(row[primaryAxis] || 'Unknown');
       const sVal = String(row[seriesAxis] || 'Unknown');
@@ -105,10 +105,10 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
         const topItems = data.slice(0, MAX_ITEMS);
         const otherItems = data.slice(MAX_ITEMS);
         
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         const otherRow: any = { [primaryAxis]: 'Other' };
         seriesKeysArray.forEach(k => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
           otherRow[k] = otherItems.reduce((acc: number, row: any) => acc + (Number(row[k]) || 0), 0);
         });
         
@@ -135,7 +135,7 @@ export function ReportChartViewer({ data, config, activeDrillDown }: ReportChart
   if (pivotedData.data.length > 500) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full p-8 text-center bg-white/50 text-[var(--text-muted)]">
-        {/* eslint-disable-next-line i18next/no-literal-string */}
+        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
         <span className="material-symbols-outlined text-4xl text-amber-500 mb-2">warning</span>
         <p className="max-w-md">{t('chartTooLarge', { count: pivotedData.data.length })}</p>
       </div>

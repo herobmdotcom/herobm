@@ -17,6 +17,7 @@ import {
   Patch,
   Query,
   UseInterceptors,
+  Delete,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
@@ -32,6 +33,7 @@ import {
   EmptyBodyDto,
   GeneratePaymentRunDto,
   GeneratePaymentRunResponseDto,
+  PaymentRunCandidateResponseDto,
 } from './dto';
 import {
   CasbinGuard,
@@ -70,6 +72,40 @@ export class PaymentsController {
     @Query('allocation') allocation?: string,
   ) {
     return this.paymentsService.findAll(days, allocation);
+  }
+
+  @Get('run-candidates')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Payment Run Candidates',
+    description: 'Fetch eligible invoices for a payment run on a target date.',
+  })
+  @ApiOkResponse({ type: [PaymentRunCandidateResponseDto] })
+  @ApiQuery({ name: 'targetDate', required: true })
+  async getPaymentRunCandidates(@Query('targetDate') targetDate: string) {
+    return await this.paymentRunGeneratorService.getPaymentRunCandidates(
+      targetDate,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Generate Payment Run',
+    description:
+      'Generates a new payment run batch for eligible supplier invoices.',
+  })
+  @Post('generate-run')
+  @CasbinAction('write')
+  @ApiCreatedResponse({ type: GeneratePaymentRunResponseDto })
+  async generatePaymentRun(
+    @Body() dto: GeneratePaymentRunDto,
+    @AuthUser('userId') userId: string,
+  ) {
+    return await this.paymentRunGeneratorService.generatePaymentRun(
+      dto.targetDate,
+      dto.glAccountBank,
+      userId,
+      dto.invoiceIds,
+    );
   }
 
   @Get(':id')
@@ -153,6 +189,20 @@ export class PaymentsController {
     return this.paymentsService.cancelPayment(id, user.username);
   }
 
+  @Delete(':id')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Draft Payment',
+    description: 'Permanently deletes a payment in the DRAFT state.',
+  })
+  @ApiOkResponse({
+    description: 'Payment successfully deleted',
+    type: ConfirmRejectResponseDto,
+  })
+  remove(@Param('id') id: string) {
+    return this.paymentsService.removePayment(id);
+  }
+
   @Post('export-aba')
   @ApiBody({ type: BatchPaymentActionDto })
   @CasbinAction('write')
@@ -219,19 +269,5 @@ export class PaymentsController {
     @AuthUser() user: { username: string },
   ) {
     return this.paymentsService.rejectExported(dto.paymentIds, user.username);
-  }
-
-  @Post('generate-run')
-  @CasbinAction('write')
-  @ApiCreatedResponse({ type: GeneratePaymentRunResponseDto })
-  async generatePaymentRun(
-    @Body() dto: GeneratePaymentRunDto,
-    @AuthUser('userId') userId: string,
-  ) {
-    return await this.paymentRunGeneratorService.generatePaymentRun(
-      dto.targetDate,
-      dto.glAccountBank,
-      userId,
-    );
   }
 }

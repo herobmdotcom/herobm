@@ -12,7 +12,7 @@ interface KitComponentSlideOverProps {
   onClose: () => void;
   productId: string;
   componentId?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   existingData?: Record<string, any>;
   onSaved: () => void;
 }
@@ -51,9 +51,9 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
       } else {
         // Fetch existing components to determine next sequence number
         api.productsControllerGetComponents(productId)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
           .then((res: any) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             const maxSeq = res.data?.reduce((max: number, c: any) => Math.max(max, c.sequenceNumber || 0), 0) || 0;
             setDto({
               childProductId: '',
@@ -92,8 +92,7 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
           parentQuantity: dto.parentQuantity,
           quantity: dto.quantity,
           sequenceNumber: parseInt(dto.sequenceNumber, 10),
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          fractionalBehavior: dto.fractionalBehavior as any,
+          fractionalBehavior: dto.fractionalBehavior as api.UpdateProductComponentDtoFractionalBehavior,
         } );
         toast.success(t('toast.componentUpdated'));
       } else {
@@ -102,8 +101,7 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
           parentQuantity: dto.parentQuantity,
           quantity: dto.quantity,
           sequenceNumber: parseInt(dto.sequenceNumber, 10),
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          fractionalBehavior: dto.fractionalBehavior as any,
+          fractionalBehavior: dto.fractionalBehavior as api.AddProductComponentDtoFractionalBehavior,
         });
         toast.success(t('toast.componentAdded'));
       }

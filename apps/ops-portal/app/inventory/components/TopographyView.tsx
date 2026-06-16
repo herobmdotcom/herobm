@@ -219,10 +219,10 @@ export default function TopographyView() {
                     className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-[#f8f9fa] transition-colors cursor-pointer"
                   >
                     
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                     <span className="material-symbols-outlined text-[18px] transition-transform" style={{ color: 'var(--accent)', transform: isLocExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>chevron_right</span>
                     
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                     <span className="material-symbols-outlined text-[22px]" style={{ color: 'var(--accent)' }}>warehouse</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3">
@@ -251,7 +251,7 @@ export default function TopographyView() {
                             className="p-1.5 hover:bg-emerald-50 rounded text-emerald-600 transition-colors"
                             title={tLoc('addZoneTo', { name: loc.code })}
                           >
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material Symbols icon name is not a translatable string. */}
                             <span className="material-symbols-outlined text-[18px]">add_circle</span>
                           </button>
                           <button
@@ -264,7 +264,7 @@ export default function TopographyView() {
                             title={tCommon('edit')}
                           >
                             
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
                           <button
@@ -283,7 +283,7 @@ export default function TopographyView() {
                             title={tCommon('delete')}
                           >
                             
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                             <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
                         </div>
@@ -329,10 +329,10 @@ export default function TopographyView() {
                               style={{ paddingLeft: 48 }}
                             >
                               
-                              {/* eslint-disable-next-line i18next/no-literal-string */}
+                              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                               <span className="material-symbols-outlined text-[16px] transition-transform" style={{ color: 'var(--text-muted)', transform: isZoneExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>chevron_right</span>
                               
-                              {/* eslint-disable-next-line i18next/no-literal-string */}
+                              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                               <span className="material-symbols-outlined text-[20px]" style={{ color: '#6366f1' }}>grid_view</span>
                               <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <span className="text-sm font-semibold text-[#041627]">
@@ -354,7 +354,7 @@ export default function TopographyView() {
                                       className="p-1.5 hover:bg-emerald-50 rounded text-emerald-600 transition-colors"
                                       title={tLoc('addBinTo', { name: zone.code })}
                                     >
-                                      {/* eslint-disable-next-line i18next/no-literal-string */}
+                                      {/* eslint-disable-next-line i18next/no-literal-string -- Material Symbols icon name is not a translatable string. */}
                                       <span className="material-symbols-outlined text-[16px]">add_circle</span>
                                     </button>
                                     <button
@@ -366,7 +366,7 @@ export default function TopographyView() {
                                       className="p-1.5 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
                                     >
                                       
-                                      {/* eslint-disable-next-line i18next/no-literal-string */}
+                                      {/* eslint-disable-next-line i18next/no-literal-string -- Material Symbols icon name is not a translatable string. */}
                                       <span className="material-symbols-outlined text-[16px]">edit</span>
                                     </button>
                                     <button
@@ -387,7 +387,7 @@ export default function TopographyView() {
                                       className={`p-1.5 rounded transition-colors ${zone.code === 'HANDLING' ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-red-50 text-red-500'}`}
                                     >
                                       
-                                      {/* eslint-disable-next-line i18next/no-literal-string */}
+                                      {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                                       <span className="material-symbols-outlined text-[16px]">delete</span>
                                     </button>
                                   </div>
@@ -447,7 +447,7 @@ export default function TopographyView() {
                                             {bin.binNumber}
                                           </td>
                                           <td className="px-4 py-2" style={{ color: 'var(--text-secondary)' }}>
-                                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown. */}
                                             {bin.binType ? tLoc(`binTypes.${bin.binType}` as any) : '—'}
                                           </td>
                                           <td className="px-4 py-2 text-center">
@@ -457,7 +457,7 @@ export default function TopographyView() {
                                                   className="text-[10px] font-bold px-1.5 py-0.5 rounded"
                                                   style={{ background: 'rgba(99,102,241,0.1)', color: '#6366f1' }}
                                                 >
-                                                  {/* eslint-disable-next-line no-restricted-syntax */}
+                                                  {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing consignment status. */}
                                                   {'CSG'}
                                                 </span>
                                               )}
@@ -466,7 +466,7 @@ export default function TopographyView() {
                                                   className="text-[10px] font-bold px-1.5 py-0.5 rounded"
                                                   style={{ background: 'rgba(245,158,11,0.1)', color: '#b45309' }}
                                                 >
-                                                  {/* eslint-disable-next-line no-restricted-syntax */}
+                                                  {/* eslint-disable-next-line no-restricted-syntax -- Technical constant representing bonded status. */}
                                                   {'BND'}
                                                 </span>
                                               )}
@@ -494,7 +494,7 @@ export default function TopographyView() {
                                                   className="p-1 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
                                                 >
                                                   
-                                                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                  {/* eslint-disable-next-line i18next/no-literal-string -- Material Symbols icon name is not a translatable string. */}
                                                   <span className="material-symbols-outlined text-[16px]">edit</span>
                                                 </button>
                                                 <button
@@ -514,7 +514,7 @@ export default function TopographyView() {
                                                   className={`p-1 rounded transition-colors ${(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-red-50 text-red-500'}`}
                                                 >
                                                   
-                                                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                  {/* eslint-disable-next-line i18next/no-literal-string -- Material Symbols icon name is not a translatable string. */}
                                                   <span className="material-symbols-outlined text-[16px]">delete</span>
                                                 </button>
                                               </div>

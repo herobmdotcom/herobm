@@ -149,8 +149,7 @@ export class ReturnsWriteService {
         const order = await this.findOrder(salesOrderId, innerTx);
         if (
           !ReturnsWriteService.RETURNABLE_ORDER_STATES.includes(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            order.stateCode as any,
+            order.stateCode as any, // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
           )
         ) {
           throw new BadRequestException(
@@ -325,8 +324,11 @@ export class ReturnsWriteService {
       async (innerTx: DrizzleDB) => {
         const [updated] = await innerTx
           .update(salesOrderReturns)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .set({ stateCode: newState as any, modifiedOn: new Date() })
+          .set({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
+            stateCode: newState as any,
+            modifiedOn: new Date(),
+          })
           .where(eq(salesOrderReturns.returnId, returnId))
           .returning();
 
@@ -525,12 +527,11 @@ export class ReturnsWriteService {
                 eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId),
               )
               .limit(1)
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              .then((r: any[]) => r[0]);
+              .then((r) => r[0]);
 
             if (orderLine) {
               stockLines.push({
-                productId: orderLine.productId,
+                productId: orderLine.productId!,
                 quantity: newlyReceived,
               });
 
@@ -538,7 +539,7 @@ export class ReturnsWriteService {
               const [product] = await innerTx
                 .select()
                 .from(coreProducts)
-                .where(eq(coreProducts.productId, orderLine.productId));
+                .where(eq(coreProducts.productId, orderLine.productId!));
 
               if (product) {
                 const cost = valuationStrategy.getCogs(
@@ -639,7 +640,7 @@ export class ReturnsWriteService {
 
           if (returnGlWithDims) {
             await this.glService.postJournalEntry(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
               returnGlWithDims.lines as any[],
               {
                 actor,
@@ -683,6 +684,16 @@ export class ReturnsWriteService {
             innerTx,
           );
         }
+
+        // Emit event for received lines
+        await emitEvent(innerTx as unknown as DrizzleDB, {
+          entityType: EntityType.SALES_RETURN,
+          entityId: returnId,
+          eventType: EventType.UPDATED,
+          entityDisplayName: ret.returnNumber,
+          payload: {},
+          actor,
+        });
 
         return await this.findReturn(returnId, innerTx);
       },
@@ -913,11 +924,13 @@ export class ReturnsWriteService {
     if (stateCode) {
       const states = stateCode.split(',');
       if (states.length === 1) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        q = q.where(eq(salesOrderReturns.stateCode, stateCode as any));
+        q = q.where(
+          eq(salesOrderReturns.stateCode, stateCode as any), // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
+        );
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        q = q.where(inArray(salesOrderReturns.stateCode, states as any[]));
+        q = q.where(
+          inArray(salesOrderReturns.stateCode, states as any[]), // eslint-disable-line @typescript-eslint/no-explicit-any -- Drizzle enum mismatch
+        );
       }
     }
 

@@ -19,8 +19,7 @@ import { eq } from 'drizzle-orm';
 describe('BackordersService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: BackordersService;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let inventoryService: any;
+  let inventoryService: { findByProductIds: jest.Mock };
 
   const ORDER_ID = '00000000-0000-0000-0000-000000000001';
   const PROD_ID = '00000000-0000-0000-0000-00000000000a';

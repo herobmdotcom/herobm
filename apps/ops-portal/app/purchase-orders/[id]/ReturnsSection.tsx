@@ -9,6 +9,11 @@ import { PURCHASE_RETURN_STATE } from '@herobm/shared';
 import InitiateReturnModal from './InitiateReturnModal';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 
+interface PriceWarningPayload {
+  poPrice: string;
+  invoicePrice: string;
+}
+
 interface ReturnLine {
   returnLineId: string;
   purchaseOrderLineId: string;
@@ -106,7 +111,7 @@ function ReturnCard({
               }
             }}
           >
-            {/* eslint-disable-next-line no-restricted-syntax */}
+            {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             {'Cancel Return'}
           </button>
         )}
@@ -119,7 +124,7 @@ function ReturnCard({
 
         return locWarning ? (
           <div style={{ padding: '8px 12px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 6, marginBottom: 12, fontSize: 12, color: '#b45309', display: 'flex', alignItems: 'center', gap: 8 }}>
-             {/* eslint-disable-next-line i18next/no-literal-string */}
+             {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
              <strong>{tPurchase('locationWarningPrefix')}</strong> {tPurchase('locationWarning')}
           </div>
@@ -181,8 +186,7 @@ function ReturnCard({
                         const priceWarning = relatedEvents.find(e => e.eventType === 'price_discrepancy_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
                         
                         if (priceWarning) {
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                          const payload = priceWarning.payload as any;
+                          const payload = priceWarning.payload as unknown as PriceWarningPayload;
                           return (
                             <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }} title="Price discrepancy warning">
                               <span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: 11, color: 'var(--text-muted)' }}>
@@ -257,8 +261,7 @@ function ReturnCard({
                   {
                     label: tPurchase('columns.unitPrice'),
                     value: priceWarning ? (() => {
-                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      const payload = priceWarning.payload as any;
+                      const payload = priceWarning.payload as unknown as PriceWarningPayload;
                       return (
                       <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: 6 }} title="Price discrepancy warning">
                         <span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: 11, color: 'var(--text-muted)' }}>
@@ -319,13 +322,11 @@ export default function ReturnsSection({
       try {
         setLoading(true);
         const listData = await api.purchaseReturnsControllerFindReturns(orderId) ;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const fetchedReturns: any[] = Array.isArray(listData) ? listData : (listData as { data?: any[] })?.data || [];
+        const fetchedReturns = (Array.isArray(listData) ? listData : (listData as { data?: unknown[] })?.data || []) as { returnId: string }[];
         
         // Fetch full data including lines for each setup
         const detailedReturns = await Promise.all(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          fetchedReturns.map((rec: any) => 
+          fetchedReturns.map((rec) => 
             api.purchaseReturnsControllerFindReturn(orderId, rec.returnId)
           )
         );
@@ -347,11 +348,9 @@ export default function ReturnsSection({
   const refreshReturns = () => {
     setLoading(true);
     api.purchaseReturnsControllerFindReturns(orderId).then(async (listData: unknown) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const fetchedReturns: any[] = (listData as { data?: any[] })?.data || (Array.isArray(listData) ? listData : []);
+      const fetchedReturns = ((listData as { data?: unknown[] })?.data || (Array.isArray(listData) ? listData : [])) as { returnId: string }[];
       const detailedReturns = await Promise.all(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        fetchedReturns.map((rec: any) => 
+        fetchedReturns.map((rec) => 
           api.purchaseReturnsControllerFindReturn(orderId, rec.returnId)
         )
       );
@@ -375,7 +374,7 @@ export default function ReturnsSection({
             letterSpacing: '0.05em', margin: 0
           }}
         >
-          {/* eslint-disable-next-line i18next/no-literal-string */}
+          {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
           <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>assignment_return</span>
           Returns
           <span style={{ fontSize: 11, fontWeight: 400 }}>({returns.length})</span>

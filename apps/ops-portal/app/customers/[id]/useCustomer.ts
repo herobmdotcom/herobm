@@ -99,8 +99,7 @@ export function useAccount(id: string) {
    */
   const saveField = async (field: keyof Customer, value: unknown) => {
     // Only persist if the value actually changed vs the server state
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const serverValue = customer ? (customer as Record<string, any>)[field as string] : undefined;
+    const serverValue = customer ? customer[field] : undefined;
     if (value === serverValue || (value === '' && serverValue === null)) return;
 
     // Optimistically update DTO

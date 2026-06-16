@@ -3,8 +3,7 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('Freight and Non-Stock Lifecycle (e2e)', () => {
   let app: INestApplication;
@@ -161,6 +160,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
 
         customerId: customerId,
         name: 'Freight Test Order',
+        deliveryAddressLine1: 'Test Address',
         lines: [
           {
             productId: physicalProductId,
@@ -204,7 +204,6 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
       .expect(200);
 
     const freightLine = summaryRes.body.lines.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (l: any) => l.productId === freightProductId,
     );
     expect(freightLine).toBeDefined();
@@ -229,7 +228,6 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
 
     // Pick only the physical line
     const physicalLine = detail.body.lines.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (l: any) => l.productId === physicalProductId,
     );
     await request(app.getHttpServer())
@@ -241,7 +239,6 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
       .expect(201);
 
     // Create shipment with all lines (physical + freight)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const shipLines = detail.body.lines.map((l: any) => ({
       salesOrderLineId: l.salesOrderLineId,
       quantityShipped: l.quantity,

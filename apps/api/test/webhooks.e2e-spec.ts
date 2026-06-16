@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { DrizzleDB, DRIZZLE } from '../src/drizzle/drizzle.module';
 import { apiKeys, webhooks } from '../src/drizzle/herobm-core-schema';
@@ -11,7 +10,7 @@ import { eq } from 'drizzle-orm';
 describe('Webhooks & API Keys (e2e)', () => {
   let app: INestApplication;
   let db: DrizzleDB;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let server: any;
   const rawKey = 'super-secret-test-key-' + Date.now();
 
@@ -102,8 +101,9 @@ describe('Webhooks & API Keys (e2e)', () => {
         .expect(200);
 
       expect(Array.isArray(res.body)).toBe(true);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(res.body.some((w: any) => w.webhookId === webhookId)).toBe(true);
+      expect(
+        res.body.some((w: { webhookId: string }) => w.webhookId === webhookId),
+      ).toBe(true);
     });
 
     it('should delete a webhook', async () => {

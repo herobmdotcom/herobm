@@ -38,8 +38,7 @@ export default function AccountGroupsAdmin() {
         api.discountMatrixControllerList({ ownerType: 'account_group' }).then(r => r.data || []),
         api.taxPositionsControllerFindAll().then(r => r.data || [])
       ]);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const sorted = [...data].sort((a: any, b: any) => 
+      const sorted = [...data].sort((a: api.AccountGroupResponseDto, b: api.AccountGroupResponseDto) => 
         a.name.localeCompare(b.name, undefined, { numeric: true })
       );
       setGroups(sorted);
@@ -57,17 +56,12 @@ export default function AccountGroupsAdmin() {
 
   useEffect(() => { loadData(); }, []);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const glAccountOptions = useMemo(() => glAccounts.map((a: any) => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` })), [glAccounts]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const costCenterOptions = useMemo(() => costCenters.map((c: any) => ({ value: c.costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const activityOptions = useMemo(() => activities.map((a: any) => ({ value: a.activityId, label: `${a.code} - ${a.name}` })), [activities]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const taxPositionOptions = useMemo(() => taxPositions.map((p: any) => ({ value: p.taxPositionId, label: p.title })), [taxPositions]);
+  const glAccountOptions = useMemo(() => glAccounts.map((a: api.GlAccountResponseDto) => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` })), [glAccounts]);
+  const costCenterOptions = useMemo(() => costCenters.map((c: api.CostCenterResponseDto) => ({ value: c.id, label: `${c.code} - ${c.name}` })), [costCenters]);
+  const activityOptions = useMemo(() => activities.map((a: api.ActivityResponseDto) => ({ value: a.id, label: `${a.code} - ${a.name}` })), [activities]);
+  const taxPositionOptions = useMemo(() => taxPositions.map((p: api.TaxPositionResponseDto) => ({ value: p.taxPositionId, label: p.title })), [taxPositions]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const columns: InlineTableColumn<any>[] = useMemo(() => [
+  const columns: InlineTableColumn<api.AccountGroupResponseDto>[] = useMemo(() => [
     { key: 'groupCode', title: tCommon('code'), type: 'text', placeholder: t('placeholders.code'), width: 100 },
     { key: 'name', title: tCommon('name'), type: 'text', placeholder: t('placeholders.name') },
     { 
@@ -84,8 +78,7 @@ export default function AccountGroupsAdmin() {
             onClick={() => setDiscountGroup(row)}
           >
             {t('manage')}
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {matrixRules.some((r: any) => r.customerGroupId === row.customerGroupId) && (
+            {matrixRules.some((r: api.DiscountMatrixResponseDto) => r.customerGroupId === row.customerGroupId) && (
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 ml-2"></span>
             )}
           </button>
@@ -112,7 +105,7 @@ export default function AccountGroupsAdmin() {
     }
   ], [tCommon, t, matrixRules]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const handleSave = async (payload: any, isNew: boolean) => {
     if (!payload.groupCode || !payload.name) {
       toast.error('Code and Name are required');
@@ -142,8 +135,7 @@ export default function AccountGroupsAdmin() {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleDelete = async (row: any) => {
+  const handleDelete = async (row: api.AccountGroupResponseDto) => {
     if(!confirm(tGlobalCommon('confirmDelete'))) return;
     try {
       await api.accountGroupsControllerRemove(row.customerGroupId);
@@ -180,6 +172,7 @@ export default function AccountGroupsAdmin() {
             defaultRevenueAccountId: '',
             defaultCostCenterId: '',
             defaultActivityId: '',
+            customerGroupId: '',
           })}
           addLabel={t('newGroup')}
           emptyLabel={loading ? null : t('noGroups')}

@@ -249,7 +249,7 @@ export default function DiscountMatrixSlideOver({
                             onClick={() => handleDelete(r.discountMatrixId)}
                             title={tCommon('delete')}
                           >
-                            {/* eslint-disable i18next/no-literal-string */}
+                            {/* eslint-disable i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
                             <span className="material-symbols-outlined text-base">
                               close
                             </span>
@@ -297,7 +297,7 @@ export default function DiscountMatrixSlideOver({
                           onClick={handleAdd}
                           disabled={!newProductGroupId || !newDiscount}
                         >
-                          {/* eslint-disable i18next/no-literal-string */}
+                          {/* eslint-disable i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
                           <span className="material-symbols-outlined text-base">add</span>
                           {/* eslint-enable i18next/no-literal-string */}
                         </button>

@@ -33,13 +33,20 @@ import * as schema from '../drizzle/herobm-core-schema';
 import { EntityType, EventType } from '../common/event-types';
 import { emitEvent } from '../common/emit-event';
 
+export interface ActiveJob {
+  status: string;
+  type: string;
+  progress: { step: number; name: string; status: string }[];
+  logs: string[];
+  lastActivityAt: number;
+}
+
 @Injectable()
 export class SetupService {
   private readonly logger = new Logger(SetupService.name);
 
   // In-memory job tracking for the setup process
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private activeJobs: Record<string, any> = {};
+  private activeJobs: Record<string, ActiveJob> = {};
 
   // In-memory resolvers for webhook-driven async tasks
   private jobResolvers: Record<
@@ -93,7 +100,9 @@ export class SetupService {
     };
 
     try {
-      const response = await fetch('http://pipeline-runner:8000/run-sync', {
+      const runnerUrl =
+        process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8000';
+      const response = await fetch(`${runnerUrl}/run-sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -156,7 +165,9 @@ export class SetupService {
     };
 
     try {
-      const response = await fetch('http://pipeline-runner:8000/run-sync', {
+      const runnerUrl =
+        process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8000';
+      const response = await fetch(`${runnerUrl}/run-sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -398,8 +409,12 @@ export class SetupService {
       const cols = getTableColumns(t.table);
       const columns = Object.keys(cols)
         .map((k) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const col = (cols as any)[k];
+          const col = (
+            cols as Record<
+              string,
+              { name: string; notNull: boolean; hasDefault: boolean }
+            >
+          )[k];
           return {
             name: col.name,
             notNull: col.notNull,
@@ -429,6 +444,7 @@ export class SetupService {
     const registryEntry = this.csvRegistry.find((r) => r.id === tableName);
     if (!registryEntry) throw new BadRequestException('Unsupported table');
 
+    Object.keys(this.activeJobs).forEach((id) => this.checkJobTimeout(id));
     const runningJobId = Object.keys(this.activeJobs).find(
       (id) => this.activeJobs[id].status === 'running',
     );
@@ -437,10 +453,12 @@ export class SetupService {
     const jobId = Math.random().toString(36).substring(7);
     this.activeJobs[jobId] = {
       status: 'running',
+      type: 'csv',
       progress: [
         { step: 1, name: `Importing CSV to ${tableName}`, status: 'running' },
       ],
       logs: [`--- Initializing CSV Import for ${tableName} ---`],
+      lastActivityAt: Date.now(),
     };
 
     this.runCsvCore(registryEntry, strategy, file, jobId).catch((err) => {
@@ -457,7 +475,7 @@ export class SetupService {
 
   // @herobm-skip-audit
   private async runCsvCore(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     entry: any,
     strategy: string,
     file: Express.Multer.File,
@@ -504,19 +522,19 @@ export class SetupService {
     let parsedCount = 0;
     for await (const record of parser) {
       // Map back to db columns, stripping unknown columns and casting empty strings to null for text fields
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const dbRecord: any = {};
+      const dbRecord: Record<string, unknown> = {};
       for (const col of colNames) {
         if (record[col] !== undefined) {
           dbRecord[col] = record[col] === '' ? null : record[col];
           if (col === 'address1Country' && dbRecord[col]) {
-            dbRecord[col] = getCountryCode(dbRecord[col]) || dbRecord[col];
+            dbRecord[col] =
+              getCountryCode(dbRecord[col] as string) || dbRecord[col];
           }
           if (col === 'currencyCode') {
-            dbRecord[col] = mapCurrencyCode(dbRecord[col]);
+            dbRecord[col] = mapCurrencyCode(dbRecord[col] as string | null);
           }
           if ((col === 'phone' || col === 'mobile') && dbRecord[col]) {
-            dbRecord[col] = parsePhone(dbRecord[col]);
+            dbRecord[col] = parsePhone(dbRecord[col] as string | null);
           }
         }
       }
@@ -587,8 +605,7 @@ export class SetupService {
     // Emit a single event for the entire CSV import
     const tableName =
       entry.table[Symbol.for('drizzle:Name')] || 'unknown_table'; // @sync-ignore
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await emitEvent(this.db as any, {
+    await emitEvent(this.db as unknown as Parameters<typeof emitEvent>[0], {
       entityType: EntityType.SYSTEM,
       entityId: 'system_setup',
       eventType: 'csv_import_completed',
@@ -610,15 +627,21 @@ export class SetupService {
   private log(
     jobId: string | undefined,
     message: string,
-    level: 'log' | 'warn' | 'error' = 'log',
+    level: 'info' | 'error' = 'info',
   ) {
-    this.logger[level](message);
+    if (level === 'error') {
+      this.logger.error(`[Job ${jobId || 'N/A'}] ${message}`);
+    } else {
+      this.logger.log(`[Job ${jobId || 'N/A'}] ${message}`);
+    }
     if (jobId && this.activeJobs[jobId]) {
       this.activeJobs[jobId].logs.push(message);
+      this.activeJobs[jobId].lastActivityAt = Date.now();
     }
   }
 
   async executeElt(dto: ExecuteEltDto) {
+    Object.keys(this.activeJobs).forEach((id) => this.checkJobTimeout(id));
     const runningJobId = Object.keys(this.activeJobs).find(
       (id) => this.activeJobs[id].status === 'running',
     );
@@ -627,8 +650,10 @@ export class SetupService {
     const jobId = Math.random().toString(36).substring(7);
     this.activeJobs[jobId] = {
       status: 'running',
+      type: dto.source || 'abm',
       progress: [{ step: 1, name: 'Importing Data (ELT)', status: 'running' }],
       logs: [],
+      lastActivityAt: Date.now(),
     };
 
     this.runEltCore(dto, jobId).catch((err) => {
@@ -805,7 +830,66 @@ export class SetupService {
     }
   }
 
+  private checkJobTimeout(jobId: string) {
+    const job = this.activeJobs[jobId];
+    if (
+      job &&
+      job.status === 'running' &&
+      job.lastActivityAt &&
+      Date.now() - job.lastActivityAt > 10 * 60 * 1000
+    ) {
+      job.status = 'failed';
+      if (job.progress && job.progress[0]) {
+        job.progress[0].status = 'failed';
+      }
+      job.logs.push(
+        'FATAL: Job timed out due to 10 minutes of inactivity (container crash or disconnected worker).',
+      );
+    }
+  }
+
+  getActiveJob() {
+    Object.keys(this.activeJobs).forEach((id) => this.checkJobTimeout(id));
+    const runningJobId = Object.keys(this.activeJobs).find(
+      (id) => this.activeJobs[id].status === 'running',
+    );
+    if (!runningJobId) return { jobId: null, type: null };
+    return {
+      jobId: runningJobId,
+      type: this.activeJobs[runningJobId].type || null,
+    };
+  }
+
+  async stopJob(jobId: string) {
+    const job = this.activeJobs[jobId];
+    if (!job) throw new BadRequestException('Job not found');
+
+    job.status = 'failed';
+    if (job.progress && job.progress[0]) {
+      job.progress[0].status = 'failed';
+    }
+    job.logs.push('[FATAL] Job forcibly stopped by user.');
+    job.lastActivityAt = Date.now();
+
+    if (job.type !== 'csv') {
+      try {
+        const runnerUrl =
+          process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8000';
+        await fetch(`${runnerUrl}/run/${jobId}`, {
+          method: 'DELETE',
+        });
+      } catch (err) {
+        this.logger.warn(
+          `Failed to send DELETE to pipeline-runner for job ${jobId}: ${err}`,
+        );
+      }
+    }
+
+    return { success: true };
+  }
+
   getJobProgress(jobId: string) {
+    this.checkJobTimeout(jobId);
     const job = this.activeJobs[jobId];
     if (!job) throw new BadRequestException('Job not found');
     return job;
@@ -847,8 +931,12 @@ export class SetupService {
     return new Promise((resolve, reject) => {
       this.jobResolvers[jobId] = { resolve, reject };
 
-      console.log(`[Job ${jobId}] Sending POST to pipeline-runner/run with command ${cmd}...`);
-      fetch('http://pipeline-runner:8000/run', {
+      console.log(
+        `[Job ${jobId}] Sending POST to pipeline-runner/run with command ${cmd}...`,
+      );
+      const runnerUrl =
+        process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8000';
+      fetch(`${runnerUrl}/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -859,7 +947,9 @@ export class SetupService {
         }),
       })
         .then(async (response) => {
-          console.log(`[Job ${jobId}] pipeline-runner/run responded with status ${response.status}`);
+          console.log(
+            `[Job ${jobId}] pipeline-runner/run responded with status ${response.status}`,
+          );
           if (!response.ok) {
             const body = await response.text();
             console.error(`[Job ${jobId}] Failed to trigger sidecar: ${body}`);
@@ -871,7 +961,10 @@ export class SetupService {
           }
         })
         .catch((err) => {
-          console.error(`[Job ${jobId}] fetch to pipeline-runner/run failed completely:`, err);
+          console.error(
+            `[Job ${jobId}] fetch to pipeline-runner/run failed completely:`,
+            err,
+          );
           delete this.jobResolvers[jobId];
           reject(err instanceof Error ? err : new Error(String(err)));
         });
@@ -939,11 +1032,15 @@ export class SetupService {
       if (Object.keys(properties).length > 0) {
         const [existingGl] = await this.db.select().from(glSettings).limit(1);
         if (existingGl) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const existingSchema = (existingGl.accountMetadataSchema as any) || {
-            type: 'object',
-            properties: {},
-          };
+          interface MetadataSchema {
+            type?: string;
+            properties?: Record<string, unknown>;
+          }
+          const existingSchema =
+            (existingGl.accountMetadataSchema as unknown as MetadataSchema) || {
+              type: 'object',
+              properties: {},
+            };
           const mergedProperties = {
             ...(existingSchema.properties || {}),
             ...properties,
@@ -955,8 +1052,7 @@ export class SetupService {
               accountMetadataSchema: {
                 type: 'object',
                 properties: mergedProperties,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              } as any,
+              } as unknown as unknown[],
             })
             .where(eq(glSettings.settingsId, existingGl.settingsId))
             .returning();

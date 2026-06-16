@@ -56,8 +56,7 @@ export class AuthController {
     description:
       'Returns the identity and role of the currently authenticated user.',
   })
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  me(@Request() req: any) {
+  me(@Request() req: { user: { username: string; role: string } }) {
     return {
       username: req.user.username,
       role: req.user.role,

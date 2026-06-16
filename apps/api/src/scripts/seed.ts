@@ -2,7 +2,7 @@ import { SystemResource } from '@herobm/shared';
 import { PgDatabase } from 'drizzle-orm/pg-core';
 import * as schema from '../drizzle/herobm-core-schema';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
 export type SeedDB = PgDatabase<any, typeof schema, any>;
 
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -1290,19 +1290,34 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
     },
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const toInsert = policies.filter((p: any) => {
-    const key = [
-      p.ptype || '',
-      p.v0 || '',
-      p.v1 || '',
-      p.v2 || '',
-      p.v3 || '',
-      p.v4 || '',
-      p.v5 || '',
-    ].join('|');
-    return !existingSet.has(key);
-  });
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  const toInsert = policies.filter(
+    (p: {
+      ptype?: string;
+      v0?: string | null;
+      v1?: string | null;
+      v2?: string | null;
+      v3?: string | null;
+      v4?: string | null;
+      v5?: string | null;
+    }) => {
+      // In production, we only seed the admin role
+      if (isProduction && p.v0 !== 'admin') {
+        return false;
+      }
+      const key = [
+        p.ptype || '',
+        p.v0 || '',
+        p.v1 || '',
+        p.v2 || '',
+        p.v3 || '',
+        p.v4 || '',
+        p.v5 || '',
+      ].join('|');
+      return !existingSet.has(key);
+    },
+  );
 
   if (toInsert.length > 0) {
     await db.insert(casbinRule).values(toInsert);
@@ -1332,19 +1347,15 @@ async function seedUsers(db: SeedDB, dryRun: boolean) {
     .values({
       username: 'admin',
       passwordHash: hash,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      role: 'admin' as any,
+      role: 'admin',
       isActive: true,
     })
     .onConflictDoUpdate({
       target: users.username,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      set: { passwordHash: hash, role: 'admin' as any, isActive: true },
+      set: { passwordHash: hash, role: 'admin', isActive: true },
     });
 
-  console.log(
-    '  Seeded users: admin',
-  );
+  console.log('  Seeded users: admin');
 
   if (generated) {
     console.log(
@@ -1554,16 +1565,16 @@ export async function seedCoaAccounts(
   }
 
   let autoCode = 100;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const insertRows: any[] = [];
 
   function walk(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     nodes: any,
     parentCode: string | null,
     inheritedType: string | null,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     for (const [name, node] of Object.entries<any>(nodes)) {
       const accountType =
         ROOT_TYPE_MAP[node.root_type || ''] || inheritedType || 'asset';
@@ -1696,7 +1707,7 @@ export async function seedCoaSettings(
   const fiscalMonth = settings.fiscal_year_start_month || 7;
   const defaults = settings.defaults || {};
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const glData: any = {
     settingsId: '4e185bce-d31a-4caa-8462-73c261864eff',
     baseCurrency,

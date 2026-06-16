@@ -9,7 +9,7 @@
 export type UpdateSupplierExpiryDtoExpiryType = typeof UpdateSupplierExpiryDtoExpiryType[keyof typeof UpdateSupplierExpiryDtoExpiryType];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+// eslint-disable-next-line @typescript-eslint/no-redeclare -- External API integration boundaries where exact types are unknown.
 export const UpdateSupplierExpiryDtoExpiryType = {
   insurance: 'insurance',
   tax_certificate: 'tax_certificate',

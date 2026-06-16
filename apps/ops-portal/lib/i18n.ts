@@ -18,13 +18,13 @@
  */
  
 export function tDynamic(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  t: any,
+  t: unknown,
   key: string,
   fallback?: string,
   values?: Record<string, string>,
 ): string {
-  if (t.has(key)) {
+  const tFn = t as { has(k: string): boolean };
+  if (tFn && typeof tFn.has === 'function' && tFn.has(key)) {
     return values
       ? (t as (k: string, v: Record<string, string>) => string)(key, values)
       : (t as (k: string) => string)(key);

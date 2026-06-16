@@ -94,7 +94,7 @@ export default function PickingPage() {
     // Fetch Locations
     useEffect(() => {
         api.inventoryControllerFindAllLocations().then((response) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                 const res = response.data as any;
                 const locs = Array.isArray(res) ? res : (res.data || []);
                 setLocations(locs);
@@ -109,7 +109,7 @@ export default function PickingPage() {
     // Fetch Pending Orders
     const loadOrders = useCallback(() => {
         setLoadingOrders(true);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
         const params: any = {};
         if (selectedLocationId) params.locationId = selectedLocationId;
 
@@ -156,7 +156,7 @@ export default function PickingPage() {
                 
                 // Initialize default quantities (what's remaining and fits in a bin)
                 const defaultInputs: Record<string, { quantity: string, binId: string }> = {};
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                 ((data as any).lines || []).forEach((line: PickingLine) => {
                     if (line.isPhysical && !line.isFullyPicked && parseFloat(line.remaining) > 0) {
                         const bestBin = line.availableBins[0];
@@ -311,7 +311,7 @@ export default function PickingPage() {
                             </div>
                         ) : filteredOrders.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
-                                {/* eslint-disable-next-line i18next/no-literal-string */}
+                                {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                 <span className="material-symbols-outlined text-4xl mb-2 opacity-50">inventory_2</span>
                                 {t('noOrders', { tab: activeTab })}
                             </div>
@@ -326,10 +326,10 @@ export default function PickingPage() {
                                         <div className="flex justify-between items-start mb-1">
                                             <div className="flex items-center gap-2">
                                                 {order.hasAllocation ? (
-                                                    /* eslint-disable-next-line i18next/no-literal-string */
+                                                    /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
                                                     <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-[var(--success)]' : order.pickabilityStatus === 'partial' ? 'text-[var(--warning)]' : 'text-[var(--danger)]'}`} title={t('tooltips.allocated')} style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
                                                 ) : (
-                                                    /* eslint-disable-next-line i18next/no-literal-string */
+                                                    /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
                                                     <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-[var(--success)]' : order.pickabilityStatus === 'partial' ? 'text-[var(--warning)]' : 'text-[var(--danger)]'}`} style={{ fontVariationSettings: "'FILL' 1" }}>fiber_manual_record</span>
                                                 )}
                                                 <div className="font-bold text-[var(--text-primary)] text-sm">{order.orderNumber}</div>
@@ -351,7 +351,7 @@ export default function PickingPage() {
                         <>
                             {!selectedOrder ? (
                         <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                             <span className="material-symbols-outlined text-4xl mb-2 opacity-50">pallet</span>
                             {t('selectOrder')}
                         </div>
@@ -377,11 +377,11 @@ export default function PickingPage() {
                                         className="btn btn-secondary btn-sm flex items-center gap-1.5"
                                     >
                                         {isGeneratingPdf && (
-                                            /* eslint-disable-next-line i18next/no-literal-string */
+                                            /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
                                             <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>
                                         )}
                                         <span className="hidden sm:inline">{t('pickingSlipPdf')}</span>
-                                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                                        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                         <span className="sm:hidden material-symbols-outlined text-[16px]">print</span>
                                     </button>
                                     <span className="bg-[var(--accent)] text-white text-xs font-bold px-2 py-0.5 rounded-full">
@@ -394,7 +394,7 @@ export default function PickingPage() {
                                 <div className="flex flex-col h-full w-full">
                                     {error && (
                                         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md flex items-center gap-2">
-                                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                             <span className="material-symbols-outlined text-sm">error</span>
                                             {error}
                                         </div>
@@ -424,7 +424,7 @@ export default function PickingPage() {
                                                                 <div className="font-bold">{line.productNumber}</div>
                                                                 {line.hasAllocation && (
                                                                     <>
-                                                                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                                        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                                                         <span className="material-symbols-outlined indicator-icon text-[var(--accent)]" title={t('tooltips.stockSpecificallyOrdered')} style={{ fontVariationSettings: "'FILL' 1" }}>
                                                                             bookmark
                                                                         </span>
@@ -511,7 +511,7 @@ export default function PickingPage() {
                                                             <div className="flex items-center gap-1.5">
                                                                 <div className="font-bold text-sm text-[var(--text-primary)] truncate">{line.productNumber}</div>
                                                                 {line.hasAllocation && (
-                                                                    /* eslint-disable-next-line i18next/no-literal-string */
+                                                                    /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
                                                                     <span className="material-symbols-outlined indicator-icon text-[var(--accent)] text-sm shrink-0" title={t('tooltips.stockSpecificallyOrdered')} style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
                                                                 )}
                                                             </div>
@@ -689,7 +689,7 @@ export default function PickingPage() {
                                                                 <div className="flex justify-end items-center gap-1.5 font-semibold text-[var(--text-primary)]">
                                                                     {pick.line && !pick.line.isFullyPicked && (
                                                                         <>
-                                                                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                                                             <span className="material-symbols-outlined text-[16px] text-[var(--warning)]" title={t('tooltips.partiallyPicked')}>
                                                                                 warning
                                                                             </span>
@@ -707,7 +707,7 @@ export default function PickingPage() {
                                                                         className="btn btn-secondary btn-sm !p-1 !text-[var(--text-muted)] hover:!text-[var(--danger)]"
                                                                         title={t('tooltips.cancelPick')}
                                                                     >
-                                                                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                                        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                                                         <span className="material-symbols-outlined text-[18px]">close</span>
                                                                     </button>
                                                                 </div>
@@ -732,7 +732,7 @@ export default function PickingPage() {
                                                                     className="btn btn-secondary btn-sm !p-1 !text-[var(--text-muted)] hover:!text-[var(--danger)]"
                                                                     title={t('tooltips.cancelPick')}
                                                                 >
-                                                                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                                                     <span className="material-symbols-outlined text-[18px]">close</span>
                                                                 </button>
                                                             </div>
@@ -746,7 +746,7 @@ export default function PickingPage() {
                                                                 <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.pickQty')}</div>
                                                                 <div className="text-xs font-medium flex items-center gap-1">
                                                                     {pick.line && !pick.line.isFullyPicked && (
-                                                                        /* eslint-disable-next-line i18next/no-literal-string */
+                                                                        /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
                                                                         <span className="material-symbols-outlined text-[16px] text-[var(--warning)]" title={t('tooltips.partiallyPicked')}>warning</span>
                                                                     )}
                                                                     {parseFloat(pick.quantity).toLocaleString()}
@@ -797,7 +797,7 @@ export default function PickingPage() {
                                                             </td>
                                                             <td>
                                                                 <span className="ml-2 text-xs font-bold text-[var(--text-muted)] inline-flex items-center">
-                                                                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                                                     <span className="material-symbols-outlined text-[14px] mr-1">local_shipping</span>
                                                                     {t('statuses.dispatched')}
                                                                 </span>
@@ -816,7 +816,7 @@ export default function PickingPage() {
                                                             </div>
                                                             <div className="flex flex-col items-end gap-2 shrink-0">
                                                                 <span className="text-xs font-bold text-[var(--text-muted)] inline-flex items-center">
-                                                                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                                                     <span className="material-symbols-outlined text-[14px] mr-1">local_shipping</span>
                                                                     {t('statuses.dispatched')}
                                                                 </span>

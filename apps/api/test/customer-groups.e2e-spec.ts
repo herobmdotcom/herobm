@@ -3,8 +3,7 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('Account Groups (e2e)', () => {
   let app: INestApplication;
@@ -61,8 +60,9 @@ describe('Account Groups (e2e)', () => {
     expect(listRes.status).toBe(200);
     expect(Array.isArray(listRes.body)).toBe(true);
     expect(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      listRes.body.find((g: any) => g.customerGroupId === groupId),
+      listRes.body.find(
+        (g: { customerGroupId: string }) => g.customerGroupId === groupId,
+      ),
     ).toBeDefined();
 
     // 3. Read single group
@@ -77,7 +77,7 @@ describe('Account Groups (e2e)', () => {
       .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        address1Country: 'AU',
+        billingAddressCountry: 'AU',
         customerNumber: `GRP-MEMBER-${Date.now()}`,
         name: 'Group Member',
         customerGroupId: groupId,
@@ -90,8 +90,8 @@ describe('Account Groups (e2e)', () => {
       .get('/api/customers?limit=1000&orderDirection=desc')
       .set('Authorization', `Bearer ${adminToken}`);
     const foundAcc = accountListRes.body.data.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (a: any) => a.customerId === createCustomerRes.body.customerId,
+      (a: { customerId: string }) =>
+        a.customerId === createCustomerRes.body.customerId,
     );
     expect(foundAcc).toBeDefined();
     expect(foundAcc.customerGroupCode).toBe(groupCode);

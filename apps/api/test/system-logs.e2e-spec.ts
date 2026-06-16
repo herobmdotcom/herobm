@@ -4,8 +4,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 import { FileLoggerService } from '../src/common/file-logger.service';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('System Logs E2E Verification', () => {
   let app: INestApplication;

@@ -127,10 +127,9 @@ describe('LocationsService', () => {
       const dto = {
         zoneId: zone.zoneId,
         binNumber: 'B1',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        binType: 'storage' as any,
+        binType: 'storage',
       };
-      const result = await service.createBin(dto, 'admin');
+      const result = await service.createBin(dto as any, 'admin');
       expect(result.binNumber).toBe('B1');
     });
 

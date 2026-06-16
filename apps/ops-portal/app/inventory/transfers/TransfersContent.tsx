@@ -9,6 +9,7 @@ import CreateTransferSlideOver from './CreateTransferSlideOver';
 
 interface UnifiedTransferOrderRow {
   id: string;
+  transferOrderId?: string;
   orderNumber: string;
   stateCode: string;
   sourceLocationName: string;
@@ -40,11 +41,10 @@ export default function TransfersContent() {
       field: 'stateCode',
       headerName: tTransfers('columns.status'),
       width: 120,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      valueFormatter: (params: any) => {
+      valueFormatter: (params: { value: unknown }) => {
         if (!params.value) return '';
         const s = String(params.value).toLowerCase();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         return tStates.has(s as any) ? tStates(s as any) : String(params.value);
       },
     },
@@ -62,8 +62,7 @@ export default function TransfersContent() {
   ], [tTransfers]);
 
   const handleRowClicked = useCallback((order: UnifiedTransferOrderRow) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const id = order.id || (order as any).transferOrderId;
+    const id = order.id || order.transferOrderId;
     if (id) {
       router.push(`/inventory/transfers/${id}`);
     }

@@ -65,8 +65,7 @@ export class SalesInvoiceController {
   async createSalesInvoice(
     @Param('id') id: string,
     @Body() dto: CreateSalesInvoiceDto,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    @Request() req: any,
+    @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
     return this.salesInvoiceService.createInvoice(id, dto, actor);
@@ -146,8 +145,7 @@ export class InvoiceDetailController {
   async changeSalesInvoiceState(
     @Param('id') id: string,
     @Body() dto: ChangeInvoiceStateDto,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    @Request() req: any,
+    @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
     return this.salesInvoiceService.changeSalesInvoiceState(
@@ -243,8 +241,7 @@ export class InvoiceDetailController {
   @ApiCreatedResponse({ type: PurchaseInvoiceResponseDto })
   async createDraftInvoice(
     @Body() dto: CreateStandaloneInvoiceDto,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    @Request() req: any,
+    @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.createDraftInvoice(dto, actor);
@@ -261,8 +258,10 @@ export class InvoiceDetailController {
   })
   @ApiBody({ type: EmptyBodyDto })
   @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async postInvoice(@Param('id') id: string, @Request() req: any) {
+  async postInvoice(
+    @Param('id') id: string,
+    @Request() req: { user?: { username?: string } },
+  ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.postInvoice(id, actor);
   }
@@ -279,8 +278,7 @@ export class InvoiceDetailController {
   async changeInvoiceState(
     @Param('id') id: string,
     @Body() dto: ChangeInvoiceStateDto,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    @Request() req: any,
+    @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.changePurchaseInvoiceState(
@@ -303,8 +301,7 @@ export class InvoiceDetailController {
   async updateInvoice(
     @Param('id') id: string,
     @Body() dto: UpdatePurchaseInvoiceDto,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    @Request() req: any,
+    @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.updateInvoice(id, dto, actor);
@@ -323,8 +320,7 @@ export class InvoiceDetailController {
     @Param('id') invoiceId: string,
     @Param('lineId') lineId: string,
     @Body() dto: UpdateInvoiceLineDto,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    @Request() req: any,
+    @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.updateLine(
@@ -347,8 +343,7 @@ export class InvoiceDetailController {
   async removeInvoiceLine(
     @Param('id') invoiceId: string,
     @Param('lineId') lineId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    @Request() req: any,
+    @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.removeLine(invoiceId, lineId, actor);
@@ -366,8 +361,7 @@ export class InvoiceDetailController {
   async addInvoiceLine(
     @Param('id') invoiceId: string,
     @Body() dto: UpdateInvoiceLineDto,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    @Request() req: any,
+    @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.addLine(invoiceId, dto, actor);
@@ -386,8 +380,7 @@ export class InvoiceDetailController {
   async resolveInvoiceLine(
     @Param('lineId') lineId: string,
     @Body() dto: ResolveInvoiceLineDto,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    @Request() req: any,
+    @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.resolveInvoiceLine(
@@ -410,8 +403,7 @@ export class InvoiceDetailController {
   @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async unresolveInvoiceLine(
     @Param('lineId') lineId: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    @Request() req: any,
+    @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.unresolveInvoiceLine(lineId, actor);
@@ -430,8 +422,7 @@ export class InvoiceDetailController {
   async autoMatchPurchaseOrder(
     @Param('id') invoiceId: string,
     @Body() dto: AutoMatchPurchaseOrderDto,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    @Request() req: any,
+    @Request() req: { user?: { username?: string } },
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.autoMatchPurchaseOrder(

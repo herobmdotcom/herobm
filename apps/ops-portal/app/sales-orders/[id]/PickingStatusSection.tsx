@@ -56,7 +56,7 @@ export default function PickingStatusSection({ pickingSummary }: Props) {
         <div id="picking-section" className="card">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="section-heading">
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                     <span className="material-symbols-outlined">inventory</span>
                     {tPicking('title')}
                 </h3>
@@ -66,7 +66,7 @@ export default function PickingStatusSection({ pickingSummary }: Props) {
                     </span>
                     {pickingSummary.isFullyPicked && (
                         <span className="text-xs font-bold text-[var(--success)]">
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                             <span className="material-symbols-outlined text-sm align-middle mr-0.5">check_circle</span>
                             {tPicking('statuses.done')}
                         </span>
@@ -117,12 +117,12 @@ export default function PickingStatusSection({ pickingSummary }: Props) {
                             <td style={{ textAlign: 'center' }}>
                                 {line.isFullyPicked ? (
                                     <>
-                                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                                        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                         <span className="material-symbols-outlined text-[var(--success)] text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                                     </>
                                 ) : remaining > 0 ? (
                                     <>
-                                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                                        {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                         <span className="material-symbols-outlined text-[var(--warning)] text-base">pending</span>
                                     </>
                                 ) : null}
@@ -144,12 +144,12 @@ export default function PickingStatusSection({ pickingSummary }: Props) {
                                 </div>
                                 <div>
                                     {line.isFullyPicked ? (
-                                        /* eslint-disable-next-line i18next/no-literal-string */
+                                        /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
                                         <span className="material-symbols-outlined text-[var(--success)] text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
                                             check_circle
                                         </span>
                                     ) : remaining > 0 ? (
-                                        /* eslint-disable-next-line i18next/no-literal-string */
+                                        /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
                                         <span className="material-symbols-outlined text-[var(--warning)] text-base">
                                             pending
                                         </span>

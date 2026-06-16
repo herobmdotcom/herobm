@@ -68,7 +68,7 @@ export default function ReceptionsSection({ orderId }: { orderId: string }) {
     <div id="receptions-section" className="card">
       <div className="flex justify-between items-center mb-4">
         <h3 className="section-heading">
-          {/* eslint-disable-next-line i18next/no-literal-string */}
+          {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
           <span className="material-symbols-outlined">inventory_2</span>
           {t('title')}
         </h3>

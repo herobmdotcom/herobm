@@ -7,8 +7,7 @@ import { INestApplication } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const request = require('supertest');
+import request from 'supertest';
 
 describe('API E2E — Purchase Invoices', () => {
   let app: INestApplication;
@@ -41,10 +40,14 @@ describe('API E2E — Purchase Invoices', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const leaves: any[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const walk = (nodes: any[]) => {
+    interface GlAccountLeaf {
+      isGroup: boolean;
+      accountCode: string;
+      glAccountId: string;
+      children?: GlAccountLeaf[];
+    }
+    const leaves: GlAccountLeaf[] = [];
+    const walk = (nodes: GlAccountLeaf[]) => {
       for (const node of nodes) {
         if (!node.isGroup) leaves.push(node);
         if (node.children) walk(node.children);
@@ -207,8 +210,8 @@ describe('API E2E — Purchase Invoices', () => {
         .expect(200);
 
       const je = glRes.body.data.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (j: any) => j.sourceId === createdInvoiceId,
+        (j: { sourceId: string; journalEntryId: string }) =>
+          j.sourceId === createdInvoiceId,
       );
       expect(je).toBeDefined();
 
@@ -222,8 +225,8 @@ describe('API E2E — Purchase Invoices', () => {
 
       // AP Line should be the credit line for the supplier
       const apLine = lines.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (l: any) => l.partyId === validVendorId && parseFloat(l.credit) > 0,
+        (l: { partyId: string; credit: string; partyType: string }) =>
+          l.partyId === validVendorId && parseFloat(l.credit) > 0,
       );
       expect(apLine).toBeDefined();
       expect(apLine.partyType).toBe('supplier');
@@ -239,8 +242,7 @@ describe('API E2E — Purchase Invoices', () => {
 
       const eventsList = dbRes.body.events || [];
       const glEvent = eventsList.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (evt: any) =>
+        (evt: { eventType: string; entityId: string }) =>
           evt.eventType === 'general_ledger.entry_posted' &&
           evt.entityId === je.journalEntryId,
       );
@@ -262,8 +264,8 @@ describe('API E2E — Purchase Invoices', () => {
         .expect(200);
 
       const je = glRes.body.data.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (j: any) => j.sourceId === createdInvoiceId,
+        (j: { sourceId: string; journalEntryId: string }) =>
+          j.sourceId === createdInvoiceId,
       );
       expect(je).toBeDefined();
 
@@ -277,8 +279,8 @@ describe('API E2E — Purchase Invoices', () => {
 
       // Reversal AP Line should be the DEBIT line for the supplier
       const apReversalLine = lines.find(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (l: any) => l.partyId === validVendorId && parseFloat(l.debit) > 0,
+        (l: { partyId: string; debit: string; partyType: string }) =>
+          l.partyId === validVendorId && parseFloat(l.debit) > 0,
       );
       expect(apReversalLine).toBeDefined();
       expect(apReversalLine.partyType).toBe('supplier');

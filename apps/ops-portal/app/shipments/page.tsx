@@ -57,8 +57,8 @@ export default function ShipmentsPage() {
       valueFormatter: (params: import("ag-grid-community").ValueFormatterParams<Record<string, unknown>>) => {
         if (!params.value) return '';
         const s = String(params.value).toLowerCase();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return tStates.has(s as any) ? tStates(s as any) : String(params.value);
+        const stateKey = s as Parameters<typeof tStates>[0];
+        return tStates.has(stateKey) ? tStates(stateKey) : String(params.value);
       },
     },
     {
@@ -67,7 +67,7 @@ export default function ShipmentsPage() {
       flex: 1.5,
       minWidth: 200,
     },
-  ], [t]);
+  ], [t, tStates]);
 
   const handleRowClicked = useCallback((data: Record<string, unknown>) => {
     router.push(`/shipments/${data.shipmentId}`);

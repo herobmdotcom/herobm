@@ -9,7 +9,7 @@
 export type CreateSupplierDtoPaymentBlockReason = typeof CreateSupplierDtoPaymentBlockReason[keyof typeof CreateSupplierDtoPaymentBlockReason];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+// eslint-disable-next-line @typescript-eslint/no-redeclare -- External API integration boundaries where exact types are unknown.
 export const CreateSupplierDtoPaymentBlockReason = {
   invoice_dispute: 'invoice_dispute',
   missing_goods: 'missing_goods',

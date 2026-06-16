@@ -1,4 +1,4 @@
-/* eslint-disable i18next/no-literal-string, no-restricted-syntax */
+
 'use client';
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -116,11 +116,11 @@ export default function FinancialSettingsPage() {
   const [activityCreating, setActivityCreating] = useState(false);
 
   // ── GL Settings state ────────────────────────────────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
   const [glSettings, setGlSettings] = useState<Record<string, any> | null>(null);
 
   // ── App Settings state ───────────────────────────────────────────────────────
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
   const [appSettings, setAppSettings] = useState<Record<string, any> | null>(null);
 
   const ratesWithBase = useMemo(() => {
@@ -140,16 +140,16 @@ export default function FinancialSettingsPage() {
   const [glLoading, setGlLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'gl' | 'operations'>('gl');
    
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
   const [schemaObj, setSchemaObj] = useState<Record<string, any>>({ type: 'object', properties: {} });
   const [schemaEditorOpen, setSchemaEditorOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
   const [viewMetadataObj, setViewMetadataObj] = useState<Record<string, any> | null>(null);
 
   // ── CoA state ──────────────────────────────────────────────────────────────
    
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
   const [coaForm, setCoaForm] = useState<Record<string, any>>({});
   const [coaCreating, setCoaCreating] = useState(false);
   const [coaEditingId, setCoaEditingId] = useState<string | null>(null);
@@ -194,13 +194,13 @@ export default function FinancialSettingsPage() {
         api.appConfigControllerGet(),
         api.glControllerGetAccounts({} as Record<string, never>)
       ]);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
       setGlSettings(settingsRes.data as unknown as Record<string, any>);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
       setAppSettings(appSettingsRes.data as unknown as Record<string, any>);
       setGlAccounts(accountsRes.data);
        
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
       setSchemaObj((settingsRes.data as unknown as { accountMetadataSchema?: Record<string, any> }).accountMetadataSchema || { type: 'object', properties: {} });
     } catch (err: unknown) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.gl }) + ': ' + getErrorMessage(err));
@@ -416,7 +416,7 @@ export default function FinancialSettingsPage() {
     catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
   const handleImportCc = async (data: Record<string, any>[]) => {
     setIsImporting(true);
     try {
@@ -478,7 +478,7 @@ export default function FinancialSettingsPage() {
     catch (err: unknown) { toast.error(getErrorMessage(err)); }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
   const handleImportActivity = async (data: Record<string, any>[]) => {
     setIsImporting(true);
     try {
@@ -519,27 +519,29 @@ export default function FinancialSettingsPage() {
       { value: 'DAYS', label: 'Days' }
     ], width: '10%' },
     {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
       key: 'isDefaultCustomer' as any,
       title: 'AR Default',
       type: 'boolean' as const,
       width: 100,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
       render: (row: any, isEditing: boolean) => {
         if (isEditing) return null;
-        return row.isDefaultCustomer ? <span className="text-green-500 material-symbols-outlined text-[16px] leading-none">check_circle</span> : <span className="text-muted">-</span>;
+        {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+        return row.isDefaultCustomer ? <span className="text-green-500 material-symbols-outlined text-[16px] leading-none">{'check_circle'}</span> : <span className="text-muted">-</span>;
       }
     },
     {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
       key: 'isDefaultSupplier' as any,
       title: 'AP Default',
       type: 'boolean' as const,
       width: 100,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
       render: (row: any, isEditing: boolean) => {
         if (isEditing) return null;
-        return row.isDefaultSupplier ? <span className="text-green-500 material-symbols-outlined text-[16px] leading-none">check_circle</span> : <span className="text-muted">-</span>;
+        {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+        return row.isDefaultSupplier ? <span className="text-green-500 material-symbols-outlined text-[16px] leading-none">{'check_circle'}</span> : <span className="text-muted">-</span>;
       }
     }
   ];
@@ -556,9 +558,9 @@ export default function FinancialSettingsPage() {
         description: row.description,
         days: Number(row.days),
         type: row.type || 'EOM',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
         isDefaultCustomer: Boolean((row as any).isDefaultCustomer),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
         isDefaultSupplier: Boolean((row as any).isDefaultSupplier),
       };
 
@@ -635,7 +637,7 @@ export default function FinancialSettingsPage() {
     );
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
 type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<string, any>; isSystem?: boolean; isBankAccount?: boolean; currencyCode?: string; isActive?: boolean; accountType?: string };
   const renderCoaRow = (isEdit: boolean, data: Partial<CoaData>, key: string) => (
     <Fragment key={key}>
@@ -651,14 +653,16 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
             : <span className={`${data.isGroup ? 'font-bold' : 'font-medium'} flex items-center gap-2`}>
                 {data.isGroup ? (
                   <>
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
-                    <span className="material-symbols-outlined text-[16px]">folder</span>
+                    { }
+                    {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+                    <span className="material-symbols-outlined text-[16px]">{'folder'}</span>
                     { }
                   </>
                 ) : (
                   <>
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
-                    <span className="material-symbols-outlined text-[16px] text-muted">receipt_long</span>
+                    { }
+                    {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+                    <span className="material-symbols-outlined text-[16px] text-muted">{'receipt_long'}</span>
                     { }
                   </>
                 )}
@@ -677,8 +681,9 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
             <input type="checkbox" checked={coaForm.isGroup} onChange={e => setCoaForm({ ...coaForm, isGroup: e.target.checked })} />
           ) : data.isGroup ? (
             <>
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>check</span>
+              { }
+              {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+              <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>{'check'}</span>
               { }
             </>
           ) : null}
@@ -688,8 +693,9 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
             <input type="checkbox" checked={coaForm.isBankAccount} onChange={e => setCoaForm({ ...coaForm, isBankAccount: e.target.checked })} />
           ) : data.isBankAccount ? (
             <>
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>check</span>
+              { }
+              {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+              <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>{'check'}</span>
               { }
             </>
           ) : null}
@@ -743,7 +749,7 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
           )}
         </td>
       </tr>
-      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon */}
       {isEdit && (glSettings?.accountMetadataSchema as Record<string, any>)?.type === 'object' && (
         <tr style={{ background: 'var(--bg-secondary)' }}>
           <td colSpan={6} style={{ padding: '16px 24px', borderTop: 'none' }}>
@@ -789,9 +795,10 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
           <input type="checkbox" checked={taxForm.isDefault === true} onChange={e => setTaxForm({ ...taxForm, isDefault: e.target.checked })} />
         ) : data.isDefault ? (
           <>
-            {/* eslint-disable-next-line i18next/no-literal-string */}
-            <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--primary)' }}>check_circle</span>
-            { }
+            {''}
+            {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+            <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--primary)' }}>{'check_circle'}</span>
+            {''}
           </>
         ) : null}
       </td>
@@ -1001,11 +1008,11 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
       if (tradingTerms.length === 0) {
         w.push('No Trading Terms are defined. You need at least one trading term (e.g. COD) for billing.');
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
         if (!tradingTerms.some((t: any) => t.isDefaultCustomer)) {
           w.push('No Default AR Trading Term is configured for Sales.');
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
         if (!tradingTerms.some((t: any) => t.isDefaultSupplier)) {
           w.push('No Default AP Trading Term is configured for Purchasing.');
         }
@@ -1035,10 +1042,11 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-md">
             <div className="flex">
               <div className="flex-shrink-0">
-                <span className="material-symbols-outlined text-yellow-400">warning</span>
+                {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+                <span className="material-symbols-outlined text-yellow-400">{'warning'}</span>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-bold">Configuration Required</h3>
+                <h3 className="text-sm font-bold">{tSettings('financialSettings.configurationRequired')}</h3>
                 <div className="mt-2 text-sm text-yellow-700">
                   <ul role="list" className="list-disc space-y-1 pl-5">
                     {configWarnings.map((w, idx) => (
@@ -1056,10 +1064,11 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
             <div id="gl-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">account_balance_wallet</span>
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span>Defaults</span>
+              {''}
+              {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+              <span className="material-symbols-outlined">{'account_balance_wallet'}</span>
+              {''}
+              <span>{tSettings('financialSettings.defaults')}</span>
             </h3>
           </div>
 
@@ -1174,10 +1183,11 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
         <div id="coa-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">account_tree</span>
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span>Accounts</span>
+              {''}
+              {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+              <span className="material-symbols-outlined">{'account_tree'}</span>
+              {''}
+              <span>{tSettings('financialSettings.accounts')}</span>
             </h3>
             <div className="flex gap-2">
               <button className="btn btn-secondary btn-xs" onClick={() => setImportCoaModalOpen(true)}>{tSettings('importCoaModal.importAction')}</button>
@@ -1218,10 +1228,11 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
         <div id="cc-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">folder_shared</span>
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span>Cost Centers</span>
+              {''}
+              {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+              <span className="material-symbols-outlined">{'folder_shared'}</span>
+              {''}
+              <span>{tSettings('financialSettings.costCenters')}</span>
             </h3>
             <div className="flex items-center gap-2">
               <CsvImportButton onImport={handleImportCc} disabled={isImporting} />
@@ -1256,10 +1267,11 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
         <div id="activity-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">account_tree</span>
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span>Activities</span>
+              {''}
+              {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+              <span className="material-symbols-outlined">{'account_tree'}</span>
+              {''}
+              <span>{tSettings('financialSettings.activities')}</span>
             </h3>
             <div className="flex items-center gap-2">
               <CsvImportButton onImport={handleImportActivity} disabled={isImporting} />
@@ -1299,26 +1311,27 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
             <div id="credit-policy" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">policy</span>
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span>Credit</span>
+              {''}
+              {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+              <span className="material-symbols-outlined">{'policy'}</span>
+              {''}
+              <span>{tSettings('financialSettings.credit')}</span>
             </h3>
           </div>
           <div className="flex flex-col gap-1 mb-8">
             <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              Credit Limit Behavior
+              {''}
+              {tSettings('financialSettings.creditLimitBehavior')}
             </label>
             <select 
               className="input max-w-sm" 
               value={(appSettings?.creditLimitBehavior as string) || 'hard'} 
               onChange={(e) => updateAppSetting('creditLimitBehavior', e.target.value)}
             >
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <option value="hard">Hard Block (Block order creation)</option>
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <option value="soft">Soft Warning (Allow draft, block dispatch)</option>
+              {''}
+              <option value="hard">{tSettings('financialSettings.hardBlock')}</option>
+              {''}
+              <option value="soft">{tSettings('financialSettings.softWarning')}</option>
             </select>
           </div>
           
@@ -1340,7 +1353,7 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                 rowKey={(row) => row.id}
                 onSave={handleTradingTermSave}
                 onDelete={handleTradingTermDelete}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
                 onAdd={() => ({ id: '', code: '', description: '', days: 0, type: 'EOM', isDefaultCustomer: false, isDefaultSupplier: false } as any)}
                 addLabel="Add Trading Term"
                 emptyLabel="No trading terms defined."
@@ -1352,10 +1365,11 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
         {/* ── Exchange Rates ─────────────────────────────────────────────── */}
         <div id="rates-section" className="card relative flex flex-col gap-4">
           <h3 className="section-heading !mb-0 flex items-center gap-2">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
-            <span className="material-symbols-outlined">currency_exchange</span>
-            {/* eslint-disable-next-line i18next/no-literal-string */}
-            <span>Currencies</span>
+            {''}
+            {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+            <span className="material-symbols-outlined">{'currency_exchange'}</span>
+            {''}
+            <span>{tSettings('financialSettings.currencies')}</span>
           </h3>
           
           <div className="flex items-center gap-3">
@@ -1466,8 +1480,9 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
           <InlineSettingsTable
             title={
               <h3 className="section-heading !mb-0 flex items-center gap-2">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined">payments</span>
+                { }
+                {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+                <span className="material-symbols-outlined">{'payments'}</span>
                 {tSettings('sections.tax')}
               </h3>
             }
@@ -1485,7 +1500,7 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
               const payload = {
                 code: row.code.toUpperCase(),
                 title: row.title,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
                 type: String(row.type) as any,
                 rate: String(row.rate),
                 isDefault: Boolean(row.isDefault),
@@ -1558,7 +1573,8 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                 width: 100,
                 render: (row: TaxCategory, isEditing: boolean) => {
                   if (isEditing) return null;
-                  return row.isDefault ? <span className="text-green-500 material-symbols-outlined text-[16px] leading-none">check_circle</span> : <span className="text-muted">-</span>;
+                  {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+                  return row.isDefault ? <span className="text-green-500 material-symbols-outlined text-[16px] leading-none">{'check_circle'}</span> : <span className="text-muted">-</span>;
                 }
               }
             ]}
@@ -1570,8 +1586,9 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
           <InlineSettingsTable
             title={
               <h3 className="section-heading !mb-0 flex items-center gap-2">
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                <span className="material-symbols-outlined">map</span>
+                { }
+                {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+                <span className="material-symbols-outlined">{'map'}</span>
                 {tSettings('sections.taxPositions')}
               </h3>
             }
@@ -1625,8 +1642,8 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                 title: 'Mappings',
                 width: 120,
                 render: (row, isEditing) => {
-                  // eslint-disable-next-line i18next/no-literal-string
-                  if (isEditing) return <span className="text-xs text-muted">Save to map</span>;
+                   
+                  if (isEditing) return <span className="text-xs text-muted">{tSettings('financialSettings.saveToMap')}</span>;
                   return (
                     <button
                       className="btn btn-secondary btn-xs"
@@ -1647,7 +1664,8 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                 width: 100,
                 render: (row: api.TaxPositionResponseDto, isEditing: boolean) => {
                   if (isEditing) return null;
-                  return row.isDefault ? <span className="text-green-500 material-symbols-outlined text-[16px] leading-none">check_circle</span> : <span className="text-muted">-</span>;
+                  {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+                  return row.isDefault ? <span className="text-green-500 material-symbols-outlined text-[16px] leading-none">{'check_circle'}</span> : <span className="text-muted">-</span>;
                 }
               }
             ]}

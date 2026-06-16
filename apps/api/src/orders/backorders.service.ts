@@ -185,6 +185,7 @@ export class BackordersService {
           .from(purchaseOrders)
           .where(eq(purchaseOrders.purchaseOrderId, current.purchaseOrderId));
         // Emit event on PO side using the old PO ID
+        // @herobm-skip-audit - DB write is performed by changeBackorderState, emitting cross-entity event here
         await emitEvent(tx, {
           entityType: EntityType.PURCHASE_ORDER,
           entityId: current.purchaseOrderId,

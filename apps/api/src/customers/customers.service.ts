@@ -32,6 +32,8 @@ import { AppConfigService } from '../settings/app-config.service';
 import {
   resolveCustomerRiskProfile,
   ResolvedCustomerRiskProfile,
+  CustomerProfile,
+  CustomerGroupProfile,
 } from './customer-risk.domain';
 
 @Injectable()
@@ -76,10 +78,8 @@ export class AccountsService {
     const behavior = this.appConfig.creditLimitBehavior();
 
     return resolveCustomerRiskProfile(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      customer as any,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      group as any,
+      customer as unknown as CustomerProfile,
+      group as unknown as CustomerGroupProfile,
       assessment,
       additionalExposure,
       behavior,

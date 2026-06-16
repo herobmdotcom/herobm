@@ -44,7 +44,7 @@ export default function SalesOrdersContent() {
       valueFormatter: (params: { value?: unknown }) => {
         if (!params.value) return '';
         const s = String(params.value).toLowerCase();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic translation key from API state code
         return tStates.has(s as any) ? tStates(s as any) : String(params.value);
       },
     },

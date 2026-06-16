@@ -610,7 +610,7 @@ export class PickingService {
           name: row.name,
           customerName: row.customerName,
           customerOrderNumber: row.customerOrderNumber,
-          // eslint-disable-next-line no-restricted-syntax
+          // eslint-disable-next-line no-restricted-syntax -- State initialization on a map object query result, not a database mutation.
           stateCode: row.stateCode,
           createdOn: row.createdOn,
           createdBy: row.createdBy,
@@ -695,7 +695,6 @@ export class PickingService {
   // Cancel Pick Line
   // -------------------------------------------------------------------------
 
-  // @herobm-skip-audit
   async cancelPick(orderId: string, pickId: string, actor: string) {
     const pickRows = await this.db
       .select({
@@ -779,9 +778,18 @@ export class PickingService {
 
       // 3. Update order modifiedOn
       await tx
-        .update(salesOrders) // @herobm-skip-audit
+        .update(salesOrders)
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
+
+      await emitEvent(tx, {
+        entityType: EntityType.SALES_ORDER,
+        entityId: orderId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: orderId,
+        payload: { pickId, action: 'cancelled' },
+        actor,
+      });
 
       return updatedPick;
     });
@@ -965,7 +973,7 @@ export class PickingService {
           name: row.name,
           customerName: row.customerName,
           customerOrderNumber: row.customerOrderNumber,
-          // eslint-disable-next-line no-restricted-syntax
+          // eslint-disable-next-line no-restricted-syntax -- State initialization on a map object query result, not a database mutation.
           stateCode: row.stateCode,
           createdOn: row.createdOn,
           createdBy: row.createdBy,

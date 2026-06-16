@@ -37,8 +37,7 @@ export default function CustomersContent() {
       valueFormatter: (params: { value?: unknown }) => {
         if (!params.value) return '';
         const s = String(params.value).toLowerCase();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return tStates.has(s as any) ? tStates(s as any) : String(params.value);
+        return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(params.value);
       }
     },
     { field: 'TaxCategoryName', headerName: tCommon('columns.taxPosition'), width: 110, hide: true },

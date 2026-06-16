@@ -325,7 +325,9 @@ export class PurchaseInvoiceService {
     }
 
     return this.db.transaction(async (tx: DrizzleDB) => {
-      const invoiceDate = new Date();
+      const invoiceDate = dto.invoiceDate
+        ? new Date(dto.invoiceDate)
+        : new Date();
       let dueDate = new Date();
       if (vendorTermType && vendorTermDays !== null) {
         console.log(
@@ -440,7 +442,6 @@ export class PurchaseInvoiceService {
       .where(eq(purchaseInvoices.invoiceId, invoiceId));
   }
 
-  // @herobm-skip-audit
   async updateInvoice(
     invoiceId: string,
     dto: {
@@ -484,11 +485,19 @@ export class PurchaseInvoiceService {
         }
       }
 
+      await emitEvent(tx, {
+        entityType: EntityType.PURCHASE_INVOICE,
+        entityId: invoiceId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: invoice.invoiceNumber,
+        payload: { action: 'updateInvoice', invoiceId },
+        actor,
+      });
+
       return this.findOne(invoiceId);
     });
   }
 
-  // @herobm-skip-audit
   async updateLine(
     invoiceId: string,
     lineId: string,
@@ -558,12 +567,19 @@ export class PurchaseInvoiceService {
         await this.recalculateInvoiceTotals(invoiceId, tx);
       }
 
+      await emitEvent(tx, {
+        entityType: EntityType.PURCHASE_INVOICE,
+        entityId: invoiceId,
+        eventType: EventType.LINE_UPDATED,
+        entityDisplayName: invoice.invoiceNumber,
+        payload: { action: 'updateLine', lineId },
+        actor,
+      });
+
       return { success: true };
     });
   }
 
-  // @herobm-skip-audit
-  // @herobm-skip-audit
   async removeLine(invoiceId: string, lineId: string, actor: string) {
     return this.db.transaction(async (tx) => {
       const [invoice] = await tx
@@ -582,12 +598,19 @@ export class PurchaseInvoiceService {
 
       await this.recalculateInvoiceTotals(invoiceId, tx);
 
+      await emitEvent(tx, {
+        entityType: EntityType.PURCHASE_INVOICE,
+        entityId: invoiceId,
+        eventType: EventType.LINE_REMOVED,
+        entityDisplayName: invoice.invoiceNumber,
+        payload: { action: 'removeLine', lineId },
+        actor,
+      });
+
       return { success: true };
     });
   }
 
-  // @herobm-skip-audit
-  // @herobm-skip-audit
   async addLine(
     invoiceId: string,
     dto: {
@@ -646,6 +669,15 @@ export class PurchaseInvoiceService {
       });
 
       await this.recalculateInvoiceTotals(invoiceId, tx);
+
+      await emitEvent(tx, {
+        entityType: EntityType.PURCHASE_INVOICE,
+        entityId: invoiceId,
+        eventType: EventType.LINE_ADDED,
+        entityDisplayName: invoice.invoiceNumber,
+        payload: { action: 'addLine' },
+        actor,
+      });
 
       return { success: true };
     });
@@ -930,7 +962,6 @@ export class PurchaseInvoiceService {
    * Handles draft -> cancelled, cancelled -> draft.
    * draft -> invoiced delegates to postInvoice.
    */
-  // @herobm-skip-audit
   async changePurchaseInvoiceState(
     invoiceId: string,
     newState: string,
@@ -940,8 +971,8 @@ export class PurchaseInvoiceService {
   ) {
     const fullInvoice = await this.findOne(invoiceId, tx);
     if (!fullInvoice) throw new NotFoundException('Invoice not found');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const invoice = fullInvoice as typeof fullInvoice & { lines: any[] }; // We use any[] for lines here due to union complexity, but it's isolated
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- We use any[] for lines here due to union complexity, but it's isolated
+    const invoice = fullInvoice as typeof fullInvoice & { lines: any[] };
 
     const allowed = PURCHASE_INVOICE_TRANSITIONS[invoice.stateCode] || [];
     if (!allowed.includes(newState)) {
@@ -1015,12 +1046,23 @@ export class PurchaseInvoiceService {
       return this.postInvoice(invoiceId, actor);
     }
 
-    return this.changePurchaseInvoiceStateInternal(
+    const result = await this.changePurchaseInvoiceStateInternal(
       invoiceId,
       newState,
       actor,
       db,
     );
+
+    await emitEvent(db, {
+      entityType: EntityType.PURCHASE_INVOICE,
+      entityId: invoiceId,
+      eventType: EventType.STATUS_CHANGED,
+      entityDisplayName: invoice?.invoiceNumber || invoiceId,
+      payload: { action: 'changeState', newState },
+      actor,
+    });
+
+    return result;
   }
 
   /**
@@ -1389,7 +1431,7 @@ export class PurchaseInvoiceService {
       const [updated] = await db
         .update(purchaseInvoices)
         .set({
-          // eslint-disable-next-line no-restricted-syntax
+          // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
           stateCode: newState as typeof purchaseInvoices.$inferInsert.stateCode,
           modifiedOn: new Date(),
         })
