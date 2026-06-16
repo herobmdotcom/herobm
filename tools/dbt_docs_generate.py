@@ -15,7 +15,11 @@ if not source:
     print("Error: SOURCE environment variable is required (e.g. SOURCE=abm)")
     sys.exit(1)
 DBT_DIR = PROJECT_ROOT / "pipelines" / f"{source}_transform"
-DBT_EXE = PROJECT_ROOT / ".venv" / "Scripts" / "dbt"
+if os.name == "nt":
+    DBT_EXE = PROJECT_ROOT / ".venv" / "Scripts" / "dbt"
+else:
+    DBT_EXE = PROJECT_ROOT / ".venv" / "bin" / "dbt"
+DBT_EXE = os.environ.get("DBT", str(DBT_EXE))
 
 # Load .env
 if ENV_FILE.exists():
