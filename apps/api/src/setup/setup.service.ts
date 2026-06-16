@@ -937,7 +937,14 @@ export class SetupService {
           jobId,
           command: cmd,
           args: args,
-          env: { ...process.env, ...envOverride },
+          env: { 
+            ...process.env, 
+            NO_COLOR: '1', 
+            FORCE_COLOR: '0', 
+            DBT_USE_COLORS: 'False',
+            TERM: 'dumb',
+            ...envOverride 
+          },
         }),
       })
         .then(async (response) => {
