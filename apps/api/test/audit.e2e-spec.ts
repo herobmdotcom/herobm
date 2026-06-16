@@ -183,6 +183,7 @@ describe('Audit Events (e2e)', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          deliveryAddressLine1: '123 E2E Street',
           fulfillmentLocationId: locationId,
           customerId,
           name: 'E2E Audit Order',

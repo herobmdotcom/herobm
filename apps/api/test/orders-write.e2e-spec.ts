@@ -137,6 +137,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${viewerToken}`)
         .send({
+          deliveryAddressLine1: '123 E2E Street',
           fulfillmentLocationId: locationId,
 
           customerId: validCustomerId,
@@ -155,6 +156,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       await request(app.getHttpServer())
         .post('/api/sales-orders')
         .send({
+          deliveryAddressLine1: '123 E2E Street',
           fulfillmentLocationId: locationId,
 
           customerId: validCustomerId,
@@ -411,6 +413,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          deliveryAddressLine1: '123 E2E Street',
           fulfillmentLocationId: locationId,
 
           customerId: validCustomerId,
@@ -434,6 +437,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          deliveryAddressLine1: '123 E2E Street',
           fulfillmentLocationId: locationId,
 
           customerId: 'NONEXISTENT-CUSTOMER-ID',
@@ -453,6 +457,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          deliveryAddressLine1: '123 E2E Street',
           fulfillmentLocationId: locationId,
 
           customerId: validCustomerId,
@@ -491,6 +496,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          deliveryAddressLine1: '123 E2E Street',
           fulfillmentLocationId: locationId,
 
           customerId: validCustomerId,
@@ -584,6 +590,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          deliveryAddressLine1: '123 E2E Street',
           fulfillmentLocationId: locationId,
 
           customerId: validCustomerId,
@@ -627,6 +634,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          deliveryAddressLine1: '123 E2E Street',
           fulfillmentLocationId: locationId,
 
           customerId: validCustomerId,

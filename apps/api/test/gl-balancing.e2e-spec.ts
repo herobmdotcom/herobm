@@ -224,11 +224,12 @@ describe('API E2E — Runtime Ledger Balancing', () => {
       const salesOrderId = orderRes.body.salesOrderId;
 
       // Transition to confirmed first
-      await request(app.getHttpServer())
+      const confRes = await request(app.getHttpServer())
         .patch(`/api/sales-orders/${salesOrderId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'confirmed' })
-        .expect(200);
+        .send({ stateCode: 'confirmed' });
+      if (confRes.status !== 200) console.log('ERROR IS', confRes.body);
+      expect(confRes.status).toBe(200);
 
       // Transition to picking
       await request(app.getHttpServer())

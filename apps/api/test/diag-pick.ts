@@ -31,6 +31,7 @@ async function main() {
     .post('/api/sales-orders')
     .set('Authorization', `Bearer ${token}`)
     .send({
+      deliveryAddressLine1: '123 E2E Street',
       customerId: accts.body.data[0].customerId,
       lines: [
         {

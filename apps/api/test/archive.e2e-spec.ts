@@ -235,6 +235,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          deliveryAddressLine1: '123 E2E Street',
           fulfillmentLocationId: validLocationId,
           customerId: validCustomerId,
           name: 'E2E Archive Test SO',
@@ -265,6 +266,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          deliveryAddressLine1: '123 E2E Street',
           fulfillmentLocationId: validLocationId,
           customerId: validCustomerId,
           name: 'E2E Draft Archive Fail',

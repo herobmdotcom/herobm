@@ -64,6 +64,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
       .post('/api/sales-orders')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        deliveryAddressLine1: '123 E2E Street',
         fulfillmentLocationId: locationId,
 
         customerId: customers.body.data[0].customerId,
@@ -115,6 +116,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
       .post('/api/sales-orders')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        deliveryAddressLine1: '123 E2E Street',
         fulfillmentLocationId: locationId,
 
         customerId: customers.body.data[0].customerId,

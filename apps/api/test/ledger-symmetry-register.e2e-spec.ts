@@ -85,6 +85,7 @@ describe('API E2E — Ledger Symmetry Register', () => {
           .post(`/api/sales-orders`)
           .set('Authorization', `Bearer ${ctx.adminToken}`)
           .send({
+            deliveryAddressLine1: '123 E2E Street',
             salesOrderId: crypto.randomUUID(),
             customerId: ctx.validCustomerId,
             customerOrderNumber: `SYM-SO-${rand}`,
@@ -402,6 +403,7 @@ describe('API E2E — Ledger Symmetry Register', () => {
           .post('/api/sales-orders')
           .set('Authorization', `Bearer ${ctx.adminToken}`)
           .send({
+            deliveryAddressLine1: '123 E2E Street',
             customerId: ctx.validCustomerId,
             fulfillmentLocationId: ctx.validLocationId,
             lines: [

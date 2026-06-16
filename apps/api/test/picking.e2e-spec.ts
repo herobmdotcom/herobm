@@ -133,6 +133,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       .post('/api/sales-orders')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        deliveryAddressLine1: '123 E2E Street',
         fulfillmentLocationId: locationId,
         customerId: validCustomerId,
         name: 'E2E Picking Test Order',
@@ -375,6 +376,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          deliveryAddressLine1: '123 E2E Street',
           fulfillmentLocationId: locationId,
           customerId: validCustomerId,
           name: 'E2E Draft Guard',
