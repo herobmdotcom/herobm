@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e dev-docs-dbt dev-docs-schema dev-docs-api migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local prod-local verify-local test-pipeline
+.PHONY: help up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal rebuild-pipeline rebuild-worker dev-portal test-api test-api-cov test-api-e2e dev-docs-dbt dev-docs-schema dev-docs-api migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local prod-local verify-local test-pipeline
 
 define HELP_TEXT
 HeroBM Makefile Help:
@@ -310,6 +310,13 @@ rebuild-pipeline:
 	-podman stop pipeline-runner
 	-podman rm pipeline-runner
 	$(COMPOSE_CMD) up -d --no-build --no-deps pipeline-runner
+	$(COMPOSE_CMD) ps
+
+rebuild-worker:
+	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
+	-podman stop outbox-worker
+	-podman rm outbox-worker
+	$(COMPOSE_CMD) up -d --no-build --no-deps outbox-worker
 	$(COMPOSE_CMD) ps
 
 USE_PGLITE ?= true
