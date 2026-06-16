@@ -54,7 +54,7 @@ export class SetupService {
 
   async getResumeState() {
     const rootDir = this.getWorkspaceRoot();
-    const stateFile = path.join(rootDir, '.abm_resume_state');
+    const stateFile = path.join(rootDir, 'logs', '.abm_resume_state');
     if (!fs.existsSync(stateFile)) {
       return { completedTables: [] };
     }
@@ -68,7 +68,7 @@ export class SetupService {
 
   async getResumeStateOdoo() {
     const rootDir = this.getWorkspaceRoot();
-    const stateFile = path.join(rootDir, '.odoo_resume_state');
+    const stateFile = path.join(rootDir, 'logs', '.odoo_resume_state');
     if (!fs.existsSync(stateFile)) {
       return { completedTables: [] };
     }
