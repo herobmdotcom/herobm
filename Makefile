@@ -372,9 +372,7 @@ seed-demo:
 	@echo "Running demo seed script..."
 	npm run seed:demo -w apps/api
 
-init: init-db migrate seed elt
-
-init-no-extract: init-db migrate seed elt-no-extract
+init: init-db migrate seed
 
 # --- Typechecks & Builds ---
 
@@ -506,13 +504,15 @@ test-structural:
 	@npx tsx infra/test-utils/run-structural.ts
 
 test-heavy:
-	@npm run test:e2e -w apps/ops-portal
 	@powershell -ExecutionPolicy Bypass -File scripts/run-heavy.ps1
+
+test-ui:
+	@powershell -ExecutionPolicy Bypass -File scripts/run-ui-tests.ps1
 
 test-data:
 	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
 
-test-all: test-api-unit test-api-e2e test-deps test-structural test-heavy test-data
+test-all: test-api-unit test-api-e2e test-deps test-structural test-heavy test-ui test-data
 
 build-all:
 	npm run build --workspaces --if-present

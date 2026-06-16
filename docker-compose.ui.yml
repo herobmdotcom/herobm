@@ -1,0 +1,14 @@
+name: herobm-test
+services:
+  ops-portal-test:
+    image: localhost/herobm_portal-test:latest
+    container_name: ops-portal-test
+    ports:
+      - "4305:3000"
+    environment:
+      API_URL: "http://custom-api-test:3000"
+      PORT: "3000"
+    networks:
+      - app-net
+    depends_on:
+      - custom-api-test

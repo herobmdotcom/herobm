@@ -270,6 +270,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
         .delete(`/api/pdf-templates/${testReportId}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
+      if (res.status !== 200) console.log('DELETE ERR:', res.body);
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
 
@@ -346,10 +347,15 @@ describe('Dynamic Reports Engine (e2e)', () => {
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);
-      expect(
-        res.body.some(
+      if (
+        !res.body.some(
           (h: { contextSlug: string }) => h.contextSlug === 'sales-order',
-        ),
+        )
+      ) {
+        console.log('HOOKS:', res.body);
+      }
+      expect(
+        res.body.some((h: { slug: string }) => h.slug === 'sales-order'),
       ).toBe(true);
     });
   });

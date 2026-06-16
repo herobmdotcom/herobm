@@ -116,7 +116,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
   const [data, setData] = useState<PaymentData | null>(null);
   const [partialModalOpen, setPartialModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Record<string, unknown> | null>(null);
-  const [isAllocating, setIsAllocating] = useState(false);
+
   
   // Creation Form State
   const [form, setForm] = useState({
@@ -164,7 +164,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     } else {
       setData(null);
       setJournalEntry(null);
-      setIsAllocating(false);
+
       setForm({
         paymentType: 'customer_receipt',
         partyId: '',
@@ -215,19 +215,23 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
       if (data.paymentType === 'customer_receipt') {
         const res = await api.invoiceDetailControllerGetSalesInvoicesGlobal({ customerId: data.partyId, balanceStatus: 'unpaid', days: '0' });
-        list = res as unknown as InvoiceLike[];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Handle mixed response types
+        list = Array.isArray(res) ? res : (res as any)?.data || [];
         referenceType = 'sales_invoice';
       } else if (data.paymentType === 'customer_refund') {
         const res = await api.salesCreditNotesControllerFindAll({ customerId: data.partyId, balanceStatus: 'unpaid' });
-        list = res.data as unknown as InvoiceLike[];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Handle mixed response types
+        list = Array.isArray(res) ? res : (res as any)?.data || [];
         referenceType = 'sales_credit_note';
       } else if (data.paymentType === 'supplier_payment') {
         const res = await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ vendorId: data.partyId, balanceStatus: 'unpaid', days: '0' });
-        list = res as unknown as InvoiceLike[];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Handle mixed response types
+        list = Array.isArray(res) ? res : (res as any)?.data || [];
         referenceType = 'purchase_invoice';
       } else if (data.paymentType === 'supplier_refund') {
         const res = await api.purchaseDebitNotesControllerFindAll({ vendorId: data.partyId, balanceStatus: 'unpaid' });
-        list = res.data as unknown as InvoiceLike[];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Handle mixed response types
+        list = Array.isArray(res) ? res : (res as any)?.data || [];
         referenceType = 'purchase_debit_note';
       }
       
@@ -462,10 +466,11 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       {/* Lifecycle Actions */}
       {isDraft && (
         <div className="flex items-center gap-2">
+
           <button 
             onClick={handleCancelPayment}
             disabled={submitting}
-            className="btn btn-secondary btn-sm"
+            className="btn btn-ghost text-red-600 hover:bg-red-50 btn-sm"
           >
             {tCommon('cancel')}
           </button>
@@ -485,17 +490,9 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
             <button 
               onClick={handleCancelPayment}
               disabled={submitting}
-              className="btn btn-secondary btn-sm"
+              className="btn btn-ghost text-red-600 hover:bg-red-50 btn-sm"
             >
               {t('manager.buttons.reverse')}</button>
-          )}
-          {(!data?.paymentType?.startsWith('direct_') && (parseFloat(data?.unallocatedAmount || '0') > 0 || isAllocating)) && (
-            <button 
-              onClick={() => setIsAllocating(!isAllocating)}
-              className={`btn btn-sm ${isAllocating ? 'btn-secondary' : 'btn-primary'}`}
-            >
-              {isAllocating ? t('view') : t('allocate')}
-            </button>
           )}
         </div>
       )}
@@ -771,7 +768,6 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                 </div>
               </form>            ) : (
               <div className="space-y-6">
-                {!isAllocating ? (
                   <>
                     {/* Metadata Section (Mirror GL View) */}
                     <div className="card space-y-3 p-4">
@@ -946,9 +942,11 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                       </div>
                     )}
                   </>
-                ) : (
+                  
+                  {isDraft && !data?.paymentType?.startsWith('direct_') && parseFloat(data?.unallocatedAmount || '0') > 0 && (
                   /* View: Allocation Controls */
-                  <div className="flex-1 flex flex-col min-h-0 gap-6 h-full min-h-[600px]">
+                  <div className="flex-1 flex flex-col min-h-0 gap-6 mt-8 border-t border-gray-200 pt-6">
+                    <h3 className="section-heading mb-2">{t('allocate')}</h3>
                     {loadingInvoices ? (
                       <div className="flex flex-col items-center justify-center flex-1 opacity-50">
                         {/* eslint-disable-next-line i18next/no-literal-string -- FIXME */}
@@ -1035,7 +1033,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                       </div>
                     )}
                   </div>
-                )}
+                  )}
               </div>
             )}
           </div>

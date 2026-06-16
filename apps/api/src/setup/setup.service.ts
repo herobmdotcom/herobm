@@ -60,31 +60,23 @@ export class SetupService {
   ) {}
 
   async getResumeState() {
-    const rootDir = this.getWorkspaceRoot();
-    const stateFile = path.join(rootDir, 'logs', '.abm_resume_state');
-    if (!fs.existsSync(stateFile)) {
+    try {
+      const result = await this.db.execute(sql`SELECT table_name FROM _raw_abm._resume_state`);
+      const tables = result.map((row: any) => row.table_name.toUpperCase());
+      return { completedTables: tables };
+    } catch (e) {
       return { completedTables: [] };
     }
-    const content = fs.readFileSync(stateFile, 'utf-8');
-    const tables = content
-      .split('\n')
-      .map((line) => line.trim().toUpperCase())
-      .filter((line) => line.length > 0);
-    return { completedTables: tables };
   }
 
   async getResumeStateOdoo() {
-    const rootDir = this.getWorkspaceRoot();
-    const stateFile = path.join(rootDir, 'logs', '.odoo_resume_state');
-    if (!fs.existsSync(stateFile)) {
+    try {
+      const result = await this.db.execute(sql`SELECT table_name FROM _raw_odoo._resume_state`);
+      const tables = result.map((row: any) => row.table_name.toLowerCase());
+      return { completedTables: tables };
+    } catch (e) {
       return { completedTables: [] };
     }
-    const content = fs.readFileSync(stateFile, 'utf-8');
-    const tables = content
-      .split('\n')
-      .map((line) => line.trim().toLowerCase())
-      .filter((line) => line.length > 0);
-    return { completedTables: tables };
   }
 
   async testAbmConnection(dto: TestAbmConnectionDto) {

@@ -605,6 +605,7 @@ export default function DataGrid<T>({
 
     if (rowData) {
       setData(rowData);
+      onDataLoaded?.(rowData);
       setDisplayedRowCount(rowData.length);
       setInternalLoading(false);
       return;
@@ -628,6 +629,7 @@ export default function DataGrid<T>({
       const body = swrResponse as any;
       const safeData = Array.isArray(body) ? body : (body?.data || []);
       setData(safeData);
+      onDataLoaded?.(safeData);
       setNextCursor(body?.nextCursor ?? null);
       setPrevCursor(body?.prevCursor ?? null);
       setDisplayedRowCount(safeData.length);

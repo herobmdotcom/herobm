@@ -45,13 +45,34 @@ describe('API E2E — Sales Invoices', () => {
       .expect(200);
     validCustomerId = customers.body.data[0].customerId;
 
-    const products = await request(app.getHttpServer())
-      .get('/api/products?limit=50')
+    // Create an explicit inventory product to test physical goods logic
+    const prodRes = await request(app.getHttpServer())
+      .post('/api/products')
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    const invProducts = products.body.data.filter((p: any) => p.productType === 'inventory');
-    validProductId1 = invProducts[0].productId;
-    validProductId2 = invProducts[1]?.productId || validProductId1;
+      .send({
+        productNumber: 'INV-TEST-001',
+        name: 'Inventory Test Product',
+        productType: 'inventory',
+        listPrice: 10,
+        isArchived: false,
+      })
+      .expect(201);
+
+    validProductId1 = prodRes.body.productId;
+
+    const prodRes2 = await request(app.getHttpServer())
+      .post('/api/products')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        productNumber: 'INV-TEST-002',
+        name: 'Inventory Test Product 2',
+        productType: 'inventory',
+        listPrice: 15,
+        isArchived: false,
+      })
+      .expect(201);
+
+    validProductId2 = prodRes2.body.productId;
   }, 120_000);
 
   afterAll(async () => {
@@ -87,8 +108,8 @@ describe('API E2E — Sales Invoices', () => {
               pricePerUnit: '15.00',
             },
           ],
-        })
-        .expect(201);
+        });
+      expect(createRes.status).toBe(201);
       orderId = createRes.body.salesOrderId;
 
       const linesRes = await request(app.getHttpServer())
@@ -202,8 +223,7 @@ describe('API E2E — Sales Invoices', () => {
               pricePerUnit: '10.00',
             },
           ],
-        })
-        .expect(201);
+        });
       const testOrderId = createRes.body.salesOrderId;
 
       const linesRes = await request(app.getHttpServer())
@@ -248,7 +268,6 @@ describe('API E2E — Sales Invoices', () => {
           lines: [{ salesOrderLineId: testLineId, quantityToInvoice: 2 }],
         });
 
-      if (badInvoiceRes.status !== 400) console.log('BAD INVOICE RES:', badInvoiceRes.body);
       expect(badInvoiceRes.status).toBe(400);
       expect(badInvoiceRes.body.message).toMatch(
         /Cannot invoice more than shipped quantity/,

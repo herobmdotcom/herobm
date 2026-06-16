@@ -3,6 +3,7 @@ services:
   pipeline-runner-test:
     image: localhost/herobm_pipeline-test:latest
     container_name: pipeline-runner-test
+    env_file: .env
     environment:
       POSTGRES_HOST: postgres-custom
       POSTGRES_PORT: "5432"
@@ -18,9 +19,11 @@ services:
   custom-api-test:
     image: localhost/herobm_api-test:latest
     container_name: custom-api-test
+    env_file: .env
     ports:
       - "3005:3000"
     environment:
+      PORT: "3000"
       POSTGRES_HOST: postgres-custom
       POSTGRES_PORT: "5432"
       POSTGRES_USER: ${POSTGRES_USER}
@@ -34,6 +37,7 @@ services:
   worker-test:
     image: localhost/herobm_worker-test:latest
     container_name: worker-test
+    env_file: .env
     environment:
       POSTGRES_HOST: postgres-custom
       POSTGRES_PORT: "5432"
@@ -57,5 +61,5 @@ services:
 
 networks:
   app-net:
-    name: herobm_app-net
+    name: ${APP_NETWORK_NAME:-modbm_app-net}
     external: true

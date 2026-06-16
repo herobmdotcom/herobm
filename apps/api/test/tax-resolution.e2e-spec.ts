@@ -78,7 +78,13 @@ describe('API E2E — Tax Resolution engine', () => {
       .send(createPayload);
 
     expect(response.status).toBe(201);
-    expect(response.body.lines[0]).toHaveProperty('taxCategoryId');
+
+    const getRes = await request(app.getHttpServer())
+      .get(`/api/sales-orders/${response.body.salesOrderId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    expect(getRes.body.lines[0]).toHaveProperty('taxCategoryId');
   });
 
   it('should resolve tax based on customer specific tax position mapping', async () => {
