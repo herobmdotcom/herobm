@@ -28,8 +28,8 @@ export default function GlobalPurchaseInvoicesPage() {
 
     // When filtering by specific invoiceId, pass it to the API (server skips date range)
     const gridEndpoint = !isReady ? undefined : (invoiceFilter
-        ? `/api/purchase-invoices?invoiceId=${encodeURIComponent(invoiceFilter)}&limit=0`
-        : `/api/purchase-invoices?days=${days}&limit=0`);
+        ? `/api/purchase-invoices?invoiceId=${encodeURIComponent(invoiceFilter)}`
+        : `/api/purchase-invoices?days=${days}`);
 
     const gridColumns: Record<string, unknown>[] = [
         { field: 'invoiceId', headerName: 'ID', hide: true },

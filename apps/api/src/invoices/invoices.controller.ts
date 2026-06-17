@@ -41,6 +41,7 @@ import {
   PurchaseInvoiceListResponseDto,
   SalesInvoiceListResponseDto,
 } from './dto';
+import { PaginationQuery, ApiPaginatedResponse, parsePagination } from '../common/pagination';
 
 export class EmptyBodyDto {}
 
@@ -163,25 +164,28 @@ export class InvoiceDetailController {
     summary: 'Get All Sales Invoices',
     description: 'Retrieve all sales invoices across orders',
   })
-  @ApiOkResponse({ type: [SalesInvoiceResponseDto] })
+  @ApiPaginatedResponse(SalesInvoiceResponseDto)
   @ApiQuery({ name: 'days', required: false })
   @ApiQuery({ name: 'customerId', required: false })
   @ApiQuery({ name: 'invoiceId', required: false })
   @ApiQuery({ name: 'balanceStatus', required: false })
-  @ApiQuery({ name: 'limit', required: false })
   async getSalesInvoicesGlobal(
+    @Query() query: PaginationQuery,
     @Query('days') days?: string,
     @Query('customerId') customerId?: string,
     @Query('invoiceId') invoiceId?: string,
     @Query('balanceStatus') balanceStatus?: string,
-    @Query('limit') limit?: string,
   ) {
+    const { limit, cursor, direction, searchTerm } = parsePagination(query);
     const data = await this.salesInvoiceService.findActiveInvoices({
       days: days ? parseInt(days, 10) : undefined,
       customerId,
       invoiceId,
       balanceStatus,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      limit,
+      cursor,
+      direction,
+      searchTerm,
     });
     return data;
   }
@@ -194,25 +198,28 @@ export class InvoiceDetailController {
     summary: 'Get All Purchase Invoices',
     description: 'Retrieve all purchase invoices across orders',
   })
-  @ApiOkResponse({ type: [PurchaseInvoiceResponseDto] })
+  @ApiPaginatedResponse(PurchaseInvoiceResponseDto)
   @ApiQuery({ name: 'days', required: false })
   @ApiQuery({ name: 'vendorId', required: false })
   @ApiQuery({ name: 'invoiceId', required: false })
   @ApiQuery({ name: 'balanceStatus', required: false })
-  @ApiQuery({ name: 'limit', required: false })
   async getPurchaseInvoicesGlobal(
+    @Query() query: PaginationQuery,
     @Query('days') days?: string,
     @Query('vendorId') vendorId?: string,
     @Query('invoiceId') invoiceId?: string,
     @Query('balanceStatus') balanceStatus?: string,
-    @Query('limit') limit?: string,
   ) {
+    const { limit, cursor, direction, searchTerm } = parsePagination(query);
     const data = await this.purchaseInvoiceService.findActiveInvoices({
       days: days ? parseInt(days, 10) : undefined,
       vendorId,
       invoiceId,
       balanceStatus,
-      limit: limit ? parseInt(limit, 10) : undefined,
+      limit,
+      cursor,
+      direction,
+      searchTerm,
     });
     return data;
   }

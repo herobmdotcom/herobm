@@ -213,25 +213,26 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
       let list: InvoiceLike[] = [];
 
+      const extractList = (res: any) => {
+        const payload = res?.data || res;
+        return Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
+      };
+
       if (data.paymentType === 'customer_receipt') {
         const res = await api.invoiceDetailControllerGetSalesInvoicesGlobal({ customerId: data.partyId, balanceStatus: 'unpaid', days: '0' });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Handle mixed response types
-        list = Array.isArray(res) ? res : (res as any)?.data || [];
+        list = extractList(res);
         referenceType = 'sales_invoice';
       } else if (data.paymentType === 'customer_refund') {
         const res = await api.salesCreditNotesControllerFindAll({ customerId: data.partyId, balanceStatus: 'unpaid' });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Handle mixed response types
-        list = Array.isArray(res) ? res : (res as any)?.data || [];
+        list = extractList(res);
         referenceType = 'sales_credit_note';
       } else if (data.paymentType === 'supplier_payment') {
         const res = await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ vendorId: data.partyId, balanceStatus: 'unpaid', days: '0' });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Handle mixed response types
-        list = Array.isArray(res) ? res : (res as any)?.data || [];
+        list = extractList(res);
         referenceType = 'purchase_invoice';
       } else if (data.paymentType === 'supplier_refund') {
         const res = await api.purchaseDebitNotesControllerFindAll({ vendorId: data.partyId, balanceStatus: 'unpaid' });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Handle mixed response types
-        list = Array.isArray(res) ? res : (res as any)?.data || [];
+        list = extractList(res);
         referenceType = 'purchase_debit_note';
       }
       
@@ -253,6 +254,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
           totalAmount: String(inv.totalAmount),
           outstandingAmount: String(inv.outstandingAmount),
           date: inv.invoiceDate || inv.createdOn || '',
+          stateCode: inv.stateCode,
           referenceType,
           pendingAllocation: 0,
         }));
@@ -297,6 +299,12 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     },
     { field: 'invoiceNumber', headerName: t('manager.columns.invoiceNo'), flex: 1 },
     { 
+      field: 'stateCode', 
+      headerName: 'State', 
+      width: 140,
+      valueFormatter: (p) => p.value ? p.value.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()) : ''
+    },
+    { 
       field: 'outstandingAmount', 
       headerName: t('manager.columns.outstanding'), 
       width: 150,
@@ -336,7 +344,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
           amount: parseFloat(l.amount) || 0,
           memo: l.memo
         })) : undefined,
-        submitImmediately: true,
+        submitImmediately: false,
       };
       await api.paymentsControllerCreate(payload as unknown as Parameters<typeof api.paymentsControllerCreate>[0]);
       toast.success(t('manager.messages.paymentCreated'));
@@ -470,7 +478,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
           <button 
             onClick={handleCancelPayment}
             disabled={submitting}
-            className="btn btn-ghost text-red-600 hover:bg-red-50 btn-sm"
+            className="btn btn-sm bg-white text-gray-700 hover:bg-gray-50 ring-1 ring-inset ring-gray-300 disabled:opacity-50"
           >
             {tCommon('cancel')}
           </button>
@@ -490,7 +498,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
             <button 
               onClick={handleCancelPayment}
               disabled={submitting}
-              className="btn btn-ghost text-red-600 hover:bg-red-50 btn-sm"
+              className="btn btn-sm bg-white text-gray-700 hover:bg-gray-50 ring-1 ring-inset ring-gray-300 disabled:opacity-50"
             >
               {t('manager.buttons.reverse')}</button>
           )}

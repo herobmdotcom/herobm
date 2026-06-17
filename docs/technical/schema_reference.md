@@ -1,6 +1,6 @@
 # Schema Reference — `herobm_core`
 
-> Auto-generated from live Postgres introspection. Last generated: 2026-06-17 14:56 UTC
+> Auto-generated from live Postgres introspection. Last generated: 2026-06-17 15:18 UTC
 > Regenerate with: `make schema-ref`
 
 **Postgres schema:** `herobm_core`
@@ -16,7 +16,7 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 | [`app_settings`](#app_settings) | 1 | `settings_id` | |
 | [`backorders`](#backorders) | 0 | `backorder_id` | |
 | [`bank_statement_lines`](#bank_statement_lines) | 0 | `line_id` | |
-| [`bin_contents`](#bin_contents) | 803 | `bin_content_id` | |
+| [`bin_contents`](#bin_contents) | 12,578 | `bin_content_id` | |
 | [`bins`](#bins) | 12,500 | `bin_id` | |
 | [`business_report_events`](#business_report_events) | 0 | `event_id` | |
 | [`business_reports`](#business_reports) | 0 | `id` | |
@@ -44,14 +44,14 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 | [`import_abm_sales_quotes`](#import_abm_sales_quotes) | 8,093 | — | |
 | [`integration_events`](#integration_events) | 0 | `event_id` | |
 | [`integrations`](#integrations) | 0 | `integration_id` | |
-| [`inventory_entries`](#inventory_entries) | 12,735 | `entry_id` | |
+| [`inventory_entries`](#inventory_entries) | 11,936 | `entry_id` | |
 | [`inventory_events`](#inventory_events) | 0 | `event_id` | |
-| [`inventory_ledger`](#inventory_ledger) | 12,161 | `ledger_id` | |
+| [`inventory_ledger`](#inventory_ledger) | 11,393 | `ledger_id` | |
 | [`locations`](#locations) | 4 | `location_id` | |
 | [`macros`](#macros) | 0 | `macro_id` | |
 | [`master_data_events`](#master_data_events) | 24,337 | `event_id` | |
 | [`organization`](#organization) | 1 | `organization_id` | |
-| [`outbox`](#outbox) | 7 | `outbox_id` | |
+| [`outbox`](#outbox) | 10 | `outbox_id` | |
 | [`payment_allocations`](#payment_allocations) | 0 | `allocation_id` | |
 | [`payment_entries`](#payment_entries) | 0 | `payment_id` | |
 | [`payment_lines`](#payment_lines) | 0 | `payment_line_id` | |
@@ -59,7 +59,7 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 | [`pdf_template_hooks`](#pdf_template_hooks) | 8 | `id` | |
 | [`pdf_templates`](#pdf_templates) | 10 | `id` | |
 | [`procurement_events`](#procurement_events) | 323 | `event_id` | |
-| [`product_components`](#product_components) | 12,370 | `component_id` | |
+| [`product_components`](#product_components) | 12,372 | `component_id` | |
 | [`product_default_bins`](#product_default_bins) | 12,746 | `product_default_bin_id` | |
 | [`product_groups`](#product_groups) | 19 | `product_group_id` | |
 | [`product_suppliers`](#product_suppliers) | 18,564 | `product_supplier_id` | |
@@ -94,7 +94,7 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 | [`supplier_expiries`](#supplier_expiries) | 0 | `expiry_id` | |
 | [`supplier_groups`](#supplier_groups) | 3 | `supplier_group_id` | |
 | [`suppliers`](#suppliers) | 324 | `vendor_id` | |
-| [`system_events`](#system_events) | 7 | `event_id` | |
+| [`system_events`](#system_events) | 10 | `event_id` | |
 | [`tax_categories`](#tax_categories) | 9 | `tax_category_id` | |
 | [`tax_position_mappings`](#tax_position_mappings) | 0 | `mapping_id` | |
 | [`tax_positions`](#tax_positions) | 0 | `tax_position_id` | |
@@ -108,7 +108,7 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 | [`transfer_orders`](#transfer_orders) | 0 | `transfer_order_id` | |
 | [`uom_dictionary`](#uom_dictionary) | 2 | `uom_code` | |
 | [`user_events`](#user_events) | 0 | `event_id` | |
-| [`user_settings`](#user_settings) | 0 | `user_id` | |
+| [`user_settings`](#user_settings) | 1 | `user_id` | |
 | [`users`](#users) | 1 | `user_id` | |
 | [`warehouse_events`](#warehouse_events) | 0 | `event_id` | |
 | [`webhooks`](#webhooks) | 0 | `webhook_id` | |
@@ -643,7 +643,7 @@ graph LR
 | 12 | `type` | `text` | ✓ |  |  |
 | 13 | `payee` | `text` | ✓ |  |  |
 
-### `herobm_core.bin_contents` (803 rows)
+### `herobm_core.bin_contents` (12,578 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1086,7 +1086,7 @@ graph LR
 | 5 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 6 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `herobm_core.inventory_entries` (12,735 rows)
+### `herobm_core.inventory_entries` (11,936 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1114,7 +1114,7 @@ graph LR
 | 7 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 8 | `entity_display_name` | `text` | ✓ |  |  |
 
-### `herobm_core.inventory_ledger` (12,161 rows)
+### `herobm_core.inventory_ledger` (11,393 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1192,7 +1192,7 @@ graph LR
 | 18 | `bank_swift_bic` | `text` | ✓ |  |  |
 | 19 | `bank_iban` | `text` | ✓ |  |  |
 
-### `herobm_core.outbox` (7 rows)
+### `herobm_core.outbox` (10 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1294,7 +1294,7 @@ graph LR
 | 7 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 8 | `entity_display_name` | `text` | ✓ |  |  |
 
-### `herobm_core.product_components` (12,370 rows)
+### `herobm_core.product_components` (12,372 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1888,7 +1888,7 @@ graph LR
 | 36 | `tax_position_id` | `uuid` | ✓ |  | FK → tax_positions.tax_position_id |
 | 37 | `early_payment_discount_days` | `int4` | ✓ |  |  |
 
-### `herobm_core.system_events` (7 rows)
+### `herobm_core.system_events` (10 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -2055,7 +2055,7 @@ graph LR
 | 6 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 7 | `entity_display_name` | `text` | ✓ |  |  |
 
-### `herobm_core.user_settings` (0 rows)
+### `herobm_core.user_settings` (1 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|

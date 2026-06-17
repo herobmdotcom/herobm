@@ -113,11 +113,11 @@ describe('Invoices Controllers', () => {
 
     it('should get global active sales invoices with parsed queries', async () => {
       const result = await detailController.getSalesInvoicesGlobal(
+        { limit: 50 },
         '30',
         'acc-1',
         'inv-1',
         undefined,
-        '50',
       );
 
       expect(result).toEqual([{ id: 'si-1' }]);
@@ -126,18 +126,22 @@ describe('Invoices Controllers', () => {
         customerId: 'acc-1',
         invoiceId: 'inv-1',
         limit: 50,
+        cursor: null,
+        direction: 'next',
       });
     });
 
     it('should get global active sales invoices without queries', async () => {
-      const result = await detailController.getSalesInvoicesGlobal();
+      const result = await detailController.getSalesInvoicesGlobal({});
 
       expect(result).toEqual([{ id: 'si-1' }]);
       expect(mockSalesService.findActiveInvoices).toHaveBeenCalledWith({
         days: undefined,
         customerId: undefined,
         invoiceId: undefined,
-        limit: undefined,
+        limit: 50, // parsePagination defaults to 50
+        cursor: null,
+        direction: 'next',
       });
     });
 

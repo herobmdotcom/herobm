@@ -292,6 +292,9 @@ dev-api:
 dev-mcp:
 	node --env-file=.env apps/mcp-server/dist/index.js
 
+dev-pipeline:
+	"$(VENV_PYTHON)" -m uvicorn pipelines.runner.server:app --port 8000 --reload
+
 rebuild-api:
 	podman build -t localhost/herobm_custom-api:latest -f Dockerfile.api .
 	-podman stop custom-api

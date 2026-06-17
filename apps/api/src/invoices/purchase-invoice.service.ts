@@ -6,7 +6,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc, and, inArray, gte, or } from 'drizzle-orm';
+import { eq, sql, desc, and, inArray, gte, or, asc, lt, gt, ilike } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -43,6 +43,7 @@ import {
   MATCH_STATUS,
   getValidStates,
 } from '@herobm/shared';
+import { withCursorPagination } from '../common/pagination';
 import { calculateDueDate } from '../settings/trading-terms.utils';
 
 const VALID_INVOICE_STATES = getValidStates(PURCHASE_INVOICE_TRANSITIONS);
@@ -1289,6 +1290,9 @@ export class PurchaseInvoiceService {
     invoiceId?: string;
     balanceStatus?: string;
     limit?: number;
+    cursor?: any;
+    direction?: 'next' | 'prev';
+    searchTerm?: string | null;
   }) {
     const {
       days = 30,
@@ -1296,6 +1300,9 @@ export class PurchaseInvoiceService {
       invoiceId,
       balanceStatus,
       limit = 100,
+      cursor,
+      direction = 'next',
+      searchTerm,
     } = query;
 
     const conditions: import('drizzle-orm').SQL[] = [];
@@ -1324,7 +1331,19 @@ export class PurchaseInvoiceService {
       conditions.push(sql`${purchaseInvoices.outstandingAmount}::numeric <= 0`);
     }
 
-    const dataQuery = this.db
+    if (searchTerm) {
+      conditions.push(
+        or(
+          ilike(purchaseInvoices.invoiceNumber, searchTerm),
+          ilike(purchaseInvoices.supplierInvoiceNumber, searchTerm),
+          ilike(suppliers.name, searchTerm),
+        ) as import('drizzle-orm').SQL,
+      );
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    let dataQuery = this.db
       .select({
         invoiceId: purchaseInvoices.invoiceId,
         invoiceNumber: purchaseInvoices.invoiceNumber,
@@ -1340,13 +1359,37 @@ export class PurchaseInvoiceService {
       })
       .from(purchaseInvoices)
       .leftJoin(suppliers, eq(purchaseInvoices.vendorId, suppliers.vendorId))
-      .where(and(...conditions))
-      .orderBy(desc(purchaseInvoices.createdOn));
+      .$dynamic();
 
-    if (limit > 0) {
-      return await dataQuery.limit(limit);
+    if (whereClause) {
+      dataQuery = dataQuery.where(whereClause);
     }
-    return await dataQuery;
+
+    return await withCursorPagination({
+      qb: dataQuery,
+      limit,
+      cursorObj: cursor as { createdOn: string; invoiceId: string } | null,
+      direction,
+      applyWhere: (q, c, dir) => {
+        const op = dir === 'next' ? lt : gt;
+        const cursorCond = or(
+            op(purchaseInvoices.createdOn, new Date(c.createdOn)),
+            and(
+              eq(purchaseInvoices.createdOn, new Date(c.createdOn)),
+              op(purchaseInvoices.invoiceId, c.invoiceId)
+            )
+          ) as import('drizzle-orm').SQL;
+        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
+      },
+      applyOrderBy: (q, dir) => {
+        const op = dir === 'next' ? desc : asc;
+        return q.orderBy(op(purchaseInvoices.createdOn), op(purchaseInvoices.invoiceId));
+      },
+      encodeRow: (row) => ({
+        createdOn: row.createdOn ? new Date(row.createdOn).toISOString() : new Date().toISOString(),
+        invoiceId: row.invoiceId,
+      }),
+    });
   }
 
   // @herobm-skip-audit

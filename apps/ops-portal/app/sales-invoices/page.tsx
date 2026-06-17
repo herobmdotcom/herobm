@@ -31,8 +31,8 @@ export default function GlobalInvoicesPage() {
 
     // When filtering by specific invoiceId, pass it to the API (server skips date range)
     const gridEndpoint = !isReady ? undefined : (invoiceFilter
-        ? `/api/sales-invoices?invoiceId=${encodeURIComponent(invoiceFilter)}&limit=0`
-        : `/api/sales-invoices?days=${days}&limit=0`);
+        ? `/api/sales-invoices?invoiceId=${encodeURIComponent(invoiceFilter)}`
+        : `/api/sales-invoices?days=${days}`);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const gridColumns: any[] = [
         { field: 'invoiceId', headerName: 'ID', hide: true },

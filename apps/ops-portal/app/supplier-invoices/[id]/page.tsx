@@ -56,6 +56,30 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
     loadInvoice,
   } = useSupplierInvoice(id);
 
+  // Synthesize legacy payment allocations for display
+  const displayAllocations = React.useMemo(() => {
+    const allocs = [...(invoice?.allocations || [])];
+    if (!invoice) return allocs;
+
+    const heroBmAllocated = allocs.reduce((sum, a) => sum + parseFloat(a.allocatedAmount), 0);
+    const totalAmount = parseFloat(invoice.totalAmount) || 0;
+    const outstandingAmount = parseFloat(invoice.outstandingAmount) || 0;
+    
+    const legacyPaidAmount = totalAmount - outstandingAmount - heroBmAllocated;
+    
+    if (legacyPaidAmount > 0.01) {
+      allocs.push({
+        allocationId: 'legacy',
+        paymentId: '', // Non-clickable
+        paymentNumber: 'Legacy Imported Payment',
+        paymentDate: invoice.invoiceDate || invoice.createdOn,
+        allocatedAmount: String(legacyPaidAmount),
+        currencyCode: invoice.currencyCode,
+      });
+    }
+    return allocs;
+  }, [invoice]);
+
   useDocumentTitle(invoice ? `Invoice ${invoice.invoiceNumber}` : 'Loading Invoice...');
 
   // Auto-select first unmatched line when entering matching mode
@@ -795,7 +819,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
         {/* Payment Allocations Card */}
         <div className="card mt-4 p-5">
           <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">{t('paymentAllocations')}</h2>
-          {invoice.allocations && invoice.allocations.length > 0 ? (
+          {displayAllocations && displayAllocations.length > 0 ? (
             <>
               <div className="hidden lg:block overflow-x-auto">
                 <table className="w-full text-left border-collapse mt-2">
@@ -807,12 +831,16 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                     </tr>
                   </thead>
                   <tbody>
-                    {invoice.allocations.map((alloc) => (
+                    {displayAllocations.map((alloc) => (
                       <tr key={alloc.allocationId} className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--bg-card-hover)] transition-colors">
                         <td className="py-2 text-sm font-medium">
-                          <span className="text-[var(--accent)] cursor-pointer hover:underline" onClick={() => setSelectedPaymentId(alloc.paymentId)}>
-                            {alloc.paymentNumber}
-                          </span>
+                          {alloc.paymentId ? (
+                            <span className="text-[var(--accent)] cursor-pointer hover:underline" onClick={() => setSelectedPaymentId(alloc.paymentId)}>
+                              {alloc.paymentNumber}
+                            </span>
+                          ) : (
+                            <span>{alloc.paymentNumber}</span>
+                          )}
                         </td>
                         <td className="py-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                           {new Date(alloc.paymentDate).toLocaleDateString()}
@@ -826,13 +854,17 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                 </table>
               </div>
               <div className="flex flex-col lg:hidden gap-3 mt-2">
-                {invoice.allocations.map((alloc) => (
+                {displayAllocations.map((alloc) => (
                   <MobileLineItemCard
                     key={alloc.allocationId}
                     title={
-                      <span className="text-[var(--accent)] cursor-pointer hover:underline" onClick={() => setSelectedPaymentId(alloc.paymentId)}>
-                        {alloc.paymentNumber}
-                      </span>
+                      alloc.paymentId ? (
+                        <span className="text-[var(--accent)] cursor-pointer hover:underline" onClick={() => setSelectedPaymentId(alloc.paymentId)}>
+                          {alloc.paymentNumber}
+                        </span>
+                      ) : (
+                        <span>{alloc.paymentNumber}</span>
+                      )
                     }
                     subtitle={new Date(alloc.paymentDate).toLocaleDateString()}
                     details={[

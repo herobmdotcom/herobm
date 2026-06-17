@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc, and, gte, or } from 'drizzle-orm';
+import { eq, sql, desc, and, gte, or, asc, lt, gt, ilike } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -38,6 +38,7 @@ import { AppConfigService } from '../settings/app-config.service';
 import { OrganizationService } from '../settings/organization.service';
 import { EnrichmentService } from '../enrichment/enrichment.service';
 import { CreateSalesInvoiceDto } from './dto';
+import { withCursorPagination } from '../common/pagination';
 import {
   SALES_INVOICE_STATE,
   SALES_INVOICE_TRANSITIONS,
@@ -864,6 +865,9 @@ export class SalesInvoiceService {
     invoiceId?: string;
     balanceStatus?: string;
     limit?: number;
+    cursor?: any;
+    direction?: 'next' | 'prev';
+    searchTerm?: string | null;
   }) {
     const {
       days = 30,
@@ -871,6 +875,9 @@ export class SalesInvoiceService {
       invoiceId,
       balanceStatus,
       limit = 100,
+      cursor,
+      direction = 'next',
+      searchTerm,
     } = query;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle SQL operators array typing
@@ -900,7 +907,19 @@ export class SalesInvoiceService {
       conditions.push(sql`${salesInvoices.outstandingAmount}::numeric <= 0`);
     }
 
-    const dataQuery = this.db
+    if (searchTerm) {
+      conditions.push(
+        or(
+          ilike(salesInvoices.invoiceNumber, searchTerm),
+          ilike(salesOrders.orderNumber, searchTerm),
+          ilike(customers.name, searchTerm),
+        ),
+      );
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    let dataQuery = this.db
       .select({
         invoiceId: salesInvoices.invoiceId,
         invoiceNumber: salesInvoices.invoiceNumber,
@@ -921,13 +940,37 @@ export class SalesInvoiceService {
         eq(salesInvoices.salesOrderId, salesOrders.salesOrderId),
       )
       .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
-      .where(and(...conditions))
-      .orderBy(desc(salesInvoices.createdOn));
+      .$dynamic();
 
-    if (limit > 0) {
-      return await dataQuery.limit(limit);
+    if (whereClause) {
+      dataQuery = dataQuery.where(whereClause);
     }
-    return await dataQuery;
+
+    return await withCursorPagination({
+      qb: dataQuery,
+      limit,
+      cursorObj: cursor as { createdOn: string; invoiceId: string } | null,
+      direction,
+      applyWhere: (q, c, dir) => {
+        const op = dir === 'next' ? lt : gt;
+        const cursorCond = or(
+            op(salesInvoices.createdOn, new Date(c.createdOn)),
+            and(
+              eq(salesInvoices.createdOn, new Date(c.createdOn)),
+              op(salesInvoices.invoiceId, c.invoiceId)
+            )
+          ) as import('drizzle-orm').SQL;
+        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
+      },
+      applyOrderBy: (q, dir) => {
+        const op = dir === 'next' ? desc : asc;
+        return q.orderBy(op(salesInvoices.createdOn), op(salesInvoices.invoiceId));
+      },
+      encodeRow: (row) => ({
+        createdOn: row.createdOn ? new Date(row.createdOn).toISOString() : new Date().toISOString(),
+        invoiceId: row.invoiceId,
+      }),
+    });
   }
   async changeSalesInvoiceState(
     invoiceId: string,
