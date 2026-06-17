@@ -269,6 +269,7 @@ export const salesOrderLineItems = herobmCore.table(
       t.fulfillmentLocationId,
     ),
     orderIdx: index('idx_sales_order_lines_order_id').on(t.salesOrderId),
+    parentLineIdx: index('idx_sales_order_lines_parent_line').on(t.parentLineId),
     parentLineFk: foreignKey({
       columns: [t.parentLineId],
       foreignColumns: [t.salesOrderLineId],
@@ -376,6 +377,9 @@ export const salesOrderReturnLines = herobmCore.table(
       .notNull()
       .default(PUTAWAY_STATUS.PENDING_PUTAWAY),
   },
+  (t) => ({
+    soLineIdx: index('idx_sales_order_return_lines_so_line').on(t.salesOrderLineId),
+  }),
 );
 
 // ---------------------------------------------------------------------------
@@ -435,6 +439,9 @@ export const salesCreditNoteLines = herobmCore.table(
     amount: numeric('amount').notNull(),
     taxAmount: numeric('tax_amount').default('0'),
   },
+  (t) => ({
+    soLineIdx: index('idx_sales_credit_note_lines_so_line').on(t.salesOrderLineId),
+  }),
 );
 
 // ---------------------------------------------------------------------------
@@ -488,6 +495,9 @@ export const salesOrderShipmentLines = herobmCore.table(
       .references(() => salesOrderLineItems.salesOrderLineId),
     quantityShipped: numeric('quantity_shipped').notNull(),
   },
+  (t) => ({
+    soLineIdx: index('idx_sales_order_shipment_lines_so_line').on(t.salesOrderLineId),
+  }),
 );
 
 // ---------------------------------------------------------------------------
@@ -1836,7 +1846,9 @@ export const salesInvoiceLines = herobmCore.table('sales_invoice_lines', {
   quantityInvoiced: numeric('quantity_invoiced').notNull(),
   pricePerUnit: numeric('price_per_unit').notNull(),
   amount: numeric('amount').notNull(),
-});
+}, (t) => ({
+  soLineIdx: index('idx_sales_invoice_lines_so_line').on(t.salesOrderLineId),
+}));
 
 // ---------------------------------------------------------------------------
 // purchase_invoices  (AP header)
@@ -1892,7 +1904,9 @@ export const purchaseInvoiceLines = herobmCore.table('purchase_invoice_lines', {
   pricePerUnit: numeric('price_per_unit').notNull(),
   amount: numeric('amount').notNull(),
   matchStatus: text('match_status').notNull().default(MATCH_STATUS.UNMATCHED),
-});
+}, (t) => ({
+  poLineIdx: index('idx_purchase_invoice_lines_po_line').on(t.purchaseOrderLineId),
+}));
 
 // ---------------------------------------------------------------------------
 // purchase_invoice_receipts  (N:N mapping for 3-way matching between invoice lines and received goods lines)
