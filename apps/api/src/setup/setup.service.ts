@@ -748,7 +748,7 @@ export class SetupService {
       envOverride['SOURCE_RESUME'] = dto.resumeExtraction ? 'true' : 'false';
 
       if (!dto.skipExtraction) {
-        const venvPython = 'python3';
+        const venvPython = process.env.VENV_PYTHON || 'python';
         this.log(
           jobId,
           `Running ${source.toUpperCase()} Extraction (bypassing make to preserve passwords)...`,

@@ -383,6 +383,34 @@ export default function AdminImportPage() {
                 </select>
               </div>
             )}
+            
+            <div className={abmTaxCategories.length > 0 ? "col-span-2 mt-2" : "col-span-1 mt-2"}>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">{t('options.enableCustomImports')}</h2>
+              <p className="text-sm text-slate-500 mb-4">{t('options.enableCustomImportsDesc')}</p>
+              <select
+                className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                value={config.enableCustomImports ? 'true' : 'false'}
+                onChange={(e) => setConfig({ ...config, enableCustomImports: e.target.value === 'true' })}
+              >
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+
+            {hasLocationInventory && (
+              <div className="col-span-2 mt-2">
+                <h2 className="text-xl font-bold text-slate-800 mb-4">{t('options.inventorySourceTitle')}</h2>
+                <p className="text-sm text-slate-500 mb-4">{t('options.inventorySourceDesc')}</p>
+                <select
+                  className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                  value={config.importInventoryFromLocations ? 'true' : 'false'}
+                  onChange={(e) => setConfig({ ...config, importInventoryFromLocations: e.target.value === 'true' })}
+                >
+                  <option value="false">{t('options.sourceBinTracking')}</option>
+                  <option value="true">{t('options.sourceLocationSummaries')}</option>
+                </select>
+              </div>
+            )}
           </div>
 
           <h2 className="text-xl font-bold text-slate-800 mb-4">{t('sections.executionOptions')}</h2>
@@ -443,56 +471,6 @@ export default function AdminImportPage() {
                 <div className="text-sm text-slate-500">{t('options.fullExtractionDesc')}</div>
               </div>
             </label>
-
-            <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50">
-              <input 
-                type="checkbox" 
-                checked={config.enableCustomImports}
-                onChange={(e) => setConfig({ ...config, enableCustomImports: e.target.checked })}
-                className="mt-1 text-[#006b5c] focus:ring-[#006b5c] rounded" 
-              />
-              <div>
-                <div className="font-bold text-slate-800">{t('options.enableCustomImports')}</div>
-                <div className="text-sm text-slate-500">{t('options.enableCustomImportsDesc')}</div>
-              </div>
-            </label>
-
-            {hasLocationInventory && (
-              <div className="p-4 border rounded-lg">
-                <div className="font-bold text-slate-800 mb-1">{t('options.inventorySourceTitle')}</div>
-                <div className="text-sm text-slate-500 mb-4">{t('options.inventorySourceDesc')}</div>
-                
-                <div className="flex flex-col gap-3">
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="inventorySource"
-                      checked={config.importInventoryFromLocations === false}
-                      onChange={() => setConfig({ ...config, importInventoryFromLocations: false })}
-                      className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
-                    />
-                    <div>
-                      <div className="font-medium text-slate-800">{t('options.sourceBinTracking')}</div>
-                      <div className="text-xs text-slate-500">{t('options.sourceBinTrackingDesc')}</div>
-                    </div>
-                  </label>
-                  
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="inventorySource"
-                      checked={config.importInventoryFromLocations === true}
-                      onChange={() => setConfig({ ...config, importInventoryFromLocations: true })}
-                      className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
-                    />
-                    <div>
-                      <div className="font-medium text-slate-800">{t('options.sourceLocationSummaries')}</div>
-                      <div className="text-xs text-slate-500">{t('options.sourceLocationSummariesDesc')}</div>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="flex justify-between border-t border-slate-100 pt-6">
