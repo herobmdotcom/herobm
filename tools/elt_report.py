@@ -28,22 +28,29 @@ except ImportError:
 def get_db_metrics(source):
     # Read pipeline metrics from raw_{source}._pipeline_metrics
     sql = f"SELECT run_ts, duration_s, table_count, status, error_msg FROM raw_{source}._pipeline_metrics ORDER BY run_id DESC LIMIT 1;"
-    cmd = [
-        "podman", "exec", "-i", "postgres-custom",
-        "psql", "-U", os.environ.get("POSTGRES_USER", "postgres"), "-d", os.environ.get("POSTGRES_DB", "herobm"),
-        "-t", "-A", "-c", sql,
-    ]
-    res = subprocess.run(cmd, capture_output=True, text=True)
-    if res.returncode == 0 and res.stdout.strip():
-        parts = res.stdout.strip().split('|')
-        if len(parts) >= 5:
+    try:
+        import psycopg2
+        conn = psycopg2.connect(
+            host=os.environ.get("POSTGRES_HOST", "postgres-custom"),
+            port=os.environ.get("POSTGRES_PORT", "5432"),
+            user=os.environ.get("POSTGRES_USER", "postgres"),
+            password=os.environ.get("POSTGRES_PASSWORD", "postgres"),
+            dbname=os.environ.get("POSTGRES_DB", "herobm")
+        )
+        cur = conn.cursor()
+        cur.execute(sql)
+        row = cur.fetchone()
+        conn.close()
+        if row:
             return {
-                "ts": parts[0],
-                "duration": parts[1],
-                "tables": parts[2],
-                "status": parts[3],
-                "error": parts[4]
+                "ts": str(row[0]),
+                "duration": str(row[1]),
+                "tables": str(row[2]),
+                "status": str(row[3]),
+                "error": str(row[4]) if row[4] else ""
             }
+    except Exception as e:
+        print(f"Failed to fetch db metrics via psycopg2: {e}")
     return None
 
 def get_dbt_results(source):

@@ -875,6 +875,7 @@ export class SetupService {
           process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8000';
         await fetch(`${runnerUrl}/run/${jobId}`, {
           method: 'DELETE',
+          signal: AbortSignal.timeout(3000),
         });
       } catch (err) {
         this.logger.warn(

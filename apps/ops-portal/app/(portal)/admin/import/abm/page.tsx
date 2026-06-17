@@ -181,15 +181,13 @@ export default function AdminImportPage() {
     }
   };
 
-  const handleStopJob = async () => {
-    if (!jobIdRef.current) return;
-    try {
-      setStopping(true);
-      await api.setupControllerStopJob(jobIdRef.current);
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err) || 'Failed to stop job');
-    } finally {
-      setStopping(false);
+  const handleStopJob = () => {
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    setStep('config');
+    setStatus('pending');
+    setLogs([]);
+    if (jobIdRef.current) {
+      api.setupControllerStopJob(jobIdRef.current).catch(() => {});
     }
   };
 
@@ -497,16 +495,13 @@ export default function AdminImportPage() {
           <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
           <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
           <div className="ml-4 text-slate-400 text-xs font-medium flex-1">{t('sections.terminal')}</div>
-          {status === 'running' && (
-            <button 
-              onClick={handleStopJob}
-              disabled={stopping}
-              className="px-3 py-1 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded font-bold text-xs transition-colors border border-red-500/20 disabled:opacity-50"
-            >
-              {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-              {stopping ? 'Stopping...' : 'Stop Job'}
-            </button>
-          )}
+          <button 
+            onClick={handleStopJob}
+            className="px-3 py-1 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded font-bold text-xs transition-colors border border-red-500/20"
+          >
+            {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+            Stop Job
+          </button>
         </div>
         <div 
           ref={scrollContainerRef} 
