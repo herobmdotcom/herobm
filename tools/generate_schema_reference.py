@@ -43,8 +43,39 @@ def load_env() -> dict:
 def psql(query: str, env: dict) -> str:
     user = env.get("POSTGRES_USER", "postgres")
     db = env.get("POSTGRES_DB", "herobm")
+    
+    import shutil
+    if not shutil.which("podman") and not shutil.which("docker"):
+        host = env.get("POSTGRES_HOST", "postgres-custom")
+        pw = env.get("POSTGRES_PASSWORD", "postgres")
+        
+        try:
+            import psycopg2
+            conn = psycopg2.connect(host=host, user=user, password=pw, dbname=db)
+            cur = conn.cursor()
+            cur.execute(query)
+            res = cur.fetchone()
+            conn.close()
+            if res and res[0] is not None:
+                import json
+                return json.dumps(res[0]) if isinstance(res[0], (list, dict)) else str(res[0])
+            return "[]"
+        except ImportError:
+            exec_env = env.copy()
+            exec_env["PGPASSWORD"] = pw
+            result = subprocess.run(
+                ["psql", "-h", host, "-U", user, "-d", db, "-t", "-A", "-c", query],
+                capture_output=True, text=True, timeout=15, env=exec_env,
+            )
+            if result.returncode != 0:
+                print(f"  SQL error: {result.stderr.strip()}")
+                return ""
+            return result.stdout.strip()
+    
+    # We are on the host machine, use podman/docker
+    bin_name = "podman" if shutil.which("podman") else "docker"
     result = subprocess.run(
-        ["podman", "exec", "-i", CONTAINER, "psql", "-U", user, "-d", db,
+        [bin_name, "exec", "-i", CONTAINER, "psql", "-U", user, "-d", db,
          "-t", "-A", "-c", query],
         capture_output=True, text=True, timeout=15, env=env,
     )
