@@ -723,6 +723,10 @@ export class SetupService {
         envOverride.ENABLE_CUSTOM_IMPORTS = 'true';
       }
 
+      if (dto.importInventoryFromLocations) {
+        envOverride.IMPORT_INVENTORY_FROM_LOCATIONS = 'true';
+      }
+
       const source = dto.source;
       if (!source) {
         throw new BadRequestException('Import source is required');

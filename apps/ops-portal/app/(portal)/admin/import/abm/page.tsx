@@ -31,7 +31,8 @@ export default function AdminImportPage() {
     defaultLocationCode: '',
     baseCurrency: 'AUD',
     defaultTaxCategoryCode: '',
-    enableCustomImports: false
+    enableCustomImports: false,
+    importInventoryFromLocations: false
   });
   
   const [logs, setLogs] = useState<string[]>([]);
@@ -40,6 +41,7 @@ export default function AdminImportPage() {
   const [completedTables, setCompletedTables] = useState<string[] | null>(null);
   const [abmLocations, setAbmLocations] = useState<{ code: string; name: string }[]>([]);
   const [abmTaxCategories, setAbmTaxCategories] = useState<{ code: string; name: string; rate: number }[]>([]);
+  const [hasLocationInventory, setHasLocationInventory] = useState(false);
   const [importSummary, setImportSummary] = useState<{products: number, customers: number, orders: number} | null>(null);
   const [stopping, setStopping] = useState(false);
   
@@ -128,6 +130,13 @@ export default function AdminImportPage() {
           setConfig(prev => ({ ...prev, defaultTaxCategoryCode: highestTax.code }));
         }
         
+        if (preview?.hasLocationInventory) {
+          setHasLocationInventory(true);
+        } else {
+          setHasLocationInventory(false);
+          setConfig(prev => ({ ...prev, importInventoryFromLocations: false }));
+        }
+
         setStep('preview');
       }
     } catch (err: unknown) {
@@ -154,6 +163,7 @@ export default function AdminImportPage() {
         baseCurrency: config.baseCurrency,
         defaultTaxCategoryCode: config.defaultTaxCategoryCode,
         enableCustomImports: config.enableCustomImports,
+        importInventoryFromLocations: config.importInventoryFromLocations,
       };
 
       setStep('executing');
@@ -446,6 +456,43 @@ export default function AdminImportPage() {
                 <div className="text-sm text-slate-500">{t('options.enableCustomImportsDesc')}</div>
               </div>
             </label>
+
+            {hasLocationInventory && (
+              <div className="p-4 border rounded-lg">
+                <div className="font-bold text-slate-800 mb-1">{t('options.inventorySourceTitle')}</div>
+                <div className="text-sm text-slate-500 mb-4">{t('options.inventorySourceDesc')}</div>
+                
+                <div className="flex flex-col gap-3">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="inventorySource"
+                      checked={config.importInventoryFromLocations === false}
+                      onChange={() => setConfig({ ...config, importInventoryFromLocations: false })}
+                      className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
+                    />
+                    <div>
+                      <div className="font-medium text-slate-800">{t('options.sourceBinTracking')}</div>
+                      <div className="text-xs text-slate-500">{t('options.sourceBinTrackingDesc')}</div>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="inventorySource"
+                      checked={config.importInventoryFromLocations === true}
+                      onChange={() => setConfig({ ...config, importInventoryFromLocations: true })}
+                      className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
+                    />
+                    <div>
+                      <div className="font-medium text-slate-800">{t('options.sourceLocationSummaries')}</div>
+                      <div className="text-xs text-slate-500">{t('options.sourceLocationSummariesDesc')}</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-between border-t border-slate-100 pt-6">

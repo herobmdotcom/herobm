@@ -457,7 +457,8 @@ export class PickingService {
             OR (
               SELECT COALESCE(SUM(si.outstanding_amount), 0)
               FROM herobm_core.sales_invoices si
-              WHERE si.customer_id = ${salesOrders.customerId}
+              JOIN herobm_core.sales_orders so ON so.sales_order_id = si.sales_order_id
+              WHERE so.customer_id = ${salesOrders.customerId}
                 AND si.state_code NOT IN ('draft', 'cancelled')
                 AND si.due_date < CURRENT_DATE
             ) > 0
@@ -897,7 +898,8 @@ export class PickingService {
             OR (
               SELECT COALESCE(SUM(si.outstanding_amount), 0)
               FROM herobm_core.sales_invoices si
-              WHERE si.customer_id = ${salesOrders.customerId}
+              JOIN herobm_core.sales_orders so ON so.sales_order_id = si.sales_order_id
+              WHERE so.customer_id = ${salesOrders.customerId}
                 AND si.state_code NOT IN ('draft', 'cancelled')
                 AND si.due_date < CURRENT_DATE
             ) > 0

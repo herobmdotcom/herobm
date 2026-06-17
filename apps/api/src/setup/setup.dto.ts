@@ -114,6 +114,10 @@ export class ExecuteEltDto {
   @IsOptional()
   @IsBoolean()
   enableCustomImports?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  importInventoryFromLocations?: boolean;
 }
 
 // ---------------------------------------------------------------------------
