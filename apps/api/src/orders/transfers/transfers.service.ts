@@ -1098,13 +1098,26 @@ export class TransferService {
     const { page, limit, cursor, direction, searchTerm, states } =
       parsePagination(query);
 
+    const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
+    const scoreSql = searchTerm
+      ? sql<number>`
+          CASE 
+            WHEN ${transferOrders.orderNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${transferOrders.orderNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${transferOrders.notes} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${transferOrders.notes} ILIKE ${rawSearchTerm + '%'} THEN 2
+            ELSE 1
+          END
+        `
+      : sql<number>`0::int`;
+
     const conditions = [];
 
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(transferOrders.orderNumber, `%${searchTerm}%`),
-          ilike(transferOrders.notes, `%${searchTerm}%`),
+          ilike(transferOrders.orderNumber, `%${rawSearchTerm}%`),
+          ilike(transferOrders.notes, `%${rawSearchTerm}%`),
         ),
       );
     }
@@ -1132,6 +1145,7 @@ export class TransferService {
         createdBy: transferOrders.createdBy,
         createdOn: transferOrders.createdOn,
         notes: transferOrders.notes,
+        score: scoreSql,
       })
       .from(transferOrders)
       .leftJoin(
@@ -1152,35 +1166,58 @@ export class TransferService {
     const { data, nextCursor, prevCursor } = await withCursorPagination({
       qb,
       limit,
-      cursorObj: cursor,
+      cursorObj: cursor as {
+        score: number;
+        createdOn: string;
+        id: string;
+      } | null,
       direction: direction,
-      applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
-        const cursorCond =
-          dir === 'next'
-            ? or(
-                sql`${transferOrders.createdOn} < ${c.createdOn}`,
-                and(
-                  eq(transferOrders.createdOn, new Date(c.createdOn)),
-                  sql`${transferOrders.transferOrderId} < ${c.id}`,
-                ),
-              )
-            : or(
-                sql`${transferOrders.createdOn} > ${c.createdOn}`,
-                and(
-                  eq(transferOrders.createdOn, new Date(c.createdOn)),
-                  sql`${transferOrders.transferOrderId} > ${c.id}`,
-                ),
-              );
-        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
+      applyWhere: (q, c, dir) => {
+        const cDate = c.createdOn;
+        if (dir === 'next') {
+          const cursorCond = or(
+            sql`${scoreSql} < ${c.score}`,
+            and(
+              eq(scoreSql, c.score),
+              sql`${transferOrders.createdOn} < ${cDate}::timestamp`,
+            ),
+            and(
+              eq(scoreSql, c.score),
+              eq(transferOrders.createdOn, sql`${cDate}::timestamp`),
+              sql`${transferOrders.transferOrderId} < ${c.id}`,
+            ),
+          );
+          return q.where(
+            whereClause ? and(whereClause, cursorCond) : cursorCond,
+          );
+        } else {
+          const cursorCond = or(
+            sql`${scoreSql} > ${c.score}`,
+            and(
+              eq(scoreSql, c.score),
+              sql`${transferOrders.createdOn} > ${cDate}::timestamp`,
+            ),
+            and(
+              eq(scoreSql, c.score),
+              eq(transferOrders.createdOn, sql`${cDate}::timestamp`),
+              sql`${transferOrders.transferOrderId} > ${c.id}`,
+            ),
+          );
+          return q.where(
+            whereClause ? and(whereClause, cursorCond) : cursorCond,
+          );
+        }
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? desc : asc;
         return q.orderBy(
+          orderFn(scoreSql),
           orderFn(transferOrders.createdOn),
           orderFn(transferOrders.transferOrderId),
         );
       },
       encodeRow: (row) => ({
+        score: Number(row.score) || 0,
         createdOn: (row.createdOn || new Date()).toISOString(),
         id: row.id,
       }),

@@ -88,28 +88,27 @@ export class InventoryService {
     const { page, limit, cursor, direction, searchTerm } =
       parsePagination(query);
 
-    let qb = this.db
-      .select({
-        inventoryLevelId: inventoryLevels.inventoryLevelId,
-        productId: inventoryLevels.productId,
-        productNumber: products.productNumber,
-        productName: products.name,
-        locationNo: locations.code,
-        locationName: locations.name,
-        quantityOnHand: inventoryLevels.quantityOnHand,
-        quantityCommitted: inventoryLevels.quantityCommitted,
-        quantityReserved: inventoryLevels.quantityReserved,
-        quantityOnOrder: inventoryLevels.quantityOnOrder,
-      })
-      .from(inventoryLevels)
-      .leftJoin(products, eq(inventoryLevels.productId, products.productId))
-      .leftJoin(locations, eq(inventoryLevels.locationId, locations.locationId))
-      .$dynamic();
+    const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
+    const scoreSql = searchTerm
+      ? sql<number>`
+          CASE 
+            WHEN ${products.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${products.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${products.productNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${products.productNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${products.alternateProductNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${products.alternateProductNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${locations.code} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${locations.code} ILIKE ${rawSearchTerm + '%'} THEN 2
+            ELSE 1
+          END
+        `
+      : sql<number>`0::int`;
 
     const filters = [];
 
     if (searchTerm) {
-      const term = `%${searchTerm}%`;
+      const term = `%${rawSearchTerm}%`;
       filters.push(
         or(
           ilike(products.name, term),
@@ -125,6 +124,27 @@ export class InventoryService {
     }
 
     const whereClause = filters.length > 0 ? and(...filters) : undefined;
+
+    let qb = this.db
+      .select({
+        inventoryLevelId: inventoryLevels.inventoryLevelId,
+        productId: inventoryLevels.productId,
+        productName: products.name,
+        productNumber: products.productNumber,
+        locationId: inventoryLevels.locationId,
+        locationName: locations.name,
+        locationCode: locations.code,
+        quantityOnHand: inventoryLevels.quantityOnHand,
+        quantityCommitted: inventoryLevels.quantityCommitted,
+        quantityReserved: inventoryLevels.quantityReserved,
+        quantityOnOrder: inventoryLevels.quantityOnOrder,
+        score: scoreSql,
+      })
+      .from(inventoryLevels)
+      .leftJoin(products, eq(inventoryLevels.productId, products.productId))
+      .leftJoin(locations, eq(inventoryLevels.locationId, locations.locationId))
+      .$dynamic();
+
     if (whereClause) {
       qb = qb.where(whereClause);
     }
@@ -132,35 +152,36 @@ export class InventoryService {
     const { data, nextCursor, prevCursor } = await withCursorPagination({
       qb,
       limit,
-      cursorObj: cursor,
+      cursorObj: cursor as { score: number; name: string; id: string } | null,
       direction: direction,
-      applyWhere: (q, c: { name: string; id: string }, dir) => {
-        const cursorCond =
-          dir === 'next'
-            ? or(
-                sql`${products.name} > ${c.name}`,
-                and(
-                  eq(products.name, c.name),
-                  sql`${inventoryLevels.inventoryLevelId} > ${c.id}`,
-                ),
-              )
-            : or(
-                sql`${products.name} < ${c.name}`,
-                and(
-                  eq(products.name, c.name),
-                  sql`${inventoryLevels.inventoryLevelId} < ${c.id}`,
-                ),
-              );
+      applyWhere: (q, c, dir) => {
+        const scoreOp = dir === 'next' ? sql`<` : sql`>`;
+        const strOp = dir === 'next' ? sql`>` : sql`<`;
+        const cursorCond = or(
+          sql`${scoreSql} ${scoreOp} ${c.score}`,
+          and(eq(scoreSql, c.score), sql`${products.name} ${strOp} ${c.name}`),
+          and(
+            eq(scoreSql, c.score),
+            eq(products.name, c.name),
+            sql`${inventoryLevels.inventoryLevelId} ${strOp} ${c.id}`,
+          ),
+        );
         return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
       applyOrderBy: (q, dir) => {
+        const scoreOp = dir === 'next' ? desc : asc;
         const orderFn = dir === 'next' ? asc : desc;
         return q.orderBy(
+          scoreOp(scoreSql),
           orderFn(products.name),
           orderFn(inventoryLevels.inventoryLevelId),
         );
       },
-      encodeRow: (row) => ({ name: row.productName, id: row.inventoryLevelId }),
+      encodeRow: (row) => ({
+        score: Number(row.score) || 0,
+        name: row.productName,
+        id: row.inventoryLevelId,
+      }),
     });
 
     // Provide default backward-compatible fields
@@ -333,6 +354,23 @@ export class InventoryService {
     const { page, limit, cursor, direction, searchTerm } =
       parsePagination(query);
 
+    const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
+    const scoreSql = searchTerm
+      ? sql<number>`
+          CASE 
+            WHEN ${products.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${products.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${products.productNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${products.productNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${products.alternateProductNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${products.alternateProductNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${bins.binNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${bins.binNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            ELSE 1
+          END
+        `
+      : sql<number>`0::int`;
+
     let qb = this.db
       .select({
         binContentId: binContents.binContentId,
@@ -346,6 +384,7 @@ export class InventoryService {
         actualQuantity: binContents.actualQuantity,
         baseUom: products.baseUom,
         zoneCode: zones.code,
+        score: scoreSql,
       })
       .from(binContents)
       .innerJoin(bins, eq(binContents.binId, bins.binId))
@@ -357,12 +396,13 @@ export class InventoryService {
     const filters = [];
 
     if (searchTerm) {
+      const term = `%${rawSearchTerm}%`;
       filters.push(
         or(
-          ilike(products.name, searchTerm),
-          ilike(products.productNumber, searchTerm),
-          ilike(products.alternateProductNumber, searchTerm),
-          ilike(bins.binNumber, searchTerm),
+          ilike(products.name, term),
+          ilike(products.productNumber, term),
+          ilike(products.alternateProductNumber, term),
+          ilike(bins.binNumber, term),
         ),
       );
     }
@@ -401,46 +441,45 @@ export class InventoryService {
     } = await withCursorPagination({
       qb,
       limit,
-      cursorObj: cursor,
+      cursorObj: cursor as {
+        score: number;
+        bin: string;
+        name: string;
+        id: string;
+      } | null,
       direction: direction,
-      applyWhere: (q, c: { bin: string; name: string; id: string }, dir) => {
-        const cursorCond =
-          dir === 'next'
-            ? or(
-                sql`${bins.binNumber} > ${c.bin}`,
-                and(
-                  eq(bins.binNumber, c.bin),
-                  sql`${products.name} > ${c.name}`,
-                ),
-                and(
-                  eq(bins.binNumber, c.bin),
-                  eq(products.name, c.name),
-                  sql`${binContents.binContentId} > ${c.id}`,
-                ),
-              )
-            : or(
-                sql`${bins.binNumber} < ${c.bin}`,
-                and(
-                  eq(bins.binNumber, c.bin),
-                  sql`${products.name} < ${c.name}`,
-                ),
-                and(
-                  eq(bins.binNumber, c.bin),
-                  eq(products.name, c.name),
-                  sql`${binContents.binContentId} < ${c.id}`,
-                ),
-              );
+      applyWhere: (q, c, dir) => {
+        const scoreOp = dir === 'next' ? sql`<` : sql`>`;
+        const strOp = dir === 'next' ? sql`>` : sql`<`;
+        const cursorCond = or(
+          sql`${scoreSql} ${scoreOp} ${c.score}`,
+          and(eq(scoreSql, c.score), sql`${bins.binNumber} ${strOp} ${c.bin}`),
+          and(
+            eq(scoreSql, c.score),
+            eq(bins.binNumber, c.bin),
+            sql`${products.name} ${strOp} ${c.name}`,
+          ),
+          and(
+            eq(scoreSql, c.score),
+            eq(bins.binNumber, c.bin),
+            eq(products.name, c.name),
+            sql`${binContents.binContentId} ${strOp} ${c.id}`,
+          ),
+        );
         return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
       applyOrderBy: (q, dir) => {
+        const scoreOp = dir === 'next' ? desc : asc;
         const orderFn = dir === 'next' ? asc : desc;
         return q.orderBy(
+          scoreOp(scoreSql),
           orderFn(bins.binNumber),
           orderFn(products.name),
           orderFn(binContents.binContentId),
         );
       },
       encodeRow: (row) => ({
+        score: Number(row.score) || 0,
         bin: row.binNumber,
         name: row.productName,
         id: row.binContentId,

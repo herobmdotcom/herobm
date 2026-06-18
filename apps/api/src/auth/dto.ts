@@ -18,4 +18,5 @@ export class LoginResponseDto {
 export class MeResponseDto {
   username: string;
   role: string;
+  permissions?: { resource: string; action: string; effect: string }[];
 }

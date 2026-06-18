@@ -372,6 +372,13 @@
       "when": 1781707392544,
       "tag": "0052_add_missing_indexes_so_lines",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1781772640334,
+      "tag": "0053_add_hierarchical_tax_categories",
+      "breakpoints": true
     }
   ]
 }

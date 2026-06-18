@@ -865,7 +865,7 @@ export class SalesInvoiceService {
     invoiceId?: string;
     balanceStatus?: string;
     limit?: number;
-    cursor?: any;
+    cursor?: unknown;
     direction?: 'next' | 'prev';
     searchTerm?: string | null;
   }) {
@@ -907,13 +907,28 @@ export class SalesInvoiceService {
       conditions.push(sql`${salesInvoices.outstandingAmount}::numeric <= 0`);
     }
 
+    const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
+    const scoreSql = searchTerm
+      ? sql<number>`
+          CASE 
+            WHEN ${salesInvoices.invoiceNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${salesInvoices.invoiceNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${salesOrders.orderNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${salesOrders.orderNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${customers.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${customers.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            ELSE 1
+          END
+        `
+      : sql<number>`0::int`;
+
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(salesInvoices.invoiceNumber, searchTerm),
-          ilike(salesOrders.orderNumber, searchTerm),
-          ilike(customers.name, searchTerm),
-        ),
+          ilike(salesInvoices.invoiceNumber, `%${rawSearchTerm}%`),
+          ilike(salesOrders.orderNumber, `%${rawSearchTerm}%`),
+          ilike(customers.name, `%${rawSearchTerm}%`),
+        ) as import('drizzle-orm').SQL,
       );
     }
 
@@ -933,6 +948,7 @@ export class SalesInvoiceService {
         currencyCode: salesInvoices.currencyCode,
         stateCode: salesInvoices.stateCode,
         createdOn: salesInvoices.createdOn,
+        score: scoreSql,
       })
       .from(salesInvoices)
       .innerJoin(
@@ -949,25 +965,41 @@ export class SalesInvoiceService {
     return await withCursorPagination({
       qb: dataQuery,
       limit,
-      cursorObj: cursor as { createdOn: string; invoiceId: string } | null,
+      cursorObj: cursor as {
+        score: number;
+        createdOn: string;
+        invoiceId: string;
+      } | null,
       direction,
       applyWhere: (q, c, dir) => {
         const op = dir === 'next' ? lt : gt;
         const cursorCond = or(
+          op(scoreSql, c.score),
+          and(
+            eq(scoreSql, c.score),
             op(salesInvoices.createdOn, new Date(c.createdOn)),
-            and(
-              eq(salesInvoices.createdOn, new Date(c.createdOn)),
-              op(salesInvoices.invoiceId, c.invoiceId)
-            )
-          ) as import('drizzle-orm').SQL;
+          ),
+          and(
+            eq(scoreSql, c.score),
+            eq(salesInvoices.createdOn, new Date(c.createdOn)),
+            op(salesInvoices.invoiceId, c.invoiceId),
+          ),
+        ) as import('drizzle-orm').SQL;
         return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
       applyOrderBy: (q, dir) => {
         const op = dir === 'next' ? desc : asc;
-        return q.orderBy(op(salesInvoices.createdOn), op(salesInvoices.invoiceId));
+        return q.orderBy(
+          op(scoreSql),
+          op(salesInvoices.createdOn),
+          op(salesInvoices.invoiceId),
+        );
       },
       encodeRow: (row) => ({
-        createdOn: row.createdOn ? new Date(row.createdOn).toISOString() : new Date().toISOString(),
+        score: Number(row.score) || 0,
+        createdOn: row.createdOn
+          ? new Date(row.createdOn).toISOString()
+          : new Date().toISOString(),
         invoiceId: row.invoiceId,
       }),
     });

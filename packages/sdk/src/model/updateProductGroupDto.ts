@@ -13,4 +13,6 @@ export interface UpdateProductGroupDto {
   defaultExpenseAccountId?: string;
   defaultCostCenterId?: string;
   defaultActivityId?: string;
+  purchaseTaxCategoryId?: string;
+  salesTaxCategoryId?: string;
 }

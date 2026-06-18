@@ -4,6 +4,9 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   taxPositionMappings,
   taxCategories,
+  products,
+  productGroups,
+  appSettings,
 } from '../drizzle/herobm-core-schema';
 import { eq, and } from 'drizzle-orm';
 
@@ -11,6 +14,7 @@ export interface TaxResolutionContext {
   isPurchase: boolean;
   isTaxRegistered: boolean;
   partyTaxPositionId?: string | null;
+  productId?: string | null;
   productDefaultTaxCategoryId?: string | null;
   manualOverrideTaxCategoryId?: string | null;
 }
@@ -31,6 +35,16 @@ export class TaxResolutionEngine {
     // 1. Manual Override takes highest precedence
     if (context.manualOverrideTaxCategoryId) {
       return context.manualOverrideTaxCategoryId;
+    }
+
+    // Resolve Product Hierarchy Tax if not explicitly provided
+    let baseTaxCategoryId = context.productDefaultTaxCategoryId || null;
+    if (!baseTaxCategoryId && context.productId) {
+      baseTaxCategoryId = await this.resolveProductTaxHierarchy(
+        context.productId,
+        context.isPurchase,
+        db,
+      );
     }
 
     // 2. Unregistered Supplier enforcement (Purchases only)
@@ -56,17 +70,14 @@ export class TaxResolutionEngine {
     }
 
     // 3. Tax Position Mapping
-    if (context.partyTaxPositionId && context.productDefaultTaxCategoryId) {
+    if (context.partyTaxPositionId && baseTaxCategoryId) {
       const mapping = await db
         .select()
         .from(taxPositionMappings)
         .where(
           and(
             eq(taxPositionMappings.taxPositionId, context.partyTaxPositionId),
-            eq(
-              taxPositionMappings.sourceTaxCategoryId,
-              context.productDefaultTaxCategoryId,
-            ),
+            eq(taxPositionMappings.sourceTaxCategoryId, baseTaxCategoryId),
           ),
         )
         .limit(1);
@@ -77,6 +88,82 @@ export class TaxResolutionEngine {
     }
 
     // 4. Fallback to Product Default Tax
-    return context.productDefaultTaxCategoryId || null;
+    return baseTaxCategoryId;
+  }
+
+  /**
+   * Resolves the base tax category for a product traversing the hierarchy:
+   * Product -> Product Group -> App Settings
+   */
+  async resolveProductTaxHierarchy(
+    productId: string,
+    isPurchase: boolean,
+    db: DrizzleDB,
+  ): Promise<string | null> {
+    const productRecord = await db
+      .select({
+        salesTaxCategoryId: products.salesTaxCategoryId,
+        purchaseTaxCategoryId: products.purchaseTaxCategoryId,
+        productGroupId: products.productGroupId,
+      })
+      .from(products)
+      .where(eq(products.productId, productId))
+      .limit(1);
+
+    if (productRecord.length === 0) {
+      return null;
+    }
+
+    const { salesTaxCategoryId, purchaseTaxCategoryId, productGroupId } =
+      productRecord[0];
+
+    // Tier 1: Product Level
+    const productLevelTax = isPurchase
+      ? purchaseTaxCategoryId
+      : salesTaxCategoryId;
+    if (productLevelTax) {
+      return productLevelTax;
+    }
+
+    // Tier 2: Product Group Level
+    if (productGroupId) {
+      const groupRecord = await db
+        .select({
+          salesTaxCategoryId: productGroups.salesTaxCategoryId,
+          purchaseTaxCategoryId: productGroups.purchaseTaxCategoryId,
+        })
+        .from(productGroups)
+        .where(eq(productGroups.productGroupId, productGroupId))
+        .limit(1);
+
+      if (groupRecord.length > 0) {
+        const groupLevelTax = isPurchase
+          ? groupRecord[0].purchaseTaxCategoryId
+          : groupRecord[0].salesTaxCategoryId;
+        if (groupLevelTax) {
+          return groupLevelTax;
+        }
+      }
+    }
+
+    // Tier 3: App Settings Level
+    const settingsRecord = await db
+      .select({
+        defaultSalesTaxCategoryId: appSettings.defaultSalesTaxCategoryId,
+        defaultPurchaseTaxCategoryId: appSettings.defaultPurchaseTaxCategoryId,
+      })
+      .from(appSettings)
+      .limit(1);
+
+    if (settingsRecord.length > 0) {
+      const settingsLevelTax = isPurchase
+        ? settingsRecord[0].defaultPurchaseTaxCategoryId
+        : settingsRecord[0].defaultSalesTaxCategoryId;
+      if (settingsLevelTax) {
+        return settingsLevelTax;
+      }
+    }
+
+    return null;
   }
 }

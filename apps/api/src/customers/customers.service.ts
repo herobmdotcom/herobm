@@ -91,13 +91,26 @@ export class AccountsService {
     const { page, limit, cursor, direction, searchTerm, includeArchived } =
       parsePagination(query);
 
+    const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
+    const scoreSql = searchTerm
+      ? sql<number>`
+          CASE 
+            WHEN ${customers.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${customers.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${customers.customerNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${customers.customerNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            ELSE 1
+          END
+        `
+      : sql<number>`0::int`;
+
     const conditions = [];
 
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(customers.name, searchTerm),
-          ilike(customers.customerNumber, searchTerm),
+          ilike(customers.name, `%${rawSearchTerm}%`),
+          ilike(customers.customerNumber, `%${rawSearchTerm}%`),
         ),
       );
     }
@@ -120,6 +133,7 @@ export class AccountsService {
         customerGroupIsOnCreditHold: customerGroups.isOnCreditHold,
         customerGroupTaxPositionId: customerGroups.taxPositionId,
         gstCategoryName: taxPositions.code,
+        score: scoreSql,
       })
       .from(customers)
       .leftJoin(
@@ -139,35 +153,41 @@ export class AccountsService {
     const { data, nextCursor, prevCursor } = await withCursorPagination({
       qb,
       limit,
-      cursorObj: cursor,
+      cursorObj: cursor as { score: number; name: string; id: string } | null,
       direction: direction,
-      applyWhere: (q, c: { name: string; id: string }, dir) => {
-        const cursorCond =
-          dir === 'next'
-            ? or(
-                sql`lower(${customers.name}) > lower(${c.name})`,
-                and(
-                  sql`lower(${customers.name}) = lower(${c.name})`,
-                  sql`${customers.customerId} > ${c.id}`,
-                ),
-              )
-            : or(
-                sql`lower(${customers.name}) < lower(${c.name})`,
-                and(
-                  sql`lower(${customers.name}) = lower(${c.name})`,
-                  sql`${customers.customerId} < ${c.id}`,
-                ),
-              );
+      applyWhere: (q, c, dir) => {
+        const scoreOp = dir === 'next' ? sql`<` : sql`>`;
+        const nameOp = dir === 'next' ? sql`>` : sql`<`;
+        const idOp = dir === 'next' ? sql`>` : sql`<`;
+
+        const cursorCond = or(
+          sql`${scoreSql} ${scoreOp} ${c.score}`,
+          and(
+            sql`${scoreSql} = ${c.score}`,
+            sql`lower(${customers.name}) ${nameOp} lower(${c.name})`,
+          ),
+          and(
+            sql`${scoreSql} = ${c.score}`,
+            sql`lower(${customers.name}) = lower(${c.name})`,
+            sql`${customers.customerId} ${idOp} ${c.id}`,
+          ),
+        );
         return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? asc : desc;
+        const scoreOp = dir === 'next' ? desc : asc;
         return q.orderBy(
+          scoreOp(scoreSql),
           orderFn(sql`lower(${customers.name})`),
           orderFn(customers.customerId),
         );
       },
-      encodeRow: (row) => ({ name: row.name, id: row.customerId }),
+      encodeRow: (row) => ({
+        score: Number(row.score) || 0,
+        name: row.name,
+        id: row.customerId,
+      }),
     });
 
     // Count total matching rows

@@ -5,5 +5,7 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { PaginatedResponse } from './paginatedResponse';
+import type { InvoiceDetailControllerGetPurchaseInvoicesGlobal200AllOf } from './invoiceDetailControllerGetPurchaseInvoicesGlobal200AllOf';
 
-export type InvoiceDetailControllerGetPurchaseInvoicesGlobal200 = { [key: string]: unknown };
+export type InvoiceDetailControllerGetPurchaseInvoicesGlobal200 = PaginatedResponse & InvoiceDetailControllerGetPurchaseInvoicesGlobal200AllOf;

@@ -20,6 +20,8 @@ import {
 } from "ag-grid-community";
 import * as api from '@herobm/sdk';
 import useSWR from 'swr';
+import { useAuth } from './AuthGate';
+import { apiFetch } from '../../lib/api';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -186,6 +188,18 @@ function getCellValue<T>(col: ColDef<T>, row: T) {
     }
   }
 
+  return formattedValue ?? rawValue;
+}
+
+function getExportValue<T>(col: ColDef<T>, row: T) {
+  let rawValue = col.field ? (row as Record<string, unknown>)[col.field] : undefined;
+  if (col.valueGetter && typeof col.valueGetter === 'function') {
+    rawValue = col.valueGetter({ data: row, getValue: () => undefined } as never);
+  }
+  let formattedValue = rawValue;
+  if (col.valueFormatter && typeof col.valueFormatter === 'function') {
+    formattedValue = col.valueFormatter({ value: rawValue, data: row } as never);
+  }
   return formattedValue ?? rawValue;
 }
 
@@ -519,6 +533,9 @@ export default function DataGrid<T>({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   const [colRevision, setColRevision] = useState(0);
+  const { permissions } = useAuth();
+  const canExport = permissions?.some(p => p.resource === 'data-export' && p.action === 'read' && p.effect === 'allow');
+  const containerRef = useRef<HTMLDivElement>(null);
   const colPickerRef = useRef<HTMLDivElement>(null);
 
   /* Close picker when clicking outside */
@@ -570,6 +587,14 @@ export default function DataGrid<T>({
     },
     [],
   );
+
+  const getExportValue = (col: ColDef, row: Record<string, unknown>) => {
+    if (col.valueGetter && typeof col.valueGetter === 'function') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- We don't have the full ValueGetterParams object to mock here
+      return col.valueGetter({ data: row, colDef: col, api: gridRef.current?.api } as any);
+    }
+    return row[col.field as string];
+  };
 
   const swrKey = useMemo(() => {
     if (rowData || !endpoint || !isRestored) return null;
@@ -737,12 +762,64 @@ export default function DataGrid<T>({
     [gridKey],
   );
 
+  const [isExporting, setIsExporting] = useState(false);
+
   /** CSV export handler */
-  const handleExport = useCallback(() => {
-    gridRef.current?.api?.exportDataAsCsv({
-      fileName: `${exportFileName ?? "export"}_${new Date().toISOString().slice(0, 10)}.csv`,
-    });
-  }, [exportFileName]);
+  const handleExport = useCallback(async () => {
+    if (effectiveFetchAll || rowData) {
+      gridRef.current?.api?.exportDataAsCsv({
+        fileName: `${exportFileName ?? "export"}_${new Date().toISOString().slice(0, 10)}.csv`,
+      });
+      return;
+    }
+
+    if (!endpoint) return;
+    try {
+      setIsExporting(true);
+      const params = new URLSearchParams();
+      if (search) params.set("q", search);
+      if (includeArchived) params.set("includeArchived", "true");
+      
+      const [baseEndpoint, queryString] = endpoint.split('?');
+      if (queryString) {
+         const existingParams = new URLSearchParams(queryString);
+         for (const [k, v] of existingParams.entries()) {
+           params.append(k, v);
+         }
+      }
+      params.set("limit", "999999");
+      
+      const url = `${baseEndpoint}?${params.toString()}`;
+      
+      const data = await apiFetch<{ data?: Record<string, unknown>[] } | Record<string, unknown>[]>(url);
+      const safeData = Array.isArray(data) ? data : (data?.data || []);
+      
+      const visibleCols = enhancedColumns.filter(c => !c.hide);
+      const headers = visibleCols.map(c => c.headerName || c.field).join(',');
+      const rows = safeData.map((row: Record<string, unknown>) => {
+        return visibleCols.map(col => {
+          let val = getExportValue(col, row);
+          if (val === null || val === undefined) val = '';
+          return `"${String(val).replace(/"/g, '""')}"`;
+        }).join(',');
+      });
+      const csv = [headers, ...rows].join('\n');
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const objUrl = URL.createObjectURL(blob);
+      link.setAttribute("href", objUrl);
+      link.setAttribute("download", `${exportFileName ?? "export"}_${new Date().toISOString().slice(0, 10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error('Export failed', e);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [exportFileName, effectiveFetchAll, rowData, endpoint, search, includeArchived, enhancedColumns]);
 
   /** Reset columns to default layout */
   const handleResetColumns = useCallback(() => {
@@ -830,26 +907,15 @@ export default function DataGrid<T>({
               }}
             >
               {/* 1. Export Section */}
-              <div
-                style={{
-                  padding: "2px 12px 4px",
-                  fontSize: 11,
-                  color: "var(--text-muted)",
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  marginTop: 4,
-                }}
-              >
-                {tGrid('export')}
-              </div>
-              <button
-                onClick={() => {
-                  handleExport();
-                  setColPickerOpen(false);
-                }}
-                style={{
-                  display: "flex",
+              {canExport && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setColPickerOpen(false);
+                    handleExport();
+                  }}
+                  style={{
+                    display: "flex",
                   alignItems: "center",
                   gap: 8,
                   width: "100%",
@@ -869,7 +935,8 @@ export default function DataGrid<T>({
                 }
               >
                 <span aria-hidden>⬇</span>{' '}{tGrid('exportCsv')}
-              </button>
+                </button>
+              )}
 
               {/* 2. Columns Section */}
               {gridKey && (

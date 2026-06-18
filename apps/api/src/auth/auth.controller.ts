@@ -20,12 +20,18 @@ import { SkipCasbin } from './casbin.guard';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { RATE_LIMITS } from '../common/config/throttler.config';
 import { LoginDto, LoginResponseDto, MeResponseDto } from './dto';
+import { Enforcer } from 'casbin';
+import { CASBIN_ENFORCER } from './casbin.provider';
+import { Inject } from '@nestjs/common';
 
 @ApiTags('System')
 @Controller('auth')
 @SkipCasbin()
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    @Inject(CASBIN_ENFORCER) private enforcer: Enforcer,
+  ) {}
 
   @Post('login')
   @ApiBody({ type: LoginDto })
@@ -56,10 +62,20 @@ export class AuthController {
     description:
       'Returns the identity and role of the currently authenticated user.',
   })
-  me(@Request() req: { user: { username: string; role: string } }) {
+  async me(@Request() req: { user: { username: string; role: string } }) {
+    const implicitPolicies = await this.enforcer.getImplicitPermissionsForUser(
+      req.user.role,
+    );
+    const permissions = implicitPolicies.map((p) => ({
+      resource: p[1],
+      action: p[2],
+      effect: p[3] || 'allow',
+    }));
+
     return {
       username: req.user.username,
       role: req.user.role,
+      permissions,
     };
   }
 }

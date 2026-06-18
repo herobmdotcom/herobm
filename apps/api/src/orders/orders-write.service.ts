@@ -175,12 +175,6 @@ export class OrdersWriteService {
     const country = customer.billingAddressCountry || '';
     const taxProvider = mappings[country] || 'internal';
 
-    let productDefaultTaxCategoryId: string | null = null;
-    if (productId) {
-      const product = await this.lookupProduct(productId, tx);
-      productDefaultTaxCategoryId = product.salesTaxCategoryId || null;
-    }
-
     const resolvedTaxCategoryId =
       await this.taxResolutionEngine.resolveTaxCategory(
         {
@@ -191,7 +185,8 @@ export class OrdersWriteService {
             ((customer as Record<string, unknown>)
               .customerGroupTaxPositionId as string | undefined) ||
             null,
-          productDefaultTaxCategoryId,
+          productId: productId || null,
+          productDefaultTaxCategoryId: null,
           manualOverrideTaxCategoryId: taxCategoryIdOverride || null,
         },
         tx,

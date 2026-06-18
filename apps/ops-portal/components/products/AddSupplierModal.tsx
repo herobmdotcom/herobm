@@ -154,7 +154,7 @@ export default function AddSupplierModal({
         {/* Product Context Banner */}
         <div className="bg-gray-50 border-b border-gray-100 px-6 py-3 flex items-center gap-3">
           <div className="w-10 h-10 rounded bg-white border border-gray-200 flex items-center justify-center shrink-0 shadow-sm">
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+            { }
             <span className="material-symbols-outlined text-gray-400 text-[20px]">inventory_2</span>
           </div>
           <div className="min-w-0">
@@ -208,12 +208,12 @@ export default function AddSupplierModal({
             )}
             
             {!loading && search.length >= 2 && suppliers.length === 0 && !vendorId && lastSearchQuery === search && (
-              // eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon).
+               
               <div className="mt-2 text-sm text-gray-500 flex items-center gap-1.5 px-1"><span className="material-symbols-outlined text-[16px]">info</span> {t('inputs.noSuppliersFound', { search })}</div>
             )}
             
             {vendorId && (
-              // eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon).
+               
               <div className="mt-2 text-sm text-[#006b5c] font-semibold flex items-center gap-1.5 px-1"><span className="material-symbols-outlined text-[18px]">check_circle</span> {t('inputs.supplierSelected')}</div>
             )}
           </div>

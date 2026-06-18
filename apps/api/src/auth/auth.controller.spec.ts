@@ -29,6 +29,12 @@ describe('AuthController', () => {
           provide: AuthService,
           useValue: { login: jest.fn().mockResolvedValue(mockToken) },
         },
+        {
+          provide: 'CASBIN_ENFORCER',
+          useValue: {
+            getImplicitPermissionsForUser: jest.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 

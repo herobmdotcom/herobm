@@ -128,6 +128,8 @@ describe('Invoices Controllers', () => {
         limit: 50,
         cursor: null,
         direction: 'next',
+        balanceStatus: undefined,
+        searchTerm: null,
       });
     });
 
@@ -142,6 +144,8 @@ describe('Invoices Controllers', () => {
         limit: 50, // parsePagination defaults to 50
         cursor: null,
         direction: 'next',
+        balanceStatus: undefined,
+        searchTerm: null,
       });
     });
 

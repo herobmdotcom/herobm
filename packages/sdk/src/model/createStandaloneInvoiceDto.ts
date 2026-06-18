@@ -12,6 +12,7 @@ export interface CreateStandaloneInvoiceDto {
   supplierInvoiceNumber: string;
   purchaseOrderId?: string;
   currencyCode: string;
+  invoiceDate?: string;
   totalAmount: number;
   taxAmount: number;
   notes?: string;

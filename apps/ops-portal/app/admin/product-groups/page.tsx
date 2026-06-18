@@ -21,6 +21,7 @@ export default function ProductGroupsAdmin() {
   const [glAccounts, setGlAccounts] = useState<api.GlAccountResponseDto[]>([]);
   const [costCenters, setCostCenters] = useState<api.CostCenterResponseDto[]>([]);
   const [activities, setActivities] = useState<api.ActivityResponseDto[]>([]);
+  const [taxCategories, setTaxCategories] = useState<api.TaxCategoryResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [financialGroup, setFinancialGroup] = useState<Partial<api.ProductGroupResponseDto> | null>(null);
@@ -28,11 +29,12 @@ export default function ProductGroupsAdmin() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [data, glAccs, cc, act] = await Promise.all([
+      const [data, glAccs, cc, act, taxCats] = await Promise.all([
         api.productGroupsControllerFindAll().then(r => (Array.isArray(r.data) ? r.data : ((r.data as unknown as { data: api.ProductGroupResponseDto[] }).data) || []) as api.ProductGroupResponseDto[]),
         api.glControllerGetAccounts({ format: 'flat' }).then(r => r.data || []),
         api.costCentersControllerFindAll().then(r => r.data),
-        api.activitiesControllerFindAll().then(r => r.data)
+        api.activitiesControllerFindAll().then(r => r.data),
+        api.taxCategoriesControllerFindAll().then(r => r.data)
       ]);
       const sorted = [...data].sort((a: api.ProductGroupResponseDto, b: api.ProductGroupResponseDto) => 
         a.name.localeCompare(b.name, undefined, { numeric: true })
@@ -41,6 +43,7 @@ export default function ProductGroupsAdmin() {
       setGlAccounts(glAccs);
       setCostCenters(cc);
       setActivities(act);
+      setTaxCategories(taxCats || []);
     } catch(err) {
       const e = err as Error;
       toast.error(t('toasts.loadFailed') + ': ' + e.message);
@@ -55,6 +58,7 @@ export default function ProductGroupsAdmin() {
   const glAccountOptions = useMemo(() => glAccounts.map((a: api.GlAccountResponseDto) => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` })), [glAccounts]);
   const costCenterOptions = useMemo(() => costCenters.map((c) => ({ value: (c as unknown as { costCenterId: string }).costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
   const activityOptions = useMemo(() => activities.map((a) => ({ value: (a as unknown as { activityId: string }).activityId, label: `${a.code} - ${a.name}` })), [activities]);
+  const taxCategoryOptions = useMemo(() => taxCategories.map((t) => ({ value: (t as unknown as { taxCategoryId: string }).taxCategoryId, label: `${(t as unknown as { code: string }).code} - ${(t as unknown as { title: string }).title}${((t as unknown as { rate: string }).rate ? ` (${Number((t as unknown as { rate: string }).rate).toFixed(2)}%)` : '')}` })), [taxCategories]);
 
   const columns: InlineTableColumn<Partial<api.ProductGroupResponseDto>>[] = useMemo(() => [
     { key: 'groupCode', title: tc('code'), type: 'text', placeholder: t('placeholders.code'), width: 100 },
@@ -92,6 +96,8 @@ export default function ProductGroupsAdmin() {
         defaultRevenueAccountId: payload.defaultRevenueAccountId || null,
         defaultCostCenterId: payload.defaultCostCenterId || null,
         defaultActivityId: payload.defaultActivityId || null,
+        defaultPurchaseTaxCategoryId: (payload as Record<string, unknown>).defaultPurchaseTaxCategoryId as string || null,
+        defaultSalesTaxCategoryId: (payload as Record<string, unknown>).defaultSalesTaxCategoryId as string || null,
       } as api.UpdateProductGroupDto;
 
       if (!isNew) {
@@ -146,6 +152,8 @@ export default function ProductGroupsAdmin() {
             defaultRevenueAccountId: '',
             defaultCostCenterId: '',
             defaultActivityId: '',
+            purchaseTaxCategoryId: '',
+            salesTaxCategoryId: '',
           })}
           addLabel={t('newGroup')}
           emptyLabel={loading ? null : t('noGroups')}
@@ -162,6 +170,7 @@ export default function ProductGroupsAdmin() {
         glAccountOptions={glAccountOptions}
         costCenterOptions={costCenterOptions}
         activityOptions={activityOptions}
+        taxCategoryOptions={taxCategoryOptions}
       />
     </div>
   );

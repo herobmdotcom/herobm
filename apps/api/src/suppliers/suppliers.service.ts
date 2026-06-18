@@ -65,6 +65,19 @@ export class SuppliersService {
     const { page, limit, cursor, direction, searchTerm, includeArchived } =
       parsePagination(params);
 
+    const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
+    const scoreSql = searchTerm
+      ? sql<number>`
+          CASE 
+            WHEN ${coreSuppliers.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${coreSuppliers.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${coreSuppliers.vendorNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${coreSuppliers.vendorNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            ELSE 1
+          END
+        `
+      : sql<number>`0::int`;
+
     let qb = this.db
       .select({
         ...getTableColumns(coreSuppliers),
@@ -75,6 +88,7 @@ export class SuppliersService {
         groupIsPaymentBlocked: supplierGroups.isPaymentBlocked,
         groupPaymentBlockReason: supplierGroups.paymentBlockReason,
         supplierGroupTaxPositionId: supplierGroups.taxPositionId,
+        score: scoreSql,
       })
       .from(coreSuppliers)
       .leftJoin(
@@ -88,8 +102,8 @@ export class SuppliersService {
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(coreSuppliers.name, searchTerm),
-          ilike(coreSuppliers.vendorNumber, searchTerm),
+          ilike(coreSuppliers.name, `%${rawSearchTerm}%`),
+          ilike(coreSuppliers.vendorNumber, `%${rawSearchTerm}%`),
         ),
       );
     }
@@ -108,35 +122,39 @@ export class SuppliersService {
     const { data, nextCursor, prevCursor } = await withCursorPagination({
       qb,
       limit,
-      cursorObj: cursor,
+      cursorObj: cursor as { score: number; name: string; id: string } | null,
       direction: direction,
-      applyWhere: (q, c: { name: string; id: string }, dir) => {
-        const cursorCond =
-          dir === 'next'
-            ? or(
-                sql`${coreSuppliers.name} > ${c.name}`,
-                and(
-                  eq(coreSuppliers.name, c.name),
-                  sql`${coreSuppliers.vendorId} > ${c.id}`,
-                ),
-              )
-            : or(
-                sql`${coreSuppliers.name} < ${c.name}`,
-                and(
-                  eq(coreSuppliers.name, c.name),
-                  sql`${coreSuppliers.vendorId} < ${c.id}`,
-                ),
-              );
+      applyWhere: (q, c, dir) => {
+        const scoreOp = dir === 'next' ? sql`<` : sql`>`;
+        const strOp = dir === 'next' ? sql`>` : sql`<`;
+        const cursorCond = or(
+          sql`${scoreSql} ${scoreOp} ${c.score}`,
+          and(
+            eq(scoreSql, c.score),
+            sql`${coreSuppliers.name} ${strOp} ${c.name}`,
+          ),
+          and(
+            eq(scoreSql, c.score),
+            eq(coreSuppliers.name, c.name),
+            sql`${coreSuppliers.vendorId} ${strOp} ${c.id}`,
+          ),
+        );
         return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
       applyOrderBy: (q, dir) => {
+        const scoreOp = dir === 'next' ? desc : asc;
         const orderFn = dir === 'next' ? asc : desc;
         return q.orderBy(
+          scoreOp(scoreSql),
           orderFn(coreSuppliers.name),
           orderFn(coreSuppliers.vendorId),
         );
       },
-      encodeRow: (row) => ({ name: row.name, id: row.vendorId }),
+      encodeRow: (row) => ({
+        score: Number(row.score) || 0,
+        name: row.name,
+        id: row.vendorId,
+      }),
     });
 
     // Count query for total (same filters, no limit/offset)

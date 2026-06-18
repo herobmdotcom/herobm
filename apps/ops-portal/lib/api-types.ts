@@ -5361,6 +5361,8 @@ export interface components {
             defaultExpenseAccountId: string | null;
             defaultCostCenterId: string | null;
             defaultActivityId: string | null;
+            purchaseTaxCategoryId: string | null;
+            salesTaxCategoryId: string | null;
             tenantId: string;
             /** Format: date-time */
             createdAt: string;
@@ -5378,6 +5380,10 @@ export interface components {
             defaultCostCenterId?: string;
             /** Format: uuid */
             defaultActivityId?: string;
+            /** Format: uuid */
+            purchaseTaxCategoryId?: string;
+            /** Format: uuid */
+            salesTaxCategoryId?: string;
         };
         UpdateProductGroupDto: {
             groupCode?: string;
@@ -5390,6 +5396,10 @@ export interface components {
             defaultCostCenterId?: string;
             /** Format: uuid */
             defaultActivityId?: string;
+            /** Format: uuid */
+            purchaseTaxCategoryId?: string;
+            /** Format: uuid */
+            salesTaxCategoryId?: string;
         };
         InventoryResponseDto: {
             inventoryLevelId: string;

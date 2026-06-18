@@ -4,9 +4,10 @@ import { useState, useEffect, createContext, useContext, type ReactNode } from '
 import { useTranslations } from 'next-intl';
 import { login, getToken, getRole, validateSession, reportError } from '../../lib/api';
 
-const AuthContext = createContext<{ authenticated: boolean; role: string | null }>({
+const AuthContext = createContext<{ authenticated: boolean; role: string | null; permissions: { resource: string; action: string; effect: string }[] }>({
   authenticated: false,
   role: null,
+  permissions: [],
 });
 
 export function useAuth() { return useContext(AuthContext); }
@@ -23,6 +24,7 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
   const t = useTranslations('common.auth');
   const [authenticated, setAuthenticated] = useState(false);
   const [role, setRole] = useState<string | null>(null);
+  const [permissions, setPermissions] = useState<{ resource: string; action: string; effect: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [username, setUsername] = useState('');
@@ -31,10 +33,11 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
   useEffect(() => {
     if (getToken()) {
       // Don't blindly trust localStorage — verify the token is still valid
-      validateSession().then((valid) => {
-        if (valid) {
+      validateSession().then((res: { valid: boolean; data?: { role: string; permissions?: { resource: string; action: string; effect: string }[] } }) => {
+        if (res.valid && res.data) {
+          setRole(res.data.role);
+          setPermissions(res.data.permissions || []);
           setAuthenticated(true);
-          setRole(getRole());
         }
         setLoading(false);
       }).catch(() => {
@@ -48,10 +51,14 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
   const handleLogin = async () => {
     setError('');
     try {
-      const data = await login(username, password);
-      setAuthenticated(true);
-      setRole(data.role);
-    } catch (err) {
+      await login(username, password);
+      const session = await validateSession();
+      if (session.valid && session.data) {
+        setRole(session.data.role);
+        setPermissions(session.data.permissions || []);
+        setAuthenticated(true);
+      }
+    } catch (err: unknown) {
       setError(t('invalidCredentials'));
       reportError(err, 'AuthGate');
     }
@@ -109,7 +116,7 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
   }
 
   return (
-    <AuthContext.Provider value={{ authenticated, role }}>
+    <AuthContext.Provider value={{ authenticated, role, permissions }}>
       {children}
     </AuthContext.Provider>
   );

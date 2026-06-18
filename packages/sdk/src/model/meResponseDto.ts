@@ -5,8 +5,10 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { MeResponseDtoPermissionsItem } from './meResponseDtoPermissionsItem';
 
 export interface MeResponseDto {
   username: string;
   role: string;
+  permissions?: MeResponseDtoPermissionsItem[];
 }

@@ -92,19 +92,6 @@ export class PurchaseOrdersService {
   ): Promise<{ taxCategoryId: string; rate: number }> {
     const supplier = await this.suppliersService.findOne(vendorId);
 
-    let productDefaultTaxCategoryId: string | null = null;
-    if (productId && productId !== '00000000-0000-0000-0000-000000000000') {
-      const pRows = await tx
-        .select({ taxCategoryId: products.purchaseTaxCategoryId })
-        .from(products)
-        .where(eq(products.productId, productId))
-        .limit(1);
-
-      if (pRows.length > 0 && pRows[0].taxCategoryId) {
-        productDefaultTaxCategoryId = pRows[0].taxCategoryId;
-      }
-    }
-
     const resolvedTaxCategoryId =
       await this.taxResolutionEngine.resolveTaxCategory(
         {
@@ -115,7 +102,11 @@ export class PurchaseOrdersService {
             ((supplier as Record<string, unknown>)
               .supplierGroupTaxPositionId as string | undefined) ||
             null,
-          productDefaultTaxCategoryId,
+          productId:
+            productId === '00000000-0000-0000-0000-000000000000'
+              ? null
+              : productId || null,
+          productDefaultTaxCategoryId: null,
           manualOverrideTaxCategoryId: taxCategoryIdOverride || null,
         },
         tx,
@@ -287,14 +278,29 @@ export class PurchaseOrdersService {
       states,
     } = parsePagination(query);
 
+    const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
+    const scoreSql = searchTerm
+      ? sql<number>`
+          CASE 
+            WHEN ${purchaseOrders.orderNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${purchaseOrders.orderNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${purchaseOrders.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${purchaseOrders.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${coreSuppliers.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${coreSuppliers.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            ELSE 1
+          END
+        `
+      : sql<number>`0::int`;
+
     const conditions = [];
 
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(purchaseOrders.orderNumber, searchTerm),
-          ilike(purchaseOrders.name, searchTerm),
-          ilike(coreSuppliers.name, searchTerm),
+          ilike(purchaseOrders.orderNumber, `%${rawSearchTerm}%`),
+          ilike(purchaseOrders.name, `%${rawSearchTerm}%`),
+          ilike(coreSuppliers.name, `%${rawSearchTerm}%`),
         ),
       );
     }
@@ -347,6 +353,7 @@ export class PurchaseOrdersService {
         createdOn: purchaseOrders.createdOn,
         expectedDate: purchaseOrders.expectedDate,
         currencyCode: purchaseOrders.currencyCode,
+        score: scoreSql,
       })
       .from(purchaseOrders)
       .leftJoin(
@@ -366,31 +373,52 @@ export class PurchaseOrdersService {
     } = await withCursorPagination({
       qb: appQuery,
       limit,
-      cursorObj: cursor,
+      cursorObj: cursor as {
+        score: number;
+        createdOn: string;
+        id: string;
+      } | null,
       direction: direction,
-      applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
+      applyWhere: (q, c, dir) => {
         const cDate = c.createdOn;
-        const cursorCond =
-          dir === 'next'
-            ? or(
-                sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) < ${cDate}::timestamp`,
-                and(
-                  sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
-                  sql`${purchaseOrders.purchaseOrderId} < ${c.id}`,
-                ),
-              )
-            : or(
-                sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) > ${cDate}::timestamp`,
-                and(
-                  sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
-                  sql`${purchaseOrders.purchaseOrderId} > ${c.id}`,
-                ),
-              );
-        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
+        if (dir === 'next') {
+          const cursorCond = or(
+            sql`${scoreSql} < ${c.score}`,
+            and(
+              eq(scoreSql, c.score),
+              sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) < ${cDate}::timestamp`,
+            ),
+            and(
+              eq(scoreSql, c.score),
+              sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
+              sql`${purchaseOrders.purchaseOrderId} < ${c.id}`,
+            ),
+          );
+          return q.where(
+            whereClause ? and(whereClause, cursorCond) : cursorCond,
+          );
+        } else {
+          const cursorCond = or(
+            sql`${scoreSql} > ${c.score}`,
+            and(
+              eq(scoreSql, c.score),
+              sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) > ${cDate}::timestamp`,
+            ),
+            and(
+              eq(scoreSql, c.score),
+              sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
+              sql`${purchaseOrders.purchaseOrderId} > ${c.id}`,
+            ),
+          );
+          return q.where(
+            whereClause ? and(whereClause, cursorCond) : cursorCond,
+          );
+        }
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? desc : asc;
         return q.orderBy(
+          orderFn(scoreSql),
           orderFn(
             sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp)`,
           ),
@@ -398,6 +426,7 @@ export class PurchaseOrdersService {
         );
       },
       encodeRow: (row) => ({
+        score: Number(row.score) || 0,
         createdOn: row.createdOn
           ? row.createdOn.toISOString()
           : '1970-01-01T00:00:00.000Z',

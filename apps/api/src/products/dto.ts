@@ -210,6 +210,14 @@ export class CreateProductGroupDto {
   @IsOptional()
   @IsUUID()
   defaultActivityId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  purchaseTaxCategoryId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  salesTaxCategoryId?: string;
 }
 
 export class UpdateProductGroupDto {
@@ -236,6 +244,14 @@ export class UpdateProductGroupDto {
   @IsOptional()
   @IsUUID()
   defaultActivityId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  purchaseTaxCategoryId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  salesTaxCategoryId?: string;
 }
 
 export class LinkBinDto {
@@ -294,6 +310,8 @@ export class ProductGroupResponseDto {
   defaultExpenseAccountId: string | null;
   defaultCostCenterId: string | null;
   defaultActivityId: string | null;
+  purchaseTaxCategoryId: string | null;
+  salesTaxCategoryId: string | null;
   tenantId: string;
   createdAt: Date;
   updatedAt: Date;

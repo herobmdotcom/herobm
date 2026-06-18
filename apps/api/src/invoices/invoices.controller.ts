@@ -41,7 +41,11 @@ import {
   PurchaseInvoiceListResponseDto,
   SalesInvoiceListResponseDto,
 } from './dto';
-import { PaginationQuery, ApiPaginatedResponse, parsePagination } from '../common/pagination';
+import {
+  PaginationQuery,
+  ApiPaginatedResponse,
+  parsePagination,
+} from '../common/pagination';
 
 export class EmptyBodyDto {}
 

@@ -280,10 +280,10 @@ describe('API E2E — Sales Invoices', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBeGreaterThan(0);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data.length).toBeGreaterThan(0);
 
-      const found = res.body.find(
+      const found = res.body.data.find(
         (inv: {
           invoiceId: string;
           salesOrderId: string;
@@ -307,9 +307,9 @@ describe('API E2E — Sales Invoices', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(Array.isArray(res.body)).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
       expect(
-        res.body.every(
+        res.body.data.every(
           (inv: { customerId: string }) => inv.customerId === validCustomerId,
         ),
       ).toBe(true);
@@ -323,8 +323,8 @@ describe('API E2E — Sales Invoices', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBe(0);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data.length).toBe(0);
     });
 
     it('GL Integration — posted a journal entry for the invoice', async () => {

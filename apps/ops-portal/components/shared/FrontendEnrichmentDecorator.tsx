@@ -152,7 +152,7 @@ export function FrontendEnrichmentDecorator({
       )}
       
       {status === 'success' && (
-        /* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */
+         
         <span className="material-symbols-outlined text-[14px] text-emerald-500 cursor-help" title={tEnrichment('verified')}>
           check_circle
         </span>

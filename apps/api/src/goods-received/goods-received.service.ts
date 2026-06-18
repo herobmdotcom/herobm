@@ -803,12 +803,27 @@ export class GoodsReceivedService {
 
     const conditions = [];
 
+    const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
+    const scoreSql = searchTerm
+      ? sql<number>`
+          CASE 
+            WHEN ${goodsReceived.receiptNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${goodsReceived.receiptNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${goodsReceived.packingSlipNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${goodsReceived.packingSlipNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${suppliers.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${suppliers.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            ELSE 1
+          END
+        `
+      : sql<number>`0::int`;
+
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(goodsReceived.receiptNumber, searchTerm),
-          ilike(goodsReceived.packingSlipNumber, searchTerm),
-          ilike(suppliers.name, searchTerm),
+          ilike(goodsReceived.receiptNumber, `%${rawSearchTerm}%`),
+          ilike(goodsReceived.packingSlipNumber, `%${rawSearchTerm}%`),
+          ilike(suppliers.name, `%${rawSearchTerm}%`),
         ),
       );
     }
@@ -824,6 +839,7 @@ export class GoodsReceivedService {
         receipt: goodsReceived,
         vendorName: suppliers.name,
         vendorNumber: suppliers.vendorNumber,
+        score: scoreSql,
       })
       .from(goodsReceived)
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
@@ -838,35 +854,58 @@ export class GoodsReceivedService {
     const { data, nextCursor, prevCursor } = await withCursorPagination({
       qb,
       limit,
-      cursorObj: cursor,
+      cursorObj: cursor as {
+        score: number;
+        createdOn: string;
+        id: string;
+      } | null,
       direction: direction,
-      applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
-        const cursorCond =
-          dir === 'next'
-            ? or(
-                sql`${goodsReceived.createdOn} < ${c.createdOn}`,
-                and(
-                  eq(goodsReceived.createdOn, new Date(c.createdOn)),
-                  sql`${goodsReceived.goodsReceivedId} < ${c.id}`,
-                ),
-              )
-            : or(
-                sql`${goodsReceived.createdOn} > ${c.createdOn}`,
-                and(
-                  eq(goodsReceived.createdOn, new Date(c.createdOn)),
-                  sql`${goodsReceived.goodsReceivedId} > ${c.id}`,
-                ),
-              );
-        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
+      applyWhere: (q, c, dir) => {
+        const cDate = c.createdOn;
+        if (dir === 'next') {
+          const cursorCond = or(
+            sql`${scoreSql} < ${c.score}`,
+            and(
+              eq(scoreSql, c.score),
+              sql`${goodsReceived.createdOn} < ${cDate}::timestamp`,
+            ),
+            and(
+              eq(scoreSql, c.score),
+              eq(goodsReceived.createdOn, sql`${cDate}::timestamp`),
+              sql`${goodsReceived.goodsReceivedId} < ${c.id}`,
+            ),
+          );
+          return q.where(
+            whereClause ? and(whereClause, cursorCond) : cursorCond,
+          );
+        } else {
+          const cursorCond = or(
+            sql`${scoreSql} > ${c.score}`,
+            and(
+              eq(scoreSql, c.score),
+              sql`${goodsReceived.createdOn} > ${cDate}::timestamp`,
+            ),
+            and(
+              eq(scoreSql, c.score),
+              eq(goodsReceived.createdOn, sql`${cDate}::timestamp`),
+              sql`${goodsReceived.goodsReceivedId} > ${c.id}`,
+            ),
+          );
+          return q.where(
+            whereClause ? and(whereClause, cursorCond) : cursorCond,
+          );
+        }
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? desc : asc;
         return q.orderBy(
+          orderFn(scoreSql),
           orderFn(goodsReceived.createdOn),
           orderFn(goodsReceived.goodsReceivedId),
         );
       },
       encodeRow: (row) => ({
+        score: Number(row.score) || 0,
         createdOn: (row.receipt.createdOn || new Date()).toISOString(),
         id: row.receipt.goodsReceivedId,
       }),
@@ -971,15 +1010,36 @@ export class GoodsReceivedService {
       conditions.push(eq(goodsReceived.locationId, locationId));
     }
 
+    const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
+    const scoreSql = searchTerm
+      ? sql<number>`
+          CASE 
+            WHEN ${goodsReceived.receiptNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${goodsReceived.receiptNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${goodsReceived.packingSlipNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${goodsReceived.packingSlipNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${products.productNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${products.productNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${products.alternateProductNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${products.alternateProductNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${products.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${products.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${suppliers.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${suppliers.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            ELSE 1
+          END
+        `
+      : sql<number>`0::int`;
+
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(goodsReceived.receiptNumber, searchTerm),
-          ilike(goodsReceived.packingSlipNumber, searchTerm),
-          ilike(products.productNumber, searchTerm),
-          ilike(products.alternateProductNumber, searchTerm),
-          ilike(products.name, searchTerm),
-          ilike(suppliers.name, searchTerm),
+          ilike(goodsReceived.receiptNumber, `%${rawSearchTerm}%`),
+          ilike(goodsReceived.packingSlipNumber, `%${rawSearchTerm}%`),
+          ilike(products.productNumber, `%${rawSearchTerm}%`),
+          ilike(products.alternateProductNumber, `%${rawSearchTerm}%`),
+          ilike(products.name, `%${rawSearchTerm}%`),
+          ilike(suppliers.name, `%${rawSearchTerm}%`),
         ),
       );
     }
@@ -1005,6 +1065,7 @@ export class GoodsReceivedService {
         productName: products.name,
         orderNumber: purchaseOrders.orderNumber,
         stateCode: goodsReceived.stateCode,
+        score: scoreSql,
       })
       .from(goodsReceivedLines)
       .leftJoin(
@@ -1027,15 +1088,24 @@ export class GoodsReceivedService {
     const { data, nextCursor, prevCursor } = await withCursorPagination({
       qb,
       limit,
-      cursorObj: cursor,
+      cursorObj: cursor as {
+        score: number;
+        createdOn: string;
+        id: string;
+      } | null,
       direction: direction,
-      applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
+      applyWhere: (q, c, dir) => {
         const cDate = c.createdOn;
         if (dir === 'next') {
           return q.where(
             or(
-              sql`${goodsReceived.createdOn} < ${cDate}::timestamp`,
+              sql`${scoreSql} < ${c.score}`,
               and(
+                eq(scoreSql, c.score),
+                sql`${goodsReceived.createdOn} < ${cDate}::timestamp`,
+              ),
+              and(
+                eq(scoreSql, c.score),
                 eq(goodsReceived.createdOn, sql`${cDate}::timestamp`),
                 sql`${goodsReceivedLines.goodsReceivedLineId} > ${c.id}`,
               ),
@@ -1044,8 +1114,13 @@ export class GoodsReceivedService {
         } else {
           return q.where(
             or(
-              sql`${goodsReceived.createdOn} > ${cDate}::timestamp`,
+              sql`${scoreSql} > ${c.score}`,
               and(
+                eq(scoreSql, c.score),
+                sql`${goodsReceived.createdOn} > ${cDate}::timestamp`,
+              ),
+              and(
+                eq(scoreSql, c.score),
                 eq(goodsReceived.createdOn, sql`${cDate}::timestamp`),
                 sql`${goodsReceivedLines.goodsReceivedLineId} < ${c.id}`,
               ),
@@ -1057,11 +1132,13 @@ export class GoodsReceivedService {
         const orderFn = dir === 'next' ? desc : asc;
         const tieBreaker = dir === 'next' ? asc : desc;
         return q.orderBy(
+          orderFn(scoreSql),
           orderFn(goodsReceived.createdOn),
           tieBreaker(goodsReceivedLines.goodsReceivedLineId),
         );
       },
       encodeRow: (row) => ({
+        score: Number(row.score) || 0,
         createdOn: row.createdOn,
         id: row.line.goodsReceivedLineId,
       }),
@@ -1117,12 +1194,27 @@ export class GoodsReceivedService {
       conditions.push(eq(goodsReceivedLines.productId, query.productId));
     }
 
+    const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
+    const scoreSql = searchTerm
+      ? sql<number>`
+          CASE 
+            WHEN ${goodsReceived.receiptNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${goodsReceived.receiptNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${products.productNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${products.productNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${products.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${products.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            ELSE 1
+          END
+        `
+      : sql<number>`0::int`;
+
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(goodsReceived.receiptNumber, `%${searchTerm}%`),
-          ilike(products.name, `%${searchTerm}%`),
-          ilike(products.productNumber, `%${searchTerm}%`),
+          ilike(goodsReceived.receiptNumber, `%${rawSearchTerm}%`),
+          ilike(products.name, `%${rawSearchTerm}%`),
+          ilike(products.productNumber, `%${rawSearchTerm}%`),
         ),
       );
     }
@@ -1141,6 +1233,7 @@ export class GoodsReceivedService {
         productName: products.name,
         orderNumber: purchaseOrders.orderNumber,
         stateCode: goodsReceived.stateCode,
+        score: scoreSql,
       })
       .from(goodsReceivedLines)
       .leftJoin(
@@ -1163,15 +1256,24 @@ export class GoodsReceivedService {
     const { data, nextCursor, prevCursor } = await withCursorPagination({
       qb,
       limit,
-      cursorObj: cursor,
+      cursorObj: cursor as {
+        score: number;
+        createdOn: string;
+        id: string;
+      } | null,
       direction: direction,
-      applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
+      applyWhere: (q, c, dir) => {
         const cDate = c.createdOn;
         if (dir === 'next') {
           return q.where(
             or(
-              sql`${goodsReceived.createdOn} < ${cDate}::timestamp`,
+              sql`${scoreSql} < ${c.score}`,
               and(
+                eq(scoreSql, c.score),
+                sql`${goodsReceived.createdOn} < ${cDate}::timestamp`,
+              ),
+              and(
+                eq(scoreSql, c.score),
                 eq(goodsReceived.createdOn, sql`${cDate}::timestamp`),
                 sql`${goodsReceivedLines.goodsReceivedLineId} > ${c.id}`,
               ),
@@ -1180,8 +1282,13 @@ export class GoodsReceivedService {
         } else {
           return q.where(
             or(
-              sql`${goodsReceived.createdOn} > ${cDate}::timestamp`,
+              sql`${scoreSql} > ${c.score}`,
               and(
+                eq(scoreSql, c.score),
+                sql`${goodsReceived.createdOn} > ${cDate}::timestamp`,
+              ),
+              and(
+                eq(scoreSql, c.score),
                 eq(goodsReceived.createdOn, sql`${cDate}::timestamp`),
                 sql`${goodsReceivedLines.goodsReceivedLineId} < ${c.id}`,
               ),
@@ -1193,11 +1300,13 @@ export class GoodsReceivedService {
         const orderFn = dir === 'next' ? desc : asc;
         const tieBreaker = dir === 'next' ? asc : desc;
         return q.orderBy(
+          orderFn(scoreSql),
           orderFn(goodsReceived.createdOn),
           tieBreaker(goodsReceivedLines.goodsReceivedLineId),
         );
       },
       encodeRow: (row) => ({
+        score: Number(row.score) || 0,
         createdOn: row.createdOn,
         id: row.line.goodsReceivedLineId,
       }),

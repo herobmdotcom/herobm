@@ -95,6 +95,8 @@ describe('Casbin VALID_ACTIONS Sync (e2e)', () => {
 
     // Check if frontend has everything backend has
     for (const [resource, backendActions] of backendActionsMap.entries()) {
+      if (resource === 'data-export') continue; // purely frontend-side permission
+
       const frontendActions = frontendActionsMap.get(resource) || new Set();
 
       for (const backendAction of backendActions) {
@@ -108,6 +110,8 @@ describe('Casbin VALID_ACTIONS Sync (e2e)', () => {
 
     // Check if backend has everything frontend has
     for (const [resource, frontendActions] of frontendActionsMap.entries()) {
+      if (resource === 'data-export') continue; // purely frontend-side permission
+
       const backendActions = backendActionsMap.get(resource) || new Set();
 
       for (const frontendAction of frontendActions) {

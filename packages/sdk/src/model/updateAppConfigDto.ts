@@ -10,6 +10,8 @@ import type { UpdateAppConfigDtoEnrichmentProviderMappings } from './updateAppCo
 
 export interface UpdateAppConfigDto {
   defaultFulfillmentLocationId?: string;
+  defaultPurchaseTaxCategoryId?: string;
+  defaultSalesTaxCategoryId?: string;
   apiRateLimit?: string;
   taxProviderMappings?: UpdateAppConfigDtoTaxProviderMappings;
   enrichmentProviderMappings?: UpdateAppConfigDtoEnrichmentProviderMappings;

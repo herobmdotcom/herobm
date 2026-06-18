@@ -51,6 +51,7 @@ p, admin, api_keys, write, allow
 p, admin, webhooks, read, allow
 p, admin, webhooks, write, allow
 p, admin, events, write, allow
+p, admin, data-export, read, allow
 
 # system — bootstrap role for setup execution only
 p, system, setup, execute, allow

@@ -9,6 +9,7 @@
 export type ExecuteEltDtoSource = typeof ExecuteEltDtoSource[keyof typeof ExecuteEltDtoSource];
 
 
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ExecuteEltDtoSource = {
   abm: 'abm',
   odoo: 'odoo',

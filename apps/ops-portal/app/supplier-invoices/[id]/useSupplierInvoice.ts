@@ -26,6 +26,7 @@ export interface PurchaseInvoiceDetails {
   receiptFilename?: string;
   totalAmount: string;
   taxAmount: string;
+  outstandingAmount?: string;
   currencyCode: string;
   stateCode: string;
   notes?: string;

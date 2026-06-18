@@ -269,7 +269,9 @@ export const salesOrderLineItems = herobmCore.table(
       t.fulfillmentLocationId,
     ),
     orderIdx: index('idx_sales_order_lines_order_id').on(t.salesOrderId),
-    parentLineIdx: index('idx_sales_order_lines_parent_line').on(t.parentLineId),
+    parentLineIdx: index('idx_sales_order_lines_parent_line').on(
+      t.parentLineId,
+    ),
     parentLineFk: foreignKey({
       columns: [t.parentLineId],
       foreignColumns: [t.salesOrderLineId],
@@ -378,7 +380,9 @@ export const salesOrderReturnLines = herobmCore.table(
       .default(PUTAWAY_STATUS.PENDING_PUTAWAY),
   },
   (t) => ({
-    soLineIdx: index('idx_sales_order_return_lines_so_line').on(t.salesOrderLineId),
+    soLineIdx: index('idx_sales_order_return_lines_so_line').on(
+      t.salesOrderLineId,
+    ),
   }),
 );
 
@@ -440,7 +444,9 @@ export const salesCreditNoteLines = herobmCore.table(
     taxAmount: numeric('tax_amount').default('0'),
   },
   (t) => ({
-    soLineIdx: index('idx_sales_credit_note_lines_so_line').on(t.salesOrderLineId),
+    soLineIdx: index('idx_sales_credit_note_lines_so_line').on(
+      t.salesOrderLineId,
+    ),
   }),
 );
 
@@ -496,7 +502,9 @@ export const salesOrderShipmentLines = herobmCore.table(
     quantityShipped: numeric('quantity_shipped').notNull(),
   },
   (t) => ({
-    soLineIdx: index('idx_sales_order_shipment_lines_so_line').on(t.salesOrderLineId),
+    soLineIdx: index('idx_sales_order_shipment_lines_so_line').on(
+      t.salesOrderLineId,
+    ),
   }),
 );
 
@@ -1361,6 +1369,12 @@ export const productGroups = herobmCore.table('product_groups', {
   defaultActivityId: uuid('default_activity_id').references(
     () => activities.activityId,
   ),
+  purchaseTaxCategoryId: uuid('purchase_tax_category_id').references(
+    () => taxCategories.taxCategoryId,
+  ),
+  salesTaxCategoryId: uuid('sales_tax_category_id').references(
+    () => taxCategories.taxCategoryId,
+  ),
 });
 
 // ---------------------------------------------------------------------------
@@ -1835,20 +1849,24 @@ export const salesInvoices = herobmCore.table(
 // ---------------------------------------------------------------------------
 // sales_invoice_lines  (AR details)
 // ---------------------------------------------------------------------------
-export const salesInvoiceLines = herobmCore.table('sales_invoice_lines', {
-  invoiceLineId: uuid('invoice_line_id').primaryKey().defaultRandom(),
-  invoiceId: uuid('invoice_id')
-    .notNull()
-    .references(() => salesInvoices.invoiceId),
-  salesOrderLineId: uuid('sales_order_line_id')
-    .notNull()
-    .references(() => salesOrderLineItems.salesOrderLineId),
-  quantityInvoiced: numeric('quantity_invoiced').notNull(),
-  pricePerUnit: numeric('price_per_unit').notNull(),
-  amount: numeric('amount').notNull(),
-}, (t) => ({
-  soLineIdx: index('idx_sales_invoice_lines_so_line').on(t.salesOrderLineId),
-}));
+export const salesInvoiceLines = herobmCore.table(
+  'sales_invoice_lines',
+  {
+    invoiceLineId: uuid('invoice_line_id').primaryKey().defaultRandom(),
+    invoiceId: uuid('invoice_id')
+      .notNull()
+      .references(() => salesInvoices.invoiceId),
+    salesOrderLineId: uuid('sales_order_line_id')
+      .notNull()
+      .references(() => salesOrderLineItems.salesOrderLineId),
+    quantityInvoiced: numeric('quantity_invoiced').notNull(),
+    pricePerUnit: numeric('price_per_unit').notNull(),
+    amount: numeric('amount').notNull(),
+  },
+  (t) => ({
+    soLineIdx: index('idx_sales_invoice_lines_so_line').on(t.salesOrderLineId),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // purchase_invoices  (AP header)
@@ -1889,24 +1907,30 @@ export const purchaseInvoices = herobmCore.table(
 // ---------------------------------------------------------------------------
 // purchase_invoice_lines  (AP details)
 // ---------------------------------------------------------------------------
-export const purchaseInvoiceLines = herobmCore.table('purchase_invoice_lines', {
-  invoiceLineId: uuid('invoice_line_id').primaryKey().defaultRandom(),
-  invoiceId: uuid('invoice_id')
-    .notNull()
-    .references(() => purchaseInvoices.invoiceId),
-  purchaseOrderLineId: uuid('purchase_order_line_id').references(
-    () => purchaseOrderLineItems.purchaseOrderLineId,
-  ),
-  productId: uuid('product_id').references(() => products.productId),
-  glAccountId: uuid('gl_account_id').references(() => glAccounts.glAccountId),
-  description: text('description'),
-  quantityInvoiced: numeric('quantity_invoiced').notNull(),
-  pricePerUnit: numeric('price_per_unit').notNull(),
-  amount: numeric('amount').notNull(),
-  matchStatus: text('match_status').notNull().default(MATCH_STATUS.UNMATCHED),
-}, (t) => ({
-  poLineIdx: index('idx_purchase_invoice_lines_po_line').on(t.purchaseOrderLineId),
-}));
+export const purchaseInvoiceLines = herobmCore.table(
+  'purchase_invoice_lines',
+  {
+    invoiceLineId: uuid('invoice_line_id').primaryKey().defaultRandom(),
+    invoiceId: uuid('invoice_id')
+      .notNull()
+      .references(() => purchaseInvoices.invoiceId),
+    purchaseOrderLineId: uuid('purchase_order_line_id').references(
+      () => purchaseOrderLineItems.purchaseOrderLineId,
+    ),
+    productId: uuid('product_id').references(() => products.productId),
+    glAccountId: uuid('gl_account_id').references(() => glAccounts.glAccountId),
+    description: text('description'),
+    quantityInvoiced: numeric('quantity_invoiced').notNull(),
+    pricePerUnit: numeric('price_per_unit').notNull(),
+    amount: numeric('amount').notNull(),
+    matchStatus: text('match_status').notNull().default(MATCH_STATUS.UNMATCHED),
+  },
+  (t) => ({
+    poLineIdx: index('idx_purchase_invoice_lines_po_line').on(
+      t.purchaseOrderLineId,
+    ),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // purchase_invoice_receipts  (N:N mapping for 3-way matching between invoice lines and received goods lines)
@@ -2195,6 +2219,12 @@ export const appSettings = herobmCore.table('app_settings', {
   ).references(() => locations.locationId),
   defaultTradingTermsId: uuid('default_trading_terms_id').references(
     () => tradingTerms.tradingTermsId,
+  ),
+  defaultPurchaseTaxCategoryId: uuid(
+    'default_purchase_tax_category_id',
+  ).references(() => taxCategories.taxCategoryId),
+  defaultSalesTaxCategoryId: uuid('default_sales_tax_category_id').references(
+    () => taxCategories.taxCategoryId,
   ),
   inventoryValuationMethod: text('inventory_valuation_method')
     .notNull()

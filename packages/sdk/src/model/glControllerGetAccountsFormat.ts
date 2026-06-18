@@ -9,6 +9,7 @@
 export type GlControllerGetAccountsFormat = typeof GlControllerGetAccountsFormat[keyof typeof GlControllerGetAccountsFormat];
 
 
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const GlControllerGetAccountsFormat = {
   tree: 'tree',
   flat: 'flat',

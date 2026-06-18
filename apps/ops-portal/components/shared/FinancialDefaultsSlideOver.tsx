@@ -25,6 +25,8 @@ export type FinancialDefaultsGroupData = {
   defaultCostCenterId?: string | null;
   defaultActivityId?: string | null;
   taxPositionId?: string | null;
+  purchaseTaxCategoryId?: string | null;
+  salesTaxCategoryId?: string | null;
   [key: string]: unknown;
 };
 
@@ -40,6 +42,7 @@ export interface FinancialDefaultsSlideOverProps<T extends FinancialDefaultsGrou
   costCenterOptions: Option[];
   activityOptions: Option[];
   taxPositionOptions?: Option[];
+  taxCategoryOptions?: Option[];
 }
 
 export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGroupData = FinancialDefaultsGroupData>({
@@ -52,7 +55,8 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
   glAccountOptions,
   costCenterOptions,
   activityOptions,
-  taxPositionOptions = []
+  taxPositionOptions = [],
+  taxCategoryOptions = []
 }: FinancialDefaultsSlideOverProps<T>) {
   const tc = useTranslations('admin.common');
   const tGlobal = useTranslations('common');
@@ -346,6 +350,48 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
               ))}
             </select>
           </div>
+        )}
+
+        {/* Tax Categories (Product) */}
+        {groupType === 'product' && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Sales Tax Category
+              </label>
+              <select
+                className="input w-full"
+                value={formData.salesTaxCategoryId || ''}
+                onChange={(e) => handleChange('salesTaxCategoryId', e.target.value)}
+                disabled={saving}
+              >
+                <option value="">-- {tGlobal('selectNone')} --</option>
+                {taxCategoryOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Purchase Tax Category
+              </label>
+              <select
+                className="input w-full"
+                value={formData.purchaseTaxCategoryId || ''}
+                onChange={(e) => handleChange('purchaseTaxCategoryId', e.target.value)}
+                disabled={saving}
+              >
+                <option value="">-- {tGlobal('selectNone')} --</option>
+                {taxCategoryOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
         )}
       </div>
     </SlideOver>

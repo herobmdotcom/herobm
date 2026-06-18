@@ -9,6 +9,7 @@
 export type QuarantineMoveDtoSourceType = typeof QuarantineMoveDtoSourceType[keyof typeof QuarantineMoveDtoSourceType];
 
 
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const QuarantineMoveDtoSourceType = {
   goods_receipt: 'goods_receipt',
   sales_return: 'sales_return',

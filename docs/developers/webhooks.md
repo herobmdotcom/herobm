@@ -61,14 +61,14 @@ The `eventType` is formed by combining the `entityType` and the action (e.g., `s
 
 | Entity Type | Supported Event Actions |
 |-------------|--------------------------|
-| `sales_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted`, `auto_status_changed`, `backorders_allocated`, `credit_note_posted`, `demand_allocated`, `demand_reallocated`, `demand_unallocated`, `line_added`, `line_removed`, `line_updated`, `post_confirmation_line_added`, `quote_generated`, `return_created`, `return_line_added`, `return_line_removed`, `return_line_updated`, `return_updated`, `sales_invoiced`, `tax_calculated`, `updated` |
-| `sales_invoice` | `created`, `status_changed`, `deleted` |
-| `sales_return` | `created`, `status_changed`, `processed` |
-| `purchase_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted`, `demand_allocated`, `demand_unallocated`, `invoice_matched`, `invoice_unmatched`, `line_added`, `line_removed`, `line_updated`, `return_created`, `updated` |
+| `sales_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted`, `auto_status_changed`, `backorders_allocated`, `credit_note_posted`, `demand_allocated`, `demand_reallocated`, `demand_unallocated`, `post_confirmation_line_added`, `quote_generated`, `return_created`, `return_line_added`, `return_line_removed`, `return_line_updated`, `return_updated`, `sales_invoiced`, `tax_calculated`, `updated` |
+| `sales_invoice` | `created`, `status_changed`, `deleted`, `credit_note_posted` |
+| `sales_return` | `created`, `status_changed`, `processed`, `updated` |
+| `purchase_order` | `created`, `status_changed`, `archived`, `unarchived`, `deleted`, `demand_allocated`, `demand_unallocated`, `invoice_matched`, `invoice_unmatched`, `return_created`, `updated` |
 | `purchase_invoice` | `created`, `status_changed`, `deleted`, `order_linked`, `order_unlinked`, `updated` |
 | `purchase_return` | `created`, `status_changed`, `processed` |
 | `warehouse` | `receipt_created`, `receipt_status_changed`, `shipment_created`, `shipment_status_changed`, `shipment_dispatched`, `pick_created`, `pick_cancelled`, `putaway_completed`, `stock_moved` |
-| `transfer_order` | `created`, `status_changed`, `deleted`, `line_removed`, `stock_dispatched`, `updated` |
+| `transfer_order` | `created`, `status_changed`, `deleted`, `stock_dispatched`, `updated` |
 | `inventory_ledger` | `entry_posted` |
 | `product` | `created`, `updated`, `deleted`, `archived`, `unarchived`, `status_changed`, `uom_added`, `uom_removed` |
 | `product_group` | `created`, `updated`, `deleted` |

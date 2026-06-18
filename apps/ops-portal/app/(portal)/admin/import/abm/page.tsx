@@ -499,7 +499,7 @@ export default function AdminImportPage() {
             onClick={handleStopJob}
             className="px-3 py-1 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded font-bold text-xs transition-colors border border-red-500/20"
           >
-            {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+            { }
             Stop Job
           </button>
         </div>

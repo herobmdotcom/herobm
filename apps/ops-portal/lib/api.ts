@@ -94,20 +94,23 @@ function clearSessionAndReload(): never {
  * Returns true if valid, false if expired/invalid (and clears storage).
  * Used by AuthGate on startup so stale tokens don't skip the login screen.
  */
-export async function validateSession(): Promise<boolean> {
-  if (!token) return false;
+export async function validateSession(): Promise<{ valid: boolean; data?: any }> {
+  if (!token) return { valid: false };
   try {
     const res = await fetch('/api/auth/me', {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (res.ok) return true;
+    if (res.ok) {
+      const data = await res.json();
+      return { valid: true, data };
+    }
     // Token is expired or invalid — clear it silently
     console.info(`[validateSession] Token rejected/expired (Status: ${res.status})`);
     clearSession();
-    return false;
+    return { valid: false };
   } catch {
     // Network error — keep the token, let real API calls handle it
-    return true;
+    return { valid: true, data: { role: getRole() } };
   }
 }
 

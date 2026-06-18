@@ -63,7 +63,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
 
     const heroBmAllocated = allocs.reduce((sum, a) => sum + parseFloat(a.allocatedAmount), 0);
     const totalAmount = parseFloat(invoice.totalAmount) || 0;
-    const outstandingAmount = parseFloat(invoice.outstandingAmount) || 0;
+    const outstandingAmount = parseFloat(invoice.outstandingAmount ?? '0') || 0;
     
     const legacyPaidAmount = totalAmount - outstandingAmount - heroBmAllocated;
     

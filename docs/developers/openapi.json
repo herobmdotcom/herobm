@@ -9101,7 +9101,7 @@
         "operationId": "InvoiceDetailController_getSalesInvoicesGlobal",
         "parameters": [
           {
-            "name": "days",
+            "name": "q",
             "required": false,
             "in": "query",
             "schema": {
@@ -9109,7 +9109,71 @@
             }
           },
           {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
             "required": false,
             "in": "query",
             "schema": {
@@ -9131,14 +9195,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -9147,10 +9203,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SalesInvoiceResponseDto"
-                  }
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/SalesInvoiceResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -9169,7 +9236,79 @@
         "operationId": "InvoiceDetailController_getPurchaseInvoicesGlobal",
         "parameters": [
           {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
             "required": false,
             "in": "query",
             "schema": {
@@ -9199,14 +9338,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -9215,10 +9346,21 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
-                  }
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -15629,6 +15771,28 @@
           },
           "role": {
             "type": "string"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "resource": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                },
+                "effect": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "resource",
+                "action",
+                "effect"
+              ]
+            }
           }
         },
         "required": [
@@ -16589,6 +16753,14 @@
             "type": "string",
             "nullable": true
           },
+          "purchaseTaxCategoryId": {
+            "type": "string",
+            "nullable": true
+          },
+          "salesTaxCategoryId": {
+            "type": "string",
+            "nullable": true
+          },
           "tenantId": {
             "type": "string"
           },
@@ -16609,6 +16781,8 @@
           "defaultExpenseAccountId",
           "defaultCostCenterId",
           "defaultActivityId",
+          "purchaseTaxCategoryId",
+          "salesTaxCategoryId",
           "tenantId",
           "createdAt",
           "updatedAt"
@@ -16636,6 +16810,14 @@
             "format": "uuid"
           },
           "defaultActivityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "purchaseTaxCategoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "salesTaxCategoryId": {
             "type": "string",
             "format": "uuid"
           }
@@ -16667,6 +16849,14 @@
             "format": "uuid"
           },
           "defaultActivityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "purchaseTaxCategoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "salesTaxCategoryId": {
             "type": "string",
             "format": "uuid"
           }
@@ -18549,6 +18739,12 @@
           },
           "smtpFromAddress": {
             "type": "string"
+          },
+          "defaultPurchaseTaxCategoryId": {
+            "type": "string"
+          },
+          "defaultSalesTaxCategoryId": {
+            "type": "string"
           }
         },
         "required": [
@@ -18560,6 +18756,12 @@
         "type": "object",
         "properties": {
           "defaultFulfillmentLocationId": {
+            "type": "string"
+          },
+          "defaultPurchaseTaxCategoryId": {
+            "type": "string"
+          },
+          "defaultSalesTaxCategoryId": {
             "type": "string"
           },
           "apiRateLimit": {
@@ -23562,6 +23764,9 @@
             "type": "string"
           },
           "enableCustomImports": {
+            "type": "boolean"
+          },
+          "importInventoryFromLocations": {
             "type": "boolean"
           }
         }

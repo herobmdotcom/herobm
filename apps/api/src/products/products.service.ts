@@ -37,11 +37,29 @@ export class ProductsService {
     const { page, limit, cursor, direction, searchTerm, includeArchived } =
       parsePagination(query);
 
+    const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
+    const scoreSql = searchTerm
+      ? sql<number>`
+          CASE 
+            WHEN ${coreProducts.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${coreProducts.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${coreProducts.productNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${coreProducts.productNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${coreProducts.barcode} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${coreProducts.barcode} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${coreProducts.alternateProductNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${coreProducts.alternateProductNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            ELSE 1
+          END
+        `
+      : sql<number>`0::int`;
+
     let qb = this.db
       .select({
         ...getTableColumns(coreProducts),
         productGroupName: productGroups.name,
         productGroupCode: productGroups.groupCode,
+        score: scoreSql,
       })
       .from(coreProducts)
       .leftJoin(
@@ -55,10 +73,10 @@ export class ProductsService {
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(coreProducts.name, searchTerm),
-          ilike(coreProducts.productNumber, searchTerm),
-          ilike(coreProducts.barcode, searchTerm),
-          ilike(coreProducts.alternateProductNumber, searchTerm),
+          ilike(coreProducts.name, `%${rawSearchTerm}%`),
+          ilike(coreProducts.productNumber, `%${rawSearchTerm}%`),
+          ilike(coreProducts.barcode, `%${rawSearchTerm}%`),
+          ilike(coreProducts.alternateProductNumber, `%${rawSearchTerm}%`),
         ),
       );
     }
@@ -79,35 +97,39 @@ export class ProductsService {
     const { data, nextCursor, prevCursor } = await withCursorPagination({
       qb,
       limit,
-      cursorObj: cursor,
+      cursorObj: cursor as { score: number; name: string; id: string } | null,
       direction: direction,
-      applyWhere: (q, c: { name: string; id: string }, dir) => {
-        const cursorCond =
-          dir === 'next'
-            ? or(
-                sql`${coreProducts.name} > ${c.name}`,
-                and(
-                  eq(coreProducts.name, c.name),
-                  sql`${coreProducts.productId} > ${c.id}`,
-                ),
-              )
-            : or(
-                sql`${coreProducts.name} < ${c.name}`,
-                and(
-                  eq(coreProducts.name, c.name),
-                  sql`${coreProducts.productId} < ${c.id}`,
-                ),
-              );
+      applyWhere: (q, c, dir) => {
+        const scoreOp = dir === 'next' ? sql`<` : sql`>`;
+        const strOp = dir === 'next' ? sql`>` : sql`<`;
+        const cursorCond = or(
+          sql`${scoreSql} ${scoreOp} ${c.score}`,
+          and(
+            eq(scoreSql, c.score),
+            sql`${coreProducts.name} ${strOp} ${c.name}`,
+          ),
+          and(
+            eq(scoreSql, c.score),
+            eq(coreProducts.name, c.name),
+            sql`${coreProducts.productId} ${strOp} ${c.id}`,
+          ),
+        );
         return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
       applyOrderBy: (q, dir) => {
+        const scoreOp = dir === 'next' ? desc : asc;
         const orderFn = dir === 'next' ? asc : desc;
         return q.orderBy(
+          scoreOp(scoreSql),
           orderFn(coreProducts.name),
           orderFn(coreProducts.productId),
         );
       },
-      encodeRow: (row) => ({ name: row.name, id: row.productId }),
+      encodeRow: (row) => ({
+        score: Number(row.score) || 0,
+        name: row.name,
+        id: row.productId,
+      }),
     });
 
     // Count query for total (optional, could be removed later if too slow)

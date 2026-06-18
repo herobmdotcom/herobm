@@ -9,7 +9,7 @@
 export type UpdateUserDtoRole = typeof UpdateUserDtoRole[keyof typeof UpdateUserDtoRole];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare -- External API integration boundaries where exact types are unknown.
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const UpdateUserDtoRole = {
   admin: 'admin',
   viewer: 'viewer',

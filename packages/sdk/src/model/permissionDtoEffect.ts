@@ -9,6 +9,7 @@
 export type PermissionDtoEffect = typeof PermissionDtoEffect[keyof typeof PermissionDtoEffect];
 
 
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const PermissionDtoEffect = {
   allow: 'allow',
   deny: 'deny',

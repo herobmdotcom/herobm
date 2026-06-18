@@ -33,4 +33,5 @@ export const VALID_ACTIONS: Record<string, string[]> = {
   'users': ['read', 'write'],
   'gl': ['read', 'write'],
   'locations': [],
+  'data-export': ['read'],
 };

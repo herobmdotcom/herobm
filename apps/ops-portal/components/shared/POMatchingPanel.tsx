@@ -221,7 +221,7 @@ export default function POMatchingPanel({
             flexShrink: 0,
           }}
         >
-          {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
+          { }
           <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: 'middle', marginRight: 4 }}>
             arrow_back
           </span>
@@ -347,7 +347,7 @@ function POCard({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* eslint-disable i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
+          { }
           <span
             className="material-symbols-outlined"
             style={{
@@ -359,7 +359,7 @@ function POCard({
           >
             chevron_right
           </span>
-          {/* eslint-enable i18next/no-literal-string */}
+          { }
           <span style={{ fontWeight: 700, color: 'var(--accent)' }}>
             {group.orderNumber}
           </span>

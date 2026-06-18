@@ -213,13 +213,13 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
       let list: InvoiceLike[] = [];
 
-      const extractList = (res: any) => {
-        const payload = res?.data || res;
-        return Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
+      const extractList = (res: unknown): InvoiceLike[] => {
+        const payload = (res as { data?: unknown })?.data ?? res;
+        return (Array.isArray(payload) ? payload : (Array.isArray((payload as { data?: unknown })?.data) ? (payload as { data?: unknown }).data : [])) as InvoiceLike[];
       };
 
       if (data.paymentType === 'customer_receipt') {
-        const res = await api.invoiceDetailControllerGetSalesInvoicesGlobal({ customerId: data.partyId, balanceStatus: 'unpaid', days: '0' });
+        const res = await api.invoiceDetailControllerGetSalesInvoicesGlobal({ customerId: data.partyId, balanceStatus: 'unpaid', days: 0 });
         list = extractList(res);
         referenceType = 'sales_invoice';
       } else if (data.paymentType === 'customer_refund') {
@@ -227,7 +227,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         list = extractList(res);
         referenceType = 'sales_credit_note';
       } else if (data.paymentType === 'supplier_payment') {
-        const res = await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ vendorId: data.partyId, balanceStatus: 'unpaid', days: '0' });
+        const res = await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ vendorId: data.partyId, balanceStatus: 'unpaid', days: 0 });
         list = extractList(res);
         referenceType = 'purchase_invoice';
       } else if (data.paymentType === 'supplier_refund') {

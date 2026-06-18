@@ -206,7 +206,9 @@ import type {
   InventoryLocationResponseDto,
   InventoryResponseDto,
   InventorySuccessResponseDto,
+  InvoiceDetailControllerGetPurchaseInvoicesGlobal200,
   InvoiceDetailControllerGetPurchaseInvoicesGlobalParams,
+  InvoiceDetailControllerGetSalesInvoicesGlobal200,
   InvoiceDetailControllerGetSalesInvoicesGlobalParams,
   JobProgressDto,
   JobResultDto,
@@ -9385,7 +9387,7 @@ export const invoiceDetailControllerChangeSalesInvoiceState = async (id: string,
  * @summary Get All Sales Invoices
  */
 export type invoiceDetailControllerGetSalesInvoicesGlobalResponse200 = {
-  data: SalesInvoiceResponseDto[]
+  data: InvoiceDetailControllerGetSalesInvoicesGlobal200
   status: 200
 }
     
@@ -9429,7 +9431,7 @@ export const invoiceDetailControllerGetSalesInvoicesGlobal = async (params?: Inv
  * @summary Get All Purchase Invoices
  */
 export type invoiceDetailControllerGetPurchaseInvoicesGlobalResponse200 = {
-  data: PurchaseInvoiceResponseDto[]
+  data: InvoiceDetailControllerGetPurchaseInvoicesGlobal200
   status: 200
 }
     
@@ -10629,6 +10631,10 @@ export const paymentsControllerGetPaymentRunCandidates = async (params: Payments
 
 
 
+/**
+ * Generates a new payment run batch for eligible supplier invoices.
+ * @summary Generate Payment Run
+ */
 export type paymentsControllerGeneratePaymentRunResponse201 = {
   data: GeneratePaymentRunResponseDto
   status: 201

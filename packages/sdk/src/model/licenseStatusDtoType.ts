@@ -9,6 +9,7 @@
 export type LicenseStatusDtoType = typeof LicenseStatusDtoType[keyof typeof LicenseStatusDtoType];
 
 
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const LicenseStatusDtoType = {
   trial: 'trial',
   perpetual: 'perpetual',

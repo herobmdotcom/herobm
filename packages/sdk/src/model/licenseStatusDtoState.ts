@@ -9,6 +9,7 @@
 export type LicenseStatusDtoState = typeof LicenseStatusDtoState[keyof typeof LicenseStatusDtoState];
 
 
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const LicenseStatusDtoState = {
   active: 'active',
   warning: 'warning',

@@ -400,15 +400,32 @@ export class OrdersService implements OnModuleInit {
       states,
     } = parsePagination(query);
 
+    const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
+    const scoreSql = searchTerm
+      ? sql<number>`
+          CASE 
+            WHEN ${salesOrders.orderNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${salesOrders.orderNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${salesOrders.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${salesOrders.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${salesOrders.customerOrderNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${salesOrders.customerOrderNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${coreAccounts.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${coreAccounts.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            ELSE 1
+          END
+        `
+      : sql<number>`0::int`;
+
     const conditions = [];
 
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(salesOrders.orderNumber, searchTerm),
-          ilike(salesOrders.name, searchTerm),
-          ilike(salesOrders.customerOrderNumber, searchTerm),
-          ilike(coreAccounts.name, searchTerm),
+          ilike(salesOrders.orderNumber, `%${rawSearchTerm}%`),
+          ilike(salesOrders.name, `%${rawSearchTerm}%`),
+          ilike(salesOrders.customerOrderNumber, `%${rawSearchTerm}%`),
+          ilike(coreAccounts.name, `%${rawSearchTerm}%`),
         ),
       );
     }
@@ -477,6 +494,7 @@ export class OrdersService implements OnModuleInit {
         createdBy: salesOrders.createdBy,
         createdOn: salesOrders.createdOn,
         currencyCode: salesOrders.currencyCode,
+        score: scoreSql,
       })
       .from(salesOrders)
       .leftJoin(
@@ -496,31 +514,52 @@ export class OrdersService implements OnModuleInit {
     } = await withCursorPagination({
       qb,
       limit,
-      cursorObj: cursor,
+      cursorObj: cursor as {
+        score: number;
+        createdOn: string;
+        id: string;
+      } | null,
       direction: direction,
-      applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
+      applyWhere: (q, c, dir) => {
         const cDate = c.createdOn;
-        const cursorCond =
-          dir === 'next'
-            ? or(
-                sql`COALESCE(${salesOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) < ${cDate}::timestamp`,
-                and(
-                  sql`COALESCE(${salesOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
-                  sql`${salesOrders.salesOrderId} < ${c.id}`,
-                ),
-              )
-            : or(
-                sql`COALESCE(${salesOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) > ${cDate}::timestamp`,
-                and(
-                  sql`COALESCE(${salesOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
-                  sql`${salesOrders.salesOrderId} > ${c.id}`,
-                ),
-              );
-        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
+        if (dir === 'next') {
+          const cursorCond = or(
+            sql`${scoreSql} < ${c.score}`,
+            and(
+              eq(scoreSql, c.score),
+              sql`COALESCE(${salesOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) < ${cDate}::timestamp`,
+            ),
+            and(
+              eq(scoreSql, c.score),
+              sql`COALESCE(${salesOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
+              sql`${salesOrders.salesOrderId} < ${c.id}`,
+            ),
+          );
+          return q.where(
+            whereClause ? and(whereClause, cursorCond) : cursorCond,
+          );
+        } else {
+          const cursorCond = or(
+            sql`${scoreSql} > ${c.score}`,
+            and(
+              eq(scoreSql, c.score),
+              sql`COALESCE(${salesOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) > ${cDate}::timestamp`,
+            ),
+            and(
+              eq(scoreSql, c.score),
+              sql`COALESCE(${salesOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
+              sql`${salesOrders.salesOrderId} > ${c.id}`,
+            ),
+          );
+          return q.where(
+            whereClause ? and(whereClause, cursorCond) : cursorCond,
+          );
+        }
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? desc : asc;
         return q.orderBy(
+          orderFn(scoreSql),
           orderFn(
             sql`COALESCE(${salesOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp)`,
           ),
@@ -528,6 +567,7 @@ export class OrdersService implements OnModuleInit {
         );
       },
       encodeRow: (row) => ({
+        score: Number(row.score) || 0,
         createdOn: row.createdOn
           ? row.createdOn.toISOString()
           : '1970-01-01T00:00:00.000Z',

@@ -51,6 +51,10 @@ export class ProductGroupsService {
           name: dto.name,
           defaultRevenueAccountId: dto.defaultRevenueAccountId || null,
           defaultExpenseAccountId: dto.defaultExpenseAccountId || null,
+          defaultCostCenterId: dto.defaultCostCenterId || null,
+          defaultActivityId: dto.defaultActivityId || null,
+          purchaseTaxCategoryId: dto.purchaseTaxCategoryId || null,
+          salesTaxCategoryId: dto.salesTaxCategoryId || null,
         })
         .returning();
 
@@ -81,6 +85,18 @@ export class ProductGroupsService {
           }),
           ...(dto.defaultExpenseAccountId !== undefined && {
             defaultExpenseAccountId: dto.defaultExpenseAccountId,
+          }),
+          ...(dto.defaultCostCenterId !== undefined && {
+            defaultCostCenterId: dto.defaultCostCenterId,
+          }),
+          ...(dto.defaultActivityId !== undefined && {
+            defaultActivityId: dto.defaultActivityId,
+          }),
+          ...(dto.purchaseTaxCategoryId !== undefined && {
+            purchaseTaxCategoryId: dto.purchaseTaxCategoryId,
+          }),
+          ...(dto.salesTaxCategoryId !== undefined && {
+            salesTaxCategoryId: dto.salesTaxCategoryId,
           }),
         })
         .where(eq(productGroups.productGroupId, id))

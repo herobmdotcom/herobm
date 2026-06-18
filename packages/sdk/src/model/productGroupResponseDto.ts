@@ -18,6 +18,10 @@ export interface ProductGroupResponseDto {
   defaultCostCenterId: string | null;
   /** @nullable */
   defaultActivityId: string | null;
+  /** @nullable */
+  purchaseTaxCategoryId: string | null;
+  /** @nullable */
+  salesTaxCategoryId: string | null;
   tenantId: string;
   createdAt: string;
   updatedAt: string;

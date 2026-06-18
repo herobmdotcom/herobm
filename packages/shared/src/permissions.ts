@@ -26,5 +26,5 @@ export enum SystemResource {
   ROLES = 'roles',
   USERS = 'users',
   GL = 'gl',
-
+  DATA_EXPORT = 'data-export',
 }

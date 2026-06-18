@@ -238,12 +238,24 @@ export class AppConfigResponseDto {
   @ApiProperty({ required: false }) smtpUser?: string;
   @ApiProperty({ required: false }) smtpPass?: string;
   @ApiProperty({ required: false }) smtpFromAddress?: string;
+  @ApiProperty({ required: false }) defaultPurchaseTaxCategoryId?: string;
+  @ApiProperty({ required: false }) defaultSalesTaxCategoryId?: string;
 }
 export class UpdateAppConfigDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   defaultFulfillmentLocationId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  defaultPurchaseTaxCategoryId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  defaultSalesTaxCategoryId?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()

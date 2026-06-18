@@ -9,7 +9,7 @@
 export type UpdateProductComponentDtoFractionalBehavior = typeof UpdateProductComponentDtoFractionalBehavior[keyof typeof UpdateProductComponentDtoFractionalBehavior];
 
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare -- External API integration boundaries where exact types are unknown.
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const UpdateProductComponentDtoFractionalBehavior = {
   allow_fractional: 'allow_fractional',
   round_up: 'round_up',

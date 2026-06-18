@@ -847,6 +847,13 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v2: 'archive',
       v3: 'allow',
     },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.DATA_EXPORT,
+      v2: 'read',
+      v3: 'allow',
+    },
 
     {
       ptype: 'p',

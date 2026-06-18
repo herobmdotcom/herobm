@@ -17,12 +17,12 @@ export function EventIcon({ type }: { type: string }) {
   const typeLower = (type || '').toLowerCase();
 
   // Common emoji mappings
-  // eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon).
+   
   if (typeLower.includes('warning') || typeLower.includes('discrepancy')) return <span>⚠️</span>;
   if (typeLower.includes('receive') || typeLower.includes('reception')) return <span>📥</span>;
   if (typeLower.includes('shipment')) return <span>🚚</span>;
   if (typeLower.includes('picking')) return <span>📦</span>;
-  // eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon).
+   
   if (typeLower.includes('return')) return <span aria-hidden>↩️</span>;
   if (typeLower.includes('auto_status')) return <span>⚡</span>;
   if (typeLower.includes('price')) return <span>💰</span>;

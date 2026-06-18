@@ -274,7 +274,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                     title={t('editField')}
                     onClick={(e) => { e.stopPropagation(); setEditingSnapshot(field); setEditingFieldId(field.id); }}
                   >
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                    { }
                     <span className="material-symbols-outlined text-[16px]">edit</span>
                   </button>
                   <button 
@@ -282,7 +282,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                     title={t('removeField')}
                     onClick={(e) => handleRemoveField(field.id, e)}
                   >
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+                    { }
                     <span className="material-symbols-outlined text-[16px]">delete</span>
                   </button>
                 </div>

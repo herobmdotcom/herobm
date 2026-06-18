@@ -6,7 +6,19 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc, and, inArray, gte, or, asc, lt, gt, ilike } from 'drizzle-orm';
+import {
+  eq,
+  sql,
+  desc,
+  and,
+  inArray,
+  gte,
+  or,
+  asc,
+  lt,
+  gt,
+  ilike,
+} from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -1290,7 +1302,7 @@ export class PurchaseInvoiceService {
     invoiceId?: string;
     balanceStatus?: string;
     limit?: number;
-    cursor?: any;
+    cursor?: unknown;
     direction?: 'next' | 'prev';
     searchTerm?: string | null;
   }) {
@@ -1331,12 +1343,27 @@ export class PurchaseInvoiceService {
       conditions.push(sql`${purchaseInvoices.outstandingAmount}::numeric <= 0`);
     }
 
+    const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
+    const scoreSql = searchTerm
+      ? sql<number>`
+          CASE 
+            WHEN ${purchaseInvoices.invoiceNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${purchaseInvoices.invoiceNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${purchaseInvoices.supplierInvoiceNumber} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${purchaseInvoices.supplierInvoiceNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${suppliers.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${suppliers.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            ELSE 1
+          END
+        `
+      : sql<number>`0::int`;
+
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(purchaseInvoices.invoiceNumber, searchTerm),
-          ilike(purchaseInvoices.supplierInvoiceNumber, searchTerm),
-          ilike(suppliers.name, searchTerm),
+          ilike(purchaseInvoices.invoiceNumber, `%${rawSearchTerm}%`),
+          ilike(purchaseInvoices.supplierInvoiceNumber, `%${rawSearchTerm}%`),
+          ilike(suppliers.name, `%${rawSearchTerm}%`),
         ) as import('drizzle-orm').SQL,
       );
     }
@@ -1356,6 +1383,7 @@ export class PurchaseInvoiceService {
         currencyCode: purchaseInvoices.currencyCode,
         stateCode: purchaseInvoices.stateCode,
         createdOn: purchaseInvoices.createdOn,
+        score: scoreSql,
       })
       .from(purchaseInvoices)
       .leftJoin(suppliers, eq(purchaseInvoices.vendorId, suppliers.vendorId))
@@ -1368,25 +1396,41 @@ export class PurchaseInvoiceService {
     return await withCursorPagination({
       qb: dataQuery,
       limit,
-      cursorObj: cursor as { createdOn: string; invoiceId: string } | null,
+      cursorObj: cursor as {
+        score: number;
+        createdOn: string;
+        invoiceId: string;
+      } | null,
       direction,
       applyWhere: (q, c, dir) => {
         const op = dir === 'next' ? lt : gt;
         const cursorCond = or(
+          op(scoreSql, c.score),
+          and(
+            eq(scoreSql, c.score),
             op(purchaseInvoices.createdOn, new Date(c.createdOn)),
-            and(
-              eq(purchaseInvoices.createdOn, new Date(c.createdOn)),
-              op(purchaseInvoices.invoiceId, c.invoiceId)
-            )
-          ) as import('drizzle-orm').SQL;
+          ),
+          and(
+            eq(scoreSql, c.score),
+            eq(purchaseInvoices.createdOn, new Date(c.createdOn)),
+            op(purchaseInvoices.invoiceId, c.invoiceId),
+          ),
+        ) as import('drizzle-orm').SQL;
         return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
       applyOrderBy: (q, dir) => {
         const op = dir === 'next' ? desc : asc;
-        return q.orderBy(op(purchaseInvoices.createdOn), op(purchaseInvoices.invoiceId));
+        return q.orderBy(
+          op(scoreSql),
+          op(purchaseInvoices.createdOn),
+          op(purchaseInvoices.invoiceId),
+        );
       },
       encodeRow: (row) => ({
-        createdOn: row.createdOn ? new Date(row.createdOn).toISOString() : new Date().toISOString(),
+        score: Number(row.score) || 0,
+        createdOn: row.createdOn
+          ? new Date(row.createdOn).toISOString()
+          : new Date().toISOString(),
         invoiceId: row.invoiceId,
       }),
     });

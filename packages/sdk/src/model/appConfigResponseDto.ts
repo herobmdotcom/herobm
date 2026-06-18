@@ -18,4 +18,6 @@ export interface AppConfigResponseDto {
   smtpUser?: string;
   smtpPass?: string;
   smtpFromAddress?: string;
+  defaultPurchaseTaxCategoryId?: string;
+  defaultSalesTaxCategoryId?: string;
 }
