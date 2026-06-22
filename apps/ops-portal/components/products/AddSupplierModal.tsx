@@ -134,7 +134,7 @@ export default function AddSupplierModal({
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 pt-10">
-      <div className="bg-white rounded-xl shadow-2xl max-w-[540px] w-full flex flex-col overflow-visible max-h-[90vh]">
+      <div className="bg-white rounded-xl max-w-[540px] w-full flex flex-col overflow-visible max-h-[90vh]">
         
         {/* Header */}
         <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between bg-white shrink-0 rounded-t-xl">
@@ -153,7 +153,7 @@ export default function AddSupplierModal({
 
         {/* Product Context Banner */}
         <div className="bg-gray-50 border-b border-gray-100 px-6 py-3 flex items-center gap-3">
-          <div className="w-10 h-10 rounded bg-white border border-gray-200 flex items-center justify-center shrink-0 shadow-sm">
+          <div className="w-10 h-10 rounded bg-white border border-gray-200 flex items-center justify-center shrink-0">
             { }
             <span className="material-symbols-outlined text-gray-400 text-[20px]">inventory_2</span>
           </div>
@@ -189,7 +189,7 @@ export default function AddSupplierModal({
 
             {/* Floating Dropdown Results */}
             {suppliers.length > 0 && (
-              <div className="absolute z-50 left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden max-h-60 overflow-y-auto w-[calc(100%+20px)] -ml-[10px] p-1">
+              <div className="absolute z-50 left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg overflow-hidden max-h-60 overflow-y-auto w-[calc(100%+20px)] -ml-[10px] p-1">
                 <ul className="py-1">
                   {(Array.isArray(suppliers) ? suppliers : []).map(s => (
                     <li key={s.id}>
@@ -242,7 +242,7 @@ export default function AddSupplierModal({
           </div>
 
           {error && (
-            <div className="mt-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-md text-[14px] flex items-start gap-2 shadow-sm font-medium">
+            <div className="mt-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-md text-[14px] flex items-start gap-2 font-medium">
               {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               <span className="material-symbols-outlined text-[18px] text-red-500 mt-[1px]">error</span>
               <span className="flex-1 leading-snug">{error}</span>
@@ -253,7 +253,7 @@ export default function AddSupplierModal({
              <button type="button" className="btn btn-ghost hover:bg-gray-100 text-gray-700 h-11 min-h-[44px] px-6 font-semibold" onClick={onClose} disabled={submitting}>
                {t('buttons.cancel')}
               </button>
-             <button type="submit" className="btn bg-[#006b5c] hover:bg-[#005246] border-none text-white h-11 min-h-[44px] px-8 font-semibold shadow-sm text-[15px]" disabled={submitting || !vendorId}>
+             <button type="submit" className="btn bg-[#006b5c] hover:bg-[#005246] border-none text-white h-11 min-h-[44px] px-8 font-semibold text-[15px]" disabled={submitting || !vendorId}>
                {submitting ? <span className="loading loading-spinner loading-sm text-white"></span> : t('buttons.linkProduct')}
              </button>
           </div>

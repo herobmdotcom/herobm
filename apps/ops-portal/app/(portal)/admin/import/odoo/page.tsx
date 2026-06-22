@@ -243,7 +243,7 @@ export default function OdooImportPage() {
       </div>
 
       {step === 'config' && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in">
+        <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in">
           <div className="grid grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{tExt('fields.host')}</label>
@@ -309,11 +309,11 @@ export default function OdooImportPage() {
             <button
               onClick={handleTestConnection}
               disabled={!isFormValid || loading}
-              className={`px-8 py-3 rounded-lg font-bold transition-colors shadow-sm ${
-                !isFormValid || loading
-                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                  : 'bg-[#006b5c] hover:bg-[#005246] text-white cursor-pointer'
-              }`}
+              className={`px-8 py-3 rounded-lg font-bold transition-colors ${
+ !isFormValid || loading
+ ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+ : 'bg-[#006b5c] hover:bg-[#005246] text-white cursor-pointer'
+ }`}
             >
               {loading ? tExt('testing') : tExt('testConnection')}
             </button>
@@ -322,7 +322,7 @@ export default function OdooImportPage() {
       )}
 
       {step === 'preview' && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in">
+        <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in">
           
           <div className="grid grid-cols-2 gap-8 mb-8 pb-8 border-b border-slate-100">
             <div>
@@ -438,7 +438,7 @@ export default function OdooImportPage() {
             </button>
             <button
               onClick={handleStartElt}
-              className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
+              className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors"
             >
               {t('buttons.startExecution')}
             </button>
@@ -447,7 +447,7 @@ export default function OdooImportPage() {
       )}
 
       {step === 'executing' && (
-      <div className="bg-[#0f172a] rounded-xl overflow-hidden shadow-lg flex-1 mb-6 flex flex-col font-mono text-sm border border-slate-800 animate-in fade-in">
+      <div className="bg-[#0f172a] rounded-xl overflow-hidden flex-1 mb-6 flex flex-col font-mono text-sm border border-slate-800 animate-in fade-in">
         <div className="bg-[#1e293b] px-4 py-3 flex items-center gap-2 border-b border-slate-800">
           <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
           <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
@@ -493,7 +493,7 @@ export default function OdooImportPage() {
       )}
 
       {step === 'finalisation' && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in text-center">
+        <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in text-center">
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
           </div>
@@ -519,7 +519,7 @@ export default function OdooImportPage() {
 
           <button
             onClick={() => router.push('/')}
-            className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm w-full"
+            className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors w-full"
           >
             {t('buttons.goToDashboard')}
           </button>
@@ -538,7 +538,7 @@ export default function OdooImportPage() {
                  setStep('finalisation');
               });
             }}
-            className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
+            className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors"
            >
              {t('buttons.continueToSummary')}
            </button>
@@ -549,7 +549,7 @@ export default function OdooImportPage() {
         <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
            <button
             onClick={() => { setStep('config'); setStatus('pending'); }}
-            className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
+            className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-lg font-bold transition-colors"
            >
              {t('buttons.retryImport')}
            </button>

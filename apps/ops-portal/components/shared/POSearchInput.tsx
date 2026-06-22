@@ -122,7 +122,7 @@ export default function POSearchInput({
             onClick={() => setShowDropdown(false)}
           />
           <div
-            className="dropdown-menu shadow"
+            className="dropdown-menu"
             style={{
               position: 'fixed',
               ...dropdownStyle,

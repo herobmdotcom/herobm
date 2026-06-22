@@ -469,7 +469,7 @@ export default function ProductDetailPage() {
 
       {product.stateCode === PRODUCT_STATE.ARCHIVED && (
         <div
-          className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
+          className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3"
           style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
         >
           <div>
@@ -484,7 +484,7 @@ export default function ProductDetailPage() {
 
       {activeTab === 'suppliers' && (
         <div className="flex-1 min-h-0 flex flex-col w-full h-full pb-6">
-          <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+          <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
               <DataGrid 
                 endpoint={`/api/suppliers/by-product/${encodeURIComponent(id as string)}?r=${refreshGrid}`}
                 columns={supplierColumns}
@@ -516,7 +516,7 @@ export default function ProductDetailPage() {
                     <div className="flex items-center gap-3 shrink-0 ml-4">
                       {optionsButton}
                       <button 
-                        className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm flex items-center gap-1.5"
+                        className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
                         onClick={() => setIsAddSupplierOpen(true)}
                         disabled={!isEditable}
                       >
@@ -534,7 +534,7 @@ export default function ProductDetailPage() {
 
       {activeTab === 'inventory' && (
         <div className="flex-1 min-h-0 flex flex-col w-full h-full pb-6">
-          <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+          <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
             <div className="flex items-center justify-between px-6 py-4 border-b border-[rgba(196,198,205,0.4)]">
               <div className="flex items-center gap-4 flex-1">
                 <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
@@ -548,7 +548,7 @@ export default function ProductDetailPage() {
               </div>
               {!addingBinLink && isEditable && product?.productType !== 'non-stock' && (
                 <button
-                  className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm flex items-center gap-1.5"
+                  className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
                   style={{ fontSize: 13 }}
                   onClick={() => setAddingBinLink(true)}
                   disabled={saving}
@@ -638,7 +638,7 @@ export default function ProductDetailPage() {
                     {tCommon('buttons.cancel')}
                   </button>
                   <button
-                    className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm font-semibold px-5"
+                    className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white font-semibold px-5"
                     disabled={!newBinLink.locationId || !newBinLink.binId || saving}
                     onClick={async () => {
                       try {

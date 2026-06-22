@@ -427,7 +427,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       >
       {supplier.stateCode === SUPPLIER_STATE.ARCHIVED && (
         <div
-          className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
+          className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3"
           style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
         >
           <div>
@@ -438,7 +438,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
       {activeTab === 'products' && (
         <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
-          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
             <DataGrid 
                 endpoint={`/api/suppliers/${encodeURIComponent(params.id)}/products`}
                 columns={productColumns}
@@ -475,7 +475,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       )}
       {activeTab === 'purchaseOrders' && (
         <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
-          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
             <DataGrid 
                 endpoint={`/api/purchase-orders?vendorId=${encodeURIComponent(params.id)}`}
                 columns={orderColumns}
@@ -513,7 +513,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
       {activeTab === 'invoices' && (
         <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
-          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
             <DataGrid 
                 endpoint={`/api/purchase-invoices?vendorId=${encodeURIComponent(params.id)}`}
                 columns={invoiceColumns}
@@ -551,7 +551,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
       {activeTab === 'payments' && (
         <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
-          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
             <DataGrid 
                 endpoint={`/api/payments?partyId=${encodeURIComponent(params.id)}`}
                 columns={paymentColumns}

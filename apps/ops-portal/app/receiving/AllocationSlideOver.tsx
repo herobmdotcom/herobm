@@ -295,7 +295,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
               return (
                 <div
                   key={line.goodsReceivedLineId}
-                  className={`transition-colors rounded-lg border p-3 flex flex-col shadow-sm ${isActive ? 'bg-[var(--bg-card-hover)] border-[var(--accent)]' : 'bg-[var(--bg-card)] border-[var(--border)]'}`}
+                  className={`transition-colors rounded-lg border p-3 flex flex-col ${isActive ? 'bg-[var(--bg-card-hover)] border-[var(--accent)]' : 'bg-[var(--bg-card)] border-[var(--border)]'}`}
                 >
                   <div className="flex justify-between items-start gap-2 mb-2 cursor-pointer" onClick={() => setActiveLineId(line.goodsReceivedLineId)}>
                      <div className="font-semibold text-sm text-[var(--accent)]">

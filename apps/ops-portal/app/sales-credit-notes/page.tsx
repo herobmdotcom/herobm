@@ -65,7 +65,7 @@ export default function ReturnsQueuePage() {
                 pageTitle="Credit Notes Queue"
                 headerActions={
                     <button 
-                        className="btn btn-primary shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5" 
+                        className="btn btn-primary hover: transition-all duration-200 hover:-translate-y-0.5" 
                         onClick={() => setAdHocOpen(true)}
                     >
                         {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}

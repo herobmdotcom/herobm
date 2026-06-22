@@ -62,7 +62,7 @@ export default function SlideOver({
       <div className="absolute inset-y-0 right-0 flex w-full justify-end pointer-events-none sm:pl-10">
         <div 
           ref={panelRef}
-          className={`pointer-events-auto w-full ${width} bg-white shadow-2xl flex flex-col`}
+          className={`pointer-events-auto w-full ${width} bg-white flex flex-col`}
         >
           {/* Header */}
           <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between bg-white shrink-0">

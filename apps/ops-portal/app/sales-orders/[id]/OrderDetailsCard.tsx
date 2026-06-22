@@ -114,7 +114,7 @@ export default function OrderDetailsCard({
                         <>
                             <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                             <div 
-                                className="absolute right-0 top-full mt-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-md shadow-lg p-1 z-50 min-w-[150px] flex flex-col gap-1"
+                                className="absolute right-0 top-full mt-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-md p-1 z-50 min-w-[150px] flex flex-col gap-1"
                                 onClick={() => setMenuOpen(false)}
                             >
                                 {(order.stateCode === SALES_ORDER_STATE.DRAFT || order.stateCode === SALES_ORDER_STATE.QUOTED) && (

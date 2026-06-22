@@ -139,7 +139,7 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-[var(--bg-card)] rounded-lg shadow-xl w-full max-w-2xl border border-[var(--border)] overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-[var(--bg-card)] rounded-lg w-full max-w-2xl border border-[var(--border)] overflow-hidden flex flex-col max-h-[90vh]">
         <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex justify-between items-center shrink-0">
           <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('importBankStatement')}</h2>
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">

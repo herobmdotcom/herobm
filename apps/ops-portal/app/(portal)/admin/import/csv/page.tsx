@@ -160,7 +160,7 @@ export default function CsvImportPage() {
       </div>
 
       {step === 'config' && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 max-w-lg mx-auto w-full animate-in fade-in">
+        <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-lg mx-auto w-full animate-in fade-in">
           <div className="mb-6">
             <label className="block text-sm font-bold text-slate-700 mb-2">{t('targetTable')}</label>
             <select
@@ -185,7 +185,7 @@ export default function CsvImportPage() {
           
           <button
             onClick={() => setStep('preview')}
-            className="w-full bg-[#006b5c] hover:bg-[#005246] text-white px-4 py-3 rounded-lg font-bold transition-colors shadow-sm"
+            className="w-full bg-[#006b5c] hover:bg-[#005246] text-white px-4 py-3 rounded-lg font-bold transition-colors"
           >
             {t('continue')}
           </button>
@@ -193,7 +193,7 @@ export default function CsvImportPage() {
       )}
 
       {step === 'preview' && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in">
+        <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in">
           <div className="mb-8 pb-8 border-b border-slate-100">
             <h2 className="text-xl font-bold text-slate-800 mb-4">{t('fileUpload')}</h2>
             
@@ -269,7 +269,7 @@ export default function CsvImportPage() {
             <button
               onClick={handleStartImport}
               disabled={!file}
-              className="bg-[#006b5c] hover:bg-[#005246] disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm flex items-center gap-2"
+              className="bg-[#006b5c] hover:bg-[#005246] disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg font-bold transition-colors flex items-center gap-2"
             >
               {t('startImport')}
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
@@ -279,7 +279,7 @@ export default function CsvImportPage() {
       )}
 
       {step === 'executing' && (
-      <div className="bg-[#0f172a] rounded-xl overflow-hidden shadow-lg flex-1 mb-6 flex flex-col font-mono text-sm border border-slate-800 animate-in fade-in">
+      <div className="bg-[#0f172a] rounded-xl overflow-hidden flex-1 mb-6 flex flex-col font-mono text-sm border border-slate-800 animate-in fade-in">
         <div className="bg-[#1e293b] px-4 py-3 flex items-center gap-2 border-b border-slate-800">
           <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
           <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
@@ -315,7 +315,7 @@ export default function CsvImportPage() {
       )}
 
       {step === 'finalisation' && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in text-center">
+        <div className="bg-white rounded-xl border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in text-center">
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
           </div>
@@ -341,7 +341,7 @@ export default function CsvImportPage() {
 
           <button
             onClick={() => router.push('/')}
-            className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm w-full"
+            className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors w-full"
           >
             {t('goToDashboard')}
           </button>
@@ -352,7 +352,7 @@ export default function CsvImportPage() {
         <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
            <button
             onClick={() => { setStep('config'); setStatus('pending'); }}
-            className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
+            className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-lg font-bold transition-colors"
            >
              {t('retryImport')}
            </button>

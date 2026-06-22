@@ -473,7 +473,7 @@ export default function AccountDetailPage({
       >
         {customer.stateCode === CUSTOMER_STATE.ARCHIVED && (
           <div
-            className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
+            className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3"
             style={{
               background: "rgba(245, 158, 11, 0.1)",
               border: "1px solid rgba(245, 158, 11, 0.3)",
@@ -607,7 +607,7 @@ export default function AccountDetailPage({
 
         {activeTab === "payments" && (
           <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
-            <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+            <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
               <DataGrid
                 endpoint={`/api/payments?partyId=${encodeURIComponent(params.id)}`}
                 columns={paymentColumns}
@@ -1606,7 +1606,7 @@ export default function AccountDetailPage({
                         <Link
                           key={child.customerId}
                           href={`/customers/${child.customerId}`}
-                          className="flex items-center gap-3 p-3 rounded-lg border border-[var(--border)] hover:border-[var(--accent)] hover:shadow-sm transition-all"
+                          className="flex items-center gap-3 p-3 rounded-lg border border-[var(--border)] hover:border-[var(--accent)] hover: transition-all"
                         >
                           <div className="w-8 h-8 rounded-full bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] font-semibold shrink-0">
                             {child.name.charAt(0)}

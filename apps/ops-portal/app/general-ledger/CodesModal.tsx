@@ -154,9 +154,9 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
         <tr 
           onClick={() => !node.isGroup && setSelectedAccount(node.accountCode)}
           className={`
-            transition-colors border-b border-[var(--border)] last:border-0 cursor-pointer
-            ${selectedAccount === node.accountCode ? 'bg-[var(--bg-card-hover)]' : 'hover:bg-[var(--bg-card-hover)]/50'}
-          `}
+ transition-colors border-b border-[var(--border)] last:border-0 cursor-pointer
+ ${selectedAccount === node.accountCode ? 'bg-[var(--bg-card-hover)]' : 'hover:bg-[var(--bg-card-hover)]/50'}
+ `}
         >
           <td className={`px-3 py-1.5 font-mono text-[11px] w-20 shrink-0 ${selectedAccount === node.accountCode ? 'text-[var(--accent)] font-bold' : 'text-[var(--text-muted)]'}`}>
             {node.accountCode}
@@ -180,7 +180,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
       />
       
       {/* Modal Container */}
-      <div className="relative bg-white w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl border border-[var(--border)] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className="relative bg-white w-full max-w-6xl h-[85vh] rounded-2xl border border-[var(--border)] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
         
         {/* Header */}
         <div className="grid grid-cols-1 md:grid-cols-3 items-center px-8 py-5 border-b border-[var(--border)] shrink-0 bg-white">
@@ -277,10 +277,10 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
                           key={cc.costCenterId || cc.code} 
                           onClick={() => setSelectedCc(cc.code)}
                           className={`
-                            transition-colors cursor-pointer
-                            ${selectedCc === cc.code ? 'bg-[var(--bg-card-hover)]' : 'hover:bg-[var(--bg-card-hover)]/50'}
-                            ${!cc.isActive ? 'opacity-40' : ''}
-                          `}
+ transition-colors cursor-pointer
+ ${selectedCc === cc.code ? 'bg-[var(--bg-card-hover)]' : 'hover:bg-[var(--bg-card-hover)]/50'}
+ ${!cc.isActive ? 'opacity-40' : ''}
+ `}
                         >
                           <td className={`px-4 py-2 font-mono text-[11px] w-16 ${selectedCc === cc.code ? 'text-[var(--accent)] font-bold' : 'text-[var(--text-muted)]'}`}>{cc.code}</td>
                           <td className={`px-4 py-2 text-xs ${selectedCc === cc.code ? 'font-bold text-[var(--text-primary)]' : !cc.isActive ? 'text-[var(--text-muted)] italic' : 'font-medium text-[var(--text-secondary)]'}`}>{cc.name}</td>
@@ -312,10 +312,10 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
                           key={act.activityId || act.code} 
                           onClick={() => setSelectedAct(act.code)}
                           className={`
-                            transition-colors cursor-pointer
-                            ${selectedAct === act.code ? 'bg-[var(--bg-card-hover)]' : 'hover:bg-[var(--bg-card-hover)]/50'}
-                            ${!act.isActive ? 'opacity-40' : ''}
-                          `}
+ transition-colors cursor-pointer
+ ${selectedAct === act.code ? 'bg-[var(--bg-card-hover)]' : 'hover:bg-[var(--bg-card-hover)]/50'}
+ ${!act.isActive ? 'opacity-40' : ''}
+ `}
                         >
                           <td className={`px-4 py-2 font-mono text-[11px] w-16 ${selectedAct === act.code ? 'text-[var(--accent)] font-bold' : 'text-[var(--text-muted)]'}`}>{act.code}</td>
                           <td className={`px-4 py-2 text-xs ${selectedAct === act.code ? 'font-bold text-[var(--text-primary)]' : !act.isActive ? 'text-[var(--text-muted)] italic' : 'font-medium text-[var(--text-secondary)]'}`}>{act.name}</td>

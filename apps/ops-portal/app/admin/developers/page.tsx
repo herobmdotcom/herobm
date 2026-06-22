@@ -253,7 +253,7 @@ export default function DevelopersPage() {
           {/* New API Key Secret Modal */}
           {newSecret && (
             <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-              <div className="bg-[var(--bg-card)] rounded-lg shadow-2xl max-w-lg w-full p-6 border border-[var(--border)] relative">
+              <div className="bg-[var(--bg-card)] rounded-lg max-w-lg w-full p-6 border border-[var(--border)] relative">
                 <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-[var(--warning)]">
                   {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                   <span className="material-symbols-outlined text-[24px]">warning</span>

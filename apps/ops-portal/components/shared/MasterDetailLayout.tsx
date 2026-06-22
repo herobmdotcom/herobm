@@ -48,12 +48,12 @@ export default function MasterDetailLayout({
 
             <div className="flex-1 min-h-0 flex gap-6">
                 {/* Left Pane: Master List */}
-                <div className={`w-full ${masterWidthClass} flex flex-col lg:bg-[var(--bg-card)] lg:border lg:border-[var(--border)] lg:rounded-xl lg:shadow-sm overflow-hidden`}>
+                <div className={`w-full ${masterWidthClass} flex flex-col lg:bg-[var(--bg-card)] lg:border lg:border-[var(--border)] lg:rounded-xl lg: overflow-hidden`}>
                     {masterPane}
                 </div>
 
                 {/* Right Pane: Detail (Desktop) */}
-                <div className="hidden lg:flex flex-1 flex-col bg-[var(--bg-card)] border border-[var(--border)] lg:rounded-xl shadow-sm overflow-hidden">
+                <div className="hidden lg:flex flex-1 flex-col bg-[var(--bg-card)] border border-[var(--border)] lg:rounded-xl overflow-hidden">
                     {detailPane}
                 </div>
 

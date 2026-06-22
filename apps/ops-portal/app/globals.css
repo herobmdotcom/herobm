@@ -180,7 +180,7 @@ select.input:not([multiple]):not([size]) {
   background-color: white;
   transition: .2s;
   border-radius: 50%;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+
 }
 .switch input:checked + .switch-slider {
   background-color: var(--success, #22c55e);
@@ -305,7 +305,7 @@ select.input:not([multiple]):not([size]) {
 
 /* Active Sidebar Item Shadow Match */
 aside nav a[style*="var(--accent-glow)"] {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+
 }
 
 h2 {
@@ -360,7 +360,7 @@ h2 {
 /* Unify focus state: single glow, no double AG Grid blue border */
 .ag-theme-alpine-dark .ag-wrapper:focus-within {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px var(--accent-glow) !important;
+
   outline: none !important;
 }
 /* DataGrid overrides for the POC */
@@ -385,7 +385,7 @@ h2 {
   --ag-wrapper-border-radius: 0 !important;
   
   border-radius: 0 !important;
-  box-shadow: none !important;
+
   border: none !important;
   overflow: hidden;
   flex: 1; /* Take remaining space */
@@ -397,7 +397,7 @@ h2 {
 .ag-theme-alpine-dark .ag-filter-wrapper {
   background-color: #ffffff !important;
   border: 1px solid var(--border) !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+
   border-radius: 12px !important;
 }
 
@@ -489,7 +489,7 @@ h2 {
 
 /* ── React Phone Number Input Overrides ── */
 .PhoneInputInput {
-  @apply bg-transparent outline-none w-full ml-2 border-none ring-0 shadow-none focus:outline-none focus:ring-0 focus:border-none;
+  @apply bg-transparent outline-none w-full ml-2 border-none ring-0  focus:outline-none focus:ring-0 focus:border-none;
 }
 
 /* ── Print Stylesheet ────────────────────────────────────────────────── */
@@ -572,7 +572,7 @@ h2 {
   /* ── 3. CARDS & INPUTS ──────────────────────────────────────────────── */
   .card {
     border: none !important;
-    box-shadow: none !important;
+
     background: transparent !important;
     padding: 0 !important;
     margin: 0 0 1.5rem 0 !important;
@@ -587,7 +587,7 @@ h2 {
     background: transparent !important;
     padding: 0 !important;
     outline: none !important;
-    box-shadow: none !important;
+
     appearance: none !important;
     resize: none !important;
   }

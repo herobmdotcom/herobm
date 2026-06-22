@@ -121,7 +121,7 @@ export default function DashboardContent() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Link
                   href="/sales-orders/new"
-                  className="group p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg border flex flex-col gap-5 cursor-pointer no-underline"
+                  className="group p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover: border flex flex-col gap-5 cursor-pointer no-underline"
                   style={{
                     background: 'var(--bg-card)',
                     borderColor: 'var(--border)',
@@ -146,7 +146,7 @@ export default function DashboardContent() {
 
                 <Link
                   href="/purchase-orders/new"
-                  className="group p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:shadow-lg border flex flex-col gap-5 cursor-pointer no-underline"
+                  className="group p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover: border flex flex-col gap-5 cursor-pointer no-underline"
                   style={{
                     background: 'var(--bg-card)',
                     borderColor: 'var(--border)',

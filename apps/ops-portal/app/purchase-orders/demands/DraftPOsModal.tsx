@@ -137,7 +137,7 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-xl">
           <div>
             <h2 className="text-xl font-bold text-gray-900">{t('demands.reviewDraftPos')}</h2>

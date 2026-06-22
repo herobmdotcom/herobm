@@ -317,7 +317,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                             <button
                                                 key={state}
                                                 className={`btn btn-sm ${state === SALES_ORDER_STATE.CANCELLED ? 'btn-danger' : back ? 'btn-secondary' : 'btn-primary'
-                                                    }`}
+ }`}
                                                 onClick={() => handleStateClick(state)}
                                             >
                                                 {state === SALES_ORDER_STATE.CANCELLED ? (
@@ -1404,7 +1404,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
             {showDiscrepancyModal && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden">
+                    <div className="bg-white rounded-xl w-full max-w-2xl flex flex-col overflow-hidden">
                         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                             <h2 className="text-xl font-bold text-gray-900">{tSales('discrepancies.title')}</h2>
                             <button onClick={() => setShowDiscrepancyModal(false)} className="text-gray-400 hover:text-gray-600">

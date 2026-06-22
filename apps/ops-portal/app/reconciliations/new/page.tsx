@@ -170,7 +170,7 @@ export default function NewReconciliationPage() {
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-[var(--accent)] text-white rounded-md shadow-sm hover:brightness-110 font-medium transition-all text-sm disabled:opacity-50"
+              className="px-4 py-2 bg-[var(--accent)] text-white rounded-md hover:brightness-110 font-medium transition-all text-sm disabled:opacity-50"
             >
               {loading ? tCommon('loading') : t('create')}
             </button>

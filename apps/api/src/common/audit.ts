@@ -30,9 +30,12 @@ export function calculateAuditTrail<T extends object, U extends object>(
   for (const [key, value] of Object.entries(dto)) {
     const original = existingRecord[key];
 
-    // Normalized comparison (handles null vs undefined vs empty string)
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string -- Object default stringification is intentionally used here as a fallback
-    const isDifferent = String(value ?? '') !== String(original ?? '');
+    let isDifferent = false;
+    if (typeof value === 'object' && value !== null) {
+      isDifferent = JSON.stringify(value) !== JSON.stringify(original);
+    } else {
+      isDifferent = String(value ?? '') !== String(original ?? '');
+    }
 
     if (mode === AuditMode.FULL || isDifferent) {
       changes[key] = value;

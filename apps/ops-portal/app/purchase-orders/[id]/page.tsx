@@ -976,8 +976,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
       {/* Global Toast Notification for Auto-Transitions */}
       <div
-        className={`fixed bottom-6 right-6 rounded-lg p-4 max-w-[400px] z-[60] flex flex-col gap-1 pointer-events-none shadow-lg border border-[var(--border)] transition-all duration-300 ease-out ${latestAutoTransition ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
-          }`}
+        className={`fixed bottom-6 right-6 rounded-lg p-4 max-w-[400px] z-[60] flex flex-col gap-1 pointer-events-none border border-[var(--border)] transition-all duration-300 ease-out ${latestAutoTransition ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+ }`}
         style={{ background: 'var(--bg-card)' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

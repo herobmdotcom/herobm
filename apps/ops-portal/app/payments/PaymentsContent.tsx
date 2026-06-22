@@ -250,7 +250,7 @@ export default function PaymentsContent() {
           </select>
           <select
             value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
+            onChange={(e) => setDays(e.target.value)}
             className="input text-sm flex-1 min-w-0 max-w-[150px]"
           >
             <option value="30">{tCommon('filters.last30Days')}</option>

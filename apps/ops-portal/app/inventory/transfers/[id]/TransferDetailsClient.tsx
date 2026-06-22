@@ -268,7 +268,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
           </div>
           <div className="lg:hidden flex flex-col gap-3 w-full">
             {order.lines?.map((line: TransferLineResponseDto, idx: number) => (
-              <div key={line.transferOrderLineId} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+              <div key={line.transferOrderLineId} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                 <div className="flex justify-between items-start gap-2 mb-2">
                   <div className="font-semibold text-sm text-[var(--accent)]">
                     {line.productNumber || '—'}

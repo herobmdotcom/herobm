@@ -35,8 +35,8 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               {/* Sidebar Container */}
               <div 
                 className={`fixed inset-y-0 left-0 z-[9999] transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:block print:hidden ${
-                  isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                }`}
+ isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+ }`}
               >
                 <Sidebar />
               </div>
@@ -47,7 +47,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
 
               {/* Floating Toggle Button for Mobile/Tablet */}
               <button 
-                className="fixed bottom-6 left-6 z-[9999] lg:hidden w-14 h-14 rounded-full flex items-center justify-center print:hidden shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-transform hover:scale-105 cursor-pointer"
+                className="fixed bottom-6 left-6 z-[9999] lg:hidden w-14 h-14 rounded-full flex items-center justify-center print:hidden -[0_4px_12px_rgba(0,0,0,0.3)] transition-transform hover:scale-105 cursor-pointer"
                 style={{ background: 'var(--accent)', color: '#fff' }}
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                 aria-label="Toggle Navigation"

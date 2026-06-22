@@ -78,7 +78,7 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-xl max-w-md w-full border border-[var(--border)] overflow-hidden">
+      <div className="bg-[var(--bg-card)] rounded-xl max-w-md w-full border border-[var(--border)] overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-secondary)]">
           <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">{t('splitEntryForm.title')}</h2>
           <button 
@@ -124,7 +124,7 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
               step="0.01"
               value={amount}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 bg-white border border-[var(--border)] rounded-md focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent outline-none transition-shadow text-gray-900"
+              className="w-full px-3 py-2 bg-white border border-[var(--border)] rounded-md focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent outline-none transition- text-gray-900"
             />
           </div>
 
@@ -155,7 +155,7 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 shadow-sm flex-1 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 flex-1 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? t('splitEntryForm.splitting') : t('splitEntryForm.confirmSplit')}
             </button>

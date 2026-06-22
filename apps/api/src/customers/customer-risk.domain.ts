@@ -51,9 +51,11 @@ export function resolveCustomerRiskProfile(
 
   // Credit/Limit checks only block progression to quote or confirm
   const isProgression = operation === 'confirm' || operation === 'quote';
-  const hasValidOverride =
-    customer.overrideCreditHoldUntil &&
-    customer.overrideCreditHoldUntil > new Date();
+
+  const overrideDate = customer.overrideCreditHoldUntil
+    ? new Date(customer.overrideCreditHoldUntil)
+    : null;
+  const hasValidOverride = overrideDate && overrideDate > new Date();
 
   if (customer.isOnCreditHold && !hasValidOverride) {
     if (isProgression || operation === 'update') {

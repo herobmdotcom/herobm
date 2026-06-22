@@ -250,7 +250,7 @@ function GenericMobileCard<T>({
 
   return (
     <div 
-      className={`p-4 bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200 flex flex-col gap-3 transition-transform ${onRowClicked ? 'cursor-pointer active:scale-[0.98]' : ''}`}
+      className={`p-4 bg-white rounded-xl -[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200 flex flex-col gap-3 transition-transform ${onRowClicked ? 'cursor-pointer active:scale-[0.98]' : ''}`}
       onClick={() => onRowClicked?.(row)}
     >
       <div className="flex justify-between items-start gap-4">
@@ -1215,7 +1215,7 @@ export default function DataGrid<T>({
     if (effectiveFetchAll || !mounted) return null;
     
     const wrapperClass = isMobileView 
-      ? 'lg:hidden flex items-center justify-between w-full p-2 bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200 shrink-0'
+      ? 'lg:hidden flex items-center justify-between w-full p-2 bg-white rounded-xl -[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200 shrink-0'
       : 'flex gap-1 shrink-0';
 
     return (
@@ -1228,7 +1228,7 @@ export default function DataGrid<T>({
 
   const gridContent = (
     <div className={`flex-1 flex flex-col relative w-full ${domLayout === 'autoHeight' ? '' : 'lg:min-h-0 lg:h-full'}`}>
-      <div className="flex flex-col-reverse lg:flex-row lg:items-center justify-between w-full px-4 pt-2 pb-2 lg:pt-1 lg:pb-4 bg-white shrink-0 min-h-[48px] gap-2 lg:gap-4 rounded-xl lg:rounded-none shadow-[0_2px_8px_rgba(0,0,0,0.04)] lg:shadow-none border border-slate-200 lg:border-t-0 lg:border-x-0 lg:border-b-slate-100">
+      <div className="flex flex-col-reverse lg:flex-row lg:items-center justify-between w-full px-4 pt-2 pb-2 lg:pt-1 lg:pb-4 bg-white shrink-0 min-h-[48px] gap-2 lg:gap-4 rounded-xl lg:rounded-none -[0_2px_8px_rgba(0,0,0,0.04)] lg: border border-slate-200 lg:border-t-0 lg:border-x-0 lg:border-b-slate-100">
         <div className="flex items-center justify-between w-full lg:w-auto gap-2 lg:gap-3 shrink-0">
           {(!effectiveFetchAll && mounted) && prevButton}
           
@@ -1391,7 +1391,7 @@ export default function DataGrid<T>({
     return (
       <div className="lg:h-full flex flex-col relative p-4 lg:p-6">
         <div className="relative lg:h-full flex flex-col">
-          <div className="flex-1 lg:min-h-0 flex flex-col z-10 lg:bg-white lg:rounded-xl lg:shadow-[0_2px_8px_rgba(0,0,0,0.04)] lg:border lg:border-[rgba(196,198,205,0.4)] lg:overflow-hidden transition-all">
+          <div className="flex-1 lg:min-h-0 flex flex-col z-10 lg:bg-white lg:rounded-xl lg:-[0_2px_8px_rgba(0,0,0,0.04)] lg:border lg:border-[rgba(196,198,205,0.4)] lg:overflow-hidden transition-all">
              <div className="flex flex-col lg:flex-row lg:items-center justify-between lg:px-6 pt-4 pb-2 lg:pt-4 lg:pb-2 gap-4">
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between lg:justify-start gap-4 w-full lg:w-auto">
                   <div className="flex items-center justify-between w-full lg:w-auto gap-4 min-w-0">

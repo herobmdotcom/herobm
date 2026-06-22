@@ -138,7 +138,7 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
           <Link 
             key={evt.eventId} 
             href={style.path.includes('?') ? `${style.path}${evt.entityId}` : `${style.path}/${evt.entityId}`}
-            className="group flex gap-4 p-4 rounded-xl transition-all hover:scale-[1.01] hover:shadow-md border"
+            className="group flex gap-4 p-4 rounded-xl transition-all hover:scale-[1.01] hover: border"
             style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
           >
             <div 

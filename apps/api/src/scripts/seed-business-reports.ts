@@ -1,5 +1,6 @@
+import * as path from 'path';
 import { config } from 'dotenv';
-config({ path: '.env' });
+config({ path: path.resolve(__dirname, '../../../../.env') });
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { businessReports } from '../drizzle/herobm-core-schema';

@@ -126,7 +126,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
     <div className="flex flex-col gap-6 pb-12 h-full overflow-y-auto pr-2">
       {/* Top side: Form & Editor */}
       <div className="flex flex-col gap-4 w-full shrink-0">
-        <div className="card p-6 flex flex-col gap-4 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)]">
+        <div className="card p-6 flex flex-col gap-4 bg-white rounded-xl border border-[rgba(196,198,205,0.4)]">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => router.push('/admin/settings/pdf-templates')} 
@@ -167,7 +167,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">{t('labels.supportedContexts')}</label>
               <div className="relative w-full">
                 <div 
-                  className="input flex items-center justify-between cursor-pointer font-normal border-gray-300 bg-white shadow-sm"
+                  className="input flex items-center justify-between cursor-pointer font-normal border-gray-300 bg-white"
                   onClick={() => setContextsOpen(!contextsOpen)}
                 >
                   <span className="truncate pr-4 text-sm text-gray-700 font-semibold">
@@ -180,7 +180,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
                 {contextsOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setContextsOpen(false)}></div>
-                    <div className="absolute top-[calc(100%+4px)] left-0 w-full min-w-[200px] max-h-60 overflow-y-auto bg-white border border-[rgba(196,198,205,0.4)] rounded-lg shadow-xl z-50 py-1">
+                    <div className="absolute top-[calc(100%+4px)] left-0 w-full min-w-[200px] max-h-60 overflow-y-auto bg-white border border-[rgba(196,198,205,0.4)] rounded-lg z-50 py-1">
                       {availableHooks.length === 0 ? (
                         <div className="text-xs text-gray-400 italic p-3">{t('loadingContexts')}</div>
                       ) : (
@@ -244,7 +244,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
 
       {/* Bottom side: Live Preview */}
       <div className="flex flex-col w-full min-h-[800px] shrink-0">
-        <div className="card p-6 flex flex-col gap-4 h-full bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)]">
+        <div className="card p-6 flex flex-col gap-4 h-full bg-white rounded-xl border border-[rgba(196,198,205,0.4)]">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>{t('livePreview.title')}</h3>
             <span className="text-xs text-gray-400 font-semibold bg-gray-100 px-2 py-1 rounded">{t('livePreview.badge')}</span>
@@ -282,7 +282,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
             </button>
           </div>
           
-          <div className="flex-1 border border-[rgba(196,198,205,0.4)] rounded-lg bg-gray-200/50 overflow-hidden relative shadow-inner">
+          <div className="flex-1 border border-[rgba(196,198,205,0.4)] rounded-lg bg-gray-200/50 overflow-hidden relative">
             {pdfBlobUrl ? (
               <iframe src={`${pdfBlobUrl}#toolbar=0`} className="w-[100%] h-[100%] border-0 object-contain" style={{ backgroundColor: '#525659' }} />
             ) : (

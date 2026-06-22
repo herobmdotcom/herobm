@@ -79,7 +79,7 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
 
   return (
     <div className="flex-1 min-h-0 flex flex-col w-full h-full pb-6">
-      <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+      <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
         <DataGrid
           endpoint={`/api/products/${productId}/components?r=${refreshKey}`}
           columns={columns}
@@ -105,7 +105,7 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
               </div>
               <div className="flex items-center gap-3 shrink-0 ml-4">
                 <button
-                  className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm flex items-center gap-1.5"
+                  className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
                   onClick={() => setSlideOverState({ isOpen: true })}
                   disabled={!isEditable}
                 >

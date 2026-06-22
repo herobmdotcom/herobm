@@ -275,7 +275,7 @@ function ReceivingFlow() {
 
             <div className="lg:hidden flex flex-col gap-3 w-full">
               {completedLines.map((line, idx) => (
-                <div key={line.goodsReceivedLineId} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                <div key={line.goodsReceivedLineId} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                   <div className="flex justify-between items-start gap-2 mb-2">
                     <div className="font-semibold text-sm text-[var(--accent)]">
                       {line.productNumber || '—'}
@@ -500,7 +500,7 @@ function ReceivingFlow() {
 
               <div className="lg:hidden flex flex-col gap-3 w-full">
                 {draftLines.map((line, idx) => (
-                  <div key={line.id} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                  <div key={line.id} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                     <div className="flex justify-between items-start gap-2 mb-2">
                       <div className="font-semibold text-sm text-[var(--accent)]">
                         {line.productNumber || '—'}

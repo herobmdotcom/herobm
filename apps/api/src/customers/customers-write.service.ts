@@ -63,11 +63,6 @@ export class AccountsWriteService {
     // Legacy ABM customers are now in core — the check above covers both.
 
     const sanitizedDto = buildUpdatePayload(dto);
-    if (sanitizedDto.overrideCreditHoldUntil) {
-      sanitizedDto.overrideCreditHoldUntil = new Date(
-        sanitizedDto.overrideCreditHoldUntil,
-      ).toISOString();
-    }
 
     let result;
     try {
@@ -131,11 +126,6 @@ export class AccountsWriteService {
       throw new NotFoundException(`Customer '${id}' not found`);
     }
     const sanitizedDto = buildUpdatePayload(dto);
-    if (sanitizedDto.overrideCreditHoldUntil) {
-      sanitizedDto.overrideCreditHoldUntil = new Date(
-        sanitizedDto.overrideCreditHoldUntil,
-      ).toISOString();
-    }
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const audit = calculateAuditTrail(

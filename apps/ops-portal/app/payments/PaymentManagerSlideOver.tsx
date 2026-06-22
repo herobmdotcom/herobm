@@ -40,17 +40,17 @@ const ToggleCell = (p: any) => {
         type="button"
         onClick={() => handleToggle(data)}
         className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-          isAllocated ? 'bg-[var(--accent)]' : 'bg-gray-300'
-        }`}
+ isAllocated ? 'bg-[var(--accent)]' : 'bg-gray-300'
+ }`}
         aria-checked={isAllocated}
         role="switch"
         title={isAllocated ? t("manager.messages.clickToRemoveAllocation") : t("manager.messages.clickToAutoAllocateMax")}
       >
         <span
           aria-hidden="true"
-          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-            isAllocated ? 'translate-x-4' : 'translate-x-0'
-          }`}
+          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out ${
+ isAllocated ? 'translate-x-4' : 'translate-x-0'
+ }`}
         />
       </button>
     </div>
@@ -546,10 +546,10 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       width="max-w-3xl"
       footer={!paymentId ? (
         <div className="flex items-center justify-end gap-3 w-full">
-          <button type="button" className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50" onClick={onClose} disabled={submitting}>
+          <button type="button" className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50" onClick={onClose} disabled={submitting}>
             {tCommon('cancel')}
           </button>
-          <button type="submit" form="create-payment-form" className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm" disabled={submitting}>
+          <button type="submit" form="create-payment-form" className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white" disabled={submitting}>
             {submitting ? (
               <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving')}</>
             ) : (

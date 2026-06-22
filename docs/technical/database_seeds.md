@@ -36,10 +36,11 @@ These records are specifically designed to handle data integrity issues during m
 
 | Entity | UUID | Code/Name | Managed By | Purpose |
 | :--- | :--- | :--- | :--- | :--- |
-| **Sales Order** | `00000000-0000-0000-0000-000000000001` | `LEGACY-SALES` | `import_sales_orders.sql` pre_hook | Parent for imported Sales Invoices that lack a matching Order. |
-| **Purchase Order** | `00000000-0000-0000-0000-000000000002` | `LEGACY-PURCHASE` | `import_purchase_orders.sql` pre_hook | Parent for imported Purchase Invoices that lack a matching PO. |
-| **SO Line** | `00000000-0000-0000-0000-000000000010` | (System Line) | `import_sales_orders.sql` pre_hook | Anchor for legacy sales events and history. |
-| **PO Line** | `00000000-0000-0000-0000-000000000020` | (System Line) | `import_purchase_orders.sql` pre_hook | Anchor for legacy purchase events and history. |
+| **Sales Order** | `00000000-0000-0000-0000-000000000001` | `ABM Import Fallback` | `import_abm_sales_orders.sql` pre_hook | Parent for imported Sales Invoices that lack a matching Order. |
+| **Purchase Order** | `00000000-0000-0000-0000-000000000002` | `ABM Import Fallback` | `import_abm_purchase_orders.sql` pre_hook | Parent for imported Purchase Invoices that lack a matching PO. |
+| **SO Line** | `00000000-0000-0000-0000-000000000010` | `(System Line)` | `import_abm_sales_orders.sql` pre_hook | Anchor for legacy sales events and history. |
+| **PO Line** | `00000000-0000-0000-0000-000000000020` | `(System Line)` | `import_abm_purchase_orders.sql` pre_hook | Anchor for legacy purchase events and history. |
+| **Supplier** | `00000000-0000-0000-0000-000000000003` | `ABM Import Fallback` | `import_abm_suppliers.sql` pre_hook | Dummy supplier for imported purchase records lacking a supplier. |
 | **Organization** | *(overwrite)* | *(from ABM)* | `import_organization.sql` | Imports company details from `raw_abm.company`, overwriting the seed fallback. |
 
 ---

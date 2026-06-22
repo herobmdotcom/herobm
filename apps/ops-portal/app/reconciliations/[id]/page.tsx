@@ -57,17 +57,17 @@ const ToggleCell = (p: ToggleCellParams) => {
         disabled={isPosted}
         onClick={handleToggleClick}
         className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-          data.isCleared ? 'bg-[var(--accent)]' : 'bg-gray-300'
-        } ${isPosted ? 'opacity-50 cursor-not-allowed' : ''}`}
+ data.isCleared ? 'bg-[var(--accent)]' : 'bg-gray-300'
+ } ${isPosted ? 'opacity-50 cursor-not-allowed' : ''}`}
         aria-checked={data.isCleared}
         role="switch"
         title={data.isCleared ? t('tooltips.clickToUnclear') : t('tooltips.clickToClear')}
       >
         <span
           aria-hidden="true"
-          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-            data.isCleared ? 'translate-x-4' : 'translate-x-0'
-          }`}
+          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white ring-0 transition duration-200 ease-in-out ${
+ data.isCleared ? 'translate-x-4' : 'translate-x-0'
+ }`}
         />
       </button>
     </div>
@@ -234,7 +234,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
   return (
     <div className="h-full flex flex-col bg-white">
       {/* GLOBAL HEADER (Outside of specific views) */}
-      <div className="flex flex-col bg-white border-b border-gray-200 px-6 py-4 gap-4 shrink-0 z-10 shadow-sm relative">
+      <div className="flex flex-col bg-white border-b border-gray-200 px-6 py-4 gap-4 shrink-0 z-10 relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button 
@@ -249,10 +249,10 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
               {t('reconciliationLabel', { glAccount: reconciliation.accountName })}
             </h1>
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-              isPosted 
-                ? 'bg-emerald-50 text-[var(--success)] border-emerald-200' 
-                : 'bg-amber-50 text-[var(--warning)] border-amber-200'
-            }`}>
+ isPosted 
+ ? 'bg-emerald-50 text-[var(--success)] border-emerald-200' 
+ : 'bg-amber-50 text-[var(--warning)] border-amber-200'
+ }`}>
               {isPosted ? tCommon('states.posted') : tCommon('states.draft')}
             </span>
           </div>
@@ -296,7 +296,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
                 <button
                   onClick={handlePost}
                   disabled={posting || Math.abs(reconciliation.variance) > 0.001}
-                  className="px-5 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                   title={Math.abs(reconciliation.variance) > 0.001 ? t('varianceMustBeZero') : ''}
                 >
                   {posting ? t('posting') : t('postReconciliation')}

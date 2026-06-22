@@ -295,7 +295,7 @@ export default function PutawayPage() {
                         <button
                             type="submit"
                             disabled={isSubmitting || !selectedBinId || !newTotalQuantity}
-                            className="w-full py-2.5 px-4 bg-[var(--accent)] text-white text-sm font-bold rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm flex items-center justify-center gap-2"
+                            className="w-full py-2.5 px-4 bg-[var(--accent)] text-white text-sm font-bold rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                         >
                             {isSubmitting ? (
                                 <>

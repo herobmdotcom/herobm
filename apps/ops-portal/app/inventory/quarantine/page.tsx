@@ -58,7 +58,7 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                     <span className="material-symbols-outlined text-[20px]">filter_list</span>
                 </button>
                 {open && (
-                    <div className="absolute left-0 right-0 sm:left-auto sm:right-0 top-full mt-2 w-full sm:w-64 bg-white shadow-[0_4px_24px_rgba(0,0,0,0.12)] rounded-xl border border-[var(--border)] p-4 z-50 flex flex-col gap-4">
+                    <div className="absolute left-0 right-0 sm:left-auto sm:right-0 top-full mt-2 w-full sm:w-64 bg-white -[0_4px_24px_rgba(0,0,0,0.12)] rounded-xl border border-[var(--border)] p-4 z-50 flex flex-col gap-4">
                         <div className="flex flex-col gap-1.5">
                             <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{tCommon('columns.location')}</label>
                             <select

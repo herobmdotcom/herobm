@@ -64,7 +64,7 @@ export default function JsonBrowserModal({ isOpen, onClose, hookSlug, type }: Js
           </div>
         )}
 
-        <div className="flex-1 bg-[#282c34] text-[#abb2bf] rounded-lg p-4 font-mono text-xs overflow-auto shadow-inner border border-gray-700">
+        <div className="flex-1 bg-[#282c34] text-[#abb2bf] rounded-lg p-4 font-mono text-xs overflow-auto border border-gray-700">
           {loading ? (
             <div className="flex items-center justify-center h-full text-gray-400">
               {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}

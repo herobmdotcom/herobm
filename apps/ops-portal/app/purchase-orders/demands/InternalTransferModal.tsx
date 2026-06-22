@@ -115,7 +115,7 @@ export default function InternalTransferModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-xl w-full max-w-md flex flex-col">
+      <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl w-full max-w-md flex flex-col">
         <div className="px-6 py-4 border-b border-[var(--border)] flex justify-between items-center">
           <h2 className="text-xl font-bold text-[var(--text-primary)]">
             {t('demands.createTransferTitle')}

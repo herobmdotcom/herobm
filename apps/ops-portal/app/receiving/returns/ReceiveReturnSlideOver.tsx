@@ -101,7 +101,7 @@ export default function ReceiveReturnSlideOver({
                     </button>
                     <button 
                         onClick={handleConfirm} 
-                        className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm" 
+                        className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white" 
                         disabled={saving || hasInvalidQuantities || hasZeroQuantities}
                     >
                         {saving ? (

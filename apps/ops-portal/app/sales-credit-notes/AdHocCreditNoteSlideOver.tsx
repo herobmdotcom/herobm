@@ -93,7 +93,7 @@ export default function AdHocCreditNoteSlideOver({
                     </button>
                     <button 
                         onClick={handleConfirm} 
-                        className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm" 
+                        className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white" 
                         disabled={saving || isInvalid}
                     >
                         {saving ? (
@@ -127,7 +127,7 @@ export default function AdHocCreditNoteSlideOver({
                     />
                 </div>
 
-                <div className="mt-4 border border-[var(--border-color)] rounded-xl overflow-hidden bg-[var(--bg-secondary)] shadow-sm">
+                <div className="mt-4 border border-[var(--border-color)] rounded-xl overflow-hidden bg-[var(--bg-secondary)]">
                     <div className="flex justify-between items-center p-3 border-b border-[var(--border-color)] bg-[var(--bg-primary)]">
                         <span className="font-medium">{t('creditLines')}</span>
                         <button onClick={handleAddLine} className="btn btn-xs btn-outline">

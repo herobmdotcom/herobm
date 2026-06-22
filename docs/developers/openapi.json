@@ -255,6 +255,14 @@
             }
           },
           {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "days",
             "required": false,
             "in": "query",
@@ -825,6 +833,14 @@
           },
           {
             "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vendorId",
             "required": false,
             "in": "query",
             "schema": {
@@ -1764,6 +1780,14 @@
             }
           },
           {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "days",
             "required": false,
             "in": "query",
@@ -1971,6 +1995,14 @@
           },
           {
             "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vendorId",
             "required": false,
             "in": "query",
             "schema": {
@@ -5548,6 +5580,14 @@
             }
           },
           {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "days",
             "required": false,
             "in": "query",
@@ -7806,6 +7846,14 @@
             }
           },
           {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "days",
             "required": false,
             "in": "query",
@@ -9226,6 +9274,14 @@
             }
           },
           {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "days",
             "required": false,
             "in": "query",
@@ -9361,6 +9417,14 @@
             }
           },
           {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "days",
             "required": false,
             "in": "query",
@@ -9370,14 +9434,6 @@
           },
           {
             "name": "purchaseOrderId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "vendorId",
             "required": false,
             "in": "query",
             "schema": {
@@ -11017,6 +11073,14 @@
             }
           },
           {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "days",
             "required": false,
             "in": "query",
@@ -11215,6 +11279,14 @@
           },
           {
             "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vendorId",
             "required": false,
             "in": "query",
             "schema": {
@@ -11429,6 +11501,14 @@
             }
           },
           {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "days",
             "required": false,
             "in": "query",
@@ -11632,6 +11712,14 @@
           },
           {
             "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vendorId",
             "required": false,
             "in": "query",
             "schema": {
@@ -12224,6 +12312,14 @@
           },
           {
             "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vendorId",
             "required": false,
             "in": "query",
             "schema": {
@@ -13985,6 +14081,14 @@
             }
           },
           {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "days",
             "required": false,
             "in": "query",
@@ -14091,6 +14195,14 @@
           },
           {
             "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vendorId",
             "required": false,
             "in": "query",
             "schema": {
@@ -16311,6 +16423,7 @@
             "format": "uuid"
           },
           "overrideCreditHoldUntil": {
+            "format": "date-time",
             "type": "string"
           }
         },
@@ -16404,6 +16517,7 @@
             "format": "uuid"
           },
           "overrideCreditHoldUntil": {
+            "format": "date-time",
             "type": "string"
           }
         }

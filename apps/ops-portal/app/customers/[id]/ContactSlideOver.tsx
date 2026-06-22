@@ -138,7 +138,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
           <button
             type="submit"
             form="contact-form"
-            className="btn btn-primary bg-[var(--accent)] hover:opacity-90 border-none text-white shadow-sm"
+            className="btn btn-primary bg-[var(--accent)] hover:opacity-90 border-none text-white"
             disabled={saving}
           >
             {saving ? (

@@ -33,13 +33,13 @@ export function DateRangeFilter({ value, onChange }: DateRangeFilterProps) {
       <div className="flex items-center gap-4">
         <div className="flex bg-[#f2f4f6] rounded-md border border-[rgba(196,198,205,0.4)] p-0.5">
           <button
-            className={`px-3 py-0.5 text-xs font-medium rounded-sm transition-colors ${!isRelative ? 'bg-white text-[var(--text-color)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'}`}
+            className={`px-3 py-0.5 text-xs font-medium rounded-sm transition-colors ${!isRelative ? 'bg-white text-[var(--text-color)] ' : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'}`}
             onClick={() => onChange({ mode: 'absolute', from: '', to: '' })}
           >
             {t('fixedDates')}
           </button>
           <button
-            className={`px-3 py-0.5 text-xs font-medium rounded-sm transition-colors ${isRelative ? 'bg-white text-[var(--text-color)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'}`}
+            className={`px-3 py-0.5 text-xs font-medium rounded-sm transition-colors ${isRelative ? 'bg-white text-[var(--text-color)] ' : 'text-[var(--text-muted)] hover:text-[var(--text-color)]'}`}
             onClick={() => onChange({ mode: 'relative', n: 30, unit: 'days', fullCalendar: false })}
           >
             {t('relative')}

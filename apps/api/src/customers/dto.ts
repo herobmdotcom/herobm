@@ -7,8 +7,9 @@ import {
   IsNumberString,
   IsBoolean,
   IsDateString,
+  IsDate,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { PartialType } from '@nestjs/swagger';
 
 export class BaseAccountDto {
@@ -106,8 +107,9 @@ export class BaseAccountDto {
   @IsUUID()
   tradingTermsId?: string;
   @IsOptional()
-  @IsDateString()
-  overrideCreditHoldUntil?: string;
+  @Type(() => Date)
+  @IsDate()
+  overrideCreditHoldUntil?: Date;
 }
 
 export class CreateAccountDto extends BaseAccountDto {}

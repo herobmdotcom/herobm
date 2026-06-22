@@ -723,7 +723,7 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
       {isEdit && (glSettings?.accountMetadataSchema as Record<string, any>)?.type === 'object' && (
         <tr style={{ background: 'var(--bg-secondary)' }}>
           <td colSpan={6} style={{ padding: '16px 24px', borderTop: 'none' }}>
-            <div className="card bg-[var(--bg-primary)] p-4 shadow-sm border border-[var(--border)]">
+            <div className="card bg-[var(--bg-primary)] p-4 border border-[var(--border)]">
               <DynamicForm 
                 schema={glSettings!.accountMetadataSchema as Record<string, unknown>} 
                 data={coaForm.metadata || {}} 

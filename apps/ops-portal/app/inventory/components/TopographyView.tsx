@@ -118,7 +118,7 @@ export default function TopographyView() {
   const totalZones = locations.reduce((acc, loc) => acc + loc.zones.length, 0);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+    <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-[rgba(196,198,205,0.4)]">
         <div className="flex items-center gap-4 flex-1">
