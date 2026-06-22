@@ -7,10 +7,16 @@ import { businessReports } from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 
 async function seedBusinessReports() {
+  const host = process.env.POSTGRES_HOST || '127.0.0.1';
+  const port = process.env.POSTGRES_PORT || '5432';
+  const user = process.env.POSTGRES_USER || 'postgres';
+  const dbName = process.env.POSTGRES_DB || 'herobm';
+
   const connectionString =
     process.env.DATABASE_URL ||
-    `postgres://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT}/${process.env.POSTGRES_DB}`;
-  if (!process.env.POSTGRES_USER) {
+    `postgres://${user}:${process.env.POSTGRES_PASSWORD}@${host}:${port}/${dbName}`;
+
+  if (!process.env.POSTGRES_USER && !process.env.DATABASE_URL) {
     throw new Error('Database connection details not set in .env');
   }
 

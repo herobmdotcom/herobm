@@ -11,7 +11,7 @@
     "libphonenumber-js": "^1.13.6"
   },
   "scripts": {
-    "seed": "tsx --tsconfig apps/api/tsconfig.json apps/api/src/scripts/seed.ts",
+    "seed": "npm run seed -w apps/api",
     "test": "make test-api",
     "verify": "make verify-local",
     "typecheck": "make typecheck-portal",
