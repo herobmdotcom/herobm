@@ -171,13 +171,7 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v2: 'read',
       v3: 'allow',
     },
-    {
-      ptype: 'p',
-      v0: 'viewer',
-      v1: SystemResource.RECEPTIONS,
-      v2: 'read',
-      v3: 'allow',
-    },
+
     {
       ptype: 'p',
       v0: 'viewer',
@@ -192,13 +186,7 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v2: 'read',
       v3: 'allow',
     },
-    {
-      ptype: 'p',
-      v0: 'viewer',
-      v1: SystemResource.TAX_CATEGORIES,
-      v2: 'read',
-      v3: 'allow',
-    },
+
     {
       ptype: 'p',
       v0: 'viewer',
@@ -227,6 +215,13 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v2: 'read',
       v3: 'allow',
     },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.CREDIT_CONTROL,
+      v2: 'read',
+      v3: 'allow',
+    },
 
     {
       ptype: 'p',
@@ -514,35 +509,6 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v0: 'admin',
       v1: SystemResource.SUPPLIERS,
       v2: 'archive',
-      v3: 'allow',
-    },
-
-    {
-      ptype: 'p',
-      v0: 'admin',
-      v1: SystemResource.RECEPTIONS,
-      v2: 'read',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'admin',
-      v1: SystemResource.RECEPTIONS,
-      v2: 'write',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'admin',
-      v1: SystemResource.RECEPTIONS,
-      v2: 'archive',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'admin',
-      v1: SystemResource.RECEPTIONS,
-      v2: 'handle',
       v3: 'allow',
     },
 
@@ -726,21 +692,6 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
     {
       ptype: 'p',
       v0: 'admin',
-      v1: SystemResource.EXTERNAL_API,
-      v2: 'read',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'admin',
-      v1: SystemResource.EXTERNAL_API,
-      v2: 'write',
-      v3: 'allow',
-    },
-
-    {
-      ptype: 'p',
-      v0: 'admin',
       v1: SystemResource.IMPORT,
       v2: 'read',
       v3: 'allow',
@@ -826,32 +777,39 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v3: 'allow',
     },
 
-    {
-      ptype: 'p',
-      v0: 'admin',
-      v1: SystemResource.TAX_CATEGORIES,
-      v2: 'read',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'admin',
-      v1: SystemResource.TAX_CATEGORIES,
-      v2: 'write',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'admin',
-      v1: SystemResource.TAX_CATEGORIES,
-      v2: 'archive',
-      v3: 'allow',
-    },
     {
       ptype: 'p',
       v0: 'admin',
       v1: SystemResource.DATA_EXPORT,
       v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.CREDIT_CONTROL,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.CREDIT_CONTROL,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: SystemResource.CREDIT_CONTROL,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'finance',
+      v1: SystemResource.CREDIT_CONTROL,
+      v2: 'write',
       v3: 'allow',
     },
 
@@ -980,13 +938,6 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       ptype: 'p',
       v0: 'warehouse',
       v1: SystemResource.PURCHASE_DEBIT_NOTES,
-      v2: 'handle',
-      v3: 'allow',
-    },
-    {
-      ptype: 'p',
-      v0: 'warehouse',
-      v1: SystemResource.RECEPTIONS,
       v2: 'handle',
       v3: 'allow',
     },
@@ -1148,13 +1099,7 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v2: 'read',
       v3: 'allow',
     },
-    {
-      ptype: 'p',
-      v0: 'agent',
-      v1: SystemResource.RECEPTIONS,
-      v2: 'read',
-      v3: 'allow',
-    },
+
     {
       ptype: 'p',
       v0: 'agent',
@@ -1169,13 +1114,7 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v2: 'read',
       v3: 'allow',
     },
-    {
-      ptype: 'p',
-      v0: 'agent',
-      v1: SystemResource.TAX_CATEGORIES,
-      v2: 'read',
-      v3: 'allow',
-    },
+
     {
       ptype: 'p',
       v0: 'agent',
@@ -1197,13 +1136,7 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       v2: 'read',
       v3: 'allow',
     },
-    {
-      ptype: 'p',
-      v0: 'agent',
-      v1: SystemResource.EXTERNAL_API,
-      v2: 'read',
-      v3: 'allow',
-    },
+
     {
       ptype: 'p',
       v0: 'agent',
@@ -1389,10 +1322,11 @@ async function seedProducts(db: SeedDB, dryRun: boolean) {
   await db
     .insert(products)
     .values({
-      productId: '00000000-0000-0000-0000-000000000000',
+      productId: '00000000-0000-4000-8000-000000000000',
       productNumber: 'SYSTEM-CUSTOM-LINE',
       name: 'Custom Line Product',
       productType: 'non-stock',
+      baseUom: 'EA',
     })
     .onConflictDoUpdate({
       target: products.productId,
@@ -1400,6 +1334,7 @@ async function seedProducts(db: SeedDB, dryRun: boolean) {
         productNumber: 'SYSTEM-CUSTOM-LINE',
         name: 'Custom Line Product',
         productType: 'non-stock',
+        baseUom: 'EA',
       },
     });
 
@@ -1461,7 +1396,7 @@ async function seedOrganization(db: SeedDB, dryRun: boolean) {
   await db
     .insert(organization)
     .values({
-      organizationId: '00000000-0000-0000-0000-000000000000',
+      organizationId: '00000000-0000-4000-8000-000000000000',
       name: 'My Company',
     })
     .onConflictDoUpdate({
@@ -1635,17 +1570,12 @@ export async function seedCoaAccounts(
   );
 }
 
-export async function seedCoaSettings(
+export async function seedTaxCategoriesAndTerms(
   db: SeedDB,
-  dryRun: boolean,
-  prefix = 'au_standard',
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Seed settings schema is dynamic and unstructured
+  settings: any,
+  dryRun = false,
 ) {
-  const settings = loadCoaSettings(prefix);
-  if (!settings) {
-    console.log('  SKIP: No COA settings file found.');
-    return;
-  }
-
   const categories = settings.gst_categories || [];
   const terms = settings.trading_terms || [];
 
@@ -1667,7 +1597,6 @@ export async function seedCoaSettings(
         title: cat.title,
         type: type,
         rate: cat.rate.toString(),
-        isDefault: !!cat.is_default,
       })
       .onConflictDoUpdate({
         target: taxCategories.code,
@@ -1675,7 +1604,6 @@ export async function seedCoaSettings(
           title: cat.title,
           type: type,
           rate: cat.rate.toString(),
-          isDefault: !!cat.is_default,
         },
       });
   }
@@ -1702,45 +1630,31 @@ export async function seedCoaSettings(
       });
   }
   console.log(`  Seeded ${terms.length} trading terms`);
+}
 
-  const baseCurrency = settings.base_currency || 'AUD';
-  const fiscalMonth = settings.fiscal_year_start_month || 7;
-  const defaults = settings.defaults || {};
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-  const glData: any = {
-    settingsId: '4e185bce-d31a-4caa-8462-73c261864eff',
-    baseCurrency,
-    fiscalYearStartMonth: fiscalMonth,
-  };
-
-  const mappings = [
-    { json: 'ar_account_code', col: 'defaultArAccountId' },
-    { json: 'ap_account_code', col: 'defaultApAccountId' },
-    { json: 'revenue_account_code', col: 'defaultRevenueAccountId' },
-    { json: 'cogs_account_code', col: 'defaultCogsAccountId' },
-    { json: 'tax_account_code', col: 'defaultTaxAccountId' },
-    { json: 'expense_account_code', col: 'defaultExpenseAccountId' },
-    { json: 'inventory_account_code', col: 'defaultInventoryAccountId' },
-    { json: 'grni_account_code', col: 'defaultGrniAccountId' },
-    { json: 'shrinkage_account_code', col: 'defaultShrinkageAccountId' },
-  ];
-
-  for (const map of mappings) {
-    if (defaults[map.json]) {
-      glData[map.col] = uuidv5(defaults[map.json], NAMESPACE_COA);
-    }
+export async function seedCoaSettings(
+  db: SeedDB,
+  dryRun: boolean,
+  prefix = 'au_standard',
+) {
+  const settings = loadCoaSettings(prefix);
+  if (!settings) {
+    console.log('  SKIP: No COA settings file found.');
+    return;
   }
 
-  await db.insert(glSettings).values(glData).onConflictDoUpdate({
-    target: glSettings.settingsId,
-    set: glData,
+  await seedTaxCategoriesAndTerms(db, settings, dryRun);
+
+  const defaultTaxCatId = uuidv5('GST_CAT_GST', NAMESPACE_COA);
+  const defaultTermId = uuidv5('TERM_NET30', NAMESPACE_COA);
+  await db.update(appSettings).set({
+    defaultSalesTaxCategoryId: defaultTaxCatId,
+    defaultPurchaseTaxCategoryId: defaultTaxCatId,
+    defaultCustomerTermsId: defaultTermId,
+    defaultSupplierTermsId: defaultTermId,
   });
 
-  console.log('  Seeded COA defaults to gl_settings');
-  console.log(
-    `  Seeded GL settings (base_currency=${baseCurrency}, fiscal_month=${fiscalMonth})`,
-  );
+  console.log('  Seeded COA defaults to app_settings');
 }
 
 function loadReportConfig() {
@@ -1887,7 +1801,7 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
   await db
     .insert(customers)
     .values({
-      customerId: '20000000-0000-0000-0000-000000000001',
+      customerId: '20000000-0000-4000-8000-000000000001',
       customerNumber: 'CUST-E2E-001',
       name: 'E2E Default Customer',
       currencyCode: 'AUD', // testData
@@ -1902,7 +1816,7 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
   await db
     .insert(suppliers)
     .values({
-      vendorId: '20000000-0000-0000-0000-000000000002',
+      vendorId: '20000000-0000-4000-8000-000000000002',
       vendorNumber: 'VEND-E2E-001',
       name: 'E2E Default Vendor',
       currencyCode: 'AUD', // testData

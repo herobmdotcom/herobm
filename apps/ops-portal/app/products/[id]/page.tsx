@@ -17,10 +17,13 @@ import DataGrid from '@/components/DataGrid';
 import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
 import AddSupplierModal from '@/components/products/AddSupplierModal';
 import GroupSelect from '@/components/shared/GroupSelect';
+import InheritedSelect from '@/components/shared/InheritedSelect';
+import { useSettings } from '@/components/SettingsProvider';
 import { formatLocationDisplay } from '@/lib/formatters';
 import { PRODUCT_STATE } from '@herobm/shared';
 import { ProductKitComponentsTab } from './ProductKitComponentsTab';
 import { getErrorMessage } from '@herobm/shared';
+import { useGroup, useInheritance } from '@/hooks/useInheritance';
 const formatMoney = (val: string | number | undefined | null) => {
   if (!val) return '0.00';
   const num = typeof val === 'string' ? parseFloat(val) : val;
@@ -41,6 +44,7 @@ export interface KitComponent extends api.ProductResponseDto {
 }
 
 export default function ProductDetailPage() {
+  const { app } = useSettings();
   const t = useTranslations();
   const tCommon = useTranslations('common');
   const tStates = useTranslations('common.states');
@@ -53,6 +57,7 @@ export default function ProductDetailPage() {
   const [refreshGrid, setRefreshGrid] = useState(0);
   const [product, setProduct] = useState<api.ProductResponseDto | null>(null);
   const [taxCategories, setTaxCategories] = useState<api.TaxCategoryResponseDto[]>([]);
+  const [productGroups, setProductGroups] = useState<api.ProductGroupResponseDto[]>([]);
   const [uomDictionary, setUomDictionary] = useState<{ uomCode: string; description: string }[]>([]);
   const [addingUom, setAddingUom] = useState(false);
 
@@ -89,6 +94,7 @@ export default function ProductDetailPage() {
     tradePrice: '0',
     priceLevel3: '0',
     priceLevel4: '0',
+    weight: '0',
     purchaseTaxCategoryId: '',
     salesTaxCategoryId: '',
     externalTaxCode: '',
@@ -115,6 +121,7 @@ export default function ProductDetailPage() {
         tradePrice: formatMoney(data.tradePrice),
         priceLevel3: formatMoney(data.priceLevel3),
         priceLevel4: formatMoney(data.priceLevel4),
+        weight: data.weight || '',
         purchaseTaxCategoryId: data.purchaseTaxCategoryId || '',
         salesTaxCategoryId: data.salesTaxCategoryId || '',
         externalTaxCode: data.externalTaxCode || '',
@@ -154,9 +161,22 @@ export default function ProductDetailPage() {
   useEffect(() => {
     fetchProduct();
     api.taxCategoriesControllerFindAll().then((res) => setTaxCategories(res.data)).catch((err) => reportError(err, 'ProductDetailPage'));
+    api.productGroupsControllerFindAll().then((res: unknown) => setProductGroups((res as { data: unknown[] }).data as unknown as api.ProductGroupResponseDto[])).catch((err) => reportError(err, 'ProductDetailPage'));
     api.uomDictionaryControllerFindAll().then((res) => setUomDictionary(res.data)).catch((err) => reportError(err, 'ProductDetailPage'));
     api.inventoryControllerFindAllLocations({ productId: id as string }).then((res) => setLocations((res.data) || [])).catch((err) => reportError(err, 'ProductDetailPage'));
   }, [fetchProduct, id]);
+
+  const selectedGroup = useGroup(productGroups, dto.productGroupId);
+
+  const purchaseTaxInheritance = useInheritance([
+    { value: selectedGroup?.purchaseTaxCategoryId, sourceLabel: `Group ${selectedGroup?.groupCode}` },
+    { value: app?.defaultPurchaseTaxCategoryId, sourceLabel: 'System Default' }
+  ]);
+
+  const salesTaxInheritance = useInheritance([
+    { value: selectedGroup?.salesTaxCategoryId, sourceLabel: `Group ${selectedGroup?.groupCode}` },
+    { value: app?.defaultSalesTaxCategoryId, sourceLabel: 'System Default' }
+  ]);
 
   useEffect(() => {
     if (!newBinLink.locationId) {
@@ -1065,45 +1085,47 @@ export default function ProductDetailPage() {
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                   {t('products.columns.purchaseTaxCategory')}
                 </label>
-                <select
+                <InheritedSelect
                   className="input"
                   disabled={!isEditable || saving}
                   value={dto.purchaseTaxCategoryId ?? ''}
-                  onChange={(e) => handleSelectChange('purchaseTaxCategoryId', e.target.value)}
-                >
-                  <option value="">{t('common.none')}</option>
-                  {taxCategories.map((cat) => (
-                    <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
-                      {cat.title} ({cat.code})
-                    </option>
-                  ))}
-                  {/* Fallback for legacy values not in current categories */}
-                  {dto.purchaseTaxCategoryId && !taxCategories.find(c => c.taxCategoryId === dto.purchaseTaxCategoryId) && (
-                    <option value={dto.purchaseTaxCategoryId}>{t('products.unknownCategory', { id: dto.purchaseTaxCategoryId })}</option>
-                  )}
-                </select>
+                  onChange={(val) => handleSelectChange('purchaseTaxCategoryId', val)}
+                  options={[
+                    ...taxCategories.map((cat) => ({
+                      value: cat.taxCategoryId,
+                      label: `${cat.title} (${cat.code})`,
+                    })),
+                    // Fallback for legacy values not in current categories
+                    ...(dto.purchaseTaxCategoryId && !taxCategories.find(c => c.taxCategoryId === dto.purchaseTaxCategoryId)
+                      ? [{ value: dto.purchaseTaxCategoryId, label: t('products.unknownCategory', { id: dto.purchaseTaxCategoryId }) }]
+                      : [])
+                  ]}
+                  inheritedValue={purchaseTaxInheritance.inheritedValue}
+                  inheritedSourceLabel={purchaseTaxInheritance.inheritedSourceLabel}
+                />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                   {t('products.columns.salesTaxCategory')}
                 </label>
-                <select
+                <InheritedSelect
                   className="input"
                   disabled={!isEditable || saving}
                   value={dto.salesTaxCategoryId ?? ''}
-                  onChange={(e) => handleSelectChange('salesTaxCategoryId', e.target.value)}
-                >
-                  <option value="">{t('common.none')}</option>
-                  {taxCategories.map((cat) => (
-                    <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
-                      {cat.title} ({cat.code})
-                    </option>
-                  ))}
-                  {/* Fallback for legacy values not in current categories */}
-                  {dto.salesTaxCategoryId && !taxCategories.find(c => c.taxCategoryId === dto.salesTaxCategoryId) && (
-                    <option value={dto.salesTaxCategoryId}>{t('products.unknownCategory', { id: dto.salesTaxCategoryId })}</option>
-                  )}
-                </select>
+                  onChange={(val) => handleSelectChange('salesTaxCategoryId', val)}
+                  options={[
+                    ...taxCategories.map((cat) => ({
+                      value: cat.taxCategoryId,
+                      label: `${cat.title} (${cat.code})`,
+                    })),
+                    // Fallback for legacy values not in current categories
+                    ...(dto.salesTaxCategoryId && !taxCategories.find(c => c.taxCategoryId === dto.salesTaxCategoryId)
+                      ? [{ value: dto.salesTaxCategoryId, label: t('products.unknownCategory', { id: dto.salesTaxCategoryId }) }]
+                      : [])
+                  ]}
+                  inheritedValue={salesTaxInheritance.inheritedValue}
+                  inheritedSourceLabel={salesTaxInheritance.inheritedSourceLabel}
+                />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -1192,7 +1214,7 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Conversions table */}
-          <div className="pt-4 mt-4 border-t border-[var(--border)]">
+          <div className="pt-4 mt-4">
             <InlineSettingsTable
               title={<span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{t('products.packagingConversions')}</span>}
               // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
@@ -1252,6 +1274,23 @@ export default function ProductDetailPage() {
               addLabel={t('products.addConversion')}
               emptyLabel={t('products.noConversions')}
             />
+          </div>
+
+          <div className="pt-4 mt-4 grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('products.columns.weight')}
+              </label>
+              <input
+                type="number"
+                step="0.0001"
+                className="input"
+                disabled={!isEditable || saving}
+                value={dto.weight ?? ''}
+                onChange={(e) => setDto({ ...dto, weight: e.target.value })}
+                onBlur={(e) => handleBlur('weight', e.target.value)}
+              />
+            </div>
           </div>
         </div>
 

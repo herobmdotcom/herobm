@@ -77,6 +77,7 @@ describe('API E2E — Tax Resolution engine', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send(createPayload);
 
+    if (response.status !== 201) console.log('TAX RES ERR:', response.body);
     expect(response.status).toBe(201);
 
     const getRes = await request(app.getHttpServer())

@@ -40,8 +40,8 @@ describe('BankFeedsController (e2e)', () => {
     const inserted = await db
       .insert(glAccounts)
       .values({
-        accountCode: '9999-BANK',
-        name: 'E2E Bank Account',
+        accountCode: '9999-BANK-' + Date.now(),
+        name: 'Bank Fee Auto-Match ' + Date.now(),
         accountType: 'asset',
         currencyCode: 'AUD',
         isBankAccount: true,
@@ -55,9 +55,7 @@ describe('BankFeedsController (e2e)', () => {
 
     bankAccountId = inserted[0].glAccountId;
 
-    // Clean up any previously created rules or profiles from failed tests
-    await db.delete(reconciliationRules);
-    await db.delete(csvMappingProfiles);
+    // Removed global delete to prevent parallel test conflicts
   });
 
   afterAll(async () => {
@@ -88,7 +86,7 @@ describe('BankFeedsController (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         glAccountId: bankAccountId,
-        name: 'Test Profile',
+        name: 'Test Profile ' + Date.now(),
         dateColumn: '0',
         amountColumn: '1',
         descriptionColumn: '2',
@@ -164,7 +162,7 @@ describe('BankFeedsController (e2e)', () => {
     const targetInserted = await db
       .insert(glAccounts)
       .values({
-        accountCode: '8888-TARGET',
+        accountCode: '8888-TARGET-' + Date.now(),
         name: 'E2E Target Account',
         accountType: 'expense',
         currencyCode: 'AUD',
@@ -184,7 +182,7 @@ describe('BankFeedsController (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         conditionType: 'contains',
-        conditionValue: 'STRIPE PAYOUT',
+        conditionValue: 'STRIPE PAYOUT E2E MATCH',
         targetGlAccountId: targetAccountId,
       })
       .expect(201);
@@ -194,7 +192,7 @@ describe('BankFeedsController (e2e)', () => {
 
   it('should import CSV and auto-match rules', async () => {
     const csvBuffer = Buffer.from(
-      'Date,Amount,Description\n2026-05-25,150.00,STRIPE PAYOUT\n2026-05-26,-50.00,UNKNOWN FEE',
+      'Date,Amount,Description\n2026-05-25,150.00,STRIPE PAYOUT E2E MATCH\n2026-05-26,-50.00,UNKNOWN FEE E2E NO MATCH',
     );
 
     const res = await request(app.getHttpServer())

@@ -240,12 +240,36 @@ export class AppConfigResponseDto {
   @ApiProperty({ required: false }) smtpFromAddress?: string;
   @ApiProperty({ required: false }) defaultPurchaseTaxCategoryId?: string;
   @ApiProperty({ required: false }) defaultSalesTaxCategoryId?: string;
+  @ApiProperty({ required: false }) defaultCustomerTermsId?: string;
+  @ApiProperty({ required: false }) defaultSupplierTermsId?: string;
+  @ApiProperty({ required: false }) defaultCustomerTaxPositionId?: string;
+  @ApiProperty({ required: false }) defaultSupplierTaxPositionId?: string;
 }
 export class UpdateAppConfigDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   defaultFulfillmentLocationId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  defaultCustomerTermsId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  defaultSupplierTermsId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  defaultCustomerTaxPositionId?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  defaultSupplierTaxPositionId?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
@@ -301,8 +325,6 @@ export class TradingTermResponseDto {
   @ApiProperty() description!: string;
   @ApiProperty() days!: number;
   @ApiProperty() type!: string;
-  @ApiProperty() isDefaultCustomer!: boolean;
-  @ApiProperty() isDefaultSupplier!: boolean;
 }
 
 export class CreateTradingTermDto {
@@ -320,14 +342,6 @@ export class CreateTradingTermDto {
   @IsString()
   @IsNotEmpty()
   type!: string;
-
-  @IsOptional()
-  @IsBoolean()
-  isDefaultCustomer?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  isDefaultSupplier?: boolean;
 }
 
 export class UpdateTradingTermDto {
@@ -346,14 +360,6 @@ export class UpdateTradingTermDto {
   @IsOptional()
   @IsString()
   type?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  isDefaultCustomer?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  isDefaultSupplier?: boolean;
 }
 
 export class EmptyBodyDto {}

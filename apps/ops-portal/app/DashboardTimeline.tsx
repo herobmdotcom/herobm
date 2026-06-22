@@ -96,7 +96,7 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
     fetchTimeline();
 
     // Polling interval
-    const interval = setInterval(fetchTimeline, 30000);
+    const interval = setInterval(fetchTimeline, 120000);
 
     return () => {
       mounted = false;

@@ -5,9 +5,9 @@ export class CreateMacroDto {
   @IsString()
   name: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  macroType?: string;
+  macroType!: string;
 
   @IsNotEmpty()
   @IsString()

@@ -82,7 +82,7 @@ describe('SuppliersService', () => {
 
     it('should throw NotFoundException if not found', async () => {
       await expect(
-        service.findOne('00000000-0000-0000-0000-000000000999'),
+        service.findOne('00000000-0000-4000-8000-000000000999'),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -109,7 +109,7 @@ describe('SuppliersService', () => {
 
     it('should throw NotFoundException if vendor does not exist', async () => {
       await expect(
-        service.assessRisk('00000000-0000-0000-0000-000000000999'),
+        service.assessRisk('00000000-0000-4000-8000-000000000999'),
       ).rejects.toThrow(NotFoundException);
     });
   });

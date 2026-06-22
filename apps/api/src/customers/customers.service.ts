@@ -209,19 +209,9 @@ export class AccountsService {
     const rows = await db
       .select({
         ...getTableColumns(customers),
-        customerGroupName: customerGroups.name,
-        customerGroupCode: customerGroups.groupCode,
-        customerGroupTradingTermsId: customerGroups.tradingTermsId,
-        customerGroupCreditLimit: customerGroups.creditLimit,
-        customerGroupIsOnCreditHold: customerGroups.isOnCreditHold,
-        customerGroupTaxPositionId: customerGroups.taxPositionId,
         gstCategoryName: taxPositions.code,
       })
       .from(customers)
-      .leftJoin(
-        customerGroups,
-        eq(customers.customerGroupId, customerGroups.customerGroupId),
-      )
       .leftJoin(
         taxPositions,
         eq(customers.taxPositionId, taxPositions.taxPositionId),
@@ -270,5 +260,79 @@ export class AccountsService {
       contacts: contactsResult,
       deliveryAddresses: deliveryAddressesResult,
     };
+  }
+
+  async getAgedBalances(agingBasis: 'invoiceDate' | 'dueDate' = 'dueDate') {
+    const basisCol = agingBasis === 'invoiceDate' ? 'invoice_date' : 'due_date';
+
+    const invoicesQuery = sql`
+      SELECT 
+        c.customer_id as "customerId",
+        c.name as "customerName",
+        c.customer_number as "accountNumber",
+        c.currency_code as "currencyCode",
+        c.is_on_credit_hold as "isOnCreditHold",
+        c.credit_limit as "creditLimit",
+        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} >= CURRENT_DATE THEN i.outstanding_amount ELSE 0 END), 0) as "current",
+        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '30 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days1To30",
+        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '30 days' AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '60 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days31To60",
+        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '60 days' AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days61To90",
+        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days90Plus",
+        COALESCE(SUM(i.outstanding_amount), 0) as "totalOutstanding"
+      FROM herobm_core.customers c
+      JOIN herobm_core.sales_orders so ON so.customer_id = c.customer_id
+      JOIN herobm_core.sales_invoices i ON i.sales_order_id = so.sales_order_id
+      WHERE i.outstanding_amount > 0 AND i.state_code NOT IN ('DRAFT', 'CANCELLED')
+      GROUP BY c.customer_id, c.name, c.customer_number, c.currency_code, c.is_on_credit_hold, c.credit_limit
+    `;
+
+    const glQuery = sql`
+      SELECT 
+        l.party_id as "customerId",
+        COALESCE(SUM(l.debit), 0) - COALESCE(SUM(l.credit), 0) as "glBalance"
+      FROM herobm_core.gl_journal_lines l
+      JOIN herobm_core.gl_journal_entries e ON l.journal_entry_id = e.journal_entry_id
+      WHERE l.party_type = 'customer'
+      GROUP BY l.party_id
+    `;
+
+    const [invoicesRes, glRes] = await Promise.all([
+      this.db.execute(invoicesQuery),
+      this.db.execute(glQuery),
+    ]);
+
+    const invoicesRows = ((invoicesRes as unknown as Record<string, unknown>)
+      .rows ?? invoicesRes) as Record<string, unknown>[];
+    const glRows = ((glRes as unknown as Record<string, unknown>).rows ??
+      glRes) as Record<string, unknown>[];
+
+    const glMap = new Map<string, number>();
+    for (const row of glRows) {
+      if (row.customerId) {
+        glMap.set(row.customerId as string, Number(row.glBalance));
+      }
+    }
+
+    return invoicesRows.map((row) => {
+      const glBalance = glMap.get(row.customerId as string) || 0;
+      const totalOutstanding = Number(row.totalOutstanding);
+      return {
+        customerId: row.customerId as string,
+        customerName: row.customerName as string,
+        accountNumber: row.accountNumber as string,
+        currencyCode: row.currencyCode,
+        current: Number(row.current),
+        days1To30: Number(row.days1To30),
+        days31To60: Number(row.days31To60),
+        days61To90: Number(row.days61To90),
+        days90Plus: Number(row.days90Plus),
+        totalOutstanding,
+        glBalance,
+        discrepancyAmount: Math.abs(totalOutstanding - glBalance),
+        isOnCreditHold: Boolean(row.isOnCreditHold),
+        creditLimit:
+          row.creditLimit !== null ? (row.creditLimit as string) : null,
+      };
+    });
   }
 }

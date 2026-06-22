@@ -50,11 +50,12 @@ describe('API E2E — Sales Invoices', () => {
       .post('/api/products')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        productNumber: 'INV-TEST-001',
+        productNumber: `INV-TEST-001-${Date.now()}`,
         name: 'Inventory Test Product',
         productType: 'inventory',
         listPrice: 10,
         isArchived: false,
+        baseUom: 'EA',
       })
       .expect(201);
 
@@ -64,11 +65,12 @@ describe('API E2E — Sales Invoices', () => {
       .post('/api/products')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        productNumber: 'INV-TEST-002',
+        productNumber: `INV-TEST-002-${Date.now()}`,
         name: 'Inventory Test Product 2',
         productType: 'inventory',
         listPrice: 15,
         isArchived: false,
+        baseUom: 'EA',
       })
       .expect(201);
 
@@ -135,7 +137,7 @@ describe('API E2E — Sales Invoices', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
       const binId =
-        binsRes.body.data[0]?.binId || '40000000-0000-0000-0000-000000000003';
+        binsRes.body.data[0]?.binId || '00000000-0000-4000-8000-000000000003';
 
       await request(app.getHttpServer())
         .post(`/api/sales-orders/${orderId}/picking/lines/${orderLineId1}`)
@@ -254,7 +256,7 @@ describe('API E2E — Sales Invoices', () => {
         .post(`/api/sales-orders/${testOrderId}/picking/lines/${testLineId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          binId: validBin2?.binId || '40000000-0000-0000-0000-000000000003',
+          binId: validBin2?.binId || '00000000-0000-4000-8000-000000000003',
           quantity: '4',
         })
         .expect(201);
@@ -318,7 +320,7 @@ describe('API E2E — Sales Invoices', () => {
     it('GET /api/sales-invoices?customerId=BOGUS — returns empty', async () => {
       const res = await request(app.getHttpServer())
         .get(
-          '/api/sales-invoices?customerId=00000000-0000-0000-0000-000000000000',
+          '/api/sales-invoices?customerId=00000000-0000-4000-8000-000000000000',
         )
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);

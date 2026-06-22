@@ -36,10 +36,10 @@ describe('PurchaseOrdersService', () => {
 
   let mockTaxResolutionEngine: any;
 
-  const VENDOR_ID = '00000000-0000-0000-0000-000000000002';
-  const PROD_ID = '00000000-0000-0000-0000-00000000000a';
-  const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
-  const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
+  const VENDOR_ID = '00000000-0000-4000-8000-000000000002';
+  const PROD_ID = '00000000-0000-4000-8000-00000000000a';
+  const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
+  const TAX_CAT_ID = '00000000-0000-4000-8000-000000000007';
 
   beforeEach(async () => {
     // Seed infrastructure ONCE
@@ -70,6 +70,7 @@ describe('PurchaseOrdersService', () => {
       productId: PROD_ID,
       productNumber: 'P1',
       name: 'Product 1',
+      productType: 'inventory',
       baseUom: 'EA',
       purchaseTaxCategoryId: TAX_CAT_ID,
     });
@@ -89,7 +90,6 @@ describe('PurchaseOrdersService', () => {
       }),
     };
     mockTaxCategoriesService = {
-      getDefault: jest.fn().mockResolvedValue({ taxCategoryId: TAX_CAT_ID }),
       getById: jest.fn().mockResolvedValue({ taxCategoryId: TAX_CAT_ID }),
     };
     mockTaxResolutionEngine = {
@@ -106,7 +106,10 @@ describe('PurchaseOrdersService', () => {
         { provide: TaxResolutionEngine, useValue: mockTaxResolutionEngine },
         {
           provide: AppConfigService,
-          useValue: { homeCurrency: () => 'EUR' },
+          useValue: {
+            homeCurrency: () => 'EUR',
+            getAppSettingsRaw: () => ({ defaultSupplierTaxPositionId: null }),
+          },
         },
         {
           provide: BackordersService,
@@ -136,7 +139,7 @@ describe('PurchaseOrdersService', () => {
 
   describe('changePurchaseOrderState', () => {
     it('should transition state from draft to ordered', async () => {
-      const poId = '00000000-0000-0000-0000-000000000101';
+      const poId = '00000000-0000-4000-8000-000000000101';
       await pg.db.insert(purchaseOrders).values({
         purchaseOrderId: poId,
         orderNumber: 'PO-STATE-' + Math.random(),
@@ -154,7 +157,7 @@ describe('PurchaseOrdersService', () => {
     });
 
     it('should throw BadRequestException if purchasing is blocked', async () => {
-      const poId = '00000000-0000-0000-0000-000000000109';
+      const poId = '00000000-0000-4000-8000-000000000109';
       await pg.db.insert(purchaseOrders).values({
         purchaseOrderId: poId,
         orderNumber: 'PO-BLOCKED-' + Math.random(),
@@ -177,7 +180,7 @@ describe('PurchaseOrdersService', () => {
 
   describe('addLine', () => {
     it('should add a line item to a draft order', async () => {
-      const poId = '00000000-0000-0000-0000-000000000102';
+      const poId = '00000000-0000-4000-8000-000000000102';
       await pg.db.insert(purchaseOrders).values({
         purchaseOrderId: poId,
         orderNumber: 'PO-LINE-' + Math.random(),

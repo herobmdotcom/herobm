@@ -98,27 +98,7 @@ describe('Archive E2E — Full Round-Trip', () => {
       .expect(200);
     validLocationId = locations.body[0].locationId;
 
-    // Ensure a default tax category exists (required by SO/PO creation)
-    const taxRes = await request(app.getHttpServer())
-      .get('/api/tax-categories')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    const hasDefault = taxRes.body.some(
-      (t: { isDefault?: boolean }) => t.isDefault === true,
-    );
-    if (!hasDefault) {
-      await request(app.getHttpServer())
-        .post('/api/tax-categories')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          code: 'GST',
-          title: 'GST 10%',
-          type: 'tax_applies',
-          rate: '10',
-          isDefault: true,
-        })
-        .expect(201);
-    }
+    // Default tax category is now seeded automatically in E2E tests
 
     // Ensure the product is mapped to the vendor
     await request(app.getHttpServer())
@@ -471,6 +451,8 @@ describe('Archive E2E — Full Round-Trip', () => {
           productNumber: `E2E-ARCH-PROD-${Date.now()}`,
           name: 'E2E Archive Test Product',
           listPrice: '25.00',
+          productType: 'inventory',
+          baseUom: 'EA',
         })
         .expect(201);
 

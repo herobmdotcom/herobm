@@ -99,6 +99,7 @@ export default function Sidebar() {
             { href: '/general-ledger/journal-entries', label: t('items.journalEntries') },
           ]
         },
+        { href: '/balances', label: 'Balances', icon: 'account_balance' },
         { href: '/payments', label: 'Payments', icon: 'account_balance_wallet' },
         { 
           href: '/reconciliations', 

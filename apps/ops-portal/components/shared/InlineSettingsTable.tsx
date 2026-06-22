@@ -24,6 +24,7 @@ export interface InlineSettingsTableProps<T> {
   onAdd?: () => T; // returns a new empty row
   className?: string;
   title?: React.ReactNode;
+  beforeTable?: React.ReactNode;
   headerActions?: React.ReactNode;
   addLabel?: string;
   emptyLabel?: React.ReactNode;
@@ -41,6 +42,7 @@ export function InlineSettingsTable<T extends Record<string, any>>({
   onAdd,
   className,
   title,
+  beforeTable,
   headerActions,
   addLabel,
   emptyLabel,
@@ -127,7 +129,7 @@ export function InlineSettingsTable<T extends Record<string, any>>({
   // Combine real data and potential new row
   const renderData = [...data];
   if (isNew && editingId === 'NEW_ROW') {
-    renderData.push(editForm as T);
+    renderData.unshift(editForm as T);
   }
 
   return (
@@ -151,16 +153,18 @@ export function InlineSettingsTable<T extends Record<string, any>>({
           </div>
         </div>
       )}
-      <table className="table-lines w-full text-sm">
-        <thead>
-          <tr>
-            {columns.map(col => (
-              <th key={String(col.key)} style={{ width: col.width }}>{col.title}</th>
-            ))}
-            <th style={{ width: 120 }}></th>
-          </tr>
-        </thead>
-        <tbody>
+      {beforeTable}
+      <div className="overflow-x-auto">
+        <table className="table-lines w-full text-sm">
+          <thead>
+            <tr>
+              {columns.map(col => (
+                <th key={String(col.key)} style={{ width: col.width }}>{col.title}</th>
+              ))}
+              <th style={{ width: 120 }}></th>
+            </tr>
+          </thead>
+          <tbody>
           {renderData.length === 0 ? (
             <tr>
               <td colSpan={columns.length + 1} className="text-center py-8 text-muted">
@@ -294,6 +298,7 @@ export function InlineSettingsTable<T extends Record<string, any>>({
           )}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }

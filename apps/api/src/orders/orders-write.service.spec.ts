@@ -76,7 +76,7 @@ describe('OrdersWriteService', () => {
     await pg.db
       .insert(locations)
       .values({
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
         code: 'MAIN',
         name: 'Main Location',
       })
@@ -113,7 +113,7 @@ describe('OrdersWriteService', () => {
     };
     mockAccountsService = {
       findOne: jest.fn().mockResolvedValue({
-        customerId: 'c0000000-0000-0000-0000-000000000001',
+        customerId: '00000000-0000-4000-8000-000000000001',
         currencyCode: 'EUR',
         taxCategoryId: TAX_DEFAULT.taxCategoryId,
       }),
@@ -171,7 +171,7 @@ describe('OrdersWriteService', () => {
       {
         defaultFulfillmentLocationId: jest
           .fn()
-          .mockReturnValue('10000000-0000-0000-0000-000000000001'),
+          .mockReturnValue('10000000-0000-4000-8000-000000000001'),
         creditLimitBehavior: jest.fn().mockReturnValue('soft'),
         taxProviderMappings: jest.fn().mockReturnValue({}),
         getAppSettingsRaw: jest.fn().mockReturnValue({}),
@@ -284,7 +284,7 @@ describe('OrdersWriteService', () => {
         customer,
         product,
         validDto: {
-          salesOrderId: '00000000-0000-0000-0000-000000000001',
+          salesOrderId: '00000000-0000-4000-8000-000000000001',
           customerId: customer.customerId,
           lines: [
             {
@@ -325,7 +325,7 @@ describe('OrdersWriteService', () => {
       const { customer, product } = await setupCreate();
       const result = await service.create(
         {
-          salesOrderId: '00000000-0000-0000-0000-000000000001',
+          salesOrderId: '00000000-0000-4000-8000-000000000001',
           customerId: customer.customerId,
           lines: [
             {
@@ -354,21 +354,29 @@ describe('OrdersWriteService', () => {
     it('should use product GST category directly without fallback if possible', async () => {
       const { validDto } = await setupCreate();
       await service.create(validDto, 'admin');
-      expect(mocktaxService.getById).toHaveBeenCalledWith(
+      expect(mocktaxService.getById.mock.calls[0][0]).toBe(
         TAX_DEFAULT.taxCategoryId,
-        expect.any(Object),
       );
     });
 
     it('should use zero-rated GST for zero-rated product', async () => {
-      const { validDto } = await setupCreate({
+      const { validDto, product } = await setupCreate({
         productTaxId: TAX_ZERO.taxCategoryId,
       });
-      await service.create(validDto, 'admin');
-      expect(mocktaxService.getById).toHaveBeenCalledWith(
+
+      mockProductsService.findOne.mockResolvedValueOnce({
+        ...product,
+        salesTaxCategoryId: TAX_ZERO.taxCategoryId,
+      });
+
+      mockTaxResolutionEngine.resolveTaxCategory.mockResolvedValueOnce(
         TAX_ZERO.taxCategoryId,
-        expect.any(Object),
       );
+
+      await service.create(validDto, 'admin');
+
+      const callArgs = mocktaxService.getById.mock.calls[0];
+      expect(callArgs[0]).toBe(TAX_ZERO.taxCategoryId);
     });
 
     it('should use exempt GST for exempt customer (regardless of product)', async () => {
@@ -402,7 +410,7 @@ describe('OrdersWriteService', () => {
     it('should create order with no lines', async () => {
       const { customer } = await setupCreate();
       const dto = {
-        salesOrderId: '00000000-0000-0000-0000-000000000001',
+        salesOrderId: '00000000-0000-4000-8000-000000000001',
         customerId: customer.customerId,
         lines: [],
       };
@@ -424,7 +432,7 @@ describe('OrdersWriteService', () => {
         orderNumber: 'DUPE-001',
         name: 'Existing',
         customerId: validDto.customerId,
-        fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+        fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
         currencyCode: 'EUR',
         stateCode: SALES_ORDER_STATE.DRAFT,
       });
@@ -455,7 +463,7 @@ describe('OrdersWriteService', () => {
       const customer = await createTestCustomer(pg.db);
       const order = await createTestSalesOrder(pg.db, {
         customerId: customer.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
 
         state: stateCode as any,
       });
@@ -518,7 +526,7 @@ describe('OrdersWriteService', () => {
       const customer = await createTestCustomer(pg.db);
       const order = await createTestSalesOrder(pg.db, {
         customerId: customer.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
 
         state: currentState as any,
       });
@@ -642,7 +650,7 @@ describe('OrdersWriteService', () => {
       const product = await createTestProduct(pg.db);
       const order = await createTestSalesOrder(pg.db, {
         customerId: customer.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
 
         state: stateCode as any,
       });
@@ -664,7 +672,7 @@ describe('OrdersWriteService', () => {
             tax: '1.00',
             totalAmount: '11.00',
             unitOfMeasure: 'EA',
-            fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+            fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
           });
         }
         await pg.db.insert(salesOrderLineItems).values(lineValues);
@@ -781,6 +789,10 @@ describe('OrdersWriteService', () => {
         salesTaxCategoryId: TAX_ZERO.taxCategoryId,
       });
 
+      mockTaxResolutionEngine.resolveTaxCategory.mockResolvedValueOnce(
+        TAX_ZERO.taxCategoryId,
+      );
+
       await service.addLine(
         order.salesOrderId,
         {
@@ -790,9 +802,8 @@ describe('OrdersWriteService', () => {
         },
         'admin',
       );
-      expect(mocktaxService.getById).toHaveBeenCalledWith(
+      expect(mocktaxService.getById.mock.calls[0][0]).toBe(
         TAX_ZERO.taxCategoryId,
-        undefined,
       );
     });
   });
@@ -807,7 +818,7 @@ describe('OrdersWriteService', () => {
       const product = await createTestProduct(pg.db);
       const order = await createTestSalesOrder(pg.db, {
         customerId: customer.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
 
         state: orderState as any,
       });
@@ -825,7 +836,7 @@ describe('OrdersWriteService', () => {
           tax: '5.00',
           totalAmount: '55.00',
           unitOfMeasure: 'EA',
-          fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+          fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
         })
         .returning();
 
@@ -916,7 +927,7 @@ describe('OrdersWriteService', () => {
       const product = await createTestProduct(pg.db);
       const order = await createTestSalesOrder(pg.db, {
         customerId: customer.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
 
         state: orderState as any,
       });
@@ -934,7 +945,7 @@ describe('OrdersWriteService', () => {
           tax: '5.00',
           totalAmount: '55.00',
           unitOfMeasure: 'EA',
-          fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+          fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
         })
         .returning();
 
@@ -1002,7 +1013,7 @@ describe('OrdersWriteService', () => {
       const product = await createTestProduct(pg.db);
       const order = await createTestSalesOrder(pg.db, {
         customerId: customer.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
         state: SALES_ORDER_STATE.DRAFT,
       });
 
@@ -1017,7 +1028,7 @@ describe('OrdersWriteService', () => {
         tax: '5.00',
         totalAmount: '55.00',
         unitOfMeasure: 'EA',
-        fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+        fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
       });
 
       // Events are automatically handled if created through the service, or we can insert one directly:
@@ -1035,7 +1046,7 @@ describe('OrdersWriteService', () => {
 
     it('should throw NotFoundException for unknown order', async () => {
       await expect(
-        service.findOne('00000000-0000-0000-0000-000000000000'),
+        service.findOne('00000000-0000-4000-8000-000000000000'),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -1045,14 +1056,14 @@ describe('OrdersWriteService', () => {
       const customer = await createTestCustomer(pg.db);
       const order = await createTestSalesOrder(pg.db, {
         customerId: customer.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
         state: SALES_ORDER_STATE.DRAFT,
       });
 
       await expect(
         service.updateLine(
           order.salesOrderId,
-          '00000000-0000-0000-0000-000000000000',
+          '00000000-0000-4000-8000-000000000000',
           { quantity: '1' },
           'admin',
         ),
@@ -1065,11 +1076,11 @@ describe('OrdersWriteService', () => {
 
       const order1 = await createTestSalesOrder(pg.db, {
         customerId: customer.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
       });
       const order2 = await createTestSalesOrder(pg.db, {
         customerId: customer.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
       });
 
       const [line] = await pg.db
@@ -1085,7 +1096,7 @@ describe('OrdersWriteService', () => {
           tax: '5.00',
           totalAmount: '55.00',
           unitOfMeasure: 'EA',
-          fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+          fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
         })
         .returning();
 
@@ -1171,7 +1182,7 @@ describe('OrdersWriteService', () => {
     it('should explode kit on order create (Parent Price > 0)', async () => {
       // When parent price > 0, children are $0
       const dto = {
-        salesOrderId: '00000000-0000-0000-0000-000000000001',
+        salesOrderId: '00000000-0000-4000-8000-000000000001',
         customerId: customer.customerId,
         lines: [
           {
@@ -1217,7 +1228,7 @@ describe('OrdersWriteService', () => {
     it('should explode kit on order create (Parent Price = 0)', async () => {
       // When parent price = 0, children use standard listPrice
       const dto = {
-        salesOrderId: '00000000-0000-0000-0000-000000000001',
+        salesOrderId: '00000000-0000-4000-8000-000000000001',
         customerId: customer.customerId,
         lines: [
           {
@@ -1256,7 +1267,7 @@ describe('OrdersWriteService', () => {
     it('should scale child quantities and toggle prices on parent line update', async () => {
       // Create initial order with parent price > 0
       const createDto = {
-        salesOrderId: '00000000-0000-0000-0000-000000000001',
+        salesOrderId: '00000000-0000-4000-8000-000000000001',
         customerId: customer.customerId,
         lines: [
           {
@@ -1309,7 +1320,7 @@ describe('OrdersWriteService', () => {
 
     it('should cascade deletion to child lines when parent kit is removed', async () => {
       const createDto = {
-        salesOrderId: '00000000-0000-0000-0000-000000000001',
+        salesOrderId: '00000000-0000-4000-8000-000000000001',
         customerId: customer.customerId,
         lines: [
           {

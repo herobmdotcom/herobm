@@ -221,7 +221,7 @@ export default function QuarantineListPage() {
                     </div>
                 }
                 secondaryHeader={
-                    <div className="flex flex-wrap items-center justify-end gap-3 w-full">
+                    <div className="flex flex-wrap items-center justify-start gap-3">
                         <button
                             onClick={handleToggleUnquarantine}
                             disabled={selectedRows.length === 0 || hasMultipleLocations}

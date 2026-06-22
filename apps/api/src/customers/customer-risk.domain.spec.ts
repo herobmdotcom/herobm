@@ -12,6 +12,7 @@ describe('Customer Risk Domain', () => {
     isOnCreditHold: false,
     creditLimit: '0',
     tradingTermsId: null,
+    overrideCreditHoldUntil: null,
   };
 
   const baseGroup: CustomerGroupProfile = {
@@ -49,18 +50,6 @@ describe('Customer Risk Domain', () => {
     );
     expect(result.isSalesBlocked).toBe(true);
     expect(result.salesBlockReasons).toContain('customer_inactive');
-  });
-
-  it('should block sales if group is inactive', () => {
-    const result = resolveCustomerRiskProfile(
-      baseCustomer,
-      { ...baseGroup, stateCode: CUSTOMER_STATE.INACTIVE },
-      baseAssessment,
-      0,
-      'hard',
-    );
-    expect(result.isSalesBlocked).toBe(true);
-    expect(result.salesBlockReasons).toContain('group_inactive');
   });
 
   it('should block sales on customer credit hold', () => {

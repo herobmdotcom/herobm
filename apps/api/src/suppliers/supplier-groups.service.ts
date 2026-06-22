@@ -11,6 +11,7 @@ import { supplierGroups, suppliers } from '../drizzle/herobm-core-schema';
 import { CreateSupplierGroupDto, UpdateSupplierGroupDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { buildUpdatePayload } from '../common/utils/drizzle-utils';
 
 @Injectable()
 export class SupplierGroupsService {
@@ -72,6 +73,9 @@ export class SupplierGroupsService {
             paymentBlockReason: dto.paymentBlockReason,
           }),
           ...(dto.blockNotes && { blockNotes: dto.blockNotes }),
+          ...(dto.defaultCostCenterId && { defaultCostCenterId: dto.defaultCostCenterId }),
+          ...(dto.defaultActivityId && { defaultActivityId: dto.defaultActivityId }),
+          ...(dto.taxPositionId && { taxPositionId: dto.taxPositionId }),
         })
         .returning();
 
@@ -94,38 +98,7 @@ export class SupplierGroupsService {
 
       const rows = await tx
         .update(supplierGroups)
-        .set({
-          ...(dto.groupCode !== undefined && { groupCode: dto.groupCode }),
-          ...(dto.name !== undefined && { name: dto.name }),
-          ...(dto.defaultApAccountId !== undefined && {
-            defaultApAccountId: dto.defaultApAccountId,
-          }),
-          ...(dto.defaultExpenseAccountId !== undefined && {
-            defaultExpenseAccountId: dto.defaultExpenseAccountId,
-          }),
-          ...(dto.earlyPaymentDiscount !== undefined && {
-            earlyPaymentDiscount: dto.earlyPaymentDiscount,
-          }),
-          ...(dto.earlyPaymentDiscountDays !== undefined && {
-            earlyPaymentDiscountDays: dto.earlyPaymentDiscountDays,
-          }),
-          ...(dto.creditLimit !== undefined && {
-            creditLimit: dto.creditLimit,
-          }),
-          ...(dto.isPurchasingBlocked !== undefined && {
-            isPurchasingBlocked: dto.isPurchasingBlocked,
-          }),
-          ...(dto.purchasingBlockReason !== undefined && {
-            purchasingBlockReason: dto.purchasingBlockReason,
-          }),
-          ...(dto.isPaymentBlocked !== undefined && {
-            isPaymentBlocked: dto.isPaymentBlocked,
-          }),
-          ...(dto.paymentBlockReason !== undefined && {
-            paymentBlockReason: dto.paymentBlockReason,
-          }),
-          ...(dto.blockNotes !== undefined && { blockNotes: dto.blockNotes }),
-        })
+        .set(buildUpdatePayload(dto))
         .where(eq(supplierGroups.supplierGroupId, id))
         .returning();
 

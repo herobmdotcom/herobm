@@ -25,13 +25,13 @@ describe('InventoryService - Quarantine', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: InventoryService;
 
-  const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
-  const ZONE_ID = '00000000-0000-0000-0000-00000000000c';
-  let RECV_BIN_ID = '00000000-0000-0000-0000-00000000000b';
-  let QUAR_BIN_ID = '00000000-0000-0000-0000-000000000010';
-  const PROD_ID = '00000000-0000-0000-0000-00000000000a';
-  const GR_ID = '00000000-0000-0000-0000-000000000021';
-  const GR_LINE_ID = '00000000-0000-0000-0000-000000000022';
+  const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
+  const ZONE_ID = '00000000-0000-4000-8000-00000000000c';
+  let RECV_BIN_ID = '00000000-0000-4000-8000-00000000000b';
+  let QUAR_BIN_ID = '00000000-0000-4000-8000-000000000010';
+  const PROD_ID = '00000000-0000-4000-8000-00000000000a';
+  const GR_ID = '00000000-0000-4000-8000-000000000021';
+  const GR_LINE_ID = '00000000-0000-4000-8000-000000000022';
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -76,7 +76,7 @@ describe('InventoryService - Quarantine', () => {
     RECV_BIN_ID = autoBins.find((b) => b.binNumber === 'RECEIVING')!.binId;
 
     // Manually insert QUARANTINE bin since it was removed from auto-scaffolding
-    QUAR_BIN_ID = '00000000-0000-0000-0000-000000000010';
+    QUAR_BIN_ID = '00000000-0000-4000-8000-000000000010';
     await pg.db.insert(bins).values({
       binId: QUAR_BIN_ID,
       zoneId: autoBins[0].zoneId,
@@ -93,6 +93,7 @@ describe('InventoryService - Quarantine', () => {
       productNumber: 'P1',
       name: 'Product 1',
       baseUom: 'EA',
+      productType: 'inventory',
     });
 
     // Seed initial stock in receiving bin via a manual entry
@@ -100,7 +101,7 @@ describe('InventoryService - Quarantine', () => {
     await service['recordInventoryMovement'](pg.db, {
       entryNumber: 'INIT',
       sourceType: 'MANUAL',
-      sourceId: '00000000-0000-0000-0000-000000000099',
+      sourceId: '00000000-0000-4000-8000-000000000099',
       memo: 'Init',
       userId: 'admin',
       lines: [{ productId: PROD_ID, binId: RECV_BIN_ID, quantity: 100 }],
@@ -204,7 +205,7 @@ describe('InventoryService - Quarantine', () => {
   describe('Line-based Move (Auto-resolve)', () => {
     beforeEach(async () => {
       await pg.db.insert(suppliers).values({
-        vendorId: '00000000-0000-0000-0000-000000000098',
+        vendorId: '00000000-0000-4000-8000-000000000098',
         name: 'Test Vendor',
         vendorNumber: 'V1',
         currencyCode: 'EUR',
@@ -214,7 +215,7 @@ describe('InventoryService - Quarantine', () => {
         goodsReceivedId: GR_ID,
         locationId: LOCATION_ID,
         receiptNumber: 'GR-1',
-        vendorId: '00000000-0000-0000-0000-000000000098',
+        vendorId: '00000000-0000-4000-8000-000000000098',
       });
       await pg.db.insert(goodsReceivedLines).values({
         goodsReceivedLineId: GR_LINE_ID,

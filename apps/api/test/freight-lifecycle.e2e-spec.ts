@@ -69,6 +69,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
         name: 'Physical Good',
         productType: 'inventory',
         listPrice: '100.00',
+        baseUom: 'EA',
       })
       .expect(201);
     physicalProductId = productRes.body.productId;
@@ -93,6 +94,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
         name: 'Standard Courier Freight',
         productType: 'non-stock',
         listPrice: '15.00',
+        baseUom: 'EA',
       })
       .expect(201);
     freightProductId = freightRes.body.productId;

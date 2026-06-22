@@ -318,7 +318,7 @@ export class PickingSlipService {
       const ordered = parseFloat(line.quantity);
       const picked = pickedMap.get(line.lineId) ?? 0;
       const toPick = ordered - picked;
-      const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+      const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
       const isCustomLine = line.productId === CUSTOM_LINE_ID;
       const productCode = isCustomLine
         ? ''

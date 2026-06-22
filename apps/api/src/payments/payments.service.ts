@@ -201,7 +201,7 @@ export class PaymentsService {
       );
 
       // JIT Compliance Block for Payments
-      if (dto.paymentType.startsWith('supplier_') && dto.partyId) {
+      if (dto.paymentType?.startsWith('supplier_') && dto.partyId) {
         const risk = await this.suppliersService.assessRisk(
           dto.partyId,
           tx as DrizzleDB,
@@ -222,8 +222,8 @@ export class PaymentsService {
           partyId: dto.partyId || null,
           paymentDate: new Date(dto.paymentDate),
           modeOfPayment: dto.modeOfPayment,
-          totalAmount: dto.totalAmount.toString(),
-          unallocatedAmount: dto.totalAmount.toString(),
+          totalAmount: dto.totalAmount?.toString() || '0',
+          unallocatedAmount: dto.totalAmount?.toString() || '0',
           glAccountBank: dto.glAccountBank,
           referenceNumber: dto.referenceNumber,
           currencyCode: dto.currencyCode,

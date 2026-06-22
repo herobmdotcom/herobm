@@ -88,6 +88,7 @@ export class SuppliersService {
         groupIsPaymentBlocked: supplierGroups.isPaymentBlocked,
         groupPaymentBlockReason: supplierGroups.paymentBlockReason,
         supplierGroupTaxPositionId: supplierGroups.taxPositionId,
+        supplierGroupTradingTermsId: supplierGroups.tradingTermsId,
         score: scoreSql,
       })
       .from(coreSuppliers)
@@ -176,19 +177,8 @@ export class SuppliersService {
     const rows = await this.db
       .select({
         ...getTableColumns(coreSuppliers),
-        supplierGroupName: supplierGroups.name,
-        supplierGroupCode: supplierGroups.groupCode,
-        groupIsPurchasingBlocked: supplierGroups.isPurchasingBlocked,
-        groupPurchasingBlockReason: supplierGroups.purchasingBlockReason,
-        groupIsPaymentBlocked: supplierGroups.isPaymentBlocked,
-        groupPaymentBlockReason: supplierGroups.paymentBlockReason,
-        supplierGroupTaxPositionId: supplierGroups.taxPositionId,
       })
       .from(coreSuppliers)
-      .leftJoin(
-        supplierGroups,
-        eq(coreSuppliers.supplierGroupId, supplierGroups.supplierGroupId),
-      )
       .where(eq(coreSuppliers.vendorId, id))
       .limit(1);
 

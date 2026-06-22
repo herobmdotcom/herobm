@@ -12,5 +12,4 @@ export interface UpdateTaxCategoryDto {
   title?: string;
   type?: UpdateTaxCategoryDtoType;
   rate?: string;
-  isDefault?: boolean;
 }

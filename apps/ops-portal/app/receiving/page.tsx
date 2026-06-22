@@ -310,42 +310,12 @@ export default function GoodsReceivedListPage() {
                     />
                 }
                 headerActions={
-                    <div className="flex lg:hidden flex-wrap items-center justify-start gap-3 w-full">
-                        <Link href="/receiving/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
-                            {t('buttons.newReception')}
-                        </Link>
-                        <button
-                            onClick={handleToggleQuarantine}
-                            disabled={!canQuarantine}
-                            title={new Set(selectedRows.map(r => r.locationId as string)).size > 1 ? 'Cannot quarantine items from different locations at once' : undefined}
-                            className="px-4 py-2 text-sm font-bold rounded-lg transition-all border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                        >
-                            {t('buttons.quarantine')}
-                        </button>
-                        <button
-                            onClick={handleCancelReceipt}
-                            disabled={[...new Set(selectedRows.map(r => r.goodsReceivedId))].length !== 1 || selectedRows.some(r => r.putawayStatus === PUTAWAY_STATUS.COMPLETED)}
-                            className="px-4 py-2 text-sm font-bold rounded-lg transition-all border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                            title={t('buttons.cancelReceiptTooltip')}
-                        >
-                            {t('buttons.cancel')}
-                        </button>
-                        <button
-                            onClick={handleAllocate}
-                            disabled={matchableCount === 0}
-                            title={hasQuarantinedSelected ? 'Quarantined items must be cleared before matching' : undefined}
-                            className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                        >
-                            {matchableCount > 0 ? t('buttons.matchCount', { count: matchableCount }) : t('buttons.match')}
-                        </button>
-                    </div>
+                    <Link href="/receiving/new" className="px-3 lg:px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
+                        {t('buttons.newReception')}
+                    </Link>
                 }
                 secondaryHeader={
-                    <div className="flex flex-wrap items-center justify-end gap-3 w-full">
-                        <Link href="/receiving/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
-                            {t('buttons.newReception')}
-                        </Link>
-                        <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
+                    <div className="flex items-center justify-start gap-3">
                         <button
                             onClick={handleToggleQuarantine}
                             disabled={!canQuarantine}

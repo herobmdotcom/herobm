@@ -14,10 +14,11 @@ import {
 import { eq, ne, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { taxCategories } from '../drizzle/herobm-core-schema';
+import { taxCategories, appSettings } from '../drizzle/herobm-core-schema';
 import { CreateTaxCategoryDto, UpdateTaxCategoryDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { calculateAuditTrail, AuditMode } from '../common/audit';
 
 @Injectable()
 export class TaxCategoriesService {
@@ -48,17 +49,29 @@ export class TaxCategoriesService {
     return rows[0];
   }
 
-  async getDefault(tx?: DrizzleDB) {
+  async getDefaultSalesTax(tx?: DrizzleDB) {
     const db = tx || this.db;
-    const rows = await db
-      .select()
-      .from(taxCategories)
-      .where(eq(taxCategories.isDefault, true))
+
+    const defaultSettings = await db
+      .select({ taxCategoryId: appSettings.defaultSalesTaxCategoryId })
+      .from(appSettings)
       .limit(1);
-    if (rows.length === 0) {
-      throw new NotFoundException('No default tax category configured');
+
+    if (defaultSettings.length > 0 && defaultSettings[0].taxCategoryId) {
+      const rows = await db
+        .select()
+        .from(taxCategories)
+        .where(
+          eq(taxCategories.taxCategoryId, defaultSettings[0].taxCategoryId),
+        )
+        .limit(1);
+
+      if (rows.length > 0) {
+        return rows[0];
+      }
     }
-    return rows[0];
+
+    throw new NotFoundException('No default sales tax category configured');
   }
 
   async getByCode(code: string, tx?: DrizzleDB) {
@@ -76,14 +89,6 @@ export class TaxCategoriesService {
 
   async create(dto: CreateTaxCategoryDto, userId?: string) {
     return await this.db.transaction(async (tx) => {
-      // If the new category wants to be default, unset any existing default first
-      if (dto.isDefault) {
-        await tx
-          .update(taxCategories) // @herobm-skip-audit
-          .set({ isDefault: false })
-          .where(eq(taxCategories.isDefault, true));
-      }
-
       const rows = await tx
         .insert(taxCategories)
         .values({
@@ -91,7 +96,6 @@ export class TaxCategoriesService {
           title: dto.title,
           type: dto.type,
           rate: dto.rate ?? '0',
-          isDefault: dto.isDefault ?? false,
         })
         .returning();
 
@@ -110,55 +114,38 @@ export class TaxCategoriesService {
 
   async update(id: string, dto: UpdateTaxCategoryDto, userId?: string) {
     return await this.db.transaction(async (tx) => {
-      await this.getById(id, tx); // ensure exists
+      const existing = await this.getById(id, tx); // ensure exists
 
-      // If toggling isDefault to true, unset the current default
-      if (dto.isDefault === true) {
-        await tx
-          .update(taxCategories) // @herobm-skip-audit
-          .set({ isDefault: false })
-          .where(
-            and(
-              eq(taxCategories.isDefault, true),
-              ne(taxCategories.taxCategoryId, id),
-            ),
-          );
+      const audit = calculateAuditTrail(dto, existing, AuditMode.DIFF);
+
+      if (audit.hasChanges) {
+        const rows = await tx
+          .update(taxCategories)
+          .set({ ...audit.changes } as typeof taxCategories.$inferInsert)
+          .where(eq(taxCategories.taxCategoryId, id))
+          .returning();
+
+        await emitEvent(tx, {
+          entityType: EntityType.TAX_CATEGORY,
+          entityId: rows[0].taxCategoryId,
+          eventType: EventType.UPDATED,
+          entityDisplayName: rows[0].code,
+          payload: {
+            changes: audit.changes,
+            previous: audit.previousValues,
+          },
+          actor: userId,
+        });
+
+        return rows[0];
       }
-
-      const rows = await tx
-        .update(taxCategories)
-        .set({
-          ...(dto.code !== undefined && { code: dto.code }),
-          ...(dto.title !== undefined && { title: dto.title }),
-          ...(dto.type !== undefined && { type: dto.type }),
-          ...(dto.rate !== undefined && { rate: dto.rate }),
-          ...(dto.isDefault !== undefined && { isDefault: dto.isDefault }),
-        })
-        .where(eq(taxCategories.taxCategoryId, id))
-        .returning();
-
-      await emitEvent(tx, {
-        entityType: EntityType.TAX_CATEGORY,
-        entityId: rows[0].taxCategoryId,
-        eventType: EventType.UPDATED,
-        entityDisplayName: rows[0].code,
-        payload: dto,
-        actor: userId,
-      });
-
-      return rows[0];
+      return existing;
     });
   }
 
   async delete(id: string, userId?: string) {
     return await this.db.transaction(async (tx) => {
       const cat = await this.getById(id, tx);
-
-      if (cat.isDefault) {
-        throw new BadRequestException(
-          'Cannot delete the default tax category. Assign a different default first.',
-        );
-      }
 
       try {
         await tx

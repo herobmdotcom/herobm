@@ -21,11 +21,11 @@ describe('BackordersService', () => {
   let service: BackordersService;
   let inventoryService: { findByProductIds: jest.Mock };
 
-  const ORDER_ID = '00000000-0000-0000-0000-000000000001';
-  const PROD_ID = '00000000-0000-0000-0000-00000000000a';
-  const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
-  const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
-  const LINE_ID = '00000000-0000-0000-0000-000000000011';
+  const ORDER_ID = '00000000-0000-4000-8000-000000000001';
+  const PROD_ID = '00000000-0000-4000-8000-00000000000a';
+  const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
+  const TAX_CAT_ID = '00000000-0000-4000-8000-000000000007';
+  const LINE_ID = '00000000-0000-4000-8000-000000000011';
 
   beforeEach(async () => {
     // Clean data
@@ -107,6 +107,7 @@ describe('BackordersService', () => {
         productNumber: 'P1',
         name: 'P1',
         baseUom: 'EA',
+        productType: 'inventory',
       });
       await seedBasicOrder();
       await pg.db.insert(salesOrderLineItems).values({
@@ -141,6 +142,7 @@ describe('BackordersService', () => {
         productNumber: 'P1',
         name: 'P1',
         baseUom: 'EA',
+        productType: 'inventory',
       });
       await seedBasicOrder();
       await pg.db.insert(salesOrderLineItems).values({

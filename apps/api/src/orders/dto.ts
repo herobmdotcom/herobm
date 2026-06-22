@@ -373,6 +373,8 @@ export class OrderResponseDto {
   taxProvider?: string | null;
   sourceId?: string | null;
   source!: string;
+  isCreditBlocked?: boolean;
+  creditHoldOverrideAt?: Date | null;
   createdBy?: string | null;
   createdOn?: Date | null;
   modifiedOn?: Date | null;

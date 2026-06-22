@@ -13,6 +13,7 @@ import {
   organization,
   locations,
   glAccounts,
+  pipelineJobs,
 } from '../drizzle/herobm-core-schema';
 import {
   ExecuteSetupDto,
@@ -24,7 +25,7 @@ import { AppConfigService } from '../settings/app-config.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import { spawn } from 'child_process';
-import { eq, getTableColumns, isNotNull } from 'drizzle-orm';
+import { eq, getTableColumns, isNotNull, and, lt } from 'drizzle-orm';
 import { Readable } from 'stream';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import * as bcrypt from 'bcrypt';
@@ -45,8 +46,43 @@ export interface ActiveJob {
 export class SetupService {
   private readonly logger = new Logger(SetupService.name);
 
-  // In-memory job tracking for the setup process
-  private activeJobs: Record<string, ActiveJob> = {};
+  // @herobm-skip-audit
+  private async failStaleJobs() {
+    const staleThreshold = new Date(Date.now() - 10 * 60 * 1000);
+    try {
+      const staleJobs = await this.db
+        .update(pipelineJobs)
+        .set({ status: 'failed', updatedAt: new Date() })
+        .where(
+          and(
+            eq(pipelineJobs.status, 'running'),
+            lt(pipelineJobs.updatedAt, staleThreshold),
+          ),
+        )
+        .returning();
+
+      for (const job of staleJobs) {
+        if (
+          Array.isArray(job.progressJson) &&
+          (job.progressJson as Record<string, unknown>[])[0]
+        ) {
+          const prog = job.progressJson;
+          prog[0].status = 'failed';
+          await this.db
+            .update(pipelineJobs)
+            .set({ progressJson: prog, updatedAt: new Date() })
+            .where(eq(pipelineJobs.jobId, job.jobId));
+        }
+        await this.db.execute(sql`
+          UPDATE herobm_core._pipeline_jobs 
+          SET logs_json = logs_json || ${JSON.stringify(['FATAL: Job timed out due to 10 minutes of inactivity.'])}::jsonb 
+          WHERE job_id = ${job.jobId}
+        `);
+      }
+    } catch (e) {
+      this.logger.error('Failed to clear stale jobs', e);
+    }
+  }
 
   // In-memory resolvers for webhook-driven async tasks
   private jobResolvers: Record<
@@ -442,6 +478,7 @@ export class SetupService {
     });
   }
 
+  // @herobm-skip-audit
   async executeCsv(
     tableName: string,
     strategy: string,
@@ -450,30 +487,37 @@ export class SetupService {
     const registryEntry = this.csvRegistry.find((r) => r.id === tableName);
     if (!registryEntry) throw new BadRequestException('Unsupported table');
 
-    Object.keys(this.activeJobs).forEach((id) => this.checkJobTimeout(id));
-    const runningJobId = Object.keys(this.activeJobs).find(
-      (id) => this.activeJobs[id].status === 'running',
-    );
-    if (runningJobId) throw new BadRequestException('A job is already running');
+    await this.failStaleJobs();
+    const [runningJob] = await this.db
+      .select()
+      .from(pipelineJobs)
+      .where(eq(pipelineJobs.status, 'running'))
+      .limit(1);
+    if (runningJob) throw new BadRequestException('A job is already running');
 
     const jobId = Math.random().toString(36).substring(7);
-    this.activeJobs[jobId] = {
-      status: 'running',
+    await this.db.insert(pipelineJobs).values({
+      jobId,
       type: 'csv',
-      progress: [
+      status: 'running',
+      progressJson: [
         { step: 1, name: `Importing CSV to ${tableName}`, status: 'running' },
       ],
-      logs: [`--- Initializing CSV Import for ${tableName} ---`],
-      lastActivityAt: Date.now(),
-    };
+      logsJson: [`--- Initializing CSV Import for ${tableName} ---`],
+    });
 
-    this.runCsvCore(registryEntry, strategy, file, jobId).catch((err) => {
+    this.runCsvCore(registryEntry, strategy, file, jobId).catch(async (err) => {
       this.logger.error(`CSV job ${jobId} failed`, err);
-      this.log(jobId, `FATAL: CSV Import failed: ${err.message}`, 'error');
-      if (this.activeJobs[jobId]) {
-        this.activeJobs[jobId].status = 'failed';
-        this.activeJobs[jobId].progress[0].status = 'failed';
-      }
+      await this.log(
+        jobId,
+        `FATAL: CSV Import failed: ${err.message}`,
+        'error',
+      );
+      await this.db
+        .update(pipelineJobs)
+        .set({ status: 'failed', updatedAt: new Date() })
+        .where(eq(pipelineJobs.jobId, jobId));
+      await this.updateJobProgress(jobId, 0, 'failed');
     });
 
     return { jobId };
@@ -624,13 +668,16 @@ export class SetupService {
       actor: 'system',
     });
 
-    if (this.activeJobs[jobId]) {
-      this.activeJobs[jobId].progress[0].status = 'done';
-      this.activeJobs[jobId].status = 'done';
+    if (jobId) {
+      await this.db
+        .update(pipelineJobs)
+        .set({ status: 'done', updatedAt: new Date() })
+        .where(eq(pipelineJobs.jobId, jobId));
+      await this.updateJobProgress(jobId, 0, 'done');
     }
   }
 
-  private log(
+  private async log(
     jobId: string | undefined,
     message: string,
     level: 'info' | 'error' = 'info',
@@ -640,34 +687,47 @@ export class SetupService {
     } else {
       this.logger.log(`[Job ${jobId || 'N/A'}] ${message}`);
     }
-    if (jobId && this.activeJobs[jobId]) {
-      this.activeJobs[jobId].logs.push(message);
-      this.activeJobs[jobId].lastActivityAt = Date.now();
+    if (jobId) {
+      try {
+        await this.db.execute(sql`
+          UPDATE herobm_core._pipeline_jobs 
+          SET logs_json = logs_json || ${JSON.stringify([message])}::jsonb, updated_at = NOW() 
+          WHERE job_id = ${jobId}
+        `);
+      } catch (e) {
+        this.logger.error(`Failed to write log for job ${jobId}`, e);
+      }
     }
   }
 
+  // @herobm-skip-audit
   async executeElt(dto: ExecuteEltDto) {
-    Object.keys(this.activeJobs).forEach((id) => this.checkJobTimeout(id));
-    const runningJobId = Object.keys(this.activeJobs).find(
-      (id) => this.activeJobs[id].status === 'running',
-    );
-    if (runningJobId) return { jobId: runningJobId };
+    await this.failStaleJobs();
+    const [runningJob] = await this.db
+      .select()
+      .from(pipelineJobs)
+      .where(eq(pipelineJobs.status, 'running'))
+      .limit(1);
+    if (runningJob) return { jobId: runningJob.jobId };
 
     const jobId = Math.random().toString(36).substring(7);
-    this.activeJobs[jobId] = {
-      status: 'running',
+    await this.db.insert(pipelineJobs).values({
+      jobId,
       type: dto.source || 'abm',
-      progress: [{ step: 1, name: 'Importing Data (ELT)', status: 'running' }],
-      logs: [],
-      lastActivityAt: Date.now(),
-    };
+      status: 'running',
+      progressJson: [
+        { step: 1, name: 'Importing Data (ELT)', status: 'running' },
+      ],
+      logsJson: [],
+    });
 
-    this.runEltCore(dto, jobId).catch((err) => {
+    this.runEltCore(dto, jobId).catch(async (err) => {
       this.logger.error(`ELT job ${jobId} failed`, err);
-      if (this.activeJobs[jobId]) {
-        this.activeJobs[jobId].status = 'failed';
-        this.activeJobs[jobId].progress[0].status = 'failed';
-      }
+      await this.db
+        .update(pipelineJobs)
+        .set({ status: 'failed', updatedAt: new Date() })
+        .where(eq(pipelineJobs.jobId, jobId));
+      await this.updateJobProgress(jobId, 0, 'failed');
     });
 
     return { jobId };
@@ -825,61 +885,66 @@ export class SetupService {
         );
       }
 
-      this.log(jobId, 'DATA IMPORT COMPLETED SUCCESSFULLY');
-      if (jobId && this.activeJobs[jobId]) {
-        this.activeJobs[jobId].progress[0].status = 'done';
-        this.activeJobs[jobId].status = 'done';
+      await this.log(jobId, 'DATA IMPORT COMPLETED SUCCESSFULLY');
+      if (jobId) {
+        await this.db
+          .update(pipelineJobs)
+          .set({ status: 'done', updatedAt: new Date() })
+          .where(eq(pipelineJobs.jobId, jobId));
+        await this.updateJobProgress(jobId, 0, 'done');
       }
     } catch (error) {
-      this.log(jobId, `FATAL: ELT Import failed: ${error.message}`, 'error');
-      if (jobId && this.activeJobs[jobId]) {
-        this.activeJobs[jobId].status = 'failed';
-        this.activeJobs[jobId].progress[0].status = 'failed';
+      await this.log(
+        jobId,
+        `FATAL: ELT Import failed: ${error.message}`,
+        'error',
+      );
+      if (jobId) {
+        await this.db
+          .update(pipelineJobs)
+          .set({ status: 'failed', updatedAt: new Date() })
+          .where(eq(pipelineJobs.jobId, jobId));
+        await this.updateJobProgress(jobId, 0, 'failed');
       }
       throw error;
     }
   }
 
-  private checkJobTimeout(jobId: string) {
-    const job = this.activeJobs[jobId];
-    if (
-      job &&
-      job.status === 'running' &&
-      job.lastActivityAt &&
-      Date.now() - job.lastActivityAt > 10 * 60 * 1000
-    ) {
-      job.status = 'failed';
-      if (job.progress && job.progress[0]) {
-        job.progress[0].status = 'failed';
-      }
-      job.logs.push(
-        'FATAL: Job timed out due to 10 minutes of inactivity (container crash or disconnected worker).',
-      );
-    }
-  }
+  // checkJobTimeout removed, using failStaleJobs
 
-  getActiveJob() {
-    Object.keys(this.activeJobs).forEach((id) => this.checkJobTimeout(id));
-    const runningJobId = Object.keys(this.activeJobs).find(
-      (id) => this.activeJobs[id].status === 'running',
-    );
-    if (!runningJobId) return { jobId: null, type: null };
+  async getActiveJob() {
+    await this.failStaleJobs();
+    const [runningJob] = await this.db
+      .select()
+      .from(pipelineJobs)
+      .where(eq(pipelineJobs.status, 'running'))
+      .limit(1);
+    if (!runningJob) return { jobId: null, type: null };
     return {
-      jobId: runningJobId,
-      type: this.activeJobs[runningJobId].type || null,
+      jobId: runningJob.jobId,
+      type: runningJob.type,
     };
   }
 
+  // @herobm-skip-audit
   async stopJob(jobId: string) {
-    const job = this.activeJobs[jobId];
+    const [job] = await this.db
+      .select()
+      .from(pipelineJobs)
+      .where(eq(pipelineJobs.jobId, jobId))
+      .limit(1);
     if (!job) throw new BadRequestException('Job not found');
 
-    job.status = 'failed';
-    if (job.progress && job.progress[0]) {
-      job.progress[0].status = 'failed';
+    const prog = Array.isArray(job.progressJson) ? job.progressJson : [];
+    if (prog[0]) {
+      prog[0].status = 'failed';
     }
-    job.logs.push('[FATAL] Job forcibly stopped by user.');
-    job.lastActivityAt = Date.now();
+
+    await this.db
+      .update(pipelineJobs)
+      .set({ status: 'cancelling', progressJson: prog, updatedAt: new Date() })
+      .where(eq(pipelineJobs.jobId, jobId));
+    await this.log(jobId, '[FATAL] Job forcibly stopped by user.', 'error');
 
     if (job.type !== 'csv') {
       try {
@@ -899,24 +964,49 @@ export class SetupService {
     return { success: true };
   }
 
-  getJobProgress(jobId: string) {
-    this.checkJobTimeout(jobId);
-    const job = this.activeJobs[jobId];
+  async getJobProgress(jobId: string) {
+    await this.failStaleJobs();
+    const [job] = await this.db
+      .select()
+      .from(pipelineJobs)
+      .where(eq(pipelineJobs.jobId, jobId))
+      .limit(1);
     if (!job) throw new BadRequestException('Job not found');
-    return job;
+    return {
+      status: job.status,
+      type: job.type,
+      progress: job.progressJson,
+      logs: job.logsJson,
+      lastActivityAt: job.updatedAt.getTime(),
+    };
   }
 
-  private updateJobProgress(
+  // @herobm-skip-audit
+  private async updateJobProgress(
     jobId: string | undefined,
     stepIndex: number,
     status: string,
   ) {
-    if (
-      jobId &&
-      this.activeJobs[jobId] &&
-      this.activeJobs[jobId].progress[stepIndex]
-    ) {
-      this.activeJobs[jobId].progress[stepIndex].status = status;
+    if (jobId) {
+      try {
+        const [job] = await this.db
+          .select()
+          .from(pipelineJobs)
+          .where(eq(pipelineJobs.jobId, jobId))
+          .limit(1);
+        if (job && Array.isArray(job.progressJson)) {
+          const prog = job.progressJson;
+          if (prog[stepIndex]) {
+            prog[stepIndex].status = status;
+            await this.db
+              .update(pipelineJobs)
+              .set({ progressJson: prog, updatedAt: new Date() })
+              .where(eq(pipelineJobs.jobId, jobId));
+          }
+        }
+      } catch (e) {
+        this.logger.error('Failed to mark step progress', e);
+      }
     }
   }
 

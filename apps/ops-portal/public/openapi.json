@@ -343,6 +343,45 @@
         ]
       }
     },
+    "/customers/aged-balances": {
+      "get": {
+        "description": "Retrieve aged balances for all customers with outstanding invoices.",
+        "operationId": "AccountsController_getAgedBalances",
+        "parameters": [
+          {
+            "name": "agingBasis",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "invoiceDate",
+                "dueDate"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AgedBalanceResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Aged Balances",
+        "tags": [
+          "Customers"
+        ]
+      }
+    },
     "/customers/{id}": {
       "get": {
         "description": "Retrieve a single customer by ID.",
@@ -419,6 +458,38 @@
           }
         },
         "summary": "Update Customer",
+        "tags": [
+          "Customers"
+        ]
+      }
+    },
+    "/customers/{id}/credit-assessment": {
+      "get": {
+        "description": "Retrieve the credit assessment for a customer.",
+        "operationId": "AccountsController_getCreditAssessment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreditAssessmentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Credit Assessment",
         "tags": [
           "Customers"
         ]
@@ -5761,16 +5832,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OrderResponseDto"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
                 }
               }
             }
@@ -15976,6 +16037,10 @@
           "isOnCreditHold": {
             "type": "boolean"
           },
+          "overrideCreditHoldUntil": {
+            "format": "date-time",
+            "type": "string"
+          },
           "tradingTermsId": {
             "type": "string"
           },
@@ -16014,6 +16079,9 @@
           "customerGroupIsOnCreditHold": {
             "type": "boolean"
           },
+          "customerGroupTaxPositionId": {
+            "type": "string"
+          },
           "gstCategoryName": {
             "type": "string"
           },
@@ -16049,6 +16117,89 @@
       "Object": {
         "type": "object",
         "properties": {}
+      },
+      "AgedBalanceResponseDto": {
+        "type": "object",
+        "properties": {
+          "customerId": {
+            "type": "string"
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "accountNumber": {
+            "type": "string"
+          },
+          "current": {
+            "type": "number"
+          },
+          "days1To30": {
+            "type": "number"
+          },
+          "days31To60": {
+            "type": "number"
+          },
+          "days61To90": {
+            "type": "number"
+          },
+          "days90Plus": {
+            "type": "number"
+          },
+          "totalOutstanding": {
+            "type": "number"
+          },
+          "glBalance": {
+            "type": "number"
+          },
+          "discrepancyAmount": {
+            "type": "number"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "isOnCreditHold": {
+            "type": "boolean"
+          },
+          "creditLimit": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "customerId",
+          "customerName",
+          "accountNumber",
+          "current",
+          "days1To30",
+          "days31To60",
+          "days61To90",
+          "days90Plus",
+          "totalOutstanding",
+          "glBalance",
+          "discrepancyAmount",
+          "currencyCode",
+          "isOnCreditHold",
+          "creditLimit"
+        ]
+      },
+      "CreditAssessmentResponseDto": {
+        "type": "object",
+        "properties": {
+          "totalArBalance": {
+            "type": "number"
+          },
+          "overdueBalance": {
+            "type": "number"
+          },
+          "isOverdue": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "totalArBalance",
+          "overdueBalance",
+          "isOverdue"
+        ]
       },
       "CreateAccountDto": {
         "type": "object",
@@ -16128,6 +16279,9 @@
           },
           "isOnCreditHold": {
             "type": "boolean"
+          },
+          "overrideCreditHoldUntil": {
+            "type": "string"
           },
           "tradingTermsId": {
             "type": "string",
@@ -16219,6 +16373,9 @@
           "isOnCreditHold": {
             "type": "boolean"
           },
+          "overrideCreditHoldUntil": {
+            "type": "string"
+          },
           "tradingTermsId": {
             "type": "string",
             "format": "uuid"
@@ -16268,6 +16425,9 @@
           "tradingTermsId": {
             "type": "string"
           },
+          "taxPositionId": {
+            "type": "string"
+          },
           "modifiedOn": {
             "format": "date-time",
             "type": "string"
@@ -16306,6 +16466,17 @@
           "defaultActivityId": {
             "type": "string",
             "format": "uuid"
+          },
+          "taxPositionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tradingTermsId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "creditLimit": {
+            "type": "string"
           }
         },
         "required": [
@@ -16341,11 +16512,22 @@
             "type": "string",
             "format": "uuid"
           },
+          "taxPositionId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "stateCode": {
             "type": "string"
           },
           "isOnCreditHold": {
             "type": "boolean"
+          },
+          "tradingTermsId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "creditLimit": {
+            "type": "string"
           }
         }
       },
@@ -16386,6 +16568,10 @@
             "nullable": true
           },
           "priceLevel4": {
+            "type": "string",
+            "nullable": true
+          },
+          "weight": {
             "type": "string",
             "nullable": true
           },
@@ -16452,6 +16638,7 @@
           "tradePrice",
           "priceLevel3",
           "priceLevel4",
+          "weight",
           "purchaseTaxCategoryId",
           "salesTaxCategoryId",
           "externalTaxCode",
@@ -16500,6 +16687,9 @@
           "priceLevel4": {
             "type": "string"
           },
+          "weight": {
+            "type": "string"
+          },
           "purchaseTaxCategoryId": {
             "type": "string",
             "format": "uuid"
@@ -16523,11 +16713,16 @@
           },
           "stateCode": {
             "type": "string"
+          },
+          "baseUom": {
+            "type": "string"
           }
         },
         "required": [
           "productNumber",
-          "name"
+          "name",
+          "productType",
+          "baseUom"
         ]
       },
       "UpdateProductDto": {
@@ -18745,6 +18940,18 @@
           },
           "defaultSalesTaxCategoryId": {
             "type": "string"
+          },
+          "defaultCustomerTermsId": {
+            "type": "string"
+          },
+          "defaultSupplierTermsId": {
+            "type": "string"
+          },
+          "defaultCustomerTaxPositionId": {
+            "type": "string"
+          },
+          "defaultSupplierTaxPositionId": {
+            "type": "string"
           }
         },
         "required": [
@@ -18756,6 +18963,18 @@
         "type": "object",
         "properties": {
           "defaultFulfillmentLocationId": {
+            "type": "string"
+          },
+          "defaultCustomerTermsId": {
+            "type": "string"
+          },
+          "defaultSupplierTermsId": {
+            "type": "string"
+          },
+          "defaultCustomerTaxPositionId": {
+            "type": "string"
+          },
+          "defaultSupplierTaxPositionId": {
             "type": "string"
           },
           "defaultPurchaseTaxCategoryId": {
@@ -18807,12 +19026,6 @@
           },
           "type": {
             "type": "string"
-          },
-          "isDefaultCustomer": {
-            "type": "boolean"
-          },
-          "isDefaultSupplier": {
-            "type": "boolean"
           }
         },
         "required": [
@@ -18820,9 +19033,7 @@
           "code",
           "description",
           "days",
-          "type",
-          "isDefaultCustomer",
-          "isDefaultSupplier"
+          "type"
         ]
       },
       "CreateTradingTermDto": {
@@ -18839,12 +19050,6 @@
           },
           "type": {
             "type": "string"
-          },
-          "isDefaultCustomer": {
-            "type": "boolean"
-          },
-          "isDefaultSupplier": {
-            "type": "boolean"
           }
         },
         "required": [
@@ -18868,12 +19073,6 @@
           },
           "type": {
             "type": "string"
-          },
-          "isDefaultCustomer": {
-            "type": "boolean"
-          },
-          "isDefaultSupplier": {
-            "type": "boolean"
           }
         }
       },
@@ -19664,6 +19863,14 @@
           },
           "source": {
             "type": "string"
+          },
+          "isCreditBlocked": {
+            "type": "boolean"
+          },
+          "creditHoldOverrideAt": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
           },
           "createdBy": {
             "type": "string",
@@ -20771,17 +20978,13 @@
           },
           "rate": {
             "type": "string"
-          },
-          "isDefault": {
-            "type": "boolean"
           }
         },
         "required": [
           "taxCategoryId",
           "code",
           "title",
-          "type",
-          "isDefault"
+          "type"
         ]
       },
       "CreateTaxCategoryDto": {
@@ -20798,9 +21001,6 @@
           },
           "rate": {
             "type": "string"
-          },
-          "isDefault": {
-            "type": "boolean"
           }
         },
         "required": [
@@ -20823,9 +21023,6 @@
           },
           "rate": {
             "type": "string"
-          },
-          "isDefault": {
-            "type": "boolean"
           }
         }
       },
@@ -20874,16 +21071,12 @@
           },
           "title": {
             "type": "string"
-          },
-          "isDefault": {
-            "type": "boolean"
           }
         },
         "required": [
           "taxPositionId",
           "code",
-          "title",
-          "isDefault"
+          "title"
         ]
       },
       "CreateTaxPositionDto": {
@@ -20894,9 +21087,6 @@
           },
           "title": {
             "type": "string"
-          },
-          "isDefault": {
-            "type": "boolean"
           }
         },
         "required": [
@@ -20912,9 +21102,6 @@
           },
           "title": {
             "type": "string"
-          },
-          "isDefault": {
-            "type": "boolean"
           }
         }
       },
@@ -22497,6 +22684,10 @@
             "type": "string",
             "nullable": true
           },
+          "taxPositionId": {
+            "type": "string",
+            "nullable": true
+          },
           "earlyPaymentDiscount": {
             "type": "string",
             "nullable": true
@@ -22554,6 +22745,7 @@
           "defaultApAccountId",
           "defaultExpenseAccountId",
           "tradingTermsId",
+          "taxPositionId",
           "earlyPaymentDiscount",
           "earlyPaymentDiscountDays",
           "creditLimit",
@@ -22590,6 +22782,10 @@
             "format": "uuid"
           },
           "tradingTermsId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taxPositionId": {
             "type": "string",
             "format": "uuid"
           },
@@ -22662,6 +22858,10 @@
             "format": "uuid"
           },
           "tradingTermsId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taxPositionId": {
             "type": "string",
             "format": "uuid"
           },
@@ -23550,7 +23750,8 @@
         },
         "required": [
           "zoneId",
-          "binNumber"
+          "binNumber",
+          "binType"
         ]
       },
       "BinResponseDto": {
@@ -24152,6 +24353,7 @@
         },
         "required": [
           "name",
+          "macroType",
           "content"
         ]
       },

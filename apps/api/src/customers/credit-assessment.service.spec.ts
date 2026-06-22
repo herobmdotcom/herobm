@@ -42,7 +42,7 @@ describe('CreditAssessmentService', () => {
   describe('assessCredit', () => {
     it('should return zero balances if customer is missing', async () => {
       const result = await service.assessCredit(
-        '00000000-0000-0000-0000-000000000000',
+        '00000000-0000-4000-8000-000000000000',
       );
       expect(result).toEqual({
         totalArBalance: 0,

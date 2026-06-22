@@ -84,44 +84,22 @@ export const herobmCore = pgSchema('herobm_core');
 // ---------------------------------------------------------------------------
 // tax_categories  (Tax classification for order lines)
 // ---------------------------------------------------------------------------
-export const taxCategories = herobmCore.table(
-  'tax_categories',
-  {
-    taxCategoryId: uuid('tax_category_id').primaryKey().defaultRandom(),
-    code: text('code').unique().notNull(),
-    title: text('title').notNull(),
-    type: text('type').notNull(), // not_relevant | exempt | zero_rated | tax_applies
-    rate: numeric('rate').default('0'), // percentage, e.g. '9' = 9%
-    isDefault: boolean('is_default').default(false),
-  },
-  (table) => {
-    return {
-      singleDefaultIndex: uniqueIndex('tax_categories_single_default_idx')
-        .on(table.isDefault)
-        .where(sql`${table.isDefault} = true`),
-    };
-  },
-);
+export const taxCategories = herobmCore.table('tax_categories', {
+  taxCategoryId: uuid('tax_category_id').primaryKey().defaultRandom(),
+  code: text('code').unique().notNull(),
+  title: text('title').notNull(),
+  type: text('type').notNull(), // not_relevant | exempt | zero_rated | tax_applies
+  rate: numeric('rate').default('0'), // percentage, e.g. '9' = 9%
+});
 
 // ---------------------------------------------------------------------------
 // tax_positions  (Business context for tax mapping)
 // ---------------------------------------------------------------------------
-export const taxPositions = herobmCore.table(
-  'tax_positions',
-  {
-    taxPositionId: uuid('tax_position_id').primaryKey().defaultRandom(),
-    code: text('code').unique().notNull(),
-    title: text('title').notNull(),
-    isDefault: boolean('is_default').default(false),
-  },
-  (table) => {
-    return {
-      singleDefaultIndex: uniqueIndex('tax_positions_single_default_idx')
-        .on(table.isDefault)
-        .where(sql`${table.isDefault} = true`),
-    };
-  },
-);
+export const taxPositions = herobmCore.table('tax_positions', {
+  taxPositionId: uuid('tax_position_id').primaryKey().defaultRandom(),
+  code: text('code').unique().notNull(),
+  title: text('title').notNull(),
+});
 
 // ---------------------------------------------------------------------------
 // tax_position_mappings  (Map product taxes to contextual taxes)
@@ -263,7 +241,7 @@ export const salesOrderLineItems = herobmCore.table(
   (t) => ({
     uniqueSoLineNumber: uniqueIndex('unique_so_line_number')
       .on(t.salesOrderId, t.lineNumber)
-      .where(sql`${t.salesOrderId} != '00000000-0000-0000-0000-000000000001'`),
+      .where(sql`${t.salesOrderId} != '00000000-0000-4000-8000-000000000001'`),
     productLocationIdx: index('idx_sales_order_lines_product_location').on(
       t.productId,
       t.fulfillmentLocationId,
@@ -583,7 +561,7 @@ export const purchaseOrderLineItems = herobmCore.table(
     uniquePoLineNumber: uniqueIndex('unique_po_line_number')
       .on(t.purchaseOrderId, t.lineNumber)
       .where(
-        sql`${t.purchaseOrderId} != '00000000-0000-0000-0000-000000000001'`,
+        sql`${t.purchaseOrderId} != '00000000-0000-4000-8000-000000000001'`,
       ),
   }),
 );
@@ -1052,7 +1030,7 @@ export const bins = herobmCore.table(
     zoneId: uuid('zone_id')
       .notNull()
       .references(() => zones.zoneId),
-    binType: binTypeEnum('bin_type').notNull().default('storage'),
+    binType: binTypeEnum('bin_type').notNull(),
     isConsignment: boolean('is_consignment').default(false),
     isBonded: boolean('is_bonded').default(false),
     isUnavailable: boolean('is_unavailable').default(false),
@@ -1253,8 +1231,6 @@ export const tradingTerms = herobmCore.table('trading_terms', {
   description: text('description').notNull(),
   days: integer('days').notNull(), // Number of days allowed
   type: text('type').notNull(), // 'net' | 'end_of_month' | 'cash_on_delivery'
-  isDefaultCustomer: boolean('is_default_customer').notNull().default(false),
-  isDefaultSupplier: boolean('is_default_supplier').notNull().default(false),
   isActive: boolean('is_active').notNull().default(true),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -1266,7 +1242,7 @@ export const tradingTerms = herobmCore.table('trading_terms', {
 export const macros = herobmCore.table('macros', {
   macroId: uuid('macro_id').primaryKey().defaultRandom(),
   name: text('name').unique().notNull(),
-  macroType: text('macro_type').notNull().default('text_template'),
+  macroType: text('macro_type').notNull(),
   content: text('content').notNull(),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -1443,7 +1419,7 @@ export const products = herobmCore.table('products', {
   productId: uuid('product_id').primaryKey().defaultRandom(),
   productNumber: text('product_number').unique().notNull(),
   name: text('name').notNull(),
-  productType: productTypeEnum('product_type').notNull().default('inventory'),
+  productType: productTypeEnum('product_type').notNull(),
   structureType: productStructureEnum('structure_type')
     .notNull()
     .default('standard'),
@@ -1463,11 +1439,11 @@ export const products = herobmCore.table('products', {
     '0',
   ),
   weightedAverageCost: numeric('weighted_average_cost').default('0'),
+  weight: numeric('weight', { precision: 12, scale: 4 }).default('0'),
   alternateInvoiceDescription: text('alternate_invoice_description'),
   boxQuantity: numeric('box_quantity').default('1'),
   baseUom: text('base_uom')
     .notNull()
-    .default('EA')
     .references(() => uomDictionary.uomCode),
   defaultSalesUomId: uuid('default_sales_uom_id'),
   defaultPurchaseUomId: uuid('default_purchase_uom_id'),
@@ -1578,7 +1554,10 @@ export const customers = herobmCore.table(
       () => tradingTerms.tradingTermsId,
     ),
     creditLimit: numeric('credit_limit'), // Nullable. Overrides group if NOT NULL.
-    isOnCreditHold: boolean('is_on_credit_hold').notNull().default(false), // Manual override per account
+    isOnCreditHold: boolean('is_on_credit_hold'), // Manual override per account
+    overrideCreditHoldUntil: timestamp('override_credit_hold_until', {
+      withTimezone: true,
+    }),
     bankAccountName: text('bank_account_name'),
     bankBsb: text('bank_bsb'),
     bankAccountNumber: text('bank_account_number'),
@@ -1682,7 +1661,7 @@ export const suppliers = herobmCore.table(
         'other',
       ],
     }),
-    isPaymentBlocked: boolean('is_payment_blocked').notNull().default(false),
+    isPaymentBlocked: boolean('is_payment_blocked'),
     paymentBlockReason: text('payment_block_reason', {
       enum: ['invoice_dispute', 'missing_goods', 'contractual_breach', 'other'],
     }),
@@ -2217,9 +2196,18 @@ export const appSettings = herobmCore.table('app_settings', {
   defaultFulfillmentLocationId: uuid(
     'default_fulfillment_location_id',
   ).references(() => locations.locationId),
-  defaultTradingTermsId: uuid('default_trading_terms_id').references(
+  defaultCustomerTermsId: uuid('default_customer_terms_id').references(
     () => tradingTerms.tradingTermsId,
   ),
+  defaultSupplierTermsId: uuid('default_supplier_terms_id').references(
+    () => tradingTerms.tradingTermsId,
+  ),
+  defaultCustomerTaxPositionId: uuid(
+    'default_customer_tax_position_id',
+  ).references(() => taxPositions.taxPositionId),
+  defaultSupplierTaxPositionId: uuid(
+    'default_supplier_tax_position_id',
+  ).references(() => taxPositions.taxPositionId),
   defaultPurchaseTaxCategoryId: uuid(
     'default_purchase_tax_category_id',
   ).references(() => taxCategories.taxCategoryId),
@@ -2720,3 +2708,16 @@ export const customerDeliveryAddressesRelations = relations(
     }),
   }),
 );
+
+// ---------------------------------------------------------------------------
+// _pipeline_jobs (Background Jobs Tracking)
+// ---------------------------------------------------------------------------
+export const pipelineJobs = herobmCore.table('_pipeline_jobs', {
+  jobId: text('job_id').primaryKey(),
+  type: text('type').notNull(),
+  status: text('status').notNull(),
+  progressJson: jsonb('progress_json').default('[]'),
+  logsJson: jsonb('logs_json').default('[]'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});

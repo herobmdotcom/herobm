@@ -27,10 +27,10 @@ describe('InventoryService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: InventoryService;
 
-  const PRODUCT_ID = '00000000-0000-0000-0000-00000000000a';
-  const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
-  const ZONE_ID = '00000000-0000-0000-0000-00000000000c';
-  const BIN_ID = '00000000-0000-0000-0000-00000000000b';
+  const PRODUCT_ID = '00000000-0000-4000-8000-00000000000a';
+  const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
+  const ZONE_ID = '00000000-0000-4000-8000-00000000000c';
+  const BIN_ID = '00000000-0000-4000-8000-00000000000b';
 
   beforeEach(async () => {
     // Seed static data
@@ -56,6 +56,7 @@ describe('InventoryService', () => {
       binId: BIN_ID,
       zoneId: ZONE_ID,
       binNumber: 'B-01-01',
+      binType: 'storage',
     });
 
     await pg.db.insert(products).values({
@@ -63,6 +64,7 @@ describe('InventoryService', () => {
       productNumber: 'P1',
       name: 'Product 1',
       baseUom: 'EA',
+      productType: 'inventory',
     });
   });
 
@@ -118,7 +120,7 @@ describe('InventoryService', () => {
       const params = {
         entryNumber: 'MV-001',
         sourceType: 'TEST',
-        sourceId: '00000000-0000-0000-0000-000000000e11',
+        sourceId: '00000000-0000-4000-8000-000000000e11',
         memo: 'Test movement',
         userId: 'admin',
         lines: [{ productId: PRODUCT_ID, binId: BIN_ID, quantity: 10 }],
@@ -171,7 +173,7 @@ describe('InventoryService', () => {
       const params = {
         entryNumber: 'MV-002',
         sourceType: 'PICK',
-        sourceId: '00000000-0000-0000-0000-000000000e12',
+        sourceId: '00000000-0000-4000-8000-000000000e12',
         lines: [{ productId: PRODUCT_ID, binId: BIN_ID, quantity: -5 }],
       };
 
@@ -195,11 +197,12 @@ describe('InventoryService', () => {
   describe('moveStock', () => {
     it('should emit stock_moved and entry_posted events', async () => {
       // Seed target bin
-      const TARGET_BIN_ID = '00000000-0000-0000-0000-000000000010';
+      const TARGET_BIN_ID = '00000000-0000-4000-8000-000000000010';
       await pg.db.insert(bins).values({
         binId: TARGET_BIN_ID,
         zoneId: ZONE_ID,
         binNumber: 'B-01-02',
+        binType: 'storage',
       });
 
       // Seed initial stock
@@ -261,7 +264,7 @@ describe('InventoryService', () => {
   describe('quarantineMove', () => {
     it('should emit stock_moved and entry_posted events', async () => {
       // Seed target bin
-      const TARGET_BIN_ID = '00000000-0000-0000-0000-000000000011';
+      const TARGET_BIN_ID = '00000000-0000-4000-8000-000000000011';
       await pg.db.insert(bins).values({
         binId: TARGET_BIN_ID,
         zoneId: ZONE_ID,
@@ -308,7 +311,7 @@ describe('InventoryService', () => {
   describe('findAll', () => {
     it('should return paginated inventory levels', async () => {
       // Seed some ledger data to have non-zero stock
-      const entryId = '00000000-0000-0000-0000-0000000000e1';
+      const entryId = '00000000-0000-4000-8000-0000000000e1';
       await pg.db.insert(inventoryEntries).values({
         entryId,
         entryNumber: 'E1',
@@ -347,7 +350,7 @@ describe('InventoryService', () => {
 
     it('returns availableQty per location when productId is supplied', async () => {
       // Seed some stock so the inventory_levels view has rows
-      const entryId = '00000000-0000-0000-0000-0000000000f1';
+      const entryId = '00000000-0000-4000-8000-0000000000f1';
       await pg.db.insert(inventoryEntries).values({
         entryId,
         entryNumber: 'E-LOC-1',

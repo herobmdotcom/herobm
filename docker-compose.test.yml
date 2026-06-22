@@ -50,6 +50,15 @@ services:
     extra_hosts:
       - "host.containers.internal:host-gateway"
 
+  webhook-catcher:
+    image: docker.io/library/node:22-alpine
+    container_name: webhook-catcher
+    command: node -e "const fs=require('fs'); require('http').createServer((req,res)=>{let b='';req.on('data',c=>b+=c);req.on('end',()=>{if(b){const evt=JSON.stringify({headers:req.headers,body:JSON.parse(b),rawBody:b});fs.appendFileSync('/app/logs/webhooks.log', evt+'\\n');}res.end('OK')})}).listen(8089, '0.0.0.0')"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - app-net
+
   maildev-test:
     image: maildev/maildev
     container_name: maildev-test

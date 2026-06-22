@@ -1,12 +1,26 @@
 import { TestingModule } from '@nestjs/testing';
 import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
-
+import { DRIZZLE } from '../src/drizzle/drizzle.module';
+import {
+  glJournalEntries,
+  glJournalLines,
+  glAccounts,
+  users,
+} from '../src/drizzle/herobm-core-schema';
+import { eq } from 'drizzle-orm';
+import * as crypto from 'crypto';
 import request from 'supertest';
+import * as bcrypt from 'bcrypt';
 
 describe('Credit Control Lifecycle (e2e)', () => {
   let app: INestApplication;
   let adminToken: string;
+  let viewerToken: string;
+  let arAccountId: string;
+  let revAccountId: string;
+  let productId: string;
+  let suffix: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await (
@@ -17,6 +31,8 @@ describe('Credit Control Lifecycle (e2e)', () => {
     app.setGlobalPrefix('api');
     await app.init();
 
+    suffix = Math.random().toString(36).substring(7);
+
     // Login as admin
     const adminRes = await request(app.getHttpServer())
       .post('/api/auth/login')
@@ -24,136 +40,242 @@ describe('Credit Control Lifecycle (e2e)', () => {
         username: 'admin',
         password: process.env.ADMIN_PASSWORD || 'password',
       });
-
-    if (adminRes.status !== 201) {
-      throw new Error(`admin login failed`);
-    }
     adminToken = adminRes.body.access_token;
+
+    // Create a viewer user
+    const db = app.get(DRIZZLE);
+    const viewerId = crypto.randomUUID();
+    const testPass = 'test-pass';
+    await db.insert(users).values({
+      userId: viewerId,
+      username: `viewer-${suffix}`,
+      passwordHash: await bcrypt.hash(testPass, 10),
+      email: `viewer-${suffix}@test.com`,
+      firstName: 'Viewer',
+      lastName: 'Test',
+      role: 'viewer',
+    });
+
+    const enforcer = app.get('CASBIN_ENFORCER');
+    await enforcer.addRoleForUser(`viewer-${suffix}`, 'viewer');
+
+    // Login as viewer
+    const viewerRes = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        username: `viewer-${suffix}`,
+        password: testPass,
+      });
+    viewerToken = viewerRes.body.access_token;
+
+    // Get GL Accounts
+    const arRes = await db
+      .select()
+      .from(glAccounts)
+      .where(eq(glAccounts.accountType, 'asset'))
+      .limit(1);
+    const revRes = await db
+      .select()
+      .from(glAccounts)
+      .where(eq(glAccounts.accountType, 'revenue'))
+      .limit(1);
+    arAccountId = arRes[0].glAccountId;
+    revAccountId = revRes[0].glAccountId;
+
+    // Get a product
+    const prodRes = await request(app.getHttpServer())
+      .get('/api/products?limit=1')
+      .set('Authorization', `Bearer ${adminToken}`);
+    productId = prodRes.body.data[0].productId;
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('should create a trading term, set it as default, and verify credit blocking', async () => {
-    console.log('1. Creating Trading Term');
-    // 1. Create a "Net 0" Trading Term
+  const createCustomer = async (payload: any) => {
+    const custRes = await request(app.getHttpServer())
+      .post('/api/customers')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(payload);
+    return custRes.body.customerId;
+  };
+
+  const createOrder = async (customerId: string, price: number) => {
+    return request(app.getHttpServer())
+      .post('/api/sales-orders')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        customerId,
+        deliveryAddressLine1: 'Test',
+        lines: [{ productId, quantity: 1, pricePerUnit: price }],
+      });
+  };
+
+  it('should block confirmation for manual credit hold', async () => {
+    const customerId = await createCustomer({
+      customerNumber: `HOLD-${suffix}`,
+      name: 'Hold Customer',
+      billingAddressCountry: 'AU',
+      isOnCreditHold: true,
+    });
+
+    const orderRes = await createOrder(customerId, 100);
+    expect(orderRes.status).toBe(201);
+    const orderId = orderRes.body.salesOrderId;
+
+    const confirmRes = await request(app.getHttpServer())
+      .patch(`/api/sales-orders/${orderId}/state`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ stateCode: 'quoted' });
+
+    expect(confirmRes.status).toBe(400);
+    expect(confirmRes.body.message).toContain('customer_credit_hold');
+  });
+
+  describe('Credit limit behavior - strict', () => {
+    beforeAll(async () => {
+      await request(app.getHttpServer())
+        .patch('/api/settings/app')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ creditLimitBehavior: 'hard' });
+    });
+
+    afterAll(async () => {
+      await request(app.getHttpServer())
+        .patch('/api/settings/app')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ creditLimitBehavior: 'soft' });
+    });
+
+    it('should block order creation for strict credit limit exceeded', async () => {
+      const customerId = await createCustomer({
+        customerNumber: `LIMIT-${suffix}`,
+        name: 'Limit Customer',
+        billingAddressCountry: 'AU',
+        creditLimit: '50.00',
+      });
+
+      const orderRes = await createOrder(customerId, 100);
+      expect(orderRes.status).toBe(400);
+      expect(orderRes.body.message).toContain('credit_limit_exceeded');
+    });
+  });
+
+  it('should prevent standard users from modifying credit limits', async () => {
+    const customerId = await createCustomer({
+      customerNumber: `PERM-${suffix}`,
+      name: 'Perm Customer',
+      billingAddressCountry: 'AU',
+    });
+
+    const patchRes = await request(app.getHttpServer())
+      .patch(`/api/customers/${customerId}`)
+      .set('Authorization', `Bearer ${viewerToken}`)
+      .send({ creditLimit: '1000' });
+
+    expect(patchRes.status).toBe(403);
+  });
+
+  it('should block overdue balance but allow a single order override', async () => {
     const termRes = await request(app.getHttpServer())
       .post('/api/settings/trading-terms')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        code: 'NET_0',
+        code: `NET_0_${suffix}`,
         description: 'Due Immediately',
         type: 'net',
         days: 0,
       });
-    expect(termRes.status).toBe(201);
     const termId = termRes.body.id;
 
-    console.log('2. Setting system default');
-    // 2. Set it as system default
-    await request(app.getHttpServer())
-      .patch('/api/settings/app')
+    const customerId = await createCustomer({
+      customerNumber: `OVERDUE-${suffix}`,
+      name: 'Overdue Customer',
+      billingAddressCountry: 'AU',
+      tradingTermsId: termId,
+      creditLimit: '10000',
+    });
+
+    const db = app.get(DRIZZLE);
+    const jeId = crypto.randomUUID();
+    const entryDate = new Date();
+    entryDate.setDate(entryDate.getDate() - 5);
+
+    await db.insert(glJournalEntries).values({
+      journalEntryId: jeId,
+      entryNumber: `JE-E2E-${suffix}`,
+      entryDate: entryDate.toISOString().split('T')[0],
+      sourceType: 'sales_invoice',
+    });
+
+    await db.insert(glJournalLines).values([
+      {
+        journalEntryId: jeId,
+        glAccountId: arAccountId,
+        partyType: 'customer',
+        partyId: customerId,
+        debit: '500.00',
+        credit: '0.00',
+      },
+      {
+        journalEntryId: jeId,
+        glAccountId: revAccountId,
+        debit: '0.00',
+        credit: '500.00',
+      },
+    ]);
+
+    // Create Order 1
+    const order1Res = await createOrder(customerId, 100);
+    const order1Id = order1Res.body.salesOrderId;
+
+    // Confirm should fail due to overdue balance
+    const confirm1Res = await request(app.getHttpServer())
+      .patch(`/api/sales-orders/${order1Id}/state`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        defaultTradingTermsId: termId,
-      });
+      .send({ stateCode: 'quoted' });
+    expect(confirm1Res.status).toBe(400);
+    expect(confirm1Res.body.message).toContain('overdue_balance');
 
-    console.log('3. Creating Customer');
-    // 3. Create a Customer
-    const custRes = await request(app.getHttpServer())
-      .post('/api/customers')
+    // Override Order 1
+    const overrideRes = await request(app.getHttpServer())
+      .post(`/api/sales-orders/${order1Id}/override-credit-hold`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        customerNumber: 'C-CREDIT-TEST-1',
-        name: 'Credit Test Customer',
-        billingAddressCountry: 'AU',
-      });
-    expect(custRes.status).toBe(201);
-    const customerId = custRes.body.customerId;
+      .send({ reason: 'Approved for test' });
+    expect(overrideRes.status).toBe(200);
 
-    console.log('4. Creating Order 1');
-    // 4. Create an order
-    const orderRes = await request(app.getHttpServer())
-      .post('/api/sales-orders')
+    // Confirm Order 1 should now succeed
+    const confirm2Res = await request(app.getHttpServer())
+      .patch(`/api/sales-orders/${order1Id}/state`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        customerId,
-        deliveryAddressLine1: 'Test Address',
-        lines: [
-          {
-            productDescription: 'Test item',
-            quantity: 1,
-            pricePerUnit: 100,
-          },
-        ],
-      });
-    expect(orderRes.status).toBe(201);
-    const orderId = orderRes.body.salesOrderId;
+      .send({ stateCode: 'quoted' });
+    expect(confirm2Res.status).toBe(200);
 
-    // Transition first order to CONFIRMED and pick/ship to generate an invoice
-    // To simplify generating an invoice, let's just create an invoice directly via the API if possible,
-    // or simulate the fulfillment process.
-
-    console.log('5. Creating Invoice');
-    const invRes = await request(app.getHttpServer())
-      .post('/api/sales-invoices')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        customerId,
-        salesOrderId: orderId,
-        invoiceDate: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 days ago
-        lines: [
-          {
-            productDescription: 'Test Item',
-            quantityInvoiced: 1,
-            pricePerUnit: 100,
-          },
-        ],
-      });
-
-    // If direct invoice creation is not supported, we might have to fulfill the order.
-    // Assuming the above or similar creates an invoice... Wait, it depends on the invoice API.
-    // Let's check the invoice API behavior by asserting status.
-    // It might return 400 if direct creation isn't allowed, but let's assume it works or we just test the override flow.
-
-    console.log('6. Creating Order 2', invRes.status, invRes.body);
-    // Let's create a second order for the customer
-    const order2Res = await request(app.getHttpServer())
-      .post('/api/sales-orders')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        customerId,
-        deliveryAddressLine1: 'Test Address',
-        lines: [
-          {
-            productDescription: 'Test item 2',
-            quantity: 1,
-            pricePerUnit: 50,
-          },
-        ],
-      });
-    expect(order2Res.status).toBe(201);
+    // Create Order 2 (should still be blocked because override was for Order 1 only)
+    const order2Res = await createOrder(customerId, 100);
     const order2Id = order2Res.body.salesOrderId;
 
-    console.log('7. Overriding Credit Hold');
-    // Override the credit hold
-    const overrideRes = await request(app.getHttpServer())
-      .post(`/api/sales-orders/${order2Id}/override-credit-hold`)
+    const confirm3Res = await request(app.getHttpServer())
+      .patch(`/api/sales-orders/${order2Id}/state`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        reason: 'Approved for testing',
-      });
-    expect(overrideRes.status).toBe(201);
+      .send({ stateCode: 'quoted' });
+    expect(confirm3Res.status).toBe(400);
+    expect(confirm3Res.body.message).toContain('overdue_balance');
 
-    console.log('8. Fetching Order 2');
-    // Fetch the order to verify override
-    const getOrderRes = await request(app.getHttpServer())
-      .get(`/api/sales-orders/${order2Id}`)
-      .set('Authorization', `Bearer ${adminToken}`);
-    expect(getOrderRes.body.creditHoldOverrideBy).toBe('admin');
-    expect(getOrderRes.body.creditHoldOverrideReason).toBe(
-      'Approved for testing',
-    );
+    // Customer level override
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 1);
+    await request(app.getHttpServer())
+      .patch(`/api/customers/${customerId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ overrideCreditHoldUntil: futureDate.toISOString() });
+
+    // Confirm Order 2 should now succeed without order-level override
+    const confirm4Res = await request(app.getHttpServer())
+      .patch(`/api/sales-orders/${order2Id}/state`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ stateCode: 'quoted' });
+    expect(confirm4Res.status).toBe(200);
   });
 });

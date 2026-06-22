@@ -19,5 +19,6 @@ export interface AccountGroupResponseDto {
   isOnCreditHold?: boolean;
   creditLimit?: string;
   tradingTermsId?: string;
+  taxPositionId?: string;
   modifiedOn?: string;
 }

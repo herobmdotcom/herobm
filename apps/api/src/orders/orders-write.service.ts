@@ -26,6 +26,7 @@ import {
   salesOrderLineItems,
   salesEvents,
   customers as coreAccounts,
+  customerGroups,
   products as coreProducts,
   backorders,
   purchaseOrders,
@@ -63,6 +64,7 @@ import {
   resolveEffectiveCreditLimit,
   resolveEffectiveTradingTermsId,
 } from '../customers/credit-control.utils';
+import { getCreditBlockedSql } from './orders.sql';
 
 const VALID_STATES = getValidStates(STATE_TRANSITIONS);
 
@@ -184,6 +186,7 @@ export class OrdersWriteService {
             customer.taxPositionId ||
             ((customer as Record<string, unknown>)
               .customerGroupTaxPositionId as string | undefined) ||
+            this.appConfig.getAppSettingsRaw()?.defaultCustomerTaxPositionId ||
             null,
           productId: productId || null,
           productDefaultTaxCategoryId: null,
@@ -208,7 +211,7 @@ export class OrdersWriteService {
     }
 
     // 4. Fallback: system default
-    const defaultGst = await this.taxService.getDefault(tx);
+    const defaultGst = await this.taxService.getDefaultSalesTax(tx);
     return {
       taxCategoryId: defaultGst.taxCategoryId,
       rate: parseFloat(defaultGst.rate ?? '0'),
@@ -391,7 +394,7 @@ export class OrdersWriteService {
 
       // Check for duplicate product IDs in the input lines
       // Exemption: The system custom line product can be added multiple times.
-      const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+      const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
       const productIds = dto.lines
         .map((l) => l.productId)
         .filter((id) => id && id !== CUSTOM_LINE_ID);
@@ -415,17 +418,27 @@ export class OrdersWriteService {
       }
 
       let termsDescription = null;
+      let accountGroup = null;
+      if (customer.customerGroupId) {
+        const [groupRow] = await tx
+          .select()
+          .from(customerGroups)
+          .where(eq(customerGroups.customerGroupId, customer.customerGroupId))
+          .limit(1);
+        accountGroup = groupRow;
+      }
+      
       const effectiveTermsId = resolveEffectiveTradingTermsId({
         creditLimit: customer.creditLimit,
-        isOnCreditHold: customer.isOnCreditHold,
+        isOnCreditHold: customer.isOnCreditHold ?? false,
         tradingTermsId: customer.tradingTermsId,
-        accountGroup: {
-          creditLimit: customer.customerGroupCreditLimit,
-          isOnCreditHold: customer.customerGroupIsOnCreditHold ?? false,
-          tradingTermsId: customer.customerGroupTradingTermsId,
-        },
-        systemDefaultTradingTermsId:
-          this.appConfig.getAppSettingsRaw()?.defaultTradingTermsId,
+        accountGroup: accountGroup ? {
+          creditLimit: accountGroup.creditLimit,
+          isOnCreditHold: accountGroup.isOnCreditHold ?? false,
+          tradingTermsId: accountGroup.tradingTermsId,
+        } : undefined,
+        systemDefaultCustomerTermsId:
+          this.appConfig.getAppSettingsRaw()?.defaultCustomerTermsId,
       });
 
       if (effectiveTermsId) {
@@ -769,6 +782,7 @@ export class OrdersWriteService {
 
     // Assert Credit / State Safety for forward progressions
     if (
+      newState === SALES_ORDER_STATE.QUOTED ||
       newState === SALES_ORDER_STATE.CONFIRMED ||
       newState === ('allocated' as string) ||
       newState === SALES_ORDER_STATE.PICKING
@@ -1162,7 +1176,7 @@ export class OrdersWriteService {
       );
     }
 
-    const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+    const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
     if (dto.productId) {
       await this.validateProduct(dto.productId);
 
@@ -1379,7 +1393,7 @@ export class OrdersWriteService {
       );
     }
 
-    const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+    const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
     if (dto.productId) {
       await this.validateProduct(dto.productId);
 
@@ -1855,7 +1869,7 @@ export class OrdersWriteService {
           .map((l) => l.productId)
           .filter(
             (id): id is string =>
-              id !== null && id !== '00000000-0000-0000-0000-000000000000',
+              id !== null && id !== '00000000-0000-4000-8000-000000000000',
           ),
       ),
     );
@@ -1939,11 +1953,16 @@ export class OrdersWriteService {
         order: salesOrders,
         customerName: coreAccounts.name,
         country: coreAccounts.billingAddressCountry,
+        isCreditBlocked: getCreditBlockedSql(),
       })
       .from(salesOrders)
       .leftJoin(
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
+      )
+      .leftJoin(
+        customerGroups,
+        eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),
       )
       .where(eq(salesOrders.salesOrderId, id))
       .limit(1);
@@ -1955,6 +1974,7 @@ export class OrdersWriteService {
       ...rows[0].order,
       customerName: rows[0].customerName,
       country: rows[0].country,
+      isCreditBlocked: rows[0].isCreditBlocked,
     };
   }
 

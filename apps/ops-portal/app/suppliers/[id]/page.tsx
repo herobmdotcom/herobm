@@ -10,9 +10,10 @@ import {
 } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
+import EntityHeader from '@/components/shared/EntityHeader';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
-import EntityHeader from '@/components/shared/EntityHeader';
+import { useInheritance, useGroup } from '@/hooks/useInheritance';
 import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichmentDecorator';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { CURRENCIES } from '@/lib/currency';
@@ -22,6 +23,8 @@ import GroupSelect from '@/components/shared/GroupSelect';
 import { resolveSupplierRiskProfile } from '@/lib/supplier-risk';
 import SupplierStatusBadges from '@/components/suppliers/SupplierStatusBadges';
 import SupplierExpiries from '@/components/suppliers/SupplierExpiries';
+import InheritedSelect from '@/components/shared/InheritedSelect';
+import InheritedNumberInput from '@/components/shared/InheritedNumberInput';
 import { useSettings } from '@/components/SettingsProvider';
 import { SUPPLIER_STATE, getErrorMessage, CURRENCIES as _CURRENCIES, COUNTRIES, getCurrencyForCountry } from '@herobm/shared';
 
@@ -47,13 +50,7 @@ interface Supplier {
   isPaymentBlocked?: boolean;
   paymentBlockReason?: string | null;
   
-  // Group properties (resolved in backend from join)
-  supplierGroupName?: string | null;
-  supplierGroupCode?: string | null;
-  groupIsPurchasingBlocked?: boolean;
-  groupPurchasingBlockReason?: string | null;
-  groupIsPaymentBlocked?: boolean;
-  groupPaymentBlockReason?: string | null;
+
 
   currencyCode: string;
   supplierGroupId: string | null;
@@ -76,7 +73,7 @@ interface Supplier {
 }
 
 export default function SupplierDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
-  const { baseCurrency } = useSettings();
+  const { baseCurrency, app } = useSettings();
   const t = useTranslations('suppliers');
   const tCommon = useTranslations('common');
   const tSales = useTranslations('salesOrders');
@@ -94,6 +91,8 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
   useDocumentTitle(supplier ? (supplier.name ? `${supplier.vendorNumber} - ${supplier.name}` : supplier.vendorNumber) : null);
 
+
+
   // Editable field state
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
@@ -103,14 +102,15 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const [editCountry, setEditCountry] = useState('');
   const [editTradingTermsId, setEditTradingTermsId] = useState<string | null>(null);
   const [editEarlyPaymentDiscount, setEditEarlyPaymentDiscount] = useState<string | null>(null);
-  const [editEarlyPaymentDiscountDays, setEditEarlyPaymentDiscountDays] = useState<number | null>(null);
+  const [editEarlyPaymentDiscountDays, setEditEarlyPaymentDiscountDays] = useState<string | null>(null);
+  const [editCreditLimit, setEditCreditLimit] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState('');
   const [editCurrency, setEditCurrency] = useState(baseCurrency);
   const [editSupplierGroupId, setEditSupplierGroupId] = useState<string | null>(null);
   
-  const [editIsPurchasingBlocked, setEditIsPurchasingBlocked] = useState(false);
+  const [editIsPurchasingBlocked, setEditIsPurchasingBlocked] = useState<boolean | null>(null);
   const [editPurchasingBlockReason, setEditPurchasingBlockReason] = useState('');
-  const [editIsPaymentBlocked, setEditIsPaymentBlocked] = useState(false);
+  const [editIsPaymentBlocked, setEditIsPaymentBlocked] = useState<boolean | null>(null);
   const [editPaymentBlockReason, setEditPaymentBlockReason] = useState('');
   const [editBlockNotes, setEditBlockNotes] = useState('');
 
@@ -124,22 +124,58 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
   const [availableTradingTerms, setAvailableTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
   const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
+  const [supplierGroups, setSupplierGroups] = useState<api.SupplierGroupResponseDto[]>([]);
+
+  const selectedGroup = useGroup(supplierGroups, editSupplierGroupId);
+
+  const earlyPaymentDiscountInheritance = useInheritance([
+    { value: selectedGroup?.earlyPaymentDiscount, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
+
+  const earlyPaymentDiscountDaysInheritance = useInheritance([
+    { value: selectedGroup?.earlyPaymentDiscountDays, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
+
+  const creditLimitInheritance = useInheritance([
+    { value: selectedGroup?.creditLimit, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
+
+  const taxPositionInheritance = useInheritance([
+    { value: selectedGroup?.taxPositionId, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' },
+    { value: app?.defaultSupplierTaxPositionId, sourceLabel: 'System Default' }
+  ]);
+
+  const tradingTermsInheritance = useInheritance([
+    { value: selectedGroup?.tradingTermsId, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' },
+    { value: app?.defaultSupplierTermsId, sourceLabel: 'System Default' }
+  ]);
+
+  const purchasingBlockInheritance = useInheritance([
+    { value: selectedGroup?.isPurchasingBlocked === true ? 'true' : selectedGroup?.isPurchasingBlocked === false ? 'false' : null, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
+
+  const paymentBlockInheritance = useInheritance([
+    { value: selectedGroup?.isPaymentBlocked === true ? 'true' : selectedGroup?.isPaymentBlocked === false ? 'false' : null, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
 
   const loadSupplier = async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
     try {
-      const [supplierRes, termsRes, taxPositionsRes] = await Promise.all([
+      const [supplierRes, termsRes, taxPositionsRes, groupsRes] = await Promise.all([
         api.suppliersControllerFindOne(params.id),
         api.tradingTermsControllerFindAll().catch(() => ({ data: [] as api.TradingTermResponseDto[] } as unknown as api.tradingTermsControllerFindAllResponse)),
         api.taxPositionsControllerFindAll().catch(() => ({ data: [] as api.TaxPositionResponseDto[] } as unknown as api.taxPositionsControllerFindAllResponse)),
+        api.supplierGroupsControllerFindAll().catch(() => ({ data: [] as api.SupplierGroupResponseDto[] } as unknown as api.supplierGroupsControllerFindAllResponse)),
       ]) as unknown as [
         { data: Supplier },
         { data: api.TradingTermResponseDto[] },
-        { data: api.TaxPositionResponseDto[] }
+        { data: api.TaxPositionResponseDto[] },
+        { data: api.SupplierGroupResponseDto[] }
       ];
       const data = supplierRes?.data;
       const termsData = termsRes?.data || [];
       setTaxPositions(taxPositionsRes?.data || []);
+      setSupplierGroups(groupsRes?.data || []);
       setSupplier(data);
       setAvailableTradingTerms(termsData);
       
@@ -151,12 +187,13 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       setEditCountry(data.address1Country || '');
       setEditTradingTermsId(data.tradingTermsId || null);
       setEditEarlyPaymentDiscount(data.earlyPaymentDiscount || '');
-      setEditEarlyPaymentDiscountDays(data.earlyPaymentDiscountDays || null);
+      setEditEarlyPaymentDiscountDays(data.earlyPaymentDiscountDays?.toString() || '');
+      setEditCreditLimit(data.creditLimit || '');
       setEditNotes(data.notes || '');
       
-      setEditIsPurchasingBlocked(data.isPurchasingBlocked || false);
+      setEditIsPurchasingBlocked(data.isPurchasingBlocked ?? null);
       setEditPurchasingBlockReason(data.purchasingBlockReason || '');
-      setEditIsPaymentBlocked(data.isPaymentBlocked || false);
+      setEditIsPaymentBlocked(data.isPaymentBlocked ?? null);
       setEditPaymentBlockReason(data.paymentBlockReason || '');
       setEditBlockNotes(data.blockNotes || '');
       
@@ -577,40 +614,76 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 {t('earlyPaymentDiscount')}
               </label>
               <div className="flex items-center gap-3">
-                <div className="relative w-32">
-                  <input
-                    type="number"
+                <div className="relative w-32 shrink-0">
+                  <InheritedNumberInput
                     className="input w-full pr-8"
                     value={editEarlyPaymentDiscount || ''}
-                    onChange={(e) => setEditEarlyPaymentDiscount(e.target.value)}
+                    onChange={(val) => setEditEarlyPaymentDiscount(val)}
                     onBlur={() => saveField('earlyPaymentDiscount', editEarlyPaymentDiscount || '', supplier.earlyPaymentDiscount || null)}
                     disabled={!isEditable || saving}
                     step="0.01"
                     min="0"
                     max="100"
                     placeholder="0.00"
+                    inheritedValue={earlyPaymentDiscountInheritance.inheritedValue}
+                    inheritedSourceLabel={earlyPaymentDiscountInheritance.inheritedSourceLabel}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
                 </div>
-                { }
-                <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                  {tCommon('in')}
+                <span className="text-sm font-medium shrink-0" style={{ color: 'var(--text-muted)' }}>
+                  in
                 </span>
-                <div className="relative w-32">
-                  <input
-                    type="number"
+                <div className="relative w-32 shrink-0">
+                  <InheritedNumberInput
                     className="input w-full pr-12"
                     value={editEarlyPaymentDiscountDays || ''}
-                    onChange={(e) => setEditEarlyPaymentDiscountDays(e.target.value ? Number(e.target.value) : null)}
-                    onBlur={() => saveField('earlyPaymentDiscountDays', editEarlyPaymentDiscountDays, supplier.earlyPaymentDiscountDays || null)}
+                    onChange={(val) => setEditEarlyPaymentDiscountDays(val)}
+                    onBlur={() => saveField('earlyPaymentDiscountDays', editEarlyPaymentDiscountDays ? Number(editEarlyPaymentDiscountDays) : null, supplier.earlyPaymentDiscountDays || null)}
                     disabled={!isEditable || saving}
                     step="1"
                     min="0"
                     placeholder="10"
+                    inheritedValue={earlyPaymentDiscountDaysInheritance.inheritedValue}
+                    inheritedSourceLabel={earlyPaymentDiscountDaysInheritance.inheritedSourceLabel}
                   />
                   {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none text-sm">days</span>
                 </div>
+                {!!earlyPaymentDiscountInheritance.inheritedSourceLabel && !!earlyPaymentDiscountDaysInheritance.inheritedSourceLabel && (
+                  <span className="text-xs italic text-[var(--primary)] ml-2 flex-shrink-0">
+                    {tCommon('options.inheritValue', { 
+                      label: `${earlyPaymentDiscountInheritance.inheritedValue}% in ${earlyPaymentDiscountDaysInheritance.inheritedValue} days`,
+                      source: earlyPaymentDiscountInheritance.inheritedSourceLabel || ''
+                    })}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Credit Limit
+              </label>
+              <div className="flex items-center gap-3">
+                <InheritedNumberInput
+                  step="0.01"
+                  className="input w-full max-w-xs"
+                  value={editCreditLimit || ""}
+                  onChange={(val) => setEditCreditLimit(val)}
+                  onBlur={() => saveField("creditLimit", editCreditLimit, supplier.creditLimit)}
+                  disabled={!isEditable || saving}
+                  placeholder="0.00"
+                  inheritedValue={creditLimitInheritance.inheritedValue}
+                  inheritedSourceLabel={creditLimitInheritance.inheritedSourceLabel}
+                />
+                {!!creditLimitInheritance.inheritedSourceLabel && (
+                  <span className="text-xs italic text-[var(--primary)] ml-2 flex-shrink-0">
+                    {tCommon('options.inheritValue', {
+                      label: creditLimitInheritance.inheritedValue || '',
+                      source: creditLimitInheritance.inheritedSourceLabel || ''
+                    })}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -700,45 +773,44 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {tCommon('columns.taxPosition')}
               </label>
-              <select
+              <InheritedSelect
                 className="input"
                 disabled={!isEditable || saving}
-                value={editTaxPositionId || ''}
-                onChange={(e) => {
-                  setEditTaxPositionId(e.target.value);
-                  saveField('taxPositionId', e.target.value, supplier.taxPositionId);
+                value={editTaxPositionId}
+                onChange={(val) => {
+                  setEditTaxPositionId(val);
+                  saveField('taxPositionId', val, supplier.taxPositionId);
                 }}
-              >
-                <option value="">{tCommon('options.none')}</option>
-                {taxPositions.map((pos) => (
-                  <option key={pos.taxPositionId} value={pos.taxPositionId}>
-                    {pos.title}
-                  </option>
-                ))}
-              </select>
+                options={taxPositions.map((pos) => ({
+                  value: pos.taxPositionId,
+                  label: pos.title,
+                }))}
+                inheritedValue={taxPositionInheritance.inheritedValue}
+                inheritedSourceLabel={taxPositionInheritance.inheritedSourceLabel}
+              />
             </div>
 
             {/* ── Row 3 ── */}
             {/* 7. Trading Terms */}
             <div>
-              { }
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Trading Terms
+                {t('tradingTerms')}
               </label>
-              <select
+              <InheritedSelect
                 className="input"
-                value={editTradingTermsId || ''}
-                onChange={(e) => {
-                  setEditTradingTermsId(e.target.value);
-                  saveField('tradingTermsId', e.target.value, supplier.tradingTermsId || null);
-                }}
                 disabled={!isEditable || saving}
-              >
-                <option value="">{tCommon('selectEllipsis')}</option>
-                {availableTradingTerms.map((t, i) => (
-                  <option key={`${t.id}-${i}`} value={t.id}>{t.code} - {t.description}</option>
-                ))}
-              </select>
+                value={editTradingTermsId || ''}
+                onChange={(val) => {
+                  setEditTradingTermsId(val || null);
+                  saveField('tradingTermsId', val, supplier.tradingTermsId || null);
+                }}
+                options={availableTradingTerms.map((term) => ({
+                  value: term.id,
+                  label: `${term.code} - ${term.description}`,
+                }))}
+                inheritedValue={tradingTermsInheritance.inheritedValue}
+                inheritedSourceLabel={tradingTermsInheritance.inheritedSourceLabel}
+              />
             </div>
           </div>
         </div>
@@ -903,24 +975,22 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5 items-start">
                   <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>{t('compliance.purchasingBlock')}</label>
-                  <div className="flex items-center gap-3">
-                    <label className="switch" title={editIsPurchasingBlocked ? t('tooltips.currentlyBlocked') : t('tooltips.currentlyActive')}>
-                      <input 
-                        type="checkbox" 
-                        checked={!editIsPurchasingBlocked} 
-                        disabled={!isEditable || saving}
-                        onChange={e => {
-                          const newBlocked = !e.target.checked;
-                          setEditIsPurchasingBlocked(newBlocked);
-                          saveField('isPurchasingBlocked', newBlocked, supplier.isPurchasingBlocked || false);
-                        }} 
-                      />
-                      <span className="switch-slider"></span>
-                    </label>
-                    <span className={`text-sm font-semibold ${!editIsPurchasingBlocked ? 'text-[var(--success)]' : 'text-red-500'}`}>
-                      {!editIsPurchasingBlocked ? t('compliance.noBlock') : t('compliance.blocked')}
-                    </span>
-                  </div>
+                  <InheritedSelect
+                    className="input"
+                    disabled={!isEditable || saving}
+                    value={editIsPurchasingBlocked === true ? 'true' : editIsPurchasingBlocked === false ? 'false' : ''}
+                    onChange={(val) => {
+                      const newBlocked = val === 'true' ? true : val === 'false' ? false : null;
+                      setEditIsPurchasingBlocked(newBlocked);
+                      saveField('isPurchasingBlocked', newBlocked, supplier.isPurchasingBlocked ?? null);
+                    }}
+                    options={[
+                      { value: 'true', label: 'Yes' },
+                      { value: 'false', label: 'No' }
+                    ]}
+                    inheritedValue={purchasingBlockInheritance.inheritedValue}
+                    inheritedSourceLabel={purchasingBlockInheritance.inheritedSourceLabel}
+                  />
                 </div>
                 {editIsPurchasingBlocked && (
                   <div>
@@ -941,9 +1011,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     </select>
                   </div>
                 )}
-                {supplier.groupIsPurchasingBlocked && (
+                {selectedGroup?.isPurchasingBlocked && (
                   <div className="text-xs font-semibold text-danger">
-                    {t('compliance.groupInherited', { reason: (supplier.groupPurchasingBlockReason || 'Unspecified').replace('_', ' ') })}
+                    {t('compliance.groupInherited', { reason: (selectedGroup?.purchasingBlockReason || 'Unspecified').replace('_', ' ') })}
                   </div>
                 )}
               </div>
@@ -951,24 +1021,22 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5 items-start">
                   <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>{t('compliance.paymentBlock')}</label>
-                  <div className="flex items-center gap-3">
-                    <label className="switch" title={editIsPaymentBlocked ? t('tooltips.currentlyBlocked') : t('tooltips.currentlyActive')}>
-                      <input 
-                        type="checkbox" 
-                        checked={!editIsPaymentBlocked} 
-                        disabled={!isEditable || saving}
-                        onChange={e => {
-                          const newBlocked = !e.target.checked;
-                          setEditIsPaymentBlocked(newBlocked);
-                          saveField('isPaymentBlocked', newBlocked, supplier.isPaymentBlocked || false);
-                        }} 
-                      />
-                      <span className="switch-slider"></span>
-                    </label>
-                    <span className={`text-sm font-semibold ${!editIsPaymentBlocked ? 'text-[var(--success)]' : 'text-red-500'}`}>
-                      {!editIsPaymentBlocked ? t('compliance.noBlock') : t('compliance.blocked')}
-                    </span>
-                  </div>
+                  <InheritedSelect
+                    className="input"
+                    disabled={!isEditable || saving}
+                    value={editIsPaymentBlocked === true ? 'true' : editIsPaymentBlocked === false ? 'false' : ''}
+                    onChange={(val) => {
+                      const newBlocked = val === 'true' ? true : val === 'false' ? false : null;
+                      setEditIsPaymentBlocked(newBlocked);
+                      saveField('isPaymentBlocked', newBlocked, supplier.isPaymentBlocked ?? null);
+                    }}
+                    options={[
+                      { value: 'true', label: 'Yes' },
+                      { value: 'false', label: 'No' }
+                    ]}
+                    inheritedValue={paymentBlockInheritance.inheritedValue}
+                    inheritedSourceLabel={paymentBlockInheritance.inheritedSourceLabel}
+                  />
                 </div>
                 {editIsPaymentBlocked && (
                   <div>
@@ -988,9 +1056,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     </select>
                   </div>
                 )}
-                {supplier.groupIsPaymentBlocked && (
+                {selectedGroup?.isPaymentBlocked && (
                   <div className="text-xs font-semibold text-amber-600">
-                    {t('compliance.groupInherited', { reason: (supplier.groupPaymentBlockReason || 'Unspecified').replace('_', ' ') })}
+                    {t('compliance.groupInherited', { reason: (selectedGroup?.paymentBlockReason || 'Unspecified').replace('_', ' ') })}
                   </div>
                 )}
               </div>

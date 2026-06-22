@@ -10,6 +10,10 @@ interface GlSettings {
   revenueRoutingPrecedence: string;
   expenseRoutingPrecedence: string;
   supportedBatchPaymentFormats: string[];
+  defaultArAccountId?: string | null;
+  defaultApAccountId?: string | null;
+  defaultRevenueAccountId?: string | null;
+  defaultExpenseAccountId?: string | null;
 }
 
 interface AppSettings {
@@ -17,6 +21,8 @@ interface AppSettings {
   inventoryValuationMethod: string;
   inventoryAccountingMode: string;
   creditLimitBehavior: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- We need any to support dynamic app settings properties that aren't strictly typed yet
+  [key: string]: any;
 }
 
 interface SettingsContextType {
@@ -48,12 +54,19 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const [glRes, orgRes] = await Promise.all([
+        const [glRes, orgRes, appRes] = await Promise.all([
           api.glControllerGetSettings(),
-          api.organizationControllerGet()
+          api.organizationControllerGet(),
+          api.appConfigControllerGet().catch(() => null)
         ]);
         setGl(glRes.data as unknown as GlSettings);
         setOrganization(orgRes.data);
+        if (appRes?.data) {
+          console.log('App settings retrieved:', appRes.data);
+          setApp(appRes.data as unknown as AppSettings);
+        } else {
+          console.log('App settings failed to load (appRes is null)');
+        }
       } catch (err: unknown) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         const anyErr = err as any;

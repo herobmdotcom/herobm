@@ -188,7 +188,7 @@ export default function GeneralLedgerContent() {
         </button>
       }
       secondaryHeader={
-        <div className="flex flex-wrap items-center justify-end gap-4 w-full">
+        <div className="flex flex-wrap items-center justify-start gap-4">
           <select
             value={accountCode}
             onChange={(e) => setAccountCode(e.target.value)}

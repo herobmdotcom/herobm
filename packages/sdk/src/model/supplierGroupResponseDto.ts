@@ -17,6 +17,8 @@ export interface SupplierGroupResponseDto {
   /** @nullable */
   tradingTermsId: string | null;
   /** @nullable */
+  taxPositionId: string | null;
+  /** @nullable */
   earlyPaymentDiscount: string | null;
   /** @nullable */
   earlyPaymentDiscountDays: number | null;

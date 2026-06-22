@@ -12,7 +12,6 @@ describe('TaxCategoriesController', () => {
       title: 'GST 10%',
       type: 'tax_applies',
       rate: '10',
-      isDefault: true,
     },
     {
       taxCategoryId: 'uuid-tax-2',
@@ -20,7 +19,6 @@ describe('TaxCategoriesController', () => {
       title: 'Exempt',
       type: 'exempt',
       rate: '0',
-      isDefault: false,
     },
   ];
 

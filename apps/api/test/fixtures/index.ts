@@ -123,7 +123,7 @@ export async function createTestSalesOrderLine(
     quantity: opts.quantity.toString(),
     pricePerUnit: opts.price.toString(),
     amount: (opts.quantity * opts.price).toString(),
-    fulfillmentLocationId: '10000000-0000-0000-0000-000000000001', // Should ideally be passed in
+    fulfillmentLocationId: '10000000-0000-4000-8000-000000000001', // Should ideally be passed in
     taxCategoryId: opts.taxCategoryId,
   });
 
@@ -268,7 +268,7 @@ export async function createTestShipment(
     salesOrderId: opts.salesOrderId,
     stateCode: opts.state || SHIPMENT_STATE.DISPATCHED,
     fulfillmentLocationId:
-      opts.locationId || '10000000-0000-0000-0000-000000000001',
+      opts.locationId || '10000000-0000-4000-8000-000000000001',
   });
 
   return { shipmentId, shipmentNumber };

@@ -30,8 +30,20 @@ const TRANSACTIONAL_TABLES = [
   'herobm_core.sales_order_picks',
   'herobm_core.sales_order_shipment_lines',
   'herobm_core.sales_order_shipments',
+  'herobm_core.user_events',
+  'herobm_core.sales_events',
+  'herobm_core.procurement_events',
+  'herobm_core.warehouse_events',
+  'herobm_core.master_data_events',
+  'herobm_core.financial_events',
+  'herobm_core.inventory_events',
+  'herobm_core.system_events',
+  'herobm_core.business_report_events',
+  'herobm_core.email_events',
+  'herobm_core.integration_events',
+  'herobm_core.reconciliation_events',
+  'herobm_core.group_events',
   'herobm_core.backorders',
-  'herobm_core.order_events',
   'herobm_core.outbox',
   'herobm_core.sales_order_lines',
   'herobm_core.sales_orders',
@@ -39,15 +51,12 @@ const TRANSACTIONAL_TABLES = [
   'herobm_core.purchase_order_returns',
   'herobm_core.goods_received_lines',
   'herobm_core.goods_received',
-  'herobm_core.purchase_order_events',
   'herobm_core.purchase_order_lines',
   'herobm_core.purchase_orders',
   'herobm_core.inventory_ledger',
-  'herobm_core.account_events',
   'herobm_core.customers',
   'herobm_core.suppliers',
   'herobm_core.products',
-  'herobm_core.payment_events',
   'herobm_core.payment_allocations',
   'herobm_core.payment_entries',
 ];
@@ -139,6 +148,13 @@ export function setupPgliteSuite(opts?: {
     // Truncate transactional tables to restore seed-only state.
     // Using CASCADE handles any FK dependencies we may have missed.
     try {
+      // Force-close any lingering transaction that might be causing deadlocks
+      try {
+        await context._client!.exec('ROLLBACK');
+      } catch {
+        // Ignore if no transaction is active
+      }
+
       await context._client!.exec(
         `TRUNCATE ${TRANSACTIONAL_TABLES.join(', ')} CASCADE`,
       );

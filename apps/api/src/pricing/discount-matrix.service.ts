@@ -13,6 +13,7 @@ import { CreateDiscountMatrixDto, UpdateDiscountMatrixDto } from './dto';
 import type { DiscountRule } from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { calculateAuditTrail, AuditMode } from '../common/audit';
 
 @Injectable()
 export class DiscountMatrixService {
@@ -142,33 +143,41 @@ export class DiscountMatrixService {
   async update(id: string, dto: UpdateDiscountMatrixDto) {
     const existing = await this.findOne(id);
 
-    const rows = await this.db
-      .update(discountMatrix)
-      .set({
-        ...(dto.discountPercentage !== undefined && {
-          discountPercentage: dto.discountPercentage,
-        }),
-        modifiedOn: new Date(),
-      })
-      .where(eq(discountMatrix.discountMatrixId, id))
-      .returning();
+    const audit = calculateAuditTrail(dto, existing, AuditMode.DIFF);
 
-    const entityType = existing.customerId
-      ? EntityType.CUSTOMER
-      : EntityType.CUSTOMER_GROUP;
-    const entityId = existing.customerId || existing.customerGroupId!;
+    if (audit.hasChanges) {
+      const rows = await this.db
+        .update(discountMatrix)
+        .set({
+          ...audit.changes,
+          modifiedOn: new Date(),
+        } as typeof discountMatrix.$inferInsert)
+        .where(eq(discountMatrix.discountMatrixId, id))
+        .returning();
 
-    // @sync-ignore
-    await emitEvent(this.db, {
-      entityType,
-      entityId,
-      eventType: EventType.UPDATED,
-      entityDisplayName: existing.customerId ? 'Customer' : 'Customer Group',
-      payload: { action: 'discount_rule_updated', ruleId: id },
-      actor: 'system',
-    });
+      const entityType = existing.customerId
+        ? EntityType.CUSTOMER
+        : EntityType.CUSTOMER_GROUP;
+      const entityId = existing.customerId || existing.customerGroupId!;
 
-    return rows[0];
+      // @sync-ignore
+      await emitEvent(this.db, {
+        entityType,
+        entityId,
+        eventType: EventType.UPDATED,
+        entityDisplayName: existing.customerId ? 'Customer' : 'Customer Group',
+        payload: {
+          action: 'discount_rule_updated',
+          ruleId: id,
+          changes: audit.changes,
+          previous: audit.previousValues,
+        },
+        actor: 'system',
+      });
+
+      return rows[0];
+    }
+    return existing;
   }
 
   /**

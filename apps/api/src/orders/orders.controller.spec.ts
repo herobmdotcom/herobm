@@ -22,7 +22,7 @@ describe('OrdersController', () => {
   const mockOrder = {
     salesOrderId: 'uuid-1',
     orderNumber: 'ORD-001',
-    customerId: 'c0000000-0000-0000-0000-000000000001',
+    customerId: '00000000-0000-4000-8000-000000000001',
     stateCode: SALES_ORDER_STATE.DRAFT,
     lines: [],
     events: [],
@@ -108,7 +108,7 @@ describe('OrdersController', () => {
   describe('create', () => {
     it('should call writeService.create with body and actor', async () => {
       const body = {
-        customerId: 'c0000000-0000-0000-0000-000000000001',
+        customerId: '00000000-0000-4000-8000-000000000001',
         lines: [{ productId: 'P001', quantity: '5', pricePerUnit: '10.00' }],
       };
       const result = await controller.create(body as CreateOrderDto, mockUser);

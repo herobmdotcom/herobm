@@ -65,6 +65,8 @@ describe('API E2E — Purchase Order Returns', () => {
         productNumber: `E2E-PRET-P-${Date.now()}`,
         name: 'E2E Purchase Return Test Product',
         listPrice: '15.00',
+        productType: 'inventory',
+        baseUom: 'EA',
       })
       .expect(201);
     appProductId = productRes.body.productId;

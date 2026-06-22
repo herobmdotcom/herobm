@@ -28,6 +28,9 @@ export interface OrderResponseDto {
   /** @nullable */
   sourceId?: string | null;
   source: string;
+  isCreditBlocked?: boolean;
+  /** @nullable */
+  creditHoldOverrideAt?: string | null;
   /** @nullable */
   createdBy?: string | null;
   /** @nullable */

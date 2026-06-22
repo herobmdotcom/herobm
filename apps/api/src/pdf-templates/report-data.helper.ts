@@ -72,7 +72,7 @@ export function assembleOrderData(
       taxRate = (parseFloat(l.tax!) / parseFloat(l.amount!)) * 100;
     }
 
-    const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+    const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
     const isCustomLine = l.productId === CUSTOM_LINE_ID;
 
     return {

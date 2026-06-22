@@ -15,6 +15,7 @@ export interface UpdateSupplierGroupDto {
   defaultApAccountId?: string;
   defaultExpenseAccountId?: string;
   tradingTermsId?: string;
+  taxPositionId?: string;
   earlyPaymentDiscount?: string;
   creditLimit?: string;
   isPurchasingBlocked?: boolean;

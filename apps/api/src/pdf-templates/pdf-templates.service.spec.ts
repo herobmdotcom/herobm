@@ -56,7 +56,7 @@ describe('PdfTemplatesService', () => {
   let mockRegistry: any;
   let mockEnforcer: any;
 
-  const TEST_REPORT_ID = '00000000-0000-0000-0000-000000000001';
+  const TEST_REPORT_ID = '00000000-0000-4000-8000-000000000001';
 
   beforeEach(async () => {
     await pg.db.delete(pdfTemplateHooks);

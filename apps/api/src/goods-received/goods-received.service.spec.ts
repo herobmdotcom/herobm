@@ -40,12 +40,12 @@ describe('GoodsReceivedService', () => {
   let mockGlService: unknown;
   let mockAppConfig: unknown;
 
-  const VENDOR_ID = '00000000-0000-0000-0000-000000000001';
-  const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
-  const PROD_ID = '00000000-0000-0000-0000-00000000000a';
-  const ZONE_ID = '00000000-0000-0000-0000-00000000000c';
-  const BIN_ID = '00000000-0000-0000-0000-00000000000b';
-  const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
+  const VENDOR_ID = '00000000-0000-4000-8000-000000000001';
+  const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
+  const PROD_ID = '00000000-0000-4000-8000-00000000000a';
+  const ZONE_ID = '00000000-0000-4000-8000-00000000000c';
+  const BIN_ID = '00000000-0000-4000-8000-00000000000b';
+  const TAX_CAT_ID = '00000000-0000-4000-8000-000000000007';
 
   beforeEach(async () => {
     // Seed static data
@@ -131,6 +131,7 @@ describe('GoodsReceivedService', () => {
       name: 'Product 1',
       baseUom: 'EA',
       standardCost: '10',
+      productType: 'inventory',
     });
     await pg.db.insert(zones).values({
       zoneId: ZONE_ID,
@@ -163,7 +164,7 @@ describe('GoodsReceivedService', () => {
     it('should set match_status to "matched" when exactly one open PO line exists', async () => {
       await seedBasics();
 
-      const PO_ID = '00000000-0000-0000-0000-000000000001';
+      const PO_ID = '00000000-0000-4000-8000-000000000001';
       await pg.db.insert(purchaseOrders).values({
         purchaseOrderId: PO_ID,
         orderNumber: 'PO-001',
@@ -203,8 +204,8 @@ describe('GoodsReceivedService', () => {
     it('should set match_status to "ambiguous" when multiple open PO lines exist', async () => {
       await seedBasics();
 
-      const PO1_ID = '00000000-0000-0000-0000-000000000001';
-      const PO2_ID = '00000000-0000-0000-0000-000000000002';
+      const PO1_ID = '00000000-0000-4000-8000-000000000001';
+      const PO2_ID = '00000000-0000-4000-8000-000000000002';
 
       await pg.db.insert(purchaseOrders).values([
         {
@@ -307,7 +308,7 @@ describe('GoodsReceivedService', () => {
 
     it('should throw NotFoundException when receipt does not exist', async () => {
       await expect(
-        service.findOne('00000000-0000-0000-0000-000000000999'),
+        service.findOne('00000000-0000-4000-8000-000000000999'),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -317,8 +318,8 @@ describe('GoodsReceivedService', () => {
       await seedBasics();
 
       // Seed quarantine infrastructure
-      const QUAR_ZONE_ID = '00000000-0000-0000-0000-0000000000d0';
-      const QUAR_BIN_ID = '00000000-0000-0000-0000-0000000000d1';
+      const QUAR_ZONE_ID = '00000000-0000-4000-8000-0000000000d0';
+      const QUAR_BIN_ID = '00000000-0000-4000-8000-0000000000d1';
       await pg.db.insert(zones).values({
         zoneId: QUAR_ZONE_ID,
         locationId: LOCATION_ID,
@@ -332,8 +333,8 @@ describe('GoodsReceivedService', () => {
         binType: 'quarantine',
       });
 
-      const PO_ID = '00000000-0000-0000-0000-000000000061';
-      const PO_LINE_ID = '00000000-0000-0000-0000-000000000062';
+      const PO_ID = '00000000-0000-4000-8000-000000000061';
+      const PO_LINE_ID = '00000000-0000-4000-8000-000000000062';
       await pg.db.insert(purchaseOrders).values({
         purchaseOrderId: PO_ID,
         orderNumber: 'PO-R1',

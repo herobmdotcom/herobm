@@ -17,6 +17,7 @@ import {
   Body,
   UseGuards,
   UseInterceptors,
+  HttpCode,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { OrdersService } from './orders.service';
@@ -168,11 +169,13 @@ export class OrdersController {
 
   @Post(':id/override-credit-hold')
   @ApiBody({ type: OverrideCreditHoldDto })
+  @CasbinResource(SystemResource.CREDIT_CONTROL)
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Override Credit Hold',
     description: 'Temporarily overrides a credit hold for this specific order.',
   })
+  @HttpCode(200)
   @ApiOkResponse({ type: OrderResponseDto })
   async overrideCreditHold(
     @Param('id') id: string,

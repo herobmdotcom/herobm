@@ -40,12 +40,12 @@ describe('PurchaseReturnsService', () => {
 
   let mockAppConfig: any;
 
-  const VENDOR_ID = '00000000-0000-0000-0000-000000000001';
-  const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
-  const PROD_ID = '00000000-0000-0000-0000-00000000000a';
-  const ZONE_ID = '00000000-0000-0000-0000-00000000000c';
-  const BIN_ID = '00000000-0000-0000-0000-00000000000b';
-  const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
+  const VENDOR_ID = '00000000-0000-4000-8000-000000000001';
+  const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
+  const PROD_ID = '00000000-0000-4000-8000-00000000000a';
+  const ZONE_ID = '00000000-0000-4000-8000-00000000000c';
+  const BIN_ID = '00000000-0000-4000-8000-00000000000b';
+  const TAX_CAT_ID = '00000000-0000-4000-8000-000000000007';
 
   beforeEach(async () => {
     // Seed static data
@@ -125,6 +125,7 @@ describe('PurchaseReturnsService', () => {
       productId: PROD_ID,
       productNumber: 'P1',
       name: 'Product 1',
+      productType: 'inventory',
       baseUom: 'EA',
       standardCost: '10',
     });
@@ -158,9 +159,9 @@ describe('PurchaseReturnsService', () => {
     it('should successfully ship a staged return, deduct inventory, post GL, and trigger engine', async () => {
       await seedBasics();
 
-      const PO_ID = '00000000-0000-0000-0000-000000000001';
-      const PO_LINE_ID = '00000000-0000-0000-0000-000000000002';
-      const RETURN_ID = '00000000-0000-0000-0000-000000000003';
+      const PO_ID = '00000000-0000-4000-8000-000000000001';
+      const PO_LINE_ID = '00000000-0000-4000-8000-000000000002';
+      const RETURN_ID = '00000000-0000-4000-8000-000000000003';
 
       await pg.db.insert(purchaseOrders).values({
         purchaseOrderId: PO_ID,
@@ -261,8 +262,8 @@ describe('PurchaseReturnsService', () => {
     it('should throw an error if the return is not STAGED', async () => {
       await seedBasics();
 
-      const PO_ID = '00000000-0000-0000-0000-000000000001';
-      const RETURN_ID = '00000000-0000-0000-0000-000000000003';
+      const PO_ID = '00000000-0000-4000-8000-000000000001';
+      const RETURN_ID = '00000000-0000-4000-8000-000000000003';
 
       await pg.db.insert(purchaseOrders).values({
         purchaseOrderId: PO_ID,

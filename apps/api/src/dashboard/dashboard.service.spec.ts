@@ -103,6 +103,8 @@ describe('DashboardService', () => {
       await pg.db.insert(products).values({
         name: 'Test Product',
         productNumber: 'PROD1',
+        productType: 'inventory',
+        baseUom: 'EA',
       });
 
       const [so] = await pg.db
@@ -141,7 +143,12 @@ describe('DashboardService', () => {
     it('should query all entity tables and return unified results', async () => {
       const [p] = await pg.db
         .insert(products)
-        .values({ name: 'Widget Alpha', productNumber: 'WA-01' })
+        .values({
+          name: 'Widget Alpha',
+          productNumber: 'WA-01',
+          productType: 'inventory',
+          baseUom: 'EA',
+        })
         .returning();
       const [a] = await pg.db
         .insert(customers)
@@ -204,7 +211,7 @@ describe('DashboardService', () => {
 
   describe('getTimeline', () => {
     it('should return chronological events from system_events', async () => {
-      const customerId = '00000000-0000-0000-0000-00000000000a';
+      const customerId = '00000000-0000-4000-8000-00000000000a';
       await pg.db.insert(customers).values({
         customerId,
         name: 'Timeline Customer',

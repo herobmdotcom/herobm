@@ -22,18 +22,18 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
   let controller: AllocationsController;
 
   // Stable UUIDs
-  const PROD_ID = '00000000-0000-0000-0000-00000000000a';
-  const LOC_MAIN = '00000000-0000-0000-0000-00000000000f';
-  const LOC_OTHER1 = '00000000-0000-0000-0000-0000000000a1';
-  const LOC_OTHER2 = '00000000-0000-0000-0000-0000000000a2';
-  const ZONE_OTHER1 = '00000000-0000-0000-0000-0000000000b1';
-  const ZONE_OTHER2 = '00000000-0000-0000-0000-0000000000b2';
-  const BIN_OTHER1 = '00000000-0000-0000-0000-0000000000c1';
-  const BIN_OTHER2 = '00000000-0000-0000-0000-0000000000c2';
-  const ORDER_ID = '00000000-0000-0000-0000-000000000001';
-  const LINE_ID = '00000000-0000-0000-0000-000000000011';
-  const BACKORDER_ID = '00000000-0000-0000-0000-000000000021';
-  const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
+  const PROD_ID = '00000000-0000-4000-8000-00000000000a';
+  const LOC_MAIN = '00000000-0000-4000-8000-00000000000f';
+  const LOC_OTHER1 = '00000000-0000-4000-8000-0000000000a1';
+  const LOC_OTHER2 = '00000000-0000-4000-8000-0000000000a2';
+  const ZONE_OTHER1 = '00000000-0000-4000-8000-0000000000b1';
+  const ZONE_OTHER2 = '00000000-0000-4000-8000-0000000000b2';
+  const BIN_OTHER1 = '00000000-0000-4000-8000-0000000000c1';
+  const BIN_OTHER2 = '00000000-0000-4000-8000-0000000000c2';
+  const ORDER_ID = '00000000-0000-4000-8000-000000000001';
+  const LINE_ID = '00000000-0000-4000-8000-000000000011';
+  const BACKORDER_ID = '00000000-0000-4000-8000-000000000021';
+  const TAX_CAT_ID = '00000000-0000-4000-8000-000000000007';
 
   beforeEach(async () => {
     // Clean transactional rows (FK order: children first)
@@ -87,6 +87,7 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
       productNumber: 'P1',
       name: 'Product 1',
       baseUom: 'EA',
+      productType: 'inventory',
     });
 
     // Seed an open demand for the main location
@@ -173,8 +174,8 @@ describe('AllocationsController.getOpenDemands — availableElsewhere enrichment
 
   it("excludes the demand's own destination location", async () => {
     // Add a zone+bin at the destination location too and put stock there.
-    const ZONE_MAIN = '00000000-0000-0000-0000-0000000000d1';
-    const BIN_MAIN = '00000000-0000-0000-0000-0000000000d2';
+    const ZONE_MAIN = '00000000-0000-4000-8000-0000000000d1';
+    const BIN_MAIN = '00000000-0000-4000-8000-0000000000d2';
     await pg.db.insert(zones).values({
       zoneId: ZONE_MAIN,
       locationId: LOC_MAIN,

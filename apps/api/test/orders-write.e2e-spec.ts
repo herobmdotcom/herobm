@@ -111,14 +111,24 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     const p1 = await request(app.getHttpServer())
       .post('/api/products')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ productNumber: 'E2E-P1', name: 'Test Product 1', baseUom: 'EA' })
+      .send({
+        productNumber: `E2E-P1-${Date.now()}`,
+        name: 'Test Product 1',
+        baseUom: 'EA',
+        productType: 'inventory',
+      })
       .expect(201);
     secondProductId = p1.body.productId;
 
     const p2 = await request(app.getHttpServer())
       .post('/api/products')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ productNumber: 'E2E-P2', name: 'Test Product 2', baseUom: 'EA' })
+      .send({
+        productNumber: `E2E-P2-${Date.now()}`,
+        name: 'Test Product 2',
+        baseUom: 'EA',
+        productType: 'inventory',
+      })
       .expect(201);
     thirdProductId = p2.body.productId;
   }, 120_000);
@@ -320,7 +330,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
           (b: { binNumber: string; binId: string }) =>
             b.binNumber !== 'SHIPPING',
         );
-        const binId = validBin?.binId || '40000000-0000-0000-0000-000000000003';
+        const binId = validBin?.binId || '00000000-0000-4000-8000-000000000003';
 
         const detail = await request(app.getHttpServer())
           .get(`/api/sales-orders/${oid}`)
@@ -531,7 +541,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
               b.binNumber !== 'SHIPPING',
           );
           const binId =
-            validBin?.binId || '40000000-0000-0000-0000-000000000003';
+            validBin?.binId || '00000000-0000-4000-8000-000000000003';
 
           const detail = await request(app.getHttpServer())
             .get(`/api/sales-orders/${invoicedId}`)
@@ -624,7 +634,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
     it('unknown order ID returns 404', async () => {
       await request(app.getHttpServer())
-        .get('/api/sales-orders/00000000-0000-0000-0000-000000000000')
+        .get('/api/sales-orders/00000000-0000-4000-8000-000000000000')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
     });

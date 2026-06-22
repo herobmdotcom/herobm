@@ -24,15 +24,15 @@ describe('ShippingDocketService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: ShippingDocketService;
 
-  const SHIPMENT_ID = '00000000-0000-0000-0000-000000000001';
-  const ORDER_ID = '00000000-0000-0000-0000-000000000002';
-  const CUSTOMER_ID = '00000000-0000-0000-0000-000000000003';
-  const PROD_A_ID = '00000000-0000-0000-0000-00000000000a';
-  const PROD_B_ID = '00000000-0000-0000-0000-00000000000b';
-  const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
-  const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
-  const LINE_1_ID = '00000000-0000-0000-0000-000000000011';
-  const LINE_2_ID = '00000000-0000-0000-0000-000000000012';
+  const SHIPMENT_ID = '00000000-0000-4000-8000-000000000001';
+  const ORDER_ID = '00000000-0000-4000-8000-000000000002';
+  const CUSTOMER_ID = '00000000-0000-4000-8000-000000000003';
+  const PROD_A_ID = '00000000-0000-4000-8000-00000000000a';
+  const PROD_B_ID = '00000000-0000-4000-8000-00000000000b';
+  const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
+  const TAX_CAT_ID = '00000000-0000-4000-8000-000000000007';
+  const LINE_1_ID = '00000000-0000-4000-8000-000000000011';
+  const LINE_2_ID = '00000000-0000-4000-8000-000000000012';
 
   beforeEach(async () => {
     // Clean data
@@ -89,12 +89,14 @@ describe('ShippingDocketService', () => {
         productNumber: 'PROD-A',
         name: 'Widget Alpha',
         baseUom: 'EA',
+        productType: 'inventory',
       },
       {
         productId: PROD_B_ID,
         productNumber: 'PROD-B',
         name: 'Gadget Beta',
         baseUom: 'EA',
+        productType: 'inventory',
       },
     ]);
 
@@ -168,7 +170,7 @@ describe('ShippingDocketService', () => {
   describe('assembleData', () => {
     it('should throw NotFoundException for unknown shipment', async () => {
       await expect(
-        service.assembleData('00000000-0000-0000-0000-ffffffffffff'),
+        service.assembleData('00000000-0000-4000-8000-ffffffffffff'),
       ).rejects.toThrow(NotFoundException);
     });
 

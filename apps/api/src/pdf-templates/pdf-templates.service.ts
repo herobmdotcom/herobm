@@ -254,7 +254,7 @@ export class PdfTemplatesService {
 
     await emitEvent(this.db, {
       entityType: EntityType.SYSTEM,
-      entityId: '00000000-0000-0000-0000-000000000000',
+      entityId: '00000000-0000-4000-8000-000000000000',
       eventType: EventType.UPDATED,
       entityDisplayName: 'PDF Templates',
       payload: { deletedReportId: id },
@@ -299,7 +299,7 @@ export class PdfTemplatesService {
 
     await emitEvent(this.db, {
       entityType: EntityType.SYSTEM,
-      entityId: '00000000-0000-0000-0000-000000000000',
+      entityId: '00000000-0000-4000-8000-000000000000',
       eventType: EventType.UPDATED,
       entityDisplayName: 'PDF Templates',
       payload: { updatedHookSlug: hookSlug },

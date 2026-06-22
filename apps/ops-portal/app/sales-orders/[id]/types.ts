@@ -65,6 +65,8 @@ export interface OrderDetail {
     deliveryState?: string | null;
     deliveryPostalCode?: string | null;
     deliveryCountry?: string | null;
+    isCreditBlocked?: boolean;
+    creditHoldOverrideAt?: string | null;
     createdBy: string | null;
     createdOn: string;
     modifiedOn: string;

@@ -2,11 +2,12 @@
 "use client";
 
 import { useState, use, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import EntityHeader from "@/components/shared/EntityHeader";
+import EntityBanner from "@/components/shared/EntityBanner";
 import { FrontendEnrichmentDecorator } from "@/components/shared/FrontendEnrichmentDecorator";
 import * as api from "@herobm/sdk";
 import DetailsLayout from "@/components/shared/DetailsLayout";
@@ -22,6 +23,9 @@ import DiscountMatrixSlideOver from "@/components/shared/DiscountMatrixSlideOver
 import { ContactSlideOver } from "./ContactSlideOver";
 import DeliveryAddressSlideOver from "@/components/shared/DeliveryAddressSlideOver";
 import InfoCard from "@/components/shared/InfoCard";
+import InheritedSelect from "@/components/shared/InheritedSelect";
+import InheritedNumberInput from "@/components/shared/InheritedNumberInput";
+import { useInheritance, useGroup } from "@/hooks/useInheritance";
 import { useSettings } from "@/components/SettingsProvider";
 import {
   getErrorMessage,
@@ -33,19 +37,23 @@ import {
 import { toast } from "react-hot-toast";
 
 import { useAccount } from "./useCustomer";
+import { useAuth } from "@/components/shared/AuthGate";
+import { SystemResource } from "@herobm/shared";
 
 export default function AccountDetailPage({
   params: paramsPromise,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { baseCurrency } = useSettings();
+  const { baseCurrency, app } = useSettings();
   const t = useTranslations();
   const tSales = useTranslations("salesOrders");
   const tCommon = useTranslations("common");
   const tStates = useTranslations("common.states");
   const params = use(paramsPromise);
   const router = useRouter();
+  const { permissions, role } = useAuth();
+  const canManageCredit = role === "admin" || permissions.some(p => p.resource === SystemResource.CREDIT_CONTROL && p.action === "write");
 
   const {
     customer,
@@ -63,6 +71,8 @@ export default function AccountDetailPage({
     handleSave,
     archiveAccount,
     unarchiveAccount,
+    creditAssessment,
+    accountGroups,
   } = useAccount(params.id);
 
   useDocumentTitle(
@@ -73,10 +83,34 @@ export default function AccountDetailPage({
       : null,
   );
 
-  // Tab state is purely UI, kept local to the page
+  const selectedGroup = useGroup(accountGroups, dto.customerGroupId);
+
+  const creditHoldInheritance = useInheritance([
+    { 
+      value: selectedGroup?.isOnCreditHold === true ? 'true' : selectedGroup?.isOnCreditHold === false ? 'false' : null, 
+      sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group'
+    }
+  ]);
+
+  const taxPositionInheritance = useInheritance([
+    { value: selectedGroup?.taxPositionId, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' },
+    { value: app?.defaultCustomerTaxPositionId, sourceLabel: 'System Default' }
+  ]);
+
+  const tradingTermsInheritance = useInheritance([
+    { value: selectedGroup?.tradingTermsId, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' },
+    { value: app?.defaultCustomerTermsId, sourceLabel: 'System Default' }
+  ]);
+
+  const creditLimitInheritance = useInheritance([
+    { value: selectedGroup?.creditLimit, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
+
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get('tab') as "details" | "contacts" | "delivery" | "salesOrders" | "invoices") || "details";
   const [activeTab, setActiveTab] = useState<
     "details" | "contacts" | "delivery" | "salesOrders" | "invoices"
-  >("details");
+  >(initialTab);
   const [showDiscounts, setShowDiscounts] = useState(false);
   const [isContactSlideOverOpen, setIsContactSlideOverOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<api.ContactResponseDto | null>(null);
@@ -277,6 +311,20 @@ export default function AccountDetailPage({
             );
           },
         },
+        ...(canManageCredit ? [{
+          id: "credit-overview-section",
+          label: "Credit",
+          onClick: () => {
+            setActiveTab("details");
+            setTimeout(
+              () =>
+                document
+                  .getElementById("credit-overview-section")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+              50,
+            );
+          },
+        }] : []),
         {
           id: "pricing-section",
           label: "Financials",
@@ -421,9 +469,19 @@ export default function AccountDetailPage({
           </div>
         )}
 
+        {customer.isOnCreditHold && (
+          <div className="px-4 lg:px-6 pt-4">
+            <EntityBanner
+              type={customer.overrideCreditHoldUntil && new Date(customer.overrideCreditHoldUntil) > new Date() ? 'warning' : 'error'}
+              title={customer.overrideCreditHoldUntil && new Date(customer.overrideCreditHoldUntil) > new Date() ? t('customers.creditHold.overriddenTitle') : t('customers.creditHold.activeTitle')}
+              description={customer.overrideCreditHoldUntil && new Date(customer.overrideCreditHoldUntil) > new Date() ? t('customers.creditHold.overriddenDesc', { date: new Date(customer.overrideCreditHoldUntil).toLocaleDateString() }) : t('customers.creditHold.activeDesc')}
+            />
+          </div>
+        )}
+
         {activeTab === "salesOrders" && (
           <div className="flex-1 min-h-0 flex flex-col w-full h-full p-4 lg:p-6">
-            <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+            <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
               <DataGrid
                 endpoint={`/api/sales-orders?customerId=${encodeURIComponent(params.id)}&limit=50`}
                 columns={orderColumns}
@@ -480,7 +538,7 @@ export default function AccountDetailPage({
 
         {activeTab === "invoices" && (
           <div className="flex-1 min-h-0 flex flex-col w-full h-full p-4 lg:p-6">
-            <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+            <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
               <DataGrid
                 endpoint={`/api/sales-invoices?customerId=${encodeURIComponent(params.id)}&days=0&limit=50`}
                 columns={invoiceColumns}
@@ -823,6 +881,92 @@ export default function AccountDetailPage({
               </div>
             </div>
 
+            {/* Credit Overview Card */}
+            {canManageCredit && (
+              <div id="credit-overview-section" className="card">
+                <h3 className="section-heading">
+                  <span className="material-symbols-outlined">account_balance</span>
+                  {t("salesOrders.creditHold.statusOverview")}
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
+                      {t("salesOrders.creditHold.totalOutstanding")}
+                    </label>
+                    <p className="font-semibold text-lg">
+                      {creditAssessment ? formatAmount(creditAssessment.totalArBalance, dto.currencyCode || baseCurrency) : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
+                      {t("salesOrders.creditHold.overdue")}
+                    </label>
+                    <p className={`font-semibold text-lg ${creditAssessment && creditAssessment.overdueBalance > 0 ? "text-red-600" : ""}`}>
+                      {creditAssessment ? formatAmount(creditAssessment.overdueBalance, dto.currencyCode || baseCurrency) : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
+                      {t("portal.creditLimit")}
+                    </label>
+                    <p className="font-semibold text-lg">
+                      {dto.creditLimit ? formatAmount(parseFloat(dto.creditLimit), dto.currencyCode || baseCurrency) : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
+                      {t("salesOrders.creditHold.systemStatus")}
+                    </label>
+                    <p className="font-semibold text-lg flex items-center gap-1.5">
+                      {creditAssessment?.isOverdue ? (
+                        <><span className="w-2.5 h-2.5 rounded-full bg-red-500"></span><span className="text-red-700">Blocked</span></>
+                      ) : (
+                        <><span className="w-2.5 h-2.5 rounded-full bg-green-500"></span><span className="text-green-700">Good Standing</span></>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="mt-6 pt-4 border-t border-[rgba(196,198,205,0.4)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div>
+                    <h4 className="font-semibold text-sm text-[#041627]">{t("salesOrders.creditHold.title")}</h4>
+                    <p className="text-xs text-[var(--text-muted)] mt-1 max-w-xl">
+                      {dto.overrideCreditHoldUntil && new Date(dto.overrideCreditHoldUntil) > new Date() 
+                        ? t("customers.creditHold.overriddenDesc", { date: new Date(dto.overrideCreditHoldUntil).toLocaleDateString() })
+                        : t("customers.creditHold.bypassDesc")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 w-full md:w-auto">
+                    {dto.overrideCreditHoldUntil && new Date(dto.overrideCreditHoldUntil) > new Date() && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm shrink-0 text-red-600 hover:bg-red-50 hover:border-red-200"
+                        onClick={() => {
+                          updateField("overrideCreditHoldUntil", null);
+                          saveField("overrideCreditHoldUntil", null);
+                        }}
+                        disabled={!isEditable || saving}
+                      >
+                        {t("common.buttons.clear")}
+                      </button>
+                    )}
+                    <input
+                      type="date"
+                      className="input text-sm w-full md:w-auto"
+                      value={dto.overrideCreditHoldUntil ? new Date(dto.overrideCreditHoldUntil).toISOString().split('T')[0] : ''}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => {
+                        const date = e.target.value ? new Date(e.target.value).toISOString() : null;
+                        updateField("overrideCreditHoldUntil", date);
+                        saveField("overrideCreditHoldUntil", date);
+                      }}
+                      disabled={!isEditable || saving}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Pricing & Tax Card */}
             <div id="pricing-section" className="card">
               <h3 className="section-heading">
@@ -931,51 +1075,22 @@ export default function AccountDetailPage({
                   >
                     {t("portal.creditHold")}
                   </label>
-                  <div
-                    className="flex items-center gap-3"
-                    style={{
-                      paddingTop: 6,
-                      cursor: !isEditable || saving ? "not-allowed" : "pointer",
+                  <InheritedSelect
+                    className="input"
+                    disabled={!isEditable || saving || !canManageCredit}
+                    value={dto.isOnCreditHold === true ? 'true' : dto.isOnCreditHold === false ? 'false' : ''}
+                    onChange={(val) => {
+                      const boolVal = val === 'true' ? true : val === 'false' ? false : null;
+                      updateField("isOnCreditHold", boolVal);
+                      saveField("isOnCreditHold", boolVal);
                     }}
-                    onClick={() => {
-                      if (!isEditable || saving) return;
-                      updateField("isOnCreditHold", !dto.isOnCreditHold);
-                      saveField("isOnCreditHold", !dto.isOnCreditHold);
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 40,
-                        height: 22,
-                        borderRadius: 11,
-                        background: dto.isOnCreditHold
-                          ? "var(--danger)"
-                          : "var(--border)",
-                        position: "relative",
-                        transition: "background 0.2s ease",
-                        opacity: !isEditable || saving ? 0.5 : 1,
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: "50%",
-                          background: "#fff",
-                          position: "absolute",
-                          top: 3,
-                          left: dto.isOnCreditHold ? 21 : 3,
-                          transition: "left 0.2s ease",
-                        }}
-                      />
-                    </div>
-                    <span
-                      className="text-sm"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      {dto.isOnCreditHold ? t("portal.onHold") : t("portal.noHold")}
-                    </span>
-                  </div>
+                    options={[
+                      { value: 'true', label: t("portal.yes") },
+                      { value: 'false', label: t("portal.no") }
+                    ]}
+                    inheritedValue={creditHoldInheritance.inheritedValue}
+                    inheritedSourceLabel={creditHoldInheritance.inheritedSourceLabel}
+                  />
                 </div>
 
                 {/* ── Row 2 ── */}
@@ -1086,22 +1201,21 @@ export default function AccountDetailPage({
                   >
                     {t("common.columns.taxPosition")}
                   </label>
-                  <select
+                  <InheritedSelect
                     className="input"
                     disabled={!isEditable || saving}
                     value={dto.taxPositionId || ""}
-                    onChange={(e) => {
-                      updateField("taxPositionId", e.target.value);
-                      saveField("taxPositionId", e.target.value);
+                    onChange={(val) => {
+                      updateField("taxPositionId", val);
+                      saveField("taxPositionId", val);
                     }}
-                  >
-                    <option value="">{t("common.options.none")}</option>
-                    {taxPositions.map((pos) => (
-                      <option key={pos.taxPositionId} value={pos.taxPositionId}>
-                        {pos.title}
-                      </option>
-                    ))}
-                  </select>
+                    options={taxPositions.map((pos) => ({
+                      value: pos.taxPositionId,
+                      label: pos.title,
+                    }))}
+                    inheritedValue={taxPositionInheritance.inheritedValue}
+                    inheritedSourceLabel={taxPositionInheritance.inheritedSourceLabel}
+                  />
                 </div>
 
                 {/* ── Row 3 ── */}
@@ -1113,22 +1227,21 @@ export default function AccountDetailPage({
                   >
                     {t("portal.tradingTerms")}
                   </label>
-                  <select
+                  <InheritedSelect
                     className="input"
-                    disabled={!isEditable || saving}
+                    disabled={!isEditable || saving || !canManageCredit}
                     value={dto.tradingTermsId || ""}
-                    onChange={(e) => {
-                      updateField("tradingTermsId", e.target.value);
-                      saveField("tradingTermsId", e.target.value);
+                    onChange={(val) => {
+                      updateField("tradingTermsId", val);
+                      saveField("tradingTermsId", val);
                     }}
-                  >
-                    <option value="">{t("portal.systemDefault")}</option>
-                    {tradingTerms.map((term) => (
-                      <option key={term.id} value={term.id}>
-                        {term.code} - {term.description}
-                      </option>
-                    ))}
-                  </select>
+                    options={tradingTerms.map((term) => ({
+                      value: term.id,
+                      label: `${term.code} - ${term.description}`,
+                    }))}
+                    inheritedValue={tradingTermsInheritance.inheritedValue}
+                    inheritedSourceLabel={tradingTermsInheritance.inheritedSourceLabel}
+                  />
                 </div>
 
                 {/* 8. Credit Limit */}
@@ -1139,20 +1252,31 @@ export default function AccountDetailPage({
                   >
                     {t("portal.creditLimit")}
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input"
-                    value={dto.creditLimit || ""}
-                    onChange={(e) => {
-                      updateField("creditLimit", e.target.value);
-                    }}
-                    onBlur={(e) => {
-                      saveField("creditLimit", e.target.value);
-                    }}
-                    disabled={!isEditable || saving}
-                    placeholder="Enter limit or leave blank"
-                  />
+                  <div className="flex items-center gap-3">
+                    <InheritedNumberInput
+                      step="0.01"
+                      className="input w-full max-w-xs"
+                      value={dto.creditLimit || ""}
+                      onChange={(val) => {
+                        updateField("creditLimit", val);
+                      }}
+                      onBlur={(e) => {
+                        saveField("creditLimit", e.target.value);
+                      }}
+                      disabled={!isEditable || saving || !canManageCredit}
+                      placeholder="0.00"
+                      inheritedValue={creditLimitInheritance.inheritedValue}
+                      inheritedSourceLabel={creditLimitInheritance.inheritedSourceLabel}
+                    />
+                    {!!creditLimitInheritance.inheritedSourceLabel && (
+                      <span className="text-xs italic text-[var(--primary)] ml-2 flex-shrink-0">
+                        {tCommon('options.inheritValue', {
+                          label: creditLimitInheritance.inheritedValue || '',
+                          source: creditLimitInheritance.inheritedSourceLabel || ''
+                        })}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* 9. Discount Rules */}
@@ -1418,7 +1542,7 @@ export default function AccountDetailPage({
                           href={`/customers/${child.customerId}`}
                           className="flex items-center gap-3 p-3 rounded-lg border border-[var(--border)] hover:border-[var(--accent)] hover:shadow-sm transition-all"
                         >
-                          <div className="w-8 h-8 rounded-full bg-[var(--accent)] bg-opacity-10 flex items-center justify-center text-[var(--accent)] font-semibold shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] font-semibold shrink-0">
                             {child.name.charAt(0)}
                           </div>
                           <div className="min-w-0 flex-1">

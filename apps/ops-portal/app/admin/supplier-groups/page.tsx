@@ -22,6 +22,7 @@ export default function SupplierGroupsAdmin() {
   const [costCenters, setCostCenters] = useState<api.CostCenterResponseDto[]>([]);
   const [activities, setActivities] = useState<api.ActivityResponseDto[]>([]);
   const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
+  const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [financialGroup, setFinancialGroup] = useState<Partial<api.SupplierGroupResponseDto> | null>(null);
@@ -29,12 +30,13 @@ export default function SupplierGroupsAdmin() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [data, customers, cc, act, taxPositionsData] = await Promise.all([
+      const [data, customers, cc, act, taxPositionsData, tradingTermsData] = await Promise.all([
         api.supplierGroupsControllerFindAll().then(r => r.data || []),
         api.glControllerGetAccounts({ format: 'flat' }).then(r => r.data || []),
         api.costCentersControllerFindAll().then(r => r.data || []),
         api.activitiesControllerFindAll().then(r => r.data || []),
-        api.taxPositionsControllerFindAll().then(r => r.data || [])
+        api.taxPositionsControllerFindAll().then(r => r.data || []),
+        api.tradingTermsControllerFindAll().then(r => r.data || [])
       ]);
       const sorted = [...data].sort((a, b) => 
         a.name.localeCompare(b.name, undefined, { numeric: true })
@@ -44,6 +46,7 @@ export default function SupplierGroupsAdmin() {
       setCostCenters(cc);
       setActivities(act);
       setTaxPositions(taxPositionsData);
+      setTradingTerms(tradingTermsData);
     } catch(err) {
       toast.error(t('toasts.loadFailed') + ': ' + (err as Error).message);
       reportError(err as Error, 'SupplierGroupsAdmin_loadData');
@@ -54,20 +57,15 @@ export default function SupplierGroupsAdmin() {
 
   useEffect(() => { loadData(); }, []);
 
-  const groups = useMemo(() => {
-    return rawGroups.map(g => ({
-      ...g,
-      isActivePurchasing: !g.isPurchasingBlocked,
-      isActivePayment: !g.isPaymentBlocked,
-    }));
-  }, [rawGroups]);
+  const groups = rawGroups;
 
   const glAccountOptions = useMemo(() => glAccounts.map((a: api.GlAccountResponseDto) => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` })), [glAccounts]);
   const costCenterOptions = useMemo(() => costCenters.map((c) => ({ value: (c as unknown as { costCenterId: string }).costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
   const activityOptions = useMemo(() => activities.map((a) => ({ value: (a as unknown as { activityId: string }).activityId, label: `${a.code} - ${a.name}` })), [activities]);
   const taxPositionOptions = useMemo(() => taxPositions.map((p: api.TaxPositionResponseDto) => ({ value: p.taxPositionId, label: p.title })), [taxPositions]);
+  const tradingTermsOptions = useMemo(() => tradingTerms.map((t: api.TradingTermResponseDto) => ({ value: t.id, label: `${t.code} - ${t.description}` })), [tradingTerms]);
 
-  const columns: InlineTableColumn<Partial<api.SupplierGroupResponseDto> & { isActivePurchasing?: boolean; isActivePayment?: boolean }>[] = useMemo(() => [
+  const columns: InlineTableColumn<Partial<api.SupplierGroupResponseDto>>[] = useMemo(() => [
     { key: 'groupCode', title: tc('code'), type: 'text', placeholder: t('placeholders.code'), width: 100 },
     { key: 'name', title: tc('name'), type: 'text', placeholder: t('placeholders.name') },
     { 
@@ -87,13 +85,11 @@ export default function SupplierGroupsAdmin() {
           </button>
         );
       }
-    },
-    { key: 'isActivePurchasing', title: t('purchasing'), type: 'boolean', width: 80 },
-    { key: 'isActivePayment', title: t('payment'), type: 'boolean', width: 80 }
+    }
   ], [tc, t]);
 
   const handleSave = async (
-    payload: Partial<api.SupplierGroupResponseDto> & { supplierGroupId?: string; isActivePurchasing?: boolean; isActivePayment?: boolean; taxPositionId?: string | null },
+    payload: Partial<api.SupplierGroupResponseDto> & { supplierGroupId?: string; taxPositionId?: string | null },
     isNew: boolean
   ) => {
     if (!payload.groupCode || !payload.name) {
@@ -108,14 +104,13 @@ export default function SupplierGroupsAdmin() {
         defaultCostCenterId: payload.defaultCostCenterId || null,
         defaultActivityId: payload.defaultActivityId || null,
         taxPositionId: payload.taxPositionId || null,
+        tradingTermsId: payload.tradingTermsId || null,
+        creditLimit: payload.creditLimit || null,
         earlyPaymentDiscount: payload.earlyPaymentDiscount || null,
         earlyPaymentDiscountDays: payload.earlyPaymentDiscountDays || null,
-        isPurchasingBlocked: !payload.isActivePurchasing,
-        isPaymentBlocked: !payload.isActivePayment,
-      } as api.UpdateSupplierGroupDto & { isActivePurchasing?: boolean; isActivePayment?: boolean };
-      
-      delete formattedPayload.isActivePurchasing;
-      delete formattedPayload.isActivePayment;
+        isPurchasingBlocked: payload.isPurchasingBlocked || false,
+        isPaymentBlocked: payload.isPaymentBlocked || false,
+      } as api.UpdateSupplierGroupDto;
 
       if (!isNew) {
         await api.supplierGroupsControllerUpdate(payload.supplierGroupId || '', formattedPayload as api.UpdateSupplierGroupDto);
@@ -170,8 +165,8 @@ export default function SupplierGroupsAdmin() {
             defaultActivityId: '',
             earlyPaymentDiscount: '',
             earlyPaymentDiscountDays: undefined,
-            isActivePurchasing: true,
-            isActivePayment: true,
+            isPurchasingBlocked: false,
+            isPaymentBlocked: false,
           })}
           addLabel={t('newGroup')}
           emptyLabel={loading ? null : t('noGroups')}
@@ -189,6 +184,7 @@ export default function SupplierGroupsAdmin() {
         costCenterOptions={costCenterOptions}
         activityOptions={activityOptions}
         taxPositionOptions={taxPositionOptions}
+        tradingTermsOptions={tradingTermsOptions}
       />
     </div>
   );

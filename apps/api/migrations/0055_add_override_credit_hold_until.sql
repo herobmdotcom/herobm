@@ -1,0 +1,1 @@
+ALTER TABLE "herobm_core"."customers" ADD COLUMN "override_credit_hold_until" timestamp with time zone;

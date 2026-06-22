@@ -380,7 +380,7 @@ export default function EventQueueDashboard() {
                                                       {t('drawer.errorLabel')} {evt.lastError}
                                                     </span>
                                                   )}
-                                                  {JSON.stringify(evt.payload, null, 2)}
+                                                  {JSON.stringify(evt, null, 2)}
                                                 </pre>
                                               </td>
                                             </tr>

@@ -12,5 +12,4 @@ export interface TaxCategoryResponseDto {
   title: string;
   type: string;
   rate?: string;
-  isDefault: boolean;
 }

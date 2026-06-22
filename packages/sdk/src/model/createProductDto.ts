@@ -11,7 +11,7 @@ import type { CreateProductDtoStructureType } from './createProductDtoStructureT
 export interface CreateProductDto {
   productNumber: string;
   name: string;
-  productType?: CreateProductDtoProductType;
+  productType: CreateProductDtoProductType;
   structureType?: CreateProductDtoStructureType;
   barcode?: string;
   listPrice?: string;
@@ -19,6 +19,7 @@ export interface CreateProductDto {
   tradePrice?: string;
   priceLevel3?: string;
   priceLevel4?: string;
+  weight?: string;
   purchaseTaxCategoryId?: string;
   salesTaxCategoryId?: string;
   externalTaxCode?: string;
@@ -26,4 +27,5 @@ export interface CreateProductDto {
   productGroupId?: string;
   notes?: string;
   stateCode?: string;
+  baseUom: string;
 }

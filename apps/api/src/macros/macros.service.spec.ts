@@ -49,7 +49,7 @@ describe('MacrosService', () => {
 
     it('should throw NotFoundException if not found', async () => {
       await expect(
-        service.findOne('00000000-0000-0000-0000-000000000000'),
+        service.findOne('00000000-0000-4000-8000-000000000000'),
       ).rejects.toThrow(NotFoundException);
     });
   });

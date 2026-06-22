@@ -882,6 +882,7 @@
     },
     "buttons": {
       "cancel": "Cancel",
+      "clear": "Clear",
       "remove": "Remove",
       "save": "Save"
     },
@@ -907,6 +908,7 @@
       "created": "Created",
       "createdBy": "Created By",
       "createdOn": "Created On",
+      "creditHold": "Credit Hold",
       "currency": "Currency",
       "customer": "Customer",
       "customerPO": "Customer PO",
@@ -1063,7 +1065,9 @@
     "goBackHome": "Go Back Home",
     "grid": {
       "all": "All",
+      "clearCustomView": "X",
       "columns": "Columns",
+      "customViewMessage": "All records",
       "export": "Export",
       "exportCsv": "Export CSV",
       "includeArchived": "Include Archived",
@@ -1102,6 +1106,7 @@
     "notesCardPlaceholder": "Internal notes",
     "optional": "Optional",
     "options": {
+      "inheritValue": "↲ Inherit: {label} (from {source})",
       "none": "(None)"
     },
     "orderReadView": {
@@ -1142,7 +1147,8 @@
         "taxation": "Taxation"
       },
       "columns": {
-        "externalTaxCode": "External Tax Code"
+        "externalTaxCode": "External Tax Code",
+        "weight": "Weight"
       },
       "storage": {
         "toastLinkUpdated": "Bin configuration updated"
@@ -1228,6 +1234,10 @@
       "supplierCreated": "Supplier created successfully"
     },
     "total": "Total",
+    "tradingTerms": "Trading Terms",
+    "units": {
+      "days": "days"
+    },
     "unknown": "Unknown",
     "unknownProduct": "Unknown Product",
     "updated": "Updated",
@@ -1251,6 +1261,7 @@
     },
     "columns": {
       "accountType": "Type",
+      "creditHold": "Credit Hold",
       "customerId": "Customer ID",
       "customerNumber": "Customer Number",
       "discountPct": "Customer Discount %"
@@ -1278,6 +1289,13 @@
       "primaryBadge": "Primary"
     },
     "contacts": "Contacts",
+    "creditHold": {
+      "activeDesc": "This order is blocked because the customer is on credit hold.",
+      "activeTitle": "Credit Hold Active",
+      "bypassDesc": "Temporarily bypass all credit holds to allow sales orders to proceed. This expires automatically at midnight on the selected date.",
+      "overriddenDesc": "Temporarily bypass all credit holds to allow sales orders to proceed. This expires automatically at midnight on {date}.",
+      "overriddenTitle": "Credit Hold Overridden"
+    },
     "deliveryAddresses": "Delivery Addresses",
     "enrichment": {
       "nameUpdated": "Name updated",
@@ -2113,7 +2131,9 @@
     "subtitle": "Manage customer receipts and supplier payments",
     "supplier": "Supplier",
     "title": "Payments",
+    "to": "to",
     "total": "Total",
+    "tradingTerms": "Trading Terms",
     "type": "Type",
     "unallocated": "Unallocated",
     "unallocatedOnly": "Unallocated Only",
@@ -2311,7 +2331,8 @@
       "stdCost": "Standard cost",
       "tradePrice": "Trade Price",
       "uomCode": "UoM Code",
-      "vendor": "Default Vendor"
+      "vendor": "Default Vendor",
+      "weight": "Weight"
     },
     "componentProduct": "Component Product",
     "confirmRemoveComponent": "Are you sure you want to remove this component?",
@@ -2585,6 +2606,7 @@
     "locationWarningPrefix": "Location Warning:",
     "matching": {
       "autoMatchAll": "Auto-match All",
+      "clear": "Clear",
       "fullyInvoiced": "Fully invoiced",
       "linesCount": "{count, plural, =1 {# line} other {# lines}}",
       "matchButton": "Match",
@@ -2727,6 +2749,7 @@
     },
     "supplierInvoicesCardHeading": "Supplier Invoices",
     "title": "Purchase Orders",
+    "tradingTerms": "Trading Terms",
     "unnamedCustomer": "Unnamed customer",
     "untitledOrder": "Untitled order"
   },
@@ -2851,11 +2874,31 @@
       "state": "State",
       "status": "Status",
       "tax": "Tax",
+      "taxPosition": "Tax Position",
+      "taxRate": "Tax Rate",
       "type": "Type",
       "unitPrice": "Unit Price",
       "uom": "UOM"
     },
     "createTitle": "Create Sales Order",
+    "creditHold": {
+      "activeDesc": "This order is blocked because the customer is on credit hold.",
+      "activeTitle": "Credit Hold Active",
+      "description": "This order is currently blocked because the customer is on credit hold. Providing an override will allow this order to be processed.",
+      "noReasonError": "Please provide a reason.",
+      "overdue": "Overdue",
+      "overriddenDesc": "The credit hold for this order has been manually overridden.",
+      "overriddenTitle": "Credit Hold Overridden",
+      "overrideBtn": "Override Hold",
+      "overriding": "Overriding...",
+      "reasonLabel": "Reason for override",
+      "reasonPlaceholder": "e.g. Approved by Finance Manager",
+      "statusOverview": "Status Overview",
+      "success": "Credit hold overridden successfully.",
+      "systemStatus": "System Status",
+      "title": "Override Credit Hold",
+      "totalOutstanding": "Total Outstanding"
+    },
     "customers": {
       "invoices": "Invoices",
       "orders": "Orders",
@@ -3495,7 +3538,8 @@
     "tooltips": {
       "currentlyActive": "Currently Active",
       "currentlyBlocked": "Currently Blocked"
-    }
+    },
+    "tradingTerms": "Trading Terms"
   },
   "taxNeedsToBeCalculated": "Tax needs to be calculated",
   "toast": {

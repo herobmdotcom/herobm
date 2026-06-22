@@ -11,6 +11,7 @@ import { costCenters } from '../drizzle/herobm-core-schema';
 import { CreateCostCenterDto, UpdateCostCenterDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { calculateAuditTrail, AuditMode } from '../common/audit';
 
 @Injectable()
 export class CostCentersService {
@@ -70,26 +71,38 @@ export class CostCentersService {
     return await this.db.transaction(async (tx) => {
       const existing = await this.findOne(id, tx);
 
-      const rows = await tx
-        .update(costCenters)
-        .set({
-          ...(dto.name !== undefined && { name: dto.name.trim() }),
-          ...(dto.isActive !== undefined && { isActive: dto.isActive }),
-          modifiedOn: new Date(),
-        })
-        .where(eq(costCenters.costCenterId, id))
-        .returning();
+      if (dto.name !== undefined) {
+        dto.name = dto.name.trim();
+      }
 
-      await emitEvent(tx, {
-        entityType: EntityType.COST_CENTER,
-        entityId: rows[0].costCenterId,
-        eventType: EventType.UPDATED,
-        entityDisplayName: rows[0].code,
-        payload: dto,
-        actor: userId,
-      });
+      const audit = calculateAuditTrail(dto, existing, AuditMode.DIFF);
 
-      return rows[0];
+      if (audit.hasChanges) {
+        const rows = await tx
+          .update(costCenters)
+          .set({
+            ...audit.changes,
+            modifiedOn: new Date(),
+          } as typeof costCenters.$inferInsert)
+          .where(eq(costCenters.costCenterId, id))
+          .returning();
+
+        await emitEvent(tx, {
+          entityType: EntityType.COST_CENTER,
+          entityId: rows[0].costCenterId,
+          eventType: EventType.UPDATED,
+          entityDisplayName: rows[0].code,
+          payload: {
+            changes: audit.changes,
+            previous: audit.previousValues,
+          },
+          actor: userId,
+        });
+
+        return rows[0];
+      }
+
+      return existing;
     });
   }
 

@@ -71,6 +71,8 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
         productNumber: `E2E-MATCH-P-${Date.now()}`,
         name: 'E2E 3-Way Test Product',
         listPrice: '10.00',
+        productType: 'inventory',
+        baseUom: 'EA',
       })
       .expect(201);
     validProductId = productRes.body.productId;

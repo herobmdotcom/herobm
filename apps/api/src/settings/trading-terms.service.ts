@@ -25,20 +25,12 @@ export class TradingTermsService {
       description: r.description,
       days: r.days,
       type: r.type,
-      isDefaultCustomer: r.isDefaultCustomer,
-      isDefaultSupplier: r.isDefaultSupplier,
     }));
   }
 
   // @herobm-skip-audit
   async create(dto: CreateTradingTermDto) {
     return this.db.transaction(async (tx) => {
-      if (dto.isDefaultCustomer) {
-        await tx.update(tradingTerms).set({ isDefaultCustomer: false });
-      }
-      if (dto.isDefaultSupplier) {
-        await tx.update(tradingTerms).set({ isDefaultSupplier: false });
-      }
       try {
         const [record] = await tx
           .insert(tradingTerms)
@@ -47,8 +39,6 @@ export class TradingTermsService {
             description: dto.description,
             days: dto.days,
             type: dto.type,
-            isDefaultCustomer: dto.isDefaultCustomer || false,
-            isDefaultSupplier: dto.isDefaultSupplier || false,
           })
           .returning();
         return {
@@ -57,8 +47,6 @@ export class TradingTermsService {
           description: record.description,
           days: record.days,
           type: record.type,
-          isDefaultCustomer: record.isDefaultCustomer,
-          isDefaultSupplier: record.isDefaultSupplier,
         };
       } catch (e: unknown) {
         const err = e as { code?: string };
@@ -75,12 +63,6 @@ export class TradingTermsService {
   // @herobm-skip-audit
   async update(id: string, dto: UpdateTradingTermDto) {
     return this.db.transaction(async (tx) => {
-      if (dto.isDefaultCustomer === true) {
-        await tx.update(tradingTerms).set({ isDefaultCustomer: false });
-      }
-      if (dto.isDefaultSupplier === true) {
-        await tx.update(tradingTerms).set({ isDefaultSupplier: false });
-      }
       try {
         const [record] = await tx
           .update(tradingTerms)
@@ -96,8 +78,6 @@ export class TradingTermsService {
           description: record.description,
           days: record.days,
           type: record.type,
-          isDefaultCustomer: record.isDefaultCustomer,
-          isDefaultSupplier: record.isDefaultSupplier,
         };
       } catch (e: unknown) {
         const err = e as { code?: string };

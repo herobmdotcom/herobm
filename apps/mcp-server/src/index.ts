@@ -16,7 +16,20 @@ import postgres from 'postgres';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+// Try multiple locations for .env to ensure it loads when run by Antigravity or locally
+const envPaths = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(__dirname, '.env'),
+  path.resolve(__dirname, '../../../.env'),
+  'c:/Users/Marcel/volz/modbm/modbm/.env'
+];
+
+for (const p of envPaths) {
+  if (fs.existsSync(p)) {
+    dotenv.config({ path: p });
+    console.error(`Loaded env from ${p}`);
+  }
+}
 
 const apiPort = process.env.PORT || process.env.API_PORT || '3001';
 const API_URL = process.env.API_URL || `http://127.0.0.1:${apiPort}/api`;

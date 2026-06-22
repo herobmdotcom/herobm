@@ -29,16 +29,16 @@ describe('PickingSlipService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: PickingSlipService;
 
-  const ORDER_ID = '00000000-0000-0000-0000-000000000001';
-  const TRANSFER_ID = '00000000-0000-0000-0000-000000000002';
-  const CUSTOMER_ID = '00000000-0000-0000-0000-000000000003';
-  const PROD_A_ID = '00000000-0000-0000-0000-00000000000a';
-  const PROD_B_ID = '00000000-0000-0000-0000-00000000000b';
-  const LOCATION_SRC_ID = '00000000-0000-0000-0000-00000000000f';
-  const LOCATION_DEST_ID = '00000000-0000-0000-0000-000000000008';
-  const ZONE_ID = '00000000-0000-0000-0000-00000000000e';
-  const BIN_ID = '00000000-0000-0000-0000-00000000000d';
-  const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
+  const ORDER_ID = '00000000-0000-4000-8000-000000000001';
+  const TRANSFER_ID = '00000000-0000-4000-8000-000000000002';
+  const CUSTOMER_ID = '00000000-0000-4000-8000-000000000003';
+  const PROD_A_ID = '00000000-0000-4000-8000-00000000000a';
+  const PROD_B_ID = '00000000-0000-4000-8000-00000000000b';
+  const LOCATION_SRC_ID = '00000000-0000-4000-8000-00000000000f';
+  const LOCATION_DEST_ID = '00000000-0000-4000-8000-000000000008';
+  const ZONE_ID = '00000000-0000-4000-8000-00000000000e';
+  const BIN_ID = '00000000-0000-4000-8000-00000000000d';
+  const TAX_CAT_ID = '00000000-0000-4000-8000-000000000007';
 
   beforeEach(async () => {
     // Clean data
@@ -111,12 +111,14 @@ describe('PickingSlipService', () => {
         productNumber: 'PROD-A',
         name: 'Widget Alpha',
         baseUom: 'EA',
+        productType: 'inventory',
       },
       {
         productId: PROD_B_ID,
         productNumber: 'PROD-B',
         name: 'Gadget Beta',
         baseUom: 'EA',
+        productType: 'inventory',
       },
     ]);
 
@@ -131,7 +133,7 @@ describe('PickingSlipService', () => {
       fulfillmentLocationId: LOCATION_SRC_ID,
     });
     await pg.db.insert(salesOrderLineItems).values({
-      salesOrderLineId: '00000000-0000-0000-0000-000000000011',
+      salesOrderLineId: '00000000-0000-4000-8000-000000000011',
       salesOrderId: ORDER_ID,
       lineNumber: 1,
       productId: PROD_A_ID,
@@ -150,7 +152,7 @@ describe('PickingSlipService', () => {
       stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
     });
     await pg.db.insert(transferOrderLines).values({
-      transferOrderLineId: '00000000-0000-0000-0000-000000000012',
+      transferOrderLineId: '00000000-0000-4000-8000-000000000012',
       transferOrderId: TRANSFER_ID,
       productId: PROD_B_ID,
       quantity: '5',
@@ -190,7 +192,7 @@ describe('PickingSlipService', () => {
 
     it('should throw NotFoundException for unknown ID', async () => {
       await expect(
-        service.assembleData('00000000-0000-0000-0000-ffffffffffff'),
+        service.assembleData('00000000-0000-4000-8000-ffffffffffff'),
       ).rejects.toThrow(NotFoundException);
     });
   });

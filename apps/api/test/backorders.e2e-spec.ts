@@ -62,6 +62,8 @@ describe('Backorders Workflow (e2e)', () => {
       .send({
         productNumber: `BACKORDER-E2E-${Date.now()}`,
         name: 'Backorder E2E Test Product',
+        productType: 'inventory',
+        baseUom: 'EA',
       })
       .expect(201);
     productId = productRes.body.productId;

@@ -41,14 +41,14 @@ const INVOICED_ORDER = {
   salesOrderId: 'order-001',
   orderNumber: 'ORD-20260315-0001',
   stateCode: SALES_ORDER_STATE.INVOICED,
-  customerId: 'c0000000-0000-0000-0000-000000000001',
+  customerId: '00000000-0000-4000-8000-000000000001',
 };
 
 const DRAFT_ORDER = {
   salesOrderId: 'order-002',
   orderNumber: 'ORD-20260315-0002',
   stateCode: SALES_ORDER_STATE.DRAFT,
-  customerId: 'c0000000-0000-0000-0000-000000000001',
+  customerId: '00000000-0000-4000-8000-000000000001',
 };
 
 const ORDER_LINE = {
@@ -196,7 +196,7 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(locations)
         .values({
-          locationId: '10000000-0000-0000-0000-000000000001',
+          locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
         })
@@ -205,7 +205,7 @@ describe('ReturnsWriteService', () => {
 
       const order = await createTestSalesOrder(pg.db, {
         customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
         state: opts?.orderState ?? SALES_ORDER_STATE.INVOICED,
       });
       orderId = order.salesOrderId;
@@ -391,7 +391,7 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(locations)
         .values({
-          locationId: '10000000-0000-0000-0000-000000000001',
+          locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
         })
@@ -399,7 +399,7 @@ describe('ReturnsWriteService', () => {
         .returning();
       const order = await createTestSalesOrder(pg.db, {
         customerId: cust.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
       });
       const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
@@ -452,7 +452,7 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(locations)
         .values({
-          locationId: '10000000-0000-0000-0000-000000000001',
+          locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
         })
@@ -463,8 +463,8 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(zones)
         .values({
-          zoneId: '30000000-0000-0000-0000-000000000001',
-          locationId: '10000000-0000-0000-0000-000000000001',
+          zoneId: '00000000-0000-4000-8000-000000000001',
+          locationId: '10000000-0000-4000-8000-000000000001',
           code: 'HANDLING',
           name: 'Handling',
         })
@@ -472,8 +472,8 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(bins)
         .values({
-          binId: '20000000-0000-0000-0000-000000000001',
-          zoneId: '30000000-0000-0000-0000-000000000001',
+          binId: '20000000-0000-4000-8000-000000000001',
+          zoneId: '00000000-0000-4000-8000-000000000001',
           binNumber: 'CUSTOMER_RETURNS',
           binType: 'staging',
         })
@@ -481,7 +481,7 @@ describe('ReturnsWriteService', () => {
 
       const order = await createTestSalesOrder(pg.db, {
         customerId: cust.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
       });
       orderId = order.salesOrderId;
 
@@ -529,7 +529,7 @@ describe('ReturnsWriteService', () => {
           to,
           'admin',
           to === RETURN_STATE.RECEIVED
-            ? '10000000-0000-0000-0000-000000000001'
+            ? '10000000-0000-4000-8000-000000000001'
             : undefined,
         ),
       ).resolves.toBeDefined();
@@ -565,7 +565,7 @@ describe('ReturnsWriteService', () => {
         returnId,
         RETURN_STATE.RECEIVED,
         'admin',
-        '10000000-0000-0000-0000-000000000001',
+        '10000000-0000-4000-8000-000000000001',
       );
       const [updated] = await pg.db
         .select()
@@ -590,7 +590,7 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(locations)
         .values({
-          locationId: '10000000-0000-0000-0000-000000000001',
+          locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
         })
@@ -601,8 +601,8 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(zones)
         .values({
-          zoneId: '30000000-0000-0000-0000-000000000001',
-          locationId: '10000000-0000-0000-0000-000000000001',
+          zoneId: '00000000-0000-4000-8000-000000000001',
+          locationId: '10000000-0000-4000-8000-000000000001',
           code: 'HANDLING',
           name: 'Handling',
         })
@@ -610,16 +610,16 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(bins)
         .values({
-          binId: '20000000-0000-0000-0000-000000000001',
+          binId: '20000000-0000-4000-8000-000000000001',
           binNumber: 'CUSTOMER_RETURNS',
-          zoneId: '30000000-0000-0000-0000-000000000001',
+          zoneId: '00000000-0000-4000-8000-000000000001',
           binType: 'staging',
         })
         .onConflictDoNothing();
 
       const order = await createTestSalesOrder(pg.db, {
         customerId: cust.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
       });
 
       const taxRes = await pg.db
@@ -659,7 +659,7 @@ describe('ReturnsWriteService', () => {
       await service.receiveReturnLines(
         retId,
         {
-          locationId: '10000000-0000-0000-0000-000000000001',
+          locationId: '10000000-0000-4000-8000-000000000001',
           lines: [{ returnLineId: retLineId, quantityReceived: '5' }],
         },
         'admin',
@@ -697,7 +697,7 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(locations)
         .values({
-          locationId: '10000000-0000-0000-0000-000000000001',
+          locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
         })
@@ -705,7 +705,7 @@ describe('ReturnsWriteService', () => {
         .returning();
       const order = await createTestSalesOrder(pg.db, {
         customerId: cust.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
       });
       orderId = order.salesOrderId;
 
@@ -788,7 +788,7 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(locations)
         .values({
-          locationId: '10000000-0000-0000-0000-000000000001',
+          locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
         })
@@ -797,7 +797,7 @@ describe('ReturnsWriteService', () => {
 
       const order = await createTestSalesOrder(pg.db, {
         customerId: cust.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
       });
       const taxRes = await pg.db
         .select()
@@ -884,7 +884,7 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(locations)
         .values({
-          locationId: '10000000-0000-0000-0000-000000000001',
+          locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
         })
@@ -893,7 +893,7 @@ describe('ReturnsWriteService', () => {
 
       const order = await createTestSalesOrder(pg.db, {
         customerId: cust.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
       });
       const taxRes = await pg.db
         .select()
@@ -954,7 +954,7 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(locations)
         .values({
-          locationId: '10000000-0000-0000-0000-000000000001',
+          locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
         })
@@ -963,7 +963,7 @@ describe('ReturnsWriteService', () => {
 
       const order = await createTestSalesOrder(pg.db, {
         customerId: cust.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
       });
       const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
@@ -993,7 +993,7 @@ describe('ReturnsWriteService', () => {
 
     it('should throw NotFoundException for unknown return', async () => {
       await expect(
-        service.findOne('00000000-0000-0000-0000-000000000000'),
+        service.findOne('00000000-0000-4000-8000-000000000000'),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -1004,7 +1004,7 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(locations)
         .values({
-          locationId: '10000000-0000-0000-0000-000000000001',
+          locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
         })
@@ -1013,7 +1013,7 @@ describe('ReturnsWriteService', () => {
 
       const order = await createTestSalesOrder(pg.db, {
         customerId: cust.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
       });
       const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
@@ -1034,7 +1034,7 @@ describe('ReturnsWriteService', () => {
     it('should throw NotFoundException when return does not exist', async () => {
       await expect(
         service.updateReturn(
-          '00000000-0000-0000-0000-000000000000',
+          '00000000-0000-4000-8000-000000000000',
           { notes: 'test' },
           'admin',
         ),
@@ -1048,7 +1048,7 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(locations)
         .values({
-          locationId: '10000000-0000-0000-0000-000000000001',
+          locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
         })
@@ -1056,7 +1056,7 @@ describe('ReturnsWriteService', () => {
         .returning();
       const order = await createTestSalesOrder(pg.db, {
         customerId: cust.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
       });
       const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
@@ -1066,7 +1066,7 @@ describe('ReturnsWriteService', () => {
       await expect(
         service.updateReturnLine(
           ret.returnId,
-          '00000000-0000-0000-0000-000000000000',
+          '00000000-0000-4000-8000-000000000000',
           { reason: 'test' },
           'admin',
         ),
@@ -1079,7 +1079,7 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(locations)
         .values({
-          locationId: '10000000-0000-0000-0000-000000000001',
+          locationId: '10000000-0000-4000-8000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
         })
@@ -1087,7 +1087,7 @@ describe('ReturnsWriteService', () => {
         .returning();
       const order = await createTestSalesOrder(pg.db, {
         customerId: cust.customerId,
-        locationId: '10000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-4000-8000-000000000001',
       });
       const taxRes = await pg.db
         .select()

@@ -318,7 +318,7 @@ export class PurchaseInvoiceService {
         const effectiveTermsId =
           vendRows[0].tradingTermsId ||
           vendRows[0].groupTradingTermsId ||
-          this.appConfig.getAppSettingsRaw()?.defaultTradingTermsId;
+          this.appConfig.getAppSettingsRaw()?.defaultSupplierTermsId;
 
         if (effectiveTermsId) {
           const [term] = await this.db

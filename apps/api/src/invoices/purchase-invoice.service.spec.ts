@@ -24,11 +24,11 @@ describe('PurchaseInvoiceService', () => {
   let service: PurchaseInvoiceService;
   let mockGlService: Partial<Record<keyof GlService, jest.Mock>>;
 
-  const VENDOR_ID = '00000000-0000-0000-0000-000000000001';
-  const PO_ID = '00000000-0000-0000-0000-000000000002';
-  const PRODUCT_ID = '00000000-0000-0000-0000-00000000000a';
-  const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
-  const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
+  const VENDOR_ID = '00000000-0000-4000-8000-000000000001';
+  const PO_ID = '00000000-0000-4000-8000-000000000002';
+  const PRODUCT_ID = '00000000-0000-4000-8000-00000000000a';
+  const TAX_CAT_ID = '00000000-0000-4000-8000-000000000007';
+  const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
 
   beforeEach(async () => {
     // Seed static data
@@ -64,6 +64,7 @@ describe('PurchaseInvoiceService', () => {
       productNumber: 'P1',
       name: 'Product 1',
       baseUom: 'EA',
+      productType: 'inventory',
     });
   });
 
@@ -123,7 +124,7 @@ describe('PurchaseInvoiceService', () => {
     });
 
     await pg.db.insert(purchaseOrderLineItems).values({
-      purchaseOrderLineId: '00000000-0000-0000-0000-000000000003',
+      purchaseOrderLineId: '00000000-0000-4000-8000-000000000003',
       purchaseOrderId: PO_ID,
       lineNumber: 1,
       productId: PRODUCT_ID,
@@ -139,7 +140,7 @@ describe('PurchaseInvoiceService', () => {
   describe('findOne', () => {
     it('should throw NotFoundException for unknown bill', async () => {
       await expect(
-        service.findOne('00000000-0000-0000-0000-000000000888'),
+        service.findOne('00000000-0000-4000-8000-000000000888'),
       ).rejects.toThrow(NotFoundException);
     });
   });

@@ -4,9 +4,12 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
+import { CASBIN_ENFORCER } from '../auth/casbin.provider';
+import { Enforcer } from 'casbin';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -20,6 +23,7 @@ import {
   CUSTOMER_STATE,
   CustomerState,
   getValidStates,
+  SystemResource,
 } from '@herobm/shared';
 
 import { calculateAuditTrail, AuditMode } from '../common/audit';
@@ -35,6 +39,7 @@ export class AccountsWriteService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly appConfig: AppConfigService,
+    @Inject(CASBIN_ENFORCER) private readonly enforcer: Enforcer,
   ) {}
 
   // Phase 8: [x] Implement strict server-side diffing in `AccountsWriteService`
@@ -75,6 +80,7 @@ export class AccountsWriteService {
       'parentCustomerId',
       'isTaxRegistered',
       'isOnCreditHold',
+      'overrideCreditHoldUntil',
       'creditLimit',
       'businessNumber',
       'notes',
@@ -86,6 +92,12 @@ export class AccountsWriteService {
       if (key in dto && recordDto[key as string] !== undefined) {
         sanitizedDto[key as string] = recordDto[key as string];
       }
+    }
+
+    if (sanitizedDto.overrideCreditHoldUntil) {
+      sanitizedDto.overrideCreditHoldUntil = new Date(
+        sanitizedDto.overrideCreditHoldUntil as string,
+      );
     }
 
     let result;
@@ -130,7 +142,12 @@ export class AccountsWriteService {
     return result;
   }
 
-  async update(id: string, dto: UpdateAccountDto, actor: string) {
+  async update(
+    id: string,
+    dto: UpdateAccountDto,
+    actor: string,
+    actorRole: string,
+  ) {
     const existing = await this.db
       .select()
       .from(coreAccounts)
@@ -164,6 +181,7 @@ export class AccountsWriteService {
       'parentCustomerId',
       'isTaxRegistered',
       'isOnCreditHold',
+      'overrideCreditHoldUntil',
       'creditLimit',
       'businessNumber',
       'notes',
@@ -181,12 +199,38 @@ export class AccountsWriteService {
       }
     }
 
+    if (sanitizedDto.overrideCreditHoldUntil) {
+      sanitizedDto.overrideCreditHoldUntil = new Date(
+        sanitizedDto.overrideCreditHoldUntil as string,
+      );
+    }
+
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const audit = calculateAuditTrail(
         sanitizedDto,
         existing[0],
         AuditMode.DIFF,
       );
+
+      // Enforce CREDIT_CONTROL permission if any credit fields changed
+      if (
+        audit.hasChanges &&
+        (audit.changes.creditLimit !== undefined ||
+          audit.changes.tradingTermsId !== undefined ||
+          audit.changes.isOnCreditHold !== undefined ||
+          audit.changes.overrideCreditHoldUntil !== undefined)
+      ) {
+        const canManageCredit = await this.enforcer.enforce(
+          actorRole,
+          SystemResource.CREDIT_CONTROL,
+          'write',
+        );
+        if (!canManageCredit) {
+          throw new ForbiddenException(
+            'You do not have permission to modify credit control settings (credit limit, trading terms, or credit holds).',
+          );
+        }
+      }
 
       // Perform the update
       const [updated] = await tx

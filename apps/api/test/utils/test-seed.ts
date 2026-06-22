@@ -17,7 +17,7 @@ export async function seedTestLocations(db: SeedDB, dryRun = false) {
   await db
     .insert(locations)
     .values({
-      locationId: '10000000-0000-0000-0000-000000000001',
+      locationId: '10000000-0000-4000-8000-000000000001',
       code: 'MAIN',
       name: 'Main Location',
     })
@@ -29,8 +29,8 @@ export async function seedTestLocations(db: SeedDB, dryRun = false) {
   await db
     .insert(zones)
     .values({
-      zoneId: '30000000-0000-0000-0000-000000000001',
-      locationId: '10000000-0000-0000-0000-000000000001',
+      zoneId: '00000000-0000-4000-8000-000000000001',
+      locationId: '10000000-0000-4000-8000-000000000001',
       code: 'MAIN-Z1',
       name: 'Main Zone',
     })
@@ -43,24 +43,24 @@ export async function seedTestLocations(db: SeedDB, dryRun = false) {
     .insert(bins)
     .values([
       {
-        binId: '40000000-0000-0000-0000-000000000001',
-        zoneId: '30000000-0000-0000-0000-000000000001',
+        binId: '00000000-0000-4000-8000-000000000001',
+        zoneId: '00000000-0000-4000-8000-000000000001',
         binNumber: 'RECEIVING',
         binType: 'staging',
         source: 'system',
         isUnavailable: true,
       },
       {
-        binId: '40000000-0000-0000-0000-000000000002',
-        zoneId: '30000000-0000-0000-0000-000000000001',
+        binId: '00000000-0000-4000-8000-000000000002',
+        zoneId: '00000000-0000-4000-8000-000000000001',
         binNumber: 'SHIPPING',
         binType: 'staging',
         source: 'system',
         isUnavailable: true,
       },
       {
-        binId: '40000000-0000-0000-0000-000000000003',
-        zoneId: '30000000-0000-0000-0000-000000000001',
+        binId: '00000000-0000-4000-8000-000000000003',
+        zoneId: '00000000-0000-4000-8000-000000000001',
         binNumber: 'MAIN-BIN-1',
         binType: 'storage',
         source: 'app',
@@ -73,7 +73,7 @@ export async function seedTestLocations(db: SeedDB, dryRun = false) {
     });
 
   await db.update(appSettings).set({
-    defaultFulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+    defaultFulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
   });
 
   console.log("  Seeded test 'MAIN' location, zone, and bins");

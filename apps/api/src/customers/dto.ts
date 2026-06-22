@@ -6,6 +6,7 @@ import {
   IsUUID,
   IsNumberString,
   IsBoolean,
+  IsDateString
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
@@ -81,6 +82,7 @@ export class CreateAccountDto {
   currencyCode?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
   @IsNumberString()
   customerDiscount?: string;
 
@@ -109,10 +111,12 @@ export class CreateAccountDto {
   isTaxRegistered?: boolean;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
   @IsNumberString()
   creditLimit?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isOnCreditHold?: boolean;
 
@@ -120,6 +124,11 @@ export class CreateAccountDto {
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   tradingTermsId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  overrideCreditHoldUntil?: string;
+
 }
 
 export class UpdateAccountDto {
@@ -183,6 +192,7 @@ export class UpdateAccountDto {
   parentCustomerId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   taxPositionId?: string;
 
@@ -191,6 +201,7 @@ export class UpdateAccountDto {
   currencyCode?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
   @IsNumberString()
   customerDiscount?: string;
 
@@ -219,10 +230,12 @@ export class UpdateAccountDto {
   isTaxRegistered?: boolean;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
   @IsNumberString()
   creditLimit?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isOnCreditHold?: boolean;
 
@@ -230,6 +243,11 @@ export class UpdateAccountDto {
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   tradingTermsId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  overrideCreditHoldUntil?: string;
+
 }
 
 export class CreateAccountGroupDto {
@@ -242,24 +260,45 @@ export class CreateAccountGroupDto {
   name!: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
   @IsNumberString()
   defaultDiscountPercentage?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultArAccountId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultRevenueAccountId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultCostCenterId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultActivityId?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  tradingTermsId?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  taxPositionId?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
+  @IsNumberString()
+  creditLimit?: string;
+
 }
 
 export class UpdateAccountGroupDto {
@@ -272,22 +311,27 @@ export class UpdateAccountGroupDto {
   name?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
   @IsNumberString()
   defaultDiscountPercentage?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultArAccountId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultRevenueAccountId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultCostCenterId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultActivityId?: string;
 
@@ -296,8 +340,25 @@ export class UpdateAccountGroupDto {
   stateCode?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isOnCreditHold?: boolean;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  tradingTermsId?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  taxPositionId?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
+  @IsNumberString()
+  creditLimit?: string;
+
 }
 
 export class AccountResponseDto {
@@ -334,12 +395,6 @@ export class AccountResponseDto {
   createdOn?: Date;
   modifiedOn?: Date;
 
-  customerGroupName?: string;
-  customerGroupCode?: string;
-  customerGroupTradingTermsId?: string;
-  customerGroupCreditLimit?: string;
-  customerGroupIsOnCreditHold?: boolean;
-  gstCategoryName?: string;
   events?: unknown[];
   contacts?: unknown[];
   deliveryAddresses?: unknown[];
@@ -362,3 +417,27 @@ export class AccountGroupResponseDto {
 }
 
 export class EmptyBodyDto {}
+
+
+export class AgedBalanceResponseDto {
+  customerId!: string;
+  customerName!: string;
+  accountNumber!: string;
+  current!: number;
+  days1To30!: number;
+  days31To60!: number;
+  days61To90!: number;
+  days90Plus!: number;
+  totalOutstanding!: number;
+  glBalance!: number;
+  discrepancyAmount!: number;
+  currencyCode!: string;
+  isOnCreditHold!: boolean;
+  creditLimit!: string | null;
+}
+
+export class CreditAssessmentResponseDto {
+  totalArBalance!: number;
+  overdueBalance!: number;
+  isOverdue!: boolean;
+}

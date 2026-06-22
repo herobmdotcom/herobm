@@ -9,5 +9,4 @@
 export interface CreateTaxPositionDto {
   code: string;
   title: string;
-  isDefault?: boolean;
 }

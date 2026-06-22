@@ -23,10 +23,6 @@ export class CreateTaxCategoryDto {
   @IsOptional()
   @IsNumberString()
   rate?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  isDefault?: boolean;
 }
 
 export class UpdateTaxCategoryDto {
@@ -45,10 +41,6 @@ export class UpdateTaxCategoryDto {
   @IsOptional()
   @IsNumberString()
   rate?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  isDefault?: boolean;
 }
 
 export class TaxCategoryResponseDto {
@@ -66,7 +58,4 @@ export class TaxCategoryResponseDto {
 
   @ApiProperty({ required: false })
   rate?: string;
-
-  @ApiProperty()
-  isDefault!: boolean;
 }

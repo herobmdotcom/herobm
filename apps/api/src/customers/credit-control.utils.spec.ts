@@ -137,7 +137,7 @@ describe('credit-control.utils', () => {
           isOnCreditHold: false,
           tradingTermsId: null,
         },
-        systemDefaultTradingTermsId: 'term_system',
+        systemDefaultCustomerTermsId: 'term_system',
       };
       expect(resolveEffectiveTradingTermsId(p)).toBe('term_system');
     });
@@ -152,7 +152,7 @@ describe('credit-control.utils', () => {
           isOnCreditHold: false,
           tradingTermsId: 'term_group',
         },
-        systemDefaultTradingTermsId: 'term_system',
+        systemDefaultCustomerTermsId: 'term_system',
       };
       expect(resolveEffectiveTradingTermsId(p)).toBe('term_group');
     });
@@ -163,7 +163,7 @@ describe('credit-control.utils', () => {
         isOnCreditHold: false,
         tradingTermsId: 'term_customer',
         accountGroup: null,
-        systemDefaultTradingTermsId: 'term_system',
+        systemDefaultCustomerTermsId: 'term_system',
       };
       expect(resolveEffectiveTradingTermsId(p)).toBe('term_customer');
     });
@@ -173,7 +173,7 @@ describe('credit-control.utils', () => {
         creditLimit: null,
         isOnCreditHold: false,
         tradingTermsId: null,
-        systemDefaultTradingTermsId: null,
+        systemDefaultCustomerTermsId: null,
       };
       expect(resolveEffectiveTradingTermsId(p)).toBeNull();
     });

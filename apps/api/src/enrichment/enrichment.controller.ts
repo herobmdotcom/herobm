@@ -15,16 +15,18 @@ import {
   CasbinGuard,
   CasbinResource,
   CasbinAction,
+  SkipCasbin,
 } from '../auth/casbin.guard';
 import { ApiOkResponse, ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
+import { ThrottlerGuard } from '@nestjs/throttler';
+
 @ApiTags('System')
 @Controller('enrichment')
-@UseGuards(CasbinGuard)
+@UseGuards(CasbinGuard, ThrottlerGuard)
 export class EnrichmentController {
   constructor(private readonly enrichmentService: EnrichmentService) {}
 
-  @CasbinResource(SystemResource.EXTERNAL_API)
-  @CasbinAction('read')
+  @SkipCasbin()
   @Get('lookup')
   @ApiOperation({ summary: 'Lookup data', description: 'Lookup data by field' })
   @ApiOkResponse({ description: 'Successful lookup', type: Object }) // BYPASS-TYPING-TEST
@@ -41,8 +43,7 @@ export class EnrichmentController {
     return result;
   }
 
-  @CasbinResource(SystemResource.EXTERNAL_API)
-  @CasbinAction('read')
+  @SkipCasbin()
   @Post('lookup')
   @ApiOperation({
     summary: 'Lookup data (POST)',
@@ -62,8 +63,7 @@ export class EnrichmentController {
     return result;
   }
 
-  @CasbinResource(SystemResource.EXTERNAL_API)
-  @CasbinAction('read')
+  @SkipCasbin()
   @Get('test')
   @ApiOperation({
     summary: 'Test provider',
@@ -78,8 +78,7 @@ export class EnrichmentController {
     return result;
   }
 
-  @CasbinResource(SystemResource.EXTERNAL_API)
-  @CasbinAction('read')
+  @SkipCasbin()
   @Post('test')
   @ApiOperation({
     summary: 'Test provider (POST)',

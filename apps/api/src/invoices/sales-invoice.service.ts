@@ -187,15 +187,15 @@ export class SalesInvoiceService {
 
         const effectiveTermsId = resolveEffectiveTradingTermsId({
           creditLimit: custRows[0].creditLimit,
-          isOnCreditHold: custRows[0].isOnCreditHold,
+          isOnCreditHold: custRows[0].isOnCreditHold ?? false,
           tradingTermsId: custRows[0].tradingTermsId,
           accountGroup: {
             creditLimit: custRows[0].groupCreditLimit,
             isOnCreditHold: custRows[0].groupIsOnCreditHold ?? false,
             tradingTermsId: custRows[0].groupTradingTermsId,
           },
-          systemDefaultTradingTermsId:
-            this.appConfig.getAppSettingsRaw()?.defaultTradingTermsId,
+          systemDefaultCustomerTermsId:
+            this.appConfig.getAppSettingsRaw()?.defaultCustomerTermsId,
         });
 
         if (effectiveTermsId) {

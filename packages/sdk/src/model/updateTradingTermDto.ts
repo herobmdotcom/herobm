@@ -11,6 +11,4 @@ export interface UpdateTradingTermDto {
   description?: string;
   days?: number;
   type?: string;
-  isDefaultCustomer?: boolean;
-  isDefaultSupplier?: boolean;
 }

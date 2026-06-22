@@ -10,5 +10,4 @@ export interface TaxPositionResponseDto {
   taxPositionId: string;
   code: string;
   title: string;
-  isDefault: boolean;
 }

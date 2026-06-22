@@ -11,6 +11,7 @@ import { productGroups, products } from '../drizzle/herobm-core-schema';
 import { CreateProductGroupDto, UpdateProductGroupDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { calculateAuditTrail, AuditMode } from '../common/audit';
 
 @Injectable()
 export class ProductGroupsService {
@@ -73,45 +74,32 @@ export class ProductGroupsService {
 
   async update(id: string, dto: UpdateProductGroupDto, userId?: string) {
     return await this.db.transaction(async (tx) => {
-      await this.findOne(id, tx);
+      const existing = await this.findOne(id, tx);
 
-      const rows = await tx
-        .update(productGroups)
-        .set({
-          ...(dto.groupCode !== undefined && { groupCode: dto.groupCode }),
-          ...(dto.name !== undefined && { name: dto.name }),
-          ...(dto.defaultRevenueAccountId !== undefined && {
-            defaultRevenueAccountId: dto.defaultRevenueAccountId,
-          }),
-          ...(dto.defaultExpenseAccountId !== undefined && {
-            defaultExpenseAccountId: dto.defaultExpenseAccountId,
-          }),
-          ...(dto.defaultCostCenterId !== undefined && {
-            defaultCostCenterId: dto.defaultCostCenterId,
-          }),
-          ...(dto.defaultActivityId !== undefined && {
-            defaultActivityId: dto.defaultActivityId,
-          }),
-          ...(dto.purchaseTaxCategoryId !== undefined && {
-            purchaseTaxCategoryId: dto.purchaseTaxCategoryId,
-          }),
-          ...(dto.salesTaxCategoryId !== undefined && {
-            salesTaxCategoryId: dto.salesTaxCategoryId,
-          }),
-        })
-        .where(eq(productGroups.productGroupId, id))
-        .returning();
+      const audit = calculateAuditTrail(dto, existing, AuditMode.DIFF);
 
-      await emitEvent(tx, {
-        entityType: EntityType.PRODUCT_GROUP,
-        entityId: rows[0].productGroupId,
-        eventType: EventType.UPDATED,
-        entityDisplayName: rows[0].groupCode,
-        payload: dto,
-        actor: userId,
-      });
+      if (audit.hasChanges) {
+        const rows = await tx
+          .update(productGroups)
+          .set({ ...audit.changes } as typeof productGroups.$inferInsert)
+          .where(eq(productGroups.productGroupId, id))
+          .returning();
 
-      return rows[0];
+        await emitEvent(tx, {
+          entityType: EntityType.PRODUCT_GROUP,
+          entityId: rows[0].productGroupId,
+          eventType: EventType.UPDATED,
+          entityDisplayName: rows[0].groupCode,
+          payload: {
+            changes: audit.changes,
+            previous: audit.previousValues,
+          },
+          actor: userId,
+        });
+
+        return rows[0];
+      }
+      return existing;
     });
   }
 

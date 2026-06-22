@@ -81,6 +81,8 @@ describe('Product Groups (e2e)', () => {
         name: 'Group Member Product',
         productGroupId: groupId,
         listPrice: '10.00',
+        productType: 'inventory',
+        baseUom: 'EA',
       });
     expect(createProductRes.status).toBe(201);
     expect(createProductRes.body.productGroupId).toBe(groupId);

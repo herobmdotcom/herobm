@@ -73,6 +73,8 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         productNumber: appProductNumber,
         name: 'E2E Goods Received Test Product',
         listPrice: '25.00',
+        productType: 'inventory',
+        baseUom: 'EA',
       });
 
     if (productRes.status !== 201) {
@@ -214,7 +216,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
 
     it('GET /goods-received/:id — returns 404 for nonexistent ID', async () => {
       await request(app.getHttpServer())
-        .get('/api/goods-received/00000000-0000-0000-0000-000000000000')
+        .get('/api/goods-received/00000000-0000-4000-8000-000000000000')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
     });
@@ -230,7 +232,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         .post('/api/goods-received')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          vendorId: '00000000-0000-0000-0000-000000000000',
+          vendorId: '00000000-0000-4000-8000-000000000000',
           locationId: validLocationId,
           lines: [{ productId: appProductId, quantityReceived: '5' }],
         })
@@ -243,7 +245,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           vendorId: validVendorId,
-          locationId: '00000000-0000-0000-0000-000000000000',
+          locationId: '00000000-0000-4000-8000-000000000000',
           lines: [{ productId: appProductId, quantityReceived: '5' }],
         })
         .expect(404);
@@ -519,6 +521,8 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
           productNumber: `E2E-GR-P-${Date.now()}-CAN`,
           name: 'E2E Goods Received Test Product - Cancel',
           listPrice: '25.00',
+          productType: 'inventory',
+          baseUom: 'EA',
         })
         .expect(201);
       cancelProductId = productRes.body.productId;

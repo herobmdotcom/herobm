@@ -320,7 +320,7 @@ export default function PaymentsContent() {
         </div>
       }
       secondaryHeader={
-        <div className="flex flex-wrap items-center justify-end gap-3 w-full">
+        <div className="flex flex-wrap items-center justify-start gap-3">
           <button  
             onClick={() => {
               setSelectedPaymentId(null);

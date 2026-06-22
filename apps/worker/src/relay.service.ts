@@ -34,7 +34,7 @@ export async function pollOutbox(db: any, syncQueue: Queue) {
           or(isNull(outbox.lockedUntil), lt(outbox.lockedUntil, now))
         )
       )
-      .limit(50);
+      .limit(500);
 
     for (const event of pendingEvents) {
       // Add to BullMQ with ID dedup

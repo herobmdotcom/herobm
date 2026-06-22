@@ -13,6 +13,7 @@
 import { useTranslations } from 'next-intl';
 import { computeOrderTotals } from '@herobm/shared';
 import MobileLineItemCard from './MobileLineItemCard';
+import EntityBanner from './EntityBanner';
 
 /* ── Type definitions ────────────────────────────────────────────── */
 
@@ -53,6 +54,11 @@ export interface OrderDetailData {
   createdOn: string;
   modifiedOn: string;
 
+  isCreditBlocked?: boolean;
+  creditHoldOverrideAt?: string | null;
+  creditHoldOverrideBy?: string | null;
+  creditHoldOverrideReason?: string | null;
+
   lines: OrderLine[];
   events?: OrderEvent[];
 }
@@ -66,6 +72,8 @@ export interface OrderDetailReadViewProps {
   headerActions?: React.ReactNode;
   /** Optional content rendered below the line items table (e.g. returns section) */
   children?: React.ReactNode;
+  /** Action for credit override, passed from parent */
+  overrideAction?: React.ReactNode;
 }
 
 /* ── Helper components ────────────────────────────────────────────── */
@@ -74,7 +82,6 @@ export function StateBadge({ state }: { state: string }) {
   return <span className={`badge badge-${state}`}>{state}</span>;
 }
 
-
 /* ── Main component ───────────────────────────────────────────────── */
 
 export default function OrderDetailReadView({
@@ -82,6 +89,7 @@ export default function OrderDetailReadView({
   formatAmount,
   headerActions,
   children,
+  overrideAction,
 }: OrderDetailReadViewProps) {
   const tRV = useTranslations('common.orderReadView');
   const tCols = useTranslations('salesOrders.columns');
@@ -92,6 +100,24 @@ export default function OrderDetailReadView({
 
   return (
     <>
+      {order.isCreditBlocked && !order.creditHoldOverrideAt && (
+        <EntityBanner 
+          type="error"
+          title="Credit Hold"
+          description="This order is currently blocked because the customer's credit limit has been exceeded or they have overdue invoices. Fulfillment is suspended."
+          action={overrideAction}
+        />
+      )}
+      
+      {order.creditHoldOverrideAt && (
+        <EntityBanner 
+          type="warning"
+          title="Credit Hold Overridden"
+          description={`A credit hold override was granted for this order on ${new Date(order.creditHoldOverrideAt).toLocaleString()} by ${order.creditHoldOverrideBy || 'System'}. Reason: ${order.creditHoldOverrideReason || 'Not provided'}`}
+          action={overrideAction}
+        />
+      )}
+
       {/* ── Header ──────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-6">
         <div>

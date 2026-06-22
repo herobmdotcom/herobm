@@ -3,6 +3,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { userSettings } from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
+import { calculateAuditTrail, AuditMode } from '../common/audit';
 
 @Injectable()
 export class UserSettingsService {
@@ -34,26 +35,24 @@ export class UserSettingsService {
     }>,
   ) {
     // Ensure record exists
-    await this.getSettings(userId);
+    const existing = await this.getSettings(userId);
 
-    const [updated] = await this.db
-      // @herobm-skip-audit
-      .update(userSettings)
-      .set({
-        ...(data.dashboardConfig !== undefined && {
-          dashboardConfig: data.dashboardConfig,
-        }),
-        ...(data.reportConfigs !== undefined && {
-          reportConfigs: data.reportConfigs,
-        }),
-        ...(data.preferences !== undefined && {
-          preferences: data.preferences,
-        }),
-        updatedAt: new Date(),
-      })
-      .where(eq(userSettings.userId, userId))
-      .returning();
+    const audit = calculateAuditTrail(data, existing, AuditMode.DIFF);
 
-    return updated;
+    if (audit.hasChanges) {
+      const [updated] = await this.db
+        // @herobm-skip-audit
+        .update(userSettings)
+        .set({
+          ...audit.changes,
+          updatedAt: new Date(),
+        } as typeof userSettings.$inferInsert)
+        .where(eq(userSettings.userId, userId))
+        .returning();
+
+      return updated;
+    }
+
+    return existing;
   }
 }

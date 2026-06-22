@@ -92,7 +92,7 @@ describe('API E2E — Ledger Symmetry Register', () => {
             currencyCode: 'AUD',
             lines: [
               {
-                productId: '00000000-0000-0000-0000-000000000000',
+                productId: '00000000-0000-4000-8000-000000000000',
                 productDescription: 'Symmetry Custom Item',
                 quantity: '2',
                 pricePerUnit: '50.0',
@@ -366,7 +366,9 @@ describe('API E2E — Ledger Symmetry Register', () => {
             ],
           });
         if (retRes.status !== 201)
-          console.error('Create Purchase Return Error:', retRes.body);
+          throw new Error(
+            'Create Purchase Return Error: ' + JSON.stringify(retRes.body),
+          );
         expect(retRes.status).toBe(201);
         ctx.purchaseReturnId = retRes.body.returnId;
       },
@@ -381,7 +383,7 @@ describe('API E2E — Ledger Symmetry Register', () => {
             locationId: ctx.validLocationId,
             lines: [
               {
-                returnLineId: '00000000-0000-0000-0000-000000000000', // We might need the real return line ID! But let's fetch it if needed... wait, actually we don't have it.
+                returnLineId: '00000000-0000-4000-8000-000000000000', // We might need the real return line ID! But let's fetch it if needed... wait, actually we don't have it.
               },
             ],
           });
@@ -422,11 +424,15 @@ describe('API E2E — Ledger Symmetry Register', () => {
           .send({ stateCode: 'quoted' })
           .expect(200);
 
-        await request(app.getHttpServer())
+        const confRes = await request(app.getHttpServer())
           .patch(`/api/sales-orders/${ctx.shipOrderId}/state`)
           .set('Authorization', `Bearer ${ctx.adminToken}`)
-          .send({ stateCode: 'confirmed' })
-          .expect(200);
+          .send({ stateCode: 'confirmed' });
+        if (confRes.status !== 200)
+          throw new Error(
+            'Ship Order Conf Error: ' + JSON.stringify(confRes.body),
+          );
+        expect(confRes.status).toBe(200);
 
         await request(app.getHttpServer())
           .patch(`/api/sales-orders/${ctx.shipOrderId}/state`)
@@ -618,16 +624,16 @@ describe('API E2E — Ledger Symmetry Register', () => {
           .post('/api/payments')
           .set('Authorization', `Bearer ${ctx.adminToken}`)
           .send({
-            partyType: 'vendor',
+            paymentId: crypto.randomUUID(),
+            paymentType: 'supplier_payment',
             partyId: ctx.validVendorId,
-            amount: '500.00',
+            totalAmount: 500.0,
             currencyCode: 'AUD',
             paymentDate: new Date().toISOString(),
-            paymentMethod: 'bank_transfer',
-            paymentDirection: 'outbound',
-            reference: 'Test Supplier Payment',
-            bankAccountId: ctx.bankAccountId,
-            status: 'submitted',
+            modeOfPayment: 'EFT',
+            referenceNumber: 'Test Supplier Payment',
+            glAccountBank: ctx.bankAccountId,
+            submitImmediately: true,
           });
         ctx.supplierPaymentId = payRes.body.paymentId;
       },
@@ -724,6 +730,13 @@ describe('API E2E — Ledger Symmetry Register', () => {
       .expect(200);
     const validCustomerId = customers.body.data[0].customerId;
 
+    // Increase credit limit massively to avoid 409 Conflict (credit hold) during symmetry tests
+    await request(app.getHttpServer())
+      .patch(`/api/customers/${validCustomerId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ creditLimit: '999999999.00' })
+      .expect(200);
+
     console.log('before vendors');
     const vendors = await request(app.getHttpServer())
       .get('/api/suppliers?limit=1')
@@ -731,12 +744,19 @@ describe('API E2E — Ledger Symmetry Register', () => {
       .expect(200);
     const validVendorId = vendors.body.data[0].vendorId;
 
-    console.log('before products');
+    console.log('creating dedicated product');
     const products = await request(app.getHttpServer())
-      .get('/api/products?limit=1')
+      .post('/api/products')
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    const validProductId = products.body.data[0].productId;
+      .send({
+        productNumber: `SYM-P-${Date.now()}`,
+        name: 'Symmetry Global Product',
+        productType: 'inventory',
+        baseUom: 'EA',
+        listPrice: '10.00',
+      })
+      .expect(201);
+    const validProductId = products.body.productId;
 
     console.log('before locations');
     const locations = await request(app.getHttpServer())
@@ -744,6 +764,26 @@ describe('API E2E — Ledger Symmetry Register', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     const validLocationId = locations.body[0].locationId;
+    const validLocationNo = locations.body[0].code;
+
+    console.log('before bins');
+    const db = app.get(DRIZZLE);
+    const rows = await db.execute(sql`
+      SELECT b.bin_id FROM herobm_core.bins b
+      JOIN herobm_core.zones z ON b.zone_id = z.zone_id
+      WHERE z.location_id = ${validLocationId} AND b.bin_type NOT IN ('receiving', 'staging', 'quarantine') AND b.is_unavailable = false
+      LIMIT 1
+    `);
+    const validBinId = rows[0]?.bin_id;
+
+    // Add inventory so shipment tests don't fail with INVENTORY_GAP
+    await db.execute(sql`
+      INSERT INTO herobm_core.bin_contents (bin_id, product_id, actual_quantity)
+      VALUES (${validBinId}, ${validProductId}, 1000)
+      ON CONFLICT (bin_id, product_id) 
+      DO UPDATE SET actual_quantity = herobm_core.bin_contents.actual_quantity + 1000;
+    `);
+
     let validLocationId2 = locations.body[1]?.locationId;
     if (!validLocationId2) {
       console.log('before createLocRes');
@@ -758,8 +798,6 @@ describe('API E2E — Ledger Symmetry Register', () => {
         .expect(201);
       validLocationId2 = createLocRes.body.locationId;
     }
-
-    const validBinId = '40000000-0000-0000-0000-000000000003';
 
     if (!validLocationId)
       console.error('validLocationId is undefined! Response:', locations.body);

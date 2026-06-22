@@ -250,7 +250,7 @@ describe('PaymentsService', () => {
     it('should create a draft payment with correct PAY-YYYYMMDD-NNNN number', async () => {
       const payment = await service.createPaymentEntry(
         {
-          paymentId: '00000000-0000-0000-0000-000000000001',
+          paymentId: '00000000-0000-4000-8000-000000000001',
           paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
@@ -277,7 +277,7 @@ describe('PaymentsService', () => {
       await expect(
         service.createPaymentEntry(
           {
-            paymentId: '00000000-0000-0000-0000-000000000009',
+            paymentId: '00000000-0000-4000-8000-000000000009',
             paymentType: PAYMENT_TYPE.SUPPLIER_PAYMENT,
             partyId: supplierId,
             paymentDate: new Date().toISOString(),
@@ -294,7 +294,7 @@ describe('PaymentsService', () => {
     it('should increment sequence number for payments on the same day', async () => {
       const p1 = await service.createPaymentEntry(
         {
-          paymentId: '00000000-0000-0000-0000-000000000001',
+          paymentId: '00000000-0000-4000-8000-000000000001',
           paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
@@ -308,7 +308,7 @@ describe('PaymentsService', () => {
 
       const p2 = await service.createPaymentEntry(
         {
-          paymentId: '00000000-0000-0000-0000-000000000002',
+          paymentId: '00000000-0000-4000-8000-000000000002',
           paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
@@ -334,7 +334,7 @@ describe('PaymentsService', () => {
     it('should submit and post GL journal with group-routed AR for customer receipt', async () => {
       const payment = await service.createPaymentEntry(
         {
-          paymentId: '00000000-0000-0000-0000-000000000001',
+          paymentId: '00000000-0000-4000-8000-000000000001',
           paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
@@ -376,7 +376,7 @@ describe('PaymentsService', () => {
     it('should submit and post GL journal with group-routed AP for supplier payment', async () => {
       const payment = await service.createPaymentEntry(
         {
-          paymentId: '00000000-0000-0000-0000-000000000001',
+          paymentId: '00000000-0000-4000-8000-000000000001',
           paymentType: PAYMENT_TYPE.SUPPLIER_PAYMENT,
           partyId: supplierId,
           paymentDate: new Date().toISOString(),
@@ -414,7 +414,7 @@ describe('PaymentsService', () => {
     it('should reject submitting a non-draft payment', async () => {
       const payment = await service.createPaymentEntry(
         {
-          paymentId: '00000000-0000-0000-0000-000000000001',
+          paymentId: '00000000-0000-4000-8000-000000000001',
           paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
@@ -448,7 +448,7 @@ describe('PaymentsService', () => {
 
       const payment = await service.createPaymentEntry(
         {
-          paymentId: '00000000-0000-0000-0000-000000000001',
+          paymentId: '00000000-0000-4000-8000-000000000001',
           paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: ungroupedId,
           paymentDate: new Date().toISOString(),
@@ -726,7 +726,7 @@ describe('PaymentsService', () => {
       // Create and submit a payment
       const payment = await service.createPaymentEntry(
         {
-          paymentId: '00000000-0000-0000-0000-000000000001',
+          paymentId: '00000000-0000-4000-8000-000000000001',
           paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
@@ -881,7 +881,7 @@ describe('PaymentsService', () => {
     it('should cancel a submitted payment with no allocations', async () => {
       const payment = await service.createPaymentEntry(
         {
-          paymentId: '00000000-0000-0000-0000-000000000001',
+          paymentId: '00000000-0000-4000-8000-000000000001',
           paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
@@ -909,7 +909,7 @@ describe('PaymentsService', () => {
     it('should reject cancelling a draft payment', async () => {
       const payment = await service.createPaymentEntry(
         {
-          paymentId: '00000000-0000-0000-0000-000000000001',
+          paymentId: '00000000-0000-4000-8000-000000000001',
           paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
@@ -952,7 +952,7 @@ describe('PaymentsService', () => {
 
       const payment = await service.createPaymentEntry(
         {
-          paymentId: '00000000-0000-0000-0000-000000000001',
+          paymentId: '00000000-0000-4000-8000-000000000001',
           paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
@@ -1078,7 +1078,7 @@ describe('PaymentsService', () => {
     it('should return partyName for customer payments', async () => {
       await service.createPaymentEntry(
         {
-          paymentId: '00000000-0000-0000-0000-000000000001',
+          paymentId: '00000000-0000-4000-8000-000000000001',
           paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),
@@ -1098,7 +1098,7 @@ describe('PaymentsService', () => {
     it('should return partyName for supplier payments', async () => {
       await service.createPaymentEntry(
         {
-          paymentId: '00000000-0000-0000-0000-000000000001',
+          paymentId: '00000000-0000-4000-8000-000000000001',
           paymentType: PAYMENT_TYPE.SUPPLIER_PAYMENT,
           partyId: supplierId,
           paymentDate: new Date().toISOString(),
@@ -1146,7 +1146,7 @@ describe('PaymentsService', () => {
 
       const payment = await service.createPaymentEntry(
         {
-          paymentId: '00000000-0000-0000-0000-000000000001',
+          paymentId: '00000000-0000-4000-8000-000000000001',
           paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
           partyId: customerId,
           paymentDate: new Date().toISOString(),

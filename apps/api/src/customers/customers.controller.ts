@@ -12,6 +12,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { AccountsService } from './customers.service';
 import { AccountsWriteService } from './customers-write.service';
+import { CreditAssessmentService } from './credit-assessment.service';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import {
@@ -25,12 +26,15 @@ import {
   UpdateAccountDto,
   EmptyBodyDto,
   AccountResponseDto,
+  CreditAssessmentResponseDto,
+  AgedBalanceResponseDto,
 } from './dto';
 import {
   ApiTags,
   ApiOperation,
   ApiOkResponse,
   ApiCreatedResponse,
+  ApiQuery,
 } from '@nestjs/swagger';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
@@ -43,6 +47,7 @@ export class AccountsController {
   constructor(
     private readonly accountsService: AccountsService,
     private readonly accountsWriteService: AccountsWriteService,
+    private readonly creditAssessmentService: CreditAssessmentService,
   ) {}
 
   @Get()
@@ -57,6 +62,23 @@ export class AccountsController {
     return this.accountsService.findAll(query);
   }
 
+  @Get('aged-balances')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Aged Balances',
+    description:
+      'Retrieve aged balances for all customers with outstanding invoices.',
+  })
+  @ApiQuery({
+    name: 'agingBasis',
+    required: false,
+    enum: ['invoiceDate', 'dueDate'],
+  })
+  @ApiOkResponse({ type: [AgedBalanceResponseDto] })
+  getAgedBalances(@Query('agingBasis') agingBasis?: 'invoiceDate' | 'dueDate') {
+    return this.accountsService.getAgedBalances(agingBasis);
+  }
+
   @Get(':id')
   @CasbinAction('read')
   @ApiOperation({
@@ -67,6 +89,18 @@ export class AccountsController {
   @ApiOkResponse({ type: AccountResponseDto })
   findOne(@Param('id') id: string) {
     return this.accountsService.findOne(id);
+  }
+
+  @Get(':id/credit-assessment')
+  @CasbinResource(SystemResource.CREDIT_CONTROL)
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Credit Assessment',
+    description: 'Retrieve the credit assessment for a customer.',
+  })
+  @ApiOkResponse({ type: CreditAssessmentResponseDto })
+  getCreditAssessment(@Param('id') id: string) {
+    return this.creditAssessmentService.assessCredit(id);
   }
 
   @Post()
@@ -92,7 +126,7 @@ export class AccountsController {
     @Body() dto: UpdateAccountDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.accountsWriteService.update(id, dto, user.username);
+    return this.accountsWriteService.update(id, dto, user.username, user.role);
   }
 
   @Post(':id/archive')

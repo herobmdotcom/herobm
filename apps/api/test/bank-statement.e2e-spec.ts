@@ -13,6 +13,7 @@ import {
 } from '../src/drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 import { RECONCILIATION_STATE } from '@herobm/shared';
+import * as crypto from 'crypto';
 
 describe('BankStatementController (e2e)', () => {
   let app: INestApplication;
@@ -43,7 +44,7 @@ describe('BankStatementController (e2e)', () => {
     const inserted = await db
       .insert(glAccounts)
       .values({
-        accountCode: '9998-STATEMENT',
+        accountCode: '9998-STATEMENT-' + Date.now(),
         name: 'E2E Bank Statement Account',
         accountType: 'asset',
         currencyCode: 'AUD',
@@ -71,14 +72,14 @@ describe('BankStatementController (e2e)', () => {
         {
           glAccountId: bankAccountId,
           date: '2026-06-01',
-          description: 'Test Line 1',
+          description: 'Test Line 1 ' + Date.now(),
           amount: 150.0,
           reference: 'Ref123',
         },
         {
           glAccountId: bankAccountId,
           date: '2026-06-02',
-          description: 'Test Line 2',
+          description: 'Test Line 2 ' + Date.now(),
           amount: -50.0,
           reference: 'Ref456',
         },
@@ -97,8 +98,8 @@ describe('BankStatementController (e2e)', () => {
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThanOrEqual(2);
     expect(
-      res.body.some(
-        (l: { description: string }) => l.description === 'Test Line 1',
+      res.body.some((l: { description: string }) =>
+        l.description.startsWith('Test Line 1'),
       ),
     ).toBe(true);
   });
@@ -111,11 +112,11 @@ describe('BankStatementController (e2e)', () => {
       .get(`/api/gl/bank-statement/lines?glAccountId=${bankAccountId}`)
       .set('Authorization', `Bearer ${adminToken}`);
 
-    const bankLine1 = linesRes.body.find(
-      (l: { description: string }) => l.description === 'Test Line 1',
+    const bankLine1 = linesRes.body.find((l: { description: string }) =>
+      l.description.startsWith('Test Line 1'),
     );
-    const bankLine2 = linesRes.body.find(
-      (l: { description: string }) => l.description === 'Test Line 2',
+    const bankLine2 = linesRes.body.find((l: { description: string }) =>
+      l.description.startsWith('Test Line 2'),
     );
 
     expect(bankLine1).toBeDefined();
@@ -127,10 +128,10 @@ describe('BankStatementController (e2e)', () => {
     const je = await db
       .insert(glJournalEntries)
       .values({
-        entryNumber: 'JE-E2E-1234',
+        entryNumber: 'JE-' + crypto.randomUUID().substring(0, 8),
         entryDate: '2026-06-02',
         sourceType: 'manual',
-        sourceId: '00000000-0000-0000-0000-000000000000',
+        sourceId: '00000000-0000-4000-8000-000000000000',
       })
       .returning();
 

@@ -197,7 +197,7 @@ describe('API E2E — Runtime Ledger Balancing', () => {
           productNumber: `BAL-PROD-${rand}`,
           name: 'Balancing Product',
           productType: 'service',
-          uom: 'EA',
+          baseUom: 'EA',
           revenueAccountId: apAccountId, // or any valid account
         })
         .expect(201);

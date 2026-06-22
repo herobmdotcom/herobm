@@ -64,19 +64,23 @@ export class CreateSupplierDto {
   tradingTermsId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
   @IsNumberString()
   earlyPaymentDiscount?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsNumber()
   earlyPaymentDiscountDays?: number;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
   @IsNumberString()
   creditLimit?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isPurchasingBlocked?: boolean;
 
@@ -96,6 +100,7 @@ export class CreateSupplierDto {
     | 'other';
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isPaymentBlocked?: boolean;
 
@@ -145,6 +150,7 @@ export class CreateSupplierDto {
   isTaxRegistered?: boolean;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   taxPositionId?: string;
 }
@@ -197,19 +203,23 @@ export class UpdateSupplierDto {
   tradingTermsId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
   @IsNumberString()
   earlyPaymentDiscount?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsNumber()
   earlyPaymentDiscountDays?: number;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
   @IsNumberString()
   creditLimit?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isPurchasingBlocked?: boolean;
 
@@ -229,6 +239,7 @@ export class UpdateSupplierDto {
     | 'other';
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isPaymentBlocked?: boolean;
 
@@ -282,6 +293,7 @@ export class UpdateSupplierDto {
   isTaxRegistered?: boolean;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   taxPositionId?: string;
 }
@@ -296,31 +308,38 @@ export class CreateSupplierGroupDto {
   name!: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultApAccountId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultExpenseAccountId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   tradingTermsId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
   @IsNumberString()
   earlyPaymentDiscount?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsNumber()
   earlyPaymentDiscountDays?: number;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
   @IsNumberString()
   creditLimit?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isPurchasingBlocked?: boolean;
 
@@ -340,6 +359,7 @@ export class CreateSupplierGroupDto {
     | 'other';
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isPaymentBlocked?: boolean;
 
@@ -356,12 +376,20 @@ export class CreateSupplierGroupDto {
   blockNotes?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultCostCenterId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultActivityId?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  taxPositionId?: string;
+
 }
 
 export class UpdateSupplierGroupDto {
@@ -374,31 +402,38 @@ export class UpdateSupplierGroupDto {
   name?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultApAccountId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultExpenseAccountId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   tradingTermsId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
   @IsNumberString()
   earlyPaymentDiscount?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsNumber()
   earlyPaymentDiscountDays?: number;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
   @IsNumberString()
   creditLimit?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isPurchasingBlocked?: boolean;
 
@@ -418,6 +453,7 @@ export class UpdateSupplierGroupDto {
     | 'other';
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isPaymentBlocked?: boolean;
 
@@ -434,12 +470,20 @@ export class UpdateSupplierGroupDto {
   blockNotes?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultCostCenterId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultActivityId?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  taxPositionId?: string;
+
 }
 
 export class CreateSupplierExpiryDto {

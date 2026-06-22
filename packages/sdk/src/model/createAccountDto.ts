@@ -31,5 +31,6 @@ export interface CreateAccountDto {
   isTaxRegistered?: boolean;
   creditLimit?: string;
   isOnCreditHold?: boolean;
+  overrideCreditHoldUntil?: string;
   tradingTermsId?: string;
 }

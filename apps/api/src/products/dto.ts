@@ -11,6 +11,7 @@ import {
   IsNumberString,
   IsArray,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class AddSupplierDto {
   @IsUUID('4')
@@ -76,10 +77,12 @@ export class CreateProductDto {
   priceLevel4?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   purchaseTaxCategoryId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   salesTaxCategoryId?: string;
 
@@ -102,6 +105,10 @@ export class CreateProductDto {
   @IsOptional()
   @IsString()
   stateCode?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  baseUom!: string;
 }
 
 export class UpdateProductDto {
@@ -146,10 +153,12 @@ export class UpdateProductDto {
   priceLevel4?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   purchaseTaxCategoryId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   salesTaxCategoryId?: string;
 
@@ -196,26 +205,32 @@ export class CreateProductGroupDto {
   name!: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultRevenueAccountId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultExpenseAccountId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultCostCenterId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultActivityId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   purchaseTaxCategoryId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   salesTaxCategoryId?: string;
 }
@@ -230,26 +245,32 @@ export class UpdateProductGroupDto {
   name?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultRevenueAccountId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultExpenseAccountId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultCostCenterId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultActivityId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   purchaseTaxCategoryId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   salesTaxCategoryId?: string;
 }

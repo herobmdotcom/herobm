@@ -28,11 +28,11 @@ import { emitEvent } from '../common/emit-event';
 describe('Order Lifecycle Rules', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
 
-  const ORDER_ID = '00000000-0000-0000-0000-000000000001';
-  const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
-  const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
-  const LINE_1_ID = '00000000-0000-0000-0000-000000000011';
-  const LINE_2_ID = '00000000-0000-0000-0000-000000000012';
+  const ORDER_ID = '00000000-0000-4000-8000-000000000001';
+  const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
+  const TAX_CAT_ID = '00000000-0000-4000-8000-000000000007';
+  const LINE_1_ID = '00000000-0000-4000-8000-000000000011';
+  const LINE_2_ID = '00000000-0000-4000-8000-000000000012';
 
   beforeEach(async () => {
     // Clean data
@@ -102,7 +102,7 @@ describe('Order Lifecycle Rules', () => {
     it('should transition order to shipped when all lines are fully shipped', async () => {
       await seedOrder(SALES_ORDER_STATE.PICKING);
 
-      const SHIP_ID = '00000000-0000-0000-0000-000000000055';
+      const SHIP_ID = '00000000-0000-4000-8000-000000000055';
       await pg.db.insert(salesOrderShipments).values({
         shipmentId: SHIP_ID,
         salesOrderId: ORDER_ID,
@@ -140,7 +140,7 @@ describe('Order Lifecycle Rules', () => {
     it('should do nothing if an order line is only partially shipped', async () => {
       await seedOrder('picking');
 
-      const SHIP_ID = '00000000-0000-0000-0000-000000000055';
+      const SHIP_ID = '00000000-0000-4000-8000-000000000055';
       await pg.db.insert(salesOrderShipments).values({
         shipmentId: SHIP_ID,
         salesOrderId: ORDER_ID,
@@ -181,7 +181,7 @@ describe('Order Lifecycle Rules', () => {
     it('should transition order to picking when lines are no longer fully shipped', async () => {
       await seedOrder(SALES_ORDER_STATE.SHIPPED);
 
-      const SHIP_ID = '00000000-0000-0000-0000-000000000055';
+      const SHIP_ID = '00000000-0000-4000-8000-000000000055';
       await pg.db.insert(salesOrderShipments).values({
         shipmentId: SHIP_ID,
         salesOrderId: ORDER_ID,
@@ -204,7 +204,7 @@ describe('Order Lifecycle Rules', () => {
     it('should run rules and return transitions', async () => {
       await seedOrder('picking');
 
-      const SHIP_ID = '00000000-0000-0000-0000-000000000055';
+      const SHIP_ID = '00000000-0000-4000-8000-000000000055';
       await pg.db.insert(salesOrderShipments).values({
         shipmentId: SHIP_ID,
         salesOrderId: ORDER_ID,

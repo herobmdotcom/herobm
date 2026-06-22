@@ -282,6 +282,19 @@ describe('Dynamic Reports Engine (e2e)', () => {
     });
 
     it('Assignment Management: lists and updates assignments', async () => {
+      // Fetch original assignment first to restore later
+      const origRes = await request(app.getHttpServer())
+        .get('/api/pdf-templates/hook-assignments')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      const origInvoiceAssign = origRes.body.find(
+        (a: { hookSlug: string; reportId: string }) =>
+          a.hookSlug === 'sales-invoice',
+      );
+      const originalReportId = origInvoiceAssign
+        ? origInvoiceAssign.reportId
+        : null;
+
       const testSlug = `assign-test-${Date.now()}`;
       const newReport = await request(app.getHttpServer())
         .post('/api/pdf-templates')
@@ -323,14 +336,16 @@ describe('Dynamic Reports Engine (e2e)', () => {
       );
 
       // Cleanup: Unassign and then restore the standard assignment
-      await request(app.getHttpServer())
-        .patch('/api/pdf-templates/hook-assignments/sales-invoice')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          reportId: 'a0000000-0000-0000-0000-000000000003',
-          contextSlug: 'sales-invoice',
-        })
-        .expect(200);
+      if (originalReportId) {
+        await request(app.getHttpServer())
+          .patch('/api/pdf-templates/hook-assignments/sales-invoice')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({
+            reportId: originalReportId,
+            contextSlug: 'sales-invoice',
+          })
+          .expect(200);
+      }
     });
 
     it('AuthZ: viewer cannot DELETE templates (403 Forbidden)', async () => {

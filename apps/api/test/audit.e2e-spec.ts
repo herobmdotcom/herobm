@@ -276,6 +276,8 @@ describe('Audit Events (e2e)', () => {
           productNumber: `E2E-PROD-${Date.now()}`,
           name: 'Original Product Name',
           listPrice: '100.00',
+          productType: 'inventory',
+          baseUom: 'EA',
         });
       productId = createRes.body.productId;
 

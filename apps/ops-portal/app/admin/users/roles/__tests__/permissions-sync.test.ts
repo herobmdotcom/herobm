@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { RESOURCES, ACTIONS } from '../constants';
+import { RESOURCES, ACTIONS, VALID_ACTIONS } from '../constants';
 
 function getAllFiles(dirPath: string, arrayOfFiles: string[] = []) {
   const files = fs.readdirSync(dirPath);
@@ -51,5 +51,10 @@ describe('Permissions Sync', () => {
 
     expect(missingResources).toEqual([]);
     expect(missingActions).toEqual([]);
+  });
+
+  it('should have all RESOURCES mapped in VALID_ACTIONS', () => {
+    const missingInValidActions = RESOURCES.filter(r => !(r in VALID_ACTIONS));
+    expect(missingInValidActions).toEqual([]);
   });
 });

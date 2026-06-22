@@ -11,6 +11,7 @@ import { exchangeRates } from '../drizzle/herobm-core-schema';
 import { CreateExchangeRateDto, UpdateExchangeRateDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { calculateAuditTrail, AuditMode } from '../common/audit';
 
 @Injectable()
 export class ExchangeRatesService {
@@ -86,34 +87,43 @@ export class ExchangeRatesService {
 
   async update(id: string, dto: UpdateExchangeRateDto, userId?: string) {
     return await this.db.transaction(async (tx) => {
-      await this.findOne(id, tx);
+      const existing = await this.findOne(id, tx);
 
-      const rows = await tx
-        .update(exchangeRates)
-        .set({
-          ...(dto.currencyName !== undefined && {
-            currencyName: dto.currencyName.trim(),
-          }),
-          ...(dto.buyRate !== undefined && { buyRate: dto.buyRate }),
-          ...(dto.sellRate !== undefined && { sellRate: dto.sellRate }),
-          ...(dto.effectiveDate !== undefined && {
-            effectiveDate: new Date(dto.effectiveDate),
-          }),
-          updatedOn: new Date(),
-        })
-        .where(eq(exchangeRates.exchangeRateId, id))
-        .returning();
+      if (dto.currencyName !== undefined) {
+        dto.currencyName = dto.currencyName.trim();
+      }
+      if (dto.effectiveDate !== undefined) {
+        dto.effectiveDate = new Date(dto.effectiveDate) as unknown as string;
+      }
 
-      await emitEvent(tx, {
-        entityType: EntityType.EXCHANGE_RATE,
-        entityId: rows[0].exchangeRateId,
-        eventType: EventType.UPDATED,
-        entityDisplayName: rows[0].currencyCode,
-        payload: dto,
-        actor: userId,
-      });
+      const audit = calculateAuditTrail(dto, existing, AuditMode.DIFF);
 
-      return rows[0];
+      if (audit.hasChanges) {
+        const rows = await tx
+          .update(exchangeRates)
+          .set({
+            ...audit.changes,
+            updatedOn: new Date(),
+          } as typeof exchangeRates.$inferInsert)
+          .where(eq(exchangeRates.exchangeRateId, id))
+          .returning();
+
+        await emitEvent(tx, {
+          entityType: EntityType.EXCHANGE_RATE,
+          entityId: rows[0].exchangeRateId,
+          eventType: EventType.UPDATED,
+          entityDisplayName: rows[0].currencyCode,
+          payload: {
+            changes: audit.changes,
+            previous: audit.previousValues,
+          },
+          actor: userId,
+        });
+
+        return rows[0];
+      }
+
+      return existing;
     });
   }
 

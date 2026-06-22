@@ -33,6 +33,7 @@ import {
   findOrderLine,
   getCommittedPerLine,
 } from './shipment-helpers';
+import { getCreditBlockedSql } from './orders.sql';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
 import { ShipmentService } from './shipment.service';
@@ -447,23 +448,7 @@ export class PickingService {
         createdOn: salesOrders.createdOn,
         createdBy: salesOrders.createdBy,
         currencyCode: salesOrders.currencyCode,
-        isCreditBlocked: sql<boolean>`CASE 
-          WHEN ${salesOrders.creditHoldOverrideAt} IS NOT NULL THEN false
-          ELSE (
-            ${coreAccounts.stateCode} != 'active'
-            OR ${customerGroups.stateCode} != 'active'
-            OR ${coreAccounts.isOnCreditHold} = true
-            OR (${customerGroups.isOnCreditHold} = true AND ${coreAccounts.creditLimit} IS NULL AND ${coreAccounts.tradingTermsId} IS NULL)
-            OR (
-              SELECT COALESCE(SUM(si.outstanding_amount), 0)
-              FROM herobm_core.sales_invoices si
-              JOIN herobm_core.sales_orders so ON so.sales_order_id = si.sales_order_id
-              WHERE so.customer_id = ${salesOrders.customerId}
-                AND si.state_code NOT IN ('draft', 'cancelled')
-                AND si.due_date < CURRENT_DATE
-            ) > 0
-          )
-        END`,
+        isCreditBlocked: getCreditBlockedSql(),
         lineId: salesOrderLineItems.salesOrderLineId,
         lineQuantity: salesOrderLineItems.quantity,
         isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} = 'inventory' THEN true ELSE false END`,
@@ -888,23 +873,7 @@ export class PickingService {
         createdOn: salesOrders.createdOn,
         createdBy: salesOrders.createdBy,
         currencyCode: salesOrders.currencyCode,
-        isCreditBlocked: sql<boolean>`CASE 
-          WHEN ${salesOrders.creditHoldOverrideAt} IS NOT NULL THEN false
-          ELSE (
-            ${coreAccounts.stateCode} != 'active'
-            OR ${customerGroups.stateCode} != 'active'
-            OR ${coreAccounts.isOnCreditHold} = true
-            OR (${customerGroups.isOnCreditHold} = true AND ${coreAccounts.creditLimit} IS NULL AND ${coreAccounts.tradingTermsId} IS NULL)
-            OR (
-              SELECT COALESCE(SUM(si.outstanding_amount), 0)
-              FROM herobm_core.sales_invoices si
-              JOIN herobm_core.sales_orders so ON so.sales_order_id = si.sales_order_id
-              WHERE so.customer_id = ${salesOrders.customerId}
-                AND si.state_code NOT IN ('draft', 'cancelled')
-                AND si.due_date < CURRENT_DATE
-            ) > 0
-          )
-        END`,
+        isCreditBlocked: getCreditBlockedSql(),
         lineId: salesOrderLineItems.salesOrderLineId,
         lineQuantity: salesOrderLineItems.quantity,
         isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} = 'inventory' OR ${coreProducts.productType} IS NULL THEN true ELSE false END`,

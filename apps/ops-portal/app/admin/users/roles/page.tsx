@@ -24,7 +24,7 @@ interface ImplicitPermissionDetail extends PermissionDetail {
 
 interface RoleWithDetails {
   role: string;
-  localPermissions: PermissionDetail[];
+  permissions: PermissionDetail[];
   inherits: string[];
   implicitPermissions: ImplicitPermissionDetail[];
 }
@@ -91,7 +91,7 @@ export default function RolesPage() {
   const startEdit = (role: RoleWithDetails) => {
     setEditingRole(role.role);
     setIsCreating(false);
-    initForm(role.localPermissions || [], role.inherits || []);
+    initForm(role.permissions || [], role.inherits || []);
   };
 
   const startCreate = () => {
@@ -203,7 +203,7 @@ export default function RolesPage() {
                   }
 
                   if (isReadOnly && currentRoleItem) {
-                    const local = currentRoleItem.localPermissions?.find(p => p.resource === res && p.action === act);
+                    const local = currentRoleItem.permissions?.find(p => p.resource === res && p.action === act);
                     const inherited = getImplicitPerm(res, act);
                     const localIcon = local?.effect === 'allow' ? 'check_circle' : 'cancel';
                     const inheritedIcon = inherited?.effect === 'allow' ? 'check_circle' : 'cancel';

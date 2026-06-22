@@ -29,15 +29,17 @@ export default function CustomersContent() {
     { field: 'primaryContactName', headerName: tCommon('columns.contact'), width: 150 },
     { field: 'primaryContactEmail', headerName: tCommon('columns.contactEmail'), width: 200, hide: true },
     { field: 'primaryContactPhone', headerName: tCommon('columns.contactPhone'), width: 140, hide: true },
-    { field: 'accountGroupName', headerName: tCommon('columns.group'), width: 100 },
+    { field: 'customerGroupName', headerName: tCommon('columns.group'), width: 100 },
     {
-      field: 'stateCode',
+      colId: 'status',
       headerName: tCommon('columns.status'),
       width: 120,
-      valueFormatter: (params: { value?: unknown }) => {
-        if (!params.value) return '';
-        const s = String(params.value).toLowerCase();
-        return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(params.value);
+      valueGetter: (params: { data?: { stateCode?: unknown, isOnCreditHold?: boolean } }) => {
+        if (!params.data) return '';
+        if (params.data.isOnCreditHold) return tCommon('columns.creditHold');
+        if (!params.data.stateCode) return '';
+        const s = String(params.data.stateCode).toLowerCase();
+        return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(params.data.stateCode);
       }
     },
     { field: 'TaxCategoryName', headerName: tCommon('columns.taxPosition'), width: 110, hide: true },

@@ -14,7 +14,7 @@ describe('UomService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: UomService;
 
-  const PRODUCT_ID = '00000000-0000-0000-0000-00000000000a';
+  const PRODUCT_ID = '00000000-0000-4000-8000-00000000000a';
 
   beforeEach(async () => {
     // Seed required UOMs
@@ -64,6 +64,7 @@ describe('UomService', () => {
         productNumber: 'P1',
         name: 'Product 1',
         baseUom: 'EA',
+        productType: 'inventory',
       });
 
       await pg.db.insert(productUoms).values([
@@ -92,6 +93,7 @@ describe('UomService', () => {
         productNumber: 'P1',
         name: 'Product 1',
         baseUom: 'EA',
+        productType: 'inventory',
       });
 
       await expect(

@@ -69,7 +69,7 @@ describe('Permissions & RBAC (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         billingAddressCountry: 'AU',
-        customerNumber: 'CUST-ADMIN-TEST',
+        customerNumber: 'CUST-ADMIN-' + Date.now(),
         name: 'Test Customer Admin',
       })
       .expect(201);

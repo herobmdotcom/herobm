@@ -1,6 +1,6 @@
 # Schema Reference — `herobm_core`
 
-> Auto-generated from live Postgres introspection. Last generated: 2026-06-17 15:18 UTC
+> Auto-generated from live Postgres introspection. Last generated: 2026-06-19 11:33 UTC
 > Regenerate with: `make schema-ref`
 
 **Postgres schema:** `herobm_core`
@@ -11,25 +11,26 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 
 | Table | Rows | PK | Description |
 |-------|------|----|-------------|
+| [`_pipeline_jobs`](#_pipeline_jobs) | 2 | `job_id` | |
 | [`activities`](#activities) | 76 | `activity_id` | |
-| [`api_keys`](#api_keys) | 0 | `api_key_id` | |
+| [`api_keys`](#api_keys) | 1 | `api_key_id` | |
 | [`app_settings`](#app_settings) | 1 | `settings_id` | |
 | [`backorders`](#backorders) | 0 | `backorder_id` | |
 | [`bank_statement_lines`](#bank_statement_lines) | 0 | `line_id` | |
-| [`bin_contents`](#bin_contents) | 12,578 | `bin_content_id` | |
-| [`bins`](#bins) | 12,500 | `bin_id` | |
+| [`bin_contents`](#bin_contents) | 12,605 | `bin_content_id` | |
+| [`bins`](#bins) | 12,527 | `bin_id` | |
 | [`business_report_events`](#business_report_events) | 0 | `event_id` | |
 | [`business_reports`](#business_reports) | 0 | `id` | |
-| [`casbin_rule`](#casbin_rule) | 171 | `id` | |
+| [`casbin_rule`](#casbin_rule) | 150 | `id` | |
 | [`cost_centers`](#cost_centers) | 37 | `cost_center_id` | |
 | [`csv_mapping_profiles`](#csv_mapping_profiles) | 0 | `profile_id` | |
-| [`customer_contacts`](#customer_contacts) | 3,351 | `id` | |
-| [`customer_delivery_addresses`](#customer_delivery_addresses) | 2,069 | `id` | |
+| [`customer_contacts`](#customer_contacts) | 3,363 | `id` | |
+| [`customer_delivery_addresses`](#customer_delivery_addresses) | 2,081 | `id` | |
 | [`customer_groups`](#customer_groups) | 14 | `customer_group_id` | |
-| [`customers`](#customers) | 1,392 | `customer_id` | |
+| [`customers`](#customers) | 1,398 | `customer_id` | |
 | [`discount_matrix`](#discount_matrix) | 0 | `discount_matrix_id` | |
 | [`email_events`](#email_events) | 0 | `event_id` | |
-| [`email_outbox`](#email_outbox) | 0 | `id` | |
+| [`email_outbox`](#email_outbox) | 4 | `id` | |
 | [`exchange_rates`](#exchange_rates) | 1 | `exchange_rate_id` | |
 | [`financial_events`](#financial_events) | 0 | `event_id` | |
 | [`gl_accounts`](#gl_accounts) | 119 | `gl_account_id` | |
@@ -41,17 +42,17 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 | [`goods_received`](#goods_received) | 0 | `goods_received_id` | |
 | [`goods_received_lines`](#goods_received_lines) | 0 | `goods_received_line_id` | |
 | [`group_events`](#group_events) | 0 | `event_id` | |
-| [`import_abm_sales_quotes`](#import_abm_sales_quotes) | 8,093 | — | |
+| [`import_abm_sales_quotes`](#import_abm_sales_quotes) | 8,647 | — | |
 | [`integration_events`](#integration_events) | 0 | `event_id` | |
 | [`integrations`](#integrations) | 0 | `integration_id` | |
-| [`inventory_entries`](#inventory_entries) | 11,936 | `entry_id` | |
+| [`inventory_entries`](#inventory_entries) | 11,931 | `entry_id` | |
 | [`inventory_events`](#inventory_events) | 0 | `event_id` | |
-| [`inventory_ledger`](#inventory_ledger) | 11,393 | `ledger_id` | |
+| [`inventory_ledger`](#inventory_ledger) | 11,414 | `ledger_id` | |
 | [`locations`](#locations) | 4 | `location_id` | |
 | [`macros`](#macros) | 0 | `macro_id` | |
-| [`master_data_events`](#master_data_events) | 24,337 | `event_id` | |
-| [`organization`](#organization) | 1 | `organization_id` | |
-| [`outbox`](#outbox) | 10 | `outbox_id` | |
+| [`master_data_events`](#master_data_events) | 24,356 | `event_id` | |
+| [`organization`](#organization) | 2 | `organization_id` | |
+| [`outbox`](#outbox) | 39 | `outbox_id` | |
 | [`payment_allocations`](#payment_allocations) | 0 | `allocation_id` | |
 | [`payment_entries`](#payment_entries) | 0 | `payment_id` | |
 | [`payment_lines`](#payment_lines) | 0 | `payment_line_id` | |
@@ -59,42 +60,42 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 | [`pdf_template_hooks`](#pdf_template_hooks) | 8 | `id` | |
 | [`pdf_templates`](#pdf_templates) | 10 | `id` | |
 | [`procurement_events`](#procurement_events) | 323 | `event_id` | |
-| [`product_components`](#product_components) | 12,372 | `component_id` | |
-| [`product_default_bins`](#product_default_bins) | 12,746 | `product_default_bin_id` | |
+| [`product_components`](#product_components) | 12,423 | `component_id` | |
+| [`product_default_bins`](#product_default_bins) | 12,772 | `product_default_bin_id` | |
 | [`product_groups`](#product_groups) | 19 | `product_group_id` | |
-| [`product_suppliers`](#product_suppliers) | 18,564 | `product_supplier_id` | |
+| [`product_suppliers`](#product_suppliers) | 18,660 | `product_supplier_id` | |
 | [`product_uoms`](#product_uoms) | 22,946 | `product_uom_id` | |
-| [`products`](#products) | 22,946 | `product_id` | |
+| [`products`](#products) | 22,948 | `product_id` | |
 | [`purchase_debit_note_lines`](#purchase_debit_note_lines) | 0 | `debit_note_line_id` | |
 | [`purchase_debit_notes`](#purchase_debit_notes) | 0 | `debit_note_id` | |
-| [`purchase_invoice_lines`](#purchase_invoice_lines) | 416 | `invoice_line_id` | |
+| [`purchase_invoice_lines`](#purchase_invoice_lines) | 189,003 | `invoice_line_id` | |
 | [`purchase_invoice_receipts`](#purchase_invoice_receipts) | 0 | `invoice_receipt_id` | |
-| [`purchase_invoices`](#purchase_invoices) | 131 | `invoice_id` | |
-| [`purchase_order_lines`](#purchase_order_lines) | 14,559 | `purchase_order_line_id` | |
+| [`purchase_invoices`](#purchase_invoices) | 31,436 | `invoice_id` | |
+| [`purchase_order_lines`](#purchase_order_lines) | 16,164 | `purchase_order_line_id` | |
 | [`purchase_order_return_lines`](#purchase_order_return_lines) | 0 | `return_line_id` | |
 | [`purchase_order_return_shipment_lines`](#purchase_order_return_shipment_lines) | 0 | `shipment_line_id` | |
 | [`purchase_order_return_shipments`](#purchase_order_return_shipments) | 0 | `shipment_id` | |
 | [`purchase_order_returns`](#purchase_order_returns) | 0 | `return_id` | |
-| [`purchase_orders`](#purchase_orders) | 1,316 | `purchase_order_id` | |
+| [`purchase_orders`](#purchase_orders) | 1,452 | `purchase_order_id` | |
 | [`reconciliation_events`](#reconciliation_events) | 0 | `event_id` | |
 | [`reconciliation_rules`](#reconciliation_rules) | 0 | `rule_id` | |
 | [`sales_credit_note_lines`](#sales_credit_note_lines) | 0 | `credit_note_line_id` | |
 | [`sales_credit_notes`](#sales_credit_notes) | 0 | `credit_note_id` | |
-| [`sales_events`](#sales_events) | 17,882 | `event_id` | |
-| [`sales_invoice_lines`](#sales_invoice_lines) | 93,432 | `invoice_line_id` | |
-| [`sales_invoices`](#sales_invoices) | 11,295 | `invoice_id` | |
-| [`sales_order_lines`](#sales_order_lines) | 211,234 | `sales_order_line_id` | |
+| [`sales_events`](#sales_events) | 19,194 | `event_id` | |
+| [`sales_invoice_lines`](#sales_invoice_lines) | 101,247 | `invoice_line_id` | |
+| [`sales_invoices`](#sales_invoices) | 12,210 | `invoice_id` | |
+| [`sales_order_lines`](#sales_order_lines) | 226,310 | `sales_order_line_id` | |
 | [`sales_order_picks`](#sales_order_picks) | 0 | `pick_id` | |
 | [`sales_order_return_lines`](#sales_order_return_lines) | 0 | `return_line_id` | |
 | [`sales_order_returns`](#sales_order_returns) | 0 | `return_id` | |
 | [`sales_order_shipment_lines`](#sales_order_shipment_lines) | 0 | `shipment_line_id` | |
 | [`sales_order_shipments`](#sales_order_shipments) | 0 | `shipment_id` | |
-| [`sales_orders`](#sales_orders) | 17,883 | `sales_order_id` | |
-| [`schema_migrations`](#schema_migrations) | 53 | `filename` | |
+| [`sales_orders`](#sales_orders) | 19,195 | `sales_order_id` | |
+| [`schema_migrations`](#schema_migrations) | 59 | `filename` | |
 | [`supplier_expiries`](#supplier_expiries) | 0 | `expiry_id` | |
 | [`supplier_groups`](#supplier_groups) | 3 | `supplier_group_id` | |
-| [`suppliers`](#suppliers) | 324 | `vendor_id` | |
-| [`system_events`](#system_events) | 10 | `event_id` | |
+| [`suppliers`](#suppliers) | 325 | `vendor_id` | |
+| [`system_events`](#system_events) | 24 | `event_id` | |
 | [`tax_categories`](#tax_categories) | 9 | `tax_category_id` | |
 | [`tax_position_mappings`](#tax_position_mappings) | 0 | `mapping_id` | |
 | [`tax_positions`](#tax_positions) | 0 | `tax_position_id` | |
@@ -120,8 +121,13 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 
 | From Table | Column | → To Table | Column |
 |-----------|--------|-----------|--------|
+| `app_settings` | `default_customer_tax_position_id` | `tax_positions` | `tax_position_id` |
+| `app_settings` | `default_customer_terms_id` | `trading_terms` | `trading_terms_id` |
 | `app_settings` | `default_fulfillment_location_id` | `locations` | `location_id` |
-| `app_settings` | `default_trading_terms_id` | `trading_terms` | `trading_terms_id` |
+| `app_settings` | `default_purchase_tax_category_id` | `tax_categories` | `tax_category_id` |
+| `app_settings` | `default_sales_tax_category_id` | `tax_categories` | `tax_category_id` |
+| `app_settings` | `default_supplier_tax_position_id` | `tax_positions` | `tax_position_id` |
+| `app_settings` | `default_supplier_terms_id` | `trading_terms` | `trading_terms_id` |
 | `backorders` | `product_id` | `products` | `product_id` |
 | `backorders` | `purchase_order_id` | `purchase_orders` | `purchase_order_id` |
 | `backorders` | `purchase_order_line_id` | `purchase_order_lines` | `purchase_order_line_id` |
@@ -193,6 +199,8 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 | `product_groups` | `default_cost_center_id` | `cost_centers` | `cost_center_id` |
 | `product_groups` | `default_expense_account_id` | `gl_accounts` | `gl_account_id` |
 | `product_groups` | `default_revenue_account_id` | `gl_accounts` | `gl_account_id` |
+| `product_groups` | `purchase_tax_category_id` | `tax_categories` | `tax_category_id` |
+| `product_groups` | `sales_tax_category_id` | `tax_categories` | `tax_category_id` |
 | `product_suppliers` | `product_id` | `products` | `product_id` |
 | `product_suppliers` | `vendor_id` | `suppliers` | `vendor_id` |
 | `product_uoms` | `product_id` | `products` | `product_id` |
@@ -299,6 +307,7 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 
 ```mermaid
 graph LR
+    _pipeline_jobs["_pipeline_jobs"]
     activities["activities"]
     api_keys["api_keys"]
     app_settings["app_settings"]
@@ -401,8 +410,10 @@ graph LR
     warehouse_events["warehouse_events"]
     webhooks["webhooks"]
     zones["zones"]
-    locations --> app_settings
+    tax_positions --> app_settings
     trading_terms --> app_settings
+    locations --> app_settings
+    tax_categories --> app_settings
     products --> backorders
     purchase_orders --> backorders
     purchase_order_lines --> backorders
@@ -461,6 +472,7 @@ graph LR
     activities --> product_groups
     cost_centers --> product_groups
     gl_accounts --> product_groups
+    tax_categories --> product_groups
     products --> product_suppliers
     suppliers --> product_suppliers
     products --> product_uoms
@@ -560,6 +572,18 @@ graph LR
 
 ---
 
+### `herobm_core._pipeline_jobs` (2 rows)
+
+| # | Column | Type | Nullable | Default | Constraints |
+|---|--------|------|----------|---------|------------|
+| 1 | `job_id` | `text` |  |  | 🔑 PK |
+| 2 | `type` | `text` |  |  |  |
+| 3 | `status` | `text` |  |  |  |
+| 4 | `progress_json` | `jsonb` | ✓ | '[]'::jsonb |  |
+| 5 | `logs_json` | `jsonb` | ✓ | '[]'::jsonb |  |
+| 6 | `created_at` | `timestamp` |  | now() |  |
+| 7 | `updated_at` | `timestamp` |  | now() |  |
+
 ### `herobm_core.activities` (76 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
@@ -572,7 +596,7 @@ graph LR
 | 6 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 7 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `herobm_core.api_keys` (0 rows)
+### `herobm_core.api_keys` (1 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -606,7 +630,12 @@ graph LR
 | 15 | `smtp_user` | `text` | ✓ |  |  |
 | 16 | `smtp_pass_encrypted` | `text` | ✓ |  |  |
 | 17 | `smtp_from_address` | `text` | ✓ |  |  |
-| 18 | `default_trading_terms_id` | `uuid` | ✓ |  | FK → trading_terms.trading_terms_id |
+| 18 | `default_purchase_tax_category_id` | `uuid` | ✓ |  | FK → tax_categories.tax_category_id |
+| 19 | `default_sales_tax_category_id` | `uuid` | ✓ |  | FK → tax_categories.tax_category_id |
+| 20 | `default_customer_terms_id` | `uuid` | ✓ |  | FK → trading_terms.trading_terms_id |
+| 21 | `default_supplier_terms_id` | `uuid` | ✓ |  | FK → trading_terms.trading_terms_id |
+| 22 | `default_customer_tax_position_id` | `uuid` | ✓ |  | FK → tax_positions.tax_position_id |
+| 23 | `default_supplier_tax_position_id` | `uuid` | ✓ |  | FK → tax_positions.tax_position_id |
 
 ### `herobm_core.backorders` (0 rows)
 
@@ -643,7 +672,7 @@ graph LR
 | 12 | `type` | `text` | ✓ |  |  |
 | 13 | `payee` | `text` | ✓ |  |  |
 
-### `herobm_core.bin_contents` (12,578 rows)
+### `herobm_core.bin_contents` (12,605 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -653,7 +682,7 @@ graph LR
 | 4 | `actual_quantity` | `numeric` |  | '0'::numeric |  |
 | 5 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `herobm_core.bins` (12,500 rows)
+### `herobm_core.bins` (12,527 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -696,7 +725,7 @@ graph LR
 | 7 | `is_system` | `bool` |  | false |  |
 | 8 | `created_at` | `timestamptz` |  | now() |  |
 
-### `herobm_core.casbin_rule` (171 rows)
+### `herobm_core.casbin_rule` (150 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -738,7 +767,7 @@ graph LR
 | 11 | `type_column` | `text` | ✓ |  |  |
 | 12 | `payee_column` | `text` | ✓ |  |  |
 
-### `herobm_core.customer_contacts` (3,351 rows)
+### `herobm_core.customer_contacts` (3,363 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -758,7 +787,7 @@ graph LR
 | 14 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 15 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `herobm_core.customer_delivery_addresses` (2,069 rows)
+### `herobm_core.customer_delivery_addresses` (2,081 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -796,7 +825,7 @@ graph LR
 | 11 | `tax_position_id` | `uuid` | ✓ |  | FK → tax_positions.tax_position_id |
 | 12 | `state_code` | `text` |  | 'active'::text |  |
 
-### `herobm_core.customers` (1,392 rows)
+### `herobm_core.customers` (1,398 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -832,6 +861,7 @@ graph LR
 | 30 | `business_number` | `text` | ✓ |  |  |
 | 31 | `is_tax_registered` | `bool` |  | false |  |
 | 32 | `tax_position_id` | `uuid` | ✓ |  | FK → tax_positions.tax_position_id |
+| 33 | `override_credit_hold_until` | `timestamptz` | ✓ |  |  |
 
 ### `herobm_core.discount_matrix` (0 rows)
 
@@ -858,7 +888,7 @@ graph LR
 | 7 | `actor` | `text` | ✓ |  |  |
 | 8 | `created_on` | `timestamptz` | ✓ | now() |  |
 
-### `herobm_core.email_outbox` (0 rows)
+### `herobm_core.email_outbox` (4 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1040,7 +1070,7 @@ graph LR
 | 7 | `actor` | `text` | ✓ |  |  |
 | 8 | `created_on` | `timestamptz` | ✓ | now() |  |
 
-### `herobm_core.import_abm_sales_quotes` (8,093 rows)
+### `herobm_core.import_abm_sales_quotes` (8,647 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1086,7 +1116,7 @@ graph LR
 | 5 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 6 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `herobm_core.inventory_entries` (11,936 rows)
+### `herobm_core.inventory_entries` (11,931 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1114,7 +1144,7 @@ graph LR
 | 7 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 8 | `entity_display_name` | `text` | ✓ |  |  |
 
-### `herobm_core.inventory_ledger` (11,393 rows)
+### `herobm_core.inventory_ledger` (11,414 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1155,7 +1185,7 @@ graph LR
 | 5 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 6 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `herobm_core.master_data_events` (24,337 rows)
+### `herobm_core.master_data_events` (24,356 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1168,7 +1198,7 @@ graph LR
 | 7 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 8 | `entity_display_name` | `text` | ✓ |  |  |
 
-### `herobm_core.organization` (1 rows)
+### `herobm_core.organization` (2 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1192,7 +1222,7 @@ graph LR
 | 18 | `bank_swift_bic` | `text` | ✓ |  |  |
 | 19 | `bank_iban` | `text` | ✓ |  |  |
 
-### `herobm_core.outbox` (10 rows)
+### `herobm_core.outbox` (39 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1294,7 +1324,7 @@ graph LR
 | 7 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 8 | `entity_display_name` | `text` | ✓ |  |  |
 
-### `herobm_core.product_components` (12,372 rows)
+### `herobm_core.product_components` (12,423 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1306,7 +1336,7 @@ graph LR
 | 6 | `sequence_number` | `int4` | ✓ | 0 |  |
 | 7 | `fractional_behavior` | `fractional_behavior` |  | 'allow_fractional'::herobm_core.fract... |  |
 
-### `herobm_core.product_default_bins` (12,746 rows)
+### `herobm_core.product_default_bins` (12,772 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1331,8 +1361,10 @@ graph LR
 | 5 | `default_expense_account_id` | `uuid` | ✓ |  | FK → gl_accounts.gl_account_id |
 | 6 | `default_cost_center_id` | `uuid` | ✓ |  | FK → cost_centers.cost_center_id |
 | 7 | `default_activity_id` | `uuid` | ✓ |  | FK → activities.activity_id |
+| 8 | `purchase_tax_category_id` | `uuid` | ✓ |  | FK → tax_categories.tax_category_id |
+| 9 | `sales_tax_category_id` | `uuid` | ✓ |  | FK → tax_categories.tax_category_id |
 
-### `herobm_core.product_suppliers` (18,564 rows)
+### `herobm_core.product_suppliers` (18,660 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1367,7 +1399,7 @@ graph LR
 | 6 | `is_sales_default` | `bool` | ✓ | false |  |
 | 7 | `is_purchase_default` | `bool` | ✓ | false |  |
 
-### `herobm_core.products` (22,946 rows)
+### `herobm_core.products` (22,948 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1400,6 +1432,7 @@ graph LR
 | 27 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 28 | `modified_on` | `timestamptz` | ✓ | now() |  |
 | 29 | `external_tax_code` | `text` | ✓ |  |  |
+| 30 | `weight` | `numeric` | ✓ | '0'::numeric |  |
 
 ### `herobm_core.purchase_debit_note_lines` (0 rows)
 
@@ -1434,7 +1467,7 @@ graph LR
 | 15 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 16 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `herobm_core.purchase_invoice_lines` (416 rows)
+### `herobm_core.purchase_invoice_lines` (189,003 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1458,7 +1491,7 @@ graph LR
 | 3 | `goods_received_line_id` | `uuid` |  |  | FK → goods_received_lines.goods_received_line_id |
 | 4 | `quantity_billed` | `numeric` |  |  |  |
 
-### `herobm_core.purchase_invoices` (131 rows)
+### `herobm_core.purchase_invoices` (31,436 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1481,7 +1514,7 @@ graph LR
 | 17 | `due_date` | `timestamptz` | ✓ |  |  |
 | 18 | `terms_description` | `text` | ✓ |  |  |
 
-### `herobm_core.purchase_order_lines` (14,559 rows)
+### `herobm_core.purchase_order_lines` (16,164 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1548,7 +1581,7 @@ graph LR
 | 7 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 8 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `herobm_core.purchase_orders` (1,316 rows)
+### `herobm_core.purchase_orders` (1,452 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1639,7 +1672,7 @@ graph LR
 | 15 | `modified_on` | `timestamptz` | ✓ | now() |  |
 | 16 | `customer_id` | `uuid` |  |  | FK → customers.customer_id |
 
-### `herobm_core.sales_events` (17,882 rows)
+### `herobm_core.sales_events` (19,194 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1652,7 +1685,7 @@ graph LR
 | 7 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 8 | `entity_display_name` | `text` | ✓ |  |  |
 
-### `herobm_core.sales_invoice_lines` (93,432 rows)
+### `herobm_core.sales_invoice_lines` (101,247 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1663,7 +1696,7 @@ graph LR
 | 5 | `price_per_unit` | `numeric` |  |  |  |
 | 6 | `amount` | `numeric` |  |  |  |
 
-### `herobm_core.sales_invoices` (11,295 rows)
+### `herobm_core.sales_invoices` (12,210 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1683,7 +1716,7 @@ graph LR
 | 14 | `due_date` | `timestamptz` | ✓ |  |  |
 | 15 | `terms_description` | `text` | ✓ |  |  |
 
-### `herobm_core.sales_order_lines` (211,234 rows)
+### `herobm_core.sales_order_lines` (226,310 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1770,7 +1803,7 @@ graph LR
 | 9 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 10 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `herobm_core.sales_orders` (17,883 rows)
+### `herobm_core.sales_orders` (19,195 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1804,7 +1837,7 @@ graph LR
 | 28 | `credit_hold_override_by` | `text` | ✓ |  |  |
 | 29 | `credit_hold_override_reason` | `text` | ✓ |  |  |
 
-### `herobm_core.schema_migrations` (53 rows)
+### `herobm_core.schema_migrations` (59 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1846,7 +1879,7 @@ graph LR
 | 16 | `tax_position_id` | `uuid` | ✓ |  | FK → tax_positions.tax_position_id |
 | 17 | `early_payment_discount_days` | `int4` | ✓ |  |  |
 
-### `herobm_core.suppliers` (324 rows)
+### `herobm_core.suppliers` (325 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1888,7 +1921,7 @@ graph LR
 | 36 | `tax_position_id` | `uuid` | ✓ |  | FK → tax_positions.tax_position_id |
 | 37 | `early_payment_discount_days` | `int4` | ✓ |  |  |
 
-### `herobm_core.system_events` (10 rows)
+### `herobm_core.system_events` (24 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -1910,7 +1943,6 @@ graph LR
 | 3 | `title` | `text` |  |  |  |
 | 4 | `type` | `text` |  |  |  |
 | 5 | `rate` | `numeric` | ✓ | '0'::numeric |  |
-| 6 | `is_default` | `bool` | ✓ | false |  |
 
 ### `herobm_core.tax_position_mappings` (0 rows)
 
@@ -1928,7 +1960,6 @@ graph LR
 | 1 | `tax_position_id` | `uuid` |  | gen_random_uuid() | 🔑 PK |
 | 2 | `code` | `text` |  |  | UNIQUE |
 | 3 | `title` | `text` |  |  |  |
-| 4 | `is_default` | `bool` | ✓ | false |  |
 
 ### `herobm_core.trading_terms` (43 rows)
 
@@ -1944,8 +1975,6 @@ graph LR
 | 8 | `source` | `text` | ✓ |  |  |
 | 9 | `is_active` | `bool` |  | true |  |
 | 10 | `modified_on` | `timestamptz` | ✓ | now() |  |
-| 11 | `is_default_customer` | `bool` |  | false |  |
-| 12 | `is_default_supplier` | `bool` |  | false |  |
 
 ### `herobm_core.transfer_order_lines` (0 rows)
 

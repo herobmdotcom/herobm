@@ -11,3 +11,4 @@ ignores:
   - "tsconfig-paths"
   # Dependencies used in new ESLint flat config aren't yet fully natively supported by depcheck
   - "@eslint/eslintrc"
+  - "@types/multer"

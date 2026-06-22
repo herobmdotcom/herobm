@@ -19,11 +19,11 @@ describe('OrdersService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: OrdersService;
 
-  const ACCOUNT_ID = '00000000-0000-0000-0000-000000000001';
-  const ORDER_ID = '00000000-0000-0000-0000-000000000002';
-  const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
-  const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
-  const PROD_ID = '00000000-0000-0000-0000-00000000000a';
+  const ACCOUNT_ID = '00000000-0000-4000-8000-000000000001';
+  const ORDER_ID = '00000000-0000-4000-8000-000000000002';
+  const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
+  const TAX_CAT_ID = '00000000-0000-4000-8000-000000000007';
+  const PROD_ID = '00000000-0000-4000-8000-00000000000a';
 
   beforeEach(async () => {
     // Seed data
@@ -58,6 +58,7 @@ describe('OrdersService', () => {
       productNumber: 'P1',
       name: 'Product 1',
       baseUom: 'EA',
+      productType: 'inventory',
     });
 
     await pg.db.insert(salesOrders).values({

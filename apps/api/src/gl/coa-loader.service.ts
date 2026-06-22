@@ -430,9 +430,6 @@ export class CoaLoaderService {
     this.logger.log(`Loading tax settings from: ${filename}`);
 
     await this.db.transaction(async (tx: DrizzleDB) => {
-      // Neutralize defaults first to avoid unique constraint if we are updating
-      await tx.update(taxCategories).set({ isDefault: false });
-
       for (const category of settings.gst_categories) {
         const deterministicId = uuidv5(
           'GST_CAT_' + category.code,
@@ -446,7 +443,6 @@ export class CoaLoaderService {
             title: category.title,
             type: category.type,
             rate: category.rate.toString(),
-            isDefault: category.is_default || false,
           })
           .onConflictDoUpdate({
             target: [taxCategories.code],
@@ -454,7 +450,6 @@ export class CoaLoaderService {
               title: category.title,
               type: category.type,
               rate: category.rate.toString(),
-              isDefault: category.is_default || false,
             },
           });
       }

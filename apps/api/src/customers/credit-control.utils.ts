@@ -7,7 +7,8 @@ export interface AccountCreditProfile {
     isOnCreditHold: boolean;
     tradingTermsId: string | null;
   } | null;
-  systemDefaultTradingTermsId?: string | null;
+  systemDefaultCustomerTermsId?: string | null;
+  overrideCreditHoldUntil?: Date | null;
 }
 
 /**
@@ -17,6 +18,12 @@ export interface AccountCreditProfile {
 export function resolveEffectiveCreditHold(
   customer: AccountCreditProfile,
 ): boolean {
+  if (
+    customer.overrideCreditHoldUntil &&
+    customer.overrideCreditHoldUntil > new Date()
+  ) {
+    return false;
+  }
   if (customer.isOnCreditHold) return true;
   if (customer.accountGroup?.isOnCreditHold) return true;
   return false;
@@ -61,10 +68,10 @@ export function resolveEffectiveTradingTermsId(
     return customer.accountGroup.tradingTermsId;
   }
   if (
-    customer.systemDefaultTradingTermsId !== null &&
-    customer.systemDefaultTradingTermsId !== undefined
+    customer.systemDefaultCustomerTermsId !== null &&
+    customer.systemDefaultCustomerTermsId !== undefined
   ) {
-    return customer.systemDefaultTradingTermsId;
+    return customer.systemDefaultCustomerTermsId;
   }
   return null;
 }

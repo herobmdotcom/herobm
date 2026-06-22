@@ -5,6 +5,7 @@ import { Logger, ValidationPipe, RequestMethod } from '@nestjs/common';
 import { collectDefaultMetrics, register } from 'prom-client';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { FileLoggerService } from './common/file-logger.service';
+import { ConvertEmptyStringsToNullMiddleware } from './common/middleware/convert-empty-strings-to-null.middleware';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
@@ -34,6 +35,10 @@ async function bootstrap() {
     exclude: [{ path: 'internal/setup/webhook', method: RequestMethod.POST }],
   });
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Clean empty strings out of the request body payload before any pipes/validation run
+  const emptyStringMiddleware = new ConvertEmptyStringsToNullMiddleware();
+  app.use(emptyStringMiddleware.use.bind(emptyStringMiddleware));
 
   // Debug middleware to log bodies
   app.use(
@@ -130,3 +135,4 @@ bootstrap().catch((err) => {
 // trigger restart 8
 // trigger restart 9
 // trigger restart 10
+// trigger restart 11

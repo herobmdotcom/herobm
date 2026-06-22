@@ -35,9 +35,9 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
     adminToken = adminLogin.body.access_token;
 
     // Use seeded setup data
-    locationId = '10000000-0000-0000-0000-000000000001'; // MAIN
-    customerId = '20000000-0000-0000-0000-000000000001'; // E2E Default Customer
-    validVendorId = '20000000-0000-0000-0000-000000000002'; // Standard seed vendor
+    locationId = '10000000-0000-4000-8000-000000000001'; // MAIN
+    customerId = '20000000-0000-4000-8000-000000000001'; // E2E Default Customer
+    validVendorId = '20000000-0000-4000-8000-000000000002'; // Standard seed vendor
 
     console.log('Ensuring Location exists...');
     const createLocRes = await request(app.getHttpServer())
@@ -85,6 +85,8 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .send({
         productNumber: `ADV085-P-${Date.now()}`,
         name: 'ADV-085 Backorder Receipt Test Product',
+        productType: 'inventory',
+        baseUom: 'EA',
       });
 
     expect(productRes.status).toBe(201);
@@ -249,6 +251,8 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .send({
         productNumber: `ADV085-PARTIAL-${Date.now()}`,
         name: 'ADV-085 Partial Receipt Test Product',
+        productType: 'inventory',
+        baseUom: 'EA',
       })
       .expect(201);
     const pProductId = partialProductRes.body.productId;

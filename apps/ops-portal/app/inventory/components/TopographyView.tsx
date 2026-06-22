@@ -763,17 +763,18 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
     if (!initialData) return;
     setLoading(true);
     
-    // Convert binType explicitly or fall back to undefined if empty string
-    const payload = {
+    const payload: Record<string, unknown> = {
       ...formData,
-      binType: formData.binType ? (formData.binType as "storage" | "pick" | "bulk" | "receiving" | "staging" | "quarantine" | "in_transit") : undefined
     };
+    if (formData.binType) {
+      payload.binType = formData.binType;
+    }
 
     try {
       if (initialData.bin) {
         await api.locationsControllerUpdateBin(initialData.bin.binId, payload);
       } else {
-        await api.locationsControllerCreateBin({ ...payload, zoneId: initialData.zoneId });
+        await api.locationsControllerCreateBin({ ...payload, zoneId: initialData.zoneId } as unknown as api.CreateBinDto);
       }
       toast.success(initialData.bin ? tCommon('updated') : tCommon('created'));
       onSuccess();

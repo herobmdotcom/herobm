@@ -5,6 +5,8 @@ import React, { useState, useEffect } from 'react';
 import SlideOver from './SlideOver';
 import { useTranslations } from 'next-intl';
 import { CUSTOMER_STATE } from '@herobm/shared';
+import { useSettings } from '@/components/SettingsProvider';
+import InheritedSelect from './InheritedSelect';
 
 export type GroupType = 'customer' | 'supplier' | 'product';
 
@@ -24,9 +26,9 @@ export type FinancialDefaultsGroupData = {
   defaultExpenseAccountId?: string | null;
   defaultCostCenterId?: string | null;
   defaultActivityId?: string | null;
-  taxPositionId?: string | null;
   purchaseTaxCategoryId?: string | null;
   salesTaxCategoryId?: string | null;
+  tradingTermsId?: string | null;
   [key: string]: unknown;
 };
 
@@ -43,6 +45,7 @@ export interface FinancialDefaultsSlideOverProps<T extends FinancialDefaultsGrou
   activityOptions: Option[];
   taxPositionOptions?: Option[];
   taxCategoryOptions?: Option[];
+  tradingTermsOptions?: Option[];
 }
 
 export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGroupData = FinancialDefaultsGroupData>({
@@ -56,22 +59,29 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
   costCenterOptions,
   activityOptions,
   taxPositionOptions = [],
-  taxCategoryOptions = []
+  taxCategoryOptions = [],
+  tradingTermsOptions = []
 }: FinancialDefaultsSlideOverProps<T>) {
   const tc = useTranslations('admin.common');
   const tGlobal = useTranslations('common');
+  const tSuppliers = useTranslations('suppliers');
+  const tCustomers = useTranslations('customers');
 
-  const [formData, setFormData] = useState<Partial<T>>({});
+  const [formData, setFormData] = useState<T>({ ...data } as T);
   const [saving, setSaving] = useState(false);
+  const { app, gl } = useSettings();
+
+  const inheritedTaxPositionId = groupType === 'customer' ? app?.defaultCustomerTaxPositionId : app?.defaultSupplierTaxPositionId;
+  const inheritedTradingTermsId = groupType === 'customer' ? app?.defaultCustomerTermsId : app?.defaultSupplierTermsId;
 
   useEffect(() => {
     if (isOpen && data) {
-      setFormData({ ...data });
+      setFormData({ ...data } as T);
     }
   }, [isOpen, data]);
 
   const handleChange = (field: keyof FinancialDefaultsGroupData, value: string | boolean | number | null) => {
-    setFormData((prev) => ({ ...prev, [field]: value } as Partial<T>));
+    setFormData((prev) => ({ ...prev, [field]: value } as T));
   };
 
   const handleSave = async () => {
@@ -103,37 +113,22 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
         </div>
       }
     >
-      <div className="flex flex-col gap-4">
-        {/* Customer specific fields */}
-        {groupType === 'customer' && (
-          <div>
-            <div className="flex items-center justify-between mb-4 mt-2">
-              <label className="block text-sm font-medium text-gray-700">
-                {tGlobal('columns.state')}
-              </label>
-              <select
-                className="input"
-                style={{ width: 'auto' }}
-                 
-                value={formData.stateCode || CUSTOMER_STATE.ACTIVE}
-                onChange={(e) => handleChange('stateCode', e.target.value)}
-                disabled={saving}
-              >
-                { }
-                <option value={CUSTOMER_STATE.ACTIVE}>Active</option>
-                { }
-                <option value={CUSTOMER_STATE.INACTIVE}>Inactive</option>
-              </select>
-            </div>
+      <div className="flex flex-col">
+        {/* OPERATIONAL SECTION */}
+        <h3 className="mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>Operational</h3>
+        
+        <div className="flex flex-col gap-4 mb-6">
 
-            <div className="flex items-center justify-between mb-4">
+
+          {/* Credit Hold (Customer) */}
+          {groupType === 'customer' && (
+            <div className="flex items-center justify-between mt-2">
               <label className="block text-sm font-medium text-gray-700">
-                { }
                 Credit Hold
               </label>
               <div
                 className="flex items-center gap-3"
-                style={{ cursor: saving ? "not-allowed" : "pointer" }}
+                style={{ cursor: saving ? 'not-allowed' : 'pointer' }}
                 onClick={() => {
                   if (saving) return;
                   handleChange('isOnCreditHold', !formData.isOnCreditHold);
@@ -144,11 +139,11 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
                     width: 40,
                     height: 22,
                     borderRadius: 11,
-                    background: formData.isOnCreditHold
-                      ? "var(--danger)"
-                      : "var(--border)",
-                    position: "relative",
-                    transition: "background 0.2s ease",
+                    background: !formData.isOnCreditHold
+                      ? 'var(--success)'
+                      : 'var(--danger)',
+                    position: 'relative',
+                    transition: 'background 0.2s ease',
                     opacity: saving ? 0.5 : 1,
                   }}
                 >
@@ -156,42 +151,155 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
                     style={{
                       width: 16,
                       height: 16,
-                      borderRadius: "50%",
-                      background: "#fff",
-                      position: "absolute",
+                      borderRadius: '50%',
+                      background: '#fff',
+                      position: 'absolute',
                       top: 3,
-                      left: formData.isOnCreditHold ? 21 : 3,
-                      transition: "left 0.2s ease",
+                      left: !formData.isOnCreditHold ? 21 : 3,
+                      transition: 'left 0.2s ease',
                     }}
                   />
                 </div>
+                <span className={`text-sm font-semibold ${!formData.isOnCreditHold ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+                  {!formData.isOnCreditHold ? tSuppliers('compliance.noBlock') : tSuppliers('compliance.blocked')}
+                </span>
               </div>
             </div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">
-              {tc('defArAccount')}
-            </label>
-            <select
-              className="input w-full"
-              value={formData.defaultArAccountId || ''}
-              onChange={(e) => handleChange('defaultArAccountId', e.target.value)}
-              disabled={saving}
-            >
-              <option value="">-- {tGlobal('selectNone')} --</option>
-              {glAccountOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+          )}
 
-        {/* Supplier specific fields */}
-        {groupType === 'supplier' && (
-          <div>
-            <div className="mb-4">
+          {/* Purchasing Block & Payment Block (Supplier) */}
+          {groupType === 'supplier' && (
+            <>
+              <div className="flex items-center justify-between mt-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Purchasing Block
+                </label>
+                <div
+                  className="flex items-center gap-3"
+                  style={{ cursor: saving ? 'not-allowed' : 'pointer' }}
+                  onClick={() => {
+                    if (saving) return;
+                    handleChange('isPurchasingBlocked', !formData.isPurchasingBlocked);
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 22,
+                      borderRadius: 11,
+                      background: !formData.isPurchasingBlocked
+                        ? 'var(--success)'
+                        : 'var(--danger)',
+                      position: 'relative',
+                      transition: 'background 0.2s ease',
+                      opacity: saving ? 0.5 : 1,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: '50%',
+                        background: '#fff',
+                        position: 'absolute',
+                        top: 3,
+                        left: !formData.isPurchasingBlocked ? 21 : 3,
+                        transition: 'left 0.2s ease',
+                      }}
+                    />
+                  </div>
+                  <span className={`text-sm font-semibold ${!formData.isPurchasingBlocked ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+                    {!formData.isPurchasingBlocked ? tSuppliers('compliance.noBlock') : tSuppliers('compliance.blocked')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mt-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Payment Block
+                </label>
+                <div
+                  className="flex items-center gap-3"
+                  style={{ cursor: saving ? 'not-allowed' : 'pointer' }}
+                  onClick={() => {
+                    if (saving) return;
+                    handleChange('isPaymentBlocked', !formData.isPaymentBlocked);
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 22,
+                      borderRadius: 11,
+                      background: !formData.isPaymentBlocked
+                        ? 'var(--success)'
+                        : 'var(--danger)',
+                      position: 'relative',
+                      transition: 'background 0.2s ease',
+                      opacity: saving ? 0.5 : 1,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: '50%',
+                        background: '#fff',
+                        position: 'absolute',
+                        top: 3,
+                        left: !formData.isPaymentBlocked ? 21 : 3,
+                        transition: 'left 0.2s ease',
+                      }}
+                    />
+                  </div>
+                  <span className={`text-sm font-semibold ${!formData.isPaymentBlocked ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+                    {!formData.isPaymentBlocked ? tSuppliers('compliance.noBlock') : tSuppliers('compliance.blocked')}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Tax Position (Customer & Supplier) */}
+          {(groupType === 'customer' || groupType === 'supplier') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">
+                {tGlobal('columns.taxPosition')}
+              </label>
+              <InheritedSelect
+                className="input w-full"
+                value={(formData.taxPositionId as string) || ''}
+                onChange={(val) => handleChange('taxPositionId', val)}
+                disabled={saving}
+                options={taxPositionOptions || []}
+                inheritedValue={inheritedTaxPositionId}
+                inheritedSourceLabel="System Default"
+              />
+            </div>
+          )}
+
+          {/* Trading Terms (Customer & Supplier) */}
+          {(groupType === 'customer' || groupType === 'supplier') && tradingTermsOptions && tradingTermsOptions.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">
+                {tGlobal('tradingTerms')}
+              </label>
+              <InheritedSelect
+                className="input w-full"
+                value={(formData.tradingTermsId as string) || ''}
+                onChange={(val) => handleChange('tradingTermsId', val)}
+                disabled={saving}
+                options={tradingTermsOptions || []}
+                inheritedValue={inheritedTradingTermsId}
+                inheritedSourceLabel="System Default"
+              />
+            </div>
+          )}
+
+          {/* Early Payment Discount (Supplier) */}
+          {groupType === 'supplier' && (
+            <div className="mt-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                { }
                 Early Payment Discount
               </label>
               <div className="flex items-center gap-3">
@@ -208,7 +316,6 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
                 </div>
                 <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-                  { }
                   in
                 </span>
                 <div className="relative w-32">
@@ -221,178 +328,164 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
                     disabled={saving}
                     placeholder="10"
                   />
-                  { }
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none text-sm">days</span>
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Tax Categories (Product) */}
+          {groupType === 'product' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">
+                  Sales Tax Category
+                </label>
+                <select
+                  className="input w-full"
+                  value={(formData.salesTaxCategoryId as string) || ''}
+                  onChange={(e) => handleChange('salesTaxCategoryId', e.target.value)}
+                  disabled={saving}
+                >
+                  <option value="">-- {tGlobal('selectNone')} --</option>
+                  {taxCategoryOptions?.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 mt-2">
+                  Purchase Tax Category
+                </label>
+                <select
+                  className="input w-full"
+                  value={(formData.purchaseTaxCategoryId as string) || ''}
+                  onChange={(e) => handleChange('purchaseTaxCategoryId', e.target.value)}
+                  disabled={saving}
+                >
+                  <option value="">-- {tGlobal('selectNone')} --</option>
+                  {taxCategoryOptions?.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* GENERAL LEDGER SECTION */}
+        <h3 className="mb-4 mt-6" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>General Ledger</h3>
+        <div className="flex flex-col gap-4">
+          {groupType === 'customer' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {tc('defArAccount')}
+              </label>
+              <InheritedSelect
+                className="input w-full"
+                value={(formData.defaultArAccountId as string) || ''}
+                onChange={(val) => handleChange('defaultArAccountId', val)}
+                disabled={saving}
+                options={glAccountOptions}
+                inheritedValue={gl?.defaultArAccountId}
+                inheritedSourceLabel="System Default"
+              />
+            </div>
+          )}
+
+          {groupType === 'supplier' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {tc('defApAccount')}
               </label>
-              <select
+              <InheritedSelect
                 className="input w-full"
-                value={formData.defaultApAccountId || ''}
-                onChange={(e) => handleChange('defaultApAccountId', e.target.value)}
+                value={(formData.defaultApAccountId as string) || ''}
+                onChange={(val) => handleChange('defaultApAccountId', val)}
                 disabled={saving}
-              >
-                <option value="">-- {tGlobal('selectNone')} --</option>
-                {glAccountOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                options={glAccountOptions}
+                inheritedValue={gl?.defaultApAccountId}
+                inheritedSourceLabel="System Default"
+              />
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Common Revenue Field (Customer & Product) */}
-        {(groupType === 'customer' || groupType === 'product') && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {tc('defRevAccount')}
-            </label>
-            <select
-              className="input w-full"
-              value={formData.defaultRevenueAccountId || ''}
-              onChange={(e) => handleChange('defaultRevenueAccountId', e.target.value)}
-              disabled={saving}
-            >
-              <option value="">-- {tGlobal('selectNone')} --</option>
-              {glAccountOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Common Expense Field (Supplier & Product) */}
-        {(groupType === 'supplier' || groupType === 'product') && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {tc('defExpenseAccount')}
-            </label>
-            <select
-              className="input w-full"
-              value={formData.defaultExpenseAccountId || ''}
-              onChange={(e) => handleChange('defaultExpenseAccountId', e.target.value)}
-              disabled={saving}
-            >
-              <option value="">-- {tGlobal('selectNone')} --</option>
-              {glAccountOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Shared Base Fields */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {tc('defCostCenter')}
-          </label>
-          <select
-            className="input w-full"
-            value={formData.defaultCostCenterId || ''}
-            onChange={(e) => handleChange('defaultCostCenterId', e.target.value)}
-            disabled={saving}
-          >
-            <option value="">-- {tGlobal('selectNone')} --</option>
-            {costCenterOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {tc('defActivity')}
-          </label>
-          <select
-            className="input w-full"
-            value={formData.defaultActivityId || ''}
-            onChange={(e) => handleChange('defaultActivityId', e.target.value)}
-            disabled={saving}
-          >
-            <option value="">-- {tGlobal('selectNone')} --</option>
-            {activityOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Tax Position (Customer & Supplier) */}
-        {(groupType === 'customer' || groupType === 'supplier') && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {tGlobal('columns.taxPosition')}
-            </label>
-            <select
-              className="input w-full"
-              value={formData.taxPositionId || ''}
-              onChange={(e) => handleChange('taxPositionId', e.target.value)}
-              disabled={saving}
-            >
-              <option value="">-- {tGlobal('selectNone')} --</option>
-              {taxPositionOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Tax Categories (Product) */}
-        {groupType === 'product' && (
-          <>
+          {(groupType === 'customer' || groupType === 'product') && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Sales Tax Category
+                {tc('defRevAccount')}
               </label>
-              <select
+              <InheritedSelect
                 className="input w-full"
-                value={formData.salesTaxCategoryId || ''}
-                onChange={(e) => handleChange('salesTaxCategoryId', e.target.value)}
+                value={(formData.defaultRevenueAccountId as string) || ''}
+                onChange={(val) => handleChange('defaultRevenueAccountId', val)}
                 disabled={saving}
-              >
-                <option value="">-- {tGlobal('selectNone')} --</option>
-                {taxCategoryOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                options={glAccountOptions}
+                inheritedValue={gl?.defaultRevenueAccountId}
+                inheritedSourceLabel="System Default"
+              />
             </div>
+          )}
+
+          {(groupType === 'supplier' || groupType === 'product') && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Purchase Tax Category
+                {tc('defExpenseAccount')}
               </label>
-              <select
+              <InheritedSelect
                 className="input w-full"
-                value={formData.purchaseTaxCategoryId || ''}
-                onChange={(e) => handleChange('purchaseTaxCategoryId', e.target.value)}
+                value={(formData.defaultExpenseAccountId as string) || ''}
+                onChange={(val) => handleChange('defaultExpenseAccountId', val)}
                 disabled={saving}
-              >
-                <option value="">-- {tGlobal('selectNone')} --</option>
-                {taxCategoryOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                options={glAccountOptions}
+                inheritedValue={gl?.defaultExpenseAccountId}
+                inheritedSourceLabel="System Default"
+              />
             </div>
-          </>
-        )}
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {tc('defCostCenter')}
+            </label>
+            <select
+              className="input w-full"
+              value={(formData.defaultCostCenterId as string) || ''}
+              onChange={(e) => handleChange('defaultCostCenterId', e.target.value)}
+              disabled={saving}
+            >
+              <option value="">-- {tGlobal('selectNone')} --</option>
+              {costCenterOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {tc('defActivity')}
+            </label>
+            <select
+              className="input w-full"
+              value={(formData.defaultActivityId as string) || ''}
+              onChange={(e) => handleChange('defaultActivityId', e.target.value)}
+              disabled={saving}
+            >
+              <option value="">-- {tGlobal('selectNone')} --</option>
+              {activityOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
     </SlideOver>
   );

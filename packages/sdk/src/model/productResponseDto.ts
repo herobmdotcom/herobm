@@ -23,6 +23,8 @@ export interface ProductResponseDto {
   /** @nullable */
   priceLevel4: string | null;
   /** @nullable */
+  weight: string | null;
+  /** @nullable */
   purchaseTaxCategoryId: string | null;
   /** @nullable */
   salesTaxCategoryId: string | null;

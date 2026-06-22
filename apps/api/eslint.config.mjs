@@ -97,6 +97,11 @@ export default tseslint.config(
           message: "ADV-045: Inject Drizzle as DrizzleDB type, not any."
         },
         {
+          // ADV-055: Prevent missing fields in Drizzle `.set()` updates via manual checking
+          selector: "CallExpression[callee.property.name='set'] ObjectExpression > SpreadElement > LogicalExpression[operator='&&'] > BinaryExpression[operator='!=='][right.name='undefined']",
+          message: "ADV-055: Do not manually destructure DTO properties checking for undefined in Drizzle .set(). Use Drizzle's native undefined-dropping behavior or a buildUpdatePayload utility."
+        },
+        {
           // ADV-045: Drizzle Typed Injection (no getter over engineered)
           selector: "MethodDefinition[kind='get'][key.name='database']",
           message: "ADV-045: Inject DrizzleDB directly. Do not use a redundant get database() accessor."

@@ -7,7 +7,7 @@ import { useState, useEffect, useMemo } from 'react';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver';
-import { getErrorMessage } from '@herobm/shared';
+import { getErrorMessage, CUSTOMER_STATE } from '@herobm/shared';
 import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
 import FinancialDefaultsSlideOver from '@/components/shared/FinancialDefaultsSlideOver';
 
@@ -22,6 +22,7 @@ export default function AccountGroupsAdmin() {
   const [activities, setActivities] = useState<api.ActivityResponseDto[]>([]);
   const [matrixRules, setMatrixRules] = useState<api.DiscountMatrixResponseDto[]>([]);
   const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
+  const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [discountGroup, setDiscountGroup] = useState<Partial<api.AccountGroupResponseDto> | null>(null);
@@ -30,13 +31,14 @@ export default function AccountGroupsAdmin() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [data, customers, cc, act, rules, taxPositionsData] = await Promise.all([
+      const [data, customers, cc, act, rules, taxPositionsData, tradingTermsData] = await Promise.all([
         api.accountGroupsControllerFindAll().then(r => r.data || []),
         api.glControllerGetAccounts({ format: 'flat' }).then(r => r.data || []),
         api.costCentersControllerFindAll().then(r => r.data || []),
         api.activitiesControllerFindAll().then(r => r.data || []),
         api.discountMatrixControllerList({ ownerType: 'account_group' }).then(r => r.data || []),
-        api.taxPositionsControllerFindAll().then(r => r.data || [])
+        api.taxPositionsControllerFindAll().then(r => r.data || []),
+        api.tradingTermsControllerFindAll().then(r => r.data || [])
       ]);
       const sorted = [...data].sort((a: api.AccountGroupResponseDto, b: api.AccountGroupResponseDto) => 
         a.name.localeCompare(b.name, undefined, { numeric: true })
@@ -47,6 +49,7 @@ export default function AccountGroupsAdmin() {
       setActivities(act);
       setMatrixRules(rules);
       setTaxPositions(taxPositionsData);
+      setTradingTerms(tradingTermsData);
     } catch (err: unknown) {
       toast.error('Failed to load groups: ' + getErrorMessage(err));
     } finally {
@@ -57,13 +60,62 @@ export default function AccountGroupsAdmin() {
   useEffect(() => { loadData(); }, []);
 
   const glAccountOptions = useMemo(() => glAccounts.map((a: api.GlAccountResponseDto) => ({ value: a.glAccountId, label: `${a.accountCode} - ${a.name}` })), [glAccounts]);
-  const costCenterOptions = useMemo(() => costCenters.map((c: api.CostCenterResponseDto) => ({ value: c.id, label: `${c.code} - ${c.name}` })), [costCenters]);
-  const activityOptions = useMemo(() => activities.map((a: api.ActivityResponseDto) => ({ value: a.id, label: `${a.code} - ${a.name}` })), [activities]);
+  const costCenterOptions = useMemo(() => costCenters.map((c) => ({ value: (c as unknown as { costCenterId: string }).costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
+  const activityOptions = useMemo(() => activities.map((a) => ({ value: (a as unknown as { activityId: string }).activityId, label: `${a.code} - ${a.name}` })), [activities]);
   const taxPositionOptions = useMemo(() => taxPositions.map((p: api.TaxPositionResponseDto) => ({ value: p.taxPositionId, label: p.title })), [taxPositions]);
+  const tradingTermsOptions = useMemo(() => tradingTerms.map((t: api.TradingTermResponseDto) => ({ value: t.id, label: `${t.code} - ${t.description}` })), [tradingTerms]);
 
   const columns: InlineTableColumn<api.AccountGroupResponseDto>[] = useMemo(() => [
     { key: 'groupCode', title: tCommon('code'), type: 'text', placeholder: t('placeholders.code'), width: 100 },
     { key: 'name', title: tCommon('name'), type: 'text', placeholder: t('placeholders.name') },
+    {
+      key: 'stateCode',
+      title: tGlobalCommon('columns.state'),
+      type: 'custom',
+      width: 140,
+      render: (row, isEditing, onChange) => {
+        const isActive = !row.stateCode || [CUSTOMER_STATE.ACTIVE as string, 'legacy'].includes(String(row.stateCode).toLowerCase());
+        return (
+          <div className="flex items-center gap-2">
+            <div
+              style={{ cursor: isEditing ? 'pointer' : 'default' }}
+              onClick={() => {
+                if (!isEditing || !onChange) return;
+                onChange(isActive ? CUSTOMER_STATE.INACTIVE : CUSTOMER_STATE.ACTIVE);
+              }}
+            >
+              <div
+                style={{
+                  width: 40,
+                  height: 22,
+                  borderRadius: 11,
+                  background: isActive ? 'var(--success)' : 'var(--danger)',
+                  position: 'relative',
+                  transition: 'background 0.2s ease',
+                  opacity: isEditing ? 1 : 0.7,
+                }}
+              >
+                <div
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: '50%',
+                    background: '#fff',
+                    position: 'absolute',
+                    top: 3,
+                    left: isActive ? 21 : 3,
+                    transition: 'left 0.2s ease',
+                  }}
+                />
+              </div>
+            </div>
+            <span className={`text-xs font-semibold ${isActive ? 'text-[var(--success)]' : 'text-[var(--danger)]'}`}>
+              {isActive ? tGlobalCommon('states.active') : tGlobalCommon('states.inactive')}
+            </span>
+          </div>
+        );
+      }
+    },
     { 
       key: 'customerGroupId', 
       title: t('discountRules'), 
@@ -119,6 +171,8 @@ export default function AccountGroupsAdmin() {
         defaultCostCenterId: payload.defaultCostCenterId || null,
         defaultActivityId: payload.defaultActivityId || null,
         taxPositionId: payload.taxPositionId || null,
+        tradingTermsId: payload.tradingTermsId || null,
+        creditLimit: payload.creditLimit || null,
       };
 
       if (!isNew) {
@@ -192,11 +246,15 @@ export default function AccountGroupsAdmin() {
         groupType="customer"
         ownerLabel={financialGroup ? `${financialGroup.groupCode} — ${financialGroup.name}` : ''}
         data={financialGroup}
-        onSave={(data) => handleSave(data, false)}
+        onSave={async (d) => {
+          await api.accountGroupsControllerUpdate(d.customerGroupId as string, d);
+          setGroups((prev) => prev.map((g) => (g.customerGroupId === d.customerGroupId ? { ...g, ...d } : g)));
+        }}
         glAccountOptions={glAccountOptions}
         costCenterOptions={costCenterOptions}
         activityOptions={activityOptions}
         taxPositionOptions={taxPositionOptions}
+        tradingTermsOptions={tradingTermsOptions}
       />
     </div>
   );

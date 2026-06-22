@@ -6,6 +6,7 @@ export interface CustomerProfile {
   isOnCreditHold: boolean;
   creditLimit: string | null;
   tradingTermsId: string | null;
+  overrideCreditHoldUntil: Date | null;
 }
 
 export interface CustomerGroupProfile {
@@ -48,27 +49,25 @@ export function resolveCustomerRiskProfile(
     resolved.salesBlockReasons.push(`customer_${customer.stateCode}`);
   }
 
-  if (group && group.stateCode !== CUSTOMER_STATE.ACTIVE) {
-    resolved.isSalesBlocked = true;
-    resolved.salesBlockReasons.push(`group_${group.stateCode}`);
-  }
-
   // Credit/Limit checks only block progression to quote or confirm
   const isProgression = operation === 'confirm' || operation === 'quote';
+  const hasValidOverride =
+    customer.overrideCreditHoldUntil &&
+    customer.overrideCreditHoldUntil > new Date();
 
-  if (customer.isOnCreditHold) {
+  if (customer.isOnCreditHold && !hasValidOverride) {
     if (isProgression || operation === 'update') {
       resolved.isSalesBlocked = true;
       resolved.salesBlockReasons.push('customer_credit_hold');
     }
-  } else if (group && group.isOnCreditHold) {
+  } else if (group && group.isOnCreditHold && !hasValidOverride) {
     if (isProgression || operation === 'update') {
       resolved.isSalesBlocked = true;
       resolved.salesBlockReasons.push('group_credit_hold');
     }
   }
 
-  if (creditAssessment.isOverdue) {
+  if (creditAssessment.isOverdue && !hasValidOverride) {
     if (isProgression) {
       resolved.isSalesBlocked = true;
       resolved.salesBlockReasons.push('overdue_balance');
@@ -76,7 +75,7 @@ export function resolveCustomerRiskProfile(
   }
 
   const limitNum = parseFloat(resolved.effectiveCreditLimit);
-  if (limitNum >= 0) {
+  if (limitNum >= 0 && !hasValidOverride) {
     const totalExposure = creditAssessment.totalArBalance + additionalExposure;
     if (totalExposure > limitNum) {
       if (creditLimitBehavior === 'hard') {

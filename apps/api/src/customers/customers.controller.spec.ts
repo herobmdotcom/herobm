@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AccountsController } from './customers.controller';
 import { AccountsService } from './customers.service';
 import { AccountsWriteService } from './customers-write.service';
+import { CreditAssessmentService } from './credit-assessment.service';
 
 describe('AccountsController', () => {
   let controller: AccountsController;
@@ -25,6 +26,10 @@ describe('AccountsController', () => {
     update: jest.fn(),
   };
 
+  const mockCreditAssessmentService = {
+    assessCredit: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
@@ -32,6 +37,10 @@ describe('AccountsController', () => {
       providers: [
         { provide: AccountsService, useValue: mockService },
         { provide: AccountsWriteService, useValue: mockWriteService },
+        {
+          provide: CreditAssessmentService,
+          useValue: mockCreditAssessmentService,
+        },
       ],
     }).compile();
 

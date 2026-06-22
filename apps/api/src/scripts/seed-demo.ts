@@ -232,6 +232,7 @@ async function seedMasterData(db: any): Promise<MasterData> {
       name: p.name,
       baseUom: 'EA',
       isActive: true,
+      productType: 'inventory',
     });
   }
 

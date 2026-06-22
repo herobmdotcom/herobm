@@ -17,34 +17,51 @@ describe('Casbin VALID_ACTIONS Sync (e2e)', () => {
 
       for (const cls of classes) {
         // Find @CasbinResource decorator on the class
-        const casbinResourceDec = cls.getDecorator('CasbinResource');
-        let resourceName: string | undefined;
+        const classResourceDec = cls.getDecorator('CasbinResource');
+        let classResourceName: string | undefined;
 
-        if (casbinResourceDec) {
-          const args = casbinResourceDec.getArguments();
+        if (classResourceDec) {
+          const args = classResourceDec.getArguments();
           if (args.length > 0) {
             const argText = args[0].getText();
             if (argText.startsWith('SystemResource.')) {
               const key = argText.split('.')[1] as keyof typeof SystemResource;
-              resourceName = SystemResource[key];
+              classResourceName = SystemResource[key];
             } else {
-              resourceName = argText.replace(/['"]/g, '');
+              classResourceName = argText.replace(/['"]/g, '');
             }
           }
         }
-
-        if (!resourceName) continue;
-
-        if (!backendActionsMap.has(resourceName)) {
-          backendActionsMap.set(resourceName, new Set());
-        }
-
-        const resourceSet = backendActionsMap.get(resourceName)!;
 
         // Find all @CasbinAction decorators on methods
         for (const method of cls.getMethods()) {
           const skipCasbinDec = method.getDecorator('SkipCasbin');
           if (skipCasbinDec) continue;
+
+          let methodResourceName = classResourceName;
+          const methodResourceDec = method.getDecorator('CasbinResource');
+          if (methodResourceDec) {
+            const args = methodResourceDec.getArguments();
+            if (args.length > 0) {
+              const argText = args[0].getText();
+              if (argText.startsWith('SystemResource.')) {
+                const key = argText.split(
+                  '.',
+                )[1] as keyof typeof SystemResource;
+                methodResourceName = SystemResource[key];
+              } else {
+                methodResourceName = argText.replace(/['"]/g, '');
+              }
+            }
+          }
+
+          if (!methodResourceName) continue;
+
+          if (!backendActionsMap.has(methodResourceName)) {
+            backendActionsMap.set(methodResourceName, new Set());
+          }
+
+          const resourceSet = backendActionsMap.get(methodResourceName)!;
 
           const casbinActionDec = method.getDecorator('CasbinAction');
           if (casbinActionDec) {

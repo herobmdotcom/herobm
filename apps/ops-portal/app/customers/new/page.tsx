@@ -15,13 +15,16 @@ import CustomerSelect from '@/components/shared/CustomerSelect';
 import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichmentDecorator';
 import { getErrorMessage, COUNTRIES, getCurrencyForCountry } from '@herobm/shared';
 import { useSettings } from '@/components/SettingsProvider';
+import InheritedSelect from '@/components/shared/InheritedSelect';
+import InheritedNumberInput from '@/components/shared/InheritedNumberInput';
+import { useGroup, useInheritance } from '@/hooks/useInheritance';
 
 export default function NewAccountPage() {
   useDocumentTitle('New Customer');
   const t = useTranslations();
   const tCommon = useTranslations('admin.common');
   const router = useRouter();
-  const { baseCurrency, organization } = useSettings();
+  const { baseCurrency, organization, app } = useSettings();
   
   const defaultCountry = organization?.country || '';
   const defaultCurrency = getCurrencyForCountry(defaultCountry) || baseCurrency || 'EUR';
@@ -41,19 +44,52 @@ export default function NewAccountPage() {
     parentCustomerId: '',
     businessNumber: '',
     isTaxRegistered: false,
+    tradingTermsId: '',
+    creditLimit: '',
+    isOnCreditHold: null as boolean | null,
   });
   const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
+  const [customerGroups, setCustomerGroups] = useState<api.AccountGroupResponseDto[]>([]);
+  const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
 
   useEffect(() => {
     api.taxPositionsControllerFindAll().then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[])).catch(console.error);
+    api.accountGroupsControllerFindAll().then((res: unknown) => setCustomerGroups((res as { data: unknown[] }).data as unknown as api.AccountGroupResponseDto[])).catch(console.error);
+    api.tradingTermsControllerFindAll().then((res: unknown) => setTradingTerms((res as { data: unknown[] }).data as unknown as api.TradingTermResponseDto[])).catch(console.error);
   }, []);
+
+  const selectedGroup = useGroup(customerGroups, dto.customerGroupId);
+
+  const creditHoldInheritance = useInheritance([
+    { 
+      value: selectedGroup?.isOnCreditHold === true ? 'true' : selectedGroup?.isOnCreditHold === false ? 'false' : null, 
+      sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group'
+    }
+  ]);
+
+  const taxPositionInheritance = useInheritance([
+    { value: selectedGroup?.taxPositionId, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' },
+    { value: app?.defaultCustomerTaxPositionId, sourceLabel: 'System Default' }
+  ]);
+
+  const tradingTermsInheritance = useInheritance([
+    { value: selectedGroup?.tradingTermsId, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' },
+    { value: app?.defaultCustomerTermsId, sourceLabel: 'System Default' }
+  ]);
+
+  const creditLimitInheritance = useInheritance([
+    { value: selectedGroup?.creditLimit, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
 
   const handleSubmit = async () => {
     if (!isValid || submitting) return;
     setSubmitting(true);
 
     try {
-      const res = await api.accountsControllerCreate(dto);
+      const payload: Record<string, unknown> = { ...dto };
+      if (payload.isOnCreditHold === null) delete payload.isOnCreditHold;
+
+      const res = await api.accountsControllerCreate(payload as unknown as api.CreateAccountDto);
       const customer = res.data;
       toast.success(t('toast.accountCreated'));
       router.push(`/customers/${customer.customerId}`);
@@ -247,19 +283,80 @@ export default function NewAccountPage() {
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {t('common.columns.taxPosition')}
                   </label>
-                  <select
+                  <InheritedSelect
                     className="input"
                     value={dto.taxPositionId || ''}
-                    onChange={(e) => updateField('taxPositionId', e.target.value)}
+                    onChange={(val) => updateField('taxPositionId', val)}
                     disabled={submitting}
-                  >
-                    <option value="">{t('common.options.none')}</option>
-                    {taxPositions.map((pos) => (
-                      <option key={pos.taxPositionId} value={pos.taxPositionId}>
-                        {pos.title}
-                      </option>
-                    ))}
-                  </select>
+                    options={taxPositions.map((pos) => ({
+                      value: pos.taxPositionId,
+                      label: pos.title,
+                    }))}
+                    inheritedValue={taxPositionInheritance.inheritedValue}
+                    inheritedSourceLabel={taxPositionInheritance.inheritedSourceLabel}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Trading Terms
+                  </label>
+                  <InheritedSelect
+                    className="input"
+                    value={dto.tradingTermsId || ''}
+                    onChange={(val) => updateField('tradingTermsId', val)}
+                    disabled={submitting}
+                    options={tradingTerms.map((term) => ({
+                      value: term.id,
+                      label: term.description,
+                    }))}
+                    inheritedValue={tradingTermsInheritance.inheritedValue}
+                    inheritedSourceLabel={tradingTermsInheritance.inheritedSourceLabel}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Credit Limit
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <InheritedNumberInput
+                      step="0.01"
+                      className="input w-full max-w-xs"
+                      value={dto.creditLimit || ""}
+                      onChange={(val) => updateField("creditLimit", val)}
+                      disabled={submitting}
+                      placeholder="0.00"
+                      inheritedValue={creditLimitInheritance.inheritedValue}
+                      inheritedSourceLabel={creditLimitInheritance.inheritedSourceLabel}
+                    />
+                    {!!creditLimitInheritance.inheritedSourceLabel && (
+                      <span className="text-xs italic text-[var(--primary)] ml-2 flex-shrink-0">
+                        {t('common.options.inheritValue', {
+                          label: creditLimitInheritance.inheritedValue || '',
+                          source: creditLimitInheritance.inheritedSourceLabel || ''
+                        })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Credit Hold
+                  </label>
+                  <InheritedSelect
+                    className="input"
+                    disabled={submitting}
+                    value={dto.isOnCreditHold === true ? 'true' : dto.isOnCreditHold === false ? 'false' : ''}
+                    onChange={(val) => {
+                      const boolVal = val === 'true' ? true : val === 'false' ? false : null;
+                      updateField("isOnCreditHold", boolVal);
+                    }}
+                    options={[
+                      { value: 'true', label: 'Yes' },
+                      { value: 'false', label: 'No' }
+                    ]}
+                    inheritedValue={creditHoldInheritance.inheritedValue}
+                    inheritedSourceLabel={creditHoldInheritance.inheritedSourceLabel}
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">

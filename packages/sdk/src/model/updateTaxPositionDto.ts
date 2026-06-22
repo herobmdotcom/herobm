@@ -9,5 +9,4 @@
 export interface UpdateTaxPositionDto {
   code?: string;
   title?: string;
-  isDefault?: boolean;
 }

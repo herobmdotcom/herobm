@@ -14,6 +14,7 @@ import type {
   AccountsControllerFindAll200,
   AccountsControllerFindAllParams,
   AccountsControllerFindOneParams,
+  AccountsControllerGetAgedBalancesParams,
   ActiveJobDto,
   ActivitiesControllerFindAllParams,
   ActivityResponseDto,
@@ -23,6 +24,7 @@ import type {
   AddShipmentLineDto,
   AddSupplierDto,
   AdjustStockDto,
+  AgedBalanceResponseDto,
   AllocatePaymentDto,
   AllocationResolveResponseDto,
   AllocationSuccessResponseDto,
@@ -115,6 +117,7 @@ import type {
   CreateUserDto,
   CreateWebhookDto,
   CreateZoneDto,
+  CreditAssessmentResponseDto,
   CsvMetadataDto,
   DashboardControllerGetSummary200,
   DashboardControllerGetTimeline200Item,
@@ -235,7 +238,6 @@ import type {
   OrdersControllerFindAll200,
   OrdersControllerFindAllParams,
   OrdersControllerFindOneParams,
-  OrdersControllerOverrideCreditHold201,
   OrganizationResponseDto,
   OverrideCreditHoldDto,
   PaginatedGoodsReceivedDto,
@@ -723,6 +725,50 @@ export const accountsControllerCreate = async (createAccountDto: CreateAccountDt
 
 
 /**
+ * Retrieve aged balances for all customers with outstanding invoices.
+ * @summary Get Aged Balances
+ */
+export type accountsControllerGetAgedBalancesResponse200 = {
+  data: AgedBalanceResponseDto[]
+  status: 200
+}
+    
+export type accountsControllerGetAgedBalancesResponseSuccess = (accountsControllerGetAgedBalancesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type accountsControllerGetAgedBalancesResponse = (accountsControllerGetAgedBalancesResponseSuccess)
+
+export const getAccountsControllerGetAgedBalancesUrl = (params?: AccountsControllerGetAgedBalancesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/customers/aged-balances?${stringifiedParams}` : `/customers/aged-balances`
+}
+
+export const accountsControllerGetAgedBalances = async (params?: AccountsControllerGetAgedBalancesParams, options?: RequestInit): Promise<accountsControllerGetAgedBalancesResponse> => {
+  
+  return customFetch<accountsControllerGetAgedBalancesResponse>(getAccountsControllerGetAgedBalancesUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
  * Retrieve a single customer by ID.
  * @summary Get Customer
  */
@@ -802,6 +848,43 @@ export const accountsControllerUpdate = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       updateAccountDto,)
+  }
+);}
+
+
+
+/**
+ * Retrieve the credit assessment for a customer.
+ * @summary Get Credit Assessment
+ */
+export type accountsControllerGetCreditAssessmentResponse200 = {
+  data: CreditAssessmentResponseDto
+  status: 200
+}
+    
+export type accountsControllerGetCreditAssessmentResponseSuccess = (accountsControllerGetCreditAssessmentResponse200) & {
+  headers: Headers;
+};
+;
+
+export type accountsControllerGetCreditAssessmentResponse = (accountsControllerGetCreditAssessmentResponseSuccess)
+
+export const getAccountsControllerGetCreditAssessmentUrl = (id: string,) => {
+
+
+  
+
+  return `/customers/${id}/credit-assessment`
+}
+
+export const accountsControllerGetCreditAssessment = async (id: string, options?: RequestInit): Promise<accountsControllerGetCreditAssessmentResponse> => {
+  
+  return customFetch<accountsControllerGetCreditAssessmentResponse>(getAccountsControllerGetCreditAssessmentUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 
@@ -6148,13 +6231,8 @@ export type ordersControllerOverrideCreditHoldResponse200 = {
   data: OrderResponseDto
   status: 200
 }
-
-export type ordersControllerOverrideCreditHoldResponse201 = {
-  data: OrdersControllerOverrideCreditHold201
-  status: 201
-}
     
-export type ordersControllerOverrideCreditHoldResponseSuccess = (ordersControllerOverrideCreditHoldResponse200 | ordersControllerOverrideCreditHoldResponse201) & {
+export type ordersControllerOverrideCreditHoldResponseSuccess = (ordersControllerOverrideCreditHoldResponse200) & {
   headers: Headers;
 };
 ;

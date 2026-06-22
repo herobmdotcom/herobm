@@ -39,6 +39,7 @@ import {
 } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { evaluateLifecycleRules } from './order-lifecycle-rules';
 import { InventoryService } from '../inventory/inventory.service';
 import { GlService } from '../gl/gl.service';
@@ -264,31 +265,34 @@ export class ShipmentService {
           throw new BadRequestException(`Cannot update a cancelled shipment.`);
         }
 
-        const [updated] = await innerTx
-          .update(salesOrderShipments)
-          .set({
-            ...(dto.notes !== undefined && { notes: dto.notes }),
-            ...(dto.trackingNumber !== undefined && {
-              trackingNumber: dto.trackingNumber,
-            }),
-            modifiedOn: new Date(),
-          })
-          .where(eq(salesOrderShipments.shipmentId, shipmentId))
-          .returning();
+        const audit = calculateAuditTrail(dto, shipment, AuditMode.DIFF);
 
-        await emitEvent(innerTx, {
-          entityType: EntityType.SHIPMENT,
-          entityId: shipmentId,
-          eventType: EventType.SHIPMENT_UPDATED,
-          entityDisplayName: shipment.shipmentNumber,
-          payload: {
-            shipmentId,
-            changes: dto,
-          },
-          actor,
-        });
+        if (audit.hasChanges) {
+          const [updated] = await innerTx
+            .update(salesOrderShipments)
+            .set({
+              ...audit.changes,
+              modifiedOn: new Date(),
+            } as typeof salesOrderShipments.$inferInsert)
+            .where(eq(salesOrderShipments.shipmentId, shipmentId))
+            .returning();
 
-        return updated;
+          await emitEvent(innerTx, {
+            entityType: EntityType.SHIPMENT,
+            entityId: shipmentId,
+            eventType: EventType.SHIPMENT_UPDATED,
+            entityDisplayName: shipment.shipmentNumber,
+            payload: {
+              shipmentId,
+              changes: audit.changes,
+              previous: audit.previousValues,
+            },
+            actor,
+          });
+
+          return updated;
+        }
+        return shipment;
       },
     );
 
@@ -778,35 +782,39 @@ export class ShipmentService {
           );
         }
 
-        const [updated] = await innerTx
-          .update(salesOrderShipmentLines)
-          .set({
-            ...(dto.quantityShipped !== undefined && {
-              quantityShipped: dto.quantityShipped,
-            }),
-          })
-          .where(eq(salesOrderShipmentLines.shipmentLineId, lineId))
-          .returning();
+        const audit = calculateAuditTrail(dto, existingLine, AuditMode.DIFF);
 
-        await innerTx
-          .update(salesOrderShipments)
-          .set({ modifiedOn: new Date() })
-          .where(eq(salesOrderShipments.shipmentId, shipmentId));
+        if (audit.hasChanges) {
+          const [updated] = await innerTx
+            .update(salesOrderShipmentLines)
+            .set({
+              ...audit.changes,
+            } as typeof salesOrderShipmentLines.$inferInsert)
+            .where(eq(salesOrderShipmentLines.shipmentLineId, lineId))
+            .returning();
 
-        await emitEvent(innerTx, {
-          entityType: EntityType.SHIPMENT,
-          entityId: shipmentId,
-          eventType: EventType.SHIPMENT_LINE_UPDATED,
-          entityDisplayName: shipment.shipmentNumber,
-          payload: {
-            shipmentId,
-            shipmentLineId: lineId,
-            changes: dto,
-          },
-          actor,
-        });
+          await innerTx
+            .update(salesOrderShipments)
+            .set({ modifiedOn: new Date() })
+            .where(eq(salesOrderShipments.shipmentId, shipmentId));
 
-        return updated;
+          await emitEvent(innerTx, {
+            entityType: EntityType.SHIPMENT,
+            entityId: shipmentId,
+            eventType: EventType.SHIPMENT_LINE_UPDATED,
+            entityDisplayName: shipment.shipmentNumber,
+            payload: {
+              shipmentId,
+              shipmentLineId: lineId,
+              changes: audit.changes,
+              previous: audit.previousValues,
+            },
+            actor,
+          });
+
+          return updated;
+        }
+        return existingLine;
       },
     );
 

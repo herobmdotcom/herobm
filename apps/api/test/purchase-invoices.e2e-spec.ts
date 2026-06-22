@@ -82,6 +82,8 @@ describe('API E2E — Purchase Invoices', () => {
         productNumber: `E2E-INV-P-${Date.now()}`,
         name: 'E2E Invoice Test Product',
         listPrice: '15.00',
+        productType: 'inventory',
+        baseUom: 'EA',
       })
       .expect(201);
     validProductId = productRes.body.productId;

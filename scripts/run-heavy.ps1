@@ -5,7 +5,7 @@ podman build -t localhost/herobm_worker-test:latest -f apps/worker/Dockerfile .
 podman build --build-arg API_URL=http://custom-api-test:3000 -t localhost/herobm_portal-test:latest -f Dockerfile.portal .
 
 Write-Host "Ensuring network exists..." -ForegroundColor Cyan
-$netName = (Split-Path -Leaf (Get-Location)).ToLower() + "_app-net"
+$netName = "herobm_app-net"
 $env:APP_NETWORK_NAME = $netName
 podman network exists $netName
 if ($LASTEXITCODE -ne 0) {
@@ -42,13 +42,12 @@ try {
     $failed = $true
 }
 
-Write-Host "Tearing down test containers to preserve dev-local isolation..." -ForegroundColor Yellow
-podman compose -f docker-compose.test.yml -f docker-compose.ui.yml down -v
-
 if ($failed) {
-    Write-Host "Heavy tests FAILED!" -ForegroundColor Red
+    Write-Host "Heavy tests FAILED! Leaving containers up for debugging." -ForegroundColor Red
     exit 1
 } else {
+    Write-Host "Tearing down test containers to preserve dev-local isolation..." -ForegroundColor Yellow
+    podman compose -f docker-compose.test.yml -f docker-compose.ui.yml down -v
     Write-Host "Heavy tests PASSED!" -ForegroundColor Green
     exit 0
 }

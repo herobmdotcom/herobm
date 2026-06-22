@@ -379,6 +379,62 @@
       "when": 1781772640334,
       "tag": "0053_add_hierarchical_tax_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1781774817402,
+      "tag": "0054_last_the_stranger",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1781783069575,
+      "tag": "0055_add_override_credit_hold_until",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1781783069576,
+      "tag": "0056_remove_is_default_add_defaults",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1781783070000,
+      "tag": "0057_add_product_weight",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1781867095676,
+      "tag": "0058_add_pipeline_jobs",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1781874453880,
+      "tag": "0059_tiny_cannonball",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1782121822735,
+      "tag": "0060_drop_not_null_from_inherited_booleans",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1782122767952,
+      "tag": "0061_drop_purchasing_blocked_not_null",
+      "breakpoints": true
     }
   ]
 }

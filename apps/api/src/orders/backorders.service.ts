@@ -20,6 +20,7 @@ import {
   suppliers as coreSuppliers,
   taxCategories,
   locations,
+  appSettings,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -75,7 +76,7 @@ export class BackordersService {
       .where(eq(salesOrders.salesOrderId, salesOrderId))
       .limit(1);
 
-    const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+    const CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
     const validLines = lines.filter(
       (l) =>
         l.productId != null &&
@@ -419,13 +420,15 @@ export class BackordersService {
 
     await this.db.transaction(async (tx) => {
       // 1. Get fallback tax category
-      const [defaultTaxCat] = await tx
-        .select({ id: taxCategories.taxCategoryId })
-        .from(taxCategories)
-        .where(eq(taxCategories.isDefault, true))
+      const [appSettingsRecord] = await tx
+        .select({
+          defaultPurchaseTaxCategoryId:
+            appSettings.defaultPurchaseTaxCategoryId,
+        })
+        .from(appSettings)
         .limit(1);
 
-      let fallbackTaxId = defaultTaxCat?.id;
+      let fallbackTaxId = appSettingsRecord?.defaultPurchaseTaxCategoryId;
       if (!fallbackTaxId) {
         const [firstCat] = await tx
           .select({ id: taxCategories.taxCategoryId })

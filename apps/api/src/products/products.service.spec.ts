@@ -49,6 +49,7 @@ describe('ProductsService', () => {
           name: 'M8 Hex Bolt',
           stateCode: PRODUCT_STATE.ACTIVE,
           baseUom: 'EA',
+          productType: 'inventory',
         },
         {
           productId: '22222222-2222-2222-2222-222222222222',
@@ -56,6 +57,7 @@ describe('ProductsService', () => {
           name: 'M8 Hex Nut',
           stateCode: PRODUCT_STATE.ACTIVE,
           baseUom: 'EA',
+          productType: 'inventory',
         },
       ]);
     });
@@ -90,6 +92,7 @@ describe('ProductsService', () => {
         name: 'M8 Hex Bolt',
         stateCode: PRODUCT_STATE.ACTIVE,
         baseUom: 'EA',
+        productType: 'inventory',
       });
 
       await pg.db.insert(masterDataEvents).values({

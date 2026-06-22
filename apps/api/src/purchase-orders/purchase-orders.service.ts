@@ -22,6 +22,7 @@ import {
   purchaseInvoiceLines,
   taxCategories,
   supplierExpiries,
+  appSettings,
 } from '../drizzle/herobm-core-schema';
 import { eq, or, ilike, desc, sql, inArray, and, asc } from 'drizzle-orm';
 import { getErrorMessage } from '@herobm/shared';
@@ -101,9 +102,10 @@ export class PurchaseOrdersService {
             supplier.taxPositionId ||
             ((supplier as Record<string, unknown>)
               .supplierGroupTaxPositionId as string | undefined) ||
+            this.appConfig.getAppSettingsRaw()?.defaultSupplierTaxPositionId ||
             null,
           productId:
-            productId === '00000000-0000-0000-0000-000000000000'
+            productId === '00000000-0000-4000-8000-000000000000'
               ? null
               : productId || null,
           productDefaultTaxCategoryId: null,
@@ -130,18 +132,29 @@ export class PurchaseOrdersService {
       }
     }
 
-    const defaultGstRows = await tx
-      .select()
-      .from(taxCategories)
-      .where(eq(taxCategories.isDefault, true))
+    const defaultSettings = await tx
+      .select({ taxCategoryId: appSettings.defaultPurchaseTaxCategoryId })
+      .from(appSettings)
       .limit(1);
-    if (defaultGstRows.length === 0) {
-      throw new NotFoundException('No default tax category configured');
+
+    if (defaultSettings.length > 0 && defaultSettings[0].taxCategoryId) {
+      const catRows = await tx
+        .select()
+        .from(taxCategories)
+        .where(
+          eq(taxCategories.taxCategoryId, defaultSettings[0].taxCategoryId),
+        )
+        .limit(1);
+
+      if (catRows.length > 0) {
+        return {
+          taxCategoryId: catRows[0].taxCategoryId,
+          rate: parseFloat(catRows[0].rate ?? '0'),
+        };
+      }
     }
-    return {
-      taxCategoryId: defaultGstRows[0].taxCategoryId,
-      rate: parseFloat(defaultGstRows[0].rate ?? '0'),
-    };
+
+    throw new NotFoundException('No default purchase tax category configured');
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
@@ -543,7 +556,7 @@ export class PurchaseOrdersService {
           .filter(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
             (id: any): id is string =>
-              id !== null && id !== '00000000-0000-0000-0000-000000000000',
+              id !== null && id !== '00000000-0000-4000-8000-000000000000',
           ),
       ),
     );

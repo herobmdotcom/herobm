@@ -28,25 +28,29 @@ export function useAccount(id: string) {
   /* ── Tax positions & Trading terms ───────────────────────────── */
   const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
   const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
+  const [accountGroups, setAccountGroups] = useState<api.AccountGroupResponseDto[]>([]);
 
   const [hasDiscountRules, setHasDiscountRules] = useState(false);
 
   /* ── Derived ─────────────────────────────────────────────────── */
   const isEditable = customer?.stateCode !== CUSTOMER_STATE.ARCHIVED;
+  const [creditAssessment, setCreditAssessment] = useState<api.CreditAssessmentResponseDto | null>(null);
 
   /* ── Data loader ─────────────────────────────────────────────── */
 
   const loadAccount = async () => {
     setLoading(true);
     try {
-      const [dataRes, rulesRes] = await Promise.all([
+      const [dataRes, rulesRes, creditRes] = await Promise.all([
         api.accountsControllerFindOne(id),
-        api.discountMatrixControllerList({ ownerType: 'customer', customerId: id }).catch(() => ({ data: [] }))
+        api.discountMatrixControllerList({ ownerType: 'customer', customerId: id }).catch(() => ({ data: [] })),
+        api.accountsControllerGetCreditAssessment(id).catch(() => ({ data: null }))
       ]);
       const data = dataRes.data;
       const rules = rulesRes.data || [];
       setAccount(data);
       setDto(data);
+      setCreditAssessment(creditRes.data);
       setHasDiscountRules(rules && rules.length > 0);
       setIsDirty(false);
     } catch (err) {
@@ -60,6 +64,7 @@ export function useAccount(id: string) {
     loadAccount();
     api.taxPositionsControllerFindAll().then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[])).catch(console.error);
     api.tradingTermsControllerFindAll().then((res: unknown) => setTradingTerms((res as { data: unknown[] }).data as unknown as api.TradingTermResponseDto[])).catch(console.error);
+    api.accountGroupsControllerFindAll().then((res: unknown) => setAccountGroups((res as { data: unknown[] }).data as unknown as api.AccountGroupResponseDto[])).catch(console.error);
   }, [id]);
 
   /* ── Field helpers ──────────────────────────────────────────── */
@@ -172,7 +177,9 @@ export function useAccount(id: string) {
     isEditable,
     taxPositions,
     tradingTerms,
+    accountGroups,
     hasDiscountRules,
+    creditAssessment,
 
     // Field helpers
     updateField,

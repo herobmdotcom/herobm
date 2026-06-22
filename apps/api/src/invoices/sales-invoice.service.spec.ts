@@ -33,11 +33,11 @@ describe('SalesInvoiceService', () => {
 
   let mockAppConfigService: any;
 
-  const CUSTOMER_ID = '00000000-0000-0000-0000-000000000001';
-  const ORDER_ID = '00000000-0000-0000-0000-000000000002';
-  const PRODUCT_ID = '00000000-0000-0000-0000-00000000000a';
-  const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
-  const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
+  const CUSTOMER_ID = '00000000-0000-4000-8000-000000000001';
+  const ORDER_ID = '00000000-0000-4000-8000-000000000002';
+  const PRODUCT_ID = '00000000-0000-4000-8000-00000000000a';
+  const TAX_CAT_ID = '00000000-0000-4000-8000-000000000007';
+  const LOCATION_ID = '00000000-0000-4000-8000-00000000000f';
 
   beforeEach(async () => {
     // Seed static data
@@ -73,6 +73,7 @@ describe('SalesInvoiceService', () => {
       productNumber: 'P1',
       name: 'Product 1',
       baseUom: 'EA',
+      productType: 'inventory',
     });
   });
 
@@ -160,7 +161,7 @@ describe('SalesInvoiceService', () => {
     it('should reject if order is not found', async () => {
       await expect(
         service.createInvoice(
-          '00000000-0000-0000-0000-000000000999',
+          '00000000-0000-4000-8000-000000000999',
           {},
           'admin',
         ),
@@ -195,7 +196,7 @@ describe('SalesInvoiceService', () => {
           {
             lines: [
               {
-                salesOrderLineId: '00000000-0000-0000-0000-000000000001',
+                salesOrderLineId: '00000000-0000-4000-8000-000000000001',
                 quantityToInvoice: 10,
               },
             ],
@@ -209,7 +210,7 @@ describe('SalesInvoiceService', () => {
   describe('findOne', () => {
     it('should throw NotFoundException for unknown invoice', async () => {
       await expect(
-        service.findOne('00000000-0000-0000-0000-000000000888'),
+        service.findOne('00000000-0000-4000-8000-000000000888'),
       ).rejects.toThrow(NotFoundException);
     });
   });

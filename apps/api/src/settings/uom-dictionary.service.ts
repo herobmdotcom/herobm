@@ -12,6 +12,7 @@ import { uomDictionary } from '../drizzle/herobm-core-schema';
 import { CreateUomDto, UpdateUomDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { calculateAuditTrail, AuditMode } from '../common/audit';
 
 @Injectable()
 export class UomDictionaryService {
@@ -67,28 +68,40 @@ export class UomDictionaryService {
   }
 
   async update(code: string, dto: UpdateUomDto) {
-    await this.findOne(code);
+    const existing = await this.findOne(code);
 
-    const rows = await this.db
-      .update(uomDictionary)
-      .set({
-        ...(dto.description !== undefined && {
-          description: dto.description.trim(),
-        }),
-      })
-      .where(eq(uomDictionary.uomCode, code))
-      .returning();
+    if (dto.description !== undefined) {
+      dto.description = dto.description.trim();
+    }
 
-    await emitEvent(this.db, {
-      entityType: EntityType.SYSTEM,
-      entityId: 'system',
-      eventType: EventType.UPDATED,
-      entityDisplayName: 'System UOM',
-      payload: { uomCode: rows[0].uomCode },
-      actor: 'system',
-    });
+    const audit = calculateAuditTrail(dto, existing, AuditMode.DIFF);
 
-    return rows[0];
+    if (audit.hasChanges) {
+      const rows = await this.db
+        .update(uomDictionary)
+        .set({
+          ...audit.changes,
+        } as typeof uomDictionary.$inferInsert)
+        .where(eq(uomDictionary.uomCode, code))
+        .returning();
+
+      await emitEvent(this.db, {
+        entityType: EntityType.SYSTEM,
+        entityId: 'system',
+        eventType: EventType.UPDATED,
+        entityDisplayName: 'System UOM',
+        payload: {
+          uomCode: rows[0].uomCode,
+          changes: audit.changes,
+          previous: audit.previousValues,
+        },
+        actor: 'system',
+      });
+
+      return rows[0];
+    }
+
+    return existing;
   }
 
   async delete(code: string) {

@@ -86,6 +86,8 @@ describe('Inventory Cycle (e2e)', () => {
         productNumber: `INV-CYC-${Date.now()}`,
         name: 'Inventory Cycle Test Product',
         listPrice: '50.00',
+        productType: 'inventory',
+        baseUom: 'EA',
       })
       .expect(201);
     productId = productRes.body.productId;

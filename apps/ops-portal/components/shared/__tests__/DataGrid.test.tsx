@@ -8,7 +8,14 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DataGrid from '../DataGrid';
-import * as api from '@herobm/sdk';
+import { customFetch } from '@herobm/sdk';
+
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
+  usePathname: () => '/test',
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 // Mock next-intl translations
 jest.mock('next-intl', () => ({
@@ -29,15 +36,24 @@ jest.mock('ag-grid-community', () => ({
   ModuleRegistry: { registerModules: jest.fn() },
 }));
 
+// Mock @herobm/sdk
+jest.mock('@herobm/sdk', () => {
+  const original = jest.requireActual('@herobm/sdk');
+  return {
+    ...original,
+    customFetch: jest.fn(),
+  };
+});
+
 describe('DataGrid', () => {
-  let mockCustomFetch: jest.SpyInstance;
+  const mockCustomFetch = customFetch as jest.Mock;
 
   beforeEach(() => {
-    mockCustomFetch = jest.spyOn(api, 'customFetch').mockResolvedValue({ data: [] } as never);
+    mockCustomFetch.mockResolvedValue({ data: [] } as never);
   });
 
   afterEach(() => {
-    mockCustomFetch.mockRestore();
+    mockCustomFetch.mockReset();
   });
 
   it('fetches data using canonical ?q= parameter when searching', async () => {

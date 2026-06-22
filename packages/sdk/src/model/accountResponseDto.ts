@@ -35,6 +35,7 @@ export interface AccountResponseDto {
   isTaxRegistered?: boolean;
   creditLimit?: string;
   isOnCreditHold?: boolean;
+  overrideCreditHoldUntil?: string;
   tradingTermsId?: string;
   stateCode: string;
   sourceId?: string;
@@ -47,6 +48,7 @@ export interface AccountResponseDto {
   customerGroupTradingTermsId?: string;
   customerGroupCreditLimit?: string;
   customerGroupIsOnCreditHold?: boolean;
+  customerGroupTaxPositionId?: string;
   gstCategoryName?: string;
   events?: AccountResponseDtoEventsItem[];
   contacts?: AccountResponseDtoContactsItem[];

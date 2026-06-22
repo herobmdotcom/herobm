@@ -141,7 +141,7 @@ export default function JournalEntriesPage() {
         onRowClicked={(row) => setSelectedEntry(row)}
         pageTitle={t('title')}
         secondaryHeader={
-          <div className="flex flex-wrap items-center justify-end gap-4 w-full">
+          <div className="flex flex-wrap items-center justify-start gap-4">
             <select
               value={sourceType}
               onChange={(e) => setSourceType(e.target.value)}

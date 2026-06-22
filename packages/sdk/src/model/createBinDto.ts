@@ -10,7 +10,7 @@ import type { CreateBinDtoBinType } from './createBinDtoBinType';
 export interface CreateBinDto {
   zoneId: string;
   binNumber: string;
-  binType?: CreateBinDtoBinType;
+  binType: CreateBinDtoBinType;
   isConsignment?: boolean;
   isBonded?: boolean;
   isUnavailable?: boolean;

@@ -41,14 +41,14 @@ export class ProductsService {
     const scoreSql = searchTerm
       ? sql<number>`
           CASE 
-            WHEN ${coreProducts.name} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${coreProducts.name} ILIKE ${rawSearchTerm + '%'} THEN 2
-            WHEN ${coreProducts.productNumber} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${coreProducts.productNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
-            WHEN ${coreProducts.barcode} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${coreProducts.barcode} ILIKE ${rawSearchTerm + '%'} THEN 2
-            WHEN ${coreProducts.alternateProductNumber} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${coreProducts.alternateProductNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${coreProducts.name} ILIKE ${rawSearchTerm}::text THEN 3
+            WHEN ${coreProducts.name} ILIKE ${rawSearchTerm + '%'}::text THEN 2
+            WHEN ${coreProducts.productNumber} ILIKE ${rawSearchTerm}::text THEN 3
+            WHEN ${coreProducts.productNumber} ILIKE ${rawSearchTerm + '%'}::text THEN 2
+            WHEN ${coreProducts.barcode} ILIKE ${rawSearchTerm}::text THEN 3
+            WHEN ${coreProducts.barcode} ILIKE ${rawSearchTerm + '%'}::text THEN 2
+            WHEN ${coreProducts.alternateProductNumber} ILIKE ${rawSearchTerm}::text THEN 3
+            WHEN ${coreProducts.alternateProductNumber} ILIKE ${rawSearchTerm + '%'}::text THEN 2
             ELSE 1
           END
         `

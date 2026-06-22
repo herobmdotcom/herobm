@@ -59,20 +59,11 @@ export class TaxPositionsService {
       );
     }
 
-    // Handle default logic
-    if (dto.isDefault) {
-      await this.db
-        .update(taxPositions)
-        .set({ isDefault: false })
-        .where(eq(taxPositions.isDefault, true));
-    }
-
     const inserted = await this.db
       .insert(taxPositions)
       .values({
         code: dto.code,
         title: dto.title,
-        isDefault: dto.isDefault || false,
       })
       .returning();
 
@@ -103,23 +94,9 @@ export class TaxPositionsService {
       }
     }
 
-    // Default logic
-    if (dto.isDefault && !existingPosition.isDefault) {
-      await this.db
-        .update(taxPositions)
-        .set({ isDefault: false })
-        .where(
-          and(
-            eq(taxPositions.isDefault, true),
-            ne(taxPositions.taxPositionId, id),
-          ),
-        );
-    }
-
     const updateData: Record<string, unknown> = {};
     if (dto.code !== undefined) updateData.code = dto.code;
     if (dto.title !== undefined) updateData.title = dto.title;
-    if (dto.isDefault !== undefined) updateData.isDefault = dto.isDefault;
 
     if (Object.keys(updateData).length === 0) {
       return existingPosition;

@@ -52,6 +52,7 @@ export class ProductsWriteService {
         .insert(coreProducts)
         .values({
           ...dto,
+          productType: dto.productType ?? 'inventory',
           createdBy: actor,
         })
         .returning();

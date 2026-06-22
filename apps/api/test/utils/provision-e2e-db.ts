@@ -136,8 +136,8 @@ async function provision() {
     const db = drizzle(e2eSql, { schema });
     await runStandardSeeds(db);
     // Testing-only extension to seed COA defaults, accounts, and locations for E2E
-    await seedCoaAccounts(db, false);
-    await seedCoaSettings(db, false);
+    // await seedCoaAccounts(db, false);
+    // await seedCoaSettings(db, false);
     await seedTestLocations(db, false);
     await seedTestUsers(db, false);
     await seedAccounts(db, false);

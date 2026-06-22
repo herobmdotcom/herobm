@@ -12,11 +12,14 @@ import { useTranslations } from 'next-intl';
 import { CURRENCIES } from '@/lib/currency';
 import GroupSelect from '@/components/shared/GroupSelect';
 import { useSettings } from '@/components/SettingsProvider';
+import InheritedSelect from '@/components/shared/InheritedSelect';
 import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichmentDecorator';
 import { getErrorMessage, COUNTRIES, getCurrencyForCountry } from '@herobm/shared';
+import InheritedNumberInput from '@/components/shared/InheritedNumberInput';
+import { useGroup, useInheritance } from '@/hooks/useInheritance';
 
 export default function NewSupplierPage() {
-  const { baseCurrency, organization } = useSettings();
+  const { baseCurrency, organization, app } = useSettings();
   const t = useTranslations('suppliers');
   const tCommon = useTranslations('common');
   useDocumentTitle(t('new.documentTitle'));
@@ -34,7 +37,6 @@ export default function NewSupplierPage() {
     address1Line1: '',
     address1City: '',
     address1Country: defaultCountry,
-    paymentTerms: 'NET30',
     currencyCode: defaultCurrency,
     supplierGroupId: '',
     notes: '',
@@ -44,20 +46,73 @@ export default function NewSupplierPage() {
     businessNumber: '',
     isTaxRegistered: false,
     taxPositionId: '',
+    tradingTermsId: '',
+    earlyPaymentDiscount: '',
+    earlyPaymentDiscountDays: '',
+    creditLimit: '',
+    isPurchasingBlocked: null as boolean | null,
+    isPaymentBlocked: null as boolean | null,
   });
 
   const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
+  const [supplierGroups, setSupplierGroups] = useState<api.SupplierGroupResponseDto[]>([]);
+  const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
 
   useEffect(() => {
     api.taxPositionsControllerFindAll().then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[])).catch(console.error);
+    api.supplierGroupsControllerFindAll().then((res: unknown) => setSupplierGroups((res as { data: unknown[] }).data as unknown as api.SupplierGroupResponseDto[])).catch(console.error);
+    api.tradingTermsControllerFindAll().then((res: unknown) => setTradingTerms((res as { data: unknown[] }).data as unknown as api.TradingTermResponseDto[])).catch(console.error);
   }, []);
+  const selectedGroup = useGroup(supplierGroups, dto.supplierGroupId);
+
+  const earlyPaymentDiscountInheritance = useInheritance([
+    { value: selectedGroup?.earlyPaymentDiscount, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
+
+  const earlyPaymentDiscountDaysInheritance = useInheritance([
+    { value: selectedGroup?.earlyPaymentDiscountDays, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
+
+  const creditLimitInheritance = useInheritance([
+    { value: selectedGroup?.creditLimit, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
+
+  const taxPositionInheritance = useInheritance([
+    { value: selectedGroup?.taxPositionId, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' },
+    { value: app?.defaultSupplierTaxPositionId, sourceLabel: 'System Default' }
+  ]);
+
+  const tradingTermsInheritance = useInheritance([
+    { value: selectedGroup?.tradingTermsId, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' },
+    { value: app?.defaultSupplierTermsId, sourceLabel: 'System Default' }
+  ]);
+
+  const purchasingBlockInheritance = useInheritance([
+    { value: selectedGroup?.isPurchasingBlocked === true ? 'true' : selectedGroup?.isPurchasingBlocked === false ? 'false' : null, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
+
+  const paymentBlockInheritance = useInheritance([
+    { value: selectedGroup?.isPaymentBlocked === true ? 'true' : selectedGroup?.isPaymentBlocked === false ? 'false' : null, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
 
   const handleSubmit = async () => {
     if (!isValid || submitting) return;
     setSubmitting(true);
 
     try {
-      const res = await api.suppliersControllerCreate(dto as api.CreateSupplierDto);
+      const payload: Record<string, unknown> = { ...dto };
+      if (!payload.purchaseTaxCategoryId) delete payload.purchaseTaxCategoryId;
+      if (!payload.salesTaxCategoryId) delete payload.salesTaxCategoryId;
+      if (!payload.productGroupId) delete payload.productGroupId;
+      if (payload.earlyPaymentDiscountDays) {
+        payload.earlyPaymentDiscountDays = Number(payload.earlyPaymentDiscountDays);
+      } else {
+        delete payload.earlyPaymentDiscountDays;
+      }
+      if (payload.isPurchasingBlocked === null) delete payload.isPurchasingBlocked;
+      if (payload.isPaymentBlocked === null) delete payload.isPaymentBlocked;
+
+      const res = await api.suppliersControllerCreate(payload as unknown as api.CreateSupplierDto);
       const supplier = res.data;
       toast.success(tCommon('toast.supplierCreated'));
       router.push(`/suppliers/${(supplier as { vendorId?: string; id?: string }).vendorId || (supplier as { vendorId?: string; id?: string }).id}`);
@@ -209,10 +264,54 @@ export default function NewSupplierPage() {
                 ))}
               </select>
             </div>
-            
-            {/* Empty slots to match the layout of the details page */}
-            <div className="hidden md:block"></div>
-            <div className="hidden md:block"></div>
+            {/* 3. Early Payment Discount */}
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('earlyPaymentDiscount')}
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="relative w-32 shrink-0">
+                  <InheritedNumberInput
+                    className="input w-full pr-8"
+                    value={dto.earlyPaymentDiscount}
+                    onChange={(val) => updateField('earlyPaymentDiscount', val)}
+                    disabled={submitting}
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    placeholder="0.00"
+                    inheritedValue={earlyPaymentDiscountInheritance.inheritedValue}
+                    inheritedSourceLabel={earlyPaymentDiscountInheritance.inheritedSourceLabel}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
+                </div>
+                <span className="text-sm font-medium shrink-0" style={{ color: 'var(--text-muted)' }}>
+                  in
+                </span>
+                <div className="relative w-32 shrink-0">
+                  <InheritedNumberInput
+                    className="input w-full pr-12"
+                    value={dto.earlyPaymentDiscountDays}
+                    onChange={(val) => updateField('earlyPaymentDiscountDays', val)}
+                    disabled={submitting}
+                    step="1"
+                    min="0"
+                    placeholder="10"
+                    inheritedValue={earlyPaymentDiscountDaysInheritance.inheritedValue}
+                    inheritedSourceLabel={earlyPaymentDiscountDaysInheritance.inheritedSourceLabel}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none text-sm">{tCommon('units.days')}</span>
+                </div>
+                {!!earlyPaymentDiscountInheritance.inheritedSourceLabel && !!earlyPaymentDiscountDaysInheritance.inheritedSourceLabel && (
+                  <span className="text-xs italic text-[var(--primary)] ml-2 flex-shrink-0">
+                    {tCommon('options.inheritValue', { 
+                      label: `${earlyPaymentDiscountInheritance.inheritedValue}% in ${earlyPaymentDiscountDaysInheritance.inheritedValue} days`,
+                      source: earlyPaymentDiscountInheritance.inheritedSourceLabel || ''
+                    })}
+                  </span>
+                )}
+              </div>
+            </div>
 
             {/* ── Row 2 ── */}
             {/* 4. Business Number */}
@@ -294,34 +393,107 @@ export default function NewSupplierPage() {
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {tCommon('columns.taxPosition')}
               </label>
-              <select
+              <InheritedSelect
                 className="input"
                 value={dto.taxPositionId || ''}
-                onChange={(e) => updateField('taxPositionId', e.target.value)}
+                onChange={(val) => updateField('taxPositionId', val)}
                 disabled={submitting}
-              >
-                <option value="">{tCommon('options.none')}</option>
-                {taxPositions.map((pos) => (
-                  <option key={pos.taxPositionId} value={pos.taxPositionId}>
-                    {pos.title}
-                  </option>
-                ))}
-              </select>
+                options={taxPositions.map((pos) => ({
+                  value: pos.taxPositionId,
+                  label: pos.title,
+                }))}
+                inheritedValue={taxPositionInheritance.inheritedValue}
+                inheritedSourceLabel={taxPositionInheritance.inheritedSourceLabel}
+              />
             </div>
 
-            {/* ── Row 3 ── */}
-            {/* 7. Payment Terms */}
+            {/* 7. Trading Terms */}
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('columns.paymentTerms')}
+                Trading Terms
               </label>
-              <input
-                type="text"
+              <InheritedSelect
                 className="input"
-                value={dto.paymentTerms}
-                onChange={(e) => updateField('paymentTerms', e.target.value)}
-                placeholder={t('placeholders.paymentTerms')}
+                value={dto.tradingTermsId || ''}
+                onChange={(val) => updateField('tradingTermsId', val)}
                 disabled={submitting}
+                options={tradingTerms.map((term) => ({
+                  value: term.id,
+                  label: term.description,
+                }))}
+                inheritedValue={tradingTermsInheritance.inheritedValue}
+                inheritedSourceLabel={tradingTermsInheritance.inheritedSourceLabel}
+              />
+            </div>
+
+            {/* 8. Credit Limit */}
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Credit Limit
+              </label>
+              <div className="flex items-center gap-3">
+                <InheritedNumberInput
+                  step="0.01"
+                  className="input w-full max-w-xs"
+                  value={dto.creditLimit || ""}
+                  onChange={(val) => updateField("creditLimit", val)}
+                  disabled={submitting}
+                  placeholder="0.00"
+                  inheritedValue={creditLimitInheritance.inheritedValue}
+                  inheritedSourceLabel={creditLimitInheritance.inheritedSourceLabel}
+                />
+                {!!creditLimitInheritance.inheritedSourceLabel && (
+                  <span className="text-xs italic text-[var(--primary)] ml-2 flex-shrink-0">
+                    {tCommon('options.inheritValue', {
+                      label: creditLimitInheritance.inheritedValue || '',
+                      source: creditLimitInheritance.inheritedSourceLabel || ''
+                    })}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* 9. Purchasing Blocked */}
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Purchasing Blocked
+              </label>
+              <InheritedSelect
+                className="input"
+                disabled={submitting}
+                value={dto.isPurchasingBlocked === true ? 'true' : dto.isPurchasingBlocked === false ? 'false' : ''}
+                onChange={(val) => {
+                  const boolVal = val === 'true' ? true : val === 'false' ? false : null;
+                  updateField("isPurchasingBlocked", boolVal);
+                }}
+                options={[
+                  { value: 'true', label: 'Yes' },
+                  { value: 'false', label: 'No' }
+                ]}
+                inheritedValue={purchasingBlockInheritance.inheritedValue}
+                inheritedSourceLabel={purchasingBlockInheritance.inheritedSourceLabel}
+              />
+            </div>
+
+            {/* 10. Payment Blocked */}
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Payment Blocked
+              </label>
+              <InheritedSelect
+                className="input"
+                disabled={submitting}
+                value={dto.isPaymentBlocked === true ? 'true' : dto.isPaymentBlocked === false ? 'false' : ''}
+                onChange={(val) => {
+                  const boolVal = val === 'true' ? true : val === 'false' ? false : null;
+                  updateField("isPaymentBlocked", boolVal);
+                }}
+                options={[
+                  { value: 'true', label: 'Yes' },
+                  { value: 'false', label: 'No' }
+                ]}
+                inheritedValue={paymentBlockInheritance.inheritedValue}
+                inheritedSourceLabel={paymentBlockInheritance.inheritedSourceLabel}
               />
             </div>
           </div>

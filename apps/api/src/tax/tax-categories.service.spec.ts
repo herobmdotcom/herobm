@@ -3,7 +3,7 @@ import { TaxCategoriesService } from './tax-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { taxCategories } from '../drizzle/herobm-core-schema';
+import { taxCategories, appSettings } from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 
 describe('TaxCategoriesService', () => {
@@ -17,23 +17,20 @@ describe('TaxCategoriesService', () => {
       title: 'GST 10%',
       type: 'tax_applies',
       rate: '10',
-      isDefault: true,
     },
     {
-      taxCategoryId: '550e8400-e29b-41d4-a716-446655440001',
+      taxCategoryId: '660e8400-e29b-41d4-a716-446655440001',
       code: 'EXE',
       title: 'Exempt',
       type: 'exempt',
       rate: '0',
-      isDefault: false,
     },
     {
-      taxCategoryId: '550e8400-e29b-41d4-a716-446655440002',
+      taxCategoryId: '770e8400-e29b-41d4-a716-446655440002',
       code: 'ZRO',
       title: 'Zero Rated',
       type: 'zero_rated',
       rate: '0',
-      isDefault: false,
     },
   ];
 
@@ -71,16 +68,23 @@ describe('TaxCategoriesService', () => {
     });
   });
 
-  describe('getDefault', () => {
-    it('should return the default category', async () => {
-      const result = await service.getDefault();
+  describe('getDefaultSalesTax', () => {
+    it('should return the default sales tax category', async () => {
+      await pg.db.delete(appSettings);
+      await pg.db.insert(appSettings).values({
+        defaultSalesTaxCategoryId: '550e8400-e29b-41d4-a716-446655440000',
+      } as any);
+      const result = await service.getDefaultSalesTax();
       expect(result.code).toBe('GST');
-      expect(result.isDefault).toBe(true);
     });
 
     it('should throw NotFoundException when no default configured', async () => {
-      await pg.db.update(taxCategories).set({ isDefault: false });
-      await expect(service.getDefault()).rejects.toThrow(NotFoundException);
+      await pg.db
+        .update(appSettings)
+        .set({ defaultSalesTaxCategoryId: null } as any);
+      await expect(service.getDefaultSalesTax()).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

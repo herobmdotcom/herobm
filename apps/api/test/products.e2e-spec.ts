@@ -71,6 +71,8 @@ describe('Products (e2e)', () => {
         productNumber,
         name: 'E2E Test Product',
         listPrice: '99.99',
+        productType: 'inventory',
+        baseUom: 'EA',
       });
 
     expect(res.status).toBe(201);
@@ -85,6 +87,8 @@ describe('Products (e2e)', () => {
       .send({
         productNumber: 'FAIL-001',
         name: 'Unauthorized Product',
+        productType: 'inventory',
+        baseUom: 'EA',
       });
 
     expect(res.status).toBe(403);
@@ -98,6 +102,8 @@ describe('Products (e2e)', () => {
       .send({
         productNumber: `PATCH-${Date.now()}`,
         name: 'Before Patch',
+        productType: 'inventory',
+        baseUom: 'EA',
       });
     const productId = createRes.body.productId;
 

@@ -12,6 +12,9 @@ import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import EntityHeader from '@/components/shared/EntityHeader';
+import EntityBanner from '@/components/shared/EntityBanner';
+import { useAuth } from '@/components/shared/AuthGate';
+import { SystemResource } from '@herobm/shared';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import DeliveryAddressSlideOver from '@/components/shared/DeliveryAddressSlideOver';
 import PhoneInput from 'react-phone-number-input';
@@ -35,6 +38,7 @@ import ShipmentsSection from './ShipmentsSection';
 import QuoteGenerationDialog from './QuoteGenerationDialog';
 import { formatLocationDisplay } from '@/lib/formatters';
 import OrderDetailsCard from './OrderDetailsCard';
+import OverrideCreditHoldModal from './OverrideCreditHoldModal';
 
 import type { TaxCategory, OrderLine } from './types';
 import { getTaxLabel } from './types';
@@ -135,6 +139,10 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     const tConfirm = useTranslations('confirm');
 
     const o = useOrder(id);
+
+    const { permissions, role } = useAuth();
+    const canManageCredit = role === 'admin' || permissions.some(p => p.resource === SystemResource.CREDIT_CONTROL && p.action === 'write');
+    const [showCreditOverrideModal, setShowCreditOverrideModal] = useState(false);
 
     /* ── Post-Confirmation Line UI State ───────────────────────────── */
     const [isPostConfirmationAddingEnabled, setIsPostConfirmationAddingEnabled] = useState(false);
@@ -348,6 +356,31 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         <strong className="font-semibold text-amber-800">{tSales('archivedBannerTitle')}</strong> {tSales('archivedBannerBody')}
                     </div>
                 </div>
+            )}
+
+            {order.isCreditBlocked && (
+                <EntityBanner
+                    type="error"
+                    title={tSales('creditHold.activeTitle')}
+                    description={tSales('creditHold.activeDesc')}
+                    action={
+                        canManageCredit ? (
+                            <button
+                                className="btn btn-sm btn-secondary bg-white text-red-700 hover:bg-red-50 border-red-200"
+                                onClick={() => setShowCreditOverrideModal(true)}
+                            >
+                                {tSales('creditHold.overrideBtn')}
+                            </button>
+                        ) : undefined
+                    }
+                />
+            )}
+            {!order.isCreditBlocked && order.creditHoldOverrideAt && (
+                <EntityBanner
+                    type="warning"
+                    title={tSales('creditHold.overriddenTitle')}
+                    description={tSales('creditHold.overriddenDesc')}
+                />
             )}
 
             <div className="flex flex-col gap-3">
@@ -1435,6 +1468,17 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         </div>
                     </div>
                 </div>
+            )}
+
+            {showCreditOverrideModal && (
+                <OverrideCreditHoldModal
+                    orderId={id}
+                    onClose={() => setShowCreditOverrideModal(false)}
+                    onSuccess={() => {
+                        setShowCreditOverrideModal(false);
+                        o.loadOrder();
+                    }}
+                />
             )}
 
             <style jsx>{`

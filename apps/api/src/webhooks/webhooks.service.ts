@@ -7,6 +7,7 @@ import { CreateWebhookDto, UpdateWebhookDto } from './dto';
 import { OUTBOX_EVENT_TYPES } from '../common/event-types';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { calculateAuditTrail, AuditMode } from '../common/audit';
 
 @Injectable()
 export class WebhooksService {
@@ -54,28 +55,40 @@ export class WebhooksService {
     const { targetUrl, eventTypes, isActive } = body;
 
     const [updated] = await this.db.transaction(async (tx) => {
-      const [updatedWebhook] = await tx
-        .update(webhooks)
-        .set({
-          ...(targetUrl !== undefined && { targetUrl }),
-          ...(eventTypes !== undefined && { eventTypes }),
-          ...(isActive !== undefined && { isActive }),
-        })
+      const existingRows = await tx
+        .select()
+        .from(webhooks)
         .where(eq(webhooks.webhookId, id))
-        .returning();
+        .limit(1);
+      const existing = existingRows[0];
+      if (!existing) return [];
 
-      if (updatedWebhook) {
-        await emitEvent(tx, {
-          entityType: EntityType.WEBHOOK,
-          entityId: updatedWebhook.webhookId,
-          eventType: EventType.UPDATED,
-          entityDisplayName: updatedWebhook.targetUrl,
-          payload: body,
-          actor: actorUsername,
-        });
+      const audit = calculateAuditTrail(body, existing, AuditMode.DIFF);
+
+      if (audit.hasChanges) {
+        const [updatedWebhook] = await tx
+          .update(webhooks)
+          .set({ ...audit.changes } as typeof webhooks.$inferInsert)
+          .where(eq(webhooks.webhookId, id))
+          .returning();
+
+        if (updatedWebhook) {
+          await emitEvent(tx, {
+            entityType: EntityType.WEBHOOK,
+            entityId: updatedWebhook.webhookId,
+            eventType: EventType.UPDATED,
+            entityDisplayName: updatedWebhook.targetUrl,
+            payload: {
+              changes: audit.changes,
+              previous: audit.previousValues,
+            },
+            actor: actorUsername,
+          });
+        }
+
+        return [updatedWebhook];
       }
-
-      return [updatedWebhook];
+      return [existing];
     });
 
     if (!updated) throw new NotFoundException('Webhook not found');

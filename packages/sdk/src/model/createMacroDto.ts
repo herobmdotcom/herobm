@@ -8,6 +8,6 @@
 
 export interface CreateMacroDto {
   name: string;
-  macroType?: string;
+  macroType: string;
   content: string;
 }

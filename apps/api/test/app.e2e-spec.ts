@@ -72,10 +72,10 @@ describe('API E2E — Data Pipeline Verification', () => {
           await db
             .insert(salesOrders)
             .values({
-              salesOrderId: '50000000-0000-0000-0000-000000000001',
+              salesOrderId: '00000000-0000-4000-8000-000000000001',
               orderNumber: 'SO-E2E-001',
-              customerId: '20000000-0000-0000-0000-000000000001',
-              fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+              customerId: '20000000-0000-4000-8000-000000000001',
+              fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
               currencyCode: 'AUD',
               stateCode: SALES_ORDER_STATE.DRAFT,
             })
@@ -90,12 +90,11 @@ describe('API E2E — Data Pipeline Verification', () => {
             [taxCategory] = await db
               .insert(taxCategories)
               .values({
-                taxCategoryId: '80000000-0000-0000-0000-000000000001',
+                taxCategoryId: '00000000-0000-4000-8000-000000000001',
                 code: 'GST',
                 title: 'Goods and Services Tax',
                 type: 'tax_applies',
                 rate: '10',
-                isDefault: true,
               })
               .returning();
           }
@@ -103,22 +102,22 @@ describe('API E2E — Data Pipeline Verification', () => {
           await db
             .insert(salesOrderLineItems)
             .values({
-              salesOrderLineId: '60000000-0000-0000-0000-000000000001',
-              salesOrderId: '50000000-0000-0000-0000-000000000001',
+              salesOrderLineId: '00000000-0000-4000-8000-000000000001',
+              salesOrderId: '00000000-0000-4000-8000-000000000001',
               lineNumber: 1,
               productId,
               quantity: '10',
               pricePerUnit: '10.00',
               taxCategoryId: taxCategory.taxCategoryId,
-              fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+              fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
             })
             .onConflictDoNothing();
 
           await db
             .insert(binContents)
             .values({
-              binContentId: '70000000-0000-0000-0000-000000000001',
-              binId: '40000000-0000-0000-0000-000000000003',
+              binContentId: '00000000-0000-4000-8000-000000000001',
+              binId: '00000000-0000-4000-8000-000000000003',
               productId,
               actualQuantity: '50',
             })

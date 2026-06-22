@@ -10,6 +10,7 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { customerGroups, customers } from '../drizzle/herobm-core-schema';
 import { CreateAccountGroupDto, UpdateAccountGroupDto } from './dto';
 import { emitEvent } from '../common/emit-event';
+import { buildUpdatePayload } from '../common/utils/drizzle-utils';
 import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
@@ -51,6 +52,11 @@ export class AccountGroupsService {
           name: dto.name,
           defaultArAccountId: dto.defaultArAccountId || null,
           defaultRevenueAccountId: dto.defaultRevenueAccountId || null,
+          defaultCostCenterId: dto.defaultCostCenterId || null,
+          defaultActivityId: dto.defaultActivityId || null,
+          tradingTermsId: dto.tradingTermsId || null,
+          taxPositionId: dto.taxPositionId || null,
+          creditLimit: dto.creditLimit || null,
         })
         .returning();
 
@@ -73,16 +79,7 @@ export class AccountGroupsService {
 
       const rows = await tx
         .update(customerGroups)
-        .set({
-          ...(dto.groupCode !== undefined && { groupCode: dto.groupCode }),
-          ...(dto.name !== undefined && { name: dto.name }),
-          ...(dto.defaultArAccountId !== undefined && {
-            defaultArAccountId: dto.defaultArAccountId,
-          }),
-          ...(dto.defaultRevenueAccountId !== undefined && {
-            defaultRevenueAccountId: dto.defaultRevenueAccountId,
-          }),
-        })
+        .set(buildUpdatePayload(dto))
         .where(eq(customerGroups.customerGroupId, id))
         .returning();
 

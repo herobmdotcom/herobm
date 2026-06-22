@@ -20,6 +20,10 @@ describe('SuppliersWriteService', () => {
           provide: AppConfigService,
           useValue: { homeCurrency: jest.fn().mockReturnValue('EUR') },
         },
+        {
+          provide: 'CASBIN_ENFORCER',
+          useValue: { enforce: jest.fn().mockResolvedValue(true) },
+        },
       ],
     }).compile();
 
@@ -96,7 +100,7 @@ describe('SuppliersWriteService', () => {
     });
 
     it('should throw NotFoundException if supplier not found', async () => {
-      const unknownId = '00000000-0000-0000-0000-000000000999';
+      const unknownId = '00000000-0000-4000-8000-000000000999';
       await expect(
         service.update(unknownId, { name: 'New' }, 'test-actor'),
       ).rejects.toThrow(NotFoundException);

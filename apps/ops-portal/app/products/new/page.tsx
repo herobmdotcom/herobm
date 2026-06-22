@@ -10,8 +10,11 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
 import GroupSelect from '@/components/shared/GroupSelect';
+import InheritedSelect from '@/components/shared/InheritedSelect';
+import { useSettings } from '@/components/SettingsProvider';
 import { PRODUCT_STATE } from '@herobm/shared';
 import { getErrorMessage } from '@herobm/shared';
+import { useGroup, useInheritance } from '@/hooks/useInheritance';
 
 const formatMoney = (val: string | number | undefined | null) => {
   if (!val) return '0.00';
@@ -21,11 +24,13 @@ const formatMoney = (val: string | number | undefined | null) => {
 };
 
 export default function NewProductPage() {
+  const { app } = useSettings();
   const t = useTranslations();
   useDocumentTitle(t('products.newTitle'));
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [taxCategories, setTaxCategories] = useState<api.TaxCategoryResponseDto[]>([]);
+  const [productGroups, setProductGroups] = useState<api.ProductGroupResponseDto[]>([]);
   const [dto, setDto] = useState({
     productNumber: '',
     name: '',
@@ -37,6 +42,7 @@ export default function NewProductPage() {
     tradePrice: '0.00',
     priceLevel3: '0.00',
     priceLevel4: '0.00',
+    weight: '0.0000',
     purchaseTaxCategoryId: '',
     salesTaxCategoryId: '',
     externalTaxCode: '',
@@ -48,7 +54,20 @@ export default function NewProductPage() {
 
   useEffect(() => {
     api.taxCategoriesControllerFindAll().then((res: unknown) => setTaxCategories((res as { data: unknown[] }).data as unknown as api.TaxCategoryResponseDto[])).catch(console.error);
+    api.productGroupsControllerFindAll().then((res: unknown) => setProductGroups((res as { data: unknown[] }).data as unknown as api.ProductGroupResponseDto[])).catch(console.error);
   }, []);
+
+  const selectedGroup = useGroup(productGroups, dto.productGroupId);
+
+  const purchaseTaxInheritance = useInheritance([
+    { value: selectedGroup?.purchaseTaxCategoryId, sourceLabel: `Group ${selectedGroup?.groupCode}` },
+    { value: app?.defaultPurchaseTaxCategoryId, sourceLabel: 'System Default' }
+  ]);
+
+  const salesTaxInheritance = useInheritance([
+    { value: selectedGroup?.salesTaxCategoryId, sourceLabel: `Group ${selectedGroup?.groupCode}` },
+    { value: app?.defaultSalesTaxCategoryId, sourceLabel: 'System Default' }
+  ]);
 
   const handleSubmit = async () => {
     if (!isValid || submitting) return;
@@ -171,6 +190,19 @@ export default function NewProductPage() {
                     value={dto.alternateProductNumber}
                     onChange={(e) => updateField('alternateProductNumber', e.target.value)}
                     placeholder={t('products.columns.alternateProductNumber')}
+                    disabled={submitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.columns.weight')}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    className="input"
+                    value={dto.weight || ''}
+                    onChange={(e) => updateField('weight', e.target.value)}
                     disabled={submitting}
                   />
                 </div>
@@ -338,37 +370,47 @@ export default function NewProductPage() {
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                   {t('products.columns.purchaseTaxCategory')}
                 </label>
-                <select
+                <InheritedSelect
                   className="input"
                   value={dto.purchaseTaxCategoryId || ''}
-                  onChange={(e) => updateField('purchaseTaxCategoryId', e.target.value)}
+                  onChange={(val) => updateField('purchaseTaxCategoryId', val)}
                   disabled={submitting}
-                >
-                  <option value="">{t('common.none')}</option>
-                  {taxCategories.map((cat) => (
-                    <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
-                      {cat.title} ({cat.code})
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    ...taxCategories.map((cat) => ({
+                      value: cat.taxCategoryId,
+                      label: `${cat.title} (${cat.code})`,
+                    })),
+                    // Fallback for legacy values not in current categories
+                    ...(dto.purchaseTaxCategoryId && !taxCategories.find(c => c.taxCategoryId === dto.purchaseTaxCategoryId)
+                      ? [{ value: dto.purchaseTaxCategoryId, label: t('products.unknownCategory', { id: dto.purchaseTaxCategoryId }) }]
+                      : [])
+                  ]}
+                  inheritedValue={purchaseTaxInheritance.inheritedValue}
+                  inheritedSourceLabel={purchaseTaxInheritance.inheritedSourceLabel}
+                />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                   {t('products.columns.salesTaxCategory')}
                 </label>
-                <select
+                <InheritedSelect
                   className="input"
                   value={dto.salesTaxCategoryId || ''}
-                  onChange={(e) => updateField('salesTaxCategoryId', e.target.value)}
+                  onChange={(val) => updateField('salesTaxCategoryId', val)}
                   disabled={submitting}
-                >
-                  <option value="">{t('common.none')}</option>
-                  {taxCategories.map((cat) => (
-                    <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
-                      {cat.title} ({cat.code})
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    ...taxCategories.map((cat) => ({
+                      value: cat.taxCategoryId,
+                      label: `${cat.title} (${cat.code})`,
+                    })),
+                    // Fallback for legacy values not in current categories
+                    ...(dto.salesTaxCategoryId && !taxCategories.find(c => c.taxCategoryId === dto.salesTaxCategoryId)
+                      ? [{ value: dto.salesTaxCategoryId, label: t('products.unknownCategory', { id: dto.salesTaxCategoryId }) }]
+                      : [])
+                  ]}
+                  inheritedValue={salesTaxInheritance.inheritedValue}
+                  inheritedSourceLabel={salesTaxInheritance.inheritedSourceLabel}
+                />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>

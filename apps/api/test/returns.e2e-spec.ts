@@ -177,7 +177,7 @@ describe('API E2E — Sales Order Returns', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     const binId =
-      binsRes.body.data[0]?.binId || '40000000-0000-0000-0000-000000000003';
+      binsRes.body.data[0]?.binId || '00000000-0000-4000-8000-000000000003';
 
     const detail = await request(app.getHttpServer())
       .get(`/api/sales-orders/${orderId}`)

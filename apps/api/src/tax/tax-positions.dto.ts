@@ -9,10 +9,6 @@ export class CreateTaxPositionDto {
   @IsString()
   @IsNotEmpty()
   title!: string;
-
-  @IsOptional()
-  @IsBoolean()
-  isDefault?: boolean;
 }
 
 export class UpdateTaxPositionDto {
@@ -23,10 +19,6 @@ export class UpdateTaxPositionDto {
   @IsOptional()
   @IsString()
   title?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  isDefault?: boolean;
 }
 
 export class TaxPositionResponseDto {
@@ -38,9 +30,6 @@ export class TaxPositionResponseDto {
 
   @ApiProperty()
   title!: string;
-
-  @ApiProperty()
-  isDefault!: boolean;
 }
 
 export class CreateTaxPositionMappingDto {

@@ -151,6 +151,8 @@ export interface DataGridProps<T> {
   overlayNoRowsTemplate?: string;
   /** Explicitly override the loading state (useful when managing fetching outside) */
   loading?: boolean;
+  /** Whether to hide the global search input */
+  hideSearch?: boolean;
 }
 
 /** Format numbers: integers stay as integers, decimals get 2 places */
@@ -301,7 +303,7 @@ export default function DataGrid<T>({
   endpoint,
   rowData,
   columns,
-  gridKey = "default-grid",
+  gridKey: providedGridKey,
   searchPlaceholder,
   exportFileName = "export",
   onError,
@@ -327,12 +329,15 @@ export default function DataGrid<T>({
   defaultSortModel,
   overlayNoRowsTemplate,
   loading: externalLoading,
+  hideSearch,
 }: DataGridProps<T>) {
   const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const gridKey = providedGridKey || (pathname ? `grid-${pathname.replace(/\//g, '-')}` : "default-grid");
 
   const qParam = urlPrefix ? `${urlPrefix}_q` : 'q';
   const cursorParam = urlPrefix ? `${urlPrefix}_cursor` : 'cursor';
@@ -372,6 +377,7 @@ export default function DataGrid<T>({
     return () => window.removeEventListener(`grid-refresh-${gridKey}`, handler);
   }, [gridKey]);
 
+  const [isCustomView, setIsCustomView] = useState(false);
   const [displayedRowCount, setDisplayedRowCount] = useState<number>(0);
   const [internalLoading, setInternalLoading] = useState(true);
   const loading = externalLoading !== undefined ? externalLoading : internalLoading;
@@ -408,6 +414,7 @@ export default function DataGrid<T>({
     if (fetchAll && !initialIsMobile) return 99999;
     return initialIsMobile ? 25 : 200;
   });
+  const [previousLimit, setPreviousLimit] = useState<number | null>(null);
 
   useEffect(() => {
     if (gridKey && typeof window !== 'undefined') {
@@ -575,6 +582,9 @@ export default function DataGrid<T>({
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(() => {
         saveGridState(gridKey, event.state);
+        if (event.state.scroll) {
+          saveScrollState(gridKey, event.state.scroll);
+        }
       }, 500);
     },
     [gridKey],
@@ -631,7 +641,6 @@ export default function DataGrid<T>({
     if (rowData) {
       setData(rowData);
       onDataLoaded?.(rowData);
-      setDisplayedRowCount(rowData.length);
       setInternalLoading(false);
       return;
     }
@@ -657,23 +666,35 @@ export default function DataGrid<T>({
       onDataLoaded?.(safeData);
       setNextCursor(body?.nextCursor ?? null);
       setPrevCursor(body?.prevCursor ?? null);
-      setDisplayedRowCount(safeData.length);
       setInternalLoading(false);
     }
   }, [isRestored, rowData, endpoint, swrResponse, swrIsLoading, swrError, onError]);
 
-  // Restore scroll position on mobile after data loads
+  // Restore scroll position after data loads
   useEffect(() => {
-    if (!loading && data && data.length > 0 && gridKey && isMobile) {
-      const key = `datagrid-mobile-scroll-${gridKey}`;
-      const savedScroll = sessionStorage.getItem(key);
-      if (savedScroll) {
-        const main = document.querySelector('main');
-        if (main) {
-          requestAnimationFrame(() => {
-            main.scrollTop = parseInt(savedScroll, 10);
-          });
-          sessionStorage.removeItem(key);
+    if (!loading && data && data.length > 0 && gridKey) {
+      if (isMobile) {
+        const key = `datagrid-mobile-scroll-${gridKey}`;
+        const savedScroll = sessionStorage.getItem(key);
+        if (savedScroll) {
+          const main = document.querySelector('main');
+          if (main) {
+            requestAnimationFrame(() => {
+              main.scrollTop = parseInt(savedScroll, 10);
+            });
+            sessionStorage.removeItem(key);
+          }
+        }
+      } else {
+        const scroll = loadScrollState(gridKey);
+        if (scroll && containerRef.current) {
+          const viewport = containerRef.current.querySelector('.ag-body-viewport') as HTMLElement;
+          if (viewport) {
+            requestAnimationFrame(() => {
+              viewport.scrollTop = scroll.top;
+              viewport.scrollLeft = scroll.left;
+            });
+          }
         }
       }
     }
@@ -845,7 +866,7 @@ export default function DataGrid<T>({
     [onRowClicked, gridKey],
   );
 
-  const searchInputNode = (
+  const searchInputNode = hideSearch ? null : (
     <div className="relative flex items-center w-full">
       {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
       <span className="material-symbols-outlined text-[18px] text-[var(--text-muted)] absolute left-3 pointer-events-none">search</span>
@@ -875,25 +896,26 @@ export default function DataGrid<T>({
     <div ref={colPickerRef} style={{ position: "relative" }}>
       <button
         onClick={() => setColPickerOpen((v) => !v)}
-        className="px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+        className="px-3 py-1.5 rounded text-xs cursor-pointer transition-colors"
         style={{
-          background: colPickerOpen ? "var(--bg-card-hover)" : "transparent",
+          background: colPickerOpen ? "var(--bg-card-hover)" : "var(--bg-card)",
           color: "var(--text-secondary)",
           border: "1px solid var(--border)",
         }}
         onMouseEnter={(e) => { if (!colPickerOpen) e.currentTarget.style.background = "var(--bg-card-hover)" }}
-        onMouseLeave={(e) => { if (!colPickerOpen) e.currentTarget.style.background = "transparent" }}
+        onMouseLeave={(e) => { if (!colPickerOpen) e.currentTarget.style.background = "var(--bg-card)" }}
         title={tGrid('options')}
       >
-        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
-        <span className="material-symbols-outlined text-[18px]">tune</span>{' '}{tGrid('options')}
+        {tGrid('options')}
       </button>
       {colPickerOpen && (
             <div
               style={{
                 position: "absolute",
                 top: "100%",
-                right: 0,
+                right: isMobile ? "auto" : (secondaryHeader ? 0 : "auto"),
+                left: isMobile ? "50%" : (secondaryHeader ? "auto" : 0),
+                transform: isMobile ? "translateX(-50%)" : "none",
                 marginTop: 4,
                 background: "var(--bg-card)",
                 border: "1px solid var(--border)",
@@ -1133,6 +1155,9 @@ export default function DataGrid<T>({
                     checked={limit === size}
                     onChange={() => {
                       setLimit(size);
+                      if (size === 99999) {
+                        setIsCustomView(false);
+                      }
                       setCursor(null); // Reset to first page
                       setColPickerOpen(false); // Optionally close the menu, but keeping it open is fine too
                     }}
@@ -1147,60 +1172,99 @@ export default function DataGrid<T>({
   );
 
 
+  const prevButton = (
+    <button
+      onClick={() => {
+        setCursor(prevCursor);
+        setDirection('prev');
+      }}
+      disabled={!cursor || !prevCursor}
+      className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30 flex items-center justify-center gap-1"
+      style={{
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+        color: "var(--text-secondary)",
+      }}
+    >
+      <span aria-hidden>←</span>{' '}{tGrid('prev')}
+    </button>
+  );
+
+  const nextButton = (
+    <button
+      onClick={() => {
+        setCursor(nextCursor);
+        setDirection('next');
+      }}
+      disabled={!nextCursor}
+      className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30 flex items-center justify-center gap-1"
+      style={{
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+        color: "var(--text-secondary)",
+      }}
+    >
+      {tGrid('next')}{' '}<span aria-hidden>→</span>
+    </button>
+  );
+
   const renderPaginationControls = (isMobileView: boolean) => {
     if (effectiveFetchAll || !mounted) return null;
     
     const wrapperClass = isMobileView 
       ? 'lg:hidden flex items-center justify-between w-full p-2 bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200 shrink-0'
-      : 'hidden lg:flex gap-1 ml-auto shrink-0 mb-3 absolute top-0 right-0 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-lg shadow-sm border border-slate-100';
+      : 'flex gap-1 shrink-0';
 
     return (
       <div className={wrapperClass}>
-        <button
-          onClick={() => {
-            setCursor(prevCursor);
-            setDirection('prev');
-          }}
-          disabled={!cursor || !prevCursor}
-          className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border)",
-            color: "var(--text-secondary)",
-          }}
-        >
-          <span aria-hidden>←</span>{' '}{tGrid('prev')}
-        </button>
-        <span
-          className="px-3 py-1.5 text-xs font-medium"
-          style={{ color: "var(--text-muted)" }}
-        >
-          {/* Using grid metadata if we want, or just empty space */}
-        </span>
-        <button
-          onClick={() => {
-            setCursor(nextCursor);
-            setDirection('next');
-          }}
-          disabled={!nextCursor}
-          className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border)",
-            color: "var(--text-secondary)",
-          }}
-        >
-          {tGrid('next')}{' '}<span aria-hidden>→</span>
-        </button>
+        {prevButton}
+        {nextButton}
       </div>
     );
   };
 
   const gridContent = (
     <div className={`flex-1 flex flex-col relative w-full ${domLayout === 'autoHeight' ? '' : 'lg:min-h-0 lg:h-full'}`}>
-      {renderPaginationControls(false)}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between w-full px-4 pt-2 pb-2 lg:pt-1 lg:pb-4 bg-white shrink-0 min-h-[48px] gap-2 lg:gap-4 rounded-xl lg:rounded-none shadow-[0_2px_8px_rgba(0,0,0,0.04)] lg:shadow-none border border-slate-200 lg:border-t-0 lg:border-x-0 lg:border-b-slate-100">
+        {secondaryHeader && (
+          <div className="flex items-center overflow-x-auto whitespace-nowrap w-full lg:w-auto">
+            {secondaryHeader}
+          </div>
+        )}
+        <div className="flex items-center justify-between w-full lg:w-auto gap-2 lg:gap-3 shrink-0">
+          {(!effectiveFetchAll && mounted) && prevButton}
+          
+          {optionsButtonNode}
+          
+          {(!effectiveFetchAll && mounted) && nextButton}
+          {(isCustomView) && (
+            <>
+              <div className="h-4 w-px bg-slate-200" />
+              <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                <span>{tGrid('customViewMessage', { fallback: 'All records' })}</span>
+                <button 
+                  onClick={() => {
+                    const api = gridRef.current?.api;
+                    if (!api) return;
+                    api.setFilterModel(null);
+                    api.applyColumnState({ defaultState: { sort: null } });
+                    if (defaultSortModel) {
+                      api.applyColumnState({ state: defaultSortModel });
+                    }
+                    setLimit(previousLimit ?? (isMobile ? 25 : 200));
+                    setIsCustomView(false);
+                  }}
+                  className="hover:text-slate-800 focus:outline-none flex items-center justify-center rounded hover:bg-slate-100 px-1 py-0.5 transition-colors"
+                >
+                  {tGrid('clearCustomView', { fallback: 'x' })}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
       <div className={`hidden lg:block flex-1 w-full relative ${domLayout === 'autoHeight' ? '' : 'min-h-0 h-full'}`}>
-        <div className={`${gridTheme} ${domLayout === 'autoHeight' ? 'w-full' : 'absolute inset-0'}`}>
+        <div ref={containerRef} className={`${gridTheme} ${domLayout === 'autoHeight' ? 'w-full' : 'absolute inset-0'}`}>
           <AgGridReact<T>
             ref={gridRef}
             rowData={data}
@@ -1224,6 +1288,32 @@ export default function DataGrid<T>({
                 if (node.data) nodes.push(node.data);
               });
               setSortedData(nodes);
+
+              const filterModel = e.api.getFilterModel();
+              const sortModel = e.api.getColumnState().filter(c => c.sort);
+              
+              let isSortedOrFiltered = Object.keys(filterModel).length > 0;
+              if (sortModel.length > 0) {
+                if (defaultSortModel && sortModel.length === defaultSortModel.length) {
+                  const isDefaultSort = sortModel.every((sm, i) => sm.colId === defaultSortModel[i].colId && sm.sort === defaultSortModel[i].sort);
+                  if (!isDefaultSort) isSortedOrFiltered = true;
+                } else {
+                  isSortedOrFiltered = true;
+                }
+              }
+              
+              if (isSortedOrFiltered) {
+                if (limit !== 99999) {
+                  setPreviousLimit(limit);
+                  setLimit(99999);
+                  setIsCustomView(true);
+                }
+              } else if (isCustomView) {
+                if (limit === 99999 && !fetchAll) {
+                  setLimit(previousLimit ?? (isMobile ? 25 : 200));
+                }
+                setIsCustomView(false);
+              }
             }}
             onRowClicked={onRowClicked ? handleRowClicked : undefined}
             onSelectionChanged={onSelectionChanged ? (e: SelectionChangedEvent<T>) => {
@@ -1246,8 +1336,7 @@ export default function DataGrid<T>({
       </div>
 
       {/* Mobile Generic Card View */}
-      <div className="lg:hidden flex-1 w-full flex flex-col gap-3 pb-24">
-        {renderPaginationControls(true)}
+      <div className="lg:hidden flex-1 w-full flex flex-col gap-3 pb-24 mt-2">
         {(() => {
           const api = gridRef.current?.api;
           const mobileVisibleCols = api
@@ -1300,52 +1389,48 @@ export default function DataGrid<T>({
       <div className="lg:h-full flex flex-col relative p-4 lg:p-6">
         <div className="relative lg:h-full flex flex-col">
           <div className="flex-1 lg:min-h-0 flex flex-col z-10 lg:bg-white lg:rounded-xl lg:shadow-[0_2px_8px_rgba(0,0,0,0.04)] lg:border lg:border-[rgba(196,198,205,0.4)] lg:overflow-hidden transition-all">
-             <div className="flex flex-col lg:flex-row lg:items-center justify-between lg:px-6 py-4 gap-4">
+             <div className="flex flex-col lg:flex-row lg:items-center justify-between lg:px-6 pt-4 pb-2 lg:pt-4 lg:pb-2 gap-4">
                 <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between lg:justify-start gap-4 w-full lg:w-auto">
-                  <div className="flex items-center justify-between w-full lg:w-auto gap-4">
-                    <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                      {pageTitle}
-                    </h2>
-                    <div className="hidden lg:block h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
-                    <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                      <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        {tGrid('rowCountLabel')}
-                      </span>
-                      <span className="text-[11px] font-bold text-[#006b5c]">
-                        {loading ? '...' : displayedRowCount.toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                  {headerActions && (
-                    <div className="lg:hidden shrink-0 w-full overflow-x-auto overflow-y-hidden pb-1 pt-1">
-                      <div className="flex items-center gap-2">
-                        {headerActions}
+                  <div className="flex items-center justify-between w-full lg:w-auto gap-4 min-w-0">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] truncate min-w-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                        {pageTitle}
+                      </h2>
+                      <div className="hidden lg:block h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
+                      <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
+                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                          {tGrid('rowCountLabel')}
+                        </span>
+                        <span className="text-[11px] font-bold text-[#006b5c]">
+                          {loading ? '...' : displayedRowCount.toLocaleString()}
+                        </span>
                       </div>
                     </div>
-                  )}
-                </div>
-                
-                <div className="flex items-center gap-3 w-full lg:w-auto relative">
-                  <div className="flex-1 lg:max-w-[280px] lg:ml-6 transition-all duration-200 focus-within:absolute focus-within:inset-y-0 focus-within:left-0 focus-within:right-0 focus-within:z-20 lg:focus-within:static bg-[#f8fafc] lg:bg-transparent rounded-lg">
-                    {searchInputNode}
-                  </div>
-                  <div className="shrink-0 flex items-center gap-3">
-                    {headerFilters}
-                    {optionsButtonNode}
                     {headerActions && (
-                      <div className="hidden lg:block shrink-0">
+                      <div className="lg:hidden shrink-0 flex items-center">
                         {headerActions}
                       </div>
                     )}
                   </div>
                 </div>
-              </div>
-              {secondaryHeader && (
-                <div className="hidden lg:flex px-6 py-4 justify-end border-t border-[rgba(196,198,205,0.2)]">
-                  {secondaryHeader}
+                
+                <div className="flex items-center gap-3 w-full lg:w-auto relative">
+                  <div className="flex-1 lg:max-w-[280px] lg:ml-6 transition-all duration-200 bg-[#f8fafc] lg:bg-transparent rounded-lg">
+                    {searchInputNode}
+                  </div>
+                  {(headerFilters || headerActions) && (
+                    <div className={`shrink-0 items-center gap-3 ${headerFilters ? 'flex' : 'hidden lg:flex'}`}>
+                      {headerFilters}
+                      {headerActions && (
+                        <div className="hidden lg:block shrink-0">
+                          {headerActions}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
-             {gridContent}
+              </div>
+              {gridContent}
           </div>
         </div>
       </div>
@@ -1355,14 +1440,13 @@ export default function DataGrid<T>({
   return (
     <div className={`flex flex-col lg:bg-white relative ${domLayout === 'autoHeight' ? '' : 'lg:h-full'}`}>
       {renderHeader ? (
-        renderHeader!({ searchInput: searchInputNode, optionsButton: optionsButtonNode, rowCount: displayedRowCount, loading })
+        renderHeader!({ searchInput: searchInputNode, optionsButton: null, rowCount: displayedRowCount, loading })
       ) : (
         <div className="flex items-center gap-3">
           {searchInputNode}
           <span className="text-xs" style={{ color: "var(--text-muted)" }}>
             {loading ? tGrid('loadingEllipsis') : tGrid('rows', { count: String(displayedRowCount) })}
           </span>
-          {optionsButtonNode}
         </div>
       )}
       {gridContent}

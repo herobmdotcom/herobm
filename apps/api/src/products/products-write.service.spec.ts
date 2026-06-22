@@ -44,6 +44,8 @@ describe('ProductsWriteService', () => {
       const dto = {
         productNumber: 'PROD-NEW-' + Math.random(),
         name: 'Test Product',
+        productType: 'inventory' as const,
+        baseUom: 'EA',
       };
       const result = await service.create(dto, 'admin');
 
@@ -73,6 +75,7 @@ describe('ProductsWriteService', () => {
           name: 'Old Name',
           stateCode: PRODUCT_STATE.ACTIVE,
           baseUom: 'EA',
+          productType: 'inventory',
         })
         .returning();
       productId = p.productId;
@@ -122,6 +125,7 @@ describe('ProductsWriteService', () => {
           productNumber: 'PROD-ARC-' + Math.random(),
           name: 'To Archive',
           stateCode: PRODUCT_STATE.ACTIVE,
+          productType: 'inventory',
           baseUom: 'EA',
         })
         .returning();
@@ -155,6 +159,7 @@ describe('ProductsWriteService', () => {
           productNumber: 'PROD-UNARC-' + Math.random(),
           name: 'To Unarchive',
           stateCode: PRODUCT_STATE.ARCHIVED,
+          productType: 'inventory',
           baseUom: 'EA',
         })
         .returning();

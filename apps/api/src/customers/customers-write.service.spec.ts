@@ -28,6 +28,10 @@ describe('AccountsWriteService', () => {
             taxProviderMappings: () => ({}),
           },
         },
+        {
+          provide: 'CASBIN_ENFORCER',
+          useValue: { enforce: jest.fn().mockResolvedValue(true) },
+        },
       ],
     }).compile();
 
@@ -158,6 +162,7 @@ describe('AccountsWriteService', () => {
         acc.customerId,
         { name: 'New' },
         'actor',
+        'admin',
       );
       expect(result.name).toBe('New');
     });
@@ -165,9 +170,10 @@ describe('AccountsWriteService', () => {
     it('should throw NotFoundException if customer does not exist', async () => {
       await expect(
         service.update(
-          '00000000-0000-0000-0000-000000000999',
+          '00000000-0000-4000-8000-000000000999',
           { name: 'Updated' },
           'actor',
+          'admin',
         ),
       ).rejects.toThrow(NotFoundException);
     });

@@ -31,7 +31,6 @@ interface TaxCategory {
   title: string;
   type: string;
   rate: string;
-  isDefault: boolean;
 }
 
 interface ExchangeRate {
@@ -274,7 +273,7 @@ export default function FinancialSettingsPage() {
     try {
       setTaxLoading(true);
       const res = await api.taxCategoriesControllerFindAll();
-      setCategories((res.data as TaxCategory[]).sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })));
+      setCategories((res.data as unknown as TaxCategory[]).sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })));
     } catch (err: unknown) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.tax }) + ': ' + getErrorMessage(err));
     } finally {
@@ -299,7 +298,7 @@ export default function FinancialSettingsPage() {
   };
 
   const taxEdit = (cat: TaxCategory) => { setTaxEditingId(cat.taxCategoryId); setTaxForm({ ...cat }); setTaxCreating(false); };
-  const taxCreate = () => { setTaxCreating(true); setTaxEditingId(null); setTaxForm({ code: '', title: '', type: 'tax_applies', rate: '0', isDefault: false }); };
+  const taxCreate = () => { setTaxCreating(true); setTaxEditingId(null); setTaxForm({ code: '', title: '', type: 'tax_applies', rate: '0' }); };
   const taxCancel = () => { setTaxEditingId(null); setTaxCreating(false); };
 
   const taxSave = async () => {
@@ -515,53 +514,24 @@ export default function FinancialSettingsPage() {
     { key: 'description', title: 'Description', type: 'text', width: '30%' },
     { key: 'days', title: 'Days', type: 'number', width: '10%' },
     { key: 'type', title: 'Type', type: 'select', options: [
-      { value: 'EOM', label: 'EOM' },
-      { value: 'DAYS', label: 'Days' }
-    ], width: '10%' },
-    {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
-      key: 'isDefaultCustomer' as any,
-      title: 'AR Default',
-      type: 'boolean' as const,
-      width: 100,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
-      render: (row: any, isEditing: boolean) => {
-        if (isEditing) return null;
-        {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
-        return row.isDefaultCustomer ? <span className="text-green-500 material-symbols-outlined text-[16px] leading-none">{'check_circle'}</span> : <span className="text-muted">-</span>;
-      }
-    },
-    {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
-      key: 'isDefaultSupplier' as any,
-      title: 'AP Default',
-      type: 'boolean' as const,
-      width: 100,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
-      render: (row: any, isEditing: boolean) => {
-        if (isEditing) return null;
-        {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
-        return row.isDefaultSupplier ? <span className="text-green-500 material-symbols-outlined text-[16px] leading-none">{'check_circle'}</span> : <span className="text-muted">-</span>;
-      }
-    }
+      { value: 'net', label: 'Net (Days from Invoice)' },
+      { value: 'end_of_month', label: 'End of Month (EOM)' },
+      { value: 'cash_on_delivery', label: 'Cash on Delivery (COD)' }
+    ], width: '20%' },
   ];
 
   const handleTradingTermSave = async (row: api.TradingTermResponseDto, isNew: boolean) => {
     try {
-      if (!row.code || !row.description) {
-        toast.error('Code and description are required');
-        throw new Error('Code and description are required');
+      if (!row.code || !row.description || !row.type) {
+        toast.error('Code, description, and type are required');
+        throw new Error('Code, description, and type are required');
       }
       
       const payload = {
         code: row.code,
         description: row.description,
         days: Number(row.days),
-        type: row.type || 'EOM',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
-        isDefaultCustomer: Boolean((row as any).isDefaultCustomer),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
-        isDefaultSupplier: Boolean((row as any).isDefaultSupplier),
+        type: row.type,
       };
 
       if (isNew) {
@@ -791,16 +761,6 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
           : <>{data.rate}%</>}
       </td>
       <td style={{ textAlign: 'center' }}>
-        {isEdit ? (
-          <input type="checkbox" checked={taxForm.isDefault === true} onChange={e => setTaxForm({ ...taxForm, isDefault: e.target.checked })} />
-        ) : data.isDefault ? (
-          <>
-            {''}
-            {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
-            <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--primary)' }}>{'check_circle'}</span>
-            {''}
-          </>
-        ) : null}
       </td>
       <td style={{ textAlign: 'right' }}>
         {isEdit ? (
@@ -811,9 +771,7 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
         ) : (
           <div className="flex justify-end gap-2">
             <button className="btn btn-secondary btn-xs" onClick={() => taxEdit(data)}>{tSettings('actions.edit')}</button>
-            {!data.isDefault && (
-              <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => taxDelete(data.taxCategoryId)}>{tSettings('actions.delete')}</button>
-            )}
+            <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => taxDelete(data.taxCategoryId)}>{tSettings('actions.delete')}</button>
           </div>
         )}
       </td>
@@ -990,31 +948,32 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
       if (!glSettings?.baseCurrency) {
         w.push('Base Currency is not configured.');
       }
-      if (!glSettings?.defaultArAccount || !glSettings?.defaultApAccount || !glSettings?.defaultRevenueAccount || !glSettings?.defaultExpenseAccount || !glSettings?.defaultTaxAccount || !glSettings?.defaultInventoryAccount || !glSettings?.defaultCogsAccount) {
+      if (!glSettings?.defaultArAccountId || !glSettings?.defaultApAccountId || !glSettings?.defaultRevenueAccountId || !glSettings?.defaultExpenseAccountId || !glSettings?.defaultTaxAccountId || !glSettings?.defaultInventoryAccountId || !glSettings?.defaultCogsAccountId) {
         w.push('One or more default General Ledger accounts are missing (AR, AP, Revenue, Expense, Tax, Inventory, COGS).');
       }
     }
     if (!taxLoading) {
-      if (!categories.some(c => c.isDefault)) {
-        w.push('No Default Tax Category is configured.');
+      if (!appSettings?.defaultSalesTaxCategoryId || !appSettings?.defaultPurchaseTaxCategoryId) {
+        w.push('Default Sales and/or Purchase Tax Categories are not configured.');
       }
     }
     if (!taxPositionsLoading) {
-      if (!taxPositions.some(p => p.isDefault)) {
-        w.push('No Default Tax Position is configured.');
+       
+      if (!appSettings?.defaultCustomerTaxPositionId || !appSettings?.defaultSupplierTaxPositionId) {
+        w.push('Default Customer and/or Supplier Tax Positions are not configured.');
       }
     }
     if (!tradingTermsLoading) {
       if (tradingTerms.length === 0) {
         w.push('No Trading Terms are defined. You need at least one trading term (e.g. COD) for billing.');
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
-        if (!tradingTerms.some((t: any) => t.isDefaultCustomer)) {
-          w.push('No Default AR Trading Term is configured for Sales.');
+         
+        if (!appSettings?.defaultCustomerTermsId) {
+          w.push('No Default Customer Trading Term is configured for Sales.');
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
-        if (!tradingTerms.some((t: any) => t.isDefaultSupplier)) {
-          w.push('No Default AP Trading Term is configured for Purchasing.');
+         
+        if (!appSettings?.defaultSupplierTermsId) {
+          w.push('No Default Supplier Trading Term is configured for Purchasing.');
         }
       }
     }
@@ -1318,7 +1277,7 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
               <span>{tSettings('financialSettings.credit')}</span>
             </h3>
           </div>
-          <div className="flex flex-col gap-1 mb-8">
+          <div className="flex flex-col gap-1 mb-6">
             <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
               {''}
               {tSettings('financialSettings.creditLimitBehavior')}
@@ -1333,6 +1292,42 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
               {''}
               <option value="soft">{tSettings('financialSettings.softWarning')}</option>
             </select>
+          </div>
+
+          <div className="flex gap-8 mb-6">
+            <div className="flex flex-col gap-1 flex-1 max-w-sm">
+              <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                Default Customer Terms
+              </label>
+              <select
+                className="input"
+                 
+                value={(appSettings?.defaultCustomerTermsId as string) || ''}
+                onChange={(e) => updateAppSetting('defaultCustomerTermsId', e.target.value)}
+              >
+                <option value="">{tCommon('notConfigured')}</option>
+                {tradingTerms.map(t => (
+                  <option key={t.id} value={t.id}>{t.code} - {t.description}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="flex flex-col gap-1 flex-1 max-w-sm">
+              <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                Default Supplier Terms
+              </label>
+              <select
+                className="input"
+                 
+                value={(appSettings?.defaultSupplierTermsId as string) || ''}
+                onChange={(e) => updateAppSetting('defaultSupplierTermsId', e.target.value)}
+              >
+                <option value="">{tCommon('notConfigured')}</option>
+                {tradingTerms.map(t => (
+                  <option key={t.id} value={t.id}>{t.code} - {t.description}</option>
+                ))}
+              </select>
+            </div>
           </div>
           
           <div className="mb-2">
@@ -1354,8 +1349,8 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                 onSave={handleTradingTermSave}
                 onDelete={handleTradingTermDelete}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
-                onAdd={() => ({ id: '', code: '', description: '', days: 0, type: 'EOM', isDefaultCustomer: false, isDefaultSupplier: false } as any)}
-                addLabel="Add Trading Term"
+                onAdd={() => ({ id: '', code: '', description: '', days: 0, type: 'EOM' } as any)}
+                addLabel="+ Create"
                 emptyLabel="No trading terms defined."
               />
             )}
@@ -1477,20 +1472,53 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
 
         {/* ── Tax Categories ─────────────────────────────────────────────── */}
         <div id="tax-section" className="card relative">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="section-heading !mb-0 flex items-center gap-2">
+              { }
+              {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+              <span className="material-symbols-outlined">{'payments'}</span>
+              {tSettings('sections.tax')}
+            </h3>
+            <button className="btn btn-secondary btn-sm" onClick={() => setImportTaxModalOpen(true)}>
+              {tSettings('actions.importSettings')}
+            </button>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-6 mb-6">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                Default Sales Tax
+              </label>
+              <select 
+                className="input max-w-[200px]" 
+                value={(appSettings?.defaultSalesTaxCategoryId as string) || ''} 
+                onChange={(e) => updateAppSetting('defaultSalesTaxCategoryId', e.target.value)}
+              >
+                <option value="">{tCommon('notConfigured')}</option>
+                {categories.map(c => (
+                  <option key={c.taxCategoryId} value={c.taxCategoryId}>{c.code} - {c.title} ({Number(c.rate).toFixed(2)}%)</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                Default Purchase Tax
+              </label>
+              <select 
+                className="input max-w-[200px]" 
+                value={(appSettings?.defaultPurchaseTaxCategoryId as string) || ''} 
+                onChange={(e) => updateAppSetting('defaultPurchaseTaxCategoryId', e.target.value)}
+              >
+                <option value="">{tCommon('notConfigured')}</option>
+                {categories.map(c => (
+                  <option key={c.taxCategoryId} value={c.taxCategoryId}>{c.code} - {c.title} ({Number(c.rate).toFixed(2)}%)</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <InlineSettingsTable
-            title={
-              <h3 className="section-heading !mb-0 flex items-center gap-2">
-                { }
-                {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
-                <span className="material-symbols-outlined">{'payments'}</span>
-                {tSettings('sections.tax')}
-              </h3>
-            }
-            headerActions={
-              <button className="btn btn-secondary btn-sm" onClick={() => setImportTaxModalOpen(true)}>
-                {tSettings('actions.importSettings')}
-              </button>
-            }
             data={categories || []}
             rowKey={(r: TaxCategory) => r.taxCategoryId}
             onSave={async (row: TaxCategory, isNew: boolean) => {
@@ -1503,7 +1531,6 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
                 type: String(row.type) as any,
                 rate: String(row.rate),
-                isDefault: Boolean(row.isDefault),
                 exemptionReason: row.exemptionReason ? String(row.exemptionReason) : undefined
               };
               if (isNew) {
@@ -1521,7 +1548,7 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
               toast.success(tSettings('toasts.taxDeleted') || 'Tax deleted');
               loadTax();
             }}
-            onAdd={() => ({ code: '', title: '', type: 'percentage', rate: 0, isDefault: false } as unknown as TaxCategory)}
+            onAdd={() => ({ code: '', title: '', type: 'percentage', rate: 0 } as unknown as TaxCategory)}
             canEdit={() => true}
             canDelete={() => true}
             addLabel={tSettings('actions.create')}
@@ -1565,17 +1592,6 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                   if (isEditing) return null;
                   return <span>{Number(row.rate).toFixed(2)}</span>;
                 }
-              },
-              {
-                key: 'isDefault',
-                title: tSettings('labels.isDefault'),
-                type: 'boolean' as const,
-                width: 100,
-                render: (row: TaxCategory, isEditing: boolean) => {
-                  if (isEditing) return null;
-                  {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
-                  return row.isDefault ? <span className="text-green-500 material-symbols-outlined text-[16px] leading-none">{'check_circle'}</span> : <span className="text-muted">-</span>;
-                }
               }
             ]}
           />
@@ -1585,12 +1601,51 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
         <div id="tax-positions-section" className="card relative mt-8">
           <InlineSettingsTable
             title={
-              <h3 className="section-heading !mb-0 flex items-center gap-2">
-                { }
-                {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
-                <span className="material-symbols-outlined">{'map'}</span>
-                {tSettings('sections.taxPositions')}
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="section-heading !mb-0 flex items-center gap-2">
+                  { }
+                  {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+                  <span className="material-symbols-outlined">{'map'}</span>
+                  {tSettings('sections.taxPositions')}
+                </h3>
+              </div>
+            }
+            beforeTable={
+              <div className="flex gap-8 mb-6 mt-4">
+                <div className="flex flex-col gap-1 flex-1 max-w-sm">
+                  <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                    Default Customer Tax Position
+                  </label>
+                  <select
+                    className="input"
+                     
+                    value={(appSettings?.defaultCustomerTaxPositionId as string) || ''}
+                    onChange={(e) => updateAppSetting('defaultCustomerTaxPositionId', e.target.value)}
+                  >
+                    <option value="">{tCommon('notConfigured')}</option>
+                    {taxPositions.map(p => (
+                      <option key={p.taxPositionId} value={p.taxPositionId}>{p.code} - {p.title}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="flex flex-col gap-1 flex-1 max-w-sm">
+                  <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                    Default Supplier Tax Position
+                  </label>
+                  <select
+                    className="input"
+                     
+                    value={(appSettings?.defaultSupplierTaxPositionId as string) || ''}
+                    onChange={(e) => updateAppSetting('defaultSupplierTaxPositionId', e.target.value)}
+                  >
+                    <option value="">{tCommon('notConfigured')}</option>
+                    {taxPositions.map(p => (
+                      <option key={p.taxPositionId} value={p.taxPositionId}>{p.code} - {p.title}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             }
             data={taxPositions || []}
             rowKey={(r: api.TaxPositionResponseDto) => r.taxPositionId}
@@ -1601,7 +1656,6 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
               const payload = {
                 code: row.code.toUpperCase(),
                 title: row.title,
-                isDefault: Boolean(row.isDefault),
               };
               if (isNew) {
                 await api.taxPositionsControllerCreate(payload);
@@ -1618,7 +1672,7 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
               toast.success('Tax Position deleted');
               loadTaxPositions();
             }}
-            onAdd={() => ({ code: '', title: '', isDefault: false } as unknown as api.TaxPositionResponseDto)}
+            onAdd={() => ({ code: '', title: '' } as unknown as api.TaxPositionResponseDto)}
             canEdit={() => true}
             canDelete={() => true}
             addLabel={tSettings('actions.create')}
@@ -1655,17 +1709,6 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                       )}
                     </button>
                   );
-                }
-              },
-              {
-                key: 'isDefault',
-                title: tSettings('labels.isDefault'),
-                type: 'boolean' as const,
-                width: 100,
-                render: (row: api.TaxPositionResponseDto, isEditing: boolean) => {
-                  if (isEditing) return null;
-                  {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
-                  return row.isDefault ? <span className="text-green-500 material-symbols-outlined text-[16px] leading-none">{'check_circle'}</span> : <span className="text-muted">-</span>;
                 }
               }
             ]}

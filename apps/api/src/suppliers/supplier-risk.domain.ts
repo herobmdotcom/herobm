@@ -4,9 +4,9 @@ export interface SupplierProfile {
   tradingTermsId?: string | null;
   earlyPaymentDiscount?: string | null;
   creditLimit?: string | null;
-  isPurchasingBlocked: boolean;
+  isPurchasingBlocked?: boolean | null;
   purchasingBlockReason?: string | null;
-  isPaymentBlocked: boolean;
+  isPaymentBlocked?: boolean | null;
   paymentBlockReason?: string | null;
   stateCode?: string | null;
 }
@@ -15,9 +15,9 @@ export interface SupplierGroupProfile {
   tradingTermsId?: string | null;
   earlyPaymentDiscount?: string | null;
   creditLimit?: string | null;
-  isPurchasingBlocked: boolean;
+  isPurchasingBlocked?: boolean | null;
   purchasingBlockReason?: string | null;
-  isPaymentBlocked: boolean;
+  isPaymentBlocked?: boolean | null;
   paymentBlockReason?: string | null;
 }
 

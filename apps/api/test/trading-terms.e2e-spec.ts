@@ -82,7 +82,7 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
         .post('/api/settings/trading-terms')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          code: 'E2E_COD',
+          code: 'E2E_COD_' + Date.now(),
           description: 'Cash on Delivery',
           type: 'cash_on_delivery',
           days: 0,
@@ -95,7 +95,7 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
         .post('/api/settings/trading-terms')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          code: 'E2E_NET30',
+          code: 'E2E_NET30_' + Date.now(),
           description: 'Net 30',
           type: 'net',
           days: 30,
@@ -108,7 +108,7 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
         .post('/api/settings/trading-terms')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          code: 'E2E_EOM30',
+          code: 'E2E_EOM_' + Date.now(),
           description: 'End of Month 30',
           type: 'end_of_month',
           days: 30,
@@ -142,7 +142,7 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           vendorId: suppRes.body.vendorId,
-          supplierInvoiceNumber: 'INV-NET-1',
+          supplierInvoiceNumber: `INV-NET-1-${Date.now()}`,
           invoiceDate: invoiceDate.toISOString(),
           currencyCode: 'AUD',
           totalAmount: 100,
@@ -187,7 +187,7 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           vendorId: suppRes.body.vendorId,
-          supplierInvoiceNumber: 'INV-EOM-1',
+          supplierInvoiceNumber: `INV-EOM-1-${Date.now()}`,
           invoiceDate: invoiceDate.toISOString(),
           currencyCode: 'AUD',
           totalAmount: 100,
