@@ -1329,9 +1329,8 @@ async function seedProducts(db: SeedDB, dryRun: boolean) {
       baseUom: 'EA',
     })
     .onConflictDoUpdate({
-      target: products.productId,
+      target: products.productNumber,
       set: {
-        productNumber: 'SYSTEM-CUSTOM-LINE',
         name: 'Custom Line Product',
         productType: 'non-stock',
         baseUom: 'EA',
