@@ -25,4 +25,7 @@ export enum SystemResource {
   GL = 'gl',
   DATA_EXPORT = 'data-export',
   CREDIT_CONTROL = 'credit-control',
+  RECEPTIONS = 'receptions',
+  TAX_CATEGORIES = 'tax-categories',
+  EXTERNAL_API = 'external-api',
 }

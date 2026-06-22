@@ -34,12 +34,12 @@ export default function InheritedNumberInput({
     <div className="flex-1 min-w-0 w-full relative group">
       <input
         type="number"
-        className={`${className} w-full ${hasInherited && !hasLocalValue ? 'placeholder:text-[var(--primary)] placeholder:italic placeholder:font-semibold' : ''}`}
+        className={`${className} w-full`}
         disabled={disabled}
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
-        placeholder={hasInherited && !hasLocalValue ? String(inheritedValue) : placeholder}
+        placeholder={placeholder}
         min={min}
         max={max}
         step={step}

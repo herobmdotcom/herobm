@@ -285,6 +285,7 @@ export default function NewSupplierPage() {
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
                 </div>
+                {/* eslint-disable-next-line i18next/no-literal-string -- The word 'in' is not translatable here */}
                 <span className="text-sm font-medium shrink-0" style={{ color: 'var(--text-muted)' }}>
                   in
                 </span>

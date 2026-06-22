@@ -1379,6 +1379,11 @@ async function seedFinancialDimensions(db: SeedDB, dryRun: boolean) {
     });
 
   console.log("  Seeded default '00' dimensions (Cost Center, Activity)");
+
+  await db.update(glSettings).set({
+    defaultCostCenterId: ccId,
+    defaultActivityId: actId,
+  });
 }
 
 async function seedOrganization(db: SeedDB, dryRun: boolean) {
@@ -1655,6 +1660,42 @@ export async function seedCoaSettings(
   });
 
   console.log('  Seeded COA defaults to app_settings');
+
+  const baseCurrency = settings.base_currency || 'AUD';
+  const fiscalMonth = settings.fiscal_year_start_month || 7;
+  const defaults = settings.defaults || {};
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
+  const glData: any = {
+    settingsId: '4e185bce-d31a-4caa-8462-73c261864eff',
+    baseCurrency,
+    fiscalYearStartMonth: fiscalMonth,
+  };
+
+  const mappings = [
+    { json: 'ar_account_code', col: 'defaultArAccountId' },
+    { json: 'ap_account_code', col: 'defaultApAccountId' },
+    { json: 'revenue_account_code', col: 'defaultRevenueAccountId' },
+    { json: 'cogs_account_code', col: 'defaultCogsAccountId' },
+    { json: 'tax_account_code', col: 'defaultTaxAccountId' },
+    { json: 'expense_account_code', col: 'defaultExpenseAccountId' },
+    { json: 'inventory_account_code', col: 'defaultInventoryAccountId' },
+    { json: 'grni_account_code', col: 'defaultGrniAccountId' },
+    { json: 'shrinkage_account_code', col: 'defaultShrinkageAccountId' },
+  ];
+
+  for (const map of mappings) {
+    if (defaults[map.json]) {
+      glData[map.col] = uuidv5(defaults[map.json], NAMESPACE_COA);
+    }
+  }
+
+  await db.insert(glSettings).values(glData).onConflictDoUpdate({
+    target: glSettings.settingsId,
+    set: glData,
+  });
+
+  console.log('  Seeded COA defaults to gl_settings');
 }
 
 function loadReportConfig() {

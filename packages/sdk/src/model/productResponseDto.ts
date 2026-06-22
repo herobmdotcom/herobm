@@ -23,8 +23,6 @@ export interface ProductResponseDto {
   /** @nullable */
   priceLevel4: string | null;
   /** @nullable */
-  weight: string | null;
-  /** @nullable */
   purchaseTaxCategoryId: string | null;
   /** @nullable */
   salesTaxCategoryId: string | null;
@@ -43,6 +41,8 @@ export interface ProductResponseDto {
   defaultSalesUomId: string | null;
   /** @nullable */
   defaultPurchaseUomId: string | null;
+  /** @nullable */
+  weight: string | null;
   tenantId: string;
   createdAt: string;
   updatedAt: string;

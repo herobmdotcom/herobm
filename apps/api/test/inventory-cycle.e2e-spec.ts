@@ -153,7 +153,7 @@ describe('Inventory Cycle (e2e)', () => {
 
     const poLineId = poDetail.body.lines[0].purchaseOrderLineId;
 
-    await request(app.getHttpServer())
+    const grnRes = await request(app.getHttpServer())
       .post('/api/goods-received')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
@@ -161,8 +161,12 @@ describe('Inventory Cycle (e2e)', () => {
         locationId,
         packingSlipNumber: 'E2E-123',
         lines: [{ productId, quantityReceived: '10' }],
-      })
-      .expect(201);
+      });
+
+    if (grnRes.status !== 201) {
+      throw new Error('PO Reception failed: ' + JSON.stringify(grnRes.body));
+    }
+    expect(grnRes.status).toBe(201);
 
     // NOTE: Per business rules, GoodsReceived does NOT update the products table cache (quantity_on_hand/WAC)
     // until invoicing/put-away. We verify physical stock arrival via the inventory endpoint instead.

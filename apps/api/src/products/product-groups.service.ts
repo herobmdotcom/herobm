@@ -47,16 +47,7 @@ export class ProductGroupsService {
     return await this.db.transaction(async (tx) => {
       const rows = await tx
         .insert(productGroups)
-        .values({
-          groupCode: dto.groupCode,
-          name: dto.name,
-          defaultRevenueAccountId: dto.defaultRevenueAccountId || null,
-          defaultExpenseAccountId: dto.defaultExpenseAccountId || null,
-          defaultCostCenterId: dto.defaultCostCenterId || null,
-          defaultActivityId: dto.defaultActivityId || null,
-          purchaseTaxCategoryId: dto.purchaseTaxCategoryId || null,
-          salesTaxCategoryId: dto.salesTaxCategoryId || null,
-        })
+        .values({ ...dto } as typeof productGroups.$inferInsert)
         .returning();
 
       await emitEvent(tx, {

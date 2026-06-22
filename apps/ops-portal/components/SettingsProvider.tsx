@@ -14,6 +14,11 @@ interface GlSettings {
   defaultApAccountId?: string | null;
   defaultRevenueAccountId?: string | null;
   defaultExpenseAccountId?: string | null;
+  defaultFeeRevenueAccountId?: string | null;
+  defaultDiscountsReceivedAccountId?: string | null;
+
+  defaultCostCenterId?: string | null;
+  defaultActivityId?: string | null;
 }
 
 interface AppSettings {

@@ -363,6 +363,11 @@ export class SalesCreditNoteService {
         );
       }
 
+      const sysDefaultCC = this.appConfig.defaultCostCenterId();
+      const sysDefaultAct = this.appConfig.defaultActivityId();
+      const finalCC = customerCostCenterId || sysDefaultCC || undefined;
+      const finalAct = customerActivityId || sysDefaultAct || undefined;
+
       // 8. Post the GL journal entry (reverse of sales invoice)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       const glLines: any[] = [
@@ -371,8 +376,8 @@ export class SalesCreditNoteService {
           debit: totalCreditAmount,
           credit: 0,
           memo: `Sales return: ${ret.returnNumber}`,
-          costCenterId: customerCostCenterId,
-          activityId: customerActivityId,
+          costCenterId: finalCC,
+          activityId: finalAct,
         },
         {
           accountCode: arCode,
@@ -381,8 +386,8 @@ export class SalesCreditNoteService {
           memo: `Credit note: ${creditNoteNumber}`,
           partyType: 'customer',
           partyId: order.customerId,
-          costCenterId: customerCostCenterId,
-          activityId: customerActivityId,
+          costCenterId: finalCC,
+          activityId: finalAct,
         },
       ];
 
@@ -392,8 +397,8 @@ export class SalesCreditNoteService {
           debit: totalTaxAmount,
           credit: 0,
           memo: `GST reversal: ${ret.returnNumber}`,
-          costCenterId: customerCostCenterId,
-          activityId: customerActivityId,
+          costCenterId: finalCC,
+          activityId: finalAct,
         });
       }
 
@@ -403,8 +408,8 @@ export class SalesCreditNoteService {
           debit: 0,
           credit: totalFees,
           memo: `Restocking fee: ${ret.returnNumber}`,
-          costCenterId: customerCostCenterId,
-          activityId: customerActivityId,
+          costCenterId: finalCC,
+          activityId: finalAct,
         });
       }
 

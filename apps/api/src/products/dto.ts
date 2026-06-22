@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
 import {
   IsUUID,
   IsString,
@@ -35,245 +35,105 @@ export class AddSupplierDto {
   effectiveTo?: string;
 }
 
-export class CreateProductDto {
+export class BaseProductDto {
   @IsString()
   @IsNotEmpty()
   productNumber!: string;
-
   @IsString()
   @IsNotEmpty()
   name!: string;
-
   @IsOptional()
   @IsEnum(['inventory', 'non-stock', 'service', 'freight'])
   productType?: 'inventory' | 'non-stock' | 'service' | 'freight';
-
   @IsOptional()
   @IsEnum(['standard', 'kit'])
   structureType?: 'standard' | 'kit';
-
   @IsOptional()
   @IsString()
   barcode?: string;
-
   @IsOptional()
   @IsNumberString()
   listPrice?: string;
-
   @IsOptional()
   @IsNumberString()
   standardCost?: string;
-
   @IsOptional()
   @IsNumberString()
   tradePrice?: string;
-
   @IsOptional()
   @IsNumberString()
   priceLevel3?: string;
-
   @IsOptional()
   @IsNumberString()
   priceLevel4?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   purchaseTaxCategoryId?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   salesTaxCategoryId?: string;
-
   @IsOptional()
   @IsString()
   externalTaxCode?: string;
-
   @IsOptional()
   @IsString()
   alternateProductNumber?: string;
-
   @IsOptional()
   @IsUUID()
   productGroupId?: string;
-
   @IsOptional()
   @IsString()
   notes?: string;
-
   @IsOptional()
   @IsString()
   stateCode?: string;
-
   @IsString()
   @IsNotEmpty()
   baseUom!: string;
 }
 
-export class UpdateProductDto {
-  @IsOptional()
-  @IsString()
-  productNumber?: string;
+export class CreateProductDto extends BaseProductDto {}
 
-  @IsOptional()
-  @IsString()
-  name?: string;
+export class UpdateProductDto extends PartialType(BaseProductDto) {}
 
-  @IsOptional()
-  @IsEnum(['inventory', 'non-stock', 'service', 'freight'])
-  productType?: 'inventory' | 'non-stock' | 'service' | 'freight';
-
-  @IsOptional()
-  @IsEnum(['standard', 'kit'])
-  structureType?: 'standard' | 'kit';
-
-  @IsOptional()
-  @IsString()
-  barcode?: string;
-
-  @IsOptional()
-  @IsNumberString()
-  listPrice?: string;
-
-  @IsOptional()
-  @IsNumberString()
-  standardCost?: string;
-
-  @IsOptional()
-  @IsNumberString()
-  tradePrice?: string;
-
-  @IsOptional()
-  @IsNumberString()
-  priceLevel3?: string;
-
-  @IsOptional()
-  @IsNumberString()
-  priceLevel4?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  purchaseTaxCategoryId?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  salesTaxCategoryId?: string;
-
-  @IsOptional()
-  @IsString()
-  externalTaxCode?: string;
-
-  @IsOptional()
-  @IsString()
-  alternateProductNumber?: string;
-
-  @IsOptional()
-  @IsUUID()
-  productGroupId?: string;
-
-  @IsOptional()
-  @IsString()
-  notes?: string;
-
-  @IsOptional()
-  @IsString()
-  stateCode?: string;
-
-  @IsOptional()
-  @IsString()
-  baseUom?: string;
-
-  @IsOptional()
-  @IsUUID()
-  defaultSalesUomId?: string | null;
-
-  @IsOptional()
-  @IsUUID()
-  defaultPurchaseUomId?: string | null;
-}
-
-export class CreateProductGroupDto {
+export class BaseProductGroupDto {
   @IsString()
   @IsNotEmpty()
   groupCode!: string;
-
   @IsString()
   @IsNotEmpty()
   name!: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultRevenueAccountId?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultExpenseAccountId?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultCostCenterId?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultActivityId?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   purchaseTaxCategoryId?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   salesTaxCategoryId?: string;
 }
 
-export class UpdateProductGroupDto {
-  @IsOptional()
-  @IsString()
-  groupCode?: string;
+export class CreateProductGroupDto extends BaseProductGroupDto {}
 
-  @IsOptional()
-  @IsString()
-  name?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  defaultRevenueAccountId?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  defaultExpenseAccountId?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  defaultCostCenterId?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  defaultActivityId?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  purchaseTaxCategoryId?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  salesTaxCategoryId?: string;
-}
+export class UpdateProductGroupDto extends PartialType(BaseProductGroupDto) {}
 
 export class LinkBinDto {
   @IsUUID('4')
@@ -318,6 +178,7 @@ export class ProductResponseDto {
   baseUom: string;
   defaultSalesUomId: string | null;
   defaultPurchaseUomId: string | null;
+  weight: string | null;
   tenantId: string;
   createdAt: Date;
   updatedAt: Date;

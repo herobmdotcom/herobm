@@ -45,6 +45,11 @@ export class PaginationQuery {
   @IsString()
   customerId?: string;
 
+  /** Optional filter by supplier/vendor ID */
+  @IsOptional()
+  @IsString()
+  vendorId?: string;
+
   @IsOptional()
   @Transform(({ value }) => (value ? Number(value) : undefined))
   days?: number;

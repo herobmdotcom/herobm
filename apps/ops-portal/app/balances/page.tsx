@@ -1,9 +1,5 @@
-import BalancesContent from './BalancesContent';
-
-export const metadata = {
-  title: 'Balances | HeroBM',
-};
+import { redirect } from 'next/navigation';
 
 export default function BalancesPage() {
-  return <BalancesContent />;
+  redirect('/balances/customers');
 }

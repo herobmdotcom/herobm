@@ -61,6 +61,7 @@ export function parsePagination(query?: PaginationQuery) {
   const searchTerm = query?.q ? `%${query.q}%` : null;
   const includeArchived = query?.includeArchived ?? false;
   const customerId = query?.customerId;
+  const vendorId = query?.vendorId;
   const days = query?.days;
   const purchaseOrderId = query?.purchaseOrderId;
   const states = query?.state
@@ -76,6 +77,7 @@ export function parsePagination(query?: PaginationQuery) {
     searchTerm,
     includeArchived,
     customerId,
+    vendorId,
     days,
     purchaseOrderId,
     states,

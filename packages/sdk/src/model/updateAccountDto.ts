@@ -7,6 +7,7 @@
  */
 
 export interface UpdateAccountDto {
+  customerNumber?: string;
   name?: string;
   billingAddressLine1?: string;
   billingAddressLine2?: string;
@@ -18,7 +19,6 @@ export interface UpdateAccountDto {
   fax?: string;
   emailAddress1?: string;
   customerGroupId?: string;
-  stateCode?: string;
   parentCustomerId?: string;
   taxPositionId?: string;
   currencyCode?: string;
@@ -31,6 +31,6 @@ export interface UpdateAccountDto {
   isTaxRegistered?: boolean;
   creditLimit?: string;
   isOnCreditHold?: boolean;
-  overrideCreditHoldUntil?: string;
   tradingTermsId?: string;
+  overrideCreditHoldUntil?: string;
 }

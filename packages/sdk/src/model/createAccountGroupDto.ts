@@ -14,7 +14,7 @@ export interface CreateAccountGroupDto {
   defaultRevenueAccountId?: string;
   defaultCostCenterId?: string;
   defaultActivityId?: string;
-  taxPositionId?: string;
   tradingTermsId?: string;
+  taxPositionId?: string;
   creditLimit?: string;
 }

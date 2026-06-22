@@ -67,11 +67,13 @@ export class PaymentsController {
   @ApiFieldMask()
   @ApiQuery({ name: 'days', required: false })
   @ApiQuery({ name: 'allocation', required: false })
+  @ApiQuery({ name: 'partyId', required: false })
   findAll(
     @Query('days') days?: string,
     @Query('allocation') allocation?: string,
+    @Query('partyId') partyId?: string,
   ) {
-    return this.paymentsService.findAll(days, allocation);
+    return this.paymentsService.findAll(days, allocation, partyId);
   }
 
   @Get('run-candidates')

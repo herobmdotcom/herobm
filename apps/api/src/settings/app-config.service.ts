@@ -109,6 +109,14 @@ export class AppConfigService implements OnModuleInit {
     return this.getGl().fiscalYearStartMonth;
   }
 
+  defaultCostCenterId(): string | null {
+    return this.getGl().defaultCostCenterId || null;
+  }
+
+  defaultActivityId(): string | null {
+    return this.getGl().defaultActivityId || null;
+  }
+
   /** Revenue routing precedence */
   revenueRoutingPrecedence(): RevenueRoutingStrategy {
     return this.getGl().revenueRoutingPrecedence as RevenueRoutingStrategy;

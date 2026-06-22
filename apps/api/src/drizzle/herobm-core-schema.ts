@@ -2170,6 +2170,12 @@ export const glSettings = herobmCore.table('gl_settings', {
   defaultShrinkageAccountId: uuid('default_shrinkage_account_id').references(
     () => glAccounts.glAccountId,
   ),
+  defaultCostCenterId: uuid('default_cost_center_id').references(
+    () => costCenters.costCenterId,
+  ),
+  defaultActivityId: uuid('default_activity_id').references(
+    () => activities.activityId,
+  ),
   baseCurrency: text('base_currency').notNull(),
   supportedBatchPaymentFormats: jsonb('supported_batch_payment_formats')
     .$type<string[]>()

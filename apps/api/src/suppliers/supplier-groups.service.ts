@@ -47,36 +47,7 @@ export class SupplierGroupsService {
     return await this.db.transaction(async (tx) => {
       const rows = await tx
         .insert(supplierGroups)
-        .values({
-          groupCode: dto.groupCode,
-          name: dto.name,
-          ...(dto.defaultApAccountId && {
-            defaultApAccountId: dto.defaultApAccountId,
-          }),
-          ...(dto.defaultExpenseAccountId && {
-            defaultExpenseAccountId: dto.defaultExpenseAccountId,
-          }),
-          ...(dto.tradingTermsId && { tradingTermsId: dto.tradingTermsId }),
-          ...(dto.earlyPaymentDiscount && {
-            earlyPaymentDiscount: dto.earlyPaymentDiscount,
-          }),
-          ...(dto.earlyPaymentDiscountDays !== undefined && {
-            earlyPaymentDiscountDays: dto.earlyPaymentDiscountDays,
-          }),
-          ...(dto.creditLimit && { creditLimit: dto.creditLimit }),
-          isPurchasingBlocked: dto.isPurchasingBlocked ?? false,
-          ...(dto.purchasingBlockReason && {
-            purchasingBlockReason: dto.purchasingBlockReason,
-          }),
-          isPaymentBlocked: dto.isPaymentBlocked ?? false,
-          ...(dto.paymentBlockReason && {
-            paymentBlockReason: dto.paymentBlockReason,
-          }),
-          ...(dto.blockNotes && { blockNotes: dto.blockNotes }),
-          ...(dto.defaultCostCenterId && { defaultCostCenterId: dto.defaultCostCenterId }),
-          ...(dto.defaultActivityId && { defaultActivityId: dto.defaultActivityId }),
-          ...(dto.taxPositionId && { taxPositionId: dto.taxPositionId }),
-        })
+        .values({ ...dto } as typeof supplierGroups.$inferInsert)
         .returning();
 
       await emitEvent(tx, {

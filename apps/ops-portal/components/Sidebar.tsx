@@ -99,7 +99,15 @@ export default function Sidebar() {
             { href: '/general-ledger/journal-entries', label: t('items.journalEntries') },
           ]
         },
-        { href: '/balances', label: 'Balances', icon: 'account_balance' },
+        { 
+          href: '/balances', 
+          label: 'Balances', 
+          icon: 'account_balance',
+          subItems: [
+            { href: '/balances/customers', label: 'Customers' },
+            { href: '/balances/suppliers', label: 'Suppliers' },
+          ]
+        },
         { href: '/payments', label: 'Payments', icon: 'account_balance_wallet' },
         { 
           href: '/reconciliations', 

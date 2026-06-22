@@ -372,8 +372,14 @@ export class GoodsReceivedService {
           memo: `Goods Receipt ${receipt.receiptNumber}`,
           partyType: 'supplier',
           partyId: vendor.vendorId,
-          costCenterId: vendor.costCenterId || undefined,
-          activityId: vendor.activityId || undefined,
+          costCenterId:
+            vendor.costCenterId ||
+            this.appConfig.defaultCostCenterId() ||
+            undefined,
+          activityId:
+            vendor.activityId ||
+            this.appConfig.defaultActivityId() ||
+            undefined,
         });
 
         if (glResult) {

@@ -10470,6 +10470,14 @@
             }
           },
           {
+            "name": "partyId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "fields",
             "required": false,
             "in": "query",
@@ -11092,6 +11100,45 @@
           }
         },
         "summary": "Create Supplier",
+        "tags": [
+          "Suppliers"
+        ]
+      }
+    },
+    "/suppliers/aged-balances": {
+      "get": {
+        "description": "Retrieve aged balances for all suppliers with outstanding invoices.",
+        "operationId": "SuppliersController_getAgedBalances",
+        "parameters": [
+          {
+            "name": "agingBasis",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "invoiceDate",
+                "dueDate"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SupplierAgedBalanceResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Aged Balances",
         "tags": [
           "Suppliers"
         ]
@@ -16064,27 +16111,6 @@
             "format": "date-time",
             "type": "string"
           },
-          "customerGroupName": {
-            "type": "string"
-          },
-          "customerGroupCode": {
-            "type": "string"
-          },
-          "customerGroupTradingTermsId": {
-            "type": "string"
-          },
-          "customerGroupCreditLimit": {
-            "type": "string"
-          },
-          "customerGroupIsOnCreditHold": {
-            "type": "boolean"
-          },
-          "customerGroupTaxPositionId": {
-            "type": "string"
-          },
-          "gstCategoryName": {
-            "type": "string"
-          },
           "events": {
             "type": "array",
             "items": {
@@ -16280,12 +16306,12 @@
           "isOnCreditHold": {
             "type": "boolean"
           },
-          "overrideCreditHoldUntil": {
-            "type": "string"
-          },
           "tradingTermsId": {
             "type": "string",
             "format": "uuid"
+          },
+          "overrideCreditHoldUntil": {
+            "type": "string"
           }
         },
         "required": [
@@ -16297,6 +16323,9 @@
       "UpdateAccountDto": {
         "type": "object",
         "properties": {
+          "customerNumber": {
+            "type": "string"
+          },
           "name": {
             "type": "string"
           },
@@ -16331,9 +16360,6 @@
           "customerGroupId": {
             "type": "string",
             "format": "uuid"
-          },
-          "stateCode": {
-            "type": "string"
           },
           "parentCustomerId": {
             "type": "string",
@@ -16373,12 +16399,12 @@
           "isOnCreditHold": {
             "type": "boolean"
           },
-          "overrideCreditHoldUntil": {
-            "type": "string"
-          },
           "tradingTermsId": {
             "type": "string",
             "format": "uuid"
+          },
+          "overrideCreditHoldUntil": {
+            "type": "string"
           }
         }
       },
@@ -16467,11 +16493,11 @@
             "type": "string",
             "format": "uuid"
           },
-          "taxPositionId": {
+          "tradingTermsId": {
             "type": "string",
             "format": "uuid"
           },
-          "tradingTermsId": {
+          "taxPositionId": {
             "type": "string",
             "format": "uuid"
           },
@@ -16512,17 +16538,11 @@
             "type": "string",
             "format": "uuid"
           },
-          "taxPositionId": {
+          "tradingTermsId": {
             "type": "string",
             "format": "uuid"
           },
-          "stateCode": {
-            "type": "string"
-          },
-          "isOnCreditHold": {
-            "type": "boolean"
-          },
-          "tradingTermsId": {
+          "taxPositionId": {
             "type": "string",
             "format": "uuid"
           },
@@ -16571,10 +16591,6 @@
             "type": "string",
             "nullable": true
           },
-          "weight": {
-            "type": "string",
-            "nullable": true
-          },
           "purchaseTaxCategoryId": {
             "type": "string",
             "nullable": true
@@ -16614,6 +16630,10 @@
             "type": "string",
             "nullable": true
           },
+          "weight": {
+            "type": "string",
+            "nullable": true
+          },
           "tenantId": {
             "type": "string"
           },
@@ -16638,7 +16658,6 @@
           "tradePrice",
           "priceLevel3",
           "priceLevel4",
-          "weight",
           "purchaseTaxCategoryId",
           "salesTaxCategoryId",
           "externalTaxCode",
@@ -16649,6 +16668,7 @@
           "baseUom",
           "defaultSalesUomId",
           "defaultPurchaseUomId",
+          "weight",
           "tenantId",
           "createdAt",
           "updatedAt"
@@ -16687,9 +16707,6 @@
           "priceLevel4": {
             "type": "string"
           },
-          "weight": {
-            "type": "string"
-          },
           "purchaseTaxCategoryId": {
             "type": "string",
             "format": "uuid"
@@ -16721,7 +16738,6 @@
         "required": [
           "productNumber",
           "name",
-          "productType",
           "baseUom"
         ]
       },
@@ -16784,16 +16800,6 @@
           },
           "baseUom": {
             "type": "string"
-          },
-          "defaultSalesUomId": {
-            "type": "string",
-            "nullable": true,
-            "format": "uuid"
-          },
-          "defaultPurchaseUomId": {
-            "type": "string",
-            "nullable": true,
-            "format": "uuid"
           }
         }
       },
@@ -22393,6 +22399,69 @@
           "updatedAt"
         ]
       },
+      "SupplierAgedBalanceResponseDto": {
+        "type": "object",
+        "properties": {
+          "supplierId": {
+            "type": "string"
+          },
+          "supplierName": {
+            "type": "string"
+          },
+          "supplierNumber": {
+            "type": "string"
+          },
+          "currencyCode": {
+            "type": "string"
+          },
+          "isPaymentBlocked": {
+            "type": "boolean"
+          },
+          "creditLimit": {
+            "type": "string",
+            "nullable": true
+          },
+          "glBalance": {
+            "type": "number"
+          },
+          "totalOutstanding": {
+            "type": "number"
+          },
+          "discrepancyAmount": {
+            "type": "number"
+          },
+          "current": {
+            "type": "number"
+          },
+          "days1To30": {
+            "type": "number"
+          },
+          "days31To60": {
+            "type": "number"
+          },
+          "days61To90": {
+            "type": "number"
+          },
+          "days90Plus": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "supplierId",
+          "supplierName",
+          "supplierNumber",
+          "currencyCode",
+          "isPaymentBlocked",
+          "glBalance",
+          "totalOutstanding",
+          "discrepancyAmount",
+          "current",
+          "days1To30",
+          "days31To60",
+          "days61To90",
+          "days90Plus"
+        ]
+      },
       "CreateSupplierDto": {
         "type": "object",
         "properties": {
@@ -22513,6 +22582,9 @@
           "earlyPaymentDiscountDays": {
             "type": "number"
           },
+          "vendorNumber": {
+            "type": "string"
+          },
           "name": {
             "type": "string"
           },
@@ -22601,9 +22673,6 @@
           "bankAccountNumber": {
             "type": "string"
           },
-          "stateCode": {
-            "type": "string"
-          },
           "businessNumber": {
             "type": "string"
           },
@@ -22684,10 +22753,6 @@
             "type": "string",
             "nullable": true
           },
-          "taxPositionId": {
-            "type": "string",
-            "nullable": true
-          },
           "earlyPaymentDiscount": {
             "type": "string",
             "nullable": true
@@ -22726,6 +22791,10 @@
             "type": "string",
             "nullable": true
           },
+          "taxPositionId": {
+            "type": "string",
+            "nullable": true
+          },
           "tenantId": {
             "type": "string"
           },
@@ -22745,7 +22814,6 @@
           "defaultApAccountId",
           "defaultExpenseAccountId",
           "tradingTermsId",
-          "taxPositionId",
           "earlyPaymentDiscount",
           "earlyPaymentDiscountDays",
           "creditLimit",
@@ -22756,6 +22824,7 @@
           "blockNotes",
           "defaultCostCenterId",
           "defaultActivityId",
+          "taxPositionId",
           "tenantId",
           "createdAt",
           "updatedAt"
@@ -22782,10 +22851,6 @@
             "format": "uuid"
           },
           "tradingTermsId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "taxPositionId": {
             "type": "string",
             "format": "uuid"
           },
@@ -22828,6 +22893,10 @@
             "format": "uuid"
           },
           "defaultActivityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taxPositionId": {
             "type": "string",
             "format": "uuid"
           }
@@ -22861,10 +22930,6 @@
             "type": "string",
             "format": "uuid"
           },
-          "taxPositionId": {
-            "type": "string",
-            "format": "uuid"
-          },
           "earlyPaymentDiscount": {
             "type": "string"
           },
@@ -22904,6 +22969,10 @@
             "format": "uuid"
           },
           "defaultActivityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "taxPositionId": {
             "type": "string",
             "format": "uuid"
           }

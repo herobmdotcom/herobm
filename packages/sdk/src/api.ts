@@ -321,6 +321,7 @@ import type {
   ShippingContextDto,
   ShippingQueueOrderDto,
   SuccessMessageResponseDto,
+  SupplierAgedBalanceResponseDto,
   SupplierGroupResponseDto,
   SupplierGroupsControllerFindAllParams,
   SupplierGroupsControllerFindOneParams,
@@ -334,6 +335,7 @@ import type {
   SuppliersControllerFindSupplierExpiriesParams,
   SuppliersControllerFindSupplierProducts200,
   SuppliersControllerFindSupplierProductsParams,
+  SuppliersControllerGetAgedBalancesParams,
   SyncEventsResponseDto,
   SyncStatusResponseDto,
   SystemControllerGetSystemLogsParams,
@@ -11176,6 +11178,50 @@ export const suppliersControllerCreate = async (createSupplierDto: CreateSupplie
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createSupplierDto,)
+  }
+);}
+
+
+
+/**
+ * Retrieve aged balances for all suppliers with outstanding invoices.
+ * @summary Get Aged Balances
+ */
+export type suppliersControllerGetAgedBalancesResponse200 = {
+  data: SupplierAgedBalanceResponseDto[]
+  status: 200
+}
+    
+export type suppliersControllerGetAgedBalancesResponseSuccess = (suppliersControllerGetAgedBalancesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type suppliersControllerGetAgedBalancesResponse = (suppliersControllerGetAgedBalancesResponseSuccess)
+
+export const getSuppliersControllerGetAgedBalancesUrl = (params?: SuppliersControllerGetAgedBalancesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/suppliers/aged-balances?${stringifiedParams}` : `/suppliers/aged-balances`
+}
+
+export const suppliersControllerGetAgedBalances = async (params?: SuppliersControllerGetAgedBalancesParams, options?: RequestInit): Promise<suppliersControllerGetAgedBalancesResponse> => {
+  
+  return customFetch<suppliersControllerGetAgedBalancesResponse>(getSuppliersControllerGetAgedBalancesUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 

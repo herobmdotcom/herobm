@@ -107,9 +107,9 @@ export default function AccountDetailPage({
   ]);
 
   const searchParams = useSearchParams();
-  const initialTab = (searchParams.get('tab') as "details" | "contacts" | "delivery" | "salesOrders" | "invoices") || "details";
+  const initialTab = (searchParams.get('tab') as "details" | "contacts" | "delivery" | "salesOrders" | "invoices" | "payments") || "details";
   const [activeTab, setActiveTab] = useState<
-    "details" | "contacts" | "delivery" | "salesOrders" | "invoices"
+    "details" | "contacts" | "delivery" | "salesOrders" | "invoices" | "payments"
   >(initialTab);
   const [showDiscounts, setShowDiscounts] = useState(false);
   const [isContactSlideOverOpen, setIsContactSlideOverOpen] = useState(false);
@@ -276,6 +276,20 @@ export default function AccountDetailPage({
     [tSales],
   );
 
+  type GridParam = { value?: string | number | null; data?: { currencyCode?: string } };
+
+  const paymentColumns = useMemo<Record<string, unknown>[]>(
+    () => [
+      { field: "paymentNumber", headerName: "Payment No.", width: 150 },
+      { field: "paymentDate", headerName: "Date", width: 150, valueFormatter: (p: GridParam) => p.value ? new Date(p.value).toLocaleDateString() : "" },
+      { field: "modeOfPayment", headerName: "Mode", width: 150 },
+      { field: "totalAmount", headerName: "Total Amount", type: "numericColumn", width: 150, valueFormatter: (p: GridParam) => p.value ? formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency) : "—" },
+      { field: "unallocatedAmount", headerName: "Unallocated", type: "numericColumn", width: 150, valueFormatter: (p: GridParam) => p.value ? formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency) : "—" },
+      { field: "stateCode", headerName: "Status", width: 140, valueFormatter: (p: GridParam) => p.value ? (tStates.has(String(p.value).toLowerCase() as never) ? tStates(String(p.value).toLowerCase() as never) : String(p.value)) : "" }
+    ],
+    [tStates, baseCurrency],
+  );
+
   if (loading)
     return (
       <>
@@ -426,6 +440,13 @@ export default function AccountDetailPage({
       isActive: activeTab === "invoices",
       onClick: () => setActiveTab("invoices"),
     },
+    {
+      id: "tab-payments",
+      label: "Payments",
+      isSubPage: true,
+      isActive: activeTab === "payments",
+      onClick: () => setActiveTab("payments"),
+    },
   ];
 
   return (
@@ -452,14 +473,13 @@ export default function AccountDetailPage({
       >
         {customer.stateCode === CUSTOMER_STATE.ARCHIVED && (
           <div
-            className="mb-4 px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
+            className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
             style={{
               background: "rgba(245, 158, 11, 0.1)",
               border: "1px solid rgba(245, 158, 11, 0.3)",
               color: "#b45309",
             }}
           >
-            <span style={{ fontSize: "1.2rem" }}>📦</span>
             <div>
               <strong className="font-semibold text-amber-800">
                 {t("salesOrders.archivedBannerTitle")}
@@ -560,6 +580,52 @@ export default function AccountDetailPage({
                         style={{ fontFamily: "Manrope, sans-serif" }}
                       >
                         {tSales("invoicesCardHeading")}
+                      </h2>
+                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
+                        <span
+                          className="text-[11px] font-bold text-[#041627] tracking-wider uppercase"
+                          style={{ fontFamily: "Manrope, sans-serif" }}
+                        >
+                          {tCommon("grid.rowCountLabel")}
+                        </span>
+                        <span className="text-[11px] font-bold text-[#006b5c]">
+                          {loading ? "..." : rowCount.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex-1 ml-4 max-w-md">{searchInput}</div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 ml-4">
+                      {optionsButton}
+                    </div>
+                  </div>
+                )}
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === "payments" && (
+          <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
+            <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+              <DataGrid
+                endpoint={`/api/payments?partyId=${encodeURIComponent(params.id)}`}
+                columns={paymentColumns}
+                gridKey="customer-payments"
+                fetchAll
+                renderHeader={({
+                  searchInput,
+                  optionsButton,
+                  rowCount,
+                  loading,
+                }) => (
+                  <div className="flex items-center justify-between px-6 py-4">
+                    <div className="flex items-center gap-4 flex-1">
+                      <h2
+                        className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0"
+                        style={{ fontFamily: "Manrope, sans-serif" }}
+                      >
+                        Payments
                       </h2>
                       <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
                       <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">

@@ -374,8 +374,12 @@ describe('Archive E2E — Full Round-Trip', () => {
               unitOfMeasure: 'EA',
             },
           ],
-        })
-        .expect(201);
+        });
+
+      if (draftRes.status !== 201) {
+        console.error('PO Create failed:', draftRes.body);
+      }
+      expect(draftRes.status).toBe(201);
 
       await request(app.getHttpServer())
         .post(`/api/purchase-orders/${draftRes.body.purchaseOrderId}/archive`)

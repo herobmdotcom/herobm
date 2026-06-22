@@ -2,9 +2,10 @@ import { SystemResource } from '@herobm/shared';
 import {
   ApiTags,
   ApiOperation,
-  ApiOkResponse,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import {
   Controller,
@@ -35,6 +36,7 @@ import {
   UpdateSupplierExpiryDto,
   SupplierResponseDto,
   EmptyBodyDto,
+  SupplierAgedBalanceResponseDto,
 } from './dto';
 import { ApiPaginatedResponse } from '../common/pagination';
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
@@ -59,6 +61,25 @@ export class SuppliersController {
   @ApiFieldMask()
   async findAll(@Query() query: PaginationQuery) {
     return this.suppliersService.findAll(query);
+  }
+
+  @Get('aged-balances')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Aged Balances',
+    description:
+      'Retrieve aged balances for all suppliers with outstanding invoices.',
+  })
+  @ApiQuery({
+    name: 'agingBasis',
+    required: false,
+    enum: ['invoiceDate', 'dueDate'],
+  })
+  @ApiOkResponse({ type: [SupplierAgedBalanceResponseDto] })
+  async getAgedBalances(
+    @Query('agingBasis') agingBasis?: 'invoiceDate' | 'dueDate',
+  ) {
+    return this.suppliersService.getAgedBalances(agingBasis);
   }
 
   @Post()

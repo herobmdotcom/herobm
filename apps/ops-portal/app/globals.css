@@ -650,3 +650,11 @@ h2 {
   }
 }
 
+/* Hide scrollbar for elements with hide-scrollbar class */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

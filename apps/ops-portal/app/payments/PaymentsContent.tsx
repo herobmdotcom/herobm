@@ -237,22 +237,21 @@ export default function PaymentsContent() {
       onDataLoaded={setPayments}
       onRowClicked={handleRowClicked}
       pageTitle={t('title')}
+      hideSecondaryHeaderOnMobile={true}
       headerFilters={
         <>
           <select
             value={allocationFilter}
             onChange={(e) => setAllocationFilter(e.target.value)}
-            className="input text-sm"
-            style={{ minWidth: 150 }}
+            className="input text-sm flex-1 min-w-0 max-w-[150px]"
           >
             <option value="all">{t('allAllocations')}</option>
             <option value="unallocated">{t('unallocatedOnly')}</option>
           </select>
           <select
             value={days}
-            onChange={(e) => setDays(e.target.value)}
-            className="input text-sm"
-            style={{ minWidth: 150 }}
+            onChange={(e) => setDays(Number(e.target.value))}
+            className="input text-sm flex-1 min-w-0 max-w-[150px]"
           >
             <option value="30">{tCommon('filters.last30Days')}</option>
             <option value="90">{tCommon('filters.last90Days')}</option>
@@ -262,19 +261,19 @@ export default function PaymentsContent() {
         </>
       }
       headerActions={
-        <div className="flex lg:hidden flex-wrap items-center justify-start gap-3 w-full">
+        <div className="flex lg:hidden flex-nowrap items-center justify-end gap-2">
           <button  
             onClick={() => {
               setSelectedPaymentId(null);
               setSlideOverOpen(true);
             }}
-            className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all whitespace-nowrap"
+            className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all whitespace-nowrap flex-1 text-sm text-center justify-center flex"
           >
             {t('newPayment')}
           </button>
           <button
             onClick={() => setGeneratorSlideOverOpen(true)}
-            className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
+            className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all whitespace-nowrap flex-1 text-sm text-center justify-center flex"
           >
             {t('generateRun')}
           </button>
@@ -320,7 +319,7 @@ export default function PaymentsContent() {
         </div>
       }
       secondaryHeader={
-        <div className="flex flex-wrap items-center justify-start gap-3">
+        <div className="hidden lg:flex flex-wrap items-center justify-start gap-3">
           <button  
             onClick={() => {
               setSelectedPaymentId(null);

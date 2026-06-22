@@ -36,6 +36,8 @@ export class MockAppConfigService {
   defaultInventoryAdjustmentAccountId = jest
     .fn()
     .mockImplementation(() => 'gl-adj-default');
+  defaultCostCenterId = jest.fn().mockImplementation(() => 'cc-default');
+  defaultActivityId = jest.fn().mockImplementation(() => 'act-default');
 
   setConfig(key: keyof typeof this.config, value: string) {
     this.config[key] = value;

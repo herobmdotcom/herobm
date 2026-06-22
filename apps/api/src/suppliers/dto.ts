@@ -10,80 +10,69 @@ import {
   IsIn,
   IsNumber,
 } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional, PartialType, ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-export class CreateSupplierDto {
+
+export class BaseSupplierDto {
   @IsString()
   @IsNotEmpty()
   vendorNumber!: string;
-
   @IsString()
   @IsNotEmpty()
   name!: string;
-
   @IsOptional()
   @IsString()
   address1Line1?: string;
-
   @IsOptional()
   @IsString()
   address1Line2?: string;
-
   @IsOptional()
   @IsString()
   address1City?: string;
-
   @IsOptional()
   @IsString()
   address1StateOrProvince?: string;
-
   @IsOptional()
   @IsString()
   address1PostalCode?: string;
-
   @IsString()
   @IsNotEmpty()
   address1Country!: string;
-
   @IsOptional()
   @IsString()
   telephone1?: string;
-
   @IsOptional()
   @IsString()
   fax?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsEmail()
   emailAddress1?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   tradingTermsId?: string;
-
   @IsOptional()
-  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
+  @Transform(({ value }) =>
+    value === '' || value === null ? null : String(value),
+  )
   @IsNumberString()
   earlyPaymentDiscount?: string;
-
   @ApiPropertyOptional()
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsNumber()
   earlyPaymentDiscountDays?: number;
-
   @IsOptional()
-  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
+  @Transform(({ value }) =>
+    value === '' || value === null ? null : String(value),
+  )
   @IsNumberString()
   creditLimit?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isPurchasingBlocked?: boolean;
-
   @IsOptional()
   @IsIn([
     'compliance_breach',
@@ -98,12 +87,10 @@ export class CreateSupplierDto {
     | 'dispute'
     | 'financial_risk'
     | 'other';
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isPaymentBlocked?: boolean;
-
   @IsOptional()
   @IsIn(['invoice_dispute', 'missing_goods', 'contractual_breach', 'other'])
   paymentBlockReason?:
@@ -111,238 +98,84 @@ export class CreateSupplierDto {
     | 'missing_goods'
     | 'contractual_breach'
     | 'other';
-
   @IsOptional()
   @IsString()
   blockNotes?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   supplierGroupId?: string;
-
   @IsOptional()
   @IsString()
   currencyCode?: string;
-
   @IsOptional()
   @IsString()
   notes?: string;
-
   @IsOptional()
   @IsString()
   bankAccountName?: string;
-
   @IsOptional()
   @IsString()
   bankBsb?: string;
-
   @IsOptional()
   @IsString()
   bankAccountNumber?: string;
-
   @IsOptional()
   @IsString()
   businessNumber?: string;
-
   @IsOptional()
   @IsBoolean()
   isTaxRegistered?: boolean;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   taxPositionId?: string;
 }
 
-export class UpdateSupplierDto {
-  @IsOptional()
-  @IsString()
-  name?: string;
+export class CreateSupplierDto extends BaseSupplierDto {}
 
-  @IsOptional()
-  @IsString()
-  address1Line1?: string;
+export class UpdateSupplierDto extends PartialType(BaseSupplierDto) {}
 
-  @IsOptional()
-  @IsString()
-  address1Line2?: string;
-
-  @IsOptional()
-  @IsString()
-  address1City?: string;
-
-  @IsOptional()
-  @IsString()
-  address1StateOrProvince?: string;
-
-  @IsOptional()
-  @IsString()
-  address1PostalCode?: string;
-
-  @IsOptional()
-  @IsString()
-  address1Country?: string;
-
-  @IsOptional()
-  @IsString()
-  telephone1?: string;
-
-  @IsOptional()
-  @IsString()
-  fax?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsEmail()
-  emailAddress1?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  tradingTermsId?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
-  @IsNumberString()
-  earlyPaymentDiscount?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsNumber()
-  earlyPaymentDiscountDays?: number;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
-  @IsNumberString()
-  creditLimit?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsBoolean()
-  isPurchasingBlocked?: boolean;
-
-  @IsOptional()
-  @IsIn([
-    'compliance_breach',
-    'quality_issues',
-    'dispute',
-    'financial_risk',
-    'other',
-  ])
-  purchasingBlockReason?:
-    | 'compliance_breach'
-    | 'quality_issues'
-    | 'dispute'
-    | 'financial_risk'
-    | 'other';
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsBoolean()
-  isPaymentBlocked?: boolean;
-
-  @IsOptional()
-  @IsIn(['invoice_dispute', 'missing_goods', 'contractual_breach', 'other'])
-  paymentBlockReason?:
-    | 'invoice_dispute'
-    | 'missing_goods'
-    | 'contractual_breach'
-    | 'other';
-
-  @IsOptional()
-  @IsString()
-  blockNotes?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  supplierGroupId?: string;
-
-  @IsOptional()
-  @IsString()
-  currencyCode?: string;
-
-  @IsOptional()
-  @IsString()
-  notes?: string;
-
-  @IsOptional()
-  @IsString()
-  bankAccountName?: string;
-
-  @IsOptional()
-  @IsString()
-  bankBsb?: string;
-
-  @IsOptional()
-  @IsString()
-  bankAccountNumber?: string;
-
-  @IsOptional()
-  @IsString()
-  stateCode?: string;
-
-  @IsOptional()
-  @IsString()
-  businessNumber?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  isTaxRegistered?: boolean;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  taxPositionId?: string;
-}
-
-export class CreateSupplierGroupDto {
+export class BaseSupplierGroupDto {
   @IsString()
   @IsNotEmpty()
   groupCode!: string;
-
   @IsString()
   @IsNotEmpty()
   name!: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultApAccountId?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultExpenseAccountId?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   tradingTermsId?: string;
-
   @IsOptional()
-  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
+  @Transform(({ value }) =>
+    value === '' || value === null ? null : String(value),
+  )
   @IsNumberString()
   earlyPaymentDiscount?: string;
-
   @ApiPropertyOptional()
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsNumber()
   earlyPaymentDiscountDays?: number;
-
   @IsOptional()
-  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
+  @Transform(({ value }) =>
+    value === '' || value === null ? null : String(value),
+  )
   @IsNumberString()
   creditLimit?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isPurchasingBlocked?: boolean;
-
   @IsOptional()
   @IsIn([
     'compliance_breach',
@@ -357,12 +190,10 @@ export class CreateSupplierGroupDto {
     | 'dispute'
     | 'financial_risk'
     | 'other';
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isPaymentBlocked?: boolean;
-
   @IsOptional()
   @IsIn(['invoice_dispute', 'missing_goods', 'contractual_breach', 'other'])
   paymentBlockReason?:
@@ -370,121 +201,26 @@ export class CreateSupplierGroupDto {
     | 'missing_goods'
     | 'contractual_breach'
     | 'other';
-
   @IsOptional()
   @IsString()
   blockNotes?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultCostCenterId?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultActivityId?: string;
-
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   taxPositionId?: string;
-
 }
 
-export class UpdateSupplierGroupDto {
-  @IsOptional()
-  @IsString()
-  groupCode?: string;
+export class CreateSupplierGroupDto extends BaseSupplierGroupDto {}
 
-  @IsOptional()
-  @IsString()
-  name?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  defaultApAccountId?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  defaultExpenseAccountId?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  tradingTermsId?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
-  @IsNumberString()
-  earlyPaymentDiscount?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsNumber()
-  earlyPaymentDiscountDays?: number;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' || value === null ? null : String(value)))
-  @IsNumberString()
-  creditLimit?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsBoolean()
-  isPurchasingBlocked?: boolean;
-
-  @IsOptional()
-  @IsIn([
-    'compliance_breach',
-    'quality_issues',
-    'dispute',
-    'financial_risk',
-    'other',
-  ])
-  purchasingBlockReason?:
-    | 'compliance_breach'
-    | 'quality_issues'
-    | 'dispute'
-    | 'financial_risk'
-    | 'other';
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsBoolean()
-  isPaymentBlocked?: boolean;
-
-  @IsOptional()
-  @IsIn(['invoice_dispute', 'missing_goods', 'contractual_breach', 'other'])
-  paymentBlockReason?:
-    | 'invoice_dispute'
-    | 'missing_goods'
-    | 'contractual_breach'
-    | 'other';
-
-  @IsOptional()
-  @IsString()
-  blockNotes?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  defaultCostCenterId?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  defaultActivityId?: string;
-
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  taxPositionId?: string;
-
-}
+export class UpdateSupplierGroupDto extends PartialType(BaseSupplierGroupDto) {}
 
 export class CreateSupplierExpiryDto {
   @IsIn(['insurance', 'tax_certificate', 'trial_period', 'other'])
@@ -568,9 +304,54 @@ export class SupplierGroupResponseDto {
   blockNotes: string | null;
   defaultCostCenterId: string | null;
   defaultActivityId: string | null;
+  taxPositionId: string | null;
   tenantId: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export class EmptyBodyDto {}
+
+export class SupplierAgedBalanceResponseDto {
+  @ApiProperty()
+  supplierId: string;
+
+  @ApiProperty()
+  supplierName: string;
+
+  @ApiProperty()
+  supplierNumber: string;
+
+  @ApiProperty()
+  currencyCode: string;
+
+  @ApiProperty()
+  isPaymentBlocked: boolean;
+
+  @ApiPropertyOptional()
+  creditLimit: string | null;
+
+  @ApiProperty()
+  glBalance: number;
+
+  @ApiProperty()
+  totalOutstanding: number;
+
+  @ApiProperty()
+  discrepancyAmount: number;
+
+  @ApiProperty()
+  current: number;
+
+  @ApiProperty()
+  days1To30: number;
+
+  @ApiProperty()
+  days31To60: number;
+
+  @ApiProperty()
+  days61To90: number;
+
+  @ApiProperty()
+  days90Plus: number;
+}

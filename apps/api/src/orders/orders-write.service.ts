@@ -427,16 +427,18 @@ export class OrdersWriteService {
           .limit(1);
         accountGroup = groupRow;
       }
-      
+
       const effectiveTermsId = resolveEffectiveTradingTermsId({
         creditLimit: customer.creditLimit,
         isOnCreditHold: customer.isOnCreditHold ?? false,
         tradingTermsId: customer.tradingTermsId,
-        accountGroup: accountGroup ? {
-          creditLimit: accountGroup.creditLimit,
-          isOnCreditHold: accountGroup.isOnCreditHold ?? false,
-          tradingTermsId: accountGroup.tradingTermsId,
-        } : undefined,
+        accountGroup: accountGroup
+          ? {
+              creditLimit: accountGroup.creditLimit,
+              isOnCreditHold: accountGroup.isOnCreditHold ?? false,
+              tradingTermsId: accountGroup.tradingTermsId,
+            }
+          : undefined,
         systemDefaultCustomerTermsId:
           this.appConfig.getAppSettingsRaw()?.defaultCustomerTermsId,
       });

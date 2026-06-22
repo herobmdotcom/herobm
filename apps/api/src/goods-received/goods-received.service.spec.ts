@@ -75,6 +75,8 @@ describe('GoodsReceivedService', () => {
       defaultGrniAccountId: () => 'grni-acc',
       defaultCogsAccountId: () => 'cogs-acc',
       defaultShrinkageAccountId: () => 'shrink-acc',
+      defaultCostCenterId: () => 'cc-1',
+      defaultActivityId: () => 'act-1',
     };
 
     const module: TestingModule = await Test.createTestingModule({

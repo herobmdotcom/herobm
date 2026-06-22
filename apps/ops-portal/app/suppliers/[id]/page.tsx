@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -16,7 +16,7 @@ import { ValidState } from '@/types/states';
 import { useInheritance, useGroup } from '@/hooks/useInheritance';
 import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichmentDecorator';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import { CURRENCIES } from '@/lib/currency';
+import { CURRENCIES, formatAmount } from '@/lib/currency';
 import PageNav from '@/components/shared/PageNav';
 import DataGrid from '@/components/DataGrid';
 import GroupSelect from '@/components/shared/GroupSelect';
@@ -83,7 +83,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const tSidebar = useTranslations('sidebar');
   const params = use(paramsPromise);
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'details' | 'products' | 'compliance'>('details');
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get('tab') as 'details' | 'products' | 'compliance' | 'purchaseOrders' | 'invoices' | 'payments') || 'details';
+  const [activeTab, setActiveTab] = useState<'details' | 'products' | 'compliance' | 'purchaseOrders' | 'invoices' | 'payments'>(initialTab);
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -256,7 +258,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     setSaving(true);
     try {
       await api.suppliersControllerArchive(params.id, {});
-      toast.success(tToast('orderArchived'), { icon: '📦' });
+      toast.success(tToast('orderArchived'));
       await loadSupplier(false);
     } catch (err: unknown) {
       setError(getErrorMessage(err));
@@ -269,7 +271,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     setSaving(true);
     try {
       await api.suppliersControllerUnarchive(params.id, {});
-      toast.success(tToast('orderUnarchived'), { icon: '📦' });
+      toast.success(tToast('orderUnarchived'));
       await loadSupplier(false);
     } catch (err: unknown) {
       setError(getErrorMessage(err));
@@ -295,6 +297,33 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       } 
     },
   ], [t, tStates]);
+
+  type GridParam = { value?: string | number | null; data?: { currencyCode?: string } };
+
+  const orderColumns: Record<string, unknown>[] = useMemo(() => [
+    { field: "orderNumber", headerName: "Order No.", width: 150 },
+    { field: "createdOn", headerName: "Date", width: 150, valueFormatter: (p: GridParam) => p.value ? new Date(p.value).toLocaleDateString() : "" },
+    { field: "totalPrice", headerName: "Total Amount", type: "numericColumn", width: 150, valueFormatter: (p: GridParam) => p.value ? formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency) : "—" },
+    { field: "stateCode", headerName: "Status", width: 140, valueFormatter: (p: GridParam) => p.value ? (tStates.has(String(p.value).toLowerCase() as never) ? tStates(String(p.value).toLowerCase() as never) : String(p.value)) : "" }
+  ], [tStates, baseCurrency]);
+
+  const invoiceColumns: Record<string, unknown>[] = useMemo(() => [
+    { field: "invoiceNumber", headerName: "Invoice No.", width: 150 },
+    { field: "orderNumber", headerName: "PO Number", width: 150 },
+    { field: "createdOn", headerName: "Date", width: 150, valueFormatter: (p: GridParam) => p.value ? new Date(p.value).toLocaleDateString() : "" },
+    { field: "totalAmount", headerName: "Total Amount", type: "numericColumn", width: 150, valueFormatter: (p: GridParam) => p.value ? formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency) : "—" },
+    { field: "outstandingAmount", headerName: "Outstanding", type: "numericColumn", width: 150, valueFormatter: (p: GridParam) => p.value ? formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency) : "—" },
+    { field: "stateCode", headerName: "Status", width: 140, valueFormatter: (p: GridParam) => p.value ? (tStates.has(String(p.value).toLowerCase() as never) ? tStates(String(p.value).toLowerCase() as never) : String(p.value)) : "" }
+  ], [tStates, baseCurrency]);
+
+  const paymentColumns: Record<string, unknown>[] = useMemo(() => [
+    { field: "paymentNumber", headerName: "Payment No.", width: 150 },
+    { field: "paymentDate", headerName: "Date", width: 150, valueFormatter: (p: GridParam) => p.value ? new Date(p.value).toLocaleDateString() : "" },
+    { field: "modeOfPayment", headerName: "Mode", width: 150 },
+    { field: "totalAmount", headerName: "Total Amount", type: "numericColumn", width: 150, valueFormatter: (p: GridParam) => p.value ? formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency) : "—" },
+    { field: "unallocatedAmount", headerName: "Unallocated", type: "numericColumn", width: 150, valueFormatter: (p: GridParam) => p.value ? formatAmount(Number(p.value), p.data?.currencyCode || baseCurrency) : "—" },
+    { field: "stateCode", headerName: "Status", width: 140, valueFormatter: (p: GridParam) => p.value ? (tStates.has(String(p.value).toLowerCase() as never) ? tStates(String(p.value).toLowerCase() as never) : String(p.value)) : "" }
+  ], [tStates, baseCurrency]);
 
   if (loading) {
     return (
@@ -347,6 +376,27 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       onClick: () => setActiveTab('products')
     },
     {
+      id: 'tab-orders',
+      label: 'Orders',
+      isSubPage: true,
+      isActive: activeTab === 'purchaseOrders',
+      onClick: () => setActiveTab('purchaseOrders')
+    },
+    {
+      id: 'tab-invoices',
+      label: 'Invoices',
+      isSubPage: true,
+      isActive: activeTab === 'invoices',
+      onClick: () => setActiveTab('invoices')
+    },
+    {
+      id: 'tab-payments',
+      label: 'Payments',
+      isSubPage: true,
+      isActive: activeTab === 'payments',
+      onClick: () => setActiveTab('payments')
+    },
+    {
       id: 'tab-compliance',
       label: t('tabs.compliance'),
       isSubPage: true,
@@ -380,7 +430,6 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
           style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
         >
-          <span style={{ fontSize: '1.2rem' }}>📦</span>
           <div>
             <strong className="font-semibold text-amber-800">{tSales('archivedBannerTitle')}</strong> {tSales('archivedBannerBody')}
           </div>
@@ -424,6 +473,119 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           </div>
         </div>
       )}
+      {activeTab === 'purchaseOrders' && (
+        <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
+          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+            <DataGrid 
+                endpoint={`/api/purchase-orders?vendorId=${encodeURIComponent(params.id)}`}
+                columns={orderColumns}
+                gridKey="supplier-orders"
+                fetchAll
+                onRowClicked={(row: { id?: string }) => router.push(`/purchase-orders/${row.id}`)}
+                renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
+                  <div className="flex items-center justify-between px-6 py-4">
+                    <div className="flex items-center gap-4 flex-1">
+                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                        Orders
+                      </h2>
+                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
+                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                          {tCommon('grid.rowCountLabel')}
+                        </span>
+                        <span className="text-[11px] font-bold text-[#006b5c]">
+                          {loading ? '...' : rowCount.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex-1 ml-4 max-w-md">
+                        {searchInput}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 ml-4">
+                      {optionsButton}
+                    </div>
+                  </div>
+                )}
+            />
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'invoices' && (
+        <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
+          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+            <DataGrid 
+                endpoint={`/api/purchase-invoices?vendorId=${encodeURIComponent(params.id)}`}
+                columns={invoiceColumns}
+                gridKey="supplier-invoices"
+                fetchAll
+                onRowClicked={(row: { invoiceId?: string }) => router.push(`/supplier-invoices/${row.invoiceId}`)}
+                renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
+                  <div className="flex items-center justify-between px-6 py-4">
+                    <div className="flex items-center gap-4 flex-1">
+                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                        Invoices
+                      </h2>
+                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
+                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                          {tCommon('grid.rowCountLabel')}
+                        </span>
+                        <span className="text-[11px] font-bold text-[#006b5c]">
+                          {loading ? '...' : rowCount.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex-1 ml-4 max-w-md">
+                        {searchInput}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 ml-4">
+                      {optionsButton}
+                    </div>
+                  </div>
+                )}
+            />
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'payments' && (
+        <div className="flex-1 min-h-0 flex flex-col z-10 w-full h-full pb-6">
+          <div className="flex-1 min-h-0 flex flex-col bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+            <DataGrid 
+                endpoint={`/api/payments?partyId=${encodeURIComponent(params.id)}`}
+                columns={paymentColumns}
+                gridKey="supplier-payments"
+                fetchAll
+                renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
+                  <div className="flex items-center justify-between px-6 py-4">
+                    <div className="flex items-center gap-4 flex-1">
+                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                        Payments
+                      </h2>
+                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
+                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                          {tCommon('grid.rowCountLabel')}
+                        </span>
+                        <span className="text-[11px] font-bold text-[#006b5c]">
+                          {loading ? '...' : rowCount.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex-1 ml-4 max-w-md">
+                        {searchInput}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 ml-4">
+                      {optionsButton}
+                    </div>
+                  </div>
+                )}
+            />
+          </div>
+        </div>
+      )}
+
 
       {activeTab === 'details' && (
         <div className="flex flex-col gap-3">
@@ -630,6 +792,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
                 </div>
+                {/* eslint-disable-next-line i18next/no-literal-string -- The word 'in' is not translatable here */}
                 <span className="text-sm font-medium shrink-0" style={{ color: 'var(--text-muted)' }}>
                   in
                 </span>
@@ -939,7 +1102,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         <div className="flex justify-end pt-2">
           {supplier.stateCode === SUPPLIER_STATE.ARCHIVED ? (
             <button className="btn btn-secondary" onClick={unarchiveSupplier} disabled={saving}>
-              📦 {tSales('buttons.unarchive')}
+              {tSales('buttons.unarchive')}
             </button>
           ) : (
             <button
@@ -948,7 +1111,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               onClick={archiveSupplier}
               disabled={saving}
             >
-              📦 {tSales('buttons.archive')}
+              {tSales('buttons.archive')}
             </button>
           )}
         </div>

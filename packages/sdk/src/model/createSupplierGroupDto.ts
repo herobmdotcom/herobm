@@ -15,7 +15,6 @@ export interface CreateSupplierGroupDto {
   defaultApAccountId?: string;
   defaultExpenseAccountId?: string;
   tradingTermsId?: string;
-  taxPositionId?: string;
   earlyPaymentDiscount?: string;
   creditLimit?: string;
   isPurchasingBlocked?: boolean;
@@ -25,4 +24,5 @@ export interface CreateSupplierGroupDto {
   blockNotes?: string;
   defaultCostCenterId?: string;
   defaultActivityId?: string;
+  taxPositionId?: string;
 }

@@ -47,17 +47,7 @@ export class AccountGroupsService {
     return await this.db.transaction(async (tx) => {
       const rows = await tx
         .insert(customerGroups)
-        .values({
-          groupCode: dto.groupCode,
-          name: dto.name,
-          defaultArAccountId: dto.defaultArAccountId || null,
-          defaultRevenueAccountId: dto.defaultRevenueAccountId || null,
-          defaultCostCenterId: dto.defaultCostCenterId || null,
-          defaultActivityId: dto.defaultActivityId || null,
-          tradingTermsId: dto.tradingTermsId || null,
-          taxPositionId: dto.taxPositionId || null,
-          creditLimit: dto.creditLimit || null,
-        })
+        .values({ ...dto } as typeof customerGroups.$inferInsert)
         .returning();
 
       await emitEvent(tx, {

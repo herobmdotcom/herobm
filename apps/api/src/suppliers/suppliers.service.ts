@@ -426,4 +426,76 @@ export class SuppliersService {
 
     return { data, page, limit, total: Number(total), nextCursor, prevCursor };
   }
+
+  async getAgedBalances(agingBasis: 'invoiceDate' | 'dueDate' = 'dueDate') {
+    const basisCol = agingBasis === 'invoiceDate' ? 'invoice_date' : 'due_date';
+
+    const invoicesQuery = sql`
+      SELECT 
+        s.vendor_id as "supplierId",
+        s.name as "supplierName",
+        s.vendor_number as "supplierNumber",
+        s.currency_code as "currencyCode",
+        s.is_payment_blocked as "isPaymentBlocked",
+        s.credit_limit as "creditLimit",
+        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} >= CURRENT_DATE THEN i.outstanding_amount ELSE 0 END), 0) as "current",
+        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '30 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days1To30",
+        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '30 days' AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '60 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days31To60",
+        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '60 days' AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days61To90",
+        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days90Plus",
+        COALESCE(SUM(i.outstanding_amount), 0) as "totalOutstanding"
+      FROM herobm_core.suppliers s
+      JOIN herobm_core.purchase_invoices i ON i.vendor_id = s.vendor_id
+      WHERE i.outstanding_amount > 0 AND i.state_code NOT IN ('DRAFT', 'CANCELLED', 'draft', 'cancelled')
+      GROUP BY s.vendor_id, s.name, s.vendor_number, s.currency_code, s.is_payment_blocked, s.credit_limit
+    `;
+
+    const glQuery = sql`
+      SELECT 
+        l.party_id as "supplierId",
+        COALESCE(SUM(l.credit), 0) - COALESCE(SUM(l.debit), 0) as "glBalance"
+      FROM herobm_core.gl_journal_lines l
+      JOIN herobm_core.gl_journal_entries e ON l.journal_entry_id = e.journal_entry_id
+      WHERE l.party_type = 'supplier'
+      GROUP BY l.party_id
+    `;
+
+    const [invoicesRes, glRes] = await Promise.all([
+      this.db.execute(invoicesQuery),
+      this.db.execute(glQuery),
+    ]);
+
+    const invoicesRows = ((invoicesRes as unknown as Record<string, unknown>)
+      .rows ?? invoicesRes) as Record<string, unknown>[];
+    const glRows = ((glRes as unknown as Record<string, unknown>).rows ??
+      glRes) as Record<string, unknown>[];
+
+    const glMap = new Map<string, number>();
+    for (const row of glRows) {
+      if (row.supplierId) {
+        glMap.set(row.supplierId as string, Number(row.glBalance));
+      }
+    }
+
+    return invoicesRows.map((row) => {
+      const glBalance = glMap.get(row.supplierId as string) || 0;
+      const totalOutstanding = Number(row.totalOutstanding);
+      return {
+        supplierId: row.supplierId as string,
+        supplierName: row.supplierName as string,
+        supplierNumber: row.supplierNumber as string,
+        currencyCode: row.currencyCode as string,
+        isPaymentBlocked: Boolean(row.isPaymentBlocked),
+        creditLimit: row.creditLimit as string | null,
+        glBalance,
+        totalOutstanding,
+        discrepancyAmount: Math.abs(glBalance - totalOutstanding),
+        current: Number(row.current),
+        days1To30: Number(row.days1To30),
+        days31To60: Number(row.days31To60),
+        days61To90: Number(row.days61To90),
+        days90Plus: Number(row.days90Plus),
+      };
+    });
+  }
 }

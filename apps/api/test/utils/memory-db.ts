@@ -58,8 +58,8 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
   if (!opts?.skipSeeds) {
     await runStandardSeeds(db);
     // Testing-only extension to seed COA defaults, accounts, and locations
-    // await seedCoaAccounts(db, false);
-    // await seedCoaSettings(db, false);
+    await seedCoaAccounts(db, false);
+    await seedCoaSettings(db, false);
     await seedTestLocations(db, false);
     await seedAccounts(db, false);
   }

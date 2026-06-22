@@ -153,6 +153,8 @@ export interface DataGridProps<T> {
   loading?: boolean;
   /** Whether to hide the global search input */
   hideSearch?: boolean;
+  /** Whether to hide the secondaryHeader wrapper on mobile to remove empty vertical space */
+  hideSecondaryHeaderOnMobile?: boolean;
 }
 
 /** Format numbers: integers stay as integers, decimals get 2 places */
@@ -330,6 +332,7 @@ export default function DataGrid<T>({
   overlayNoRowsTemplate,
   loading: externalLoading,
   hideSearch,
+  hideSecondaryHeaderOnMobile = false,
 }: DataGridProps<T>) {
   const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
@@ -871,7 +874,7 @@ export default function DataGrid<T>({
       {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
       <span className="material-symbols-outlined text-[18px] text-[var(--text-muted)] absolute left-3 pointer-events-none">search</span>
       <input
-        className="w-full pl-9 pr-4 py-2 rounded-lg text-sm outline-none transition-all"
+        className={`w-full pl-9 py-2 rounded-lg text-sm outline-none transition-all duration-300 ${!search ? 'pr-0 placeholder-transparent lg:placeholder-slate-400 focus:placeholder-slate-400 lg:pr-4 focus:pr-4' : 'pr-4'}`}
         style={{
           background: "#ffffff",
           border: "1px solid var(--border)",
@@ -1225,12 +1228,7 @@ export default function DataGrid<T>({
 
   const gridContent = (
     <div className={`flex-1 flex flex-col relative w-full ${domLayout === 'autoHeight' ? '' : 'lg:min-h-0 lg:h-full'}`}>
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between w-full px-4 pt-2 pb-2 lg:pt-1 lg:pb-4 bg-white shrink-0 min-h-[48px] gap-2 lg:gap-4 rounded-xl lg:rounded-none shadow-[0_2px_8px_rgba(0,0,0,0.04)] lg:shadow-none border border-slate-200 lg:border-t-0 lg:border-x-0 lg:border-b-slate-100">
-        {secondaryHeader && (
-          <div className="flex items-center overflow-x-auto whitespace-nowrap w-full lg:w-auto">
-            {secondaryHeader}
-          </div>
-        )}
+      <div className="flex flex-col-reverse lg:flex-row lg:items-center justify-between w-full px-4 pt-2 pb-2 lg:pt-1 lg:pb-4 bg-white shrink-0 min-h-[48px] gap-2 lg:gap-4 rounded-xl lg:rounded-none shadow-[0_2px_8px_rgba(0,0,0,0.04)] lg:shadow-none border border-slate-200 lg:border-t-0 lg:border-x-0 lg:border-b-slate-100">
         <div className="flex items-center justify-between w-full lg:w-auto gap-2 lg:gap-3 shrink-0">
           {(!effectiveFetchAll && mounted) && prevButton}
           
@@ -1262,6 +1260,11 @@ export default function DataGrid<T>({
             </>
           )}
         </div>
+        {secondaryHeader && (
+          <div className={`items-center overflow-x-auto whitespace-nowrap w-full lg:w-auto ${hideSecondaryHeaderOnMobile ? 'hidden lg:flex' : 'flex'}`}>
+            {secondaryHeader}
+          </div>
+        )}
       </div>
       <div className={`hidden lg:block flex-1 w-full relative ${domLayout === 'autoHeight' ? '' : 'min-h-0 h-full'}`}>
         <div ref={containerRef} className={`${gridTheme} ${domLayout === 'autoHeight' ? 'w-full' : 'absolute inset-0'}`}>
@@ -1406,20 +1409,20 @@ export default function DataGrid<T>({
                         </span>
                       </div>
                     </div>
-                    {headerActions && (
-                      <div className="lg:hidden shrink-0 flex items-center">
-                        {headerActions}
-                      </div>
-                    )}
+                      {headerActions && (
+                        <div className="lg:hidden flex-1 flex items-center justify-end min-w-0 ml-4">
+                          {headerActions}
+                        </div>
+                      )}
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3 w-full lg:w-auto relative">
-                  <div className="flex-1 lg:max-w-[280px] lg:ml-6 transition-all duration-200 bg-[#f8fafc] lg:bg-transparent rounded-lg">
+                <div className="flex items-center justify-between gap-3 w-full lg:w-auto relative overflow-x-auto hide-scrollbar sm:overflow-visible pb-1 -mb-1">
+                  <div className={`transition-all duration-300 lg:bg-transparent rounded-lg shrink-0 ${search ? 'w-[calc(100vw-80px)] lg:w-auto lg:flex-1 lg:max-w-[280px] lg:ml-6' : 'w-[44px] focus-within:w-[calc(100vw-80px)] lg:focus-within:w-auto lg:w-auto lg:flex-1 lg:max-w-[280px] lg:ml-6'}`}>
                     {searchInputNode}
                   </div>
                   {(headerFilters || headerActions) && (
-                    <div className={`shrink-0 items-center gap-3 ${headerFilters ? 'flex' : 'hidden lg:flex'}`}>
+                    <div className={`flex-1 min-w-0 ml-auto flex items-center justify-end gap-3 ${headerFilters ? '' : 'hidden lg:flex'}`}>
                       {headerFilters}
                       {headerActions && (
                         <div className="hidden lg:block shrink-0">

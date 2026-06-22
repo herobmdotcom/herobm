@@ -452,38 +452,30 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {tc('defCostCenter')}
             </label>
-            <select
+            <InheritedSelect
               className="input w-full"
               value={(formData.defaultCostCenterId as string) || ''}
-              onChange={(e) => handleChange('defaultCostCenterId', e.target.value)}
+              onChange={(val) => handleChange('defaultCostCenterId', val)}
               disabled={saving}
-            >
-              <option value="">-- {tGlobal('selectNone')} --</option>
-              {costCenterOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              options={costCenterOptions}
+              inheritedValue={gl?.defaultCostCenterId}
+              inheritedSourceLabel="System Default"
+            />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {tc('defActivity')}
             </label>
-            <select
+            <InheritedSelect
               className="input w-full"
               value={(formData.defaultActivityId as string) || ''}
-              onChange={(e) => handleChange('defaultActivityId', e.target.value)}
+              onChange={(val) => handleChange('defaultActivityId', val)}
               disabled={saving}
-            >
-              <option value="">-- {tGlobal('selectNone')} --</option>
-              {activityOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              options={activityOptions}
+              inheritedValue={gl?.defaultActivityId}
+              inheritedSourceLabel="System Default"
+            />
           </div>
         </div>
       </div>

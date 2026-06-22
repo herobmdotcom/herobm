@@ -26,7 +26,8 @@ import {
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
-import { calculateAuditTrail, AuditMode } from '../common/audit';
+import { buildUpdatePayload } from '../common/utils/drizzle-utils';
+import { resolveGlDimensions } from '../common/utils/gl-resolution.util';
 import { calculateDueDate } from '../settings/trading-terms.utils';
 import { resolveEffectiveTradingTermsId } from '../customers/credit-control.utils';
 import { GlService } from '../gl/gl.service';
@@ -366,21 +367,40 @@ export class SalesInvoiceService {
       rawTotal += pricing.amount;
       rawTax += pricing.tax;
 
-      // Group revenue by highest precedence GL customer
-      const lineRevAcctId =
-        this.appConfig.revenueRoutingPrecedence() === 'customer_first'
-          ? customerRevenueAccountId || line.productRevenueAccountId || null
-          : line.productRevenueAccountId || customerRevenueAccountId || null;
+      const sysDefaultRevAcct = this.appConfig.defaultRevenueAccountId();
+      const sysDefaultCC = this.appConfig.defaultCostCenterId();
+      const sysDefaultAct = this.appConfig.defaultActivityId();
 
-      // Resolve cost center / activity using same routing precedence
-      const lineCostCenterId =
+      const customerDims = {
+        accountId: customerRevenueAccountId,
+        costCenterId: customerCostCenterId,
+        activityId: customerActivityId,
+      };
+
+      const productDims = {
+        accountId: line.productRevenueAccountId,
+        costCenterId: line.productCostCenterId,
+        activityId: line.productActivityId,
+      };
+
+      const {
+        accountId: lineRevAcctId,
+        costCenterId: lineCostCenterId,
+        activityId: lineActivityId,
+      } = resolveGlDimensions(
         this.appConfig.revenueRoutingPrecedence() === 'customer_first'
-          ? customerCostCenterId || line.productCostCenterId || null
-          : line.productCostCenterId || customerCostCenterId || null;
-      const lineActivityId =
+          ? customerDims
+          : productDims,
         this.appConfig.revenueRoutingPrecedence() === 'customer_first'
-          ? customerActivityId || line.productActivityId || null
-          : line.productActivityId || customerActivityId || null;
+          ? productDims
+          : customerDims,
+        {
+          defaultAccountId: sysDefaultRevAcct,
+          defaultCostCenterId: sysDefaultCC,
+          defaultActivityId: sysDefaultAct,
+        },
+      );
+
       if (lineRevAcctId) {
         const compositeKey = `${lineRevAcctId}|${lineCostCenterId || ''}|${lineActivityId || ''}`;
         const existing = revenueGroups.get(compositeKey);
@@ -561,8 +581,14 @@ export class SalesInvoiceService {
                 memo: `AR: ${invoiceNumber}`,
                 partyType: 'customer',
                 partyId: order.customerId,
-                costCenterId: customerCostCenterId || undefined,
-                activityId: customerActivityId || undefined,
+                costCenterId:
+                  customerCostCenterId ||
+                  this.appConfig.defaultCostCenterId() ||
+                  undefined,
+                activityId:
+                  customerActivityId ||
+                  this.appConfig.defaultActivityId() ||
+                  undefined,
               },
             ];
 

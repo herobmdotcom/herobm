@@ -57,6 +57,8 @@ import {
 } from '@herobm/shared';
 import { withCursorPagination } from '../common/pagination';
 import { calculateDueDate } from '../settings/trading-terms.utils';
+import { resolveEffectiveTradingTermsId } from '../customers/credit-control.utils';
+import { resolveGlDimensions } from '../common/utils/gl-resolution.util';
 
 const VALID_INVOICE_STATES = getValidStates(PURCHASE_INVOICE_TRANSITIONS);
 import { CreateStandaloneInvoiceDto } from './dto';
@@ -712,6 +714,9 @@ export class PurchaseInvoiceService {
       .select({
         line: purchaseInvoiceLines,
         poProductId: purchaseOrderLineItems.productId,
+        productExpenseAccountId: productGroups.defaultExpenseAccountId,
+        productCostCenterId: productGroups.defaultCostCenterId,
+        productActivityId: productGroups.defaultActivityId,
       })
       .from(purchaseInvoiceLines)
       .leftJoin(
@@ -721,14 +726,46 @@ export class PurchaseInvoiceService {
           purchaseOrderLineItems.purchaseOrderLineId,
         ),
       )
+      .leftJoin(
+        coreProducts,
+        eq(
+          coreProducts.productId,
+          purchaseInvoiceLines.productId || purchaseOrderLineItems.productId,
+        ),
+      )
+      .leftJoin(
+        productGroups,
+        eq(coreProducts.productGroupId, productGroups.productGroupId),
+      )
       .where(eq(purchaseInvoiceLines.invoiceId, invoiceId));
 
     let lineTotal = 0;
-    const expenseByAccountId = new Map<string, number>();
-    let defaultExpense = 0;
-    let grniExpense = 0;
+    const expenseGroups = new Map<
+      string,
+      {
+        amount: number;
+        accountId: string;
+        costCenterId: string | null;
+        activityId: string | null;
+      }
+    >();
+    const grniGroups = new Map<
+      string,
+      { amount: number; costCenterId: string | null; activityId: string | null }
+    >();
+    const defaultExpenseGroups = new Map<
+      string,
+      { amount: number; costCenterId: string | null; activityId: string | null }
+    >();
 
-    for (const { line, poProductId } of lines) {
+    for (const row of lines) {
+      const {
+        line,
+        poProductId,
+        productExpenseAccountId,
+        productCostCenterId,
+        productActivityId,
+      } = row;
       if (line.matchStatus !== MATCH_STATUS.MATCHED && !line.glAccountId) {
         throw new BadRequestException(
           `Line "${line.description}" is unmatched and must have a GL Customer assigned before finalisation.`,
@@ -738,14 +775,54 @@ export class PurchaseInvoiceService {
       const amt = parseFloat(line.amount);
       lineTotal += amt;
 
+      // Extract CC/Activity from product
+      const productDims = {
+        accountId: productExpenseAccountId || null,
+        costCenterId: productCostCenterId || null,
+        activityId: productActivityId || null,
+      };
+
       const acctId = line.glAccountId;
       if (acctId) {
-        const current = expenseByAccountId.get(acctId) || 0;
-        expenseByAccountId.set(acctId, current + amt);
+        // Line has specific account
+        const key = `${acctId}|${productDims.costCenterId || ''}|${productDims.activityId || ''}`;
+        const current = expenseGroups.get(key);
+        if (current) {
+          current.amount += amt;
+        } else {
+          expenseGroups.set(key, {
+            amount: amt,
+            accountId: acctId,
+            costCenterId: productDims.costCenterId,
+            activityId: productDims.activityId,
+          });
+        }
       } else if (line.matchStatus === MATCH_STATUS.MATCHED && poProductId) {
-        grniExpense += amt;
+        // GRNI
+        const key = `GRNI|${productDims.costCenterId || ''}|${productDims.activityId || ''}`;
+        const current = grniGroups.get(key);
+        if (current) {
+          current.amount += amt;
+        } else {
+          grniGroups.set(key, {
+            amount: amt,
+            costCenterId: productDims.costCenterId,
+            activityId: productDims.activityId,
+          });
+        }
       } else {
-        defaultExpense += amt;
+        // Default Expense
+        const key = `DEF|${productDims.costCenterId || ''}|${productDims.activityId || ''}`;
+        const current = defaultExpenseGroups.get(key);
+        if (current) {
+          current.amount += amt;
+        } else {
+          defaultExpenseGroups.set(key, {
+            amount: amt,
+            costCenterId: productDims.costCenterId,
+            activityId: productDims.activityId,
+          });
+        }
       }
     }
 
@@ -796,8 +873,8 @@ export class PurchaseInvoiceService {
           distinctAccountIds.add(settings.defaultGrniAccountId);
         if (supplierExpenseAccountId)
           distinctAccountIds.add(supplierExpenseAccountId);
-        for (const acctId of expenseByAccountId.keys())
-          distinctAccountIds.add(acctId);
+        for (const group of expenseGroups.values())
+          distinctAccountIds.add(group.accountId);
 
         const settingsIds = Array.from(distinctAccountIds).filter(Boolean);
 
@@ -841,40 +918,96 @@ export class PurchaseInvoiceService {
           if (apCode) {
             const glLines: Parameters<GlService['postJournalEntry']>[0] = [];
 
-            if (defaultExpense > 0 && fallbackExpCode) {
-              glLines.push({
-                accountCode: fallbackExpCode,
-                debit: defaultExpense,
-                credit: 0,
-                memo: `Expense (Default): ${invoice.invoiceNumber}`,
-                costCenterId: supplierCostCenterId || undefined,
-                activityId: supplierActivityId || undefined,
-              });
+            const sysDefaultCC = this.appConfig.defaultCostCenterId();
+            const sysDefaultAct = this.appConfig.defaultActivityId();
+            const supplierDims = {
+              costCenterId: supplierCostCenterId,
+              activityId: supplierActivityId,
+            };
+            const isSuppFirst =
+              this.appConfig.expenseRoutingPrecedence() === 'supplier_first';
+
+            for (const group of defaultExpenseGroups.values()) {
+              if (group.amount > 0 && fallbackExpCode) {
+                const prodDims = {
+                  costCenterId: group.costCenterId,
+                  activityId: group.activityId,
+                };
+                const dims = resolveGlDimensions(
+                  isSuppFirst ? supplierDims : prodDims,
+                  isSuppFirst ? prodDims : supplierDims,
+                  {
+                    defaultCostCenterId: sysDefaultCC,
+                    defaultActivityId: sysDefaultAct,
+                  },
+                );
+                glLines.push({
+                  accountCode: fallbackExpCode,
+                  debit: group.amount,
+                  credit: 0,
+                  memo: `Expense (Default): ${invoice.invoiceNumber}`,
+                  costCenterId: dims.costCenterId || undefined,
+                  activityId: dims.activityId || undefined,
+                });
+              }
             }
 
-            if (grniExpense > 0 && grniCode) {
-              glLines.push({
-                accountCode: grniCode,
-                debit: grniExpense,
-                credit: 0,
-                memo: `GRNI Clearance: ${invoice.invoiceNumber}`,
-                partyId: invoice.vendorId,
-                partyType: 'supplier',
-                costCenterId: supplierCostCenterId || undefined,
-                activityId: supplierActivityId || undefined,
-              });
+            for (const group of grniGroups.values()) {
+              if (group.amount > 0 && grniCode) {
+                const prodDims = {
+                  costCenterId: group.costCenterId,
+                  activityId: group.activityId,
+                };
+                const dims = resolveGlDimensions(
+                  isSuppFirst ? supplierDims : prodDims,
+                  isSuppFirst ? prodDims : supplierDims,
+                  {
+                    defaultCostCenterId: sysDefaultCC,
+                    defaultActivityId: sysDefaultAct,
+                  },
+                );
+                glLines.push({
+                  accountCode: grniCode,
+                  debit: group.amount,
+                  credit: 0,
+                  memo: `GRNI Clearance: ${invoice.invoiceNumber}`,
+                  partyId: invoice.vendorId,
+                  partyType: 'supplier',
+                  costCenterId: dims.costCenterId || undefined,
+                  activityId: dims.activityId || undefined,
+                });
+              }
             }
 
-            for (const [acctId, amount] of expenseByAccountId.entries()) {
-              const code = idToCode.get(acctId);
-              if (code && amount > 0) {
+            for (const group of expenseGroups.values()) {
+              const code = idToCode.get(group.accountId);
+              if (code && group.amount > 0) {
+                const prodDims = {
+                  costCenterId: group.costCenterId,
+                  activityId: group.activityId,
+                  accountId: group.accountId,
+                };
+                const suppDims = {
+                  costCenterId: supplierCostCenterId,
+                  activityId: supplierActivityId,
+                  accountId: supplierExpenseAccountId,
+                };
+                const dims = resolveGlDimensions(
+                  isSuppFirst ? suppDims : prodDims,
+                  isSuppFirst ? prodDims : suppDims,
+                  {
+                    defaultCostCenterId: sysDefaultCC,
+                    defaultActivityId: sysDefaultAct,
+                    defaultAccountId: settings.defaultExpenseAccountId,
+                  },
+                );
                 glLines.push({
                   accountCode: code,
-                  debit: amount,
+                  debit: group.amount,
                   credit: 0,
                   memo: `Expense: ${invoice.invoiceNumber}`,
-                  costCenterId: supplierCostCenterId || undefined,
-                  activityId: supplierActivityId || undefined,
+                  costCenterId: dims.costCenterId || undefined,
+                  activityId: dims.activityId || undefined,
                 });
               }
             }
@@ -889,6 +1022,11 @@ export class PurchaseInvoiceService {
             }
 
             // AP Credit
+            const apDims = resolveGlDimensions(supplierDims, supplierDims, {
+              defaultCostCenterId: sysDefaultCC,
+              defaultActivityId: sysDefaultAct,
+            });
+
             const totalDebits = glLines.reduce((sum, l) => sum + l.debit, 0);
             glLines.push({
               accountCode: apCode,
@@ -897,8 +1035,8 @@ export class PurchaseInvoiceService {
               memo: `Customers Payable: ${invoice.invoiceNumber}`,
               partyId: invoice.vendorId,
               partyType: 'supplier',
-              costCenterId: supplierCostCenterId || undefined,
-              activityId: supplierActivityId || undefined,
+              costCenterId: apDims.costCenterId || undefined,
+              activityId: apDims.activityId || undefined,
             });
 
             await this.glService.postJournalEntry(

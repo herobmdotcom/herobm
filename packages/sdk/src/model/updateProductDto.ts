@@ -27,8 +27,4 @@ export interface UpdateProductDto {
   notes?: string;
   stateCode?: string;
   baseUom?: string;
-  /** @nullable */
-  defaultSalesUomId?: string | null;
-  /** @nullable */
-  defaultPurchaseUomId?: string | null;
 }

@@ -43,13 +43,6 @@ export interface AccountResponseDto {
   createdBy?: string;
   createdOn?: string;
   modifiedOn?: string;
-  customerGroupName?: string;
-  customerGroupCode?: string;
-  customerGroupTradingTermsId?: string;
-  customerGroupCreditLimit?: string;
-  customerGroupIsOnCreditHold?: boolean;
-  customerGroupTaxPositionId?: string;
-  gstCategoryName?: string;
   events?: AccountResponseDtoEventsItem[];
   contacts?: AccountResponseDtoContactsItem[];
   deliveryAddresses?: AccountResponseDtoDeliveryAddressesItem[];

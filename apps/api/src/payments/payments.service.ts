@@ -87,7 +87,7 @@ export class PaymentsService {
     return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
   }
 
-  async findAll(days?: string, allocation?: string) {
+  async findAll(days?: string, allocation?: string, partyId?: string) {
     const whereClauses: SQL[] = [];
 
     if (days && days !== '0') {
@@ -98,6 +98,10 @@ export class PaymentsService {
 
     if (allocation === 'unallocated') {
       whereClauses.push(sql`${paymentEntries.unallocatedAmount} > 0`);
+    }
+
+    if (partyId) {
+      whereClauses.push(eq(paymentEntries.partyId, partyId));
     }
 
     const whereClause =

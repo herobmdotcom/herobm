@@ -289,6 +289,7 @@ export class PurchaseOrdersService {
       includeArchived,
       days,
       states,
+      vendorId,
     } = parsePagination(query);
 
     const rawSearchTerm = searchTerm ? searchTerm.replace(/^%+|%+$/g, '') : '';
@@ -338,6 +339,10 @@ export class PurchaseOrdersService {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         conditions.push(inArray(purchaseOrders.stateCode, states as any[]));
       }
+    }
+
+    if (vendorId) {
+      conditions.push(eq(purchaseOrders.vendorId, vendorId));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

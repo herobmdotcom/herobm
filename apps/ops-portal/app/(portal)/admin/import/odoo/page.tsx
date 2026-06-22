@@ -194,7 +194,7 @@ export default function OdooImportPage() {
             try {
               const stateRes = await api.setupControllerGetResumeStateOdoo();
               const count = stateRes.data.completedTables?.length || 0;
-              setLogs(prev => [...prev, `✅ Extraction finished. Successfully extracted ${count} tables.`]);
+              setLogs(prev => [...prev, `Extraction finished. Successfully extracted ${count} tables.`]);
             } catch(e) { /* ignore */ }
           } else if (progress.status === 'failed') {
             setStatus('failed');
@@ -205,7 +205,7 @@ export default function OdooImportPage() {
             try {
               const stateRes = await api.setupControllerGetResumeStateOdoo();
               const count = stateRes.data.completedTables?.length || 0;
-              setLogs(prev => [...prev, `⏹️ Job stopped or failed. Safely extracted ${count} tables before terminating.`]);
+              setLogs(prev => [...prev, `Job stopped or failed. Safely extracted ${count} tables before terminating.`]);
             } catch(e) { /* ignore */ }
           }
         }

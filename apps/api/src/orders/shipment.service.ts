@@ -1285,8 +1285,10 @@ export class ShipmentService {
       )
       .where(eq(salesOrders.salesOrderId, shipment.salesOrderId));
     if (order) {
-      customerCostCenterId = order.costCenterId || undefined;
-      customerActivityId = order.activityId || undefined;
+      customerCostCenterId =
+        order.costCenterId || this.appConfig.defaultCostCenterId() || undefined;
+      customerActivityId =
+        order.activityId || this.appConfig.defaultActivityId() || undefined;
     }
 
     const dispatchGl = accountingStrategy.onGoodsDispatch({

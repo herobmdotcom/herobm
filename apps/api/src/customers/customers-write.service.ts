@@ -33,6 +33,7 @@ const isUuid = (id: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
 import { AppConfigService } from '../settings/app-config.service';
+import { buildUpdatePayload } from '../common/utils/drizzle-utils';
 
 @Injectable()
 export class AccountsWriteService {
@@ -61,43 +62,11 @@ export class AccountsWriteService {
 
     // Legacy ABM customers are now in core — the check above covers both.
 
-    const allowedKeys: (keyof CreateAccountDto)[] = [
-      'customerNumber',
-      'name',
-      'billingAddressLine1',
-      'billingAddressLine2',
-      'billingAddressCity',
-      'billingAddressStateOrProvince',
-      'billingAddressPostalCode',
-      'billingAddressCountry',
-      'telephone1',
-      'fax',
-      'emailAddress1',
-      'customerGroupId',
-      'taxPositionId',
-      'tradingTermsId',
-      'currencyCode',
-      'parentCustomerId',
-      'isTaxRegistered',
-      'isOnCreditHold',
-      'overrideCreditHoldUntil',
-      'creditLimit',
-      'businessNumber',
-      'notes',
-    ];
-
-    const sanitizedDto: Record<string, unknown> = {};
-    const recordDto = dto as unknown as Record<string, unknown>;
-    for (const key of allowedKeys) {
-      if (key in dto && recordDto[key as string] !== undefined) {
-        sanitizedDto[key as string] = recordDto[key as string];
-      }
-    }
-
+    const sanitizedDto = buildUpdatePayload(dto);
     if (sanitizedDto.overrideCreditHoldUntil) {
       sanitizedDto.overrideCreditHoldUntil = new Date(
-        sanitizedDto.overrideCreditHoldUntil as string,
-      );
+        sanitizedDto.overrideCreditHoldUntil,
+      ).toISOString();
     }
 
     let result;
@@ -161,48 +130,11 @@ export class AccountsWriteService {
     if (existing.length === 0) {
       throw new NotFoundException(`Customer '${id}' not found`);
     }
-
-    const allowedKeys: (keyof UpdateAccountDto)[] = [
-      'name',
-      'billingAddressLine1',
-      'billingAddressLine2',
-      'billingAddressCity',
-      'billingAddressStateOrProvince',
-      'billingAddressPostalCode',
-      'billingAddressCountry',
-      'telephone1',
-      'fax',
-      'emailAddress1',
-      'customerGroupId',
-      'stateCode',
-      'taxPositionId',
-      'tradingTermsId',
-      'currencyCode',
-      'parentCustomerId',
-      'isTaxRegistered',
-      'isOnCreditHold',
-      'overrideCreditHoldUntil',
-      'creditLimit',
-      'businessNumber',
-      'notes',
-    ];
-
-    const sanitizedDto: Record<string, unknown> = {};
-    for (const key of allowedKeys) {
-      if (
-        key in dto &&
-        (dto as Record<string, unknown>)[key as string] !== undefined
-      ) {
-        sanitizedDto[key as string] = (dto as Record<string, unknown>)[
-          key as string
-        ];
-      }
-    }
-
+    const sanitizedDto = buildUpdatePayload(dto);
     if (sanitizedDto.overrideCreditHoldUntil) {
       sanitizedDto.overrideCreditHoldUntil = new Date(
-        sanitizedDto.overrideCreditHoldUntil as string,
-      );
+        sanitizedDto.overrideCreditHoldUntil,
+      ).toISOString();
     }
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {

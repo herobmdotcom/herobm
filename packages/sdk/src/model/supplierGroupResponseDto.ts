@@ -17,8 +17,6 @@ export interface SupplierGroupResponseDto {
   /** @nullable */
   tradingTermsId: string | null;
   /** @nullable */
-  taxPositionId: string | null;
-  /** @nullable */
   earlyPaymentDiscount: string | null;
   /** @nullable */
   earlyPaymentDiscountDays: number | null;
@@ -36,6 +34,8 @@ export interface SupplierGroupResponseDto {
   defaultCostCenterId: string | null;
   /** @nullable */
   defaultActivityId: string | null;
+  /** @nullable */
+  taxPositionId: string | null;
   tenantId: string;
   createdAt: string;
   updatedAt: string;

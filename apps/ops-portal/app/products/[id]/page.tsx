@@ -472,7 +472,6 @@ export default function ProductDetailPage() {
           className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
           style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
         >
-          <span style={{ fontSize: '1.2rem' }}>📦</span>
           <div>
             <strong className="font-semibold text-amber-800">{t('salesOrders.archivedBannerTitle')}</strong> {t('salesOrders.archivedBannerBody')}
           </div>
