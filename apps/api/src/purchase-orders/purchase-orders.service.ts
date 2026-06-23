@@ -35,6 +35,7 @@ import {
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { getExchangeRateForCurrency } from '../common/fx-helper';
 import {
   PURCHASE_ORDER_STATE,
   PURCHASE_ORDER_TRANSITIONS,
@@ -91,7 +92,7 @@ export class PurchaseOrdersService {
     productId?: string,
     taxCategoryIdOverride?: string,
   ): Promise<{ taxCategoryId: string; rate: number }> {
-    const supplier = await this.suppliersService.findOne(vendorId);
+    const supplier = await this.suppliersService.findOne(vendorId, tx);
 
     const resolvedTaxCategoryId =
       await this.taxResolutionEngine.resolveTaxCategory(
@@ -159,7 +160,9 @@ export class PurchaseOrdersService {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   async create(createDto: any, userId: string) {
+    console.log('[DEBUG] PO create - starting transaction');
     return await this.db.transaction(async (tx) => {
+      console.log('[DEBUG] PO create - inside transaction, checking loc');
       if (!createDto.deliveryLocationId) {
         throw new BadRequestException(
           'Delivery location is mandatory for all purchase orders.',
@@ -177,6 +180,7 @@ export class PurchaseOrdersService {
         throw new BadRequestException('Invalid delivery location ID.');
       }
 
+      console.log('[DEBUG] PO create - checking supplier expiries');
       // Option B: Just in time lookup against supplierExpiries
       const expiredDocs = await tx
         .select({ id: supplierExpiries.expiryId })
@@ -195,6 +199,15 @@ export class PurchaseOrdersService {
         );
       }
 
+      console.log('[DEBUG] PO create - inserting order');
+      const poCurrencyCode =
+        createDto.currencyCode || this.appConfig.homeCurrency();
+      const fx = await getExchangeRateForCurrency(
+        tx as DrizzleDB,
+        poCurrencyCode,
+        new Date(),
+      );
+
       // Create PO
       let order;
       try {
@@ -205,8 +218,8 @@ export class PurchaseOrdersService {
             orderNumber: createDto.orderNumber, // In reality, should auto-gen
             name: createDto.name,
             vendorId: createDto.vendorId,
-            currencyCode:
-              createDto.currencyCode || this.appConfig.homeCurrency(),
+            currencyCode: poCurrencyCode,
+            exchangeRate: fx.rate.toString(),
             notes: createDto.notes,
             createdBy: userId,
             stateCode: PURCHASE_ORDER_STATE.DRAFT,
@@ -223,18 +236,21 @@ export class PurchaseOrdersService {
         throw err;
       }
 
+      console.log('[DEBUG] PO create - inserting lines');
       // Create lines if any
       if (createDto.lines && createDto.lines.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
         const lineValues: any[] = [];
         let index = 0;
         for (const line of createDto.lines) {
+          console.log('[DEBUG] PO create - resolving tax for line', index);
           const { taxCategoryId, rate } = await this.resolveTaxForLine(
             tx,
             createDto.vendorId,
             line.productId,
             line.taxCategoryId,
           );
+          console.log('[DEBUG] PO create - tax resolved for line', index, rate);
           const pricing = computeLinePriceForStorage({
             quantity: parseFloat(line.quantity || '0'),
             pricePerUnit: parseFloat(line.pricePerUnit || '0'),
@@ -259,9 +275,11 @@ export class PurchaseOrdersService {
           index++;
         }
 
+        console.log('[DEBUG] PO create - executing line inserts');
         await tx.insert(purchaseOrderLineItems).values(lineValues);
       }
 
+      console.log('[DEBUG] PO create - emitting event');
       await emitEvent(tx, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: order.purchaseOrderId,
@@ -275,6 +293,7 @@ export class PurchaseOrdersService {
         actor: userId,
       });
 
+      console.log('[DEBUG] PO create - finding and returning one');
       return this.findOne(order.purchaseOrderId, tx);
     });
   }

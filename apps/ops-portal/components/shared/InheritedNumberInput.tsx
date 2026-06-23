@@ -36,10 +36,10 @@ export default function InheritedNumberInput({
         type="number"
         className={`${className} w-full`}
         disabled={disabled}
-        value={value || ''}
+        value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
-        placeholder={placeholder}
+        placeholder={hasInherited && !hasLocalValue ? String(inheritedValue) : placeholder}
         min={min}
         max={max}
         step={step}

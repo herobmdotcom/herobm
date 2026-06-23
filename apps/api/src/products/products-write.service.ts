@@ -37,17 +37,17 @@ export class ProductsWriteService {
 
   private readonly logger = new Logger(ProductsWriteService.name);
 
-  /**
-   * Create a new product in herobm_core.
-   * Product number uniqueness is enforced by the DB UNIQUE constraint.
-   */
   async create(dto: CreateProductDto, actor: string) {
     if (dto.structureType === 'kit' && dto.productType !== 'non-stock') {
       throw new BadRequestException(
         'Kits must be stored as non-stock products.',
       );
     }
+    console.log('[DEBUG] ProductsWriteService.create starting transaction');
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      console.log(
+        '[DEBUG] ProductsWriteService.create inside transaction, inserting product',
+      );
       const [product] = await tx
         .insert(coreProducts)
         .values({
@@ -57,6 +57,7 @@ export class ProductsWriteService {
         })
         .returning();
 
+      console.log('[DEBUG] ProductsWriteService.create emitting event');
       await emitEvent(tx, {
         entityType: EntityType.PRODUCT,
         entityId: product.productId,
@@ -66,6 +67,7 @@ export class ProductsWriteService {
         actor,
       });
 
+      console.log('[DEBUG] ProductsWriteService.create returning product');
       return product;
     });
 

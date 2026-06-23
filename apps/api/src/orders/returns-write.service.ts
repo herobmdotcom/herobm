@@ -609,6 +609,7 @@ export class ReturnsWriteService {
               grniAccountId: this.appConfig.defaultGrniAccountId(),
               cogsAccountId: this.appConfig.defaultCogsAccountId(),
               shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
+              ppvAccountId: this.appConfig.defaultPpvAccountId(),
             },
           );
 

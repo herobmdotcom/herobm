@@ -26,6 +26,7 @@ import {
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { GlService, JournalMeta } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
+import { FxRevaluationService } from './fx-revaluation.service';
 import {
   JournalLineDto,
   CreateJournalEntryDto,
@@ -45,6 +46,8 @@ import {
   PaginatedJournalEntriesDto,
   PaginatedGeneralLedgerDto,
   UpdateGLSettingsDto,
+  CommitFxRevaluationDto,
+  RunFxRevaluationDto,
 } from './dto';
 import { AppConfigService } from '../settings/app-config.service';
 import { GLAccountType, SystemResource } from '@herobm/shared';
@@ -61,6 +64,7 @@ export class GlController {
     private readonly glService: GlService,
     private readonly coaLoader: CoaLoaderService,
     private readonly appConfig: AppConfigService,
+    private readonly fxRevalService: FxRevaluationService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -145,6 +149,7 @@ export class GlController {
   @ApiQuery({ name: 'fromDate', required: false })
   @ApiQuery({ name: 'toDate', required: false })
   @ApiQuery({ name: 'sourceType', required: false })
+  @ApiQuery({ name: 'sourceId', required: false })
   @ApiQuery({ name: 'q', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'page', required: false })
@@ -152,6 +157,7 @@ export class GlController {
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
     @Query('sourceType') sourceType?: string,
+    @Query('sourceId') sourceId?: string,
     @Query('q') entryNumber?: string,
     @Query('limit') limitStr?: string,
     @Query('page') pageStr?: string,
@@ -162,6 +168,7 @@ export class GlController {
       fromDate,
       toDate,
       sourceType,
+      sourceId,
       entryNumber,
       limit,
       page,
@@ -210,12 +217,13 @@ export class GlController {
   async createManualJournalEntry(
     @Body()
     body: CreateJournalEntryDto,
+    @AuthUser('userId') userId: string,
   ) {
     const meta: JournalMeta = {
       sourceType: 'manual',
       memo: body.memo,
       entryDate: body.entryDate,
-      actor: body.actor,
+      actor: userId,
       journalEntryId: body.journalEntryId,
     };
     return this.glService.postJournalEntry(body.lines, meta);
@@ -297,6 +305,34 @@ export class GlController {
     // Automatically reload app config cache since settings changed
     await this.appConfig.reload();
     return updated;
+  }
+
+  @Get('fx-revaluation/candidates')
+  @ApiOperation({
+    summary: 'Get FX Revaluation Candidates',
+    description:
+      'Calculates Unrealised FX Gains/Losses on open foreign currency balances and returns proposed adjustments without posting them.',
+  })
+  @ApiOkResponse({ schema: { type: 'object' } })
+  @CasbinAction('read')
+  async getFxCandidates(@Query() dto: RunFxRevaluationDto) {
+    return await this.fxRevalService.generateCandidates(dto);
+  }
+
+  @Post('fx-revaluation/commit')
+  @ApiOperation({
+    summary: 'Commit Period-End FX Revaluation',
+    description:
+      'Commits the user-approved FX Revaluation adjustments and automatically generates their corresponding reversing journals for the following day.',
+  })
+  @ApiCreatedResponse({ schema: { type: 'object' } })
+  @CasbinAction('write')
+  @ApiBody({ type: CommitFxRevaluationDto })
+  async commitFxRevaluation(
+    @AuthUser() user: JwtUser,
+    @Body() dto: CommitFxRevaluationDto,
+  ) {
+    return await this.fxRevalService.commitRevaluation(dto, user.userId);
   }
 
   @Post('settings/reload')

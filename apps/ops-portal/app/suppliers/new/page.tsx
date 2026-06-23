@@ -243,7 +243,7 @@ export default function NewSupplierPage() {
             <span className="material-symbols-outlined">payments</span>
             FINANCIALS
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {/* ── Row 1 ── */}
             {/* 1. Currency */}
             <div>
@@ -304,7 +304,7 @@ export default function NewSupplierPage() {
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none text-sm">{tCommon('units.days')}</span>
                 </div>
                 {!!earlyPaymentDiscountInheritance.inheritedSourceLabel && !!earlyPaymentDiscountDaysInheritance.inheritedSourceLabel && (
-                  <span className="text-xs italic text-[var(--primary)] ml-2 flex-shrink-0">
+                  <span className="text-xs italic text-[var(--primary)] ml-2">
                     {tCommon('options.inheritValue', { 
                       label: `${earlyPaymentDiscountInheritance.inheritedValue}% in ${earlyPaymentDiscountDaysInheritance.inheritedValue} days`,
                       source: earlyPaymentDiscountInheritance.inheritedSourceLabel || ''
@@ -444,7 +444,7 @@ export default function NewSupplierPage() {
                   inheritedSourceLabel={creditLimitInheritance.inheritedSourceLabel}
                 />
                 {!!creditLimitInheritance.inheritedSourceLabel && (
-                  <span className="text-xs italic text-[var(--primary)] ml-2 flex-shrink-0">
+                  <span className="text-xs italic text-[var(--primary)] ml-2">
                     {tCommon('options.inheritValue', {
                       label: creditLimitInheritance.inheritedValue || '',
                       source: creditLimitInheritance.inheritedSourceLabel || ''

@@ -33,4 +33,6 @@ export interface CreateAccountDto {
   isOnCreditHold?: boolean;
   tradingTermsId?: string;
   overrideCreditHoldUntil?: string;
+  earlyPaymentDiscount?: string;
+  earlyPaymentDiscountDays?: number;
 }

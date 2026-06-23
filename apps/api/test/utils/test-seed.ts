@@ -6,7 +6,7 @@ import {
   users,
 } from '../../src/drizzle/herobm-core-schema';
 import * as bcrypt from 'bcrypt';
-import { SeedDB } from '../../src/scripts/seed';
+import type { SeedDB } from '../../src/seeds/run';
 
 export async function seedTestLocations(db: SeedDB, dryRun = false) {
   if (dryRun) {

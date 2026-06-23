@@ -781,7 +781,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     className="input w-full pr-8"
                     value={editEarlyPaymentDiscount || ''}
                     onChange={(val) => setEditEarlyPaymentDiscount(val)}
-                    onBlur={() => saveField('earlyPaymentDiscount', editEarlyPaymentDiscount || '', supplier.earlyPaymentDiscount || null)}
+                    onBlur={() => saveField('earlyPaymentDiscount', editEarlyPaymentDiscount ? String(editEarlyPaymentDiscount) : null, supplier.earlyPaymentDiscount || null)}
                     disabled={!isEditable || saving}
                     step="0.01"
                     min="0"
@@ -813,7 +813,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none text-sm">days</span>
                 </div>
                 {!!earlyPaymentDiscountInheritance.inheritedSourceLabel && !!earlyPaymentDiscountDaysInheritance.inheritedSourceLabel && (
-                  <span className="text-xs italic text-[var(--primary)] ml-2 flex-shrink-0">
+                  <span className="text-xs italic text-[var(--primary)] ml-2">
                     {tCommon('options.inheritValue', { 
                       label: `${earlyPaymentDiscountInheritance.inheritedValue}% in ${earlyPaymentDiscountDaysInheritance.inheritedValue} days`,
                       source: earlyPaymentDiscountInheritance.inheritedSourceLabel || ''
@@ -840,7 +840,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   inheritedSourceLabel={creditLimitInheritance.inheritedSourceLabel}
                 />
                 {!!creditLimitInheritance.inheritedSourceLabel && (
-                  <span className="text-xs italic text-[var(--primary)] ml-2 flex-shrink-0">
+                  <span className="text-xs italic text-[var(--primary)] ml-2">
                     {tCommon('options.inheritValue', {
                       label: creditLimitInheritance.inheritedValue || '',
                       source: creditLimitInheritance.inheritedSourceLabel || ''

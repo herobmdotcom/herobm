@@ -1,27 +1,12 @@
-import * as path from 'path';
-import { config } from 'dotenv';
-config({ path: path.resolve(__dirname, '../../../../.env') });
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import { businessReports } from '../drizzle/herobm-core-schema';
+import { businessReports } from '../../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
+import type { SeedDB } from '../run';
 
-async function seedBusinessReports() {
-  const host = process.env.POSTGRES_HOST || '127.0.0.1';
-  const port = process.env.POSTGRES_PORT || '5432';
-  const user = process.env.POSTGRES_USER || 'postgres';
-  const dbName = process.env.POSTGRES_DB || 'herobm';
-
-  const connectionString =
-    process.env.DATABASE_URL ||
-    `postgres://${user}:${process.env.POSTGRES_PASSWORD}@${host}:${port}/${dbName}`;
-
-  if (!process.env.POSTGRES_USER && !process.env.DATABASE_URL) {
-    throw new Error('Database connection details not set in .env');
+export async function seedBusinessReports(db: SeedDB, dryRun = false) {
+  if (dryRun) {
+    console.log('  [DRY RUN] Would seed business reports');
+    return;
   }
-
-  const sql = postgres(connectionString, { max: 1 });
-  const db = drizzle(sql);
 
   console.log('Seeding business reports...');
 
@@ -732,11 +717,5 @@ async function seedBusinessReports() {
     }
   }
 
-  console.log('Done!');
-  process.exit(0);
+  console.log('  Done seeding business reports!');
 }
-
-seedBusinessReports().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});

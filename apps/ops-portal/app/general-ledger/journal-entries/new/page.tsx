@@ -11,6 +11,8 @@ import CustomerSelect from '@/components/shared/CustomerSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import { useSettings } from '@/components/SettingsProvider';
+import { formatAmount } from '@/lib/currency';
 
 interface GlAccount {
   accountCode: string;
@@ -27,6 +29,8 @@ interface JournalLineForm {
   accountCode: string;
   partyType: 'none' | 'customer' | 'supplier';
   partyId: string;
+  costCenterId: string;
+  activityId: string;
   debit: string;
   credit: string;
   memo: string;
@@ -41,15 +45,18 @@ export default function NewJournalEntryPage() {
   const tGeneral = useTranslations('gl');
   const tCommon = useTranslations('common');
   const router = useRouter();
+  const { baseCurrency } = useSettings();
 
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [memo, setMemo] = useState('');
   const [lines, setLines] = useState<JournalLineForm[]>([
-    { id: uid(), accountCode: '', partyType: 'none', partyId: '', debit: '', credit: '', memo: '' },
-    { id: uid(), accountCode: '', partyType: 'none', partyId: '', debit: '', credit: '', memo: '' },
+    { id: uid(), accountCode: '', partyType: 'none', partyId: '', costCenterId: '', activityId: '', debit: '', credit: '', memo: '' },
+    { id: uid(), accountCode: '', partyType: 'none', partyId: '', costCenterId: '', activityId: '', debit: '', credit: '', memo: '' },
   ]);
 
   const [accounts, setAccounts] = useState<GlAccount[]>([]);
+  const [costCenters, setCostCenters] = useState<{ costCenterId: string; code: string; name: string }[]>([]);
+  const [activities, setActivities] = useState<{ activityId: string; code: string; name: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -60,6 +67,20 @@ export default function NewJournalEntryPage() {
         setAccounts(payload.filter(a => !a.isGroup && a.isActive));
       })
       .catch((err) => reportError(err, 'NewJournalEntryPage - accounts'));
+
+    api.costCentersControllerFindAll()
+      .then(res => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Expected any due to missing backend type
+        setCostCenters(res.data.filter((c: any) => c.isActive) as any);
+      })
+      .catch((err) => reportError(err, 'NewJournalEntryPage - costCenters'));
+
+    api.activitiesControllerFindAll()
+      .then(res => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Expected any due to missing backend type
+        setActivities(res.data.filter((a: any) => a.isActive) as any);
+      })
+      .catch((err) => reportError(err, 'NewJournalEntryPage - activities'));
   }, []);
 
   const totalDebit = useMemo(() => {
@@ -91,7 +112,7 @@ export default function NewJournalEntryPage() {
   };
 
   const addLine = () => {
-    setLines([...lines, { id: uid(), accountCode: '', partyType: 'none', partyId: '', debit: '', credit: '', memo: '' }]);
+    setLines([...lines, { id: uid(), accountCode: '', partyType: 'none', partyId: '', costCenterId: '', activityId: '', debit: '', credit: '', memo: '' }]);
   };
 
   const removeLine = (id: string) => {
@@ -107,6 +128,8 @@ export default function NewJournalEntryPage() {
       accountCode: line.accountCode,
       partyType: line.partyType === 'none' ? undefined : (line.partyType as 'customer' | 'supplier'),
       partyId: line.partyId || undefined,
+      costCenterId: line.costCenterId || undefined,
+      activityId: line.activityId || undefined,
       debit: parseFloat(line.debit) || 0,
       credit: parseFloat(line.credit) || 0,
       memo: line.memo || undefined,
@@ -203,6 +226,8 @@ export default function NewJournalEntryPage() {
                   <th>{t('columns.glAccount')}</th>
                   <th>{t('columns.partyType')}</th>
                   <th>{t('columns.party')}</th>
+                  <th>{tCommon('costCenter')}</th>
+                  <th>{tCommon('activity')}</th>
                   <th>{t('columns.memo')}</th>
                   <th style={{ width: 120, textAlign: 'right' }}>{t('columns.debit')}</th>
                   <th style={{ width: 120, textAlign: 'right' }}>{t('columns.credit')}</th>
@@ -261,6 +286,32 @@ export default function NewJournalEntryPage() {
                       )}
                     </td>
                     <td>
+                      <select
+                        value={line.costCenterId}
+                        onChange={(e) => updateLine(line.id, 'costCenterId', e.target.value)}
+                        className="input"
+                        style={{ width: '100%', fontSize: 13 }}
+                      >
+                        <option value="">—</option>
+                        {costCenters.map(cc => (
+                          <option key={cc.costCenterId} value={cc.costCenterId}>{cc.code} - {cc.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <select
+                        value={line.activityId}
+                        onChange={(e) => updateLine(line.id, 'activityId', e.target.value)}
+                        className="input"
+                        style={{ width: '100%', fontSize: 13 }}
+                      >
+                        <option value="">—</option>
+                        {activities.map(act => (
+                          <option key={act.activityId} value={act.activityId}>{act.code} - {act.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
                       <input
                         type="text"
                         value={line.memo}
@@ -314,15 +365,15 @@ export default function NewJournalEntryPage() {
                 </div>
                 <div className="flex justify-between items-center py-1">
                   <span className="text-sm font-medium text-slate-500">{t('columns.debit')}</span>
-                  <span className="text-sm font-semibold">{totalDebit.toFixed(2)}</span>
+                  <span className="text-sm font-semibold">{formatAmount(totalDebit, baseCurrency)}</span>
                 </div>
                 <div className="flex justify-between items-center py-1">
                   <span className="text-sm font-medium text-slate-500">{t('columns.credit')}</span>
-                  <span className="text-sm font-semibold">{totalCredit.toFixed(2)}</span>
+                  <span className="text-sm font-semibold">{formatAmount(totalCredit, baseCurrency)}</span>
                 </div>
                 {!isBalanced && totalDebit > 0 && (
                   <div className="mt-2 text-xs font-semibold text-red-600 bg-red-50 px-3 py-1.5 rounded-md border border-red-200">
-                    {t('unbalancedWarning', { amount: Math.abs(totalDebit - totalCredit).toFixed(2) })}
+                    {t('unbalancedWarning', { amount: formatAmount(Math.abs(totalDebit - totalCredit), baseCurrency) })}
                   </div>
                 )}
               </div>

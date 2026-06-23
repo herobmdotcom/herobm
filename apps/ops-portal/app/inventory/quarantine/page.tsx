@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';
 import UnquarantineModal from './UnquarantineModal';
+import { usePersistedSetting } from '@/hooks/usePersistedSetting';
 
 function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, t, tCommon, defaultLocId }: { locations: api.InventoryLocationResponseDto[], selectedLocationId: string, setSelectedLocationId: (v: string) => void, t: ReturnType<typeof useTranslations>, tCommon: ReturnType<typeof useTranslations>, defaultLocId: string }) {
     const [open, setOpen] = useState(false);
@@ -35,7 +36,6 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                         value={selectedLocationId}
                         onChange={(e) => {
                             setSelectedLocationId(e.target.value);
-                            localStorage.setItem('receiving_selected_location', e.target.value);
                         }}
                         className="input text-sm w-48"
                     >
@@ -65,7 +65,6 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                                 value={selectedLocationId}
                                 onChange={(e) => {
                                     setSelectedLocationId(e.target.value);
-                                    localStorage.setItem('receiving_selected_location', e.target.value);
                                 }}
                                 className="input text-sm w-full"
                             >
@@ -92,7 +91,7 @@ export default function QuarantineListPage() {
     const [refreshKey, setRefreshKey] = useState(0);
 
     const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
-    const [selectedLocationId, setSelectedLocationId] = useState<string>('');
+    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('receiving_selected_location', '');
     const [selectedLocationNo, setSelectedLocationNo] = useState<string>('');
 
     useEffect(() => {
@@ -100,12 +99,19 @@ export default function QuarantineListPage() {
             .then((response) => {
                 const locs = response.data || [];
                 setLocations(locs);
-                const storedLocId = localStorage.getItem('receiving_selected_location');
-                const defaultLocId = storedLocId !== null ? storedLocId : (app?.defaultFulfillmentLocationId || (locs.length > 0 ? locs[0].locationId : ''));
-                setSelectedLocationId(defaultLocId);
             })
             .catch((err: unknown) => reportError(err, 'QuarantineListPage.loadLocations'));
-    }, [app?.defaultFulfillmentLocationId]);
+    }, []);
+
+    useEffect(() => {
+        if (locReady && locations.length > 0) {
+            const isValidSaved = selectedLocationId && locations.some(l => l.locationId === selectedLocationId);
+            const defaultLocId = isValidSaved ? selectedLocationId : (app?.defaultFulfillmentLocationId || locations[0].locationId);
+            if (defaultLocId !== selectedLocationId) {
+                setSelectedLocationId(defaultLocId as string);
+            }
+        }
+    }, [locReady, locations, selectedLocationId, app?.defaultFulfillmentLocationId, setSelectedLocationId]);
 
     useEffect(() => {
         if (selectedLocationId) {

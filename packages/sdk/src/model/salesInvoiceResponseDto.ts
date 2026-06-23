@@ -20,6 +20,8 @@ export interface SalesInvoiceResponseDto {
   stateCode: string;
   notes?: string;
   salesOrderId?: string;
+  earlyPaymentDiscount?: string;
+  earlyPaymentDiscountDays?: number;
   createdBy: string;
   createdOn: string;
   lines: InvoiceLineResponseDto[];

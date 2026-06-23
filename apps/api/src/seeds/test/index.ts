@@ -1,16 +1,22 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../app.module';
-import { GlService } from '../gl/gl.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
-import { glAccounts } from '../drizzle/herobm-core-schema';
+import { AppModule } from '../../app.module';
+import { GlService } from '../../gl/gl.service';
+import { DRIZZLE } from '../../drizzle/drizzle.module';
+import { glAccounts } from '../../drizzle/herobm-core-schema';
 import { eq, sql } from 'drizzle-orm';
 
-async function bootstrap() {
+import type { SeedDB } from '../run';
+
+export async function runTestSeeds(db: SeedDB, dryRun = false) {
+  if (dryRun) {
+    console.log('  [DRY RUN] Would seed test data');
+    return;
+  }
   const app = await NestFactory.createApplicationContext(AppModule);
-  const db = app.get(DRIZZLE);
+  const appDb = app.get(DRIZZLE);
   const glService = app.get(GlService);
 
-  const bankAccs = await db
+  const bankAccs = await appDb
     .select()
     .from(glAccounts)
     .where(eq(glAccounts.isBankAccount, true))
@@ -21,12 +27,12 @@ async function bootstrap() {
   }
   const bankAcc = bankAccs[0];
 
-  const arAccs = await db
+  const arAccs = await appDb
     .select()
     .from(glAccounts)
     .where(sql`name ILIKE '%Receivable%'`)
     .limit(1);
-  const apAccs = await db
+  const apAccs = await appDb
     .select()
     .from(glAccounts)
     .where(sql`name ILIKE '%Payable%'`)
@@ -88,5 +94,3 @@ async function bootstrap() {
   console.log('Payments seeded successfully.');
   await app.close();
 }
-
-bootstrap();

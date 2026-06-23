@@ -18,6 +18,8 @@ export interface SalesInvoiceDetails {
   currencyCode: string;
   stateCode: string;
   notes?: string;
+  earlyPaymentDiscount?: string | null;
+  earlyPaymentDiscountDays?: number | null;
   lines: Array<{
     lineId: string;
     productId: string;
@@ -27,6 +29,14 @@ export interface SalesInvoiceDetails {
     pricePerUnit: string;
     amount: string;
   }>;
+  allocations?: {
+    allocationId: string;
+    allocatedAmount: string;
+    paymentId: string;
+    paymentNumber: string;
+    paymentDate: string;
+    currencyCode: string;
+  }[];
 }
 
 export function useSalesInvoice(id: string) {

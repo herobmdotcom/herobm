@@ -16,7 +16,8 @@ import {
   SALES_INVOICE_STATE, 
   PURCHASE_INVOICE_STATE,
   SALES_CREDIT_NOTE_STATE,
-  PURCHASE_DEBIT_NOTE_STATE
+  PURCHASE_DEBIT_NOTE_STATE,
+  calculateEarlyPaymentDiscount
 } from '@herobm/shared';
 
 import SupplierSelect from '@/components/shared/SupplierSelect';
@@ -101,8 +102,11 @@ interface OutstandingInvoice {
   outstandingAmount: string;
   date: string;
   referenceType: 'sales_invoice' | 'purchase_invoice' | 'sales_credit_note' | 'purchase_debit_note';
+  earlyPaymentDiscount?: string | null;
+  earlyPaymentDiscountDays?: number | null;
   // Local state for allocation editing
   pendingAllocation: number;
+  pendingDiscountAmount: number;
 }
 
 export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, onNext, onPrev }: Props) {
@@ -181,7 +185,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
   // Load outstanding invoices for allocation
   const loadOutstandingInvoices = useCallback(async () => {
-    if (!data || data.stateCode !== PAYMENT_STATE.DRAFT) return;
+    if (!data || (data.stateCode !== PAYMENT_STATE.DRAFT && data.stateCode !== PAYMENT_STATE.SUBMITTED)) return;
 
     if (parseFloat(data.unallocatedAmount) <= 0) {
       setOutstandingInvoices([]);
@@ -209,6 +213,8 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         invoiceDate?: string;
         createdOn?: string;
         stateCode: string;
+        earlyPaymentDiscount?: string | null;
+        earlyPaymentDiscountDays?: number | null;
       };
 
       let list: InvoiceLike[] = [];
@@ -257,6 +263,9 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
           stateCode: inv.stateCode,
           referenceType,
           pendingAllocation: 0,
+          pendingDiscountAmount: 0,
+          earlyPaymentDiscount: inv.earlyPaymentDiscount,
+          earlyPaymentDiscountDays: inv.earlyPaymentDiscountDays,
         }));
       
       setOutstandingInvoices(invoices);
@@ -268,7 +277,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
   }, [data]);
 
   useEffect(() => {
-    if (data?.stateCode === PAYMENT_STATE.DRAFT) {
+    if (data?.stateCode === PAYMENT_STATE.DRAFT || data?.stateCode === PAYMENT_STATE.SUBMITTED) {
       loadOutstandingInvoices();
     }
   }, [data?.stateCode, data?.unallocatedAmount, loadOutstandingInvoices]);
@@ -278,19 +287,53 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     if (!data) return;
     setOutstandingInvoices(prev => prev.map(p => {
       if (p.id !== invoice.id) return p;
-      if (p.pendingAllocation > 0) {
-        return { ...p, pendingAllocation: 0 };
+
+      if (p.pendingAllocation > 0 || p.pendingDiscountAmount > 0) {
+        // Toggle OFF
+        return { ...p, pendingAllocation: 0, pendingDiscountAmount: 0 };
       } else {
-        // Calculate remaining unallocated excluding this invoice
+        // Toggle ON: calculate what we can allocate
+        let discountVal = 0;
+        
+        if (p.earlyPaymentDiscount != null && p.earlyPaymentDiscountDays != null && data.paymentDate) {
+          const result = calculateEarlyPaymentDiscount({
+            invoiceDate: p.date ? new Date(p.date) : new Date(),
+            outstandingAmount: p.outstandingAmount,
+            earlyPaymentDiscount: p.earlyPaymentDiscount,
+            earlyPaymentDiscountDays: p.earlyPaymentDiscountDays,
+            currentDate: new Date(data.paymentDate)
+          });
+          if (result.isEligible) {
+            discountVal = result.discountAmount;
+          }
+        }
+
         const currentAllocated = prev.reduce((sum, item) => sum + (item.id === invoice.id ? 0 : item.pendingAllocation), 0);
         const maxAvailable = parseFloat(data.unallocatedAmount) - currentAllocated;
-        const toAllocate = Math.min(parseFloat(p.outstandingAmount), Math.max(0, maxAvailable));
-        return { ...p, pendingAllocation: toAllocate };
+        
+        const remainingToClear = Math.max(0, parseFloat(p.outstandingAmount) - discountVal);
+        const toAllocate = Math.min(remainingToClear, Math.max(0, maxAvailable));
+        
+        // Only apply discount if we are fully allocating the remaining balance
+        const actualDiscount = (toAllocate >= remainingToClear && toAllocate > 0) ? discountVal : 0;
+        
+        return { ...p, pendingAllocation: toAllocate, pendingDiscountAmount: actualDiscount };
       }
     }));
   }, [data]);
 
   const allocationColumns = useMemo<ColDef[]>(() => [
+    {
+      headerName: t('manager.columns.allocate'),
+      cellRenderer: ToggleCell,
+      width: 100,
+      suppressSizeToFit: true,
+      sortable: false,
+      filter: false,
+      pinned: 'left',
+      lockPinned: true,
+      lockPosition: 'left',
+    },
     { 
       field: 'date', 
       headerName: t('manager.columns.date'), 
@@ -318,13 +361,12 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       type: 'numericColumn',
       valueFormatter: (p) => p.value > 0 && data ? formatAmount(p.value, data.currencyCode) : ''
     },
-    {
-      headerName: t('manager.columns.allocate'),
-      cellRenderer: ToggleCell,
-      width: 100,
-      suppressSizeToFit: true,
-      sortable: false,
-      filter: false,
+    { 
+      field: 'pendingDiscountAmount', 
+      headerName: t('manager.columns.discount'), 
+      width: 150,
+      type: 'numericColumn',
+      valueFormatter: (p) => p.value > 0 && data ? formatAmount(p.value, data.currencyCode) : ''
     }
   ], [data, t]);
 
@@ -416,8 +458,12 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     
     setSubmitting(true);
     try {
-      await api.paymentsControllerCancel(paymentId, {});
-      toast.success(t('manager.messages.paymentCancelled'));
+      if (isDraft) {
+        await api.paymentsControllerRemove(paymentId);
+      } else {
+        await api.paymentsControllerCancel(paymentId, {});
+      }
+      toast.success(isDraft ? t('manager.messages.paymentDeleted') : t('manager.messages.paymentCancelled'));
       loadPayment();
       onSaved(); // Refresh grid
     } catch (err: unknown) {
@@ -437,11 +483,12 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
   const submitAllocations = async () => {
     if (!paymentId) return;
     const allocations = outstandingInvoices
-      .filter(inv => inv.pendingAllocation > 0)
+      .filter(inv => inv.pendingAllocation > 0 || inv.pendingDiscountAmount > 0)
       .map(inv => ({
         referenceType: inv.referenceType,
         referenceId: inv.id,
         allocatedAmount: inv.pendingAllocation,
+        discountAmount: inv.pendingDiscountAmount || 0,
       }));
 
     if (allocations.length === 0) return;
@@ -465,6 +512,8 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       setSubmitting(false);
     }
   };
+
+
 
   const isDraft = data?.stateCode === PAYMENT_STATE.DRAFT;
   const isSubmitted = data?.stateCode === PAYMENT_STATE.SUBMITTED;
@@ -500,8 +549,10 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
               disabled={submitting}
               className="btn btn-sm bg-white text-gray-700 hover:bg-gray-50 ring-1 ring-inset ring-gray-300 disabled:opacity-50"
             >
-              {t('manager.buttons.reverse')}</button>
+              {t('manager.buttons.reverse')}
+            </button>
           )}
+
         </div>
       )}
 
@@ -541,9 +592,14 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       isOpen={true}
       onClose={onClose}
       title={paymentId ? (data?.paymentNumber || '...') : t('manager.newEntry')}
-      subtitle={paymentId && data ? `${new Date(data.paymentDate).toLocaleDateString()} · ${t(('manager.options.' + data.paymentType.replace(/_([a-z])/g, g => g[1].toUpperCase())) as Parameters<typeof t>[0])}` : undefined}
+      subtitle={paymentId && data ? (() => {
+        const transKey = 'manager.options.' + data.paymentType.replace(/_([a-z])/g, g => g[1].toUpperCase());
+        const translated = t(transKey as Parameters<typeof t>[0]);
+        const fallback = data.paymentType.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+        return `${new Date(data.paymentDate).toLocaleDateString()} · ${translated === transKey ? fallback : translated}`;
+      })() : undefined}
       actions={paymentId ? actionsContent : undefined}
-      width="max-w-3xl"
+      width="w-[90vw] max-w-5xl xl:w-2/3"
       footer={!paymentId ? (
         <div className="flex items-center justify-end gap-3 w-full">
           <button type="button" className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50" onClick={onClose} disabled={submitting}>
@@ -951,7 +1007,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     )}
                   </>
                   
-                  {isDraft && !data?.paymentType?.startsWith('direct_') && parseFloat(data?.unallocatedAmount || '0') > 0 && (
+                  {(isDraft || isSubmitted) && !data?.paymentType?.startsWith('direct_') && parseFloat(data?.unallocatedAmount || '0') > 0 && (
                   /* View: Allocation Controls */
                   <div className="flex-1 flex flex-col min-h-0 gap-6 mt-8 border-t border-gray-200 pt-6">
                     <h3 className="section-heading mb-2">{t('allocate')}</h3>
@@ -994,13 +1050,13 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                           </div>
                         )}
 
-                        <div className="border border-[var(--border)] rounded-md overflow-hidden bg-white">
+                        <div className="h-[500px] border border-[var(--border)] rounded-md overflow-hidden bg-white flex flex-col">
                           <DataGrid
+                            gridKey="payment-allocation-grid"
                             rowData={outstandingInvoices}
                             columns={allocationColumns}
                             rowIdField="id"
                             fetchAll={true}
-                            domLayout="autoHeight"
                             rowSelection="single"
                             onSelectionChanged={(rows) => setSelectedInvoice(rows[0] || null)}
                             context={{ handleToggle, t }}
@@ -1053,8 +1109,8 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         currencyCode={data?.currencyCode || baseCurrency}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- FIXME
         maxAvailable={data ? parseFloat(data.unallocatedAmount) - totalAllocatedNow + ((selectedInvoice as any)?.pendingAllocation || 0) : 0}
-        onSave={(invoiceId, amount) => {
-          setOutstandingInvoices(prev => prev.map(p => p.id === invoiceId ? { ...p, pendingAllocation: amount } : p));
+        onSave={(invoiceId, amount, discountAmount) => {
+          setOutstandingInvoices(prev => prev.map(p => p.id === invoiceId ? { ...p, pendingAllocation: amount, pendingDiscountAmount: discountAmount } : p));
         }}
       />
     </SlideOver>

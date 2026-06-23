@@ -9,13 +9,13 @@ import type { CreateSupplierGroupDtoPurchasingBlockReason } from './createSuppli
 import type { CreateSupplierGroupDtoPaymentBlockReason } from './createSupplierGroupDtoPaymentBlockReason';
 
 export interface CreateSupplierGroupDto {
+  earlyPaymentDiscount?: string;
   earlyPaymentDiscountDays?: number;
   groupCode: string;
   name: string;
   defaultApAccountId?: string;
   defaultExpenseAccountId?: string;
   tradingTermsId?: string;
-  earlyPaymentDiscount?: string;
   creditLimit?: string;
   isPurchasingBlocked?: boolean;
   purchasingBlockReason?: CreateSupplierGroupDtoPurchasingBlockReason;

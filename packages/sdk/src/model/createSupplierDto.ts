@@ -9,6 +9,7 @@ import type { CreateSupplierDtoPurchasingBlockReason } from './createSupplierDto
 import type { CreateSupplierDtoPaymentBlockReason } from './createSupplierDtoPaymentBlockReason';
 
 export interface CreateSupplierDto {
+  earlyPaymentDiscount?: string;
   earlyPaymentDiscountDays?: number;
   vendorNumber: string;
   name: string;
@@ -22,7 +23,6 @@ export interface CreateSupplierDto {
   fax?: string;
   emailAddress1?: string;
   tradingTermsId?: string;
-  earlyPaymentDiscount?: string;
   creditLimit?: string;
   isPurchasingBlocked?: boolean;
   purchasingBlockReason?: CreateSupplierDtoPurchasingBlockReason;

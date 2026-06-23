@@ -1,30 +1,13 @@
 import { readFileSync } from 'fs';
 import { join, resolve } from 'path';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
 import { v4 as uuidv4 } from 'uuid';
 import { eq, inArray } from 'drizzle-orm';
 import {
   pdfTemplates,
   pdfTemplateHooks,
   pdfTemplateContexts,
-} from '../drizzle/herobm-core-schema';
-
-const profile = process.env.PROFILE;
-const envFile = profile ? `.env.${profile}` : '.env';
-process.loadEnvFile(resolve(__dirname, `../../../../${envFile}`));
-
-const dbUrl = process.env.DATABASE_URL;
-const queryClient = dbUrl
-  ? postgres(dbUrl)
-  : postgres({
-      host: process.env.POSTGRES_HOST ?? 'localhost',
-      port: Number(process.env.POSTGRES_PORT ?? 5432),
-      user: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
-      database: process.env.POSTGRES_DB ?? 'herobm',
-    });
-const db = drizzle(queryClient);
+} from '../../drizzle/herobm-core-schema';
+import type { SeedDB } from '../run';
 
 interface SeedData {
   slug: string;
@@ -138,10 +121,14 @@ const SEEDS: SeedData[] = [
   },
 ];
 
-async function seed() {
-  console.log('Seeding Dynamic Reports...');
-
+export async function seedDynamicReports(db: SeedDB, dryRun = false) {
+  if (dryRun) {
+    console.log('  [DRY RUN] Would seed dynamic reports');
+    return;
+  }
   try {
+    console.log('Seeding Dynamic Reports...');
+
     for (const seedData of SEEDS) {
       // 1. Read the Typst file
       let typstContent = '';
@@ -207,13 +194,9 @@ async function seed() {
       }
     }
 
-    console.log('Seeding completed successfully!');
+    console.log('  Dynamic reports seeding completed successfully!');
   } catch (error) {
-    console.error('Error seeding reports:', error);
-    process.exit(1);
-  } finally {
-    await queryClient.end();
+    console.error('Error seeding dynamic reports:', error);
+    throw error;
   }
 }
-
-void seed();

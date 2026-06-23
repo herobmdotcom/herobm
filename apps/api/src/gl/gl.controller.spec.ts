@@ -230,6 +230,7 @@ describe('GlController', () => {
         body as unknown as Parameters<
           typeof controller.createManualJournalEntry
         >[0],
+        'test-user',
       );
 
       expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {
@@ -254,6 +255,7 @@ describe('GlController', () => {
         body as unknown as Parameters<
           typeof controller.createManualJournalEntry
         >[0],
+        'test-user',
       );
 
       expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {

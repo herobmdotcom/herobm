@@ -609,36 +609,61 @@ export default function FinancialSettingsPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon
 type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<string, any>; isSystem?: boolean; isBankAccount?: boolean; currencyCode?: string; isActive?: boolean; accountType?: string };
-  const renderCoaRow = (isEdit: boolean, data: Partial<CoaData>, key: string) => (
-    <Fragment key={key}>
-      <tr style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
-        <td style={{ paddingLeft: `${(data.depth || 0) * 20 + 8}px` }}>
-          {isEdit && coaCreating
-            ? <input className="input" value={coaForm.accountCode} onChange={e => setCoaForm({ ...coaForm, accountCode: e.target.value })} placeholder="Code" style={{ width: 100 }} />
-            : <span className={`font-mono text-xs ${data.isGroup ? 'font-bold' : ''}`}>{data.accountCode}</span>}
-        </td>
-        <td>
-          {isEdit
-            ? <input className="input" value={coaForm.name} onChange={e => setCoaForm({ ...coaForm, name: e.target.value })} placeholder="Name" />
-            : <span className={`${data.isGroup ? 'font-bold' : 'font-medium'} flex items-center gap-2`}>
-                {data.isGroup ? (
-                  <>
-                    { }
-                    {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
-                    <span className="material-symbols-outlined text-[16px]">{'folder'}</span>
-                    { }
-                  </>
-                ) : (
-                  <>
-                    { }
-                    {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
-                    <span className="material-symbols-outlined text-[16px] text-muted">{'receipt_long'}</span>
-                    { }
-                  </>
-                )}
-                {data.name}
-              </span>}
-        </td>
+  const renderCoaRow = (isEdit: boolean, data: Partial<CoaData>, key: string) => {
+    const defaultLabels: string[] = [];
+    if (glSettings && data.glAccountId) {
+      if (glSettings.defaultArAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultAr'));
+      if (glSettings.defaultRevenueAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultRevenue'));
+      if (glSettings.defaultApAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultAp'));
+      if (glSettings.defaultExpenseAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultExpense'));
+      if (glSettings.defaultInventoryAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultInventory'));
+      if (glSettings.defaultCogsAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultCogs'));
+      if (glSettings.defaultGrniAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultGrni'));
+      if (glSettings.defaultShrinkageAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultShrinkage'));
+      if (glSettings.defaultFeeRevenueAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultFeeRevenue'));
+      if (glSettings.defaultDiscountsReceivedAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultDiscountsReceived'));
+      if (glSettings.defaultTaxAccountId === data.glAccountId) defaultLabels.push(tSettings('labels.defaultTax'));
+    }
+
+    return (
+      <Fragment key={key}>
+        <tr style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
+          <td style={{ paddingLeft: `${(data.depth || 0) * 20 + 8}px` }}>
+            {isEdit && coaCreating
+              ? <input className="input" value={coaForm.accountCode} onChange={e => setCoaForm({ ...coaForm, accountCode: e.target.value })} placeholder="Code" style={{ width: 100 }} />
+              : <span className={`font-mono text-xs ${data.isGroup ? 'font-bold' : ''}`}>{data.accountCode}</span>}
+          </td>
+          <td>
+            {isEdit
+              ? <input className="input" value={coaForm.name} onChange={e => setCoaForm({ ...coaForm, name: e.target.value })} placeholder="Name" />
+              : <span className={`${data.isGroup ? 'font-bold' : 'font-medium'} flex items-center gap-2`}>
+                  {data.isGroup ? (
+                    <>
+                      { }
+                      {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+                      <span className="material-symbols-outlined text-[16px]">{'folder'}</span>
+                      { }
+                    </>
+                  ) : (
+                    <>
+                      { }
+                      {/* eslint-disable-next-line no-restricted-syntax -- Complex settings state or UI Icon */}
+                      <span className="material-symbols-outlined text-[16px] text-muted">{'receipt_long'}</span>
+                      { }
+                    </>
+                  )}
+                  {defaultLabels.length > 0 ? (
+                    <span 
+                      className="underline decoration-dotted underline-offset-4 cursor-help"
+                      title={defaultLabels.join(', ')}
+                    >
+                      {data.name}
+                    </span>
+                  ) : (
+                    <span>{data.name}</span>
+                  )}
+                </span>}
+          </td>
         <td>
           {isEdit && coaCreating ? (
             <select className="input" disabled={!!coaForm.parentAccountId} value={coaForm.accountType} onChange={e => setCoaForm({ ...coaForm, accountType: e.target.value })}>
@@ -734,8 +759,8 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
         </tr>
       )}
     </Fragment>
-  );
-
+    );
+  };
   const renderTaxRow = (isEdit: boolean, data: TaxCategory, key: string) => (
     <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
       <td>
@@ -1035,7 +1060,8 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
             <div className="text-sm text-muted animate-pulse">{tSettings('gl.loading')}</div>
           ) : (
             <div className="flex flex-col gap-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-6">
+                {/* Sales & Revenue */}
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultAr')}
@@ -1048,6 +1074,8 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                   </label>
                   {renderGlAccountSelect('defaultRevenueAccountId', glSettings?.defaultRevenueAccountId as string | undefined)}
                 </div>
+
+                {/* Purchasing & Expense */}
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultAp')}
@@ -1056,9 +1084,17 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {tSettings('labels.defaultTax')}
+                    {tSettings('labels.defaultExpense')}
                   </label>
-                  {renderGlAccountSelect('defaultTaxAccountId', glSettings?.defaultTaxAccountId as string | undefined)}
+                  {renderGlAccountSelect('defaultExpenseAccountId', glSettings?.defaultExpenseAccountId as string | undefined)}
+                </div>
+
+                {/* Inventory & COGS */}
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {tSettings('labels.defaultInventory')}
+                  </label>
+                  {renderGlAccountSelect('defaultInventoryAccountId', glSettings?.defaultInventoryAccountId as string | undefined)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -1066,18 +1102,8 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                   </label>
                   {renderGlAccountSelect('defaultCogsAccountId', glSettings?.defaultCogsAccountId as string | undefined)}
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {tSettings('labels.defaultExpense')}
-                  </label>
-                  {renderGlAccountSelect('defaultExpenseAccountId', glSettings?.defaultExpenseAccountId as string | undefined)}
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {tSettings('labels.defaultInventory')}
-                  </label>
-                  {renderGlAccountSelect('defaultInventoryAccountId', glSettings?.defaultInventoryAccountId as string | undefined)}
-                </div>
+
+                {/* Accruals & Shrinkage */}
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultGrni')}
@@ -1090,6 +1116,8 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                   </label>
                   {renderGlAccountSelect('defaultShrinkageAccountId', glSettings?.defaultShrinkageAccountId as string | undefined)}
                 </div>
+
+                {/* Misc */}
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultFeeRevenue')}
@@ -1102,13 +1130,54 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                   </label>
                   {renderGlAccountSelect('defaultDiscountsReceivedAccountId', glSettings?.defaultDiscountsReceivedAccountId as string | undefined)}
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
-
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {tSettings('labels.defaultDiscountsGiven')}
+                  </label>
+                  {renderGlAccountSelect('defaultDiscountsGivenAccountId', glSettings?.defaultDiscountsGivenAccountId as string | undefined)}
+                </div>
+
+                {/* Foreign Exchange */}
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {tSettings('labels.realisedFxGain')}
+                  </label>
+                  {renderGlAccountSelect('realisedFxGainAccountId', glSettings?.realisedFxGainAccountId as string | undefined)}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {tSettings('labels.realisedFxLoss')}
+                  </label>
+                  {renderGlAccountSelect('realisedFxLossAccountId', glSettings?.realisedFxLossAccountId as string | undefined)}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {tSettings('labels.unrealisedFxGain')}
+                  </label>
+                  {renderGlAccountSelect('unrealisedFxGainAccountId', glSettings?.unrealisedFxGainAccountId as string | undefined)}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {tSettings('labels.unrealisedFxLoss')}
+                  </label>
+                  {renderGlAccountSelect('unrealisedFxLossAccountId', glSettings?.unrealisedFxLossAccountId as string | undefined)}
+                </div>
+
+                {/* Tax */}
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {tSettings('labels.defaultTax')}
+                  </label>
+                  {renderGlAccountSelect('defaultTaxAccountId', glSettings?.defaultTaxAccountId as string | undefined)}
+                </div>
+                <div className="hidden md:block"></div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                <div className="flex flex-col gap-1">
+                  <label className="flex items-center gap-1.5 text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.revenueRouting')}
+                    <span className="material-symbols-outlined text-[14px] cursor-help" title="If customer and product both have a default GL account, this determines which to use">info</span>
                   </label>
                   <select 
                     className="input max-w-sm" 
@@ -1120,8 +1189,9 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="flex items-center gap-1.5 text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.expenseRouting')}
+                    <span className="material-symbols-outlined text-[14px] cursor-help" title="If supplier and product both have a default GL account, this determines which to use">info</span>
                   </label>
                   <select 
                     className="input max-w-sm" 
@@ -1132,7 +1202,6 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                     <option value="product_first">{tSettings('gl.productFirst')}</option>
                   </select>
                 </div>
-
               </div>
             </div>
           )}
@@ -1198,6 +1267,23 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
               <button className="btn btn-primary btn-sm" onClick={ccCreate}>{tSettings('actions.create')}</button>
             </div>
           </div>
+
+          <div className="mb-6 flex flex-col gap-1 max-w-sm">
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              Default Cost Center
+            </label>
+            <select 
+              className="input w-full" 
+              value={(glSettings?.defaultCostCenterId as string) || ''} 
+              onChange={(e) => updateGlSetting('defaultCostCenterId', e.target.value)}
+            >
+              <option value="">{tCommon('notConfigured')}</option>
+              {ccs.map(cc => (
+                <option key={cc.costCenterId} value={cc.costCenterId}>{cc.code} - {cc.name}</option>
+              ))}
+            </select>
+          </div>
+
           <table className="table-lines w-full">
             <thead>
               <tr>
@@ -1213,10 +1299,12 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                 <tr><td colSpan={4} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{tSettings('costCenters.empty')}</td></tr>
               )}
 
-              {ccs.map(cc =>
-                ccEditingId === cc.costCenterId
-                  ? renderCcRow(true, cc, cc.costCenterId)
-                  : renderCcRow(false, cc, cc.costCenterId)
+              {ccs.map((cc, idx) =>
+                <Fragment key={cc.costCenterId || `cc-${idx}`}>
+                  {ccEditingId === cc.costCenterId
+                    ? renderCcRow(true, cc, cc.costCenterId || `cc-${idx}`)
+                    : renderCcRow(false, cc, cc.costCenterId || `cc-${idx}`)}
+                </Fragment>
               )}
             </tbody>
           </table>
@@ -1237,6 +1325,23 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
               <button className="btn btn-primary btn-sm" onClick={activityCreate}>{tSettings('actions.create')}</button>
             </div>
           </div>
+
+          <div className="mb-6 flex flex-col gap-1 max-w-sm">
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              Default Activity
+            </label>
+            <select 
+              className="input w-full" 
+              value={(glSettings?.defaultActivityId as string) || ''} 
+              onChange={(e) => updateGlSetting('defaultActivityId', e.target.value)}
+            >
+              <option value="">{tCommon('notConfigured')}</option>
+              {activitiesData.map(act => (
+                <option key={act.activityId} value={act.activityId}>{act.code} - {act.name}</option>
+              ))}
+            </select>
+          </div>
+
           <table className="table-lines w-full">
             <thead>
               <tr>
@@ -1252,10 +1357,12 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                 <tr><td colSpan={4} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{tSettings('activities.empty')}</td></tr>
               )}
 
-              {activitiesData.map(a =>
-                activityEditingId === a.activityId
-                  ? renderActivityRow(true, a, a.activityId)
-                  : renderActivityRow(false, a, a.activityId)
+              {activitiesData.map((a, idx) =>
+                <Fragment key={a.activityId || `act-${idx}`}>
+                  {activityEditingId === a.activityId
+                    ? renderActivityRow(true, a, a.activityId || `act-${idx}`)
+                    : renderActivityRow(false, a, a.activityId || `act-${idx}`)}
+                </Fragment>
               )}
             </tbody>
           </table>

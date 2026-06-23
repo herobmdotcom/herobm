@@ -173,8 +173,9 @@ export class SuppliersService {
     return { data, page, limit, total: Number(total), nextCursor, prevCursor };
   }
 
-  async findOne(id: string) {
-    const rows = await this.db
+  async findOne(id: string, tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const rows = await db
       .select({
         ...getTableColumns(coreSuppliers),
       })
@@ -183,7 +184,7 @@ export class SuppliersService {
       .limit(1);
 
     if (rows.length > 0) {
-      const events = await this.db
+      const events = await db
         .select()
         .from(masterDataEvents)
         .where(
@@ -194,7 +195,7 @@ export class SuppliersService {
         )
         .orderBy(sql`${masterDataEvents.createdOn} DESC`);
 
-      const expiredDocs = await this.db
+      const expiredDocs = await db
         .select({ id: supplierExpiries.expiryId })
         .from(supplierExpiries)
         .where(

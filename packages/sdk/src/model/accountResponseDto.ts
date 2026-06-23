@@ -37,6 +37,8 @@ export interface AccountResponseDto {
   isOnCreditHold?: boolean;
   overrideCreditHoldUntil?: string;
   tradingTermsId?: string;
+  earlyPaymentDiscount?: string;
+  earlyPaymentDiscountDays?: number;
   stateCode: string;
   sourceId?: string;
   source: string;

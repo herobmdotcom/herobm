@@ -14,7 +14,7 @@ import { useSalesInvoice } from './useSalesInvoice';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 
 import * as api from '@herobm/sdk';
-import { getErrorMessage, SALES_INVOICE_STATE } from '@herobm/shared';
+import { getErrorMessage, SALES_INVOICE_STATE, calculateEarlyPaymentDiscount } from '@herobm/shared';
 
 export default function InvoiceDetailContent({ id }: { id: string }) {
   const router = useRouter();
@@ -118,6 +118,37 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               </label>
               <div className="text-sm">{new Date(invoice.createdOn).toLocaleDateString()}</div>
             </div>
+            {invoice.earlyPaymentDiscount != null && invoice.earlyPaymentDiscountDays != null && (
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+                  Early Payment Terms
+                </label>
+                <div className="text-sm">
+                  {(() => {
+                    const result = calculateEarlyPaymentDiscount({
+                      invoiceDate: new Date(invoice.createdOn),
+                      outstandingAmount: invoice.outstandingAmount,
+                      earlyPaymentDiscount: invoice.earlyPaymentDiscount,
+                      earlyPaymentDiscountDays: invoice.earlyPaymentDiscountDays,
+                    });
+                    const dateLimit = result.eligibleUntil ? result.eligibleUntil.toLocaleDateString() : '';
+                    
+                    if (result.isEligible) {
+                      return `${invoice.earlyPaymentDiscount}% (${formatAmount(result.discountAmount, invoice.currencyCode)}) in ${invoice.earlyPaymentDiscountDays} days (${dateLimit})`;
+                    }
+                    
+                    return (
+                      <>
+                        { }
+                        <span className="text-[var(--text-muted)]">
+                          {tCommon('earlyPaymentDiscountExpired', { discount: invoice.earlyPaymentDiscount, days: invoice.earlyPaymentDiscountDays, dateLimit })}
+                        </span>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
             <div className="col-span-2 mt-2">
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
                 {tCommon('notesCardHeading')}
@@ -271,11 +302,42 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               <span>{t('paymentAllocations')}</span>
             </h3>
           </div>
-          <div className="overflow-x-auto -mx-5 sm:mx-0 px-5 sm:px-0">
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              {t('paymentAllocationsDesc')}
-            </p>
-          </div>
+          {invoice.allocations && invoice.allocations.length > 0 ? (
+            <div className="overflow-x-auto -mx-5 sm:mx-0 px-5 sm:px-0">
+              <table className="table-lines min-w-[500px]">
+                <thead>
+                  <tr>
+                    <th style={{ width: 150 }}>{t('columns.paymentNo')}</th>
+                    <th style={{ width: 150 }}>{t('columns.date')}</th>
+                    <th style={{ textAlign: 'right' }}>{t('columns.allocatedAmount')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoice.allocations.map((alloc) => (
+                    <tr key={alloc.allocationId}>
+                      <td className="font-semibold text-[var(--accent)]">
+                        <span className="cursor-pointer hover:underline" onClick={() => router.push(`/payments?paymentId=${alloc.paymentId}`)}>
+                          {alloc.paymentNumber}
+                        </span>
+                      </td>
+                      <td style={{ color: 'var(--text-secondary)' }}>
+                        {new Date(alloc.paymentDate).toLocaleDateString()}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                        {formatAmount(parseFloat(alloc.allocatedAmount), alloc.currencyCode)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="overflow-x-auto -mx-5 sm:mx-0 px-5 sm:px-0">
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                {t('paymentAllocationsDesc')}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </DetailsLayout>

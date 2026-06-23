@@ -21,6 +21,8 @@ export interface PurchaseInvoiceResponseDto {
   stateCode: string;
   notes?: string;
   purchaseOrderId?: string;
+  earlyPaymentDiscount?: string;
+  earlyPaymentDiscountDays?: number;
   createdBy: string;
   createdOn: string;
   lines: InvoiceLineResponseDto[];

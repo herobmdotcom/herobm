@@ -6,6 +6,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import MasterDetailLayout from '@/components/shared/MasterDetailLayout';
+import { usePersistedSetting } from '@/hooks/usePersistedSetting';
 
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
@@ -73,9 +74,9 @@ export default function PickingPage() {
     const tCommon = useTranslations('common');
     useDocumentTitle(t('title'));
     const { app } = useSettings();
-
-    const [locations, setLocations] = useState<{ locationId: string; code: string; name: string }[]>([]);
-    const [selectedLocationId, setSelectedLocationId] = useState<string>('');
+    // Location
+    const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
+    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('picking-location', '');
     const [pendingOrders, setPendingOrders] = useState<UnifiedOrder[]>([]);
     const [selectedOrder, setSelectedOrder] = useState<UnifiedOrder | null>(null);
     const [loadingOrders, setLoadingOrders] = useState(false);
@@ -98,16 +99,23 @@ export default function PickingPage() {
                 const res = response.data as any;
                 const locs = Array.isArray(res) ? res : (res.data || []);
                 setLocations(locs);
-                if (locs.length > 0) {
-                    const defaultLocId = app?.defaultFulfillmentLocationId || locs[0].locationId;
-                    setSelectedLocationId(defaultLocId);
-                }
             })
             .catch(err => reportError(err, 'Failed to load locations'));
-    }, [app?.defaultFulfillmentLocationId]);
+    }, []);
+
+    useEffect(() => {
+        if (locReady && locations.length > 0) {
+            const isValidSaved = selectedLocationId && locations.some(l => l.locationId === selectedLocationId);
+            const defaultLocId = isValidSaved ? selectedLocationId : (app?.defaultFulfillmentLocationId || locations[0].locationId);
+            if (defaultLocId !== selectedLocationId) {
+                setSelectedLocationId(defaultLocId as string);
+            }
+        }
+    }, [locReady, locations, selectedLocationId, app?.defaultFulfillmentLocationId, setSelectedLocationId]);
 
     // Fetch Pending Orders
     const loadOrders = useCallback(() => {
+        if (!locReady) return;
         setLoadingOrders(true);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
         const params: any = {};
@@ -119,7 +127,7 @@ export default function PickingPage() {
             })
             .catch(err => reportError(err, 'Failed to load pending orders'))
             .finally(() => setLoadingOrders(false));
-    }, [selectedLocationId]);
+    }, [selectedLocationId, locReady]);
 
     useEffect(() => {
         loadOrders();

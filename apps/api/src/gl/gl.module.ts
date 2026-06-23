@@ -9,6 +9,7 @@ import { BankFeedsController } from './bank-feeds.controller';
 import { BankFeedsService } from './bank-feeds.service';
 import { BankStatementController } from './bank-statement.controller';
 import { BankStatementService } from './bank-statement.service';
+import { FxRevaluationService } from './fx-revaluation.service';
 
 import { BusinessReportsModule } from '../business-reports/business-reports.module';
 
@@ -26,6 +27,7 @@ import { BusinessReportsModule } from '../business-reports/business-reports.modu
     ReconciliationService,
     BankFeedsService,
     BankStatementService,
+    FxRevaluationService,
   ],
   exports: [
     GlService,
@@ -33,6 +35,7 @@ import { BusinessReportsModule } from '../business-reports/business-reports.modu
     ReconciliationService,
     BankFeedsService,
     BankStatementService,
+    FxRevaluationService,
   ],
 })
 export class GlModule {}

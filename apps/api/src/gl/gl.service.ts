@@ -270,6 +270,10 @@ export class GlService implements OnModuleInit {
         partyId: l.partyId || null,
         debit: String(l.debit),
         credit: String(l.credit),
+        foreignDebit: String(l.foreignDebit ?? l.debit),
+        foreignCredit: String(l.foreignCredit ?? l.credit),
+        foreignCurrencyCode: l.foreignCurrencyCode || null,
+        exchangeRate: l.exchangeRate ? String(l.exchangeRate) : '1',
         memo: l.memo,
       }));
 
@@ -649,6 +653,7 @@ export class GlService implements OnModuleInit {
     fromDate?: string;
     toDate?: string;
     sourceType?: string;
+    sourceId?: string;
     entryNumber?: string;
     limit?: number;
     page?: number;
@@ -663,6 +668,9 @@ export class GlService implements OnModuleInit {
     }
     if (filters.sourceType) {
       conditions.push(sql`je.source_type = ${filters.sourceType}`);
+    }
+    if (filters.sourceId) {
+      conditions.push(sql`je.source_id = ${filters.sourceId}`);
     }
     if (filters.entryNumber) {
       conditions.push(
@@ -692,7 +700,7 @@ export class GlService implements OnModuleInit {
         COALESCE(acc.name, supp.name) as "partyName",
         flp.party_id as "partyIdRef",
         flp.party_type as "partyTypeRef",
-        COALESCE(si.invoice_number, pi.invoice_number, sor.return_number) as "sourceNumber"
+        COALESCE(si.invoice_number, pi.invoice_number, sor.return_number, pe.payment_number, gr.receipt_number) as "sourceNumber"
       FROM herobm_core.gl_journal_entries je
       LEFT JOIN first_line_parties flp ON flp.journal_entry_id = je.journal_entry_id
       LEFT JOIN herobm_core.customers acc ON acc.customer_id = flp.party_id::uuid AND flp.party_type = 'customer'
@@ -700,6 +708,8 @@ export class GlService implements OnModuleInit {
       LEFT JOIN herobm_core.sales_invoices si ON si.invoice_id = je.source_id AND je.source_type = 'sales_invoice'
       LEFT JOIN herobm_core.purchase_invoices pi ON pi.invoice_id = je.source_id AND je.source_type = 'purchase_invoice'
       LEFT JOIN herobm_core.sales_order_returns sor ON sor.return_id = je.source_id AND je.source_type = 'sales_credit_note'
+      LEFT JOIN herobm_core.payment_entries pe ON pe.payment_id = je.source_id AND je.source_type = 'payment_entry'
+      LEFT JOIN herobm_core.goods_received gr ON gr.goods_received_id = je.source_id AND je.source_type = 'inventory_receipt'
       ${whereClause ? sql`WHERE ${whereClause}` : sql``}
       ORDER BY je.entry_date DESC, je.entry_number DESC
       LIMIT ${limit} OFFSET ${offset}
@@ -787,6 +797,7 @@ export class GlService implements OnModuleInit {
         partyId: glJournalLines.partyId,
         customerName: customers.name,
         supplierName: suppliers.name,
+        accountId: glJournalLines.glAccountId,
         accountCode: glAccounts.accountCode,
         accountName: glAccounts.name,
         costCenterId: glJournalLines.costCenterId,

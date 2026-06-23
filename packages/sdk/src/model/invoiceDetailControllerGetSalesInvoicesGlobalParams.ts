@@ -16,6 +16,7 @@ limit?: number;
 state?: string;
 includeArchived?: boolean;
 customerId?: string;
+vendorId?: string;
 days?: number;
 purchaseOrderId?: string;
 invoiceId?: string;

@@ -30,6 +30,8 @@ export interface PurchaseInvoiceDetails {
   currencyCode: string;
   stateCode: string;
   notes?: string;
+  earlyPaymentDiscount?: string | null;
+  earlyPaymentDiscountDays?: number | null;
   createdOn: string;
   dueDate?: string;
   invoiceDate?: string;

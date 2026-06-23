@@ -46,6 +46,22 @@ export class JournalLineDto {
   credit!: number;
 
   @IsOptional()
+  @IsNumber()
+  foreignDebit?: number;
+
+  @IsOptional()
+  @IsNumber()
+  foreignCredit?: number;
+
+  @IsOptional()
+  @IsString()
+  foreignCurrencyCode?: string;
+
+  @IsOptional()
+  @IsNumber()
+  exchangeRate?: number;
+
+  @IsOptional()
   @IsString()
   memo?: string;
 }
@@ -211,10 +227,32 @@ export class UpdateGLSettingsDto {
   @IsOptional() @IsString() defaultShrinkageAccountId?: string | null;
   @IsOptional() @IsString() defaultFeeRevenueAccountId?: string | null;
   @IsOptional() @IsString() defaultDiscountsReceivedAccountId?: string | null;
+  @IsOptional() @IsString() defaultDiscountsGivenAccountId?: string | null;
   @IsOptional() @IsString() defaultCostCenterId?: string | null;
   @IsOptional() @IsString() defaultActivityId?: string | null;
+  @IsOptional() @IsString() realisedFxGainAccountId?: string | null;
+  @IsOptional() @IsString() realisedFxLossAccountId?: string | null;
+  @IsOptional() @IsString() unrealisedFxGainAccountId?: string | null;
+  @IsOptional() @IsString() unrealisedFxLossAccountId?: string | null;
   @IsOptional() @IsString() baseCurrency?: string;
   @IsOptional() @IsArray() supportedBatchPaymentFormats?: string[];
   @IsOptional() @IsString() revenueRoutingPrecedence?: string;
   @IsOptional() @IsString() expenseRoutingPrecedence?: string;
+}
+
+export class RunFxRevaluationDto {
+  @IsString()
+  @IsNotEmpty()
+  revaluationDate: string;
+}
+
+export class CommitFxRevaluationDto {
+  @IsString()
+  @IsNotEmpty()
+  revaluationDate: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => JournalLineDto)
+  lines!: JournalLineDto[];
 }

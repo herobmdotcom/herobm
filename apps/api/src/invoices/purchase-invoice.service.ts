@@ -47,6 +47,8 @@ import { GlService } from '../gl/gl.service';
 import { evaluatePOLifecycleRules } from '../purchase-orders/purchase-order-lifecycle-rules';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { AppConfigService } from '../settings/app-config.service';
+
+import { getExchangeRateForCurrency } from '../common/fx-helper';
 import {
   computeLinePriceForStorage,
   EXPENSE_ROUTING_PRECEDENCE,
@@ -57,7 +59,10 @@ import {
 } from '@herobm/shared';
 import { withCursorPagination } from '../common/pagination';
 import { calculateDueDate } from '../settings/trading-terms.utils';
-import { resolveEffectiveTradingTermsId } from '../customers/credit-control.utils';
+import {
+  resolveEffectiveTradingTermsId,
+  resolveEffectiveEarlyPaymentDiscount,
+} from '../customers/credit-control.utils';
 import { resolveGlDimensions } from '../common/utils/gl-resolution.util';
 
 const VALID_INVOICE_STATES = getValidStates(PURCHASE_INVOICE_TRANSITIONS);
@@ -301,12 +306,19 @@ export class PurchaseInvoiceService {
 
     let vendorTermType: string | null = null;
     let vendorTermDays: number | null = null;
+    let earlyPaymentDiscount: string | null = null;
+    let earlyPaymentDiscountDays: number | null = null;
 
     if (dto.vendorId) {
       const vendRows = await this.db
         .select({
           tradingTermsId: suppliers.tradingTermsId,
           groupTradingTermsId: supplierGroups.tradingTermsId,
+          earlyPaymentDiscount: suppliers.earlyPaymentDiscount,
+          earlyPaymentDiscountDays: suppliers.earlyPaymentDiscountDays,
+          groupEarlyPaymentDiscount: supplierGroups.earlyPaymentDiscount,
+          groupEarlyPaymentDiscountDays:
+            supplierGroups.earlyPaymentDiscountDays,
         })
         .from(suppliers)
         .leftJoin(
@@ -317,6 +329,21 @@ export class PurchaseInvoiceService {
         .limit(1);
 
       if (vendRows.length > 0) {
+        const effectiveEarlyPaymentDiscount =
+          resolveEffectiveEarlyPaymentDiscount({
+            earlyPaymentDiscount: vendRows[0].earlyPaymentDiscount,
+            earlyPaymentDiscountDays: vendRows[0].earlyPaymentDiscountDays,
+            accountGroup: {
+              earlyPaymentDiscount: vendRows[0].groupEarlyPaymentDiscount,
+              earlyPaymentDiscountDays:
+                vendRows[0].groupEarlyPaymentDiscountDays,
+            },
+          });
+        earlyPaymentDiscount =
+          effectiveEarlyPaymentDiscount.earlyPaymentDiscount;
+        earlyPaymentDiscountDays =
+          effectiveEarlyPaymentDiscount.earlyPaymentDiscountDays;
+
         const effectiveTermsId =
           vendRows[0].tradingTermsId ||
           vendRows[0].groupTradingTermsId ||
@@ -362,6 +389,18 @@ export class PurchaseInvoiceService {
           vendorTermType,
         );
       }
+
+      const piCurrencyCode = dto.currencyCode || this.appConfig.homeCurrency();
+      const fx = await getExchangeRateForCurrency(
+        tx,
+        piCurrencyCode,
+        invoiceDate || new Date(),
+      );
+
+      const baseTotalAmount = (
+        parseFloat(dto.totalAmount.toString()) * fx.rate
+      ).toFixed(2);
+
       const [invoice] = await tx
         .insert(purchaseInvoices)
         .values({
@@ -371,13 +410,18 @@ export class PurchaseInvoiceService {
           totalAmount: String(dto.totalAmount),
           outstandingAmount: String(dto.totalAmount),
           taxAmount: String(dto.taxAmount),
+          baseTotalAmount: baseTotalAmount,
+          baseOutstandingAmount: baseTotalAmount,
           receiptFilename: dto.receiptFilename,
-          currencyCode: dto.currencyCode,
+          currencyCode: piCurrencyCode,
+          exchangeRate: fx.rate.toString(),
           stateCode: PURCHASE_INVOICE_STATE.DRAFT,
           notes: dto.notes,
           purchaseOrderId: dto.purchaseOrderId,
           invoiceDate,
           dueDate,
+          earlyPaymentDiscount,
+          earlyPaymentDiscountDays,
           createdBy: actor,
         })
         .returning();
@@ -739,11 +783,55 @@ export class PurchaseInvoiceService {
       )
       .where(eq(purchaseInvoiceLines.invoiceId, invoiceId));
 
-    let lineTotal = 0;
+    const receipts = await this.db
+      .select({
+        invoiceLineId: purchaseInvoiceReceipts.invoiceLineId,
+        quantityBilled: purchaseInvoiceReceipts.quantityBilled,
+        unitCost: goodsReceivedLines.unitCost,
+        poExchangeRate: purchaseOrders.exchangeRate,
+      })
+      .from(purchaseInvoiceReceipts)
+      .innerJoin(
+        goodsReceivedLines,
+        eq(
+          purchaseInvoiceReceipts.goodsReceivedLineId,
+          goodsReceivedLines.goodsReceivedLineId,
+        ),
+      )
+      .innerJoin(
+        purchaseInvoiceLines,
+        eq(
+          purchaseInvoiceReceipts.invoiceLineId,
+          purchaseInvoiceLines.invoiceLineId,
+        ),
+      )
+      .leftJoin(
+        purchaseOrders,
+        eq(goodsReceivedLines.purchaseOrderId, purchaseOrders.purchaseOrderId),
+      )
+      .where(eq(purchaseInvoiceLines.invoiceId, invoiceId));
+
+    const receiptCosts = new Map<string, { cost: number; poRate: number }>();
+    for (const r of receipts) {
+      const q = parseFloat(r.quantityBilled);
+      const c = parseFloat(r.unitCost || '0');
+      const poRate = parseFloat(r.poExchangeRate || '1');
+      const existing = receiptCosts.get(r.invoiceLineId) || {
+        cost: 0,
+        poRate: 1,
+      };
+      receiptCosts.set(r.invoiceLineId, {
+        cost: existing.cost + q * c,
+        poRate: poRate,
+      });
+    }
+
+    let lineTotalForeign = 0;
     const expenseGroups = new Map<
       string,
       {
-        amount: number;
+        foreignAmount: number;
+        baseAmount: number;
         accountId: string;
         costCenterId: string | null;
         activityId: string | null;
@@ -751,12 +839,40 @@ export class PurchaseInvoiceService {
     >();
     const grniGroups = new Map<
       string,
-      { amount: number; costCenterId: string | null; activityId: string | null }
+      {
+        baseAmount: number;
+        foreignAmount: number;
+        costCenterId: string | null;
+        activityId: string | null;
+      }
     >();
     const defaultExpenseGroups = new Map<
       string,
-      { amount: number; costCenterId: string | null; activityId: string | null }
+      {
+        foreignAmount: number;
+        baseAmount: number;
+        costCenterId: string | null;
+        activityId: string | null;
+      }
     >();
+    const ppvGroups = new Map<
+      string,
+      {
+        baseAmount: number;
+        costCenterId: string | null;
+        activityId: string | null;
+      }
+    >();
+    const fxVarianceGroups = new Map<
+      string,
+      {
+        baseAmount: number;
+        costCenterId: string | null;
+        activityId: string | null;
+      }
+    >();
+
+    const invoiceRate = parseFloat(invoice.exchangeRate || '1');
 
     for (const row of lines) {
       const {
@@ -772,8 +888,9 @@ export class PurchaseInvoiceService {
         );
       }
 
-      const amt = parseFloat(line.amount);
-      lineTotal += amt;
+      const foreignAmt = parseFloat(line.amount);
+      const baseAmt = foreignAmt * invoiceRate;
+      lineTotalForeign += foreignAmt;
 
       // Extract CC/Activity from product
       const productDims = {
@@ -788,37 +905,84 @@ export class PurchaseInvoiceService {
         const key = `${acctId}|${productDims.costCenterId || ''}|${productDims.activityId || ''}`;
         const current = expenseGroups.get(key);
         if (current) {
-          current.amount += amt;
+          current.foreignAmount += foreignAmt;
+          current.baseAmount += baseAmt;
         } else {
           expenseGroups.set(key, {
-            amount: amt,
+            foreignAmount: foreignAmt,
+            baseAmount: baseAmt,
             accountId: acctId,
             costCenterId: productDims.costCenterId,
             activityId: productDims.activityId,
           });
         }
       } else if (line.matchStatus === MATCH_STATUS.MATCHED && poProductId) {
-        // GRNI
+        const rc = receiptCosts.get(line.invoiceLineId) || {
+          cost: 0,
+          poRate: 1,
+        };
+        const receiptCostBase = rc.cost;
+        const poRate = rc.poRate;
+
+        const foreignCost = receiptCostBase / poRate;
+        const tradeVarianceBase = baseAmt - foreignCost * invoiceRate;
+        const fxVarianceBase = foreignCost * invoiceRate - receiptCostBase;
+
+        // GRNI Clearance
         const key = `GRNI|${productDims.costCenterId || ''}|${productDims.activityId || ''}`;
         const current = grniGroups.get(key);
         if (current) {
-          current.amount += amt;
+          current.baseAmount += receiptCostBase;
+          current.foreignAmount += foreignCost;
         } else {
           grniGroups.set(key, {
-            amount: amt,
+            baseAmount: receiptCostBase,
+            foreignAmount: foreignCost,
             costCenterId: productDims.costCenterId,
             activityId: productDims.activityId,
           });
+        }
+
+        // PPV (Trade Variance)
+        if (Math.abs(tradeVarianceBase) > 0.005) {
+          const ppvKey = `PPV|${productDims.costCenterId || ''}|${productDims.activityId || ''}`;
+          const ppvCurrent = ppvGroups.get(ppvKey);
+          if (ppvCurrent) {
+            ppvCurrent.baseAmount += tradeVarianceBase;
+          } else {
+            ppvGroups.set(ppvKey, {
+              baseAmount: tradeVarianceBase,
+              costCenterId: productDims.costCenterId,
+              activityId: productDims.activityId,
+            });
+          }
+        }
+
+        // FX Variance
+        if (Math.abs(fxVarianceBase) > 0.005) {
+          const fxKey = `FX|${productDims.costCenterId || ''}|${productDims.activityId || ''}`;
+          const fxCurrent = fxVarianceGroups.get(fxKey);
+          if (fxCurrent) {
+            fxCurrent.baseAmount += fxVarianceBase;
+          } else {
+            fxVarianceGroups.set(fxKey, {
+              baseAmount: fxVarianceBase,
+              costCenterId: productDims.costCenterId,
+              activityId: productDims.activityId,
+            });
+          }
         }
       } else {
         // Default Expense
         const key = `DEF|${productDims.costCenterId || ''}|${productDims.activityId || ''}`;
         const current = defaultExpenseGroups.get(key);
         if (current) {
-          current.amount += amt;
+          current.foreignAmount += foreignAmt;
+          current.baseAmount += baseAmt;
         } else {
           defaultExpenseGroups.set(key, {
-            amount: amt,
+            foreignAmount: foreignAmt,
+            baseAmount: baseAmt,
             costCenterId: productDims.costCenterId,
             activityId: productDims.activityId,
           });
@@ -826,13 +990,14 @@ export class PurchaseInvoiceService {
       }
     }
 
-    const headerTotal = parseFloat(invoice.totalAmount || '0');
-    const taxAmount = parseFloat(invoice.taxAmount || '0');
-    const expectedHeader = lineTotal + taxAmount;
+    const headerTotalForeign = parseFloat(invoice.totalAmount || '0');
+    const taxAmountForeign = parseFloat(invoice.taxAmount || '0');
+    const taxAmountBase = taxAmountForeign * invoiceRate;
+    const expectedHeaderForeign = lineTotalForeign + taxAmountForeign;
 
-    if (Math.abs(expectedHeader - headerTotal) > 0.01) {
+    if (Math.abs(headerTotalForeign - expectedHeaderForeign) > 0.01) {
       throw new BadRequestException(
-        `Invoice totals mismatch. Header: ${headerTotal.toFixed(2)}, Lines+Tax: ${expectedHeader.toFixed(2)}`,
+        `Invoice totals mismatch. Header: ${headerTotalForeign.toFixed(2)}, Lines+Tax: ${expectedHeaderForeign.toFixed(2)}`,
       );
     }
 
@@ -871,6 +1036,12 @@ export class PurchaseInvoiceService {
           distinctAccountIds.add(settings.defaultExpenseAccountId);
         if (settings?.defaultGrniAccountId)
           distinctAccountIds.add(settings.defaultGrniAccountId);
+        if (settings?.defaultPpvAccountId)
+          distinctAccountIds.add(settings.defaultPpvAccountId);
+        if (settings?.realisedFxGainAccountId)
+          distinctAccountIds.add(settings.realisedFxGainAccountId);
+        if (settings?.realisedFxLossAccountId)
+          distinctAccountIds.add(settings.realisedFxLossAccountId);
         if (supplierExpenseAccountId)
           distinctAccountIds.add(supplierExpenseAccountId);
         for (const group of expenseGroups.values())
@@ -915,6 +1086,17 @@ export class PurchaseInvoiceService {
             ? idToCode.get(settings.defaultTaxAccountId)
             : null;
 
+          const ppvCode = settings?.defaultPpvAccountId
+            ? idToCode.get(settings.defaultPpvAccountId)
+            : null;
+
+          const fxGainCode = settings?.realisedFxGainAccountId
+            ? idToCode.get(settings.realisedFxGainAccountId)
+            : null;
+          const fxLossCode = settings?.realisedFxLossAccountId
+            ? idToCode.get(settings.realisedFxLossAccountId)
+            : null;
+
           if (apCode) {
             const glLines: Parameters<GlService['postJournalEntry']>[0] = [];
 
@@ -928,7 +1110,7 @@ export class PurchaseInvoiceService {
               this.appConfig.expenseRoutingPrecedence() === 'supplier_first';
 
             for (const group of defaultExpenseGroups.values()) {
-              if (group.amount > 0 && fallbackExpCode) {
+              if (group.baseAmount > 0 && fallbackExpCode) {
                 const prodDims = {
                   costCenterId: group.costCenterId,
                   activityId: group.activityId,
@@ -943,8 +1125,12 @@ export class PurchaseInvoiceService {
                 );
                 glLines.push({
                   accountCode: fallbackExpCode,
-                  debit: group.amount,
+                  debit: group.baseAmount,
                   credit: 0,
+                  foreignDebit: group.foreignAmount,
+                  foreignCredit: 0,
+                  foreignCurrencyCode: invoice.currencyCode,
+                  exchangeRate: invoiceRate,
                   memo: `Expense (Default): ${invoice.invoiceNumber}`,
                   costCenterId: dims.costCenterId || undefined,
                   activityId: dims.activityId || undefined,
@@ -953,7 +1139,7 @@ export class PurchaseInvoiceService {
             }
 
             for (const group of grniGroups.values()) {
-              if (group.amount > 0 && grniCode) {
+              if (group.baseAmount > 0 && grniCode) {
                 const prodDims = {
                   costCenterId: group.costCenterId,
                   activityId: group.activityId,
@@ -968,8 +1154,12 @@ export class PurchaseInvoiceService {
                 );
                 glLines.push({
                   accountCode: grniCode,
-                  debit: group.amount,
+                  debit: group.baseAmount,
                   credit: 0,
+                  foreignDebit: group.foreignAmount,
+                  foreignCredit: 0,
+                  foreignCurrencyCode: invoice.currencyCode,
+                  exchangeRate: invoiceRate, // Approx for reporting
                   memo: `GRNI Clearance: ${invoice.invoiceNumber}`,
                   partyId: invoice.vendorId,
                   partyType: 'supplier',
@@ -979,9 +1169,74 @@ export class PurchaseInvoiceService {
               }
             }
 
+            for (const group of ppvGroups.values()) {
+              if (Math.abs(group.baseAmount) > 0.005 && ppvCode) {
+                const prodDims = {
+                  costCenterId: group.costCenterId,
+                  activityId: group.activityId,
+                };
+                const dims = resolveGlDimensions(
+                  isSuppFirst ? supplierDims : prodDims,
+                  isSuppFirst ? prodDims : supplierDims,
+                  {
+                    defaultCostCenterId: sysDefaultCC,
+                    defaultActivityId: sysDefaultAct,
+                  },
+                );
+                glLines.push({
+                  accountCode: ppvCode,
+                  debit: group.baseAmount > 0 ? group.baseAmount : 0,
+                  credit: group.baseAmount < 0 ? Math.abs(group.baseAmount) : 0,
+                  foreignDebit: 0,
+                  foreignCredit: 0,
+                  foreignCurrencyCode: invoice.currencyCode,
+                  exchangeRate: 1,
+                  memo: `Purchase Price Variance: ${invoice.invoiceNumber}`,
+                  costCenterId: dims.costCenterId || undefined,
+                  activityId: dims.activityId || undefined,
+                });
+              }
+            }
+
+            for (const group of fxVarianceGroups.values()) {
+              if (Math.abs(group.baseAmount) > 0.005) {
+                const isGain = group.baseAmount < 0; // Credit = Gain
+                const targetCode = isGain ? fxGainCode : fxLossCode;
+                if (!targetCode) {
+                  throw new BadRequestException(
+                    'Realised FX Gain/Loss accounts are not configured in GL Settings.',
+                  );
+                }
+                const prodDims = {
+                  costCenterId: group.costCenterId,
+                  activityId: group.activityId,
+                };
+                const dims = resolveGlDimensions(
+                  isSuppFirst ? supplierDims : prodDims,
+                  isSuppFirst ? prodDims : supplierDims,
+                  {
+                    defaultCostCenterId: sysDefaultCC,
+                    defaultActivityId: sysDefaultAct,
+                  },
+                );
+                glLines.push({
+                  accountCode: targetCode,
+                  debit: !isGain ? group.baseAmount : 0,
+                  credit: isGain ? Math.abs(group.baseAmount) : 0,
+                  foreignDebit: 0,
+                  foreignCredit: 0,
+                  foreignCurrencyCode: invoice.currencyCode,
+                  exchangeRate: 1,
+                  memo: `Realised FX Variance (GRNI): ${invoice.invoiceNumber}`,
+                  costCenterId: dims.costCenterId || undefined,
+                  activityId: dims.activityId || undefined,
+                });
+              }
+            }
+
             for (const group of expenseGroups.values()) {
               const code = idToCode.get(group.accountId);
-              if (code && group.amount > 0) {
+              if (code && group.baseAmount > 0) {
                 const prodDims = {
                   costCenterId: group.costCenterId,
                   activityId: group.activityId,
@@ -1003,8 +1258,12 @@ export class PurchaseInvoiceService {
                 );
                 glLines.push({
                   accountCode: code,
-                  debit: group.amount,
+                  debit: group.baseAmount,
                   credit: 0,
+                  foreignDebit: group.foreignAmount,
+                  foreignCredit: 0,
+                  foreignCurrencyCode: invoice.currencyCode,
+                  exchangeRate: invoiceRate,
                   memo: `Expense: ${invoice.invoiceNumber}`,
                   costCenterId: dims.costCenterId || undefined,
                   activityId: dims.activityId || undefined,
@@ -1012,11 +1271,15 @@ export class PurchaseInvoiceService {
               }
             }
 
-            if (taxCode && taxAmount > 0) {
+            if (taxCode && taxAmountBase > 0) {
               glLines.push({
                 accountCode: taxCode,
-                debit: taxAmount,
+                debit: taxAmountBase,
                 credit: 0,
+                foreignDebit: taxAmountForeign,
+                foreignCredit: 0,
+                foreignCurrencyCode: invoice.currencyCode,
+                exchangeRate: invoiceRate,
                 memo: `Tax: ${invoice.invoiceNumber}`,
               });
             }
@@ -1027,11 +1290,25 @@ export class PurchaseInvoiceService {
               defaultActivityId: sysDefaultAct,
             });
 
-            const totalDebits = glLines.reduce((sum, l) => sum + l.debit, 0);
+            // Rebalance AP Base vs Debits
+            const totalDebits = glLines.reduce(
+              (sum, l) => sum + Number(l.debit || 0),
+              0,
+            );
+            const totalCreditsExclAp = glLines.reduce(
+              (sum, l) => sum + Number(l.credit || 0),
+              0,
+            );
+            const apBaseCredit = totalDebits - totalCreditsExclAp;
+
             glLines.push({
               accountCode: apCode,
               debit: 0,
-              credit: totalDebits,
+              credit: apBaseCredit,
+              foreignDebit: 0,
+              foreignCredit: headerTotalForeign,
+              foreignCurrencyCode: invoice.currencyCode,
+              exchangeRate: invoiceRate,
               memo: `Customers Payable: ${invoice.invoiceNumber}`,
               partyId: invoice.vendorId,
               partyType: 'supplier',
@@ -1521,6 +1798,8 @@ export class PurchaseInvoiceService {
         currencyCode: purchaseInvoices.currencyCode,
         stateCode: purchaseInvoices.stateCode,
         createdOn: purchaseInvoices.createdOn,
+        earlyPaymentDiscount: purchaseInvoices.earlyPaymentDiscount,
+        earlyPaymentDiscountDays: purchaseInvoices.earlyPaymentDiscountDays,
         score: scoreSql,
       })
       .from(purchaseInvoices)

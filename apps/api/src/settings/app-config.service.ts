@@ -41,7 +41,8 @@ export class AppConfigService implements OnModuleInit {
     try {
       const [gl] = await this.db.select().from(glSettings).limit(1);
       this.glCache = gl ?? null;
-    } catch {
+    } catch (err) {
+      this.logger.error('Failed to load glSettings:', err);
       // Table may not exist yet (pre-migration) — graceful degradation
       this.glCache = null;
     }
@@ -160,6 +161,11 @@ export class AppConfigService implements OnModuleInit {
   /** Default Cost of Goods Sold (COGS) expense customer UUID. */
   defaultCogsAccountId(): string | null {
     return this.getGl().defaultCogsAccountId;
+  }
+
+  /** Default Purchase Price Variance (PPV) expense/liability customer UUID. */
+  defaultPpvAccountId(): string | null {
+    return this.getGl()?.defaultPpvAccountId || null;
   }
 
   /** Default Fee Revenue customer UUID (e.g. restocking fees). */

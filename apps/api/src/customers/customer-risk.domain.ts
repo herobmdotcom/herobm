@@ -7,6 +7,8 @@ export interface CustomerProfile {
   creditLimit: string | null;
   tradingTermsId: string | null;
   overrideCreditHoldUntil: Date | null;
+  earlyPaymentDiscount?: string | null;
+  earlyPaymentDiscountDays?: number | null;
 }
 
 export interface CustomerGroupProfile {
@@ -14,6 +16,8 @@ export interface CustomerGroupProfile {
   isOnCreditHold: boolean;
   creditLimit: string | null;
   tradingTermsId: string | null;
+  earlyPaymentDiscount?: string | null;
+  earlyPaymentDiscountDays?: number | null;
 }
 
 export interface ResolvedCustomerRiskProfile {
@@ -21,6 +25,8 @@ export interface ResolvedCustomerRiskProfile {
   salesBlockReasons: string[];
   effectiveCreditLimit: string;
   effectiveTradingTermsId: string | null;
+  earlyPaymentDiscount: string;
+  earlyPaymentDiscountDays: number | null;
 }
 
 export function resolveCustomerRiskProfile(
@@ -36,6 +42,8 @@ export function resolveCustomerRiskProfile(
     salesBlockReasons: [],
     effectiveCreditLimit: '0',
     effectiveTradingTermsId: null,
+    earlyPaymentDiscount: '0',
+    earlyPaymentDiscountDays: null,
   };
 
   resolved.effectiveTradingTermsId =
@@ -43,6 +51,16 @@ export function resolveCustomerRiskProfile(
 
   resolved.effectiveCreditLimit =
     customer.creditLimit ?? (group ? group.creditLimit : '0') ?? '0';
+
+  resolved.earlyPaymentDiscount =
+    customer.earlyPaymentDiscount ??
+    (group ? group.earlyPaymentDiscount : '0') ??
+    '0';
+
+  resolved.earlyPaymentDiscountDays =
+    customer.earlyPaymentDiscountDays ??
+    (group ? group.earlyPaymentDiscountDays : null) ??
+    null;
 
   if (customer.stateCode !== CUSTOMER_STATE.ACTIVE) {
     resolved.isSalesBlocked = true;

@@ -17,5 +17,9 @@ export interface JournalLineDto {
   partyId?: string | null;
   debit: number;
   credit: number;
+  foreignDebit?: number;
+  foreignCredit?: number;
+  foreignCurrencyCode?: string;
+  exchangeRate?: number;
   memo?: string;
 }

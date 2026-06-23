@@ -8,6 +8,7 @@
 import type { CreatePaymentDtoPaymentType } from './createPaymentDtoPaymentType';
 import type { CreatePaymentDtoModeOfPayment } from './createPaymentDtoModeOfPayment';
 import type { PaymentLineDto } from './paymentLineDto';
+import type { AllocationDto } from './allocationDto';
 
 export interface CreatePaymentDto {
   paymentId: string;
@@ -22,4 +23,5 @@ export interface CreatePaymentDto {
   currencyCode: string;
   submitImmediately?: boolean;
   lines?: PaymentLineDto[];
+  allocations?: AllocationDto[];
 }

@@ -14,6 +14,7 @@ export interface JournalEntry {
   memo: string | null;
   sourceType: string;
   sourceId: string | null;
+  sourceNumber?: string | null;
   createdBy: string | null;
 }
 
@@ -53,7 +54,12 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
       sales_credit_note: t('sourceSalesCreditNote'),
       manual: t('sourceManual'),
     };
-    return labels[type] || type;
+    if (labels[type]) return labels[type];
+    
+    return type
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   };
 
   useEffect(() => {
@@ -90,16 +96,26 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
               </div>
               <div>
                 <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('sourceDocument')}</span>
-                {entry.sourceId && (entry.sourceType === 'sales_invoice' || entry.sourceType === 'sales_credit_note') ? (
+                {entry.sourceId && (['sales_invoice', 'sales_credit_note', 'payment_entry', 'purchase_invoice', 'inventory_receipt'].includes(entry.sourceType)) ? (
                   <Link 
-                    href={`/sales-orders/${entry.sourceId}${entry.sourceType === 'sales_invoice' ? '#invoices-section' : ''}`} 
+                    href={
+                      entry.sourceType === 'payment_entry' 
+                        ? `/payments?payment=${entry.sourceId}` 
+                        : entry.sourceType === 'sales_invoice' 
+                          ? `/sales-invoices/${entry.sourceId}` 
+                          : entry.sourceType === 'purchase_invoice'
+                            ? `/supplier-invoices/${entry.sourceId}`
+                            : entry.sourceType === 'inventory_receipt'
+                              ? `/receiving/${entry.sourceId}`
+                              : `/sales-orders/credit-notes/${entry.sourceId}`
+                    }
                     className="text-[var(--accent)] hover:underline"
                     onClick={onClose}
                   >
-                    {sourceLabel(entry.sourceType)}
+                    {entry.sourceNumber || sourceLabel(entry.sourceType)}
                   </Link>
                 ) : (
-                  <span className="text-[#041627]">{sourceLabel(entry.sourceType)}</span>
+                  <span className="text-[#041627]">{entry.sourceNumber || sourceLabel(entry.sourceType)}</span>
                 )}
               </div>
             </div>

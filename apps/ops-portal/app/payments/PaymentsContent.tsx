@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
@@ -36,8 +37,17 @@ export default function PaymentsContent() {
   const supportedFormats = gl?.supportedBatchPaymentFormats || (baseCurrency === 'USD' ? ['NACHA'] : ['ABA']);
   const showNacha = supportedFormats.includes('NACHA');
   const showAba = supportedFormats.includes('ABA');
-  const [slideOverOpen, setSlideOverOpen] = useState(false);
-  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const paymentQuery = searchParams?.get('payment');
+  const [slideOverOpen, setSlideOverOpen] = useState(!!paymentQuery);
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(paymentQuery || null);
+
+  useEffect(() => {
+    if (paymentQuery) {
+      setSelectedPaymentId(paymentQuery);
+      setSlideOverOpen(true);
+    }
+  }, [paymentQuery]);
   const [payments, setPayments] = useState<UnifiedPayment[]>([]);
   const [selectedPayments, setSelectedPayments] = useState<UnifiedPayment[]>([]);
   const [days, setDays, isReadyDays] = usePersistedFilter('payments-days', '90');

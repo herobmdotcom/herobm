@@ -170,6 +170,7 @@ export class GoodsReceivedService {
               quantity: purchaseOrderLineItems.quantity,
               quantityReceived: purchaseOrderLineItems.quantityReceived,
               pricePerUnit: purchaseOrderLineItems.pricePerUnit,
+              exchangeRate: purchaseOrders.exchangeRate,
             })
             .from(purchaseOrderLineItems)
             .innerJoin(
@@ -201,10 +202,15 @@ export class GoodsReceivedService {
           } else if (openPoLines.length > 1) {
             matchStatus = MATCH_STATUS.AMBIGUOUS;
           } else {
-            matchStatus = MATCH_STATUS.UNMATCHED;
+            throw new BadRequestException('Receipt must be matched to a PO.');
           }
 
-          const unitCost = matchedPoLineId ? openPoLines[0].pricePerUnit : null;
+          const unitCost = matchedPoLineId
+            ? String(
+                parseFloat(openPoLines[0].pricePerUnit) *
+                  parseFloat(openPoLines[0].exchangeRate || '1'),
+              )
+            : null;
 
           lineValues.push({
             goodsReceivedId: receipt.goodsReceivedId,
@@ -221,14 +227,7 @@ export class GoodsReceivedService {
           });
         }
 
-        await tx
-          .insert(goodsReceivedLines)
-          .values(
-            lineValues.map(
-              ({ unitCost, ...rest }) =>
-                rest as typeof goodsReceivedLines.$inferInsert,
-            ),
-          );
+        await tx.insert(goodsReceivedLines).values(lineValues);
 
         // --- 5. Inventory Impact: Place items into RECEIVING bin ---
         // Find or create RECEIVING zone/bin
@@ -343,6 +342,17 @@ export class GoodsReceivedService {
             unitCost,
           );
 
+          console.log(
+            '[DEBUG] GoodsReceived - Product:',
+            lv.productId,
+            'Qty:',
+            qty,
+            'UnitCost:',
+            unitCost,
+            'Added:',
+            valuation.inventoryValueAdded,
+          );
+
           totalInventoryValueAdded += parseFloat(valuation.inventoryValueAdded);
 
           // Update product WAC
@@ -364,6 +374,7 @@ export class GoodsReceivedService {
             grniAccountId: this.appConfig.defaultGrniAccountId(),
             cogsAccountId: this.appConfig.defaultCogsAccountId(),
             shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
+            ppvAccountId: this.appConfig.defaultPpvAccountId(),
           },
         );
 

@@ -14,7 +14,7 @@ import POMatchingPanel from '@/components/shared/POMatchingPanel';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
-import { cap, isBackTransition, PURCHASE_INVOICE_LIFECYCLE, PURCHASE_INVOICE_STATE, MATCH_STATUS } from '@herobm/shared';
+import { cap, isBackTransition, PURCHASE_INVOICE_LIFECYCLE, PURCHASE_INVOICE_STATE, MATCH_STATUS, calculateEarlyPaymentDiscount } from '@herobm/shared';
 import { useSupplierInvoice, PurchaseInvoiceDetails } from './useSupplierInvoice';
 import PaymentManagerSlideOver from '@/app/payments/PaymentManagerSlideOver';
 
@@ -292,6 +292,37 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                 {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}
               </div>
             </div>
+            {invoice.earlyPaymentDiscount != null && invoice.earlyPaymentDiscountDays != null && (
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+                  Early Payment Terms
+                </label>
+                <div className="text-sm">
+                  {(() => {
+                    const result = calculateEarlyPaymentDiscount({
+                      invoiceDate: invoice.invoiceDate ? new Date(invoice.invoiceDate) : new Date(invoice.createdOn),
+                      outstandingAmount: invoice.outstandingAmount || '0',
+                      earlyPaymentDiscount: invoice.earlyPaymentDiscount,
+                      earlyPaymentDiscountDays: invoice.earlyPaymentDiscountDays,
+                    });
+                    const dateLimit = result.eligibleUntil ? result.eligibleUntil.toLocaleDateString() : '';
+                    
+                    if (result.isEligible) {
+                      return `${invoice.earlyPaymentDiscount}% (${formatAmount(result.discountAmount, invoice.currencyCode)}) in ${invoice.earlyPaymentDiscountDays} days (${dateLimit})`;
+                    }
+                    
+                    return (
+                      <>
+                        { }
+                        <span className="text-[var(--text-muted)]">
+                          {tCommon('earlyPaymentDiscountExpired', { discount: invoice.earlyPaymentDiscount, days: invoice.earlyPaymentDiscountDays, dateLimit })}
+                        </span>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
             <div className="md:col-span-2 mt-2">
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
                 {tCommon('notesCardHeading')}

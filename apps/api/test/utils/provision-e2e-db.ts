@@ -23,11 +23,11 @@ import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from '../../src/drizzle/herobm-core-schema';
 import {
-  runStandardSeeds,
-  seedCoaSettings,
+  runCoreSeeds,
   seedCoaAccounts,
+  seedCoaSettings,
   seedAccounts,
-} from '../../src/scripts/seed';
+} from '../../src/seeds/prod/core';
 import { seedTestLocations, seedTestUsers } from './test-seed';
 
 const E2E_DB_NAME = 'herobm_e2e_test';
@@ -134,7 +134,7 @@ async function provision() {
 
     // 3. Seed the database
     const db = drizzle(e2eSql, { schema });
-    await runStandardSeeds(db);
+    await runCoreSeeds(db, false);
     // Testing-only extension to seed COA defaults, accounts, and locations for E2E
     await seedCoaAccounts(db, false);
     await seedCoaSettings(db, false);

@@ -24,7 +24,7 @@ import {
   taxCategories,
   glSettings,
   tradingTerms,
-} from '../drizzle/herobm-core-schema';
+} from '../../drizzle/herobm-core-schema';
 import {
   SALES_ORDER_STATE,
   PURCHASE_ORDER_STATE,
@@ -32,11 +32,13 @@ import {
   SALES_ORDER_PICK_STATE,
   PUTAWAY_STATUS,
 } from '@herobm/shared';
-import * as schema from '../drizzle/herobm-core-schema';
+import * as schema from '../../drizzle/herobm-core-schema';
 import * as readline from 'readline';
 
 // Import standard setup functions
-import { runStandardSeeds, seedCoaAccounts, seedCoaSettings } from './seed';
+import { seedCoaAccounts, seedCoaSettings } from '../prod/core';
+import { runProdSeeds } from '../prod';
+import type { SeedDB } from '../run';
 
 function uuid() {
   return crypto.randomUUID();
@@ -449,7 +451,7 @@ async function confirmExecution(): Promise<boolean> {
   });
 }
 
-async function main() {
+export async function runDemoSeeds(db: SeedDB, dryRun = false) {
   const args = process.argv.slice(2);
   if (!args.includes('--force') && !args.includes('-y')) {
     const confirmed = await confirmExecution();
@@ -458,22 +460,11 @@ async function main() {
       process.exit(0);
     }
   }
-
-  const pool = new Pool({
-    host: process.env.POSTGRES_HOST || '127.0.0.1',
-    port: Number(process.env.POSTGRES_PORT) || 5432,
-    user: process.env.POSTGRES_USER || 'postgres',
-    password: process.env.POSTGRES_PASSWORD,
-    database: process.env.POSTGRES_DB || 'herobm',
-  });
-
-  const db = drizzle(pool, { schema });
-
   try {
     await wipeDatabase(db);
 
     // Run the framework seeds (Users, Apps settings, etc.)
-    await runStandardSeeds(db, false);
+    await runProdSeeds(db, dryRun);
     await seedCoaAccounts(db, false, 'us_standard');
     await seedCoaSettings(db, false, 'us_standard');
 
@@ -484,14 +475,5 @@ async function main() {
     console.log('\nDemo Data Seeding Complete!');
   } catch (e) {
     console.error('Seeding failed:', e);
-  } finally {
-    await pool.end();
   }
-}
-
-if (require.main === module) {
-  main().catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
 }

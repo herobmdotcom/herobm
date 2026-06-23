@@ -13,6 +13,7 @@ import Link from 'next/link';
 import MasterDetailLayout from '@/components/shared/MasterDetailLayout';
 import { getErrorMessage } from '@herobm/shared';
 import AddressDisplay from '@/components/shared/AddressDisplay';
+import { usePersistedSetting } from '@/hooks/usePersistedSetting';
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -71,7 +72,7 @@ export default function ShippingPage() {
 
     // Location
     const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
-    const [selectedLocationId, setSelectedLocationId] = useState<string>('');
+    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('shipping-location', '');
 
     // Queue
     const [orders, setOrders] = useState<ShippingOrder[]>([]);
@@ -98,17 +99,24 @@ export default function ShippingPage() {
                 const res = response.data as unknown;
                 const locs = (Array.isArray(res) ? res : ((res as { data?: unknown[] })?.data || [])) as api.InventoryLocationResponseDto[];
                 setLocations(locs);
-                if (locs.length > 0) {
-                    const defaultLocId = app?.defaultFulfillmentLocationId || locs[0].locationId;
-                    setSelectedLocationId(defaultLocId);
-                }
             })
             .catch(err => reportError(err, 'Failed to load locations'));
-    }, [app?.defaultFulfillmentLocationId]);
+    }, []);
+
+    useEffect(() => {
+        if (locReady && locations.length > 0) {
+            const isValid = selectedLocationId && locations.some(l => l.locationId === selectedLocationId);
+            if (!isValid) {
+                const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
+                setSelectedLocationId(defaultLocId);
+            }
+        }
+    }, [locReady, locations, selectedLocationId, app?.defaultFulfillmentLocationId, setSelectedLocationId]);
 
     // ── Queue ────────────────────────────────────────────────────
 
     const loadOrders = useCallback(() => {
+        if (!locReady) return;
         setLoadingOrders(true);
         const params: { locationId?: string } = {};
         if (selectedLocationId) params.locationId = selectedLocationId;
@@ -121,7 +129,7 @@ export default function ShippingPage() {
                 setOrders([]);
             })
             .finally(() => setLoadingOrders(false));
-    }, [selectedLocationId, t]);
+    }, [selectedLocationId, t, locReady]);
 
     useEffect(() => {
         loadOrders();

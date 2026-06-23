@@ -1028,6 +1028,7 @@ export class InventoryService {
               grniAccountId: this.appConfig.defaultGrniAccountId(),
               cogsAccountId: this.appConfig.defaultCogsAccountId(),
               shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
+              ppvAccountId: this.appConfig.defaultPpvAccountId(),
             },
           );
 
@@ -1771,6 +1772,7 @@ export class InventoryService {
         const [sourceBinInfo] = await tx
           .select({
             binId: bins.binId,
+            binNumber: bins.binNumber,
             locationId: zones.locationId,
             zoneCode: zones.code,
           })
@@ -1808,6 +1810,14 @@ export class InventoryService {
         if (targetBinInfo.zoneCode === 'HANDLING') {
           throw new BadRequestException(
             'Cannot manually move stock into system HANDLING bins.',
+          );
+        }
+        if (
+          sourceBinInfo.binNumber === 'RECEIVING' &&
+          targetBinInfo.zoneCode !== 'HANDLING'
+        ) {
+          throw new BadRequestException(
+            'Cannot manually move stock out of RECEIVING bins. Please use the Putaway process.',
           );
         }
 

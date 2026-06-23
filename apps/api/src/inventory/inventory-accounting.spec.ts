@@ -11,6 +11,7 @@ describe('PerpetualAccountingStrategy', () => {
     cogsAccountId: 'cogs-uuid',
     shrinkageAccountId: 'shrink-uuid',
     apAccountId: 'ap-uuid',
+    ppvAccountId: 'ppv-uuid',
   };
 
   const strategy = getAccountingStrategy('perpetual', accts);

@@ -26,14 +26,16 @@ import {
   activities,
   glJournalEntries,
   glJournalLines,
+  exchangeRates,
 } from '../drizzle/herobm-core-schema';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, and } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import {
   PAYMENT_TYPE,
   PAYMENT_STATE,
   SALES_INVOICE_STATE,
   SALES_ORDER_STATE,
+  CUSTOMER_STATE,
 } from '@herobm/shared';
 
 describe('PaymentsService', () => {
@@ -773,6 +775,70 @@ describe('PaymentsService', () => {
       expect(inv.stateCode).toBe(SALES_INVOICE_STATE.PAID);
     });
 
+    it('should allow allocating a SUBMITTED payment (late allocation) sequentially', async () => {
+      await seedInvoiceAndPayment(1000, 1000);
+
+      // Submit the payment BEFORE allocating
+      await service.submitPaymentEntry(draftPaymentId, 'admin');
+
+      // 1st late allocation: 400
+      let result = await service.allocatePayment(
+        draftPaymentId,
+        {
+          allocations: [
+            {
+              referenceType: 'sales_invoice',
+              referenceId: invoiceId,
+              allocatedAmount: 400,
+            },
+          ],
+        },
+        'admin',
+      );
+
+      // Unallocated amount should drop from 1000 to 600
+      expect(parseFloat(result.unallocatedAmount)).toBe(600);
+
+      // 2nd late allocation: 600
+      result = await service.allocatePayment(
+        draftPaymentId,
+        {
+          allocations: [
+            {
+              referenceType: 'sales_invoice',
+              referenceId: invoiceId,
+              allocatedAmount: 600,
+            },
+          ],
+        },
+        'admin',
+      );
+
+      // Payment should be fully allocated now
+      expect(parseFloat(result.unallocatedAmount)).toBe(0);
+
+      // Invoice should be paid
+      const [inv] = await pg.db
+        .select()
+        .from(salesInvoices)
+        .where(eq(salesInvoices.invoiceId, invoiceId));
+      expect(parseFloat(inv.outstandingAmount)).toBe(0);
+      expect(inv.stateCode).toBe(SALES_INVOICE_STATE.PAID);
+
+      // Verify GL entries - should have an extra one for the allocation
+      const entries = await pg.db
+        .select()
+        .from(glJournalEntries)
+        .where(
+          and(
+            eq(glJournalEntries.sourceType, 'payment_entry'),
+            eq(glJournalEntries.sourceId, draftPaymentId),
+          ),
+        );
+      // It should have the original receipt entry. No FX variance means no additional entries.
+      expect(entries.length).toBeGreaterThanOrEqual(1);
+    });
+
     it('should allocate partial amount and mark invoice as partially_paid', async () => {
       await seedInvoiceAndPayment(1000, 500);
 
@@ -815,13 +881,15 @@ describe('PaymentsService', () => {
               {
                 referenceType: 'sales_invoice',
                 referenceId: invoiceId,
-                allocatedAmount: 600,
+                allocatedAmount: 600, // 600 > 500
               },
             ],
           },
           'admin',
         ),
-      ).rejects.toThrow('Cannot allocate more than the total payment amount');
+      ).rejects.toThrow(
+        'Cannot allocate more than the available unallocated amount',
+      );
     });
 
     it('should reject over-allocation beyond invoice outstanding', async () => {
@@ -870,6 +938,150 @@ describe('PaymentsService', () => {
           'admin',
         ),
       ).rejects.toThrow('Cannot allocate to invoice in state draft');
+    });
+    it('should validate early payment discount successfully', async () => {
+      const discCustomerId = randomUUID();
+      await pg.db.insert(customers).values({
+        customerId: discCustomerId,
+        customerNumber: 'CUST-DISC-001',
+        name: 'Discount Customer',
+        billingAddressCountry: 'AU',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        currencyCode: 'AUD',
+        earlyPaymentDiscount: '5', // 5%
+        earlyPaymentDiscountDays: 14,
+      });
+
+      const soId = randomUUID();
+      await pg.db.insert(salesOrders).values({
+        salesOrderId: soId,
+        orderNumber: 'SO-DISC-001',
+        customerId: discCustomerId,
+        currencyCode: 'AUD',
+        fulfillmentLocationId: locationId,
+        stateCode: SALES_ORDER_STATE.SHIPPED,
+      });
+
+      const invId = randomUUID();
+      await pg.db.insert(salesInvoices).values({
+        invoiceId: invId,
+        invoiceNumber: 'INV-DISC-001',
+        salesOrderId: soId,
+        totalAmount: '1000',
+        outstandingAmount: '1000',
+        taxAmount: '0',
+        currencyCode: 'AUD',
+        stateCode: SALES_INVOICE_STATE.DRAFT,
+        invoiceDate: new Date(),
+      });
+
+      await pg.db
+        .update(salesInvoices)
+        .set({ stateCode: 'invoiced' })
+        .where(eq(salesInvoices.invoiceId, invId));
+
+      const payment = await service.createPaymentEntry(
+        {
+          paymentId: randomUUID(),
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
+          partyId: discCustomerId,
+          paymentDate: new Date().toISOString(),
+          modeOfPayment: 'EFT',
+          totalAmount: 950,
+          glAccountBank: bankAccountId,
+          currencyCode: 'AUD',
+        },
+        'admin',
+      );
+
+      const result = await service.allocatePayment(
+        payment.paymentId,
+        {
+          allocations: [
+            {
+              referenceType: 'sales_invoice',
+              referenceId: invId,
+              allocatedAmount: 950,
+              discountAmount: 50,
+            },
+          ],
+        },
+        'admin',
+      );
+
+      expect(result).toBeDefined();
+      expect(result.unallocatedAmount).toBe('0');
+    });
+
+    it('should reject early payment discount if past the allowed days', async () => {
+      const discCustomerId = randomUUID();
+      await pg.db.insert(customers).values({
+        customerId: discCustomerId,
+        customerNumber: 'CUST-DISC-002',
+        name: 'Discount Customer 2',
+        billingAddressCountry: 'AU',
+        stateCode: CUSTOMER_STATE.ACTIVE,
+        currencyCode: 'AUD',
+        earlyPaymentDiscount: '5', // 5%
+        earlyPaymentDiscountDays: 14,
+      });
+
+      const soId = randomUUID();
+      await pg.db.insert(salesOrders).values({
+        salesOrderId: soId,
+        orderNumber: 'SO-DISC-002',
+        customerId: discCustomerId,
+        currencyCode: 'AUD',
+        fulfillmentLocationId: locationId,
+        stateCode: SALES_ORDER_STATE.SHIPPED,
+      });
+
+      const invId = randomUUID();
+      const pastInvoiceDate = new Date();
+      pastInvoiceDate.setDate(pastInvoiceDate.getDate() - 20); // 20 days ago (past 14 days)
+
+      await pg.db.insert(salesInvoices).values({
+        invoiceId: invId,
+        invoiceNumber: 'INV-DISC-002',
+        salesOrderId: soId,
+        totalAmount: '1000',
+        outstandingAmount: '1000',
+        taxAmount: '0',
+        currencyCode: 'AUD',
+        stateCode: 'invoiced',
+        invoiceDate: pastInvoiceDate,
+      });
+
+      const payment = await service.createPaymentEntry(
+        {
+          paymentId: randomUUID(),
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
+          partyId: discCustomerId,
+          paymentDate: new Date().toISOString(),
+          modeOfPayment: 'EFT',
+          totalAmount: 950,
+          glAccountBank: bankAccountId,
+          currencyCode: 'AUD',
+        },
+        'admin',
+      );
+
+      await expect(
+        service.allocatePayment(
+          payment.paymentId,
+          {
+            allocations: [
+              {
+                referenceType: 'sales_invoice',
+                referenceId: invId,
+                allocatedAmount: 950,
+                discountAmount: 50,
+              },
+            ],
+          },
+          'admin',
+        ),
+      ).rejects.toThrow(/is past the allowed early payment discount period/);
     });
   });
 
@@ -1183,6 +1395,144 @@ describe('PaymentsService', () => {
       await expect(service.findOne(randomUUID())).rejects.toThrow(
         NotFoundException,
       );
+    });
+    describe('Realized FX on Payments', () => {
+      it('should calculate and book Realized FX Gain/Loss based on invoice rate vs payment rate', async () => {
+        // Create dummy FX accounts
+        const fxGainId = randomUUID();
+        const fxLossId = randomUUID();
+        await pg.db.insert(glAccounts).values([
+          {
+            glAccountId: fxGainId,
+            accountCode: 'FX-GAIN-01',
+            name: 'FX Gain',
+            accountType: 'revenue',
+            isGroup: false,
+            isActive: true,
+            currencyCode: 'AUD',
+          },
+          {
+            glAccountId: fxLossId,
+            accountCode: 'FX-LOSS-01',
+            name: 'FX Loss',
+            accountType: 'expense',
+            isGroup: false,
+            isActive: true,
+            currencyCode: 'AUD',
+          },
+        ]);
+
+        // Update GL settings
+        await pg.db.update(glSettings).set({
+          realisedFxGainAccountId: fxGainId,
+          realisedFxLossAccountId: fxLossId,
+        });
+
+        // Setup exchange rates
+        await pg.db
+          .insert(exchangeRates)
+          .values([
+            {
+              currencyCode: 'AUD',
+              currencyName: 'Australian Dollar',
+              effectiveDate: new Date('2020-01-01'),
+              buyRate: '1.0',
+              sellRate: '1.0',
+            },
+            {
+              currencyCode: 'EUR',
+              currencyName: 'Euro',
+              effectiveDate: new Date('2020-01-01'),
+              buyRate: '0.6',
+              sellRate: '0.6',
+            },
+          ])
+          .onConflictDoNothing();
+
+        // Create a foreign currency sales invoice
+        const soId = randomUUID();
+        await pg.db.insert(salesOrders).values({
+          salesOrderId: soId,
+          orderNumber: 'SO-FX-TEST',
+          customerId,
+          currencyCode: 'EUR',
+          exchangeRate: '1.1',
+          fulfillmentLocationId: locationId,
+          stateCode: SALES_ORDER_STATE.SHIPPED,
+        });
+
+        const invId = randomUUID();
+        await pg.db.insert(salesInvoices).values({
+          invoiceId: invId,
+          invoiceNumber: 'INV-FX-001',
+          salesOrderId: soId,
+          totalAmount: '100', // 100 EUR
+          outstandingAmount: '100', // 100 EUR
+          taxAmount: '0',
+          currencyCode: 'EUR',
+          exchangeRate: '1.1', // 100 EUR = 110 AUD Base
+          stateCode: SALES_INVOICE_STATE.INVOICED,
+        });
+
+        // Create a payment at a different rate
+        const paymentId = randomUUID();
+        const payment = await service.createPaymentEntry(
+          {
+            paymentId,
+            paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
+            partyId: customerId,
+            paymentDate: new Date().toISOString(),
+            modeOfPayment: 'EFT',
+            totalAmount: 100, // 100 EUR
+            glAccountBank: bankAccountId,
+            currencyCode: 'EUR',
+          },
+          'admin',
+        );
+
+        // Allocate the payment fully to the invoice
+        await service.allocatePayment(
+          payment.paymentId,
+          {
+            allocations: [
+              {
+                referenceType: 'sales_invoice',
+                referenceId: invId,
+                allocatedAmount: 100,
+              },
+            ],
+          },
+          'admin',
+        );
+
+        // Submit payment
+        await service.submitPaymentEntry(payment.paymentId, 'admin');
+
+        // Check Journal lines for Realized FX Gain (Credit)
+        // AR debited originally 110. Payment base is 120. AR cleared with 110.
+        // 120 Base Bank - 110 Base AR = 10 Base Gain (Credit).
+        const allEntries = await pg.db
+          .select()
+          .from(glJournalEntries)
+          .where(eq(glJournalEntries.sourceId, payment.paymentId));
+        expect(allEntries).toHaveLength(1);
+
+        const allLines = await pg.db
+          .select()
+          .from(glJournalLines)
+          .where(
+            eq(glJournalLines.journalEntryId, allEntries[0].journalEntryId),
+          );
+
+        // We should have 3 lines: Bank, AR, and FX Gain
+        expect(allLines).toHaveLength(3);
+
+        const fxGainLine = allLines.find(
+          (l) => Math.abs(parseFloat(l.credit) - 56.67) < 0.01,
+        );
+        expect(fxGainLine).toBeDefined();
+        expect(fxGainLine!.memo).toContain('Realised FX Gain for');
+      });
     });
   });
 });

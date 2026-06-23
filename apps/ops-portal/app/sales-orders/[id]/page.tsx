@@ -225,6 +225,9 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     const selectedAddressId = customerDeliveryAddresses.find(a => a.addressLine1 === editDeliveryAddressLine1 && a.city === editDeliveryCity)?.id || (editDeliveryAddressLine1 ? 'other' : '');
 
     const handleStateClick = async (state: string) => {
+        if (headerDirty) {
+            await saveHeader();
+        }
         if (state === SALES_ORDER_STATE.CONFIRMED && gaps.length > 0 && !discrepanciesAcknowledged) {
             setShowDiscrepancyModal(true);
             return;
@@ -271,13 +274,18 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     
     // Pre-calculate gaps for the Availability tab
     const gaps = calculateInventoryGaps(
-        order.lines, 
+        order.lines.map(l => ({
+            ...l,
+            fulfillmentLocationId: (editFulfillmentLocationId && editFulfillmentLocationId !== order.fulfillmentLocationId && (!l.fulfillmentLocationId || l.fulfillmentLocationId === order.fulfillmentLocationId)) 
+                ? editFulfillmentLocationId 
+                : l.fulfillmentLocationId
+        })), 
         inventoryData.map(inv => ({ 
             productId: inv.productId, 
             locationId: inv.locationId, 
             quantityAvailable: inv.quantityAvailable 
         })), 
-        order.fulfillmentLocationId
+        editFulfillmentLocationId || order.fulfillmentLocationId
     );
     const gapMap = new Map(gaps.map(g => [g.salesOrderLineId, g]));
 
@@ -481,7 +489,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                             onSelect={addLineFromProduct}
                                             placeholder={tSales('placeholders.searchProduct')}
                                             style={{ width: '100%' }}
-                                            fulfillmentLocationId={order?.fulfillmentLocationId || undefined}
+                                            fulfillmentLocationId={editFulfillmentLocationId || order?.fulfillmentLocationId || undefined}
                                         />
                                     </div>
                                     <button
@@ -1019,7 +1027,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                             </td>
                                                         </>
                                                     )}
-                                                    <td style={{ textAlign: 'right', fontSize: 12, color: inv.locationId === order.fulfillmentLocationId ? 'var(--accent)' : 'var(--text-muted)', fontWeight: inv.locationId === order.fulfillmentLocationId ? 600 : 400 }}>
+                                                    <td style={{ textAlign: 'right', fontSize: 12, color: inv.locationId === (editFulfillmentLocationId || order.fulfillmentLocationId) ? 'var(--accent)' : 'var(--text-muted)', fontWeight: inv.locationId === (editFulfillmentLocationId || order.fulfillmentLocationId) ? 600 : 400 }}>
                                                         {inv.locationName}
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{parseFloat(inv.quantityOnHand || '0')}</td>
@@ -1083,7 +1091,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                         {lineInventory.map((inv) => (
                                                             <div key={inv.locationId} className="bg-slate-50 rounded p-2 text-xs flex flex-col gap-1 border border-slate-100">
                                                                 <div className="flex justify-between font-medium">
-                                                                    <span className={inv.locationId === order.fulfillmentLocationId ? 'text-[var(--accent)]' : ''}>{inv.locationName}</span>
+                                                                    <span className={inv.locationId === (editFulfillmentLocationId || order.fulfillmentLocationId) ? 'text-[var(--accent)]' : ''}>{inv.locationName}</span>
                                                                     <span className={parseFloat(inv.quantityAvailable) >= parseFloat(line.quantity as string) ? 'text-emerald-600' : 'text-rose-600'}>{parseFloat(inv.quantityAvailable)} {tSales('availabilityTable.avail')}</span>
                                                                 </div>
                                                                 <div className="flex justify-between text-slate-500">

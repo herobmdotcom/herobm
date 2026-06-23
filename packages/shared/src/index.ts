@@ -159,5 +159,6 @@ export type { GLAccountType } from './accounting';
 export {
   getErrorMessage,
 } from './errors';
+export * from './invoice-discounts';
 
 export { SystemResource } from './permissions';

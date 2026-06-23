@@ -466,5 +466,136 @@ describe('GlService', () => {
       expect(lines[0].costCenterId).toBe(ccId);
       expect(lines[0].activityId).toBe(actId);
     });
+    describe('FX Symmetry and Multi-Currency', () => {
+      beforeEach(async () => {
+        await pg.db
+          .insert(glAccounts)
+          .values([
+            {
+              accountCode: 'FX-1000',
+              name: 'FX AR',
+              accountType: 'asset',
+              isGroup: false,
+              isActive: true,
+              currencyCode: 'AUD',
+            },
+            {
+              accountCode: 'FX-4000',
+              name: 'FX Rev',
+              accountType: 'revenue',
+              isGroup: false,
+              isActive: true,
+              currencyCode: 'AUD',
+            },
+          ])
+          .onConflictDoNothing();
+      });
+
+      it('should allow posting a journal with foreign amounts and an exchange rate', async () => {
+        const result = await service.postJournalEntry(
+          [
+            {
+              accountCode: 'FX-1000',
+              debit: 110,
+              credit: 0,
+              foreignDebit: 100,
+              foreignCredit: 0,
+              foreignCurrencyCode: 'EUR',
+              exchangeRate: 1.1,
+            },
+            {
+              accountCode: 'FX-4000',
+              debit: 0,
+              credit: 110,
+              foreignDebit: 0,
+              foreignCredit: 100,
+              foreignCurrencyCode: 'EUR',
+              exchangeRate: 1.1,
+            },
+          ],
+          { sourceType: 'manual', actor: 'test' },
+        );
+
+        const lines = await pg.db
+          .select()
+          .from(glJournalLines)
+          .where(eq(glJournalLines.journalEntryId, result.journalEntryId))
+          .orderBy(glJournalLines.debit);
+
+        expect(lines).toHaveLength(2);
+        const debitLine = lines.find((l) => parseFloat(l.debit) === 110);
+        expect(debitLine).toBeDefined();
+        expect(parseFloat(debitLine!.foreignDebit || '0')).toBe(100);
+        expect(debitLine!.foreignCurrencyCode).toBe('EUR');
+        expect(parseFloat(debitLine!.exchangeRate || '1')).toBe(1.1);
+      });
+
+      it('should reject a journal if base debit != base credit, even if foreign amounts balance', async () => {
+        await expect(
+          service.postJournalEntry(
+            [
+              {
+                accountCode: 'FX-1000',
+                debit: 110,
+                credit: 0,
+                foreignDebit: 100,
+                foreignCredit: 0,
+                foreignCurrencyCode: 'EUR',
+                exchangeRate: 1.1,
+              },
+              {
+                accountCode: 'FX-4000',
+                debit: 0,
+                credit: 115,
+                foreignDebit: 0,
+                foreignCredit: 100,
+                foreignCurrencyCode: 'EUR',
+                exchangeRate: 1.15,
+              },
+            ],
+            { sourceType: 'manual', actor: 'test' },
+          ),
+        ).rejects.toThrow('Journal entry is unbalanced');
+      });
+
+      it('should accept a journal where base amounts balance but foreign amounts do not (e.g. Realized FX Variance)', async () => {
+        // Base: 120 (Payment) - 100 (Invoice) - 20 (Loss) = 0.
+        // Foreign: 100 EUR Payment - 100 EUR Invoice = 0.
+        const result = await service.postJournalEntry(
+          [
+            {
+              accountCode: 'FX-1000',
+              debit: 120,
+              credit: 0,
+              foreignDebit: 100,
+              foreignCredit: 0,
+              foreignCurrencyCode: 'EUR',
+              exchangeRate: 1.2,
+            }, // Payment
+            {
+              accountCode: 'FX-4000',
+              debit: 0,
+              credit: 100,
+              foreignDebit: 0,
+              foreignCredit: 100,
+              foreignCurrencyCode: 'EUR',
+              exchangeRate: 1.0,
+            }, // Clear AP
+            {
+              accountCode: 'FX-4000',
+              debit: 0,
+              credit: 20,
+              foreignDebit: 0,
+              foreignCredit: 0,
+              foreignCurrencyCode: 'EUR',
+              exchangeRate: 1.0,
+            }, // Realized FX Loss
+          ],
+          { sourceType: 'manual', actor: 'test' },
+        );
+
+        expect(result.journalEntryId).toBeDefined();
+      });
+    });
   });
 });

@@ -77,6 +77,12 @@ export class CreatePaymentDto {
   @ValidateNested({ each: true })
   @Type(() => PaymentLineDto)
   lines?: PaymentLineDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AllocationDto)
+  allocations?: AllocationDto[];
 }
 
 export class AllocationDto {

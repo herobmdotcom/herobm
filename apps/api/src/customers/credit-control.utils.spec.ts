@@ -2,6 +2,7 @@ import {
   resolveEffectiveCreditHold,
   resolveEffectiveCreditLimit,
   resolveEffectiveTradingTermsId,
+  resolveEffectiveEarlyPaymentDiscount,
   AccountCreditProfile,
 } from './credit-control.utils';
 
@@ -176,6 +177,60 @@ describe('credit-control.utils', () => {
         systemDefaultCustomerTermsId: null,
       };
       expect(resolveEffectiveTradingTermsId(p)).toBeNull();
+    });
+  });
+
+  describe('resolveEffectiveEarlyPaymentDiscount', () => {
+    it('resolves customer early payment discount when present', () => {
+      const p = {
+        earlyPaymentDiscount: '2.50',
+        earlyPaymentDiscountDays: 10,
+        accountGroup: {
+          earlyPaymentDiscount: '1.00',
+          earlyPaymentDiscountDays: 5,
+        },
+      };
+      const result = resolveEffectiveEarlyPaymentDiscount(p);
+      expect(result.earlyPaymentDiscount).toBe('2.50');
+      expect(result.earlyPaymentDiscountDays).toBe(10);
+    });
+
+    it('cascades to group early payment discount when customer discount is null', () => {
+      const p = {
+        earlyPaymentDiscount: null,
+        earlyPaymentDiscountDays: null,
+        accountGroup: {
+          earlyPaymentDiscount: '1.00',
+          earlyPaymentDiscountDays: 5,
+        },
+      };
+      const result = resolveEffectiveEarlyPaymentDiscount(p);
+      expect(result.earlyPaymentDiscount).toBe('1.00');
+      expect(result.earlyPaymentDiscountDays).toBe(5);
+    });
+
+    it('returns null if both are null', () => {
+      const p = {
+        earlyPaymentDiscount: null,
+        earlyPaymentDiscountDays: null,
+        accountGroup: {
+          earlyPaymentDiscount: null,
+          earlyPaymentDiscountDays: null,
+        },
+      };
+      const result = resolveEffectiveEarlyPaymentDiscount(p);
+      expect(result.earlyPaymentDiscount).toBeNull();
+      expect(result.earlyPaymentDiscountDays).toBeNull();
+    });
+
+    it('handles missing group gracefully', () => {
+      const p = {
+        earlyPaymentDiscount: null,
+        earlyPaymentDiscountDays: null,
+      };
+      const result = resolveEffectiveEarlyPaymentDiscount(p);
+      expect(result.earlyPaymentDiscount).toBeNull();
+      expect(result.earlyPaymentDiscountDays).toBeNull();
     });
   });
 });

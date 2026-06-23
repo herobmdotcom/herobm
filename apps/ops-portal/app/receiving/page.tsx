@@ -4,6 +4,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePersistedFilter } from '@/hooks/usePersistedFilter';
+import { usePersistedSetting } from '@/hooks/usePersistedSetting';
 import { useSettings } from '@/components/SettingsProvider';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
@@ -50,7 +51,6 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                         value={selectedLocationId}
                         onChange={(e) => {
                             setSelectedLocationId(e.target.value);
-                            localStorage.setItem('receiving_selected_location', e.target.value);
                         }}
                         className="input text-sm w-48"
                     >
@@ -94,7 +94,6 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                                 value={selectedLocationId}
                                 onChange={(e) => {
                                     setSelectedLocationId(e.target.value);
-                                    localStorage.setItem('receiving_selected_location', e.target.value);
                                 }}
                                 className="input text-sm w-full"
                             >
@@ -135,20 +134,26 @@ export default function GoodsReceivedListPage() {
     const [refreshKey, setRefreshKey] = useState(0);
 
     const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
-    const [selectedLocationId, setSelectedLocationId] = useState<string>('');
+    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('receiving_selected_location', '');
 
     useEffect(() => {
         api.inventoryControllerFindAllLocations({} )
             .then((response) => {
                 const locs = response.data || [];
                 setLocations(locs);
-                // For receiving, we check localStorage first, then app default, then first location
-                const storedLocId = localStorage.getItem('receiving_selected_location');
-                const defaultLocId = storedLocId !== null ? storedLocId : (app?.defaultFulfillmentLocationId || (locs.length > 0 ? locs[0].locationId : ''));
-                setSelectedLocationId(defaultLocId);
             })
-            .catch((err: unknown) => reportError(err, 'GoodsReceivedListPage.loadLocations'));
-    }, [app?.defaultFulfillmentLocationId]);
+            .catch((err: unknown) => reportError(err, 'ReceivingPage.loadLocations'));
+    }, []);
+
+    useEffect(() => {
+        if (locReady && locations.length > 0) {
+            const isValidSaved = selectedLocationId && locations.some(l => l.locationId === selectedLocationId);
+            const defaultLocId = isValidSaved ? selectedLocationId : (app?.defaultFulfillmentLocationId || locations[0].locationId);
+            if (defaultLocId !== selectedLocationId) {
+                setSelectedLocationId(defaultLocId as string);
+            }
+        }
+    }, [locReady, locations, selectedLocationId, app?.defaultFulfillmentLocationId, setSelectedLocationId]);
 
     const [slideOverOpen, setSlideOverOpen] = useState(false);
     const [quarantineModalOpen, setQuarantineModalOpen] = useState(false);

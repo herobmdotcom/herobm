@@ -13,6 +13,7 @@ export interface InventoryGlAccounts {
   grniAccountId: string | null;
   cogsAccountId: string | null;
   shrinkageAccountId: string | null;
+  ppvAccountId: string | null;
   apAccountId?: string | null;
 }
 

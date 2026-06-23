@@ -45,6 +45,7 @@ import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { findOrderLine as sharedFindOrderLine } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { getExchangeRateForCurrency } from '../common/fx-helper';
 
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { EnrichmentService } from '../enrichment/enrichment.service';
@@ -453,6 +454,13 @@ export class OrdersWriteService {
       }
 
       const orderNumber = await this.generateOrderNumber(tx);
+
+      const fx = await getExchangeRateForCurrency(
+        tx,
+        customer.currencyCode,
+        new Date(),
+      );
+
       // Insert order header with snapshotted customer discount + GST category
       const [order] = await tx
         .insert(salesOrders)
@@ -465,6 +473,7 @@ export class OrdersWriteService {
           fulfillmentLocationId: fallbackLocId,
           stateCode: SALES_ORDER_STATE.DRAFT,
           currencyCode: customer.currencyCode,
+          exchangeRate: fx.rate.toString(),
           notes: dto.notes,
           shippingNotes: dto.shippingNotes,
           deliveryName: dto.deliveryName,
@@ -704,6 +713,16 @@ export class OrdersWriteService {
         })
         .where(eq(salesOrders.salesOrderId, id))
         .returning();
+
+      if (audit.changes.fulfillmentLocationId) {
+        await tx
+          .update(salesOrderLineItems)
+          .set({
+            fulfillmentLocationId: audit.changes
+              .fulfillmentLocationId as string,
+          })
+          .where(eq(salesOrderLineItems.salesOrderId, id));
+      }
 
       if (audit.hasChanges) {
         await emitEvent(tx, {

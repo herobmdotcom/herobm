@@ -40,6 +40,8 @@ export class PurchaseInvoiceResponseDto {
   @ApiProperty() stateCode!: string;
   @ApiPropertyOptional() notes?: string;
   @ApiPropertyOptional() purchaseOrderId?: string;
+  @ApiPropertyOptional() earlyPaymentDiscount?: string;
+  @ApiPropertyOptional() earlyPaymentDiscountDays?: number;
   @ApiProperty() createdBy!: string;
   @ApiProperty() createdOn!: Date;
 
@@ -67,6 +69,8 @@ export class SalesInvoiceResponseDto {
   @ApiProperty() stateCode!: string;
   @ApiPropertyOptional() notes?: string;
   @ApiPropertyOptional() salesOrderId?: string;
+  @ApiPropertyOptional() earlyPaymentDiscount?: string;
+  @ApiPropertyOptional() earlyPaymentDiscountDays?: number;
   @ApiProperty() createdBy!: string;
   @ApiProperty() createdOn!: Date;
 

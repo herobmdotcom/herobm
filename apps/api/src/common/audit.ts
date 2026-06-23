@@ -34,7 +34,8 @@ export function calculateAuditTrail<T extends object, U extends object>(
     if (typeof value === 'object' && value !== null) {
       isDifferent = JSON.stringify(value) !== JSON.stringify(original);
     } else {
-      isDifferent = String(value ?? '') !== String(original ?? '');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- required for unknown original object
+      isDifferent = String(value ?? '') !== String((original as any) ?? '');
     }
 
     if (mode === AuditMode.FULL || isDifferent) {

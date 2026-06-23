@@ -52,6 +52,7 @@ export class BaseSupplierDto {
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   tradingTermsId?: string;
+  @ApiPropertyOptional()
   @IsOptional()
   @Transform(({ value }) =>
     value === '' || value === null ? null : String(value),
@@ -155,6 +156,7 @@ export class BaseSupplierGroupDto {
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   tradingTermsId?: string;
+  @ApiPropertyOptional()
   @IsOptional()
   @Transform(({ value }) =>
     value === '' || value === null ? null : String(value),
@@ -264,7 +266,9 @@ export class SupplierResponseDto {
   fax: string | null;
   emailAddress1: string | null;
   tradingTermsId: string | null;
+  @ApiPropertyOptional()
   earlyPaymentDiscount: string | null;
+  @ApiPropertyOptional()
   earlyPaymentDiscountDays: number | null;
   creditLimit: string | null;
   isPurchasingBlocked: boolean;
@@ -294,7 +298,9 @@ export class SupplierGroupResponseDto {
   defaultApAccountId: string | null;
   defaultExpenseAccountId: string | null;
   tradingTermsId: string | null;
+  @ApiPropertyOptional()
   earlyPaymentDiscount: string | null;
+  @ApiPropertyOptional()
   earlyPaymentDiscountDays: number | null;
   creditLimit: string | null;
   isPurchasingBlocked: boolean;

@@ -47,6 +47,8 @@ export default function NewAccountPage() {
     tradingTermsId: '',
     creditLimit: '',
     isOnCreditHold: null as boolean | null,
+    earlyPaymentDiscount: '',
+    earlyPaymentDiscountDays: '',
   });
   const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
   const [customerGroups, setCustomerGroups] = useState<api.AccountGroupResponseDto[]>([]);
@@ -81,6 +83,14 @@ export default function NewAccountPage() {
     { value: selectedGroup?.creditLimit, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
   ]);
 
+  const earlyPaymentDiscountInheritance = useInheritance([
+    { value: (selectedGroup as { earlyPaymentDiscount?: string })?.earlyPaymentDiscount, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
+
+  const earlyPaymentDiscountDaysInheritance = useInheritance([
+    { value: (selectedGroup as { earlyPaymentDiscountDays?: number })?.earlyPaymentDiscountDays, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
+
   const handleSubmit = async () => {
     if (!isValid || submitting) return;
     setSubmitting(true);
@@ -88,6 +98,15 @@ export default function NewAccountPage() {
     try {
       const payload: Record<string, unknown> = { ...dto };
       if (payload.isOnCreditHold === null) delete payload.isOnCreditHold;
+      
+      if (payload.earlyPaymentDiscountDays) {
+        payload.earlyPaymentDiscountDays = Number(payload.earlyPaymentDiscountDays);
+      } else {
+        delete payload.earlyPaymentDiscountDays;
+      }
+      if (!payload.earlyPaymentDiscount) {
+        delete payload.earlyPaymentDiscount;
+      }
 
       const res = await api.accountsControllerCreate(payload as unknown as api.CreateAccountDto);
       const customer = res.data;
@@ -246,7 +265,7 @@ export default function NewAccountPage() {
               <span className="material-symbols-outlined">payments</span>
               FINANCIALS
             </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {t('common.columns.currency')} *
@@ -328,13 +347,63 @@ export default function NewAccountPage() {
                       inheritedValue={creditLimitInheritance.inheritedValue}
                       inheritedSourceLabel={creditLimitInheritance.inheritedSourceLabel}
                     />
-                    {!!creditLimitInheritance.inheritedSourceLabel && (
-                      <span className="text-xs italic text-[var(--primary)] ml-2 flex-shrink-0">
-                        {t('common.options.inheritValue', {
-                          label: creditLimitInheritance.inheritedValue || '',
-                          source: creditLimitInheritance.inheritedSourceLabel || ''
-                        })}
-                      </span>
+                        <span className="text-xs italic text-[var(--primary)] ml-2">
+                          {t('common.options.inheritValue', {
+                            label: creditLimitInheritance.inheritedValue || '',
+                            source: creditLimitInheritance.inheritedSourceLabel || ''
+                          })}
+                        </span>
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    className="block text-xs font-medium mb-1.5"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {t("customers.earlyPaymentDiscount")}
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-32">
+                      <InheritedNumberInput
+                        step="0.01"
+                        placeholder="0.00"
+                        className="input w-full pr-8"
+                        value={dto.earlyPaymentDiscount}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Type is dynamic
+                        onChange={(val: any) => updateField("earlyPaymentDiscount", val)}
+                        disabled={submitting}
+                        inheritedValue={earlyPaymentDiscountInheritance.inheritedValue}
+                        inheritedSourceLabel={earlyPaymentDiscountInheritance.inheritedSourceLabel}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
+                    </div>
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Simple word */}
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                      in
+                    </span>
+                    <div className="relative w-32">
+                      <InheritedNumberInput
+                        placeholder="0"
+                        className="input w-full pr-12"
+                        value={dto.earlyPaymentDiscountDays}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Type is dynamic
+                        onChange={(val: any) => updateField("earlyPaymentDiscountDays", val)}
+                        disabled={submitting}
+                        inheritedValue={earlyPaymentDiscountDaysInheritance.inheritedValue}
+                        inheritedSourceLabel={earlyPaymentDiscountDaysInheritance.inheritedSourceLabel}
+                      />
+                      {/* eslint-disable-next-line i18next/no-literal-string -- Simple word */}
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none text-sm">days</span>
+                    </div>
+
+                    {!!(earlyPaymentDiscountInheritance.inheritedSourceLabel || earlyPaymentDiscountDaysInheritance.inheritedSourceLabel) && (
+                        <span className="text-xs italic text-[var(--primary)] ml-2">
+                          {t('common.options.inheritValue', {
+                            label: `${earlyPaymentDiscountInheritance.inheritedValue}% in ${earlyPaymentDiscountDaysInheritance.inheritedValue} days`,
+                            source: earlyPaymentDiscountInheritance.inheritedSourceLabel || earlyPaymentDiscountDaysInheritance.inheritedSourceLabel || ''
+                          })}
+                        </span>
                     )}
                   </div>
                 </div>

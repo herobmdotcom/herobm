@@ -20,16 +20,21 @@ import {
   customerGroups,
   productGroups,
   paymentEntries,
+  paymentAllocations,
   glJournalEntries,
   glJournalLines,
   tradingTerms,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
+import { getExchangeRateForCurrency } from '../common/fx-helper';
 import { buildUpdatePayload } from '../common/utils/drizzle-utils';
 import { resolveGlDimensions } from '../common/utils/gl-resolution.util';
 import { calculateDueDate } from '../settings/trading-terms.utils';
-import { resolveEffectiveTradingTermsId } from '../customers/credit-control.utils';
+import {
+  resolveEffectiveTradingTermsId,
+  resolveEffectiveEarlyPaymentDiscount,
+} from '../customers/credit-control.utils';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { getCommittedPerLine } from '../orders/shipment-helpers';
@@ -131,6 +136,8 @@ export class SalesInvoiceService {
     let billingAddressLine1: string | null = null;
     let customerTermType: string | null = null;
     let customerTermDays: number | null = null;
+    let earlyPaymentDiscount: string | null = null;
+    let earlyPaymentDiscountDays: number | null = null;
 
     if (order.customerId) {
       // Find Party details to bind
@@ -156,9 +163,14 @@ export class SalesInvoiceService {
           creditLimit: customers.creditLimit,
           isOnCreditHold: customers.isOnCreditHold,
           tradingTermsId: customers.tradingTermsId,
+          earlyPaymentDiscount: customers.earlyPaymentDiscount,
+          earlyPaymentDiscountDays: customers.earlyPaymentDiscountDays,
           groupCreditLimit: customerGroups.creditLimit,
           groupIsOnCreditHold: customerGroups.isOnCreditHold,
           groupTradingTermsId: customerGroups.tradingTermsId,
+          groupEarlyPaymentDiscount: customerGroups.earlyPaymentDiscount,
+          groupEarlyPaymentDiscountDays:
+            customerGroups.earlyPaymentDiscountDays,
         })
         .from(customers)
         .leftJoin(
@@ -185,6 +197,21 @@ export class SalesInvoiceService {
           custRows[0].billingAddressStateOrProvince;
         billingAddressCity = custRows[0].billingAddressCity;
         billingAddressLine1 = custRows[0].billingAddressLine1;
+
+        const effectiveEarlyPaymentDiscount =
+          resolveEffectiveEarlyPaymentDiscount({
+            earlyPaymentDiscount: custRows[0].earlyPaymentDiscount,
+            earlyPaymentDiscountDays: custRows[0].earlyPaymentDiscountDays,
+            accountGroup: {
+              earlyPaymentDiscount: custRows[0].groupEarlyPaymentDiscount,
+              earlyPaymentDiscountDays:
+                custRows[0].groupEarlyPaymentDiscountDays,
+            },
+          });
+        earlyPaymentDiscount =
+          effectiveEarlyPaymentDiscount.earlyPaymentDiscount;
+        earlyPaymentDiscountDays =
+          effectiveEarlyPaymentDiscount.earlyPaymentDiscountDays;
 
         const effectiveTermsId = resolveEffectiveTradingTermsId({
           creditLimit: custRows[0].creditLimit,
@@ -469,6 +496,13 @@ export class SalesInvoiceService {
         );
       }
 
+      const fx = await getExchangeRateForCurrency(
+        tx,
+        order.currencyCode,
+        invoiceDate,
+      );
+      const baseTotalAmount = (combinedTotal * fx.rate).toFixed(2);
+
       const [invoice] = await tx
         .insert(salesInvoices)
         .values({
@@ -477,11 +511,16 @@ export class SalesInvoiceService {
           totalAmount: String(combinedTotal), // AR takes the whole amount dynamically
           outstandingAmount: String(combinedTotal),
           taxAmount: String(taxAmount),
+          baseTotalAmount: baseTotalAmount,
+          baseOutstandingAmount: baseTotalAmount,
           currencyCode: order.currencyCode,
+          exchangeRate: fx.rate.toString(),
           stateCode: SALES_INVOICE_STATE.DRAFT, // Start in draft and then transition
           notes: dto.notes,
           invoiceDate,
           dueDate,
+          earlyPaymentDiscount,
+          earlyPaymentDiscountDays,
           createdBy: actor,
         })
         .returning();
@@ -576,8 +615,11 @@ export class SalesInvoiceService {
             const glLines: any[] = [
               {
                 accountCode: arCode,
-                debit: combinedTotal,
+                debit: combinedTotal * fx.rate,
                 credit: 0,
+                foreignCurrency: order.currencyCode,
+                foreignDebit: combinedTotal,
+                foreignCredit: 0,
                 memo: `AR: ${invoiceNumber}`,
                 partyType: 'customer',
                 partyId: order.customerId,
@@ -599,7 +641,10 @@ export class SalesInvoiceService {
                 glLines.push({
                   accountCode: code,
                   debit: 0,
-                  credit: group.amount,
+                  credit: group.amount * fx.rate,
+                  foreignCurrency: order.currencyCode,
+                  foreignDebit: 0,
+                  foreignCredit: group.amount,
                   memo: `Revenue: ${invoiceNumber}`,
                   costCenterId: group.costCenterId || undefined,
                   activityId: group.activityId || undefined,
@@ -617,7 +662,10 @@ export class SalesInvoiceService {
                 glLines.push({
                   accountCode: defCode,
                   debit: 0,
-                  credit: defaultRevenue,
+                  credit: defaultRevenue * fx.rate,
+                  foreignCurrency: order.currencyCode,
+                  foreignDebit: 0,
+                  foreignCredit: defaultRevenue,
                   memo: `Revenue: ${invoiceNumber} (Default)`,
                   costCenterId: defaultRevenueCostCenterId || undefined,
                   activityId: defaultRevenueActivityId || undefined,
@@ -633,7 +681,10 @@ export class SalesInvoiceService {
               glLines.push({
                 accountCode: taxCode,
                 debit: 0,
-                credit: taxAmount,
+                credit: taxAmount * fx.rate,
+                foreignCurrency: order.currencyCode,
+                foreignDebit: 0,
+                foreignCredit: taxAmount,
                 memo: `GST: ${invoiceNumber}`,
               });
             }
@@ -787,6 +838,8 @@ export class SalesInvoiceService {
         stateCode: salesInvoices.stateCode,
         createdOn: salesInvoices.createdOn,
         notes: salesOrders.notes, // Or if salesInvoices has its own notes
+        earlyPaymentDiscount: salesInvoices.earlyPaymentDiscount,
+        earlyPaymentDiscountDays: salesInvoices.earlyPaymentDiscountDays,
       })
       .from(salesInvoices)
       .innerJoin(
@@ -828,7 +881,28 @@ export class SalesInvoiceService {
       )
       .where(eq(salesInvoiceLines.invoiceId, invoiceId));
 
-    return { ...invoice, lines };
+    const allocations = await this.db
+      .select({
+        allocationId: paymentAllocations.allocationId,
+        allocatedAmount: paymentAllocations.allocatedAmount,
+        paymentId: paymentAllocations.paymentId,
+        paymentNumber: paymentEntries.paymentNumber,
+        paymentDate: paymentEntries.paymentDate,
+        currencyCode: paymentEntries.currencyCode,
+      })
+      .from(paymentAllocations)
+      .innerJoin(
+        paymentEntries,
+        eq(paymentAllocations.paymentId, paymentEntries.paymentId),
+      )
+      .where(
+        and(
+          eq(paymentAllocations.referenceId, invoiceId),
+          eq(paymentAllocations.referenceType, 'sales_invoice'),
+        ),
+      );
+
+    return { ...invoice, lines, allocations };
   }
 
   /**
@@ -974,6 +1048,8 @@ export class SalesInvoiceService {
         currencyCode: salesInvoices.currencyCode,
         stateCode: salesInvoices.stateCode,
         createdOn: salesInvoices.createdOn,
+        earlyPaymentDiscount: salesInvoices.earlyPaymentDiscount,
+        earlyPaymentDiscountDays: salesInvoices.earlyPaymentDiscountDays,
         score: scoreSql,
       })
       .from(salesInvoices)

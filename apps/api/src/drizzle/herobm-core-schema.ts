@@ -135,7 +135,7 @@ export const exchangeRates = herobmCore.table(
   'exchange_rates',
   {
     exchangeRateId: uuid('exchange_rate_id').primaryKey().defaultRandom(),
-    currencyCode: text('currency_code').notNull().unique(), // ISO 4217
+    currencyCode: text('currency_code').notNull(), // ISO 4217
     currencyName: text('currency_name').notNull(),
     buyRate: numeric('buy_rate').notNull(), // units of this currency per 1 EUR
     sellRate: numeric('sell_rate').notNull(), // units of this currency per 1 EUR
@@ -144,6 +144,10 @@ export const exchangeRates = herobmCore.table(
   },
   (t) => ({
     currencyCheck: validCurrencyCheck('exchange_rates'),
+    unq: unique('exchange_rates_currency_effective_date_unq').on(
+      t.currencyCode,
+      t.effectiveDate,
+    ),
   }),
 );
 
@@ -165,7 +169,9 @@ export const salesOrders = herobmCore.table(
       .$type<SalesOrderState>()
       .notNull()
       .default(SALES_ORDER_STATE.DRAFT),
+    baseTotalAmount: numeric('base_total_amount').default('0'),
     currencyCode: text('currency_code').notNull(),
+    exchangeRate: numeric('exchange_rate').notNull().default('1'),
     notes: text('notes'),
     shippingNotes: text('shipping_notes'),
     deliveryName: text('delivery_name'),
@@ -384,7 +390,10 @@ export const salesCreditNotes = herobmCore.table(
     taxAmount: numeric('tax_amount').default('0'),
     feeAmount: numeric('fee_amount').default('0'),
     outstandingAmount: numeric('outstanding_amount').notNull().default('0'),
+    baseTotalAmount: numeric('base_total_amount').default('0'),
+    baseOutstandingAmount: numeric('base_outstanding_amount').default('0'),
     currencyCode: text('currency_code').notNull(),
+    exchangeRate: numeric('exchange_rate').notNull().default('1'),
     stateCode: text('state_code')
       .notNull()
       .default(SALES_CREDIT_NOTE_STATE.DRAFT),
@@ -504,7 +513,9 @@ export const purchaseOrders = herobmCore.table(
       .$type<PurchaseOrderState>()
       .notNull()
       .default(PURCHASE_ORDER_STATE.DRAFT),
+    baseTotalAmount: numeric('base_total_amount').default('0'),
     currencyCode: text('currency_code').notNull(),
+    exchangeRate: numeric('exchange_rate').notNull().default('1'),
     notes: text('notes'),
     customFields: jsonb('custom_fields'),
     expectedDate: timestamp('expected_date', { withTimezone: true }),
@@ -691,7 +702,10 @@ export const purchaseDebitNotes = herobmCore.table(
     taxAmount: numeric('tax_amount').default('0'),
     feeAmount: numeric('fee_amount').default('0'),
     outstandingAmount: numeric('outstanding_amount').notNull().default('0'),
+    baseTotalAmount: numeric('base_total_amount').default('0'),
+    baseOutstandingAmount: numeric('base_outstanding_amount').default('0'),
     currencyCode: text('currency_code').notNull(),
+    exchangeRate: numeric('exchange_rate').notNull().default('1'),
     stateCode: text('state_code')
       .$type<PurchaseDebitNoteState>()
       .notNull()
@@ -1272,6 +1286,8 @@ export const customerGroups = herobmCore.table('customer_groups', {
   defaultActivityId: uuid('default_activity_id').references(
     () => activities.activityId,
   ),
+  earlyPaymentDiscount: numeric('early_payment_discount').default('0'),
+  earlyPaymentDiscountDays: integer('early_payment_discount_days'),
   creditLimit: numeric('credit_limit').default('0'), // 0 = cash only/no limit policy
   isOnCreditHold: boolean('is_on_credit_hold').notNull().default(false),
   taxPositionId: uuid('tax_position_id').references(
@@ -1553,6 +1569,8 @@ export const customers = herobmCore.table(
     tradingTermsId: uuid('trading_terms_id').references(
       () => tradingTerms.tradingTermsId,
     ),
+    earlyPaymentDiscount: numeric('early_payment_discount'),
+    earlyPaymentDiscountDays: integer('early_payment_discount_days'),
     creditLimit: numeric('credit_limit'), // Nullable. Overrides group if NOT NULL.
     isOnCreditHold: boolean('is_on_credit_hold'), // Manual override per account
     overrideCreditHoldUntil: timestamp('override_credit_hold_until', {
@@ -1810,12 +1828,17 @@ export const salesInvoices = herobmCore.table(
     totalAmount: numeric('total_amount').notNull(),
     outstandingAmount: numeric('outstanding_amount').notNull().default('0'),
     taxAmount: numeric('tax_amount').default('0'),
+    baseTotalAmount: numeric('base_total_amount').default('0'),
+    baseOutstandingAmount: numeric('base_outstanding_amount').default('0'),
     currencyCode: text('currency_code').notNull(),
+    exchangeRate: numeric('exchange_rate').notNull().default('1'),
     stateCode: text('state_code').notNull().default(SALES_INVOICE_STATE.DRAFT),
     invoiceDate: timestamp('invoice_date', { withTimezone: true }),
     dueDate: timestamp('due_date', { withTimezone: true }),
     termsDescription: text('terms_description'),
     notes: text('notes'),
+    earlyPaymentDiscount: numeric('early_payment_discount'),
+    earlyPaymentDiscountDays: integer('early_payment_discount_days'),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -1866,7 +1889,10 @@ export const purchaseInvoices = herobmCore.table(
     totalAmount: numeric('total_amount').notNull(),
     outstandingAmount: numeric('outstanding_amount').notNull().default('0'),
     taxAmount: numeric('tax_amount').default('0'),
+    baseTotalAmount: numeric('base_total_amount').default('0'),
+    baseOutstandingAmount: numeric('base_outstanding_amount').default('0'),
     currencyCode: text('currency_code').notNull(),
+    exchangeRate: numeric('exchange_rate').notNull().default('1'),
     stateCode: text('state_code')
       .notNull()
       .default(PURCHASE_INVOICE_STATE.DRAFT),
@@ -1874,6 +1900,8 @@ export const purchaseInvoices = herobmCore.table(
     dueDate: timestamp('due_date', { withTimezone: true }),
     termsDescription: text('terms_description'),
     notes: text('notes'),
+    earlyPaymentDiscount: numeric('early_payment_discount'),
+    earlyPaymentDiscountDays: integer('early_payment_discount_days'),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -1954,7 +1982,10 @@ export const paymentEntries = herobmCore.table('payment_entries', {
     .references(() => glAccounts.glAccountId),
   referenceNumber: text('reference_number'),
   stateCode: text('state_code').notNull().default(PAYMENT_STATE.DRAFT),
+  baseTotalAmount: numeric('base_total_amount').default('0'),
+  baseUnallocatedAmount: numeric('base_unallocated_amount').default('0'),
   currencyCode: text('currency_code').notNull(),
+  exchangeRate: numeric('exchange_rate').notNull().default('1'),
   createdBy: text('created_by'),
   abaExportedAt: timestamp('aba_exported_at', { withTimezone: true }),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -2092,8 +2123,12 @@ export const glJournalLines = herobmCore.table('gl_journal_lines', {
     .references(() => glAccounts.glAccountId),
   partyType: text('party_type'), // 'customer' | 'supplier'
   partyId: text('party_id'), // generic reference to customers/suppliers
-  debit: numeric('debit').notNull().default('0'),
-  credit: numeric('credit').notNull().default('0'),
+  debit: numeric('debit').notNull().default('0'), // Base Currency
+  credit: numeric('credit').notNull().default('0'), // Base Currency
+  foreignDebit: numeric('foreign_debit').notNull().default('0'),
+  foreignCredit: numeric('foreign_credit').notNull().default('0'),
+  foreignCurrencyCode: text('foreign_currency_code'),
+  exchangeRate: numeric('exchange_rate').default('1'),
   memo: text('memo'),
   isReconciled: boolean('is_reconciled').notNull().default(false),
   reconciliationId: uuid('reconciliation_id').references(
@@ -2167,7 +2202,22 @@ export const glSettings = herobmCore.table('gl_settings', {
   defaultGrniAccountId: uuid('default_grni_account_id').references(
     () => glAccounts.glAccountId,
   ),
+  realisedFxGainAccountId: uuid('realised_fx_gain_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  realisedFxLossAccountId: uuid('realised_fx_loss_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  unrealisedFxGainAccountId: uuid('unrealised_fx_gain_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  unrealisedFxLossAccountId: uuid('unrealised_fx_loss_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
   defaultShrinkageAccountId: uuid('default_shrinkage_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  defaultPpvAccountId: uuid('default_ppv_account_id').references(
     () => glAccounts.glAccountId,
   ),
   defaultCostCenterId: uuid('default_cost_center_id').references(
@@ -2191,6 +2241,9 @@ export const glSettings = herobmCore.table('gl_settings', {
   ),
   defaultDiscountsReceivedAccountId: uuid(
     'default_discounts_received_account_id',
+  ).references(() => glAccounts.glAccountId),
+  defaultDiscountsGivenAccountId: uuid(
+    'default_discounts_given_account_id',
   ).references(() => glAccounts.glAccountId),
 });
 
@@ -2507,6 +2560,7 @@ export const goodsReceivedLines = herobmCore.table('goods_received_lines', {
     .notNull()
     .references(() => products.productId),
   quantityReceived: numeric('quantity_received').notNull(),
+  unitCost: numeric('unit_cost'),
   matchStatus: text('match_status').notNull().default(MATCH_STATUS.UNMATCHED), // matched | unmatched | ambiguous
   putawayStatus: text('putaway_status', {
     enum: [

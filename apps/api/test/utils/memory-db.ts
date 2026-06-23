@@ -4,11 +4,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as schema from '../../src/drizzle/herobm-core-schema';
 import {
-  runStandardSeeds,
   seedCoaSettings,
   seedCoaAccounts,
   seedAccounts,
-} from '../../src/scripts/seed';
+  runCoreSeeds,
+} from '../../src/seeds/prod/core';
 import { seedTestLocations } from './test-seed';
 
 export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
@@ -56,7 +56,7 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
 
   // Run the standard application seeds against the in-memory PGLite DB
   if (!opts?.skipSeeds) {
-    await runStandardSeeds(db);
+    await runCoreSeeds(db, false);
     // Testing-only extension to seed COA defaults, accounts, and locations
     await seedCoaAccounts(db, false);
     await seedCoaSettings(db, false);

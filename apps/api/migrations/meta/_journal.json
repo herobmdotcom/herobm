@@ -442,6 +442,34 @@
       "when": 1782137230499,
       "tag": "0062_many_owl",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1782208816150,
+      "tag": "0063_stale_mauler",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1782213269544,
+      "tag": "0064_dark_snowbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1782213428018,
+      "tag": "0065_blushing_carmella_unuscione",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1782218723096,
+      "tag": "0066_busy_shinobi_shaw",
+      "breakpoints": true
     }
   ]
 }

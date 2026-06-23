@@ -2595,6 +2595,14 @@
             }
           },
           {
+            "name": "sourceId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "q",
             "required": false,
             "in": "query",
@@ -2903,6 +2911,71 @@
           }
         },
         "summary": "Update Settings",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/gl/fx-revaluation/candidates": {
+      "get": {
+        "description": "Calculates Unrealised FX Gains/Losses on open foreign currency balances and returns proposed adjustments without posting them.",
+        "operationId": "GlController_getFxCandidates",
+        "parameters": [
+          {
+            "name": "revaluationDate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get FX Revaluation Candidates",
+        "tags": [
+          "General Ledger"
+        ]
+      }
+    },
+    "/gl/fx-revaluation/commit": {
+      "post": {
+        "description": "Commits the user-approved FX Revaluation adjustments and automatically generates their corresponding reversing journals for the following day.",
+        "operationId": "GlController_commitFxRevaluation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommitFxRevaluationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Commit Period-End FX Revaluation",
         "tags": [
           "General Ledger"
         ]
@@ -16203,6 +16276,12 @@
           "tradingTermsId": {
             "type": "string"
           },
+          "earlyPaymentDiscount": {
+            "type": "string"
+          },
+          "earlyPaymentDiscountDays": {
+            "type": "number"
+          },
           "stateCode": {
             "type": "string"
           },
@@ -16425,6 +16504,12 @@
           "overrideCreditHoldUntil": {
             "format": "date-time",
             "type": "string"
+          },
+          "earlyPaymentDiscount": {
+            "type": "string"
+          },
+          "earlyPaymentDiscountDays": {
+            "type": "number"
           }
         },
         "required": [
@@ -16519,6 +16604,12 @@
           "overrideCreditHoldUntil": {
             "format": "date-time",
             "type": "string"
+          },
+          "earlyPaymentDiscount": {
+            "type": "string"
+          },
+          "earlyPaymentDiscountDays": {
+            "type": "number"
           }
         }
       },
@@ -16529,6 +16620,12 @@
       "AccountGroupResponseDto": {
         "type": "object",
         "properties": {
+          "earlyPaymentDiscount": {
+            "type": "string"
+          },
+          "earlyPaymentDiscountDays": {
+            "type": "number"
+          },
           "customerGroupId": {
             "type": "string"
           },
@@ -16582,6 +16679,12 @@
       "CreateAccountGroupDto": {
         "type": "object",
         "properties": {
+          "earlyPaymentDiscount": {
+            "type": "string"
+          },
+          "earlyPaymentDiscountDays": {
+            "type": "number"
+          },
           "groupCode": {
             "type": "string"
           },
@@ -16627,6 +16730,12 @@
       "UpdateAccountGroupDto": {
         "type": "object",
         "properties": {
+          "earlyPaymentDiscount": {
+            "type": "string"
+          },
+          "earlyPaymentDiscountDays": {
+            "type": "number"
+          },
           "groupCode": {
             "type": "string"
           },
@@ -17761,6 +17870,18 @@
           "credit": {
             "type": "number"
           },
+          "foreignDebit": {
+            "type": "number"
+          },
+          "foreignCredit": {
+            "type": "number"
+          },
+          "foreignCurrencyCode": {
+            "type": "string"
+          },
+          "exchangeRate": {
+            "type": "number"
+          },
           "memo": {
             "type": "string"
           }
@@ -17843,6 +17964,24 @@
         },
         "required": [
           "id"
+        ]
+      },
+      "CommitFxRevaluationDto": {
+        "type": "object",
+        "properties": {
+          "revaluationDate": {
+            "type": "string"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JournalLineDto"
+            }
+          }
+        },
+        "required": [
+          "revaluationDate",
+          "lines"
         ]
       },
       "SuccessMessageResponseDto": {
@@ -21531,6 +21670,12 @@
           "salesOrderId": {
             "type": "string"
           },
+          "earlyPaymentDiscount": {
+            "type": "string"
+          },
+          "earlyPaymentDiscountDays": {
+            "type": "number"
+          },
           "createdBy": {
             "type": "string"
           },
@@ -21604,6 +21749,12 @@
           },
           "purchaseOrderId": {
             "type": "string"
+          },
+          "earlyPaymentDiscount": {
+            "type": "string"
+          },
+          "earlyPaymentDiscountDays": {
+            "type": "number"
           },
           "createdBy": {
             "type": "string"
@@ -22215,6 +22366,31 @@
           "amount"
         ]
       },
+      "AllocationDto": {
+        "type": "object",
+        "properties": {
+          "referenceType": {
+            "type": "object"
+          },
+          "referenceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "allocatedAmount": {
+            "type": "number",
+            "minimum": 0.01
+          },
+          "discountAmount": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "referenceType",
+          "referenceId",
+          "allocatedAmount"
+        ]
+      },
       "CreatePaymentDto": {
         "type": "object",
         "properties": {
@@ -22257,6 +22433,12 @@
             "items": {
               "$ref": "#/components/schemas/PaymentLineDto"
             }
+          },
+          "allocations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AllocationDto"
+            }
           }
         },
         "required": [
@@ -22267,31 +22449,6 @@
           "totalAmount",
           "glAccountBank",
           "currencyCode"
-        ]
-      },
-      "AllocationDto": {
-        "type": "object",
-        "properties": {
-          "referenceType": {
-            "type": "object"
-          },
-          "referenceId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "allocatedAmount": {
-            "type": "number",
-            "minimum": 0.01
-          },
-          "discountAmount": {
-            "type": "number",
-            "minimum": 0
-          }
-        },
-        "required": [
-          "referenceType",
-          "referenceId",
-          "allocatedAmount"
         ]
       },
       "AllocatePaymentDto": {
@@ -22347,6 +22504,14 @@
       "SupplierResponseDto": {
         "type": "object",
         "properties": {
+          "earlyPaymentDiscount": {
+            "type": "string",
+            "nullable": true
+          },
+          "earlyPaymentDiscountDays": {
+            "type": "number",
+            "nullable": true
+          },
           "id": {
             "type": "string"
           },
@@ -22393,14 +22558,6 @@
           },
           "tradingTermsId": {
             "type": "string",
-            "nullable": true
-          },
-          "earlyPaymentDiscount": {
-            "type": "string",
-            "nullable": true
-          },
-          "earlyPaymentDiscountDays": {
-            "type": "number",
             "nullable": true
           },
           "creditLimit": {
@@ -22490,8 +22647,6 @@
           "fax",
           "emailAddress1",
           "tradingTermsId",
-          "earlyPaymentDiscount",
-          "earlyPaymentDiscountDays",
           "creditLimit",
           "isPurchasingBlocked",
           "purchasingBlockReason",
@@ -22579,6 +22734,9 @@
       "CreateSupplierDto": {
         "type": "object",
         "properties": {
+          "earlyPaymentDiscount": {
+            "type": "string"
+          },
           "earlyPaymentDiscountDays": {
             "type": "number"
           },
@@ -22619,9 +22777,6 @@
           "tradingTermsId": {
             "type": "string",
             "format": "uuid"
-          },
-          "earlyPaymentDiscount": {
-            "type": "string"
           },
           "creditLimit": {
             "type": "string"
@@ -22693,6 +22848,9 @@
       "UpdateSupplierDto": {
         "type": "object",
         "properties": {
+          "earlyPaymentDiscount": {
+            "type": "string"
+          },
           "earlyPaymentDiscountDays": {
             "type": "number"
           },
@@ -22733,9 +22891,6 @@
           "tradingTermsId": {
             "type": "string",
             "format": "uuid"
-          },
-          "earlyPaymentDiscount": {
-            "type": "string"
           },
           "creditLimit": {
             "type": "string"
@@ -22846,6 +23001,14 @@
       "SupplierGroupResponseDto": {
         "type": "object",
         "properties": {
+          "earlyPaymentDiscount": {
+            "type": "string",
+            "nullable": true
+          },
+          "earlyPaymentDiscountDays": {
+            "type": "number",
+            "nullable": true
+          },
           "id": {
             "type": "string"
           },
@@ -22865,14 +23028,6 @@
           },
           "tradingTermsId": {
             "type": "string",
-            "nullable": true
-          },
-          "earlyPaymentDiscount": {
-            "type": "string",
-            "nullable": true
-          },
-          "earlyPaymentDiscountDays": {
-            "type": "number",
             "nullable": true
           },
           "creditLimit": {
@@ -22928,8 +23083,6 @@
           "defaultApAccountId",
           "defaultExpenseAccountId",
           "tradingTermsId",
-          "earlyPaymentDiscount",
-          "earlyPaymentDiscountDays",
           "creditLimit",
           "isPurchasingBlocked",
           "purchasingBlockReason",
@@ -22947,6 +23100,9 @@
       "CreateSupplierGroupDto": {
         "type": "object",
         "properties": {
+          "earlyPaymentDiscount": {
+            "type": "string"
+          },
           "earlyPaymentDiscountDays": {
             "type": "number"
           },
@@ -22967,9 +23123,6 @@
           "tradingTermsId": {
             "type": "string",
             "format": "uuid"
-          },
-          "earlyPaymentDiscount": {
-            "type": "string"
           },
           "creditLimit": {
             "type": "string"
@@ -23023,6 +23176,9 @@
       "UpdateSupplierGroupDto": {
         "type": "object",
         "properties": {
+          "earlyPaymentDiscount": {
+            "type": "string"
+          },
           "earlyPaymentDiscountDays": {
             "type": "number"
           },
@@ -23043,9 +23199,6 @@
           "tradingTermsId": {
             "type": "string",
             "format": "uuid"
-          },
-          "earlyPaymentDiscount": {
-            "type": "string"
           },
           "creditLimit": {
             "type": "string"

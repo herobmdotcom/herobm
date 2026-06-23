@@ -164,6 +164,10 @@
             "Inventory Shrinkage": {
               "account_number": "5300",
               "account_type": "Cost of Goods Sold"
+            },
+            "Purchase Price Variance": {
+              "account_number": "5400",
+              "account_type": "Cost of Goods Sold"
             }
           }
         },

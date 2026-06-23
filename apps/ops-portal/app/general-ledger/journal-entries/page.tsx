@@ -8,6 +8,7 @@ import DataGrid from '@/components/DataGrid';
 import type { ColDef, ValueFormatterParams, ICellRendererParams } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import JournalEntrySlideOver, { JournalEntry } from './JournalEntrySlideOver';
+import FxRevalSlideOver from './FxRevalSlideOver';
 
 interface JournalEntryRow extends JournalEntry {
   partyType?: string | null;
@@ -26,9 +27,15 @@ export default function JournalEntriesPage() {
       sales_invoice: t('sourceSalesInvoice'),
       purchase_invoice: t('sourcePurchaseInvoice'),
       sales_credit_note: t('sourceSalesCreditNote'),
+      payment_entry: t('sourcePaymentEntry'),
       manual: t('sourceManual'),
     };
-    return labels[type] || type;
+    if (labels[type]) return labels[type];
+    
+    return type
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   };
 
   useDocumentTitle(t('title'));
@@ -41,6 +48,7 @@ export default function JournalEntriesPage() {
   const [sourceType, setSourceType] = useState('');
 
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
+  const [isFxRevalOpen, setIsFxRevalOpen] = useState(false);
 
   const prevEntryParam = useRef(entryParam);
   useEffect(() => {
@@ -99,6 +107,8 @@ export default function JournalEntriesPage() {
         if (p.data.sourceType === 'sales_invoice') link = `/sales-invoices/${p.data.sourceId}`;
         if (p.data.sourceType === 'purchase_invoice') link = `/procurement/invoices/${p.data.sourceId}`;
         if (p.data.sourceType === 'sales_credit_note') link = `/sales-orders/credit-notes/${p.data.sourceId}`;
+        if (p.data.sourceType === 'payment_entry') link = `/payments?payment=${p.data.sourceId}`;
+        if (p.data.sourceType === 'inventory_receipt') link = `/receiving/${p.data.sourceId}`;
         
         if (!link) return <span>{p.value}</span>;
 
@@ -151,7 +161,11 @@ export default function JournalEntriesPage() {
               <option value="sales_invoice">{t('sourceSalesInvoice')}</option>
               <option value="purchase_invoice">{t('sourcePurchaseInvoice')}</option>
               <option value="sales_credit_note">{t('sourceSalesCreditNote')}</option>
+              <option value="payment_entry">{t('sourcePaymentEntry')}</option>
               <option value="manual">{t('sourceManual')}</option>
+              <option value="inventory_receipt">Inventory Receipt</option>
+              <option value="inventory_adjustment">Inventory Adjustment</option>
+              <option value="adjustment">Adjustment</option>
             </select>
 
             <div className="flex items-center gap-3">
@@ -174,18 +188,37 @@ export default function JournalEntriesPage() {
           </div>
         }
         headerActions={
-          <button
-            onClick={() => router.push('/general-ledger/journal-entries/new')}
-            className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap"
-          >
-            {t('newEntry')}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsFxRevalOpen(true)}
+              className="px-4 py-2 text-sm rounded-lg transition-all bg-white border border-gray-200 text-[#041627] hover:bg-gray-50 whitespace-nowrap"
+            >
+              FX Revaluation
+            </button>
+            <button
+              onClick={() => router.push('/general-ledger/journal-entries/new')}
+              className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap shadow-sm"
+            >
+              {t('newEntry')}
+            </button>
+          </div>
         }
       />
 
       <JournalEntrySlideOver
         entry={selectedEntry}
         onClose={() => setSelectedEntry(null)}
+      />
+
+      <FxRevalSlideOver 
+        isOpen={isFxRevalOpen}
+        onClose={() => setIsFxRevalOpen(false)}
+        onSuccess={() => {
+          // Trigger reload by slightly changing a dummy filter, or if there's a reload method
+          // Right now changing the selected entry clears it, to refresh we could toggle a state.
+          // The cleanest way is often router.refresh() in nextjs
+          router.refresh();
+        }}
       />
     </>
   );

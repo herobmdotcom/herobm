@@ -9,6 +9,7 @@ import type { UpdateSupplierDtoPurchasingBlockReason } from './updateSupplierDto
 import type { UpdateSupplierDtoPaymentBlockReason } from './updateSupplierDtoPaymentBlockReason';
 
 export interface UpdateSupplierDto {
+  earlyPaymentDiscount?: string;
   earlyPaymentDiscountDays?: number;
   vendorNumber?: string;
   name?: string;
@@ -22,7 +23,6 @@ export interface UpdateSupplierDto {
   fax?: string;
   emailAddress1?: string;
   tradingTermsId?: string;
-  earlyPaymentDiscount?: string;
   creditLimit?: string;
   isPurchasingBlocked?: boolean;
   purchasingBlockReason?: UpdateSupplierDtoPurchasingBlockReason;

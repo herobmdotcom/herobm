@@ -106,6 +106,14 @@ export default function AccountDetailPage({
     { value: selectedGroup?.creditLimit, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
   ]);
 
+  const earlyPaymentDiscountInheritance = useInheritance([
+    { value: (selectedGroup as { earlyPaymentDiscount?: string })?.earlyPaymentDiscount, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
+
+  const earlyPaymentDiscountDaysInheritance = useInheritance([
+    { value: (selectedGroup as { earlyPaymentDiscountDays?: number })?.earlyPaymentDiscountDays, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
+  ]);
+
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as "details" | "contacts" | "delivery" | "salesOrders" | "invoices" | "payments") || "details";
   const [activeTab, setActiveTab] = useState<
@@ -1041,7 +1049,7 @@ export default function AccountDetailPage({
                 <span className="material-symbols-outlined">payments</span>
                 FINANCIALS
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {/* ── Row 1 ── */}
                 {/* 1. Currency */}
                 <div>
@@ -1335,12 +1343,72 @@ export default function AccountDetailPage({
                       inheritedSourceLabel={creditLimitInheritance.inheritedSourceLabel}
                     />
                     {!!creditLimitInheritance.inheritedSourceLabel && (
-                      <span className="text-xs italic text-[var(--primary)] ml-2 flex-shrink-0">
-                        {tCommon('options.inheritValue', {
-                          label: creditLimitInheritance.inheritedValue || '',
-                          source: creditLimitInheritance.inheritedSourceLabel || ''
-                        })}
-                      </span>
+                        <span className="text-xs italic text-[var(--primary)] ml-2">
+                          {tCommon('options.inheritValue', {
+                            label: creditLimitInheritance.inheritedValue || '',
+                            source: creditLimitInheritance.inheritedSourceLabel || ''
+                          })}
+                        </span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    className="block text-xs font-medium mb-1.5"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {t("customers.earlyPaymentDiscount")}
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-32">
+                      <InheritedNumberInput
+                        step="0.01"
+                        placeholder="0.00"
+                        className="input w-full pr-8"
+                        value={(dto as { earlyPaymentDiscount?: string }).earlyPaymentDiscount ?? ""}
+                         
+                        onChange={(val: unknown) =>
+                          updateField("earlyPaymentDiscount" as never, val)
+                        }
+                        onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
+                          saveField("earlyPaymentDiscount", e.target?.value ? String(e.target.value) : null)
+                        }}
+                        inheritedValue={earlyPaymentDiscountInheritance.inheritedValue}
+                        inheritedSourceLabel={earlyPaymentDiscountInheritance.inheritedSourceLabel}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
+                    </div>
+                    {/* eslint-disable-next-line i18next/no-literal-string -- Simple word */}
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                      in
+                    </span>
+                    <div className="relative w-32">
+                      <InheritedNumberInput
+                        placeholder="0"
+                        className="input w-full pr-12"
+                        value={(dto as { earlyPaymentDiscountDays?: number }).earlyPaymentDiscountDays ?? ""}
+                         
+                        onChange={(val: unknown) =>
+                          updateField("earlyPaymentDiscountDays" as never, val)
+                        }
+                        onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
+                          saveField("earlyPaymentDiscountDays", e.target?.value !== "" ? Number(e.target.value) : null)
+                        }}
+                        inheritedValue={earlyPaymentDiscountDaysInheritance.inheritedValue}
+                        inheritedSourceLabel={earlyPaymentDiscountDaysInheritance.inheritedSourceLabel}
+                      />
+                      {/* eslint-disable-next-line i18next/no-literal-string -- Simple word */}
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none text-sm">days</span>
+                    </div>
+
+                    {!!(earlyPaymentDiscountInheritance.inheritedSourceLabel || earlyPaymentDiscountDaysInheritance.inheritedSourceLabel) && (
+                        <span className="text-xs italic text-[var(--primary)] ml-2">
+                          {tCommon('options.inheritValue', {
+                            label: `${earlyPaymentDiscountInheritance.inheritedValue}% in ${earlyPaymentDiscountDaysInheritance.inheritedValue} days`,
+                            source: earlyPaymentDiscountInheritance.inheritedSourceLabel || earlyPaymentDiscountDaysInheritance.inheritedSourceLabel || ''
+                          })}
+                        </span>
                     )}
                   </div>
                 </div>

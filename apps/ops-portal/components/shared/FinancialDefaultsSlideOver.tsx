@@ -296,8 +296,8 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
             </div>
           )}
 
-          {/* Early Payment Discount (Supplier) */}
-          {groupType === 'supplier' && (
+          {/* Early Payment Discount */}
+          {(groupType === 'supplier' || groupType === 'customer') && (
             <div className="mt-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Early Payment Discount

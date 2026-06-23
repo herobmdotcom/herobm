@@ -16,6 +16,10 @@ interface GlSettings {
   defaultExpenseAccountId?: string | null;
   defaultFeeRevenueAccountId?: string | null;
   defaultDiscountsReceivedAccountId?: string | null;
+  realisedFxGainAccountId?: string | null;
+  realisedFxLossAccountId?: string | null;
+  unrealisedFxGainAccountId?: string | null;
+  unrealisedFxLossAccountId?: string | null;
 
   defaultCostCenterId?: string | null;
   defaultActivityId?: string | null;

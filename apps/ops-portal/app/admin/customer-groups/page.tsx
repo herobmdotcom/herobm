@@ -173,6 +173,8 @@ export default function AccountGroupsAdmin() {
         taxPositionId: payload.taxPositionId || null,
         tradingTermsId: payload.tradingTermsId || null,
         creditLimit: payload.creditLimit || null,
+        earlyPaymentDiscount: payload.earlyPaymentDiscount || null,
+        earlyPaymentDiscountDays: payload.earlyPaymentDiscountDays || null,
       };
 
       if (!isNew) {
@@ -226,6 +228,8 @@ export default function AccountGroupsAdmin() {
             defaultRevenueAccountId: '',
             defaultCostCenterId: '',
             defaultActivityId: '',
+            earlyPaymentDiscount: '',
+            earlyPaymentDiscountDays: undefined,
             customerGroupId: '',
           })}
           addLabel={t('newGroup')}

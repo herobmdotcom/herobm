@@ -7,6 +7,8 @@
  */
 
 export interface AccountGroupResponseDto {
+  earlyPaymentDiscount?: string;
+  earlyPaymentDiscountDays?: number;
   customerGroupId: string;
   groupCode: string;
   name: string;

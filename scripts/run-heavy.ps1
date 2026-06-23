@@ -1,3 +1,6 @@
+Write-Host "Tearing down any existing test containers to ensure a clean run..." -ForegroundColor Yellow
+podman compose -f docker-compose.test.yml -f docker-compose.ui.yml down -v
+
 Write-Host "Building isolated test images..." -ForegroundColor Cyan
 podman build -t localhost/herobm_api-test:latest -f Dockerfile.api .
 podman build -t localhost/herobm_pipeline-test:latest -f Dockerfile.pipeline .

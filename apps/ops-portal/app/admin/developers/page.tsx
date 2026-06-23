@@ -226,12 +226,11 @@ export default function DevelopersPage() {
                 type: 'select',
                 options: [
                   { value: 'agent', label: tDev('roleAgent') },
-                  { value: 'webhook', label: tDev('roleWebhook') },
                   { value: 'viewer', label: tDev('roleViewer') },
                   { value: 'admin', label: tDev('roleAdmin') },
                   ...roles
-                    .filter(r => !['agent', 'webhook', 'viewer', 'admin'].includes(r.role))
-                    .map(r => ({ value: r.role, label: `${r.role} ${tDev('customRoleSuffix')}` }))
+                    .filter(r => !['agent', 'viewer', 'admin'].includes(r.role))
+                    .map(r => ({ value: r.role, label: r.role }))
                 ]
               },
               {

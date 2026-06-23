@@ -4,7 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, and, lte, desc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { exchangeRates } from '../drizzle/herobm-core-schema';
@@ -35,6 +35,45 @@ export class ExchangeRatesService {
       throw new NotFoundException(`Exchange rate with ID '${id}' not found`);
     }
     return rows[0];
+  }
+
+  async getRateForDate(currencyCode: string, date: Date, tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const rows = await db
+      .select()
+      .from(exchangeRates)
+      .where(
+        and(
+          eq(exchangeRates.currencyCode, currencyCode),
+          lte(exchangeRates.effectiveDate, date),
+        ),
+      )
+      .orderBy(desc(exchangeRates.effectiveDate))
+      .limit(1);
+
+    if (rows.length === 0) {
+      throw new NotFoundException(
+        `No exchange rate found for currency '${currencyCode}' on or before ${date.toISOString()}`,
+      );
+    }
+    return rows[0];
+  }
+
+  async getExchangeRate(
+    fromCurrency: string,
+    toCurrency: string,
+    date: Date,
+    tx?: DrizzleDB,
+  ): Promise<number> {
+    if (fromCurrency === toCurrency) return 1.0;
+
+    const fromRateRow = await this.getRateForDate(fromCurrency, date, tx);
+    const toRateRow = await this.getRateForDate(toCurrency, date, tx);
+
+    // Both rates are units per 1 EUR.
+    // So 1 unit of fromCurrency = 1 / fromRateRow.buyRate EUR
+    // Thus, fromCurrency in toCurrency = toRateRow.buyRate / fromRateRow.buyRate
+    return parseFloat(toRateRow.buyRate) / parseFloat(fromRateRow.buyRate);
   }
 
   async create(dto: CreateExchangeRateDto, userId?: string) {

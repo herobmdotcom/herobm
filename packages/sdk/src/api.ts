@@ -60,6 +60,7 @@ import type {
   ChangeStateDto,
   ChartFileDto,
   ClientErrorDto,
+  CommitFxRevaluationDto,
   ConfirmRejectResponseDto,
   ContactResponseDto,
   ContactsControllerRemove200,
@@ -172,7 +173,10 @@ import type {
   GeneratePaymentRunResponseDto,
   GenerateTransfersDto,
   GlAccountResponseDto,
+  GlControllerCommitFxRevaluation201,
   GlControllerGetAccountsParams,
+  GlControllerGetFxCandidates200,
+  GlControllerGetFxCandidatesParams,
   GlControllerGetGeneralLedger200,
   GlControllerGetGeneralLedgerParams,
   GlControllerGetJournalEntriesParams,
@@ -3061,6 +3065,88 @@ export const glControllerUpdateSettings = async (glControllerUpdateSettingsBody:
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       glControllerUpdateSettingsBody,)
+  }
+);}
+
+
+
+/**
+ * Calculates Unrealised FX Gains/Losses on open foreign currency balances and returns proposed adjustments without posting them.
+ * @summary Get FX Revaluation Candidates
+ */
+export type glControllerGetFxCandidatesResponse200 = {
+  data: GlControllerGetFxCandidates200
+  status: 200
+}
+    
+export type glControllerGetFxCandidatesResponseSuccess = (glControllerGetFxCandidatesResponse200) & {
+  headers: Headers;
+};
+;
+
+export type glControllerGetFxCandidatesResponse = (glControllerGetFxCandidatesResponseSuccess)
+
+export const getGlControllerGetFxCandidatesUrl = (params: GlControllerGetFxCandidatesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/gl/fx-revaluation/candidates?${stringifiedParams}` : `/gl/fx-revaluation/candidates`
+}
+
+export const glControllerGetFxCandidates = async (params: GlControllerGetFxCandidatesParams, options?: RequestInit): Promise<glControllerGetFxCandidatesResponse> => {
+  
+  return customFetch<glControllerGetFxCandidatesResponse>(getGlControllerGetFxCandidatesUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Commits the user-approved FX Revaluation adjustments and automatically generates their corresponding reversing journals for the following day.
+ * @summary Commit Period-End FX Revaluation
+ */
+export type glControllerCommitFxRevaluationResponse201 = {
+  data: GlControllerCommitFxRevaluation201
+  status: 201
+}
+    
+export type glControllerCommitFxRevaluationResponseSuccess = (glControllerCommitFxRevaluationResponse201) & {
+  headers: Headers;
+};
+;
+
+export type glControllerCommitFxRevaluationResponse = (glControllerCommitFxRevaluationResponseSuccess)
+
+export const getGlControllerCommitFxRevaluationUrl = () => {
+
+
+  
+
+  return `/gl/fx-revaluation/commit`
+}
+
+export const glControllerCommitFxRevaluation = async (commitFxRevaluationDto: CommitFxRevaluationDto, options?: RequestInit): Promise<glControllerCommitFxRevaluationResponse> => {
+  
+  return customFetch<glControllerCommitFxRevaluationResponse>(getGlControllerCommitFxRevaluationUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      commitFxRevaluationDto,)
   }
 );}
 

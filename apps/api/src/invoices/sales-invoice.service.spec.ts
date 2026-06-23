@@ -16,10 +16,11 @@ import {
   products,
   locations,
   uomDictionary,
+  salesInvoices,
 } from '../drizzle/herobm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
-import { SALES_ORDER_STATE } from '@herobm/shared';
+import { SALES_ORDER_STATE, SALES_INVOICE_STATE } from '@herobm/shared';
 
 jest.mock('../orders/order-lifecycle-rules', () => ({
   evaluateLifecycleRules: jest.fn().mockResolvedValue([]),
@@ -212,6 +213,39 @@ describe('SalesInvoiceService', () => {
       await expect(
         service.findOne('00000000-0000-4000-8000-000000000888'),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+  describe('findActiveInvoices', () => {
+    it('should return early payment discount fields', async () => {
+      // Seed a sales order and invoice with discount terms
+      await pg.db.insert(salesOrders).values({
+        salesOrderId: '00000000-0000-4000-8000-000000000100',
+        orderNumber: 'SO-TEST-1',
+        customerId: CUSTOMER_ID,
+        fulfillmentLocationId: '00000000-0000-4000-8000-000000000000',
+        currencyCode: 'AUD',
+        stateCode: SALES_ORDER_STATE.DRAFT,
+      });
+      await pg.db.insert(salesInvoices).values({
+        invoiceId: '00000000-0000-4000-8000-000000000101',
+        invoiceNumber: 'INV-TEST-1',
+        salesOrderId: '00000000-0000-4000-8000-000000000100',
+        currencyCode: 'AUD',
+        stateCode: SALES_INVOICE_STATE.DRAFT,
+        totalAmount: '100.00',
+        outstandingAmount: '100.00',
+        earlyPaymentDiscount: '2.5',
+        earlyPaymentDiscountDays: 14,
+      });
+
+      const result = await service.findActiveInvoices({ days: 30 });
+      const invoice = result.data.find(
+        (i: any) => i.invoiceId === '00000000-0000-4000-8000-000000000101',
+      );
+
+      expect(invoice).toBeDefined();
+      expect(invoice?.earlyPaymentDiscount).toBe('2.5');
+      expect(invoice?.earlyPaymentDiscountDays).toBe(14);
     });
   });
 });

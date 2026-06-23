@@ -10,7 +10,7 @@ import {
   IsDate,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { PartialType } from '@nestjs/swagger';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
 
 export class BaseAccountDto {
   @IsString()
@@ -110,6 +110,15 @@ export class BaseAccountDto {
   @Type(() => Date)
   @IsDate()
   overrideCreditHoldUntil?: Date;
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === '' || value === null ? null : String(value),
+  )
+  @IsNumberString()
+  earlyPaymentDiscount?: string;
+  @IsOptional()
+  @Type(() => Number)
+  earlyPaymentDiscountDays?: number;
 }
 
 export class CreateAccountDto extends BaseAccountDto {}
@@ -159,6 +168,18 @@ export class BaseAccountGroupDto {
   )
   @IsNumberString()
   creditLimit?: string;
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === '' || value === null ? null : String(value),
+  )
+  @IsNumberString()
+  earlyPaymentDiscount?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @Type(() => Number)
+  earlyPaymentDiscountDays?: number;
 }
 
 export class CreateAccountGroupDto extends BaseAccountGroupDto {}
@@ -193,6 +214,8 @@ export class AccountResponseDto {
   isOnCreditHold?: boolean;
   overrideCreditHoldUntil?: Date;
   tradingTermsId?: string;
+  earlyPaymentDiscount?: string;
+  earlyPaymentDiscountDays?: number;
   stateCode!: string;
   sourceId?: string;
   source!: string;
@@ -219,6 +242,13 @@ export class AccountGroupResponseDto {
   creditLimit?: string;
   tradingTermsId?: string;
   taxPositionId?: string;
+
+  @ApiProperty({ required: false })
+  earlyPaymentDiscount?: string;
+
+  @ApiProperty({ required: false })
+  earlyPaymentDiscountDays?: number;
+
   modifiedOn?: Date;
 }
 

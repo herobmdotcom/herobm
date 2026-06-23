@@ -1,16 +1,9 @@
 import { SystemResource } from '@herobm/shared';
-import { PgDatabase } from 'drizzle-orm/pg-core';
-import * as schema from '../drizzle/herobm-core-schema';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-export type SeedDB = PgDatabase<any, typeof schema, any>;
-
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import * as fs from 'fs';
 import * as path from 'path';
+import type { SeedDB } from '../run';
 import {
   users,
   uomDictionary,
@@ -31,11 +24,8 @@ import {
   bins,
   customers,
   suppliers,
-} from '../drizzle/herobm-core-schema';
+} from '../../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
-import * as dotenv from 'dotenv';
-
-dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 
 const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 
@@ -73,7 +63,7 @@ const GST_TYPE_MAP: Record<string, string> = {
 };
 
 // Generic seed utility that takes any drizzle DB (postgres or pglite)
-export async function runStandardSeeds(db: SeedDB, dryRun = false) {
+export async function runCoreSeeds(db: SeedDB, dryRun = false) {
   if (dryRun) {
     console.log('Dry run mode -- no data will be written.');
   }
@@ -96,7 +86,7 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
     return;
   }
 
-  const { casbinRule } = await import('../drizzle/herobm-core-schema.js');
+  const { casbinRule } = await import('../../drizzle/herobm-core-schema.js');
 
   const existingSet = new Set();
 
@@ -1026,7 +1016,6 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
     { ptype: 'g', v0: 'warehouse', v1: 'viewer' },
     { ptype: 'g', v0: 'procurement', v1: 'viewer' },
     { ptype: 'g', v0: 'agent', v1: 'viewer' },
-    { ptype: 'g', v0: 'webhook', v1: 'viewer' },
 
     // Agent read-only access globally
     {
@@ -1445,6 +1434,7 @@ function loadCoaSettings(prefix = 'au_standard') {
   const p = path.join(
     __dirname,
     '..',
+    '..',
     'gl',
     'charts',
     `${prefix}_settings.json`,
@@ -1482,7 +1472,14 @@ export async function seedCoaAccounts(
   dryRun: boolean,
   prefix = 'au_standard',
 ) {
-  const coaPath = path.join(__dirname, '..', 'gl', 'charts', `${prefix}.json`);
+  const coaPath = path.join(
+    __dirname,
+    '..',
+    '..',
+    'gl',
+    'charts',
+    `${prefix}.json`,
+  );
   if (!fs.existsSync(coaPath)) {
     console.log(`  SKIP: COA file not found at ${coaPath}`);
     return;
@@ -1681,6 +1678,7 @@ export async function seedCoaSettings(
     { json: 'inventory_account_code', col: 'defaultInventoryAccountId' },
     { json: 'grni_account_code', col: 'defaultGrniAccountId' },
     { json: 'shrinkage_account_code', col: 'defaultShrinkageAccountId' },
+    { json: 'ppv_account_code', col: 'defaultPpvAccountId' },
   ];
 
   for (const map of mappings) {
@@ -1699,9 +1697,10 @@ export async function seedCoaSettings(
 
 function loadReportConfig() {
   // Shared package is at root/packages/shared
-  // __dirname is root/apps/api/src/scripts
+  // __dirname is root/apps/api/src/seeds/prod
   const p = path.join(
     __dirname,
+    '..',
     '..',
     '..',
     '..',
@@ -1728,6 +1727,7 @@ async function seedReports(db: SeedDB, dryRun: boolean) {
     // Template files are in root/tools/seeds/reports
     const p = path.join(
       __dirname,
+      '..',
       '..',
       '..',
       '..',
@@ -1800,35 +1800,6 @@ async function seedReports(db: SeedDB, dryRun: boolean) {
   console.log(
     `  Seeded ${seededCount} reports and ${hookCount} hook assignments.`,
   );
-}
-
-async function main() {
-  const args = process.argv.slice(2);
-  const dryRun = args.includes('--dry-run');
-
-  const pool = new Pool({
-    host: process.env.POSTGRES_HOST || '127.0.0.1',
-    port: Number(process.env.POSTGRES_PORT) || 5432,
-    user: process.env.POSTGRES_USER || 'postgres',
-    password: process.env.POSTGRES_PASSWORD,
-    database: process.env.POSTGRES_DB || 'herobm',
-  });
-
-  const db = drizzle(pool, { schema });
-
-  try {
-    await runStandardSeeds(db, dryRun);
-  } finally {
-    await pool.end();
-  }
-}
-
-// Only execute main if run directly
-if (require.main === module) {
-  main().catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
 }
 
 export async function seedAccounts(db: SeedDB, dryRun: boolean) {

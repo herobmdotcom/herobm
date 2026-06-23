@@ -7,6 +7,8 @@
  */
 
 export interface UpdateAccountGroupDto {
+  earlyPaymentDiscount?: string;
+  earlyPaymentDiscountDays?: number;
   groupCode?: string;
   name?: string;
   defaultDiscountPercentage?: string;

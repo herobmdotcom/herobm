@@ -75,3 +75,43 @@ export function resolveEffectiveTradingTermsId(
   }
   return null;
 }
+
+/**
+ * Resolves the effective early payment discount.
+ * Order of precedence: Customer -> Group -> null.
+ */
+export function resolveEffectiveEarlyPaymentDiscount(customer: {
+  earlyPaymentDiscount?: string | null;
+  earlyPaymentDiscountDays?: number | null;
+  accountGroup?: {
+    earlyPaymentDiscount?: string | null;
+    earlyPaymentDiscountDays?: number | null;
+  } | null;
+}): {
+  earlyPaymentDiscount: string | null;
+  earlyPaymentDiscountDays: number | null;
+} {
+  if (
+    customer.earlyPaymentDiscount !== null &&
+    customer.earlyPaymentDiscount !== undefined
+  ) {
+    return {
+      earlyPaymentDiscount: customer.earlyPaymentDiscount,
+      earlyPaymentDiscountDays: customer.earlyPaymentDiscountDays ?? null,
+    };
+  }
+  if (
+    customer.accountGroup?.earlyPaymentDiscount !== null &&
+    customer.accountGroup?.earlyPaymentDiscount !== undefined
+  ) {
+    return {
+      earlyPaymentDiscount: customer.accountGroup.earlyPaymentDiscount,
+      earlyPaymentDiscountDays:
+        customer.accountGroup.earlyPaymentDiscountDays ?? null,
+    };
+  }
+  return {
+    earlyPaymentDiscount: null,
+    earlyPaymentDiscountDays: null,
+  };
+}

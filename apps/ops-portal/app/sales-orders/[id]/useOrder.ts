@@ -158,7 +158,7 @@ export function useOrder(id: string) {
 
             if (autoTransitions && autoTransitions.length > 0) {
                 const tr = autoTransitions[0];
-                toast(tToast('orderMovedToReason', { state: tCommon(`states.${tr.to}` as Parameters<typeof tCommon>[0]), reason: tr.reason.toLowerCase() }), { icon: '🔄' });
+                toast.success(tToast('orderMovedToReason', { state: tCommon(`states.${tr.to}` as Parameters<typeof tCommon>[0]), reason: tr.reason.toLowerCase() }));
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToLoadOrder'));
@@ -291,7 +291,7 @@ export function useOrder(id: string) {
                 generateBackorders,
                 discrepanciesAcknowledged: acknowledged
             });
-            toast(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as Parameters<typeof tCommon>[0]) }), { icon: '🔄' });
+            toast.success(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as Parameters<typeof tCommon>[0]) }));
             await loadOrder(undefined, false);
         } catch (err: unknown) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
@@ -310,7 +310,7 @@ export function useOrder(id: string) {
         try {
             await api.ordersControllerTriggerTaxCalculation(encodeURIComponent(id), {});
             await loadOrder(undefined, false);
-            toast.success('Taxes calculated successfully', { icon: '✅' });
+            toast.success('Taxes calculated successfully');
         } catch (err) {
             reportError(err, 'OrderDetailPage');
             const msg = err instanceof ApiError ? err.message : 'Tax calculation failed';
@@ -420,7 +420,7 @@ export function useOrder(id: string) {
         if (!order) return;
         const exists = order.lines.some((l) => l.productId === p.productId);
         if (exists) {
-            toast(tToast('productAlreadyInOrder', { productNumber: p.productNumber }), { icon: '⚠️' });
+            toast(tToast('productAlreadyInOrder', { productNumber: p.productNumber }));
             return;
         }
 

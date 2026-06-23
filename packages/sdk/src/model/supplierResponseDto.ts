@@ -7,6 +7,10 @@
  */
 
 export interface SupplierResponseDto {
+  /** @nullable */
+  earlyPaymentDiscount?: string | null;
+  /** @nullable */
+  earlyPaymentDiscountDays?: number | null;
   id: string;
   vendorNumber: string;
   name: string;
@@ -29,10 +33,6 @@ export interface SupplierResponseDto {
   emailAddress1: string | null;
   /** @nullable */
   tradingTermsId: string | null;
-  /** @nullable */
-  earlyPaymentDiscount: string | null;
-  /** @nullable */
-  earlyPaymentDiscountDays: number | null;
   /** @nullable */
   creditLimit: string | null;
   isPurchasingBlocked: boolean;
