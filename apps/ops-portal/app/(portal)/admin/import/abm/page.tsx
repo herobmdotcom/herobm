@@ -418,8 +418,8 @@ export default function AdminImportPage() {
             )}
             
             <div className="col-span-2 mt-2">
-              <h2 className="text-xl font-bold text-slate-800 mb-4">{t('options.legacyInvoicesTitle' as any, { defaultValue: 'Legacy Invoices Paid Before Date' })}</h2>
-              <p className="text-sm text-slate-500 mb-4">{t('options.legacyInvoicesDesc' as any, { defaultValue: 'Invoices with a due date before this date will be considered paid and their outstanding balance zeroed. Defaults to the end of the month, three months ago.' })}</p>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">{t('options.legacyInvoicesTitle')}</h2>
+              <p className="text-sm text-slate-500 mb-4">{t('options.legacyInvoicesDesc')}</p>
               <input
                 type="date"
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"

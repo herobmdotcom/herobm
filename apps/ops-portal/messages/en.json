@@ -3096,6 +3096,8 @@
         "fullExtractionTitle": "Full Extraction",
         "inventorySourceDesc": "We detected available inventory quantities in the high-level location details. Choose whether to import these summaries or rely on detailed bin tracking.",
         "inventorySourceTitle": "Inventory Source",
+        "legacyInvoicesDesc": "Invoices with a due date before this date will be considered paid and their outstanding balance zeroed. Defaults to the end of the month, three months ago.",
+        "legacyInvoicesTitle": "Legacy Invoices Paid Before Date",
         "resumeModeDesc": "Skip already imported tables.",
         "resumeModeTitle": "Resume from Checkpoint",
         "sourceBinTracking": "Use Bin Tracking (Standard)",

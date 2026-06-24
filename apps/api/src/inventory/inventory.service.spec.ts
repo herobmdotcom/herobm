@@ -422,8 +422,6 @@ describe('InventoryService', () => {
       await pg.db.insert(products).values({
         productId: FRAC_PROD_ID,
         productNumber: 'FRAC-01',
-        organizationId: '00000000-0000-4000-8000-000000000000',
-        sku: 'FRAC-01',
         name: 'Fractional Product',
         baseUom: 'EA',
         productType: 'inventory',

@@ -1,4 +1,4 @@
-import { SimEvent } from './catalogue';
+import type { SimEvent } from './catalogue';
 
 export class Timeline {
   private events: SimEvent[] = [];

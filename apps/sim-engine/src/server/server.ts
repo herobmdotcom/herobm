@@ -3,7 +3,8 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { Timeline } from './timeline';
-import { SimEvent, EventType, EVENT_CATALOGUE } from './catalogue';
+import { EventType, EVENT_CATALOGUE } from './catalogue';
+import type { SimEvent } from './catalogue';
 
 const app = express();
 app.use(cors());
@@ -35,7 +36,7 @@ function updateFaketime(timestampMs: number) {
 // -----------------------------------------
 // UI Endpoints (Human Supervisor)
 // -----------------------------------------
-app.get('/api/state', (req, res) => {
+app.get('/api/state', (_req, res) => {
   res.json({
     state: currentState,
     currentEvent,
@@ -45,7 +46,7 @@ app.get('/api/state', (req, res) => {
   });
 });
 
-app.post('/api/step', (req, res) => {
+app.post('/api/step', (_req, res) => {
   if (currentState !== 'READY') {
     return res.status(400).json({ error: 'Cannot step, engine is waiting for agents.' });
   }
@@ -68,7 +69,7 @@ app.post('/api/step', (req, res) => {
   res.json({ success: true, event });
 });
 
-app.post('/api/generate-epoch', (req, res) => {
+app.post('/api/generate-epoch', (_req, res) => {
   // Simple generator: add 5 random events over the next 7 days
   const now = currentEvent ? currentEvent.timestamp : Date.now();
   for (let i = 0; i < 5; i++) {
@@ -80,7 +81,7 @@ app.post('/api/generate-epoch', (req, res) => {
       id: Math.random().toString(36).substring(7),
       type,
       timestamp: now + delay,
-      payload: EVENT_CATALOGUE[type].generatePayload(),
+      payload: EVENT_CATALOGUE[type]?.generatePayload?.() || {},
       status: 'pending'
     });
   }
@@ -97,7 +98,7 @@ app.post('/api/sim/register', (req, res) => {
   res.json({ success: true });
 });
 
-app.get('/api/sim/inbox', (req, res) => {
+app.get('/api/sim/inbox', (_req, res) => {
   if (currentState === 'WAITING_FOR_AGENTS') {
     res.json({ event: currentEvent });
   } else {
@@ -150,7 +151,7 @@ app.post('/api/webhooks', (req, res) => {
 
 // Serve frontend
 app.use(express.static(path.join(process.cwd(), 'dist')));
-app.get('*', (req, res) => {
+app.get('*', (_req, res) => {
   res.sendFile(path.join(process.cwd(), 'dist/index.html'));
 });
 

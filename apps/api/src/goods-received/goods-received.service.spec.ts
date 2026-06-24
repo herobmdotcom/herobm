@@ -36,7 +36,7 @@ jest.mock('../purchase-orders/purchase-order-lifecycle-rules', () => ({
 describe('GoodsReceivedService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
   let service: GoodsReceivedService;
-  let mockInventoryService: unknown;
+  let mockInventoryService: any;
   let mockGlService: unknown;
   let mockAppConfig: unknown;
 

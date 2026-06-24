@@ -529,9 +529,8 @@ describe('ShipmentService', () => {
           salesOrderId: so.salesOrderId,
           lineNumber: 1,
           productId: '00000000-0000-4000-8000-000000000001',
-          uomCode: 'PACKS',
+          unitOfMeasure: 'PACKS',
           quantity: '10',
-          quantityShipped: '5',
           pricePerUnit: '100',
           taxCategoryId: '00000000-0000-4000-8000-000000000001',
           fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
@@ -565,7 +564,6 @@ describe('ShipmentService', () => {
           productId: '00000000-0000-4000-8000-000000000001',
           binId: '00000000-0000-4000-8000-000000000002',
           quantity: '50',
-          netPicked: 50,
         });
 
       const entryId = '00000000-0000-4000-8000-000000000005';
