@@ -2750,11 +2750,19 @@
     },
     "/gl/trial-balance": {
       "get": {
-        "description": "Calculate and retrieve the trial balance as of a specific date.",
+        "description": "Calculate and retrieve the trial balance as of a specific date, optionally with periodic activity.",
         "operationId": "GlController_getTrialBalance",
         "parameters": [
           {
             "name": "asOfDate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "periodStart",
             "required": false,
             "in": "query",
             "schema": {
@@ -2936,7 +2944,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/FxRevalCandidatesResponseDto"
                 }
               }
             }
@@ -2969,7 +2977,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/FxRevalCommitResponseDto"
                 }
               }
             }
@@ -9277,6 +9285,49 @@
         ]
       }
     },
+    "/sales-invoices/{id}/admin-mark-paid": {
+      "post": {
+        "description": "Marks a sales invoice as paid without generating a GL entry.",
+        "operationId": "InvoiceDetailController_adminMarkSalesInvoicePaid",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesInvoiceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mark Sales Invoice as Paid (Admin)",
+        "tags": [
+          "Sales Invoices",
+          "Sales Invoices"
+        ]
+      }
+    },
     "/sales-invoices": {
       "get": {
         "description": "Retrieve all sales invoices across orders",
@@ -9663,6 +9714,49 @@
           }
         },
         "summary": "Update Invoice",
+        "tags": [
+          "Sales Invoices",
+          "Purchase Invoices"
+        ]
+      }
+    },
+    "/purchase-invoices/{id}/admin-mark-paid": {
+      "post": {
+        "description": "Marks a purchase invoice as paid without generating a GL entry.",
+        "operationId": "InvoiceDetailController_adminMarkPurchaseInvoicePaid",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyBodyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseInvoiceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mark Purchase Invoice as Paid (Admin)",
         "tags": [
           "Sales Invoices",
           "Purchase Invoices"
@@ -17921,24 +18015,52 @@
       "TrialBalanceResponseDto": {
         "type": "object",
         "properties": {
-          "accountId": {
-            "type": "string"
-          },
           "accountCode": {
             "type": "string"
           },
           "name": {
             "type": "string"
           },
-          "balance": {
+          "accountType": {
+            "type": "string"
+          },
+          "isGroup": {
+            "type": "boolean"
+          },
+          "openingBalance": {
+            "type": "number"
+          },
+          "periodDebit": {
+            "type": "number"
+          },
+          "periodCredit": {
+            "type": "number"
+          },
+          "closingBalance": {
+            "type": "number"
+          },
+          "ytdDebit": {
+            "type": "number"
+          },
+          "ytdCredit": {
+            "type": "number"
+          },
+          "ytdBalance": {
             "type": "number"
           }
         },
         "required": [
-          "accountId",
           "accountCode",
           "name",
-          "balance"
+          "accountType",
+          "isGroup",
+          "openingBalance",
+          "periodDebit",
+          "periodCredit",
+          "closingBalance",
+          "ytdDebit",
+          "ytdCredit",
+          "ytdBalance"
         ]
       },
       "GeneralLedgerResponseDto": {
@@ -17966,6 +18088,28 @@
           "id"
         ]
       },
+      "FxRevalCandidatesResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "revaluationDate": {
+            "type": "string"
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JournalLineDto"
+            }
+          }
+        },
+        "required": [
+          "success",
+          "revaluationDate",
+          "candidates"
+        ]
+      },
       "CommitFxRevaluationDto": {
         "type": "object",
         "properties": {
@@ -17982,6 +18126,25 @@
         "required": [
           "revaluationDate",
           "lines"
+        ]
+      },
+      "FxRevalCommitResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "revaluationDate": {
+            "type": "string"
+          },
+          "entriesGenerated": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "success",
+          "revaluationDate",
+          "entriesGenerated"
         ]
       },
       "SuccessMessageResponseDto": {
@@ -19223,6 +19386,14 @@
         "properties": {
           "defaultFulfillmentLocationId": {
             "type": "string"
+          },
+          "creditLimitBehavior": {
+            "type": "string",
+            "enum": [
+              "hard",
+              "soft",
+              "notify"
+            ]
           },
           "defaultCustomerTermsId": {
             "type": "string"
@@ -24275,6 +24446,10 @@
       "ExecuteEltDto": {
         "type": "object",
         "properties": {
+          "legacyInvoicesPaidBeforeDate": {
+            "type": "string",
+            "description": "If provided, all legacy invoices (sales and purchase) with a due date before this date will be considered paid."
+          },
           "dbConfig": {
             "$ref": "#/components/schemas/DbConfigDto"
           },

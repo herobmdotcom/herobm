@@ -131,6 +131,7 @@ describe('ReturnsWriteService', () => {
             defaultGrniAccountId: () => 'grni-acct-001',
             defaultCogsAccountId: () => 'cogs-acct-001',
             defaultShrinkageAccountId: () => 'shrink-acct-001',
+            defaultPpvAccountId: () => 'ppv-acct-001',
           },
         },
         ReturnsWriteService,

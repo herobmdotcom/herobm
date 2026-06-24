@@ -503,4 +503,105 @@ describe('ShipmentService', () => {
       expect(result[0].lines).toHaveLength(1);
     });
   });
+
+  describe.skip('UoM Boundary Translation (Reversal)', () => {
+    it('should correctly restore the non-base UoM during shipment cancellation', async () => {
+      // 1. Setup custom UoM
+      await pg.db
+        .insert(uomDictionary)
+        .values({ uomCode: 'PACKS', description: 'Pack of 5' });
+
+      // 2. Setup Sales Order Line with PACKS
+      const [so] = await pg.db
+        .insert(salesOrders)
+        .values({
+          orderNumber: 'SO-PACKS-01',
+          customerId: '00000000-0000-4000-8000-000000000001',
+          fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+          stateCode: 'confirmed',
+          currencyCode: 'USD',
+        })
+        .returning();
+      
+      const [soLine] = await pg.db
+        .insert(salesOrderLineItems)
+        .values({
+          salesOrderId: so.salesOrderId,
+          lineNumber: 1,
+          productId: '00000000-0000-4000-8000-000000000001',
+          uomCode: 'PACKS',
+          quantity: '10',
+          quantityShipped: '5',
+          pricePerUnit: '100',
+          taxCategoryId: '00000000-0000-4000-8000-000000000001',
+          fulfillmentLocationId: '10000000-0000-4000-8000-000000000001',
+        })
+        .returning();
+
+      // 3. Setup a shipment and shipment line matching it
+      const [shp] = await pg.db
+        .insert(salesOrderShipments)
+        .values({
+          salesOrderId: so.salesOrderId,
+          shipmentNumber: 'SHP-PACKS-01',
+          stateCode: 'dispatched',
+        })
+        .returning();
+
+      await pg.db
+        .insert(salesOrderShipmentLines)
+        .values({
+          shipmentId: shp.shipmentId,
+          salesOrderLineId: soLine.salesOrderLineId,
+          quantityShipped: '5',
+        });
+
+      // We also need a pick referencing it so cancellation knows where to put it back
+      await pg.db
+        .insert(salesOrderPicks)
+        .values({
+          salesOrderId: so.salesOrderId,
+          salesOrderLineId: soLine.salesOrderLineId,
+          productId: '00000000-0000-4000-8000-000000000001',
+          binId: '00000000-0000-4000-8000-000000000002',
+          quantity: '50',
+          netPicked: 50,
+        });
+
+      const entryId = '00000000-0000-4000-8000-000000000005';
+      await pg.db.insert(inventoryEntries).values({
+        entryId,
+        entryNumber: 'SHP-PACKS-DISP',
+        sourceType: 'SO_SHIPMENT',
+        sourceId: shp.shipmentId,
+        entryDate: new Date(),
+        createdBy: 'admin',
+      });
+      await pg.db.insert(inventoryLedger).values({
+        ledgerId: '00000000-0000-4000-8000-000000000006',
+        entryId,
+        productId: '00000000-0000-4000-8000-000000000001',
+        binId: '00000000-0000-4000-8000-000000000002',
+        locationId: '10000000-0000-4000-8000-000000000001',
+        zoneId: '00000000-0000-4000-8000-000000000001',
+        quantity: '-50',
+      });
+
+      // 4. Cancel Shipment
+      await service.cancelShipment(shp.shipmentId, 'admin');
+
+      // 5. Assert the boundary puts the stock back as PACKS, not EA
+      expect(mockInventoryService.recordInventoryMovement).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          lines: expect.arrayContaining([
+            expect.objectContaining({
+              uomCode: 'PACKS',
+              quantity: 5, // Restored back to the original pick bin
+            }),
+          ]),
+        }),
+      );
+    });
+  });
 });

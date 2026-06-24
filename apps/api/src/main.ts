@@ -23,6 +23,17 @@ async function bootstrap() {
     process.exit(1);
   }
 
+  // --- Safeguard: Prevent faketime in Production ---
+  if (
+    (process.env.NODE_ENV === 'production' || process.env.DEPLOYMENT_TIER === 'production') &&
+    process.env.LD_PRELOAD?.includes('faketime')
+  ) {
+    Logger.error(
+      'FATAL: Attempted to boot with libfaketime in a production deployment tier. Crashing to prevent security vulnerabilities.',
+    );
+    process.exit(1);
+  }
+
   const fileLogger = new FileLoggerService();
   const app = await NestFactory.create(AppModule, {
     logger: fileLogger,

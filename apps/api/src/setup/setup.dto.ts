@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsString,
   IsOptional,
@@ -118,6 +119,14 @@ export class ExecuteEltDto {
   @IsOptional()
   @IsBoolean()
   importInventoryFromLocations?: boolean;
+
+  @ApiProperty({
+    description: 'If provided, all legacy invoices (sales and purchase) with a due date before this date will be considered paid.',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  legacyInvoicesPaidBeforeDate?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -222,7 +231,6 @@ export class ExecuteSetupDto {
 // ---------------------------------------------------------------------------
 // Setup Response DTOs
 // ---------------------------------------------------------------------------
-import { ApiProperty } from '@nestjs/swagger';
 
 export class TestConnectionResultDto {
   @ApiProperty()

@@ -1,6 +1,6 @@
 import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
+import { createE2eModule, setupE2eApp } from './utils/e2e-module';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import {
   glJournalEntries,
@@ -28,7 +28,7 @@ describe('Credit Control Lifecycle (e2e)', () => {
     ).compile();
 
     app = moduleFixture.createNestApplication();
-    app.setGlobalPrefix('api');
+    setupE2eApp(app);
     await app.init();
 
     suffix = Math.random().toString(36).substring(7);
@@ -101,16 +101,24 @@ describe('Credit Control Lifecycle (e2e)', () => {
     return custRes.body.customerId;
   };
 
-  const createOrder = async (customerId: string, price: number) => {
+  async function createOrder(customerId: string, price: number) {
     return request(app.getHttpServer())
       .post('/api/sales-orders')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        salesOrderId: crypto.randomUUID(),
         customerId,
+        lines: [
+          {
+            productId,
+            quantity: '1',
+            pricePerUnit: price.toString(),
+            tax: '0.00',
+          },
+        ],
         deliveryAddressLine1: 'Test',
-        lines: [{ productId, quantity: 1, pricePerUnit: price }],
       });
-  };
+  }
 
   it('should block confirmation for manual credit hold', async () => {
     const customerId = await createCustomer({
@@ -266,16 +274,25 @@ describe('Credit Control Lifecycle (e2e)', () => {
     // Customer level override
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 1);
-    await request(app.getHttpServer())
+    const overrideCustomerRes = await request(app.getHttpServer())
       .patch(`/api/customers/${customerId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ overrideCreditHoldUntil: futureDate.toISOString() });
+
+    if (overrideCustomerRes.status !== 200) {
+      console.error('OVERRIDE FAILED:', overrideCustomerRes.body);
+    }
+    expect(overrideCustomerRes.status).toBe(200);
 
     // Confirm Order 2 should now succeed without order-level override
     const confirm4Res = await request(app.getHttpServer())
       .patch(`/api/sales-orders/${order2Id}/state`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ stateCode: 'quoted' });
+
+    if (confirm4Res.status !== 200) {
+      console.error('SO CONFIRM FAILED:', confirm4Res.body);
+    }
     expect(confirm4Res.status).toBe(200);
   });
 });

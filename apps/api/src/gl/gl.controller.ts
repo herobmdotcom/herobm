@@ -48,6 +48,8 @@ import {
   UpdateGLSettingsDto,
   CommitFxRevaluationDto,
   RunFxRevaluationDto,
+  FxRevalCandidatesResponseDto,
+  FxRevalCommitResponseDto,
 } from './dto';
 import { AppConfigService } from '../settings/app-config.service';
 import { GLAccountType, SystemResource } from '@herobm/shared';
@@ -238,12 +240,16 @@ export class GlController {
   @ApiOperation({
     summary: 'Get Trial Balance',
     description:
-      'Calculate and retrieve the trial balance as of a specific date.',
+      'Calculate and retrieve the trial balance as of a specific date, optionally with periodic activity.',
   })
   @ApiOkResponse({ type: [TrialBalanceResponseDto] })
   @ApiQuery({ name: 'asOfDate', required: false })
-  async getTrialBalance(@Query('asOfDate') asOfDate?: string) {
-    return this.glService.getTrialBalance(asOfDate);
+  @ApiQuery({ name: 'periodStart', required: false })
+  async getTrialBalance(
+    @Query('asOfDate') asOfDate?: string,
+    @Query('periodStart') periodStart?: string,
+  ) {
+    return this.glService.getTrialBalance(asOfDate, periodStart);
   }
 
   @Get('general-ledger')
@@ -308,25 +314,25 @@ export class GlController {
   }
 
   @Get('fx-revaluation/candidates')
+  @CasbinAction('read')
   @ApiOperation({
     summary: 'Get FX Revaluation Candidates',
     description:
       'Calculates Unrealised FX Gains/Losses on open foreign currency balances and returns proposed adjustments without posting them.',
   })
-  @ApiOkResponse({ schema: { type: 'object' } })
-  @CasbinAction('read')
+  @ApiOkResponse({ type: FxRevalCandidatesResponseDto })
   async getFxCandidates(@Query() dto: RunFxRevaluationDto) {
     return await this.fxRevalService.generateCandidates(dto);
   }
 
   @Post('fx-revaluation/commit')
+  @CasbinAction('write')
   @ApiOperation({
     summary: 'Commit Period-End FX Revaluation',
     description:
       'Commits the user-approved FX Revaluation adjustments and automatically generates their corresponding reversing journals for the following day.',
   })
-  @ApiCreatedResponse({ schema: { type: 'object' } })
-  @CasbinAction('write')
+  @ApiCreatedResponse({ type: FxRevalCommitResponseDto })
   @ApiBody({ type: CommitFxRevaluationDto })
   async commitFxRevaluation(
     @AuthUser() user: JwtUser,

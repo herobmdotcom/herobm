@@ -375,6 +375,7 @@ export class PurchaseReturnsService {
           stockLines.push({
             productId: orderLine.productId,
             quantity: rl.quantityReturned,
+            uomCode: orderLine.unitOfMeasure,
           });
         }
       }
@@ -400,12 +401,13 @@ export class PurchaseReturnsService {
 
         const validStockLines = stockLines.filter(
           (l) => l.productId != null,
-        ) as { productId: string; quantity: string }[];
+        ) as { productId: string; quantity: string; uomCode: string }[];
 
         const moveLines = validStockLines.map((line) => ({
           productId: line.productId,
           binId: supplierReturnsBin.binId,
           quantity: -parseFloat(line.quantity), // negative quantity for removing from inventory
+          uomCode: line.uomCode,
         }));
 
         if (moveLines.length > 0) {

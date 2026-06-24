@@ -197,7 +197,7 @@ export class ProductsService {
           locationNo: locations.code,
           binNumber: bins.binNumber,
           binType: bins.binType,
-          quantityOnHand: sql<number>`COALESCE(SUM(${inventoryLedger.quantity}), 0)`,
+          quantityOnHand: sql<number>`COALESCE(SUM(${inventoryLedger.quantity}), 0)`.mapWith(Number),
         })
         .from(productDefaultBins)
         .leftJoin(

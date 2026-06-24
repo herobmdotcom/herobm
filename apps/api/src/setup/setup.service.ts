@@ -804,17 +804,19 @@ export class SetupService {
         throw new BadRequestException('Import source is required');
       }
 
+      if (dto.legacyInvoicesPaidBeforeDate) {
+        envOverride.LEGACY_INVOICES_PAID_BEFORE_DATE = dto.legacyInvoicesPaidBeforeDate;
+      }
+
       if (dto.dbConfig) {
-        if (dto.dbConfig.host)
-          envOverride[`SOURCE_DB_HOST`] = dto.dbConfig.host;
-        if (dto.dbConfig.database)
-          envOverride[`SOURCE_DB_DATABASE`] = dto.dbConfig.database;
-        if (dto.dbConfig.username)
-          envOverride[`SOURCE_DB_USER`] = dto.dbConfig.username;
-        if (dto.dbConfig.password)
-          envOverride[`SOURCE_DB_PASSWORD`] = dto.dbConfig.password;
-        if (dto.dbConfig.port)
-          envOverride[`SOURCE_DB_PORT`] = dto.dbConfig.port.toString();
+        Object.assign(envOverride, {
+          SOURCES__SQL_DATABASE__CREDENTIALS: `mssql+pymssql://${encodeURIComponent(dto.dbConfig.username || '')}:${encodeURIComponent(dto.dbConfig.password || '')}@${dto.dbConfig.host}:${dto.dbConfig.port}/${dto.dbConfig.database}?charset=utf8`,
+          SOURCE_DB_HOST: dto.dbConfig.host,
+          SOURCE_DB_PORT: dto.dbConfig.port?.toString(),
+          SOURCE_DB_DATABASE: dto.dbConfig.database,
+          SOURCE_DB_USER: dto.dbConfig.username,
+          SOURCE_DB_PASSWORD: dto.dbConfig.password,
+        });
       }
 
       envOverride['SOURCE_RESUME'] = dto.resumeExtraction ? 'true' : 'false';
@@ -940,9 +942,11 @@ export class SetupService {
       prog[0].status = 'failed';
     }
 
+    const newStatus = (job.status === 'done' || job.status === 'failed') ? job.status : 'cancelling';
+
     await this.db
       .update(pipelineJobs)
-      .set({ status: 'cancelling', progressJson: prog, updatedAt: new Date() })
+      .set({ status: newStatus, progressJson: prog, updatedAt: new Date() })
       .where(eq(pipelineJobs.jobId, jobId));
     await this.log(jobId, '[FATAL] Job forcibly stopped by user.', 'error');
 
@@ -1037,6 +1041,17 @@ export class SetupService {
       );
       const runnerUrl =
         process.env.PIPELINE_RUNNER_URL || 'http://pipeline-runner:8000';
+      const envToPass: Record<string, string | undefined> = {
+        ...process.env,
+        NO_COLOR: '1',
+        FORCE_COLOR: '0',
+        DBT_USE_COLORS: 'False',
+        TERM: 'dumb',
+        ...envOverride,
+      };
+      // Let the pipeline runner use its own configured webhook URL
+      delete envToPass.WEBHOOK_URL;
+
       fetch(`${runnerUrl}/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1044,14 +1059,7 @@ export class SetupService {
           jobId,
           command: cmd,
           args: args,
-          env: {
-            ...process.env,
-            NO_COLOR: '1',
-            FORCE_COLOR: '0',
-            DBT_USE_COLORS: 'False',
-            TERM: 'dumb',
-            ...envOverride,
-          },
+          env: envToPass,
         }),
       })
         .then(async (response) => {

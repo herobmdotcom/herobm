@@ -418,6 +418,7 @@ export class ShipmentService {
               !product ||
               !product.productType ||
               product.productType === 'inventory',
+            uomCode: orderLine.unitOfMeasure,
           });
         }
 
@@ -454,7 +455,7 @@ export class ShipmentService {
             .select({
               binId: inventoryLedger.binId,
               productId: inventoryLedger.productId,
-              shippedQty: sql<number>`SUM(ABS(${inventoryLedger.quantity}::numeric))`,
+              shippedQty: sql<number>`SUM(ABS(${inventoryLedger.quantity}::numeric))`.mapWith(Number),
             })
             .from(inventoryLedger)
             .innerJoin(
@@ -483,6 +484,7 @@ export class ShipmentService {
                 productId: line.productId!,
                 binId: prev.binId,
                 quantity: putBack,
+                uomCode: line.uomCode || 'EA',
               });
               prev.shippedQty -= putBack;
               remainingToRevert -= putBack;
@@ -1107,7 +1109,7 @@ export class ShipmentService {
       .select({
         binId: inventoryLedger.binId,
         productId: inventoryLedger.productId,
-        netPicked: sql<number>`SUM(${inventoryLedger.quantity}::numeric)`,
+        netPicked: sql<number>`SUM(${inventoryLedger.quantity}::numeric)`.mapWith(Number),
       })
       .from(inventoryLedger)
       .innerJoin(
@@ -1139,6 +1141,7 @@ export class ShipmentService {
           productId: line.productId!,
           binId: pick.binId,
           quantity: -take,
+          uomCode: line.uomCode || 'EA',
         });
         pick.netPicked -= take;
         remainingToShip -= take;

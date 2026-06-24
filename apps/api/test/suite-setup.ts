@@ -91,6 +91,7 @@ beforeAll(async () => {
               DELETE FROM herobm_core.purchase_order_return_lines WHERE return_id IN (SELECT return_id FROM herobm_core.purchase_order_returns WHERE purchase_order_id = r_po.purchase_order_id);
               DELETE FROM herobm_core.purchase_order_returns WHERE purchase_order_id = r_po.purchase_order_id;
 
+              DELETE FROM herobm_core.purchase_invoice_receipts WHERE goods_received_line_id IN (SELECT goods_received_line_id FROM herobm_core.goods_received_lines WHERE goods_received_id IN (SELECT goods_received_id FROM herobm_core.goods_received WHERE vendor_id = r_po.vendor_id));
               DELETE FROM herobm_core.goods_received_lines WHERE goods_received_id IN (SELECT goods_received_id FROM herobm_core.goods_received WHERE vendor_id = r_po.vendor_id);
               DELETE FROM herobm_core.goods_received WHERE vendor_id = r_po.vendor_id;
               DELETE FROM herobm_core.outbox WHERE entity_id = r_po.purchase_order_id;

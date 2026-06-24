@@ -15,15 +15,46 @@ if ($LASTEXITCODE -ne 0) {
     podman network create $netName
 }
 
-Write-Host "Booting up test stack via docker-compose.test.yml and docker-compose.ui.yml..." -ForegroundColor Cyan
-podman compose -f docker-compose.test.yml -f docker-compose.ui.yml up -d
+Write-Host "Booting up test databases..." -ForegroundColor Cyan
+podman compose -f docker-compose.test.yml -f docker-compose.ui.yml up -d postgres-test redis-test maildev-test webhook-catcher
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "Failed to boot test stack!" -ForegroundColor Red
+    Write-Host "Failed to boot test databases!" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "Waiting 20 seconds for Postgres, API, and UI to initialize..." -ForegroundColor Yellow
+Write-Host "Waiting 20 seconds for Postgres and Redis to initialize..." -ForegroundColor Yellow
 Start-Sleep -Seconds 20
+
+Write-Host "Initializing Test Database..." -ForegroundColor Cyan
+$env:POSTGRES_CONTAINER = "postgres-test"
+$env:POSTGRES_HOST = "127.0.0.1"
+$env:POSTGRES_PORT = "5434"
+$env:REDIS_HOST = "127.0.0.1"
+$env:REDIS_PORT = "6380"
+
+# Run migrations
+python tools/migrate.py
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Failed to run migrations!" -ForegroundColor Red
+    exit 1
+}
+
+# Run seed
+npm run seed:test -w apps/api
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Failed to seed test database!" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Booting up app containers..." -ForegroundColor Cyan
+podman compose -f docker-compose.test.yml -f docker-compose.ui.yml up -d custom-api-test worker-test pipeline-runner-test ops-portal-test
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Failed to boot test app containers!" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Waiting 15 seconds for apps to initialize..." -ForegroundColor Yellow
+Start-Sleep -Seconds 15
 
 $failed = $false
 

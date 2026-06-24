@@ -384,6 +384,7 @@ describe('FxRevaluationService', () => {
 
       await pg.db.insert(goodsReceivedLines).values({
         goodsReceivedId: grId,
+        purchaseOrderId: poId,
         productId: prodId,
         quantityReceived: '10',
         unitCost: '100', // 1000 USD total

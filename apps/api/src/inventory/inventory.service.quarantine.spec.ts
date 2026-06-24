@@ -104,7 +104,7 @@ describe('InventoryService - Quarantine', () => {
       sourceId: '00000000-0000-4000-8000-000000000099',
       memo: 'Init',
       userId: 'admin',
-      lines: [{ productId: PROD_ID, binId: RECV_BIN_ID, quantity: 100 }],
+      lines: [{ productId: PROD_ID, binId: RECV_BIN_ID, quantity: 100, uomCode: 'EA' }],
     });
   });
 

@@ -127,7 +127,7 @@ export async function assertShipmentQtyAvailable(
   if (isPhysical) {
     // Derive picked qty from the sub-ledger (replaces legacy quantityPicked column)
     const [pickSum] = await db
-      .select({ sum: sql<number>`COALESCE(SUM(quantity), 0)` })
+      .select({ sum: sql<number>`COALESCE(SUM(quantity), 0)`.mapWith(Number) })
       .from(salesOrderPicks)
       .where(
         and(

@@ -18,6 +18,7 @@ import {
   taxCategories,
   suppliers,
   procurementEvents,
+  exchangeRates,
 } from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 import { PURCHASE_ORDER_STATE, SUPPLIER_STATE } from '@herobm/shared';
@@ -117,6 +118,26 @@ describe('PurchaseOrdersService', () => {
         },
       ],
     }).compile();
+
+    await pg.db
+      .insert(exchangeRates)
+      .values([
+        {
+          currencyCode: 'EUR',
+          currencyName: 'Euro',
+          effectiveDate: new Date('2000-01-01'),
+          buyRate: '0.85',
+          sellRate: '0.85',
+        },
+        {
+          currencyCode: 'AUD',
+          currencyName: 'Australian Dollar',
+          effectiveDate: new Date('2000-01-01'),
+          buyRate: '1.0',
+          sellRate: '1.0',
+        },
+      ])
+      .onConflictDoNothing();
 
     service = module.get<PurchaseOrdersService>(PurchaseOrdersService);
   });

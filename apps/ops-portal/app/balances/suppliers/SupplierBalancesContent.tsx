@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import * as api from '@herobm/sdk';
 import type { ColDef } from 'ag-grid-community';
 import { reportError } from '@/lib/api';
+import { calculateAgedTotals } from '@herobm/shared';
 
 export default function SupplierBalancesContent() {
   const router = useRouter();
@@ -127,6 +128,12 @@ export default function SupplierBalancesContent() {
     return balances;
   }, [balances, quickFilter]);
 
+  const totals = useMemo(() => {
+    return calculateAgedTotals(filteredBalances);
+  }, [filteredBalances]);
+
+  const defaultCurrency = balances.length > 0 ? balances[0].currencyCode || 'USD' : 'USD';
+
   return (
     <DataGrid
       columns={columns}
@@ -158,6 +165,34 @@ export default function SupplierBalancesContent() {
             <option value="dueDate">By Due Date</option>
             <option value="invoiceDate">By Invoice Date</option>
           </select>
+        </div>
+      }
+      secondaryHeader={
+        <div className="flex flex-wrap items-center gap-6 pb-1 w-full">
+          <div className="flex flex-col">
+            <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Total Outstanding</span>
+            <span className="text-sm">{formatAmount(totals.totalOutstanding, defaultCurrency)}</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">Current</span>
+            <span className="text-sm">{formatAmount(totals.current, defaultCurrency)}</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">1-30 Days</span>
+            <span className="text-sm">{formatAmount(totals.days1To30, defaultCurrency)}</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">31-60 Days</span>
+            <span className="text-sm">{formatAmount(totals.days31To60, defaultCurrency)}</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">61-90 Days</span>
+            <span className="text-sm">{formatAmount(totals.days61To90, defaultCurrency)}</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">90+ Days</span>
+            <span className="text-sm">{formatAmount(totals.days90Plus, defaultCurrency)}</span>
+          </div>
         </div>
       }
     />

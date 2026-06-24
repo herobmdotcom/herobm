@@ -108,7 +108,7 @@ export class PickingService {
         ? await this.db
             .select({
               salesOrderLineId: backorders.salesOrderLineId,
-              allocatedQty: sql<number>`COALESCE(SUM(${backorders.quantity}), 0)`,
+              allocatedQty: sql<number>`COALESCE(SUM(${backorders.quantity}), 0)`.mapWith(Number),
             })
             .from(backorders)
             .where(
@@ -261,7 +261,7 @@ export class PickingService {
 
     // Get current picked amount
     const [currentPickSum] = await this.db
-      .select({ sum: sql<number>`COALESCE(SUM(quantity), 0)` })
+      .select({ sum: sql<number>`COALESCE(SUM(quantity), 0)`.mapWith(Number) })
       .from(salesOrderPicks)
       .where(
         and(
@@ -321,11 +321,13 @@ export class PickingService {
             productId: line.productId!,
             binId: binId,
             quantity: -qty,
+            uomCode: line.unitOfMeasure || 'EA',
           },
           {
             productId: line.productId!,
             binId: shippingBin.binId,
             quantity: qty,
+            uomCode: line.unitOfMeasure || 'EA',
           },
         ],
       });
@@ -713,6 +715,7 @@ export class PickingService {
     }
 
     const qty = parseFloat(pick.quantity);
+    const line = await findOrderLine(this.db, pick.salesOrderLineId, orderId);
 
     // Resolve SHIPPING bin for physical stock movement reversal
     const [shippingBin] = await this.db
@@ -745,11 +748,13 @@ export class PickingService {
             productId: pick.productId,
             binId: shippingBin.binId,
             quantity: -qty, // remove from shipping
+            uomCode: line.unitOfMeasure || 'EA',
           },
           {
             productId: pick.productId,
             binId: pick.binId!, // put back to original bin
             quantity: qty,
+            uomCode: line.unitOfMeasure || 'EA',
           },
         ],
       });
@@ -1042,7 +1047,7 @@ export class PickingService {
       const pickSums = await this.db
         .select({
           salesOrderLineId: salesOrderPicks.salesOrderLineId,
-          totalPicked: sql<number>`COALESCE(SUM(${salesOrderPicks.quantity}), 0)`,
+          totalPicked: sql<number>`COALESCE(SUM(${salesOrderPicks.quantity}), 0)`.mapWith(Number),
         })
         .from(salesOrderPicks)
         .where(

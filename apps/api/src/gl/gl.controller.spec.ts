@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GlController } from './gl.controller';
 import { GlService } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
+import { FxRevaluationService } from './fx-revaluation.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { GLAccountType } from '@herobm/shared';
 import { JwtUser } from '../auth/auth-user.decorator';
@@ -51,6 +52,13 @@ describe('GlController', () => {
         },
         { provide: CoaLoaderService, useValue: coaLoader },
         { provide: AppConfigService, useValue: { reload: jest.fn() } },
+        {
+          provide: FxRevaluationService,
+          useValue: {
+            generateCandidates: jest.fn(),
+            commitRevaluation: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -192,12 +200,14 @@ describe('GlController', () => {
         undefined,
         undefined,
         undefined,
+        undefined,
         '25',
       );
       expect(glService.getJournalEntries).toHaveBeenCalledWith({
         fromDate: undefined,
         toDate: undefined,
         sourceType: undefined,
+        sourceId: undefined,
         entryNumber: undefined,
         limit: 25,
         page: undefined,
@@ -230,7 +240,7 @@ describe('GlController', () => {
         body as unknown as Parameters<
           typeof controller.createManualJournalEntry
         >[0],
-        'test-user',
+        'admin',
       );
 
       expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {
@@ -255,7 +265,7 @@ describe('GlController', () => {
         body as unknown as Parameters<
           typeof controller.createManualJournalEntry
         >[0],
-        'test-user',
+        undefined as any,
       );
 
       expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {

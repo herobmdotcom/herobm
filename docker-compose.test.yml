@@ -5,7 +5,7 @@ services:
     container_name: pipeline-runner-test
     env_file: .env
     environment:
-      POSTGRES_HOST: postgres-custom
+      POSTGRES_HOST: postgres-test
       POSTGRES_PORT: "5432"
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -24,12 +24,12 @@ services:
       - "3005:3000"
     environment:
       PORT: "3000"
-      POSTGRES_HOST: postgres-custom
+      POSTGRES_HOST: postgres-test
       POSTGRES_PORT: "5432"
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-herobm}
-      REDIS_HOST: redis-broker
+      REDIS_HOST: redis-test
       PIPELINE_RUNNER_URL: http://pipeline-runner-test:8000
     networks:
       - app-net
@@ -39,12 +39,12 @@ services:
     container_name: worker-test
     env_file: .env
     environment:
-      POSTGRES_HOST: postgres-custom
+      POSTGRES_HOST: postgres-test
       POSTGRES_PORT: "5432"
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-herobm}
-      REDIS_HOST: redis-broker
+      REDIS_HOST: redis-test
     networks:
       - app-net
     extra_hosts:
@@ -68,7 +68,49 @@ services:
     networks:
       - app-net
 
+  postgres-test:
+    image: docker.io/library/postgres:16-alpine
+    container_name: postgres-test
+    hostname: postgres-test
+    command: ["postgres"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-herobm}
+    ports:
+      - "${BIND_IP:-127.0.0.1}:5434:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB:-herobm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-net
+
+  redis-test:
+    image: docker.io/library/redis:7-alpine
+    container_name: redis-test
+    hostname: redis-test
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    ports:
+      - "${BIND_IP:-127.0.0.1}:6380:6379"
+    volumes:
+      - redis_test_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-net
+
 networks:
   app-net:
     name: ${APP_NETWORK_NAME:-modbm_app-net}
     external: true
+
+volumes:
+  postgres_test_data:
+  redis_test_data:

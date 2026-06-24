@@ -146,12 +146,13 @@ export class GoodsReceivedService {
       if (createDto.lines && createDto.lines.length > 0) {
         const lineValues: (typeof goodsReceivedLines.$inferInsert & {
           unitCost: string | null;
+          uomCode: string;
         })[] = [];
 
         for (const line of createDto.lines) {
           // Validate product
           const [product] = await tx
-            .select({ productId: products.productId })
+            .select({ productId: products.productId, baseUom: products.baseUom })
             .from(products)
             .where(eq(products.productId, line.productId))
             .limit(1);
@@ -170,6 +171,7 @@ export class GoodsReceivedService {
               quantity: purchaseOrderLineItems.quantity,
               quantityReceived: purchaseOrderLineItems.quantityReceived,
               pricePerUnit: purchaseOrderLineItems.pricePerUnit,
+              unitOfMeasure: purchaseOrderLineItems.unitOfMeasure,
               exchangeRate: purchaseOrders.exchangeRate,
             })
             .from(purchaseOrderLineItems)
@@ -224,10 +226,13 @@ export class GoodsReceivedService {
             purchaseOrderLineId: matchedPoLineId,
             purchaseOrderId: matchedPoId,
             unitCost: unitCost, // Use for valuation, filtered out during insert
+            uomCode: openPoLines.length > 0 ? (openPoLines[0].unitOfMeasure || product.baseUom) : product.baseUom,
           });
         }
 
-        await tx.insert(goodsReceivedLines).values(lineValues);
+        await tx.insert(goodsReceivedLines).values(
+          lineValues.map(({ uomCode, ...rest }) => rest)
+        );
 
         // --- 5. Inventory Impact: Place items into RECEIVING bin ---
         // Find or create RECEIVING zone/bin
@@ -282,32 +287,19 @@ export class GoodsReceivedService {
           receivingBin = newBin;
         }
 
-        // Create inventory ledger entries via inventoryService
-        await this.inventoryService.recordInventoryMovement(tx, {
-          entryNumber: `GRN-${receipt.receiptNumber}`,
-          sourceType: 'PO_RECEIPT',
-          sourceId: receipt.goodsReceivedId,
-          memo: `Goods Reception ${receipt.receiptNumber}`,
-          userId,
-          lines: lineValues.map((lv) => ({
-            productId: lv.productId,
-            binId: receivingBin.binId,
-            quantity: parseFloat(lv.quantityReceived),
-          })),
-        });
-
         // --- 5.1 Financial Integration & Valuation Updates ---
         const valuationMethodCode = this.appConfig.valuationMethod();
         const valuationStrategy = getValuationStrategy(valuationMethodCode);
 
         // Fetch products to update their WAC and get standard costs
+        // MUST BE DONE BEFORE recordInventoryMovement so QOH doesn't include the newly received goods!
         const productIds = [...new Set(lineValues.map((l) => l.productId))];
         const productRows = await tx
           .select({
             productId: products.productId,
             standardCost: products.standardCost,
             weightedAverageCost: products.weightedAverageCost,
-            qoh: sql`COALESCE((SELECT SUM(actual_quantity) FROM herobm_core.bin_contents WHERE product_id = ${products.productId}), 0)`.mapWith(
+            qoh: sql`COALESCE((SELECT SUM(actual_quantity) FROM herobm_core.bin_contents WHERE product_id = products.product_id), 0)`.mapWith(
               Number,
             ),
           })
@@ -318,6 +310,21 @@ export class GoodsReceivedService {
               sql`, `,
             )})`,
           );
+
+        // Create inventory ledger entries via inventoryService
+        await this.inventoryService.recordInventoryMovement(tx, {
+          entryNumber: `GRN-${receipt.receiptNumber}`,
+          sourceType: 'PO_RECEIPT',
+          sourceId: receipt.goodsReceivedId,
+          memo: `Goods Reception ${receipt.receiptNumber}`,
+          userId,
+          lines: lineValues.map((lv) => ({
+            productId: lv.productId,
+            binId: receivingBin.binId,
+            quantity: parseFloat(lv.quantityReceived as string),
+            uomCode: lv.uomCode,
+          })),
+        });
 
         const productMap = new Map(productRows.map((p) => [p.productId, p]));
         let totalInventoryValueAdded = 0;
@@ -559,8 +566,28 @@ export class GoodsReceivedService {
       }
 
       const receiptLines = await tx
-        .select()
+        .select({
+          goodsReceivedLineId: goodsReceivedLines.goodsReceivedLineId,
+          goodsReceivedId: goodsReceivedLines.goodsReceivedId,
+          productId: goodsReceivedLines.productId,
+          purchaseOrderLineId: goodsReceivedLines.purchaseOrderLineId,
+          purchaseOrderId: goodsReceivedLines.purchaseOrderId,
+          quantityReceived: goodsReceivedLines.quantityReceived,
+          matchStatus: goodsReceivedLines.matchStatus,
+          putawayStatus: goodsReceivedLines.putawayStatus,
+          unitCost: goodsReceivedLines.unitCost,
+          uomCode: purchaseOrderLineItems.unitOfMeasure,
+          baseUom: products.baseUom,
+        })
         .from(goodsReceivedLines)
+        .leftJoin(
+          purchaseOrderLineItems,
+          eq(
+            goodsReceivedLines.purchaseOrderLineId,
+            purchaseOrderLineItems.purchaseOrderLineId,
+          ),
+        )
+        .leftJoin(products, eq(goodsReceivedLines.productId, products.productId))
         .where(eq(goodsReceivedLines.goodsReceivedId, goodsReceivedId));
 
       // 2. Validate states
@@ -621,6 +648,7 @@ export class GoodsReceivedService {
           productId: lv.productId,
           binId: receivingBin.binId,
           quantity: -parseFloat(lv.quantityReceived),
+          uomCode: lv.uomCode || lv.baseUom || 'EA',
         })),
       });
 

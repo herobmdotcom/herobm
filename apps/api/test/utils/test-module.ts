@@ -36,6 +36,7 @@ export class MockAppConfigService {
   defaultInventoryAdjustmentAccountId = jest
     .fn()
     .mockImplementation(() => 'gl-adj-default');
+  defaultPpvAccountId = jest.fn().mockImplementation(() => 'gl-ppv-default');
   defaultCostCenterId = jest.fn().mockImplementation(() => 'cc-default');
   defaultActivityId = jest.fn().mockImplementation(() => 'act-default');
 

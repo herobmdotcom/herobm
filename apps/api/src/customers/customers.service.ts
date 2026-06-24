@@ -26,7 +26,7 @@ import {
 } from '../common/pagination';
 import { alias } from 'drizzle-orm/pg-core';
 
-import { CUSTOMER_STATE } from '@herobm/shared';
+import { CUSTOMER_STATE, SALES_INVOICE_STATE } from '@herobm/shared';
 import { CreditAssessmentService } from './credit-assessment.service';
 import { AppConfigService } from '../settings/app-config.service';
 import {
@@ -277,12 +277,12 @@ export class AccountsService {
         COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '30 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days1To30",
         COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '30 days' AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '60 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days31To60",
         COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '60 days' AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days61To90",
-        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days90Plus",
+        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '90 days' OR i.${sql.raw(basisCol)} IS NULL THEN i.outstanding_amount ELSE 0 END), 0) as "days90Plus",
         COALESCE(SUM(i.outstanding_amount), 0) as "totalOutstanding"
       FROM herobm_core.customers c
       JOIN herobm_core.sales_orders so ON so.customer_id = c.customer_id
       JOIN herobm_core.sales_invoices i ON i.sales_order_id = so.sales_order_id
-      WHERE i.outstanding_amount > 0 AND i.state_code NOT IN ('DRAFT', 'CANCELLED')
+      WHERE i.outstanding_amount > 0 AND i.state_code NOT IN (${SALES_INVOICE_STATE.DRAFT}, ${SALES_INVOICE_STATE.CANCELLED}, ${SALES_INVOICE_STATE.PAID})
       GROUP BY c.customer_id, c.name, c.customer_number, c.currency_code, c.is_on_credit_hold, c.credit_limit
     `;
 

@@ -7,9 +7,10 @@ import * as api from '@herobm/sdk';
 import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
+import { useAuth } from '@/components/AuthGate';
 
 import type { OrderDetail, TaxCategory, SalesInvoice } from './types';
-import { computeLinePrice, SALES_ORDER_STATE, SALES_INVOICE_STATE } from '@herobm/shared';
+import { computeLinePrice, SALES_ORDER_STATE, SALES_INVOICE_STATE, getErrorMessage } from '@herobm/shared';
 import type { NewInvoiceLine } from './useOrder';
 import { calculateInvoiceableQuantities } from '@/lib/sales-order-utils';
 import { useSettings } from '@/components/SettingsProvider';
@@ -32,7 +33,9 @@ export default function InvoicesSection({
     orderId, order, invoices, taxCategories,
     pickingSummary, setError, loadInvoices, loadOrder,
 }: InvoicesSectionProps) {
-  const { baseCurrency } = useSettings();
+    const { baseCurrency } = useSettings();
+    const { permissions } = useAuth();
+    const canManageImport = permissions.some(p => p.resource === 'import' && p.action === 'write');
     const tCommon = useTranslations('common');
     const tSales = useTranslations('salesOrders');
     const tConfirm = useTranslations('confirm');
@@ -260,23 +263,25 @@ export default function InvoicesSection({
                                     </span>
                                 )}
                             </div>
-                            <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={async () => {
-                                    try {
-                                        const response = await api.pdfTemplatesControllerRunHook('sales-invoice', {}, { id: inv.invoiceId, context: 'sales-invoice' });
-                                        const blob = response.data ;
-                                        const url = URL.createObjectURL(blob);
-                                        window.open(url, '_blank');
-                                    } catch (err) {
-                                        const { reportError } = await import('@/lib/api');
-                                        reportError(err, 'OrderDetailPage:printInvoice');
-                                        setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateInvoice'));
-                                    }
-                                }}
-                            >
-                                {tSales('buttons.printInvoice')}
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={async () => {
+                                        try {
+                                            const response = await api.pdfTemplatesControllerRunHook('sales-invoice', {}, { id: inv.invoiceId, context: 'sales-invoice' });
+                                            const blob = response.data ;
+                                            const url = URL.createObjectURL(blob);
+                                            window.open(url, '_blank');
+                                        } catch (err) {
+                                            const { reportError } = await import('@/lib/api');
+                                            reportError(err, 'OrderDetailPage:printInvoice');
+                                            setError(getErrorMessage(err));
+                                        }
+                                    }}
+                                >
+                                    {tSales('buttons.printInvoice')}
+                                </button>
+                            </div>
                         </div>
                         
                         {inv.lines && inv.lines.length > 0 && (() => {

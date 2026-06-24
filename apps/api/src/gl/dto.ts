@@ -108,10 +108,17 @@ export class JournalEntryResponseDto {
   entryNumber: string;
 }
 export class TrialBalanceResponseDto {
-  accountId: string;
   accountCode: string;
   name: string;
-  balance: number;
+  accountType: string;
+  isGroup: boolean;
+  openingBalance: number;
+  periodDebit: number;
+  periodCredit: number;
+  closingBalance: number;
+  ytdDebit: number;
+  ytdCredit: number;
+  ytdBalance: number;
 }
 export class GeneralLedgerResponseDto {
   glEntryId: string;
@@ -255,4 +262,16 @@ export class CommitFxRevaluationDto {
   @ValidateNested({ each: true })
   @Type(() => JournalLineDto)
   lines!: JournalLineDto[];
+}
+
+export class FxRevalCandidatesResponseDto {
+  @ApiProperty() success!: boolean;
+  @ApiProperty() revaluationDate!: string;
+  @ApiProperty({ type: [JournalLineDto] }) candidates!: JournalLineDto[];
+}
+
+export class FxRevalCommitResponseDto {
+  @ApiProperty() success!: boolean;
+  @ApiProperty() revaluationDate!: string;
+  @ApiProperty() entriesGenerated!: number;
 }

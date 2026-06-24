@@ -8,4 +8,5 @@
 
 export type GlControllerGetTrialBalanceParams = {
 asOfDate?: string;
+periodStart?: string;
 };

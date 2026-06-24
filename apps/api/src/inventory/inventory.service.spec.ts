@@ -16,6 +16,7 @@ import {
   inventoryLedger,
   binContents,
   uomDictionary,
+  productUoms,
 } from '../drizzle/herobm-core-schema';
 import { eq, sql } from 'drizzle-orm';
 
@@ -83,20 +84,7 @@ describe('InventoryService', () => {
               .mockReturnValue(LOCATION_ID),
           },
         },
-        {
-          provide: UomService,
-          useValue: {
-            calculateAbsoluteBaseQuantity: jest
-              .fn()
-              .mockImplementation(async (pid, lines) => {
-                return lines.reduce(
-                  (acc: number, l: { quantity?: number }) =>
-                    acc + (l.quantity || 0),
-                  0,
-                );
-              }),
-          },
-        },
+        UomService,
         {
           provide: GlService,
           useValue: {
@@ -123,7 +111,7 @@ describe('InventoryService', () => {
         sourceId: '00000000-0000-4000-8000-000000000e11',
         memo: 'Test movement',
         userId: 'admin',
-        lines: [{ productId: PRODUCT_ID, binId: BIN_ID, quantity: 10 }],
+        lines: [{ productId: PRODUCT_ID, binId: BIN_ID, quantity: 10, uomCode: 'EA' }],
       };
 
       await pg.db.transaction(async (tx) => {
@@ -174,7 +162,9 @@ describe('InventoryService', () => {
         entryNumber: 'MV-002',
         sourceType: 'PICK',
         sourceId: '00000000-0000-4000-8000-000000000e12',
-        lines: [{ productId: PRODUCT_ID, binId: BIN_ID, quantity: -5 }],
+        lines: [
+          { productId: PRODUCT_ID, binId: BIN_ID, quantity: -5, uomCode: 'EA' },
+        ],
       };
 
       await pg.db.transaction(async (tx) => {
@@ -387,6 +377,95 @@ describe('InventoryService', () => {
       ).find((l) => l.locationId === LOCATION_ID);
       expect(main).toBeDefined();
       expect(main!.availableQty).toBe(0);
+    });
+  });
+
+  describe('UoM Ledger Boundary Validation & Fractions', () => {
+    it('should reject transactions with an unregistered uomCode', async () => {
+      const params = {
+        entryNumber: 'MV-INVALID',
+        sourceType: 'TEST',
+        sourceId: '00000000-0000-4000-8000-000000000e11',
+        memo: 'Test movement',
+        userId: 'admin',
+        lines: [
+          {
+            productId: PRODUCT_ID,
+            binId: BIN_ID,
+            quantity: 10,
+            uomCode: 'FAKE_UOM',
+          },
+        ],
+      };
+
+      await expect(
+        pg.db.transaction(async (tx) => {
+          await service.recordInventoryMovement(
+            tx as unknown as Parameters<
+              typeof service.recordInventoryMovement
+            >[0],
+            params,
+          );
+        }),
+      ).rejects.toThrow(); // Should fail foreign key constraint or explicit check
+    });
+
+    it('should accurately process and calculate available quantity for fractional composite UoMs', async () => {
+      // 1. Register BOX (10 EA)
+      await pg.db.insert(uomDictionary).values({
+        uomCode: 'BOX',
+        description: 'Box of 10',
+      }).onConflictDoNothing();
+      
+      const FRAC_PROD_ID = '00000000-0000-4000-8000-000000000022';
+      
+      await pg.db.insert(products).values({
+        productId: FRAC_PROD_ID,
+        productNumber: 'FRAC-01',
+        organizationId: '00000000-0000-4000-8000-000000000000',
+        sku: 'FRAC-01',
+        name: 'Fractional Product',
+        baseUom: 'EA',
+        productType: 'inventory',
+      });
+      
+      await pg.db.insert(productUoms).values({
+        productId: FRAC_PROD_ID,
+        uomCode: 'BOX',
+        ratio: '10',
+      });
+
+      // 2. Record movement of 1.5 BOX
+      await pg.db.transaction(async (tx) => {
+        await service.recordInventoryMovement(tx as any, {
+          entryNumber: 'MV-FRAC-1',
+          sourceType: 'MANUAL',
+          sourceId: '00000000-0000-4000-8000-000000000001',
+          userId: 'admin',
+          lines: [
+            {
+              productId: FRAC_PROD_ID,
+              binId: BIN_ID,
+              quantity: 1.5,
+              uomCode: 'BOX',
+            },
+          ],
+        });
+      });
+
+      // 3. Assert base quantity in ledger is exactly 15
+      const ledgerEntries = await pg.db
+        .select()
+        .from(inventoryLedger)
+        .where(eq(inventoryLedger.productId, FRAC_PROD_ID));
+
+      expect(ledgerEntries).toHaveLength(1);
+      expect(Number(ledgerEntries[0].quantity)).toBe(15);
+      
+      // Also verify available quantity
+      const locs = await service.findAllLocations(FRAC_PROD_ID);
+      const mainLoc = locs.find((l: any) => l.locationId === LOCATION_ID);
+      expect(mainLoc!.availableQty).toBe(15);
     });
   });
 });

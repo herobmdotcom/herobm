@@ -168,14 +168,14 @@ import type {
   ExternalSyncControllerGetSyncStatusParams,
   FileUploadDto,
   FindByProductIdsBulkDto,
+  FxRevalCandidatesResponseDto,
+  FxRevalCommitResponseDto,
   GeneratePOsDto,
   GeneratePaymentRunDto,
   GeneratePaymentRunResponseDto,
   GenerateTransfersDto,
   GlAccountResponseDto,
-  GlControllerCommitFxRevaluation201,
   GlControllerGetAccountsParams,
-  GlControllerGetFxCandidates200,
   GlControllerGetFxCandidatesParams,
   GlControllerGetGeneralLedger200,
   GlControllerGetGeneralLedgerParams,
@@ -2908,7 +2908,7 @@ export const glControllerGetJournalEntryBySource = async (type: string,
 
 
 /**
- * Calculate and retrieve the trial balance as of a specific date.
+ * Calculate and retrieve the trial balance as of a specific date, optionally with periodic activity.
  * @summary Get Trial Balance
  */
 export type glControllerGetTrialBalanceResponse200 = {
@@ -3075,7 +3075,7 @@ export const glControllerUpdateSettings = async (glControllerUpdateSettingsBody:
  * @summary Get FX Revaluation Candidates
  */
 export type glControllerGetFxCandidatesResponse200 = {
-  data: GlControllerGetFxCandidates200
+  data: FxRevalCandidatesResponseDto
   status: 200
 }
     
@@ -3119,7 +3119,7 @@ export const glControllerGetFxCandidates = async (params: GlControllerGetFxCandi
  * @summary Commit Period-End FX Revaluation
  */
 export type glControllerCommitFxRevaluationResponse201 = {
-  data: GlControllerCommitFxRevaluation201
+  data: FxRevalCommitResponseDto
   status: 201
 }
     
@@ -9549,6 +9549,45 @@ export const invoiceDetailControllerChangeSalesInvoiceState = async (id: string,
 
 
 /**
+ * Marks a sales invoice as paid without generating a GL entry.
+ * @summary Mark Sales Invoice as Paid (Admin)
+ */
+export type invoiceDetailControllerAdminMarkSalesInvoicePaidResponse200 = {
+  data: SalesInvoiceResponseDto
+  status: 200
+}
+    
+export type invoiceDetailControllerAdminMarkSalesInvoicePaidResponseSuccess = (invoiceDetailControllerAdminMarkSalesInvoicePaidResponse200) & {
+  headers: Headers;
+};
+;
+
+export type invoiceDetailControllerAdminMarkSalesInvoicePaidResponse = (invoiceDetailControllerAdminMarkSalesInvoicePaidResponseSuccess)
+
+export const getInvoiceDetailControllerAdminMarkSalesInvoicePaidUrl = (id: string,) => {
+
+
+  
+
+  return `/sales-invoices/${id}/admin-mark-paid`
+}
+
+export const invoiceDetailControllerAdminMarkSalesInvoicePaid = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<invoiceDetailControllerAdminMarkSalesInvoicePaidResponse> => {
+  
+  return customFetch<invoiceDetailControllerAdminMarkSalesInvoicePaidResponse>(getInvoiceDetailControllerAdminMarkSalesInvoicePaidUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
+  }
+);}
+
+
+
+/**
  * Retrieve all sales invoices across orders
  * @summary Get All Sales Invoices
  */
@@ -9745,6 +9784,45 @@ export const invoiceDetailControllerUpdateInvoice = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       updatePurchaseInvoiceDto,)
+  }
+);}
+
+
+
+/**
+ * Marks a purchase invoice as paid without generating a GL entry.
+ * @summary Mark Purchase Invoice as Paid (Admin)
+ */
+export type invoiceDetailControllerAdminMarkPurchaseInvoicePaidResponse200 = {
+  data: PurchaseInvoiceResponseDto
+  status: 200
+}
+    
+export type invoiceDetailControllerAdminMarkPurchaseInvoicePaidResponseSuccess = (invoiceDetailControllerAdminMarkPurchaseInvoicePaidResponse200) & {
+  headers: Headers;
+};
+;
+
+export type invoiceDetailControllerAdminMarkPurchaseInvoicePaidResponse = (invoiceDetailControllerAdminMarkPurchaseInvoicePaidResponseSuccess)
+
+export const getInvoiceDetailControllerAdminMarkPurchaseInvoicePaidUrl = (id: string,) => {
+
+
+  
+
+  return `/purchase-invoices/${id}/admin-mark-paid`
+}
+
+export const invoiceDetailControllerAdminMarkPurchaseInvoicePaid = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<invoiceDetailControllerAdminMarkPurchaseInvoicePaidResponse> => {
+  
+  return customFetch<invoiceDetailControllerAdminMarkPurchaseInvoicePaidResponse>(getInvoiceDetailControllerAdminMarkPurchaseInvoicePaidUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emptyBodyDto,)
   }
 );}
 

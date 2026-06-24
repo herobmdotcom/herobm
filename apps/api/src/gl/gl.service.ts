@@ -494,35 +494,69 @@ export class GlService implements OnModuleInit {
   // Reporting queries
   // -------------------------------------------------------------------------
 
-  async getTrialBalance(asOfDate?: string) {
-    const dateFilterSub = asOfDate
-      ? sql`WHERE je.entry_date <= ${asOfDate}`
-      : sql``;
+  async getTrialBalance(asOfDate?: string, periodStart?: string) {
+    // Determine the fiscal year start month
+    const [settings] = await this.db
+      .select({ fiscalYearStartMonth: glSettings.fiscalYearStartMonth })
+      .from(glSettings)
+      .limit(1);
+    const fysm = settings?.fiscalYearStartMonth || 1;
 
-    const rows = await this.db.execute(sql`
+    // Use current date if asOfDate is not provided
+    const targetDateStr = asOfDate || new Date().toISOString().slice(0, 10);
+    const targetDate = new Date(targetDateStr);
+
+    let fyYear = targetDate.getFullYear();
+    if (targetDate.getMonth() + 1 < fysm) {
+      fyYear -= 1;
+    }
+    const financialYearStart = `${fyYear}-${String(fysm).padStart(2, '0')}-01`;
+
+    const asOfDateSql = asOfDate ? sql`${asOfDate}` : sql`CURRENT_DATE`;
+    const periodStartSql = periodStart
+      ? sql`${periodStart}`
+      : sql`'1970-01-01'`;
+    const financialYearStartSql = sql`${financialYearStart}`;
+
+    const query = sql`
       SELECT
         a.account_code,
         a.name,
         a.account_type,
         a.is_group,
-        COALESCE(SUM(activity.debit), 0)::numeric  AS total_debit,
-        COALESCE(SUM(activity.credit), 0)::numeric AS total_credit,
-        COALESCE(SUM(activity.debit), 0) - COALESCE(SUM(activity.credit), 0) AS balance
+        COALESCE(SUM(CASE WHEN je.entry_date < ${periodStartSql} THEN jl.debit - jl.credit ELSE 0 END), 0)::numeric AS opening_balance,
+        COALESCE(SUM(CASE WHEN je.entry_date >= ${periodStartSql} AND je.entry_date <= ${asOfDateSql} THEN jl.debit ELSE 0 END), 0)::numeric AS period_debit,
+        COALESCE(SUM(CASE WHEN je.entry_date >= ${periodStartSql} AND je.entry_date <= ${asOfDateSql} THEN jl.credit ELSE 0 END), 0)::numeric AS period_credit,
+        COALESCE(SUM(CASE WHEN je.entry_date <= ${asOfDateSql} THEN jl.debit - jl.credit ELSE 0 END), 0)::numeric AS closing_balance,
+        COALESCE(SUM(CASE WHEN je.entry_date >= ${financialYearStartSql} AND je.entry_date <= ${asOfDateSql} THEN jl.debit ELSE 0 END), 0)::numeric AS ytd_debit,
+        COALESCE(SUM(CASE WHEN je.entry_date >= ${financialYearStartSql} AND je.entry_date <= ${asOfDateSql} THEN jl.credit ELSE 0 END), 0)::numeric AS ytd_credit,
+        COALESCE(SUM(CASE WHEN je.entry_date >= ${financialYearStartSql} AND je.entry_date <= ${asOfDateSql} THEN jl.debit - jl.credit ELSE 0 END), 0)::numeric AS ytd_balance
       FROM herobm_core.gl_accounts a
-      LEFT JOIN (
-        SELECT jl.gl_account_id, jl.debit, jl.credit
-        FROM herobm_core.gl_journal_lines jl
-        JOIN herobm_core.gl_journal_entries je ON je.journal_entry_id = jl.journal_entry_id
-        ${dateFilterSub}
-      ) activity ON activity.gl_account_id = a.gl_account_id
+      LEFT JOIN herobm_core.gl_journal_lines jl ON jl.gl_account_id = a.gl_account_id
+      LEFT JOIN herobm_core.gl_journal_entries je ON je.journal_entry_id = jl.journal_entry_id
       WHERE a.is_group = false
       GROUP BY a.gl_account_id, a.account_code, a.name, a.account_type, a.is_group
       ORDER BY a.account_code
-    `);
+    `;
 
-    return Array.isArray(rows)
+    const rows = await this.db.execute(query);
+    const resultRows = Array.isArray(rows)
       ? rows
       : (rows as { rows: unknown[] }).rows || [];
+
+    return resultRows.map((r: any) => ({
+      accountCode: r.account_code,
+      name: r.name,
+      accountType: r.account_type,
+      isGroup: r.is_group,
+      openingBalance: parseFloat(r.opening_balance || '0'),
+      periodDebit: parseFloat(r.period_debit || '0'),
+      periodCredit: parseFloat(r.period_credit || '0'),
+      closingBalance: parseFloat(r.closing_balance || '0'),
+      ytdDebit: parseFloat(r.ytd_debit || '0'),
+      ytdCredit: parseFloat(r.ytd_credit || '0'),
+      ytdBalance: parseFloat(r.ytd_balance || '0'),
+    }));
   }
 
   async getGeneralLedger(filters: {

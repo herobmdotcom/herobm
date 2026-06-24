@@ -23,7 +23,7 @@ import {
   parsePagination,
   withCursorPagination,
 } from '../common/pagination';
-import { SUPPLIER_STATE } from '@herobm/shared';
+import { SUPPLIER_STATE, PURCHASE_INVOICE_STATE } from '@herobm/shared';
 import {
   resolveSupplierRiskProfile,
   ResolvedRiskProfile,
@@ -443,11 +443,11 @@ export class SuppliersService {
         COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '30 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days1To30",
         COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '30 days' AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '60 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days31To60",
         COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '60 days' AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days61To90",
-        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '90 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days90Plus",
+        COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '90 days' OR i.${sql.raw(basisCol)} IS NULL THEN i.outstanding_amount ELSE 0 END), 0) as "days90Plus",
         COALESCE(SUM(i.outstanding_amount), 0) as "totalOutstanding"
       FROM herobm_core.suppliers s
       JOIN herobm_core.purchase_invoices i ON i.vendor_id = s.vendor_id
-      WHERE i.outstanding_amount > 0 AND i.state_code NOT IN ('DRAFT', 'CANCELLED', 'draft', 'cancelled')
+      WHERE i.outstanding_amount > 0 AND i.state_code NOT IN (${PURCHASE_INVOICE_STATE.DRAFT}, ${PURCHASE_INVOICE_STATE.CANCELLED}, ${PURCHASE_INVOICE_STATE.PAID})
       GROUP BY s.vendor_id, s.name, s.vendor_number, s.currency_code, s.is_payment_blocked, s.credit_limit
     `;
 

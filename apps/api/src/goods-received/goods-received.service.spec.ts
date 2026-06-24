@@ -75,6 +75,7 @@ describe('GoodsReceivedService', () => {
       defaultGrniAccountId: () => 'grni-acc',
       defaultCogsAccountId: () => 'cogs-acc',
       defaultShrinkageAccountId: () => 'shrink-acc',
+      defaultPpvAccountId: () => 'ppv-acc',
       defaultCostCenterId: () => 'cc-1',
       defaultActivityId: () => 'act-1',
     };
@@ -267,20 +268,16 @@ describe('GoodsReceivedService', () => {
     it('should set match_status to "unmatched" when no open PO lines exist', async () => {
       await seedBasics();
 
-      const result = await service.create(
-        {
-          vendorId: VENDOR_ID,
-          locationId: LOCATION_ID,
-          lines: [{ productId: PROD_ID, quantityReceived: '5' }],
-        },
-        'admin',
-      );
-
-      const [line] = await pg.db
-        .select()
-        .from(goodsReceivedLines)
-        .where(eq(goodsReceivedLines.goodsReceivedId, result.goodsReceivedId));
-      expect(line.matchStatus).toBe(MATCH_STATUS.UNMATCHED);
+      await expect(
+        service.create(
+          {
+            vendorId: VENDOR_ID,
+            locationId: LOCATION_ID,
+            lines: [{ productId: PROD_ID, quantityReceived: '5' }],
+          },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -392,6 +389,66 @@ describe('GoodsReceivedService', () => {
 
       expect(dbLine.matchStatus).toBe(MATCH_STATUS.MATCHED);
       expect(dbLine.putawayStatus).toBe(PUTAWAY_STATUS.QUARANTINED);
+    });
+  });
+
+  describe('UoM Boundary Translation', () => {
+    it('should correctly pass the non-base UoM from the Purchase Order to the Inventory Ledger', async () => {
+      await seedBasics();
+
+      // 1. Setup custom UoM
+      await pg.db
+        .insert(uomDictionary)
+        .values({ uomCode: 'BOX', description: 'Box of 10' });
+
+      // 2. Setup PO with BOX
+      const [po] = await pg.db
+        .insert(purchaseOrders)
+        .values({
+          orderNumber: 'PO-BOX-01',
+          vendorId: VENDOR_ID,
+          deliveryLocationId: LOCATION_ID,
+          stateCode: PURCHASE_ORDER_STATE.ORDERED,
+          currencyCode: 'USD',
+        })
+        .returning();
+      const [poLine] = await pg.db
+        .insert(purchaseOrderLineItems)
+        .values({
+          purchaseOrderId: po.purchaseOrderId,
+          lineNumber: 1,
+          productId: PROD_ID,
+          unitOfMeasure: 'BOX',
+          quantity: '10',
+          quantityReceived: '0',
+          pricePerUnit: '100',
+          taxCategoryId: TAX_CAT_ID,
+        })
+        .returning();
+
+      // 3. Receive the goods
+      await service.create(
+        {
+          vendorId: VENDOR_ID,
+          locationId: LOCATION_ID,
+          lines: [{ productId: PROD_ID, quantityReceived: '5' }],
+        },
+        'admin',
+      );
+
+      // 4. Assert the boundary doesn't strip 'BOX'
+      expect(mockInventoryService.recordInventoryMovement).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          lines: expect.arrayContaining([
+            expect.objectContaining({
+              productId: PROD_ID,
+              quantity: 5,
+              uomCode: 'BOX',
+            }),
+          ]),
+        }),
+      );
     });
   });
 });

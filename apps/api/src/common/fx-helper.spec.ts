@@ -32,17 +32,15 @@ describe('FX Helper (getExchangeRateForCurrency)', () => {
     expect(result).toEqual({ rate: 1.0, baseCurrency: 'USD' });
   });
 
-  it('should calculate the cross rate correctly when both currency and base have rates', async () => {
+  it('should return the direct buyRate when currency differs from base', async () => {
     // Mock Base Currency fetch (Base = USD)
     limitMock.mockResolvedValueOnce([{ baseCurrency: 'USD' }]);
 
-    // Mock From Rate fetch (Currency = GBP, rate against EUR = 0.8)
-    limitMock.mockResolvedValueOnce([{ currencyCode: 'GBP', buyRate: '0.8' }]);
+    // Mock From Rate fetch (Currency = GBP, direct rate = 1.375)
+    limitMock.mockResolvedValueOnce([
+      { currencyCode: 'GBP', buyRate: '1.375' },
+    ]);
 
-    // Mock Base Rate fetch (Currency = USD, rate against EUR = 1.1)
-    limitMock.mockResolvedValueOnce([{ currencyCode: 'USD', buyRate: '1.1' }]);
-
-    // Expected rate: 1.1 / 0.8 = 1.375
     const result = await getExchangeRateForCurrency(dbMock, 'GBP', new Date());
     expect(result).toEqual({ rate: 1.375, baseCurrency: 'USD' });
   });
@@ -61,20 +59,25 @@ describe('FX Helper (getExchangeRateForCurrency)', () => {
     );
   });
 
-  it('should throw an error when no rate is found for the base currency', async () => {
-    // Mock Base Currency fetch (Base = USD)
-    limitMock.mockResolvedValueOnce([{ baseCurrency: 'USD' }]);
+  it('should handle high-precision float calculations accurately', async () => {
+    limitMock.mockResolvedValueOnce([{ baseCurrency: 'AUD' }]);
+    // Mock highly specific precision float
+    limitMock.mockResolvedValueOnce([
+      { currencyCode: 'USD', buyRate: '1.2345678912' },
+    ]);
 
-    // Mock From Rate fetch
-    limitMock.mockResolvedValueOnce([{ currencyCode: 'GBP', buyRate: '0.8' }]);
+    const result = await getExchangeRateForCurrency(dbMock, 'USD', new Date());
+    expect(result.rate).toBeCloseTo(1.2345678912, 10);
+    expect(result.baseCurrency).toEqual('AUD');
+  });
 
-    // Mock Base Rate fetch (returns empty array)
-    limitMock.mockResolvedValueOnce([]);
+  it('should handle repeating decimals and edge cases accurately', async () => {
+    limitMock.mockResolvedValueOnce([{ baseCurrency: 'AUD' }]);
+    limitMock.mockResolvedValueOnce([
+      { currencyCode: 'JPY', buyRate: '0.333333333333' },
+    ]);
 
-    await expect(
-      getExchangeRateForCurrency(dbMock, 'GBP', new Date('2026-06-20')),
-    ).rejects.toThrow(
-      "No exchange rate found for base currency 'USD' on or before 2026-06-20",
-    );
+    const result = await getExchangeRateForCurrency(dbMock, 'JPY', new Date());
+    expect(result.rate).toBeCloseTo(0.333333333333, 10);
   });
 });

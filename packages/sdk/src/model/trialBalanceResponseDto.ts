@@ -7,8 +7,15 @@
  */
 
 export interface TrialBalanceResponseDto {
-  accountId: string;
   accountCode: string;
   name: string;
-  balance: number;
+  accountType: string;
+  isGroup: boolean;
+  openingBalance: number;
+  periodDebit: number;
+  periodCredit: number;
+  closingBalance: number;
+  ytdDebit: number;
+  ytdCredit: number;
+  ytdBalance: number;
 }

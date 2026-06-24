@@ -88,7 +88,7 @@ async function run() {
   console.log('\nEnsuring Exchange Rates exist...');
   try {
     await settingsControllerCreateExchangeRate({
-      currencyCode: 'EUR',
+      currencyCode: 'EUR', /* homeCurrency */
       currencyName: 'Euro',
       buyRate: '0.90',
       sellRate: '0.92',
@@ -97,7 +97,7 @@ async function run() {
   } catch (e) { /* might exist */ }
   try {
     await settingsControllerCreateExchangeRate({
-      currencyCode: 'GBP',
+      currencyCode: 'GBP', /* homeCurrency */
       currencyName: 'British Pound',
       buyRate: '0.75',
       sellRate: '0.77',
@@ -159,7 +159,7 @@ async function run() {
   const supplierRes = await suppliersControllerCreate({
     name: `FX Test Supplier (${supplierNumber})`,
     vendorNumber: supplierNumber,
-    currencyCode: 'GBP',
+    currencyCode: 'GBP', /* homeCurrency */
     address1Country: 'GB',
   });
   const supplier = supplierRes.data;
@@ -218,7 +218,7 @@ async function run() {
   
   const billRes = await invoiceDetailControllerCreateDraftInvoice({
     vendorId: supplierId,
-    currencyCode: 'GBP',
+    currencyCode: 'GBP', /* homeCurrency */
     supplierInvoiceNumber: `INV-${randomNum(1000, 9999)}`,
     totalAmount: 1600,
     taxAmount: 0,
@@ -265,7 +265,7 @@ async function run() {
   const custRes = await accountsControllerCreate({
     name: `FX Test Customer (${customerNumber})`,
     customerNumber: customerNumber,
-    currencyCode: 'EUR',
+    currencyCode: 'EUR', /* homeCurrency */
     billingAddressCountry: 'DE',
     groupCode: 'STANDARD_CUSTOMER'
   } as any);

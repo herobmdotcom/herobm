@@ -70,15 +70,15 @@ export default function NewJournalEntryPage() {
 
     api.costCentersControllerFindAll()
       .then(res => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Expected any due to missing backend type
-        setCostCenters(res.data.filter((c: any) => c.isActive) as any);
+        const cData = res.data as unknown as { costCenterId: string; code: string; name: string; isActive?: boolean }[];
+        setCostCenters(cData.filter(c => c.isActive));
       })
       .catch((err) => reportError(err, 'NewJournalEntryPage - costCenters'));
 
     api.activitiesControllerFindAll()
       .then(res => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Expected any due to missing backend type
-        setActivities(res.data.filter((a: any) => a.isActive) as any);
+        const aData = res.data as unknown as { activityId: string; code: string; name: string; isActive?: boolean }[];
+        setActivities(aData.filter(a => a.isActive));
       })
       .catch((err) => reportError(err, 'NewJournalEntryPage - activities'));
   }, []);

@@ -1219,4 +1219,53 @@ export class SalesInvoiceService {
       return await this.db.transaction(execute);
     }
   }
+
+  async adminMarkPaid(invoiceId: string, actor: string) {
+    return await this.db.transaction(async (tx) => {
+      const [invoice] = await tx
+        .select()
+        .from(salesInvoices)
+        .where(eq(salesInvoices.invoiceId, invoiceId))
+        .limit(1);
+
+      if (!invoice) {
+        throw new NotFoundException(`Invoice ${invoiceId} not found`);
+      }
+
+      if (invoice.stateCode === 'paid' || invoice.stateCode === 'cancelled') {
+        throw new BadRequestException(
+          `Cannot mark invoice as paid. Invoice is currently '${invoice.stateCode}'.`
+        );
+      }
+
+      const [updated] = await tx
+        .update(salesInvoices)
+        .set({
+          stateCode: 'paid',
+          outstandingAmount: '0',
+          baseOutstandingAmount: '0',
+          modifiedOn: new Date(),
+        })
+        .where(eq(salesInvoices.invoiceId, invoiceId))
+        .returning();
+
+      await emitEvent(tx as unknown as DrizzleDB, {
+        entityType: EntityType.SALES_INVOICE,
+        entityId: invoiceId,
+        eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: invoice.invoiceNumber,
+        payload: {
+          entity: 'sales_invoice',
+          entityId: invoiceId,
+          invoiceNumber: invoice.invoiceNumber,
+          from: invoice.stateCode,
+          to: 'paid',
+          note: 'Administrative override: Invoice manually marked as paid without GL impact',
+        },
+        actor,
+      });
+
+      return updated;
+    });
+  }
 }

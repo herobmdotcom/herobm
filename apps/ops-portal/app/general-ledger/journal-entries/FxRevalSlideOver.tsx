@@ -51,18 +51,19 @@ export default function FxRevalSlideOver({ isOpen, onClose, onSuccess }: FxReval
         ]);
         
         const accountsMap: Record<string, { code: string; name: string }> = {};
-        const accList = Array.isArray(accRes.data) ? accRes.data : ((accRes.data as any).data || []);
-        accList.forEach((acc: any) => {
-          accountsMap[acc.glAccountId || acc.id] = { code: acc.accountCode, name: acc.name };
+        const accList = Array.isArray(accRes.data) ? accRes.data : ((accRes.data as { data?: unknown[] }).data || []);
+        accList.forEach((acc: unknown) => {
+          const account = acc as { glAccountId?: string; id: string; accountCode: string; name: string };
+          accountsMap[account.glAccountId || account.id] = { code: account.accountCode, name: account.name };
         });
         setAccounts(accountsMap);
         
-        const settings = setRes.data as any;
+        const settings = setRes.data as { baseCurrency?: string };
         if (settings.baseCurrency) {
           setBaseCurrency(settings.baseCurrency);
         }
       } catch (e) {
-        console.error('Failed to fetch metadata', e);
+        reportError(e, 'FxRevalSlideOver');
       }
     };
     fetchMetadata();
@@ -182,7 +183,13 @@ export default function FxRevalSlideOver({ isOpen, onClose, onSuccess }: FxReval
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {candidates.map((line, idx) => {
+                  {candidates.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500 italic">
+                        No eligible candidates
+                      </td>
+                    </tr>
+                  ) : candidates.map((line, idx) => {
                     const acc = line.accountId ? accounts[line.accountId] : null;
                     const accountCodeDisplay = acc ? acc.code : (line.accountId?.substring(0, 8) + '...');
                     const accountNameDisplay = acc ? acc.name : '';

@@ -223,11 +223,9 @@ describe('FX Lifecycle (e2e)', () => {
     date: string,
     directRate: number,
   ) => {
-    // directRate is the target rate: 1 unit of foreign = directRate units of base
-    // Because the system triangulates: rate = baseRate / foreignRate
-    // Assuming baseRate (AUD) is 1.0, foreignRate = 1.0 / directRate
-    const triangulatedRate = (1.0 / directRate).toFixed(6);
-    await setExchangeRate(currency, date, triangulatedRate);
+    // directRate is the exact multiplier to convert the foreign currency to base currency
+    const exactRate = directRate.toFixed(6);
+    await setExchangeRate(currency, date, exactRate);
   };
 
   beforeAll(async () => {
@@ -280,7 +278,7 @@ describe('FX Lifecycle (e2e)', () => {
         .expect(200);
 
       poLineId = poDetail.body.lines[0].purchaseOrderLineId;
-      expect(parseFloat(poDetail.body.exchangeRate)).toBeCloseTo(1.1, 2);
+      expect(parseFloat(poDetail.body.exchangeRate)).toBeCloseTo(1.1, 5);
     });
 
     it('Setup: Exchange rate EUR = 1.15 on Day 2', async () => {
@@ -329,8 +327,8 @@ describe('FX Lifecycle (e2e)', () => {
       );
 
       // Expected: 10 * 100 EUR = 1000 EUR. PO Rate = 1.10. Base = 1100 AUD
-      expect(parseFloat(invLine.debit)).toBeCloseTo(1100, 1);
-      expect(parseFloat(grniLine.credit)).toBeCloseTo(1100, 1);
+      expect(parseFloat(invLine.debit)).toBeCloseTo(1100, 5);
+      expect(parseFloat(grniLine.credit)).toBeCloseTo(1100, 5);
 
       // Get pending putaway to link to invoice
       const pendingRes = await request(app.getHttpServer())
@@ -420,16 +418,16 @@ describe('FX Lifecycle (e2e)', () => {
       );
 
       // Invoice Total = 1050 EUR @ 1.20 = 1260 AUD
-      expect(parseFloat(apLine.credit)).toBeCloseTo(1260, 1);
+      expect(parseFloat(apLine.credit)).toBeCloseTo(1260, 5);
 
       // GRNI Clearance = 10 * 100 EUR @ 1.10 = 1100 AUD
-      expect(parseFloat(grniLine.debit)).toBeCloseTo(1100, 1);
+      expect(parseFloat(grniLine.debit)).toBeCloseTo(1100, 5);
 
       // PPV = (105 - 100) EUR * 10 = 50 EUR @ 1.20 = 60 AUD
-      expect(parseFloat(ppvLine.debit)).toBeCloseTo(60, 1);
+      expect(parseFloat(ppvLine.debit)).toBeCloseTo(60, 5);
 
       // FX Variance = 1000 EUR @ (1.20 - 1.10) = 100 AUD
-      expect(parseFloat(fxLine.debit)).toBeCloseTo(100, 1);
+      expect(parseFloat(fxLine.debit)).toBeCloseTo(100, 5);
     });
 
     it('Setup: Exchange rate EUR = 1.18 on Day 4', async () => {
@@ -483,14 +481,14 @@ describe('FX Lifecycle (e2e)', () => {
       );
 
       // AP Cleared = 1260 AUD
-      expect(parseFloat(apLine.debit)).toBeCloseTo(1260, 1);
+      expect(parseFloat(apLine.debit)).toBeCloseTo(1260, 5);
 
       // Bank payment = 1050 EUR @ 1.18 = 1239 AUD
-      expect(parseFloat(bankLine.credit)).toBeCloseTo(1239, 1);
+      expect(parseFloat(bankLine.credit)).toBeCloseTo(1239, 5);
 
       // 1260 - 1239 = 21 Realized FX Gain
       expect(fxGainLine).toBeDefined();
-      expect(parseFloat(fxGainLine.credit)).toBeCloseTo(21, 1);
+      expect(parseFloat(fxGainLine.credit)).toBeCloseTo(21, 5);
     });
   });
 
@@ -524,7 +522,7 @@ describe('FX Lifecycle (e2e)', () => {
 
       soLineId = soDetail.body.lines[0].salesOrderLineId;
 
-      expect(parseFloat(soDetail.body.exchangeRate)).toBeCloseTo(1.3, 2);
+      expect(parseFloat(soDetail.body.exchangeRate)).toBeCloseTo(1.3, 5);
     });
 
     it('Setup: Exchange rate GBP = 1.40 on Day 3', async () => {
@@ -575,7 +573,7 @@ describe('FX Lifecycle (e2e)', () => {
       const arLine = entry.lines.find((l: any) => l.accountId === accounts.ar);
 
       // 1100 GBP @ 1.40 = 1540 AUD
-      expect(parseFloat(arLine.debit)).toBeCloseTo(1540, 1);
+      expect(parseFloat(arLine.debit)).toBeCloseTo(1540, 5);
     });
 
     it('Setup: Exchange rate GBP = 1.38 on Day 4', async () => {
@@ -629,14 +627,14 @@ describe('FX Lifecycle (e2e)', () => {
       );
 
       // AR Cleared = 1540 AUD
-      expect(parseFloat(arLine.credit)).toBeCloseTo(1540, 1);
+      expect(parseFloat(arLine.credit)).toBeCloseTo(1540, 5);
 
       // Bank receipt = 1100 GBP @ 1.38 = 1518 AUD
-      expect(parseFloat(bankLine.debit)).toBeCloseTo(1518, 1);
+      expect(parseFloat(bankLine.debit)).toBeCloseTo(1518, 5);
 
       // 1540 - 1518 = 22 Realized FX Loss
       expect(fxLossLine).toBeDefined();
-      expect(parseFloat(fxLossLine.debit)).toBeCloseTo(22, 1);
+      expect(parseFloat(fxLossLine.debit)).toBeCloseTo(22, 5);
     });
   });
 });

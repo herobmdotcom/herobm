@@ -31,6 +31,7 @@ import {
   products as coreProducts,
   productComponents,
   locations,
+  exchangeRates,
 } from '../drizzle/herobm-core-schema';
 
 import { taxCategories } from '../drizzle/herobm-core-schema';
@@ -80,6 +81,33 @@ describe('OrdersWriteService', () => {
         code: 'MAIN',
         name: 'Main Location',
       })
+      .onConflictDoNothing();
+
+    await pg.db
+      .insert(exchangeRates)
+      .values([
+        {
+          currencyCode: 'EUR',
+          currencyName: 'Euro',
+          effectiveDate: new Date('2000-01-01'),
+          buyRate: '0.85',
+          sellRate: '0.85',
+        },
+        {
+          currencyCode: 'AUD',
+          currencyName: 'Australian Dollar',
+          effectiveDate: new Date('2000-01-01'),
+          buyRate: '1.0',
+          sellRate: '1.0',
+        },
+        {
+          currencyCode: 'SGD',
+          currencyName: 'Singapore Dollar',
+          effectiveDate: new Date('2000-01-01'),
+          buyRate: '1.10',
+          sellRate: '1.10',
+        },
+      ])
       .onConflictDoNothing();
 
     mocktaxService = {

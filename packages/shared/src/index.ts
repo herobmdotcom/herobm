@@ -1,4 +1,3 @@
-
 export {
   // Transition maps
   SALES_ORDER_TRANSITIONS,
@@ -105,8 +104,6 @@ export {
   resolveEffectiveDiscount,
 } from './pricing';
 
-
-
 export {
   formatCompositeQuantity,
   calculateUomPriceAdjustment,
@@ -153,8 +150,9 @@ export type ProductType = 'inventory' | 'non-stock' | 'service';
 
 export {
   GL_ACCOUNT_TYPE,
+  calculateAgedTotals,
 } from './accounting';
-export type { GLAccountType } from './accounting';
+export type { GLAccountType, AgedBalanceRow, AgedTotals } from './accounting';
 
 export {
   getErrorMessage,

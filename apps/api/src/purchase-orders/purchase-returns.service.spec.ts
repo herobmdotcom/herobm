@@ -81,6 +81,7 @@ describe('PurchaseReturnsService', () => {
       defaultGrniAccountId: () => 'grni-acc',
       defaultCogsAccountId: () => 'cogs-acc',
       defaultShrinkageAccountId: () => 'shrink-acc',
+      defaultPpvAccountId: () => 'ppv-acc',
     };
 
     const module: TestingModule = await Test.createTestingModule({

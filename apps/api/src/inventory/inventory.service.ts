@@ -42,6 +42,7 @@ import {
   productDefaultBins,
   goodsReceived,
   goodsReceivedLines,
+  purchaseOrderLineItems,
 } from '../drizzle/herobm-core-schema';
 import { randomUUID } from 'crypto';
 import { emitEvent } from '../common/emit-event';
@@ -878,7 +879,7 @@ export class InventoryService {
         productId: string;
         binId: string;
         quantity: number;
-        uomCode?: string;
+        uomCode: string; // <-- strictly required
       }[];
     },
   ) {
@@ -1176,6 +1177,7 @@ export class InventoryService {
         let recordSourceType: string;
         let recordSourceId: string;
         let linePrefix: string;
+        let uomCode: string;
 
         if (lineDto.sourceType === 'goods_receipt') {
           const [grLine] = await tx
@@ -1183,6 +1185,8 @@ export class InventoryService {
               line: goodsReceivedLines,
               locationId: goodsReceived.locationId,
               receiptNumber: goodsReceived.receiptNumber,
+              uomCode: purchaseOrderLineItems.unitOfMeasure,
+              baseUom: products.baseUom,
             })
             .from(goodsReceivedLines)
             .innerJoin(
@@ -1192,6 +1196,14 @@ export class InventoryService {
                 goodsReceived.goodsReceivedId,
               ),
             )
+            .leftJoin(
+              purchaseOrderLineItems,
+              eq(
+                goodsReceivedLines.purchaseOrderLineId,
+                purchaseOrderLineItems.purchaseOrderLineId,
+              ),
+            )
+            .leftJoin(products, eq(goodsReceivedLines.productId, products.productId))
             .where(eq(goodsReceivedLines.goodsReceivedLineId, lineDto.lineId))
             .limit(1);
 
@@ -1214,6 +1226,7 @@ export class InventoryService {
             putawayStatus === PUTAWAY_STATUS.QUARANTINED
               ? 'QUARANTINE'
               : 'RECEIVING';
+          uomCode = grLine.uomCode || grLine.baseUom || 'EA';
         } else {
           // sales_return
           const [retLine] = await tx
@@ -1222,6 +1235,7 @@ export class InventoryService {
               locationId: salesOrders.fulfillmentLocationId,
               returnNumber: salesOrderReturns.returnNumber,
               productId: salesOrderLineItems.productId,
+              uomCode: salesOrderLineItems.unitOfMeasure,
             })
             .from(salesOrderReturnLines)
             .innerJoin(
@@ -1258,6 +1272,7 @@ export class InventoryService {
             putawayStatus === PUTAWAY_STATUS.QUARANTINED
               ? 'QUARANTINE'
               : 'CUSTOMER_RETURNS';
+          uomCode = retLine.uomCode || 'EA';
         }
 
         if (putawayStatus === PUTAWAY_STATUS.COMPLETED) {
@@ -1290,10 +1305,10 @@ export class InventoryService {
           productId: string;
           binId: string;
           quantity: number;
-          uomCode?: string;
+          uomCode: string;
         }[] = [
-          { productId, binId: sourceBin.binId, quantity: -qty },
-          { productId, binId: lineDto.destinationBinId, quantity: qty },
+          { productId, binId: sourceBin.binId, quantity: -qty, uomCode },
+          { productId, binId: lineDto.destinationBinId, quantity: qty, uomCode },
         ];
 
         // Handle discrepancies
@@ -1321,6 +1336,7 @@ export class InventoryService {
               productId,
               binId: lineDto.destinationBinId,
               quantity: discrepancy,
+              uomCode,
             });
             this.logger.warn(
               `Putaway discrepancy adjustment created. Expected: ${expectedTotal}, Counted: ${newTotal}, Adj: ${discrepancy}`,
@@ -1698,6 +1714,12 @@ export class InventoryService {
             : 'MANUAL';
       const recordSourceId = dto.lineId || dto.sourceBinId;
 
+      const [product] = await tx
+        .select({ baseUom: products.baseUom })
+        .from(products)
+        .where(eq(products.productId, productId))
+        .limit(1);
+
       await this.recordInventoryMovement(tx, {
         entryNumber: `${prefix}-${reference}`,
         sourceType: recordSourceType,
@@ -1709,11 +1731,13 @@ export class InventoryService {
             productId: productId,
             binId: sourceBin.binId,
             quantity: -quantityToMove,
+            uomCode: product.baseUom,
           },
           {
             productId: productId,
             binId: targetBinId,
             quantity: quantityToMove,
+            uomCode: product.baseUom,
           },
         ],
       });
@@ -1763,11 +1787,17 @@ export class InventoryService {
         productId: string;
         binId: string;
         quantity: number;
-        uomCode?: string;
+        uomCode: string;
       }[] = [];
       const reasonStr = dto.reason || 'Manual stock move';
 
       for (const line of dto.lines) {
+        const [product] = await tx
+          .select({ baseUom: products.baseUom })
+          .from(products)
+          .where(eq(products.productId, line.productId))
+          .limit(1);
+
         // Fetch source and target bin details
         const [sourceBinInfo] = await tx
           .select({
@@ -1852,11 +1882,13 @@ export class InventoryService {
             productId: line.productId,
             binId: line.sourceBinId,
             quantity: -qtyToMove,
+            uomCode: product?.baseUom || 'EA',
           },
           {
             productId: line.productId,
             binId: line.targetBinId,
             quantity: qtyToMove,
+            uomCode: product?.baseUom || 'EA',
           },
         );
       }
@@ -1920,10 +1952,21 @@ export class InventoryService {
     if (!dto.lines || dto.lines.length === 0) return { success: true };
 
     return await this.db.transaction(async (tx) => {
-      const movementLines = [];
+      const movementLines: {
+        productId: string;
+        binId: string;
+        quantity: number;
+        uomCode: string;
+      }[] = [];
       const reasonStr = dto.reason || 'N/A';
 
       for (const line of dto.lines) {
+        const [product] = await tx
+          .select({ baseUom: products.baseUom })
+          .from(products)
+          .where(eq(products.productId, line.productId))
+          .limit(1);
+
         const currentContent = await tx
           .select({ actualQuantity: binContents.actualQuantity })
           .from(binContents)
@@ -1947,6 +1990,7 @@ export class InventoryService {
             productId: line.productId,
             binId: line.binId,
             quantity: diff,
+            uomCode: product?.baseUom || 'EA',
           });
         }
       }

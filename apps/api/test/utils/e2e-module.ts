@@ -1,4 +1,6 @@
 import { Test, TestingModuleBuilder } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ConvertEmptyStringsToNullMiddleware } from '../../src/common/middleware/convert-empty-strings-to-null.middleware';
 import { AppModule } from '../../src/app.module';
 import { DRIZZLE, POSTGRES_CLIENT } from '../../src/drizzle/drizzle.module';
 // PGlite imports removed from static scope to prevent Node from evaluating
@@ -38,4 +40,18 @@ export async function createE2eModule(): Promise<TestingModuleBuilder> {
   }
 
   return builder;
+}
+
+export function setupE2eApp(app: INestApplication) {
+  app.setGlobalPrefix('api');
+  const emptyStringMiddleware = new ConvertEmptyStringsToNullMiddleware();
+  app.use(emptyStringMiddleware.use.bind(emptyStringMiddleware));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+  );
 }

@@ -14,7 +14,11 @@ export class WebhooksService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   async list() {
-    return this.db.select().from(webhooks);
+    const records = await this.db.select().from(webhooks);
+    return records.map((w) => ({
+      ...w,
+      secretKey: w.secretKey ? `${w.secretKey.substring(0, 10)}...` : null,
+    }));
   }
 
   async listEvents() {
@@ -23,7 +27,7 @@ export class WebhooksService {
 
   async create(body: CreateWebhookDto, actorUsername: string) {
     const { targetUrl, eventTypes } = body;
-    const secretKey = randomBytes(32).toString('hex');
+    const secretKey = `whsec_${randomBytes(32).toString('hex')}`;
 
     const [created] = await this.db.transaction(async (tx) => {
       const [newWebhook] = await tx
@@ -92,7 +96,12 @@ export class WebhooksService {
     });
 
     if (!updated) throw new NotFoundException('Webhook not found');
-    return updated;
+    return {
+      ...updated,
+      secretKey: updated.secretKey
+        ? `${updated.secretKey.substring(0, 10)}...`
+        : null,
+    };
   }
 
   async remove(id: string, actorUsername: string) {

@@ -69,7 +69,13 @@ export default function JournalEntriesPage() {
       field: 'entryDate', 
       headerName: t('columns.date'), 
       width: 120,
-      valueFormatter: (p: ValueFormatterParams<JournalEntryRow>) => p.value ? new Date(p.value as string).toLocaleDateString() : ''
+      sort: 'desc',
+      valueFormatter: (p: ValueFormatterParams<JournalEntryRow>) => {
+        if (!p.value) return '';
+        const dateStr = (p.value as string).split('T')[0];
+        const [year, month, day] = dateStr.split('-');
+        return `${day}/${month}/${year}`;
+      }
     },
     {
       field: 'partyName',

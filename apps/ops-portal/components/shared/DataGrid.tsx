@@ -1228,7 +1228,7 @@ export default function DataGrid<T>({
 
   const gridContent = (
     <div className={`flex-1 flex flex-col relative w-full ${domLayout === 'autoHeight' ? '' : 'lg:min-h-0 lg:h-full'}`}>
-      <div className="flex flex-col-reverse lg:flex-row lg:items-center justify-between w-full px-4 pt-2 pb-2 lg:pt-1 lg:pb-4 bg-white shrink-0 min-h-[48px] gap-2 lg:gap-4 rounded-xl lg:rounded-none -[0_2px_8px_rgba(0,0,0,0.04)] lg: border border-slate-200 lg:border-t-0 lg:border-x-0 lg:border-b-slate-100">
+      <div className="flex flex-col-reverse lg:flex-row lg:items-center justify-between w-full px-4 pt-2 pb-2 lg:pt-1 lg:pb-2 bg-white shrink-0 min-h-[48px] gap-2 lg:gap-4 rounded-xl lg:rounded-none -[0_2px_8px_rgba(0,0,0,0.04)] lg:border lg:border-t-0 lg:border-x-0 lg:border-b-transparent">
         <div className="flex items-center justify-between w-full lg:w-auto gap-2 lg:gap-3 shrink-0">
           {(!effectiveFetchAll && mounted) && prevButton}
           

@@ -222,7 +222,7 @@ describe('SalesInvoiceService', () => {
         salesOrderId: '00000000-0000-4000-8000-000000000100',
         orderNumber: 'SO-TEST-1',
         customerId: CUSTOMER_ID,
-        fulfillmentLocationId: '00000000-0000-4000-8000-000000000000',
+        fulfillmentLocationId: LOCATION_ID,
         currencyCode: 'AUD',
         stateCode: SALES_ORDER_STATE.DRAFT,
       });

@@ -533,6 +533,7 @@ export class ReturnsWriteService {
               stockLines.push({
                 productId: orderLine.productId!,
                 quantity: newlyReceived,
+                uomCode: orderLine.unitOfMeasure,
               });
 
               // Calculate COGS
@@ -589,6 +590,7 @@ export class ReturnsWriteService {
             productId: line.productId,
             binId: returnsBin.binId,
             quantity: line.quantity,
+            uomCode: line.uomCode || 'EA',
           }));
 
           await this.inventoryService.recordInventoryMovement(innerTx, {

@@ -259,7 +259,7 @@ export class BackordersService {
       const existingAllocations = await tx
         .select({
           purchaseOrderLineId: backorders.purchaseOrderLineId,
-          allocatedQty: sql<number>`SUM(${backorders.quantity}::numeric)`,
+          allocatedQty: sql<number>`SUM(${backorders.quantity}::numeric)`.mapWith(Number),
         })
         .from(backorders)
         .where(sql`${backorders.purchaseOrderLineId} IS NOT NULL`)
@@ -595,7 +595,7 @@ export class BackordersService {
     const existingAllocations = await this.db
       .select({
         purchaseOrderLineId: backorders.purchaseOrderLineId,
-        allocatedQty: sql<number>`SUM(${backorders.quantity}::numeric)`,
+        allocatedQty: sql<number>`SUM(${backorders.quantity}::numeric)`.mapWith(Number),
       })
       .from(backorders)
       .where(inArray(backorders.purchaseOrderLineId, poLineIds))
@@ -678,7 +678,7 @@ export class BackordersService {
       // Verify capacity
       const [existingAlloc] = await tx
         .select({
-          allocated: sql<number>`SUM(${backorders.quantity}::numeric)`,
+          allocated: sql<number>`SUM(${backorders.quantity}::numeric)`.mapWith(Number),
         })
         .from(backorders)
         .where(eq(backorders.purchaseOrderLineId, purchaseOrderLineId));

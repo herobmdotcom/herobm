@@ -58,7 +58,7 @@ export class WeightedAverageStrategy implements ValuationStrategy {
     const newWeightedAverageCost =
       newQuantityOnHand > 0
         ? (totalExistingValue + totalReceivedValue) / newQuantityOnHand
-        : 0;
+        : currentWac;
 
     return {
       newWeightedAverageCost: newWeightedAverageCost.toFixed(4),

@@ -11,6 +11,7 @@ import { ValidState } from '@/types/states';
 import Link from 'next/link';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useSalesInvoice } from './useSalesInvoice';
+import { useAuth } from '@/components/AuthGate';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 
 import * as api from '@herobm/sdk';
@@ -20,8 +21,11 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
   const router = useRouter();
   const tCommon = useTranslations('common');
   const t = useTranslations('salesInvoices');
+  const { permissions } = useAuth();
+  const canManageGL = permissions.some(p => p.resource === 'gl' && p.action === 'write');
   const { invoice, loading, error } = useSalesInvoice(id);
   const [cancelling, setCancelling] = React.useState(false);
+  const [markingPaid, setMarkingPaid] = React.useState(false);
 
   useDocumentTitle(invoice ? `Invoice ${invoice.invoiceNumber}` : t('loading'));
 
@@ -42,6 +46,19 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
     }
   };
 
+  const handleAdminMarkPaid = async () => {
+    if (!window.confirm('This will mark the invoice as paid without generating a GL entry. Proceed?')) return;
+    setMarkingPaid(true);
+    try {
+      await api.invoiceDetailControllerAdminMarkSalesInvoicePaid(id, {});
+      window.location.reload();
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to mark as paid');
+    } finally {
+      setMarkingPaid(false);
+    }
+  };
+
   return (
     <DetailsLayout
       header={
@@ -51,15 +68,18 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           onBack={() => router.push('/sales-invoices')}
           badges={<StateBadge state={invoice.stateCode as ValidState} />}
           actions={
-            invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && (
-              <button
-                className="btn btn-secondary btn-sm text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-                onClick={handleCancel}
-                disabled={cancelling}
-              >
-                {cancelling ? tCommon('saving') : tCommon('cancel')}
-              </button>
-            )
+            <div className="flex items-center gap-2">
+
+              {invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && (
+                <button
+                  className="btn btn-secondary btn-sm text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                  onClick={handleCancel}
+                  disabled={cancelling}
+                >
+                  {cancelling ? tCommon('saving') : tCommon('cancel')}
+                </button>
+              )}
+            </div>
           }
         />
       }
@@ -301,6 +321,15 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               <span className="material-symbols-outlined shrink-0">payments</span>
               <span>{t('paymentAllocations')}</span>
             </h3>
+            {invoice.stateCode !== 'paid' && invoice.stateCode !== 'cancelled' && canManageGL && (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={handleAdminMarkPaid}
+                disabled={markingPaid}
+              >
+                {markingPaid ? tCommon('loadingEllipsis') : 'Mark Paid'}
+              </button>
+            )}
           </div>
           {invoice.allocations && invoice.allocations.length > 0 ? (
             <div className="overflow-x-auto -mx-5 sm:mx-0 px-5 sm:px-0">

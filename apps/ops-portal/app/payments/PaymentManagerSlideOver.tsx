@@ -12,6 +12,7 @@ import { formatAmount } from '@/lib/currency';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import {
+  PAYMENT_TYPE,
   PAYMENT_STATE, 
   SALES_INVOICE_STATE, 
   PURCHASE_INVOICE_STATE,
@@ -124,7 +125,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
   
   // Creation Form State
   const [form, setForm] = useState({
-    paymentType: 'customer_receipt',
+    paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT as string,
     partyId: '',
     paymentDate: new Date().toISOString().split('T')[0],
     modeOfPayment: 'EFT',
@@ -170,7 +171,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       setJournalEntry(null);
 
       setForm({
-        paymentType: 'customer_receipt',
+        paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
         partyId: '',
         paymentDate: new Date().toISOString().split('T')[0],
         modeOfPayment: 'EFT',
@@ -224,19 +225,19 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         return (Array.isArray(payload) ? payload : (Array.isArray((payload as { data?: unknown })?.data) ? (payload as { data?: unknown }).data : [])) as InvoiceLike[];
       };
 
-      if (data.paymentType === 'customer_receipt') {
+      if (data.paymentType === PAYMENT_TYPE.CUSTOMER_RECEIPT) {
         const res = await api.invoiceDetailControllerGetSalesInvoicesGlobal({ customerId: data.partyId, balanceStatus: 'unpaid', days: 0 });
         list = extractList(res);
         referenceType = 'sales_invoice';
-      } else if (data.paymentType === 'customer_refund') {
+      } else if (data.paymentType === PAYMENT_TYPE.CUSTOMER_REFUND) {
         const res = await api.salesCreditNotesControllerFindAll({ customerId: data.partyId, balanceStatus: 'unpaid' });
         list = extractList(res);
         referenceType = 'sales_credit_note';
-      } else if (data.paymentType === 'supplier_payment') {
+      } else if (data.paymentType === PAYMENT_TYPE.SUPPLIER_PAYMENT) {
         const res = await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ vendorId: data.partyId, balanceStatus: 'unpaid', days: 0 });
         list = extractList(res);
         referenceType = 'purchase_invoice';
-      } else if (data.paymentType === 'supplier_refund') {
+      } else if (data.paymentType === PAYMENT_TYPE.SUPPLIER_REFUND) {
         const res = await api.purchaseDebitNotesControllerFindAll({ vendorId: data.partyId, balanceStatus: 'unpaid' });
         list = extractList(res);
         referenceType = 'purchase_debit_note';
@@ -644,12 +645,12 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                       }}
                       required
                     >
-                      <option value="customer_receipt">{t('manager.options.customerReceipt')}</option>
-                      <option value="supplier_payment">{t('manager.options.supplierPayment')}</option>
-                      <option value="customer_refund">{t('manager.options.customerRefund')}</option>
-                      <option value="supplier_refund">{t('manager.options.supplierRefund')}</option>
-                      <option value="direct_receipt">{t('manager.options.directReceipt')}</option>
-                      <option value="direct_payment">{t('manager.options.directPayment')}</option>
+                      <option value={PAYMENT_TYPE.CUSTOMER_RECEIPT}>{t('manager.options.customerReceipt')}</option>
+                      <option value={PAYMENT_TYPE.SUPPLIER_PAYMENT}>{t('manager.options.supplierPayment')}</option>
+                      <option value={PAYMENT_TYPE.CUSTOMER_REFUND}>{t('manager.options.customerRefund')}</option>
+                      <option value={PAYMENT_TYPE.SUPPLIER_REFUND}>{t('manager.options.supplierRefund')}</option>
+                      <option value={PAYMENT_TYPE.DIRECT_RECEIPT}>{t('manager.options.directReceipt')}</option>
+                      <option value={PAYMENT_TYPE.DIRECT_PAYMENT}>{t('manager.options.directPayment')}</option>
                     </select>
                   </div>
                   <div>

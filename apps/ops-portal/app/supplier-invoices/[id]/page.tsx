@@ -14,7 +14,9 @@ import POMatchingPanel from '@/components/shared/POMatchingPanel';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
-import { cap, isBackTransition, PURCHASE_INVOICE_LIFECYCLE, PURCHASE_INVOICE_STATE, MATCH_STATUS, calculateEarlyPaymentDiscount } from '@herobm/shared';
+import { cap, isBackTransition, PURCHASE_INVOICE_LIFECYCLE, PURCHASE_INVOICE_STATE, MATCH_STATUS, calculateEarlyPaymentDiscount, getErrorMessage } from '@herobm/shared';
+import * as api from '@herobm/sdk';
+import { useAuth } from '@/components/AuthGate';
 import { useSupplierInvoice, PurchaseInvoiceDetails } from './useSupplierInvoice';
 import PaymentManagerSlideOver from '@/app/payments/PaymentManagerSlideOver';
 
@@ -23,7 +25,10 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
   const { id } = React.use(params);
   const t = useTranslations('purchaseOrders');
   const tCommon = useTranslations('common');
+  const { permissions } = useAuth();
+  const canManageGL = permissions.some(p => p.resource === 'gl' && p.action === 'write');
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [markingPaid, setMarkingPaid] = useState(false);
 
   const {
     invoice, loading, saving,
@@ -98,6 +103,19 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
   if (!invoice) {
     return <div className="flex items-center justify-center p-12 text-gray-500 text-sm">{tCommon('errors.failedToLoadOrder')}</div>;
   }
+
+  const handleAdminMarkPaid = async () => {
+    if (!window.confirm('This will mark the invoice as paid without generating a GL entry. Proceed?')) return;
+    setMarkingPaid(true);
+    try {
+      await api.invoiceDetailControllerAdminMarkPurchaseInvoicePaid(id, {});
+      window.location.reload();
+    } catch (err: unknown) {
+      alert(getErrorMessage(err) || 'Failed to mark as paid');
+    } finally {
+      setMarkingPaid(false);
+    }
+  };
 
   const isEditable = invoice.stateCode === PURCHASE_INVOICE_STATE.DRAFT;
   const canEditLines = isEditable && !isMatchingMode;
@@ -849,7 +867,18 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
 
         {/* Payment Allocations Card */}
         <div className="card mt-4 p-5">
-          <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">{t('paymentAllocations')}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-0">{t('paymentAllocations')}</h2>
+            {invoice.stateCode !== 'paid' && invoice.stateCode !== 'cancelled' && canManageGL && (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={handleAdminMarkPaid}
+                disabled={markingPaid}
+              >
+                {markingPaid ? tCommon('loadingEllipsis') : 'Mark Paid'}
+              </button>
+            )}
+          </div>
           {displayAllocations && displayAllocations.length > 0 ? (
             <>
               <div className="hidden lg:block overflow-x-auto">

@@ -1,8 +1,18 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../../app.module';
-import { GlService } from '../../gl/gl.service';
-import { DRIZZLE } from '../../drizzle/drizzle.module';
-import { glAccounts } from '../../drizzle/herobm-core-schema';
+
+import { 
+  glAccounts,
+  locations,
+  zones,
+  bins,
+  suppliers,
+  customers,
+  products,
+  taxCategories,
+  tradingTerms,
+  uomDictionary,
+  glJournalEntries,
+  glJournalLines
+} from '../../drizzle/herobm-core-schema';
 import { eq, sql } from 'drizzle-orm';
 
 import type { SeedDB } from '../run';
@@ -12,85 +22,163 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
     console.log('  [DRY RUN] Would seed test data');
     return;
   }
-  const app = await NestFactory.createApplicationContext(AppModule);
-  const appDb = app.get(DRIZZLE);
-  const glService = app.get(GlService);
+  
+  console.log('Seeding baseline test data...');
 
-  const bankAccs = await appDb
+
+
+  const defaultTerm = await db.select().from(tradingTerms).where(sql`code = 'NET30'`).limit(1);
+  const termId = defaultTerm[0]?.tradingTermsId;
+
+  // 1. Locations
+  const locId = 'c9050d22-1b1e-4519-8664-d621b1db7b8c';
+  const zoneId = '2cfb8c56-b08e-4a6c-a225-b873a1198c8c';
+  const binId = '1fbd779b-ae7d-419b-ab29-4d6cbbf7cd46';
+
+  await db.insert(locations).values({
+    locationId: locId,
+    code: 'TEST-LOC',
+    name: 'Test Location',
+    addressLine1: '123 Test St',
+    city: 'Test City',
+    state: 'TX',
+    postCode: '12345',
+    country: 'USA',
+  }).onConflictDoNothing();
+
+  await db.insert(zones).values({
+    zoneId: zoneId,
+    locationId: locId,
+    code: 'TEST-ZONE',
+    name: 'Test Zone',
+  }).onConflictDoNothing();
+
+  await db.insert(bins).values({
+    binId: binId,
+    zoneId: zoneId,
+    binNumber: 'TEST-BIN',
+    binType: 'storage',
+  }).onConflictDoNothing();
+
+  // 2. Suppliers
+  const supId = 'b0b3e7ea-b7bd-425d-bb85-df0a28f804aa';
+  await db.insert(suppliers).values({
+    vendorId: supId,
+    vendorNumber: 'TEST-SUP-01',
+    name: 'Test Supplier LLC',
+    currencyCode: 'USD',
+    tradingTermsId: termId ?? null,
+    address1Country: 'USA',
+  }).onConflictDoNothing();
+
+  // 3. Customers
+  const custId = 'd32c4e85-d865-4f40-8abf-c4e89e47261d';
+  await db.insert(customers).values({
+    customerId: custId,
+    customerNumber: 'TEST-CUST-01',
+    name: 'Test Customer Inc',
+    currencyCode: 'USD',
+    tradingTermsId: termId ?? null,
+    creditLimit: '10000.00',
+    billingAddressCountry: 'USA',
+  }).onConflictDoNothing();
+
+  // 4. Products
+  await db.insert(uomDictionary).values({ uomCode: 'BOX', description: 'Box' }).onConflictDoNothing();
+  
+  const prodId = 'e2cd8fba-813c-48c0-84c1-4b13a375494d';
+  await db.insert(products).values({
+    productId: prodId,
+    productNumber: 'TEST-PROD-01',
+    name: 'Test Product 1',
+    baseUom: 'EA',
+    productType: 'inventory',
+  }).onConflictDoNothing();
+
+  console.log('Baseline test master data seeded.');
+
+  // 5. Existing payment GL seed
+  const bankAccs = await db
     .select()
     .from(glAccounts)
     .where(eq(glAccounts.isBankAccount, true))
     .limit(1);
+  
   if (!bankAccs.length) {
-    console.error('No bank account found');
-    process.exit(1);
+    console.warn('No bank account found, skipping payment seeds');
+    return;
   }
   const bankAcc = bankAccs[0];
 
-  const arAccs = await appDb
+  const arAccs = await db
     .select()
     .from(glAccounts)
     .where(sql`name ILIKE '%Receivable%'`)
     .limit(1);
-  const apAccs = await appDb
+  const apAccs = await db
     .select()
     .from(glAccounts)
     .where(sql`name ILIKE '%Payable%'`)
     .limit(1);
 
-  const arCode = arAccs.length ? arAccs[0].accountCode : '1200';
-  const apCode = apAccs.length ? apAccs[0].accountCode : '2000';
-
-  console.log(`Using Bank Account: ${bankAcc.accountCode} - ${bankAcc.name}`);
+  const arId = arAccs.length ? arAccs[0].glAccountId : bankAcc.glAccountId;
+  const apId = apAccs.length ? apAccs[0].glAccountId : bankAcc.glAccountId;
 
   // Create Customer Payment
-  await glService.postJournalEntry(
-    [
-      {
-        accountCode: bankAcc.accountCode,
-        debit: 500.0,
-        credit: 0,
-        memo: 'CUSTOMER PAYMENT INV-001',
-      },
-      {
-        accountCode: arCode,
-        debit: 0,
-        credit: 500.0,
-        memo: 'CUSTOMER PAYMENT INV-001',
-      },
-    ],
+  const custJeId = '00000000-0000-0000-0000-000000000001';
+  await db.insert(glJournalEntries).values({
+    journalEntryId: custJeId,
+    entryNumber: 'JE-CUST-PAY-01',
+    entryDate: '2026-05-27',
+    sourceType: 'manual',
+    memo: 'Test Customer Payment',
+    createdBy: 'system',
+  }).onConflictDoNothing();
+
+  await db.insert(glJournalLines).values([
     {
-      sourceType: 'manual',
-      memo: 'Test Customer Payment',
-      entryDate: '2026-05-27',
-      actor: 'system',
+      journalEntryId: custJeId,
+      glAccountId: bankAcc.glAccountId,
+      debit: '500.00',
+      credit: '0.00',
+      memo: 'CUSTOMER PAYMENT INV-001',
     },
-  );
+    {
+      journalEntryId: custJeId,
+      glAccountId: arId,
+      debit: '0.00',
+      credit: '500.00',
+      memo: 'CUSTOMER PAYMENT INV-001',
+    }
+  ]).onConflictDoNothing();
 
   // Create Supplier Payment
-  await glService.postJournalEntry(
-    [
-      {
-        accountCode: apCode,
-        debit: 200.0,
-        credit: 0,
-        memo: 'SUPPLIER PAYMENT BILL-001',
-      },
-      {
-        accountCode: bankAcc.accountCode,
-        debit: 0,
-        credit: 200.0,
-        memo: 'SUPPLIER PAYMENT BILL-001',
-      },
-    ],
+  const supJeId = '00000000-0000-0000-0000-000000000002';
+  await db.insert(glJournalEntries).values({
+    journalEntryId: supJeId,
+    entryNumber: 'JE-SUP-PAY-01',
+    entryDate: '2026-05-28',
+    sourceType: 'manual',
+    memo: 'Test Supplier Payment',
+    createdBy: 'system',
+  }).onConflictDoNothing();
+
+  await db.insert(glJournalLines).values([
     {
-      sourceType: 'manual',
-      memo: 'Test Supplier Payment',
-      entryDate: '2026-05-28',
-      actor: 'system',
+      journalEntryId: supJeId,
+      glAccountId: apId,
+      debit: '200.00',
+      credit: '0.00',
+      memo: 'SUPPLIER PAYMENT BILL-001',
     },
-  );
+    {
+      journalEntryId: supJeId,
+      glAccountId: bankAcc.glAccountId,
+      debit: '0.00',
+      credit: '200.00',
+      memo: 'SUPPLIER PAYMENT BILL-001',
+    }
+  ]).onConflictDoNothing();
 
   console.log('Payments seeded successfully.');
-  await app.close();
 }

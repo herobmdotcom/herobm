@@ -9,6 +9,8 @@ import type { DbConfigDto } from './dbConfigDto';
 import type { ExecuteEltDtoSource } from './executeEltDtoSource';
 
 export interface ExecuteEltDto {
+  /** If provided, all legacy invoices (sales and purchase) with a due date before this date will be considered paid. */
+  legacyInvoicesPaidBeforeDate?: string;
   dbConfig?: DbConfigDto;
   source?: ExecuteEltDtoSource;
   resumeExtraction?: boolean;

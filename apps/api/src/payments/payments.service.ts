@@ -38,6 +38,7 @@ import { NachaGeneratorService } from './nacha-generator.service';
 import { inArray } from 'drizzle-orm';
 import {
   PAYMENT_STATE,
+  PAYMENT_TYPE,
   PAYMENT_TRANSITIONS,
   SALES_INVOICE_STATE,
   PURCHASE_INVOICE_STATE,
@@ -448,11 +449,13 @@ export class PaymentsService {
       const totalControlBase =
         totalAllocatedBaseAtInvoiceRate + unallocatedBase;
 
-      const isReceipt = [
-        'customer_receipt',
-        'supplier_refund',
-        'direct_receipt',
-      ].includes(payment.paymentType);
+      const isReceipt = (
+        [
+          PAYMENT_TYPE.CUSTOMER_RECEIPT,
+          PAYMENT_TYPE.SUPPLIER_REFUND,
+          PAYMENT_TYPE.DIRECT_RECEIPT,
+        ] as string[]
+      ).includes(payment.paymentType);
 
       const settings = await this.glService.getSettings(tx);
 
@@ -738,8 +741,8 @@ export class PaymentsService {
       let earlyPaymentDiscountDays = 0;
 
       if (
-        (payment.paymentType === 'customer_receipt' ||
-          payment.paymentType === 'customer_refund') &&
+        (payment.paymentType === PAYMENT_TYPE.CUSTOMER_RECEIPT ||
+          payment.paymentType === PAYMENT_TYPE.CUSTOMER_REFUND) &&
         payment.partyId
       ) {
         const [customer] = await tx
@@ -765,8 +768,8 @@ export class PaymentsService {
           group?.earlyPaymentDiscountDays ??
           0;
       } else if (
-        (payment.paymentType === 'supplier_payment' ||
-          payment.paymentType === 'supplier_refund') &&
+        (payment.paymentType === PAYMENT_TYPE.SUPPLIER_PAYMENT ||
+          payment.paymentType === PAYMENT_TYPE.SUPPLIER_REFUND) &&
         payment.partyId
       ) {
         const [supplier] = await tx
@@ -1175,11 +1178,13 @@ export class PaymentsService {
       const reversalLines: JournalLineDto[] = [];
       const linePartyId =
         (linePartyType ? payment.partyId : undefined) ?? undefined;
-      const isReceipt = [
-        'customer_receipt',
-        'supplier_refund',
-        'direct_receipt',
-      ].includes(payment.paymentType);
+      const isReceipt = (
+        [
+          PAYMENT_TYPE.CUSTOMER_RECEIPT,
+          PAYMENT_TYPE.SUPPLIER_REFUND,
+          PAYMENT_TYPE.DIRECT_RECEIPT,
+        ] as string[]
+      ).includes(payment.paymentType);
 
       if (isReceipt) {
         reversalLines.push({
@@ -1648,17 +1653,17 @@ export class PaymentsService {
 
     const paymentRate = parseFloat(payment.exchangeRate || '1');
     const isReceipt = [
-      'customer_receipt',
-      'supplier_refund',
-      'direct_receipt',
+      PAYMENT_TYPE.CUSTOMER_RECEIPT,
+      PAYMENT_TYPE.SUPPLIER_REFUND,
+      PAYMENT_TYPE.DIRECT_RECEIPT,
     ].includes(payment.paymentType);
     const settings = await this.glService.getSettings(tx);
 
     let controlAccountId: string | null = null;
     let linePartyType: 'customer' | 'supplier' | null = null;
     if (
-      payment.paymentType === 'customer_receipt' ||
-      payment.paymentType === 'customer_refund'
+      payment.paymentType === PAYMENT_TYPE.CUSTOMER_RECEIPT ||
+      payment.paymentType === PAYMENT_TYPE.CUSTOMER_REFUND
     ) {
       if (payment.partyId) {
         const [cust] = await tx
@@ -1669,8 +1674,8 @@ export class PaymentsService {
         linePartyType = 'customer';
       }
     } else if (
-      payment.paymentType === 'supplier_payment' ||
-      payment.paymentType === 'supplier_refund'
+      payment.paymentType === PAYMENT_TYPE.SUPPLIER_PAYMENT ||
+      payment.paymentType === PAYMENT_TYPE.SUPPLIER_REFUND
     ) {
       if (payment.partyId) {
         const [sup] = await tx

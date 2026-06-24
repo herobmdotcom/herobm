@@ -22,6 +22,9 @@ import {
   binContents,
   backorders,
   salesOrderLineItems,
+  products,
+  inventoryLedger,
+  inventoryEntries,
   products as coreProducts,
 } from '../../drizzle/herobm-core-schema';
 import { eq, and, inArray, sum, sql, desc, or, ilike, asc } from 'drizzle-orm';
@@ -544,8 +547,16 @@ export class TransferService {
         productId: string;
         binId: string;
         quantity: number;
+        uomCode: string;
       }[] = [];
       const shipmentLinesInsert = [];
+
+      const productIds = Array.from(new Set(picks.map((p) => p.productId)));
+      const productUoms = await tx
+        .select({ productId: products.productId, baseUom: products.baseUom })
+        .from(products)
+        .where(inArray(products.productId, productIds));
+      const uomMap = new Map(productUoms.map((p) => [p.productId, p.baseUom]));
 
       for (const pick of picks) {
         const pickQty = parseFloat(pick.quantity);
@@ -560,11 +571,14 @@ export class TransferService {
           quantity: pickQty.toString(),
         });
 
+        const uomCode = uomMap.get(pick.productId) || 'EA';
+
         // B. Decrease from source pick bin
         inventoryLines.push({
           productId: pick.productId,
           binId: pick.binId!,
           quantity: -pickQty,
+          uomCode,
         });
 
         // C. Increase into INTRA_TRANSIT bin
@@ -572,6 +586,7 @@ export class TransferService {
           productId: pick.productId,
           binId: transitBin.binId,
           quantity: pickQty,
+          uomCode,
         });
 
         // D. Mark pick as shipped
@@ -674,9 +689,17 @@ export class TransferService {
       }
 
       // 2) Revert inventory movement
+      const productIds = Array.from(new Set(lines.map((p) => p.productId)));
+      const productUoms = await tx
+        .select({ productId: products.productId, baseUom: products.baseUom })
+        .from(products)
+        .where(inArray(products.productId, productIds));
+      const uomMap = new Map(productUoms.map((p) => [p.productId, p.baseUom]));
+
       const inventoryLines = [];
       for (const line of lines) {
         const pickQty = parseFloat(line.quantity);
+        const uomCode = uomMap.get(line.productId) || 'EA';
 
         if (!line.pickId) continue;
 
@@ -692,12 +715,14 @@ export class TransferService {
           productId: line.productId,
           binId: transitBin.binId,
           quantity: -pickQty, // Remove from transit
+          uomCode,
         });
 
         inventoryLines.push({
           productId: line.productId,
           binId: pick.binId!,
           quantity: pickQty, // Put back in pick bin
+          uomCode,
         });
 
         // Mark pick as PICKED
@@ -858,6 +883,7 @@ export class TransferService {
         productId: string;
         binId: string;
         quantity: number;
+        uomCode: string;
       }[] = [];
       const receiptLinesInsert = [];
 
@@ -888,6 +914,13 @@ export class TransferService {
         receivedBy: actor,
       });
 
+      const productIds = Array.from(new Set(orderLines.map((p) => p.productId)));
+      const productUoms = await tx
+        .select({ productId: products.productId, baseUom: products.baseUom })
+        .from(products)
+        .where(inArray(products.productId, productIds));
+      const uomMap = new Map(productUoms.map((p) => [p.productId, p.baseUom]));
+
       for (const line of orderLines) {
         const shipped = parseFloat(line.quantityShipped || '0');
         const received = parseFloat(line.quantityReceived || '0');
@@ -910,6 +943,7 @@ export class TransferService {
             productId: line.productId,
             binId: transitBin.binId,
             quantity: -toReceive,
+            uomCode: uomMap.get(line.productId) || 'EA',
           });
 
           // Increase into Destination Bin
@@ -917,6 +951,7 @@ export class TransferService {
             productId: line.productId,
             binId: destinationBinId,
             quantity: toReceive,
+            uomCode: uomMap.get(line.productId) || 'EA',
           });
 
           // Update received quantity on order line

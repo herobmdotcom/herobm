@@ -10,8 +10,8 @@
  * Requires: Docker stack running with Postgres + populated marts.
  */
 import { TestingModule } from '@nestjs/testing';
-import { createE2eModule } from './utils/e2e-module';
-import { INestApplication } from '@nestjs/common';
+import { createE2eModule, setupE2eApp } from './utils/e2e-module';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { PURCHASE_ORDER_STATE, PURCHASE_RETURN_STATE } from '@herobm/shared';
@@ -35,7 +35,7 @@ describe('API E2E — Purchase Order Returns', () => {
     ).compile();
 
     app = moduleFixture.createNestApplication();
-    app.setGlobalPrefix('api');
+    setupE2eApp(app);
     await app.init();
 
     // Login
@@ -83,9 +83,7 @@ describe('API E2E — Purchase Order Returns', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         vendorId: validVendorId,
-        isPreferred: true,
         costPrice: '15.00',
-        minOrderQty: 1,
       })
       .expect(201);
 
@@ -115,15 +113,14 @@ describe('API E2E — Purchase Order Returns', () => {
       .post('/api/purchase-orders')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        orderNumber: `E2E-PRET-PO-${today}-${rand}`,
+        purchaseOrderId: crypto.randomUUID(),
+        orderNumber: `RET-PO-${rand}`,
         name: 'E2E Purchase Return Test PO',
         vendorId: validVendorId,
         deliveryLocationId: validLocationId,
-        currencyCode: 'EUR',
         lines: [
           {
             productId: appProductId,
-            productDescription: 'Return Test Product',
             quantity: '20',
             pricePerUnit: '15.00',
             unitOfMeasure: 'EA',

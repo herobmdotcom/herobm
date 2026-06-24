@@ -256,7 +256,8 @@ export default function DevelopersPage() {
                 <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-[var(--warning)]">
                   {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                   <span className="material-symbols-outlined text-[24px]">warning</span>
-                  {tDev('copyApiKeyWarning')}
+                  {/* eslint-disable-next-line no-restricted-syntax -- Temporary literal for webhook */}
+                  {newSecret.startsWith('whsec_') ? 'Copy Webhook Secret' : tDev('copyApiKeyWarning')}
                 </h3>
                 <p className="text-sm text-muted mb-6">
                   {tDev('onlyTimeSecretShown')}
@@ -302,10 +303,11 @@ export default function DevelopersPage() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- InlineSettingsTable uses generic any rows to support mixed entity types
             onSave={async (row: any, isNew: boolean) => {
               if (isNew) {
-                await api.webhooksControllerCreate({
+                const res = await api.webhooksControllerCreate({
                   targetUrl: row.targetUrl,
                   eventTypes: (row.eventTypes || '').split(',').map((s: string) => s.trim()).filter(Boolean),
                 });
+                setNewSecret(res.data.secretKey);
                 toast.success('Webhook created');
                 await loadWebhooks();
               }
@@ -375,7 +377,7 @@ export default function DevelopersPage() {
                   return (
                     <div className="flex flex-wrap gap-1">
                       {currentEvents.map((e: string) => (
-                        <span key={e} className="inline-block bg-black/20 px-2 py-0.5 rounded text-xs">{e.trim()}</span>
+                        <span key={e} className="inline-block px-2 py-0.5 text-xs">{e.trim()}</span>
                       ))}
                     </div>
                   );

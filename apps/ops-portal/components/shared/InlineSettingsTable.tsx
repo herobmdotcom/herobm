@@ -30,6 +30,7 @@ export interface InlineSettingsTableProps<T> {
   emptyLabel?: React.ReactNode;
   canEdit?: (row: T) => boolean;
   canDelete?: (row: T) => boolean;
+  extraActions?: (row: T) => React.ReactNode;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
@@ -47,7 +48,8 @@ export function InlineSettingsTable<T extends Record<string, any>>({
   addLabel,
   emptyLabel,
   canEdit,
-  canDelete
+  canDelete,
+  extraActions
 }: InlineSettingsTableProps<T>) {
   const tSettings = useTranslations('admin.settings');
   const actualAddLabel = addLabel || tSettings('addRow');
@@ -289,6 +291,7 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                             {tSettings('actions.delete')}
                           </button>
                         )}
+                        {extraActions && extraActions(row)}
                       </div>
                     )}
                   </td>

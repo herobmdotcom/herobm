@@ -9,9 +9,10 @@ import * as api from '@herobm/sdk';
 import Link from 'next/link';
 
 import type { OrderDetail, TaxCategory } from './types';
-import { computeLinePrice, PURCHASE_ORDER_STATE } from '@herobm/shared';
+import { computeLinePrice, PURCHASE_ORDER_STATE, getErrorMessage } from '@herobm/shared';
 import { PurchaseInvoice } from '@/lib/purchase-order-utils';
 import { useSettings } from '@/components/SettingsProvider';
+import { useAuth } from '@/components/AuthGate';
 import { useRouter } from 'next/navigation';
 
 interface InvoicesSectionProps {
@@ -33,6 +34,8 @@ export default function InvoicesSection({
     const router = useRouter();
     const tCommon = useTranslations('common');
     const tPurchase = useTranslations('purchaseOrders');
+    const { permissions } = useAuth();
+    const canManageImport = permissions.some(p => p.resource === 'import' && p.action === 'write');
 
     const [receiptLines, setReceiptLines] = useState<unknown[]>([]);
 
@@ -78,6 +81,8 @@ export default function InvoicesSection({
                                 {(inv as unknown as Record<string, string>).receiptFilename && (
                                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('file')} {(inv as unknown as Record<string, string>).receiptFilename}</span>
                                 )}
+                            </div>
+                            <div className="flex items-center gap-2">
                             </div>
                         </div>
                         

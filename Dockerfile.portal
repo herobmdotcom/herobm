@@ -75,6 +75,8 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
+RUN apt-get update && apt-get install -y --no-install-recommends libfaketime && rm -rf /var/lib/apt/lists/*
+
 # The standalone output bundles all runtime deps into a self-contained directory.
 # Only server.js + bundled node_modules + static assets are needed.
 COPY --from=builder /app/apps/ops-portal/.next/standalone ./

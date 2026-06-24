@@ -5,11 +5,13 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { UpdateAppConfigDtoCreditLimitBehavior } from './updateAppConfigDtoCreditLimitBehavior';
 import type { UpdateAppConfigDtoTaxProviderMappings } from './updateAppConfigDtoTaxProviderMappings';
 import type { UpdateAppConfigDtoEnrichmentProviderMappings } from './updateAppConfigDtoEnrichmentProviderMappings';
 
 export interface UpdateAppConfigDto {
   defaultFulfillmentLocationId?: string;
+  creditLimitBehavior?: UpdateAppConfigDtoCreditLimitBehavior;
   defaultCustomerTermsId?: string;
   defaultSupplierTermsId?: string;
   defaultCustomerTaxPositionId?: string;

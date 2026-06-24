@@ -161,6 +161,25 @@ export class InvoiceDetailController {
   }
 
   @ApiTags('Sales Invoices')
+  @Post('sales-invoices/:id/admin-mark-paid')
+  @CasbinResource(SystemResource.GL)
+  @CasbinAction('write')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Mark Sales Invoice as Paid (Admin)',
+    description: 'Marks a sales invoice as paid without generating a GL entry.',
+  })
+  @ApiBody({ type: EmptyBodyDto })
+  @ApiOkResponse({ type: SalesInvoiceResponseDto })
+  async adminMarkSalesInvoicePaid(
+    @Param('id') id: string,
+    @Request() req: { user?: { username?: string } },
+  ) {
+    const actor = req.user?.username || 'system';
+    return this.salesInvoiceService.adminMarkPaid(id, actor);
+  }
+
+  @ApiTags('Sales Invoices')
   @Get('sales-invoices')
   @CasbinResource(SystemResource.SALES_ORDERS)
   @CasbinAction('read')
@@ -239,6 +258,25 @@ export class InvoiceDetailController {
   @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
   async getPurchaseBillDetails(@Param('id') id: string) {
     return this.purchaseInvoiceService.findOne(id);
+  }
+
+  @ApiTags('Purchase Invoices')
+  @Post('purchase-invoices/:id/admin-mark-paid')
+  @CasbinResource(SystemResource.GL)
+  @CasbinAction('write')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Mark Purchase Invoice as Paid (Admin)',
+    description: 'Marks a purchase invoice as paid without generating a GL entry.',
+  })
+  @ApiBody({ type: EmptyBodyDto })
+  @ApiOkResponse({ type: PurchaseInvoiceResponseDto })
+  async adminMarkPurchaseInvoicePaid(
+    @Param('id') id: string,
+    @Request() req: { user?: { username?: string } },
+  ) {
+    const actor = req.user?.username || 'system';
+    return this.purchaseInvoiceService.adminMarkPaid(id, actor);
   }
 
   @ApiTags('Purchase Invoices')

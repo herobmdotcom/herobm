@@ -8,6 +8,8 @@ import {
   IsUrl,
   IsBoolean,
   IsNumber,
+  IsUUID,
+  IsEnum,
 } from 'class-validator';
 
 export class CreateUomDto {
@@ -250,6 +252,11 @@ export class UpdateAppConfigDto {
   @IsOptional()
   @IsString()
   defaultFulfillmentLocationId?: string;
+
+  @ApiProperty({ required: false, enum: ['hard', 'soft', 'notify'] })
+  @IsOptional()
+  @IsEnum(['hard', 'soft', 'notify'])
+  creditLimitBehavior?: 'hard' | 'soft' | 'notify';
 
   @ApiProperty({ required: false })
   @IsOptional()

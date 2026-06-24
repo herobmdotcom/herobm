@@ -16,6 +16,7 @@ import { DynamicForm } from '@/components/DynamicForm';
 import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
 import ImportCoaModal from './ImportCoaModal';
 import ImportTaxModal from './ImportTaxModal';
+import ExchangeRateHistoryModal from './ExchangeRateHistoryModal';
 
 import { getCurrency } from '@/lib/currency';
 import { CURRENCIES, GL_ACCOUNT_TYPE } from '@herobm/shared';
@@ -99,6 +100,7 @@ export default function FinancialSettingsPage() {
   const [rateEditingId, setRateEditingId] = useState<string | null>(null);
   const [rateForm, setRateForm] = useState<Partial<api.ExchangeRateResponseDto>>({});
   const [rateCreating, setRateCreating] = useState(false);
+  const [historyCurrencyCode, setHistoryCurrencyCode] = useState<string | null>(null);
 
   // ── Cost Centers state ─────────────────────────────────────────────────────
   const [ccs, setCcs] = useState<CostCenter[]>([]);
@@ -123,7 +125,18 @@ export default function FinancialSettingsPage() {
   const [appSettings, setAppSettings] = useState<Record<string, any> | null>(null);
 
   const ratesWithBase = useMemo(() => {
-    if (!glSettings?.baseCurrency) return rates;
+    // Group by currencyCode and get the latest rate
+    const latestRatesMap = new Map<string, ExchangeRate>();
+    rates.forEach(r => {
+      if (glSettings?.baseCurrency && r.currencyCode === glSettings.baseCurrency) return;
+      const existing = latestRatesMap.get(r.currencyCode);
+      if (!existing || new Date(r.effectiveDate) > new Date(existing.effectiveDate)) {
+        latestRatesMap.set(r.currencyCode, r);
+      }
+    });
+    const latestRates = Array.from(latestRatesMap.values());
+
+    if (!glSettings?.baseCurrency) return latestRates;
     const baseRow = {
       isSystemBase: true,
       currencyCode: String(glSettings.baseCurrency),
@@ -132,7 +145,7 @@ export default function FinancialSettingsPage() {
       buyRate: '1.0',
       sellRate: '1.0'
     };
-    return [baseRow, ...rates];
+    return [baseRow, ...latestRates];
   }, [glSettings, rates]);
 
   const [glAccounts, setGlAccounts] = useState<api.GlAccountResponseDto[]>([]);
@@ -1494,13 +1507,13 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
             data={ratesWithBase as (ExchangeRate & { isSystemBase?: boolean })[]}
             rowKey={(r: ExchangeRate) => r.exchangeRateId || r.currencyCode}
             onSave={async (row: ExchangeRate, isNew: boolean) => {
-              if (!row.currencyCode || !row.effectiveDate || !row.buyRate || !row.sellRate) {
+              if (!row.currencyCode || !row.buyRate || !row.sellRate) {
                 throw new Error(tCommon('errors.typeAndDateRequired'));
               }
               const payload = {
                 currencyCode: row.currencyCode.toUpperCase(),
                 currencyName: row.currencyName || row.currencyCode.toUpperCase(),
-                effectiveDate: row.effectiveDate,
+                effectiveDate: isNew ? row.effectiveDate : new Date().toISOString(),
                 buyRate: String(row.buyRate),
                 sellRate: String(row.sellRate)
               };
@@ -1508,20 +1521,25 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                 await api.exchangeRatesControllerCreate(payload);
                 toast.success(tSettings('toasts.rateCreated') || 'Rate created');
               } else {
-                await api.exchangeRatesControllerUpdate(row.exchangeRateId, payload);
-                toast.success(tSettings('toasts.rateUpdated') || 'Rate updated');
+                await api.exchangeRatesControllerCreate(payload);
+                toast.success(tSettings('toasts.rateUpdated') || 'New rate added to history');
               }
               loadRates();
             }}
-            onDelete={async (row: ExchangeRate) => {
-              if (!confirm(tSettings('confirmations.deleteRate') || 'Are you sure you want to delete this rate?')) return;
-              await api.exchangeRatesControllerRemove(row.exchangeRateId);
-              toast.success(tSettings('toasts.rateDeleted') || 'Rate deleted');
-              loadRates();
+            extraActions={(row: ExchangeRate & { isSystemBase?: boolean }) => {
+              if (row.isSystemBase) return null;
+              return (
+                <button 
+                  className="btn btn-secondary btn-xs ml-2" 
+                  onClick={() => setHistoryCurrencyCode(row.currencyCode)}
+                >
+                  History
+                </button>
+              );
             }}
             onAdd={() => ({ currencyCode: '', currencyName: '', effectiveDate: new Date().toISOString().split('T')[0], buyRate: 1.0, sellRate: 1.0 } as unknown as ExchangeRate)}
             canEdit={(row: ExchangeRate & { isSystemBase?: boolean }) => !row.isSystemBase}
-            canDelete={(row: ExchangeRate & { isSystemBase?: boolean }) => !row.isSystemBase}
+            canDelete={() => false}
             addLabel={tSettings('actions.create')}
             emptyLabel={tSettings('rates.empty')}
             columns={[
@@ -1550,11 +1568,17 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
               {
                 key: 'effectiveDate',
                 title: tSettings('labels.effectiveDate'),
-                type: 'text',
+                type: 'date',
                 width: 150,
                 validate: (v: unknown) => v ? null : 'Required',
-                render: (row: ExchangeRate & { isSystemBase?: boolean }, isEditing: boolean) => {
-                  if (isEditing) return null;
+                render: (row: ExchangeRate & { isSystemBase?: boolean }, isEditing: boolean, onChange) => {
+                  if (isEditing) {
+                    return (
+                      <span className="text-xs italic text-muted">
+                        Will be set to today
+                      </span>
+                    );
+                  }
                   if (row.isSystemBase) return <span className="text-xs italic text-muted">{tSettings('labels.systemBase')}</span>;
                   return <span>{new Date(row.effectiveDate as string).toLocaleDateString()}</span>;
                 }
@@ -1936,6 +1960,32 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
           />
         </div>
       </SlideOver>
+
+      {historyCurrencyCode && (
+        <ExchangeRateHistoryModal
+          isOpen={!!historyCurrencyCode}
+          onClose={() => setHistoryCurrencyCode(null)}
+          currencyCode={historyCurrencyCode}
+          rates={rates}
+          onSave={async (row, isNew) => {
+            const payload = {
+              currencyCode: row.currencyCode.toUpperCase(),
+              currencyName: row.currencyName || row.currencyCode.toUpperCase(),
+              effectiveDate: row.effectiveDate,
+              buyRate: String(row.buyRate),
+              sellRate: String(row.sellRate)
+            };
+            if (isNew) {
+              await api.exchangeRatesControllerCreate(payload);
+              toast.success(tSettings('toasts.rateCreated') || 'Rate created');
+            } else {
+              await api.exchangeRatesControllerUpdate(row.exchangeRateId, payload);
+              toast.success(tSettings('toasts.rateUpdated') || 'Rate updated');
+            }
+            loadRates();
+          }}
+        />
+      )}
     </DetailsLayout>
   );
 }
