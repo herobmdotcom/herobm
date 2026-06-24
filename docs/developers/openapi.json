@@ -8719,6 +8719,56 @@
         ]
       }
     },
+    "/tax/bas-summary": {
+      "get": {
+        "description": "Returns the formatted ATO BAS summary for the specified date range",
+        "operationId": "TaxBasController_getBasSummary",
+        "parameters": [
+          {
+            "name": "fromDate",
+            "required": false,
+            "in": "query",
+            "description": "Start date of the reporting period (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "toDate",
+            "required": false,
+            "in": "query",
+            "description": "End date of the reporting period (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the ATO BAS Summary layout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BasSummaryRowDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get ATO BAS Summary Report Data",
+        "tags": [
+          "Tax"
+        ]
+      }
+    },
     "/pdf-templates/hooks/{hookSlug}/run": {
       "post": {
         "description": "Execute a specific reporting hook and generate a PDF document.",
@@ -21534,6 +21584,25 @@
             "type": "string"
           }
         }
+      },
+      "BasSummaryRowDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "description",
+          "amount"
+        ]
       },
       "RunHookBodyDto": {
         "type": "object",

@@ -1979,16 +1979,20 @@ export class PurchaseInvoiceService {
         throw new NotFoundException(`Invoice ${invoiceId} not found`);
       }
 
-      if (invoice.stateCode === 'paid' || invoice.stateCode === 'cancelled') {
+      if (
+        invoice.stateCode === PURCHASE_INVOICE_STATE.PAID ||
+        invoice.stateCode === PURCHASE_INVOICE_STATE.CANCELLED
+      ) {
         throw new BadRequestException(
-          `Cannot mark invoice as paid. Invoice is currently '${invoice.stateCode}'.`
+          'Cannot mark paid a cancelled or already paid invoice.',
         );
       }
 
       const [updated] = await tx
         .update(purchaseInvoices)
         .set({
-          stateCode: 'paid',
+          // eslint-disable-next-line no-restricted-syntax -- Administrative override to bypass standard state machine logic
+          stateCode: PURCHASE_INVOICE_STATE.PAID,
           outstandingAmount: '0',
           baseOutstandingAmount: '0',
           modifiedOn: new Date(),
@@ -2006,7 +2010,7 @@ export class PurchaseInvoiceService {
           entityId: invoiceId,
           invoiceNumber: invoice.invoiceNumber,
           from: invoice.stateCode,
-          to: 'paid',
+          to: PURCHASE_INVOICE_STATE.PAID,
           note: 'Administrative override: Invoice manually marked as paid without GL impact',
         },
         actor,

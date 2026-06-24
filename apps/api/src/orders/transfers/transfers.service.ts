@@ -914,7 +914,9 @@ export class TransferService {
         receivedBy: actor,
       });
 
-      const productIds = Array.from(new Set(orderLines.map((p) => p.productId)));
+      const productIds = Array.from(
+        new Set(orderLines.map((p) => p.productId)),
+      );
       const productUoms = await tx
         .select({ productId: products.productId, baseUom: products.baseUom })
         .from(products)

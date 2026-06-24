@@ -129,10 +129,10 @@ describe('API E2E — General Ledger', () => {
       const trialBalance = res.body;
 
       const debitNode = trialBalance.find(
-        (node: any) => node.account_code === debitAccountCode,
+        (node: any) => node.accountCode === debitAccountCode,
       );
       const creditNode = trialBalance.find(
-        (node: any) => node.account_code === creditAccountCode,
+        (node: any) => node.accountCode === creditAccountCode,
       );
 
       expect(debitNode).toBeDefined();
@@ -140,8 +140,8 @@ describe('API E2E — General Ledger', () => {
 
       // Ensure their values represent the manual entry.
       // E2E db is dirty so we can only check they are >= 150 or exist.
-      expect(parseFloat(debitNode.total_debit)).toBeGreaterThanOrEqual(150.0);
-      expect(parseFloat(creditNode.total_credit)).toBeGreaterThanOrEqual(150.0);
+      expect(Number(debitNode.periodDebit)).toBeGreaterThanOrEqual(150.0);
+      expect(Number(creditNode.periodCredit)).toBeGreaterThanOrEqual(150.0);
     });
   });
 });

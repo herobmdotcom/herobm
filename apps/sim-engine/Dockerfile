@@ -1,4 +1,4 @@
-FROM docker.io/library/node:20-alpine
+FROM docker.io/library/node:22-bookworm-slim
 
 WORKDIR /app
 COPY package*.json ./

@@ -108,7 +108,10 @@ export class PickingService {
         ? await this.db
             .select({
               salesOrderLineId: backorders.salesOrderLineId,
-              allocatedQty: sql<number>`COALESCE(SUM(${backorders.quantity}), 0)`.mapWith(Number),
+              allocatedQty:
+                sql<number>`COALESCE(SUM(${backorders.quantity}), 0)`.mapWith(
+                  Number,
+                ),
             })
             .from(backorders)
             .where(
@@ -1047,7 +1050,10 @@ export class PickingService {
       const pickSums = await this.db
         .select({
           salesOrderLineId: salesOrderPicks.salesOrderLineId,
-          totalPicked: sql<number>`COALESCE(SUM(${salesOrderPicks.quantity}), 0)`.mapWith(Number),
+          totalPicked:
+            sql<number>`COALESCE(SUM(${salesOrderPicks.quantity}), 0)`.mapWith(
+              Number,
+            ),
         })
         .from(salesOrderPicks)
         .where(

@@ -29,7 +29,8 @@
     "seed": "tsx src/seeds/run.ts --mode=prod",
     "seed:dry": "tsx src/seeds/run.ts --mode=prod --dry-run",
     "seed:demo": "tsx src/seeds/run.ts --mode=demo",
-    "seed:test": "tsx src/seeds/run.ts --mode=test"
+    "seed:test": "tsx src/seeds/run.ts --mode=test",
+    "seed:sim": "tsx src/seeds/run.ts --mode=sim"
   },
   "dependencies": {
     "@herobm/shared": "*",

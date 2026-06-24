@@ -805,7 +805,8 @@ export class SetupService {
       }
 
       if (dto.legacyInvoicesPaidBeforeDate) {
-        envOverride.LEGACY_INVOICES_PAID_BEFORE_DATE = dto.legacyInvoicesPaidBeforeDate;
+        envOverride.LEGACY_INVOICES_PAID_BEFORE_DATE =
+          dto.legacyInvoicesPaidBeforeDate;
       }
 
       if (dto.dbConfig) {
@@ -942,7 +943,10 @@ export class SetupService {
       prog[0].status = 'failed';
     }
 
-    const newStatus = (job.status === 'done' || job.status === 'failed') ? job.status : 'cancelling';
+    const newStatus =
+      job.status === 'done' || job.status === 'failed'
+        ? job.status
+        : 'cancelling';
 
     await this.db
       .update(pipelineJobs)

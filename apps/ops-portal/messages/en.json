@@ -1092,6 +1092,7 @@
     "loading": "Loading...",
     "loadingEllipsis": "Loading...",
     "location": "Location",
+    "markPaid": "Mark Paid",
     "memo": "Memo",
     "moveStock": "Move Stock",
     "na": "N/A",
@@ -1760,8 +1761,10 @@
         "credit": "Credit",
         "debit": "Debit"
       },
+      "fromDate": "From",
       "noData": "No transactions found for this period.",
       "title": "Trial Balance",
+      "toDate": "To",
       "totals": "Totals"
     }
   },

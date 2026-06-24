@@ -11,6 +11,12 @@ services:
       - "${BIND_IP:-127.0.0.1}:3005:3005"
     volumes:
       - ./scratch/faketime:/etc/faketime
+      - ./apps/sim-engine:/app/apps/sim-engine
+    env_file: .env
+    environment:
+      API_URL: http://custom-api:3001
+      ADMIN_PASSWORD: ${DEV_ADMIN_PASSWORD}
+    command: ["npx", "tsx", "src/server/server.ts"]
     depends_on:
       postgres-custom:
         condition: service_healthy
@@ -25,12 +31,12 @@ services:
     container_name: ops-portal-sim
     restart: unless-stopped
     environment:
-      API_URL: http://custom-api-sim:3001
+      API_URL: http://custom-api:3001
       LD_PRELOAD: "/usr/lib/x86_64-linux-gnu/faketime/libfaketime.so.1"
       FAKETIME_NO_CACHE: "1"
       FAKETIME_TIMESTAMP_FILE: "/etc/faketime/faketime.rc"
     ports:
-      - "${BIND_IP:-127.0.0.1}:${FE_PORT:-8000}:3000"
+      - "${BIND_IP:-127.0.0.1}:3010:3000"
     depends_on:
       custom-api:
         condition: service_healthy
@@ -77,7 +83,7 @@ services:
         max-size: "20m"
         max-file: "3"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB:-herobm}"]
+      test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -102,14 +108,14 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-herobm}
       JWT_SECRET: ${JWT_SECRET}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_PASSWORD: ${DEV_ADMIN_PASSWORD}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4300,http://localhost:4400,http://localhost:5000,http://localhost:8000}
       TYPST_BINARY_PATH: typst
       LD_PRELOAD: "/usr/lib/x86_64-linux-gnu/faketime/libfaketime.so.1"
       FAKETIME_NO_CACHE: "1"
       FAKETIME_TIMESTAMP_FILE: "/etc/faketime/faketime.rc"
     ports:
-      - "${BIND_IP:-127.0.0.1}:${API_PORT:-3001}:3001"
+      - "${BIND_IP:-127.0.0.1}:3011:3001"
     volumes:
       - ./logs:/app/logs
       - ./scratch/faketime:/etc/faketime:ro

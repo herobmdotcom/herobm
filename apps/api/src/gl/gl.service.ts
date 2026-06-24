@@ -544,19 +544,33 @@ export class GlService implements OnModuleInit {
       ? rows
       : (rows as { rows: unknown[] }).rows || [];
 
-    return resultRows.map((r: any) => ({
-      accountCode: r.account_code,
-      name: r.name,
-      accountType: r.account_type,
-      isGroup: r.is_group,
-      openingBalance: parseFloat(r.opening_balance || '0'),
-      periodDebit: parseFloat(r.period_debit || '0'),
-      periodCredit: parseFloat(r.period_credit || '0'),
-      closingBalance: parseFloat(r.closing_balance || '0'),
-      ytdDebit: parseFloat(r.ytd_debit || '0'),
-      ytdCredit: parseFloat(r.ytd_credit || '0'),
-      ytdBalance: parseFloat(r.ytd_balance || '0'),
-    }));
+    return resultRows.map(
+      (r: {
+        account_code: string;
+        name: string;
+        account_type: string;
+        is_group: boolean;
+        opening_balance?: string;
+        period_debit?: string;
+        period_credit?: string;
+        closing_balance?: string;
+        ytd_debit?: string;
+        ytd_credit?: string;
+        ytd_balance?: string;
+      }) => ({
+        accountCode: r.account_code,
+        name: r.name,
+        accountType: r.account_type,
+        isGroup: r.is_group,
+        openingBalance: parseFloat(r.opening_balance || '0'),
+        periodDebit: parseFloat(r.period_debit || '0'),
+        periodCredit: parseFloat(r.period_credit || '0'),
+        closingBalance: parseFloat(r.closing_balance || '0'),
+        ytdDebit: parseFloat(r.ytd_debit || '0'),
+        ytdCredit: parseFloat(r.ytd_credit || '0'),
+        ytdBalance: parseFloat(r.ytd_balance || '0'),
+      }),
+    );
   }
 
   async getGeneralLedger(filters: {

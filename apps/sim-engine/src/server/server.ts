@@ -5,12 +5,22 @@ import path from 'path';
 import { Timeline } from './timeline';
 import { EventType, EVENT_CATALOGUE } from './catalogue';
 import type { SimEvent } from './catalogue';
+import { WorldState } from './world';
+import { fetchProductsFromApi } from './api-client';
+import { generateEpoch } from './generate-epoch';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 const timeline = new Timeline();
+const world = new WorldState();
+
+// Fetch products asynchronously
+fetchProductsFromApi().then(products => {
+  console.log(`[SimEngine] Fetched ${products.length} products from API`);
+  world.setProducts(products);
+});
 
 // Engine State
 let currentState: 'READY' | 'WAITING_FOR_AGENTS' = 'READY';
@@ -70,21 +80,8 @@ app.post('/api/step', (_req, res) => {
 });
 
 app.post('/api/generate-epoch', (_req, res) => {
-  // Simple generator: add 5 random events over the next 7 days
-  const now = currentEvent ? currentEvent.timestamp : Date.now();
-  for (let i = 0; i < 5; i++) {
-    const delay = Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000);
-    const types = [EventType.CUSTOMER_ENQUIRY, EventType.CUSTOMER_ORDER, EventType.CUSTOMER_RETURN];
-    const type = types[Math.floor(Math.random() * types.length)];
-    
-    timeline.addEvent({
-      id: Math.random().toString(36).substring(7),
-      type,
-      timestamp: now + delay,
-      payload: EVENT_CATALOGUE[type]?.generatePayload?.() || {},
-      status: 'pending'
-    });
-  }
+  const timestamp = currentEvent ? currentEvent.timestamp : Date.now();
+  generateEpoch(world, timeline, timestamp);
   res.json({ success: true });
 });
 
@@ -107,11 +104,26 @@ app.get('/api/sim/inbox', (_req, res) => {
 });
 
 app.post('/api/sim/turn-complete', (req, res) => {
-  const { agentId } = req.body;
+  const { agentId, outcomes } = req.body;
   if (!agentId) return res.status(400).json({ error: 'agentId required' });
   
   if (currentState !== 'WAITING_FOR_AGENTS') {
     return res.status(400).json({ error: 'Not currently waiting for agents.' });
+  }
+
+  // Process any outcomes reported by the agent
+  if (Array.isArray(outcomes)) {
+    for (const outcome of outcomes) {
+      console.log(`[SimEngine] Agent ${agentId} reported outcome for ${outcome.eventId}: ${outcome.status}`);
+      if (outcome.status === 'failure' && outcome.reason?.toLowerCase().includes('credit')) {
+        // Find the event to get the virtual IDs
+        const evt = currentEvent;
+        if (evt && evt.payload?.customer?.id) {
+           world.updateCustomerBalanceStatus(evt.payload.customer.id, 'CREDIT_HOLD');
+           console.log(`[SimEngine] VirtualCustomer ${evt.payload.customer.id} placed on CREDIT_HOLD`);
+        }
+      }
+    }
   }
 
   pendingAcks.delete(agentId);
@@ -130,9 +142,8 @@ app.post('/api/sim/turn-complete', (req, res) => {
 // -----------------------------------------
 app.post('/api/webhooks', (req, res) => {
   const payload = req.body;
-  console.log('[SimEngine] Received webhook:', payload);
+  console.log('[SimEngine] Received webhook:', payload.type);
   
-  // Example logic: if PO sent, schedule arrival in 3 days
   if (payload.type === 'purchase-order.sent') {
     const now = currentEvent ? currentEvent.timestamp : Date.now();
     const threeDays = 3 * 24 * 60 * 60 * 1000;
@@ -144,6 +155,13 @@ app.post('/api/webhooks', (req, res) => {
       status: 'pending'
     });
     console.log(`[SimEngine] Scheduled SUPPLIER_SHIPMENT_ARRIVAL for PO ${payload.data.id}`);
+  } else if (payload.type === 'sales_order.status_changed' && payload.data.status === 'COMPLETED') {
+    // Attempt to extract Virtual Order ID from Customer Reference field
+    const virtualOrderId = payload.data.customerReference;
+    if (virtualOrderId) {
+       world.updateOrderStatus(virtualOrderId, 'FULFILLED');
+       console.log(`[SimEngine] Virtual Order ${virtualOrderId} marked as FULFILLED, eligible for return.`);
+    }
   }
 
   res.json({ success: true });
@@ -151,7 +169,7 @@ app.post('/api/webhooks', (req, res) => {
 
 // Serve frontend
 app.use(express.static(path.join(process.cwd(), 'dist')));
-app.get('*', (_req, res) => {
+app.use((_req, res) => {
   res.sendFile(path.join(process.cwd(), 'dist/index.html'));
 });
 

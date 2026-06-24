@@ -321,13 +321,13 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               <span className="material-symbols-outlined shrink-0">payments</span>
               <span>{t('paymentAllocations')}</span>
             </h3>
-            {invoice.stateCode !== 'paid' && invoice.stateCode !== 'cancelled' && canManageGL && (
+            {invoice.stateCode !== SALES_INVOICE_STATE.PAID && invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && canManageGL && (
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={handleAdminMarkPaid}
                 disabled={markingPaid}
               >
-                {markingPaid ? tCommon('loadingEllipsis') : 'Mark Paid'}
+                {markingPaid ? tCommon('loadingEllipsis') : tCommon('markPaid')}
               </button>
             )}
           </div>

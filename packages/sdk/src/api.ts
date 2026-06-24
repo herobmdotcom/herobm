@@ -44,6 +44,7 @@ import type {
   BankStatementManualMatchDto,
   BankStatementMatchGroupResponseDto,
   BankStatementSuccessResponseDto,
+  BasSummaryRowDto,
   BatchPaymentActionDto,
   BinResponseDto,
   BulkImportResultDto,
@@ -344,6 +345,7 @@ import type {
   SyncStatusResponseDto,
   SystemControllerGetSystemLogsParams,
   SystemLogResponseDto,
+  TaxBasControllerGetBasSummaryParams,
   TaxCategoriesControllerFindAllParams,
   TaxCategoriesControllerFindOneParams,
   TaxCategoryResponseDto,
@@ -8928,6 +8930,49 @@ export const taxPositionsControllerRemove = async (id: string, options?: Request
   {      
     ...options,
     method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Get ATO BAS Summary Report Data
+ */
+export type taxBasControllerGetBasSummaryResponse200 = {
+  data: BasSummaryRowDto[]
+  status: 200
+}
+    
+export type taxBasControllerGetBasSummaryResponseSuccess = (taxBasControllerGetBasSummaryResponse200) & {
+  headers: Headers;
+};
+;
+
+export type taxBasControllerGetBasSummaryResponse = (taxBasControllerGetBasSummaryResponseSuccess)
+
+export const getTaxBasControllerGetBasSummaryUrl = (params?: TaxBasControllerGetBasSummaryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/tax/bas-summary?${stringifiedParams}` : `/tax/bas-summary`
+}
+
+export const taxBasControllerGetBasSummary = async (params?: TaxBasControllerGetBasSummaryParams, options?: RequestInit): Promise<taxBasControllerGetBasSummaryResponse> => {
+  
+  return customFetch<taxBasControllerGetBasSummaryResponse>(getTaxBasControllerGetBasSummaryUrl(params),
+  {      
+    ...options,
+    method: 'GET'
     
     
   }

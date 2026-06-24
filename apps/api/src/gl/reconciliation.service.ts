@@ -80,7 +80,10 @@ export class ReconciliationService {
     // Calculate opening balance (sum of all POSTED lines for this account that are NOT this reconciliation)
     const openingRes = await this.db
       .select({
-        total: sql<number>`SUM(${glJournalLines.debit} - ${glJournalLines.credit})`.mapWith(Number),
+        total:
+          sql<number>`SUM(${glJournalLines.debit} - ${glJournalLines.credit})`.mapWith(
+            Number,
+          ),
       })
       .from(glJournalLines)
       .where(
@@ -99,7 +102,10 @@ export class ReconciliationService {
     // Calculate cleared balance (sum of all lines linked to THIS reconciliation)
     const clearedRes = await this.db
       .select({
-        total: sql<number>`SUM(${glJournalLines.debit} - ${glJournalLines.credit})`.mapWith(Number),
+        total:
+          sql<number>`SUM(${glJournalLines.debit} - ${glJournalLines.credit})`.mapWith(
+            Number,
+          ),
       })
       .from(glJournalLines)
       .where(eq(glJournalLines.reconciliationId, id));

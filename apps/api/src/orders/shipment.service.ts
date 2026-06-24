@@ -455,7 +455,10 @@ export class ShipmentService {
             .select({
               binId: inventoryLedger.binId,
               productId: inventoryLedger.productId,
-              shippedQty: sql<number>`SUM(ABS(${inventoryLedger.quantity}::numeric))`.mapWith(Number),
+              shippedQty:
+                sql<number>`SUM(ABS(${inventoryLedger.quantity}::numeric))`.mapWith(
+                  Number,
+                ),
             })
             .from(inventoryLedger)
             .innerJoin(
@@ -1109,7 +1112,10 @@ export class ShipmentService {
       .select({
         binId: inventoryLedger.binId,
         productId: inventoryLedger.productId,
-        netPicked: sql<number>`SUM(${inventoryLedger.quantity}::numeric)`.mapWith(Number),
+        netPicked:
+          sql<number>`SUM(${inventoryLedger.quantity}::numeric)`.mapWith(
+            Number,
+          ),
       })
       .from(inventoryLedger)
       .innerJoin(

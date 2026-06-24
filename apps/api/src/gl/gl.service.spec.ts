@@ -396,13 +396,11 @@ describe('GlService', () => {
       });
 
       const tb = await service.getTrialBalance();
-      const row = tb.find(
-        (r) => (r as Record<string, unknown>).account_code === 'TB-1100',
-      ) as Record<string, unknown>;
+      const row = tb.find((r) => r.accountCode === 'TB-1100');
       expect(row).toBeDefined();
-      expect(parseFloat(row.total_debit as string)).toBe(500);
-      expect(parseFloat(row.total_credit as string)).toBe(200);
-      expect(parseFloat(row.balance as string)).toBe(300);
+      expect(row?.ytdDebit).toBe(500);
+      expect(row?.ytdCredit).toBe(200);
+      expect(row?.ytdBalance).toBe(300);
     });
   });
 

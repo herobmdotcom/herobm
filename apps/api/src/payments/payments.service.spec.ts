@@ -1443,8 +1443,8 @@ describe('PaymentsService', () => {
               currencyCode: 'EUR',
               currencyName: 'Euro',
               effectiveDate: new Date('2020-01-01'),
-              buyRate: '0.6',
-              sellRate: '0.6',
+              buyRate: '1.2',
+              sellRate: '1.2',
             },
           ])
           .onConflictDoNothing();
@@ -1528,7 +1528,7 @@ describe('PaymentsService', () => {
         expect(allLines).toHaveLength(3);
 
         const fxGainLine = allLines.find(
-          (l) => Math.abs(parseFloat(l.credit) - 56.67) < 0.01,
+          (l) => Math.abs(parseFloat(l.credit) - 10) < 0.01,
         );
         expect(fxGainLine).toBeDefined();
         expect(fxGainLine!.memo).toContain('Realised FX Gain for');

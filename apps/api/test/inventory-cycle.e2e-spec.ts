@@ -127,7 +127,7 @@ describe('Inventory Cycle (e2e)', () => {
         orderNumber: `PO-CYC-${Date.now()}`,
         vendorId,
         deliveryLocationId: locationId,
-        currencyCode: 'EUR',
+        currencyCode: 'AUD',
         lines: [
           {
             productId,

@@ -113,7 +113,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
           orderNumber: `PO-E2E-${Date.now()}`,
           vendorId: validVendorId,
           deliveryLocationId: validLocationId,
-          currencyCode: 'EUR',
+          currencyCode: 'AUD',
           lines: [
             {
               productId: appProductId,
@@ -535,7 +535,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
           orderNumber: `PO-CAN-${Date.now()}`,
           vendorId: validVendorId,
           deliveryLocationId: validLocationId,
-          currencyCode: 'EUR',
+          currencyCode: 'AUD',
           lines: [
             {
               productId: cancelProductId,

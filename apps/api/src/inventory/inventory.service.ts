@@ -1203,7 +1203,10 @@ export class InventoryService {
                 purchaseOrderLineItems.purchaseOrderLineId,
               ),
             )
-            .leftJoin(products, eq(goodsReceivedLines.productId, products.productId))
+            .leftJoin(
+              products,
+              eq(goodsReceivedLines.productId, products.productId),
+            )
             .where(eq(goodsReceivedLines.goodsReceivedLineId, lineDto.lineId))
             .limit(1);
 
@@ -1308,7 +1311,12 @@ export class InventoryService {
           uomCode: string;
         }[] = [
           { productId, binId: sourceBin.binId, quantity: -qty, uomCode },
-          { productId, binId: lineDto.destinationBinId, quantity: qty, uomCode },
+          {
+            productId,
+            binId: lineDto.destinationBinId,
+            quantity: qty,
+            uomCode,
+          },
         ];
 
         // Handle discrepancies

@@ -285,12 +285,18 @@ describe('GlController', () => {
   describe('GET /gl/trial-balance', () => {
     it('should call getTrialBalance without date filter', async () => {
       await controller.getTrialBalance();
-      expect(glService.getTrialBalance).toHaveBeenCalledWith(undefined);
+      expect(glService.getTrialBalance).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+      );
     });
 
     it('should pass asOf date filter', async () => {
       await controller.getTrialBalance('2026-06-30');
-      expect(glService.getTrialBalance).toHaveBeenCalledWith('2026-06-30');
+      expect(glService.getTrialBalance).toHaveBeenCalledWith(
+        '2026-06-30',
+        undefined,
+      );
     });
   });
 

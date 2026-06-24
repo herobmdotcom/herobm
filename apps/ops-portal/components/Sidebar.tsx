@@ -106,7 +106,9 @@ export default function Sidebar() {
           subItems: [
             { href: '/balances/customers', label: 'Customers' },
             { href: '/balances/suppliers', label: 'Suppliers' },
+            { href: '/balances/tax', label: 'Tax' },
           ]
+
         },
         { href: '/payments', label: 'Payments', icon: 'account_balance_wallet' },
         { 

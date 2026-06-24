@@ -329,7 +329,7 @@ describe('Archive E2E — Full Round-Trip', () => {
           name: 'E2E Archive Test PO',
           vendorId: validVendorId,
           deliveryLocationId: validLocationId,
-          currencyCode: 'EUR',
+          currencyCode: 'AUD',
           lines: [
             {
               productId: validProductId,
@@ -364,7 +364,7 @@ describe('Archive E2E — Full Round-Trip', () => {
           name: 'E2E Draft Archive Fail',
           vendorId: validVendorId,
           deliveryLocationId: validLocationId,
-          currencyCode: 'EUR',
+          currencyCode: 'AUD',
           lines: [
             {
               productId: validProductId,

@@ -869,13 +869,13 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
         <div className="card mt-4 p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-0">{t('paymentAllocations')}</h2>
-            {invoice.stateCode !== 'paid' && invoice.stateCode !== 'cancelled' && canManageGL && (
+            {invoice.stateCode !== PURCHASE_INVOICE_STATE.PAID && invoice.stateCode !== PURCHASE_INVOICE_STATE.CANCELLED && canManageGL && (
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={handleAdminMarkPaid}
                 disabled={markingPaid}
               >
-                {markingPaid ? tCommon('loadingEllipsis') : 'Mark Paid'}
+                {markingPaid ? tCommon('loadingEllipsis') : tCommon('markPaid')}
               </button>
             )}
           </div>

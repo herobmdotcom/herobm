@@ -111,7 +111,9 @@ describe('InventoryService', () => {
         sourceId: '00000000-0000-4000-8000-000000000e11',
         memo: 'Test movement',
         userId: 'admin',
-        lines: [{ productId: PRODUCT_ID, binId: BIN_ID, quantity: 10, uomCode: 'EA' }],
+        lines: [
+          { productId: PRODUCT_ID, binId: BIN_ID, quantity: 10, uomCode: 'EA' },
+        ],
       };
 
       await pg.db.transaction(async (tx) => {
@@ -412,13 +414,16 @@ describe('InventoryService', () => {
 
     it('should accurately process and calculate available quantity for fractional composite UoMs', async () => {
       // 1. Register BOX (10 EA)
-      await pg.db.insert(uomDictionary).values({
-        uomCode: 'BOX',
-        description: 'Box of 10',
-      }).onConflictDoNothing();
-      
+      await pg.db
+        .insert(uomDictionary)
+        .values({
+          uomCode: 'BOX',
+          description: 'Box of 10',
+        })
+        .onConflictDoNothing();
+
       const FRAC_PROD_ID = '00000000-0000-4000-8000-000000000022';
-      
+
       await pg.db.insert(products).values({
         productId: FRAC_PROD_ID,
         productNumber: 'FRAC-01',
@@ -426,7 +431,7 @@ describe('InventoryService', () => {
         baseUom: 'EA',
         productType: 'inventory',
       });
-      
+
       await pg.db.insert(productUoms).values({
         productId: FRAC_PROD_ID,
         uomCode: 'BOX',
@@ -459,7 +464,7 @@ describe('InventoryService', () => {
 
       expect(ledgerEntries).toHaveLength(1);
       expect(Number(ledgerEntries[0].quantity)).toBe(15);
-      
+
       // Also verify available quantity
       const locs = await service.findAllLocations(FRAC_PROD_ID);
       const mainLoc = locs.find((l: any) => l.locationId === LOCATION_ID);

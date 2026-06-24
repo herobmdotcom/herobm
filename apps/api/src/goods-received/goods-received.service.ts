@@ -152,7 +152,10 @@ export class GoodsReceivedService {
         for (const line of createDto.lines) {
           // Validate product
           const [product] = await tx
-            .select({ productId: products.productId, baseUom: products.baseUom })
+            .select({
+              productId: products.productId,
+              baseUom: products.baseUom,
+            })
             .from(products)
             .where(eq(products.productId, line.productId))
             .limit(1);
@@ -226,13 +229,16 @@ export class GoodsReceivedService {
             purchaseOrderLineId: matchedPoLineId,
             purchaseOrderId: matchedPoId,
             unitCost: unitCost, // Use for valuation, filtered out during insert
-            uomCode: openPoLines.length > 0 ? (openPoLines[0].unitOfMeasure || product.baseUom) : product.baseUom,
+            uomCode:
+              openPoLines.length > 0
+                ? openPoLines[0].unitOfMeasure || product.baseUom
+                : product.baseUom,
           });
         }
 
-        await tx.insert(goodsReceivedLines).values(
-          lineValues.map(({ uomCode, ...rest }) => rest)
-        );
+        await tx
+          .insert(goodsReceivedLines)
+          .values(lineValues.map(({ uomCode, ...rest }) => rest));
 
         // --- 5. Inventory Impact: Place items into RECEIVING bin ---
         // Find or create RECEIVING zone/bin
@@ -321,7 +327,7 @@ export class GoodsReceivedService {
           lines: lineValues.map((lv) => ({
             productId: lv.productId,
             binId: receivingBin.binId,
-            quantity: parseFloat(lv.quantityReceived as string),
+            quantity: parseFloat(lv.quantityReceived),
             uomCode: lv.uomCode,
           })),
         });
@@ -587,7 +593,10 @@ export class GoodsReceivedService {
             purchaseOrderLineItems.purchaseOrderLineId,
           ),
         )
-        .leftJoin(products, eq(goodsReceivedLines.productId, products.productId))
+        .leftJoin(
+          products,
+          eq(goodsReceivedLines.productId, products.productId),
+        )
         .where(eq(goodsReceivedLines.goodsReceivedId, goodsReceivedId));
 
       // 2. Validate states

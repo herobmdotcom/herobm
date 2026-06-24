@@ -1,5 +1,5 @@
-
-import { 
+import { BIN_TYPE } from '@herobm/shared';
+import {
   glAccounts,
   locations,
   zones,
@@ -11,7 +11,7 @@ import {
   tradingTerms,
   uomDictionary,
   glJournalEntries,
-  glJournalLines
+  glJournalLines,
 } from '../../drizzle/herobm-core-schema';
 import { eq, sql } from 'drizzle-orm';
 
@@ -22,12 +22,14 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
     console.log('  [DRY RUN] Would seed test data');
     return;
   }
-  
+
   console.log('Seeding baseline test data...');
 
-
-
-  const defaultTerm = await db.select().from(tradingTerms).where(sql`code = 'NET30'`).limit(1);
+  const defaultTerm = await db
+    .select()
+    .from(tradingTerms)
+    .where(sql`code = 'NET30'`)
+    .limit(1);
   const termId = defaultTerm[0]?.tradingTermsId;
 
   // 1. Locations
@@ -35,65 +37,86 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
   const zoneId = '2cfb8c56-b08e-4a6c-a225-b873a1198c8c';
   const binId = '1fbd779b-ae7d-419b-ab29-4d6cbbf7cd46';
 
-  await db.insert(locations).values({
-    locationId: locId,
-    code: 'TEST-LOC',
-    name: 'Test Location',
-    addressLine1: '123 Test St',
-    city: 'Test City',
-    state: 'TX',
-    postCode: '12345',
-    country: 'USA',
-  }).onConflictDoNothing();
+  await db
+    .insert(locations)
+    .values({
+      locationId: locId,
+      code: 'TEST-LOC',
+      name: 'Test Location',
+      addressLine1: '123 Test St',
+      city: 'Test City',
+      state: 'TX',
+      postCode: '12345',
+      country: 'USA',
+    })
+    .onConflictDoNothing();
 
-  await db.insert(zones).values({
-    zoneId: zoneId,
-    locationId: locId,
-    code: 'TEST-ZONE',
-    name: 'Test Zone',
-  }).onConflictDoNothing();
+  await db
+    .insert(zones)
+    .values({
+      zoneId: zoneId,
+      locationId: locId,
+      code: 'TEST-ZONE',
+      name: 'Test Zone',
+    })
+    .onConflictDoNothing();
 
-  await db.insert(bins).values({
-    binId: binId,
-    zoneId: zoneId,
-    binNumber: 'TEST-BIN',
-    binType: 'storage',
-  }).onConflictDoNothing();
+  await db
+    .insert(bins)
+    .values({
+      binId: binId,
+      zoneId: zoneId,
+      binNumber: 'TEST-BIN',
+      binType: BIN_TYPE.STORAGE,
+    })
+    .onConflictDoNothing();
 
   // 2. Suppliers
   const supId = 'b0b3e7ea-b7bd-425d-bb85-df0a28f804aa';
-  await db.insert(suppliers).values({
-    vendorId: supId,
-    vendorNumber: 'TEST-SUP-01',
-    name: 'Test Supplier LLC',
-    currencyCode: 'USD',
-    tradingTermsId: termId ?? null,
-    address1Country: 'USA',
-  }).onConflictDoNothing();
+  await db
+    .insert(suppliers)
+    .values({
+      vendorId: supId,
+      vendorNumber: 'TEST-SUP-01',
+      name: 'Test Supplier LLC',
+      currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
+      tradingTermsId: termId ?? null,
+      address1Country: 'USA',
+    })
+    .onConflictDoNothing();
 
   // 3. Customers
   const custId = 'd32c4e85-d865-4f40-8abf-c4e89e47261d';
-  await db.insert(customers).values({
-    customerId: custId,
-    customerNumber: 'TEST-CUST-01',
-    name: 'Test Customer Inc',
-    currencyCode: 'USD',
-    tradingTermsId: termId ?? null,
-    creditLimit: '10000.00',
-    billingAddressCountry: 'USA',
-  }).onConflictDoNothing();
+  await db
+    .insert(customers)
+    .values({
+      customerId: custId,
+      customerNumber: 'TEST-CUST-01',
+      name: 'Test Customer Inc',
+      currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
+      tradingTermsId: termId ?? null,
+      creditLimit: '10000.00',
+      billingAddressCountry: 'USA',
+    })
+    .onConflictDoNothing();
 
   // 4. Products
-  await db.insert(uomDictionary).values({ uomCode: 'BOX', description: 'Box' }).onConflictDoNothing();
-  
+  await db
+    .insert(uomDictionary)
+    .values({ uomCode: 'BOX', description: 'Box' })
+    .onConflictDoNothing();
+
   const prodId = 'e2cd8fba-813c-48c0-84c1-4b13a375494d';
-  await db.insert(products).values({
-    productId: prodId,
-    productNumber: 'TEST-PROD-01',
-    name: 'Test Product 1',
-    baseUom: 'EA',
-    productType: 'inventory',
-  }).onConflictDoNothing();
+  await db
+    .insert(products)
+    .values({
+      productId: prodId,
+      productNumber: 'TEST-PROD-01',
+      name: 'Test Product 1',
+      baseUom: 'EA',
+      productType: 'inventory',
+    })
+    .onConflictDoNothing();
 
   console.log('Baseline test master data seeded.');
 
@@ -103,7 +126,7 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
     .from(glAccounts)
     .where(eq(glAccounts.isBankAccount, true))
     .limit(1);
-  
+
   if (!bankAccs.length) {
     console.warn('No bank account found, skipping payment seeds');
     return;
@@ -126,59 +149,71 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
 
   // Create Customer Payment
   const custJeId = '00000000-0000-0000-0000-000000000001';
-  await db.insert(glJournalEntries).values({
-    journalEntryId: custJeId,
-    entryNumber: 'JE-CUST-PAY-01',
-    entryDate: '2026-05-27',
-    sourceType: 'manual',
-    memo: 'Test Customer Payment',
-    createdBy: 'system',
-  }).onConflictDoNothing();
+  await db
+    .insert(glJournalEntries)
+    .values({
+      journalEntryId: custJeId,
+      entryNumber: 'JE-CUST-PAY-01',
+      entryDate: '2026-05-27',
+      sourceType: 'manual',
+      memo: 'Test Customer Payment',
+      createdBy: 'system',
+    })
+    .onConflictDoNothing();
 
-  await db.insert(glJournalLines).values([
-    {
-      journalEntryId: custJeId,
-      glAccountId: bankAcc.glAccountId,
-      debit: '500.00',
-      credit: '0.00',
-      memo: 'CUSTOMER PAYMENT INV-001',
-    },
-    {
-      journalEntryId: custJeId,
-      glAccountId: arId,
-      debit: '0.00',
-      credit: '500.00',
-      memo: 'CUSTOMER PAYMENT INV-001',
-    }
-  ]).onConflictDoNothing();
+  await db
+    .insert(glJournalLines)
+    .values([
+      {
+        journalEntryId: custJeId,
+        glAccountId: bankAcc.glAccountId,
+        debit: '500.00',
+        credit: '0.00',
+        memo: 'CUSTOMER PAYMENT INV-001',
+      },
+      {
+        journalEntryId: custJeId,
+        glAccountId: arId,
+        debit: '0.00',
+        credit: '500.00',
+        memo: 'CUSTOMER PAYMENT INV-001',
+      },
+    ])
+    .onConflictDoNothing();
 
   // Create Supplier Payment
   const supJeId = '00000000-0000-0000-0000-000000000002';
-  await db.insert(glJournalEntries).values({
-    journalEntryId: supJeId,
-    entryNumber: 'JE-SUP-PAY-01',
-    entryDate: '2026-05-28',
-    sourceType: 'manual',
-    memo: 'Test Supplier Payment',
-    createdBy: 'system',
-  }).onConflictDoNothing();
+  await db
+    .insert(glJournalEntries)
+    .values({
+      journalEntryId: supJeId,
+      entryNumber: 'JE-SUP-PAY-01',
+      entryDate: '2026-05-28',
+      sourceType: 'manual',
+      memo: 'Test Supplier Payment',
+      createdBy: 'system',
+    })
+    .onConflictDoNothing();
 
-  await db.insert(glJournalLines).values([
-    {
-      journalEntryId: supJeId,
-      glAccountId: apId,
-      debit: '200.00',
-      credit: '0.00',
-      memo: 'SUPPLIER PAYMENT BILL-001',
-    },
-    {
-      journalEntryId: supJeId,
-      glAccountId: bankAcc.glAccountId,
-      debit: '0.00',
-      credit: '200.00',
-      memo: 'SUPPLIER PAYMENT BILL-001',
-    }
-  ]).onConflictDoNothing();
+  await db
+    .insert(glJournalLines)
+    .values([
+      {
+        journalEntryId: supJeId,
+        glAccountId: apId,
+        debit: '200.00',
+        credit: '0.00',
+        memo: 'SUPPLIER PAYMENT BILL-001',
+      },
+      {
+        journalEntryId: supJeId,
+        glAccountId: bankAcc.glAccountId,
+        debit: '0.00',
+        credit: '200.00',
+        memo: 'SUPPLIER PAYMENT BILL-001',
+      },
+    ])
+    .onConflictDoNothing();
 
   console.log('Payments seeded successfully.');
 }

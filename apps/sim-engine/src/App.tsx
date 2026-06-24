@@ -12,6 +12,7 @@ interface SimState {
 function App() {
   const [simState, setSimState] = useState<SimState | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
 
   const fetchState = async () => {
     try {
@@ -55,6 +56,10 @@ function App() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpandedEventId(prev => (prev === id ? null : id));
   };
 
   if (!simState) return <div>Loading Simulation Engine...</div>;
@@ -122,13 +127,26 @@ function App() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
             {simState.upcomingEvents.map((evt: any) => (
               <div key={evt.id} style={{ background: '#3f3f46', padding: '1rem', borderRadius: '4px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <strong>{evt.type}</strong>
                   <span style={{ color: '#a1a1aa' }}>{new Date(evt.timestamp).toLocaleString()}</span>
                 </div>
-                <div style={{ fontSize: '0.875rem', marginTop: '0.5rem', color: '#d4d4d8' }}>
-                  ID: {evt.id}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                  <div style={{ fontSize: '0.875rem', color: '#d4d4d8' }}>
+                    ID: {evt.id}
+                  </div>
+                  <button 
+                    onClick={() => toggleExpand(evt.id)}
+                    style={{ background: 'transparent', color: '#3b82f6', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}
+                  >
+                    {expandedEventId === evt.id ? 'Hide Details' : 'Show Details'}
+                  </button>
                 </div>
+                {expandedEventId === evt.id && (
+                  <pre style={{ background: '#000', padding: '1rem', borderRadius: '4px', overflowX: 'auto', marginTop: '1rem', fontSize: '0.875rem' }}>
+                    {JSON.stringify(evt.payload, null, 2)}
+                  </pre>
+                )}
               </div>
             ))}
             {simState.upcomingEvents.length === 0 && (

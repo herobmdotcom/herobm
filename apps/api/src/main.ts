@@ -25,7 +25,8 @@ async function bootstrap() {
 
   // --- Safeguard: Prevent faketime in Production ---
   if (
-    (process.env.NODE_ENV === 'production' || process.env.DEPLOYMENT_TIER === 'production') &&
+    (process.env.NODE_ENV === 'production' ||
+      process.env.DEPLOYMENT_TIER === 'production') &&
     process.env.LD_PRELOAD?.includes('faketime')
   ) {
     Logger.error(

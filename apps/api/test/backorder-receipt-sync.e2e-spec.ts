@@ -178,7 +178,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
         orderNumber: `PO-ADV085-${Date.now()}`,
         vendorId: validVendorId,
         deliveryLocationId: locationId,
-        currencyCode: 'EUR',
+        currencyCode: 'AUD',
         lines: [
           {
             productId,
@@ -313,7 +313,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
         orderNumber: `PO-ADV085-P-${Date.now()}`,
         vendorId: validVendorId,
         deliveryLocationId: locationId,
-        currencyCode: 'EUR',
+        currencyCode: 'AUD',
         lines: [{ productId: pProductId, quantity: 10, pricePerUnit: '10.00' }],
       })
       .expect(201);

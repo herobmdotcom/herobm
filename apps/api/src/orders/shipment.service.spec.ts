@@ -504,7 +504,7 @@ describe('ShipmentService', () => {
     });
   });
 
-  describe.skip('UoM Boundary Translation (Reversal)', () => {
+  describe('UoM Boundary Translation (Reversal)', () => {
     it('should correctly restore the non-base UoM during shipment cancellation', async () => {
       // 1. Setup custom UoM
       await pg.db
@@ -522,7 +522,7 @@ describe('ShipmentService', () => {
           currencyCode: 'USD',
         })
         .returning();
-      
+
       const [soLine] = await pg.db
         .insert(salesOrderLineItems)
         .values({
@@ -547,24 +547,20 @@ describe('ShipmentService', () => {
         })
         .returning();
 
-      await pg.db
-        .insert(salesOrderShipmentLines)
-        .values({
-          shipmentId: shp.shipmentId,
-          salesOrderLineId: soLine.salesOrderLineId,
-          quantityShipped: '5',
-        });
+      await pg.db.insert(salesOrderShipmentLines).values({
+        shipmentId: shp.shipmentId,
+        salesOrderLineId: soLine.salesOrderLineId,
+        quantityShipped: '5',
+      });
 
       // We also need a pick referencing it so cancellation knows where to put it back
-      await pg.db
-        .insert(salesOrderPicks)
-        .values({
-          salesOrderId: so.salesOrderId,
-          salesOrderLineId: soLine.salesOrderLineId,
-          productId: '00000000-0000-4000-8000-000000000001',
-          binId: '00000000-0000-4000-8000-000000000002',
-          quantity: '50',
-        });
+      await pg.db.insert(salesOrderPicks).values({
+        salesOrderId: so.salesOrderId,
+        salesOrderLineId: soLine.salesOrderLineId,
+        productId: '00000000-0000-4000-8000-000000000001',
+        binId: '00000000-0000-4000-8000-000000000002',
+        quantity: '50',
+      });
 
       const entryId = '00000000-0000-4000-8000-000000000005';
       await pg.db.insert(inventoryEntries).values({

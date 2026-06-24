@@ -48,7 +48,7 @@ services:
         max-size: "20m"
         max-file: "3"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB:-herobm}"]
+      test: ["CMD", "sh", "-c", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB:-herobm}"]
       interval: 10s
       timeout: 5s
       retries: 5

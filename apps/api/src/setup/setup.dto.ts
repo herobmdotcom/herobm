@@ -121,7 +121,8 @@ export class ExecuteEltDto {
   importInventoryFromLocations?: boolean;
 
   @ApiProperty({
-    description: 'If provided, all legacy invoices (sales and purchase) with a due date before this date will be considered paid.',
+    description:
+      'If provided, all legacy invoices (sales and purchase) with a due date before this date will be considered paid.',
     required: false,
   })
   @IsOptional()

@@ -333,10 +333,13 @@ rebuild-sim-images:
 	podman build -t localhost/herobm_sim-engine:latest -f apps/sim-engine/Dockerfile .
 
 up-sim: rebuild-sim-images
-	$(COMPOSE_CMD) -f docker-compose.sim.yml up -d --no-build
-	$(COMPOSE_CMD) -f docker-compose.sim.yml ps
+	podman-compose -f docker-compose.sim.yml up -d --no-build
+	podman-compose -f docker-compose.sim.yml ps
 
 USE_PGLITE ?= true
+
+query-sim-db:
+	@podman exec -i postgres-custom-sim psql -U postgres -d herobm_volzau -c "$(QUERY)"
 
 ifeq ($(USE_PGLITE),true)
   TEST_API_TARGET = test:pglite

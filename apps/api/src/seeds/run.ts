@@ -52,6 +52,9 @@ async function main() {
 
       const { runTestSeeds } = await import('./test/index.js');
       await runTestSeeds(db, dryRun);
+    } else if (mode === 'sim') {
+      const { runSimSeeds } = await import('./sim/index.js');
+      await runSimSeeds(db, dryRun);
     } else {
       console.error(`Unknown mode: ${mode}`);
       process.exit(1);

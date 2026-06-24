@@ -91,7 +91,7 @@ export default function TrialBalancePage() {
             <div className="flex items-center gap-4">
               <select
                 value={reportMode}
-                onChange={(e) => setReportMode(e.target.value as any)}
+                onChange={(e) => setReportMode(e.target.value as 'point_in_time' | 'periodic')}
                 className="text-sm px-3 py-1.5 rounded-lg border outline-none transition-all"
                 style={{
                   background: 'var(--bg-card)',
@@ -106,7 +106,7 @@ export default function TrialBalancePage() {
               {reportMode === 'periodic' && (
                 <div className="flex items-center gap-2">
                   <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                    From
+                    {t('fromDate')}
                   </label>
                   <input
                     type="date"
@@ -124,7 +124,7 @@ export default function TrialBalancePage() {
 
               <div className="flex items-center gap-2">
                 <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                  {reportMode === 'periodic' ? 'To' : t('asOfDate')}
+                  {reportMode === 'periodic' ? t('toDate') : t('asOfDate')}
                 </label>
                 <input
                   type="date"

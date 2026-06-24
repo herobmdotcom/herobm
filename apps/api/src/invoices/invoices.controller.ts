@@ -267,7 +267,8 @@ export class InvoiceDetailController {
   @HttpCode(200)
   @ApiOperation({
     summary: 'Mark Purchase Invoice as Paid (Admin)',
-    description: 'Marks a purchase invoice as paid without generating a GL entry.',
+    description:
+      'Marks a purchase invoice as paid without generating a GL entry.',
   })
   @ApiBody({ type: EmptyBodyDto })
   @ApiOkResponse({ type: PurchaseInvoiceResponseDto })

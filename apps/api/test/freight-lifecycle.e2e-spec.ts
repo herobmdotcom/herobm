@@ -107,7 +107,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
         orderNumber: `PO-FRT-${Date.now()}`,
         vendorId,
         deliveryLocationId: locationId,
-        currencyCode: 'EUR',
+        currencyCode: 'AUD',
         lines: [
           {
             productId: physicalProductId,
