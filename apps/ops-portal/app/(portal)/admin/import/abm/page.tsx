@@ -33,6 +33,7 @@ export default function AdminImportPage() {
     defaultTaxCategoryCode: '',
     enableCustomImports: false,
     importInventoryFromLocations: false,
+    enableLegacyInvoicesRule: false,
     legacyInvoicesPaidBeforeDate: ''
   });
   
@@ -170,7 +171,7 @@ export default function AdminImportPage() {
         defaultTaxCategoryCode: config.defaultTaxCategoryCode,
         enableCustomImports: config.enableCustomImports,
         importInventoryFromLocations: config.importInventoryFromLocations,
-        legacyInvoicesPaidBeforeDate: config.legacyInvoicesPaidBeforeDate,
+        legacyInvoicesPaidBeforeDate: config.enableLegacyInvoicesRule ? config.legacyInvoicesPaidBeforeDate : '',
       };
 
       setStep('executing');
@@ -420,12 +421,27 @@ export default function AdminImportPage() {
             <div className="col-span-2 mt-2">
               <h2 className="text-xl font-bold text-slate-800 mb-4">{t('options.legacyInvoicesTitle')}</h2>
               <p className="text-sm text-slate-500 mb-4">{t('options.legacyInvoicesDesc')}</p>
-              <input
-                type="date"
-                className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
-                value={config.legacyInvoicesPaidBeforeDate}
-                onChange={(e) => setConfig({ ...config, legacyInvoicesPaidBeforeDate: e.target.value })}
-              />
+              
+              <div className="flex flex-col gap-4">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 text-[#006b5c] rounded border-slate-300 focus:ring-[#006b5c]"
+                    checked={config.enableLegacyInvoicesRule}
+                    onChange={(e) => setConfig({ ...config, enableLegacyInvoicesRule: e.target.checked })}
+                  />
+                  <span className="text-slate-700 font-medium">Apply paid status to older legacy invoices</span>
+                </label>
+                
+                {config.enableLegacyInvoicesRule && (
+                  <input
+                    type="date"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                    value={config.legacyInvoicesPaidBeforeDate}
+                    onChange={(e) => setConfig({ ...config, legacyInvoicesPaidBeforeDate: e.target.value })}
+                  />
+                )}
+              </div>
             </div>
           </div>
 
