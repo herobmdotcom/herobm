@@ -248,8 +248,8 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
 
       const assessRes = await creditAssessmentService.assessCredit(customerId);
 
-      expect(assessRes.totalArBalance).toBe(1000);
-      expect(assessRes.overdueBalance).toBe(1000);
+      expect(assessRes.totalInvoiceBalance).toBe(1000);
+      expect(assessRes.overdueInvoiceBalance).toBe(1000);
       expect(assessRes.isOverdue).toBe(true);
     });
 
@@ -323,8 +323,8 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
 
       const assessRes = await creditAssessmentService.assessCredit(customerId);
 
-      expect(assessRes.totalArBalance).toBe(700);
-      expect(assessRes.overdueBalance).toBe(200); // Only the older one
+      expect(assessRes.totalInvoiceBalance).toBe(700);
+      expect(assessRes.overdueInvoiceBalance).toBe(200); // Only the older one
       expect(assessRes.isOverdue).toBe(true);
     });
   });

@@ -88,7 +88,7 @@
     },
     "customerGroups": {
       "definedGroups": "Defined Groups",
-      "discountRules": "Discount Rules",
+      "discountRules": "Product Discount Rules",
       "manage": "Manage",
       "newGroup": "+ New Group",
       "noGroups": "No customer groups defined.",
@@ -200,7 +200,7 @@
       "productGroup": "Product Group",
       "productGroupRules": "Product Group Overrides",
       "selectProductGroup": "— Select product group —",
-      "title": "Discount Rules",
+      "title": "Product Discount Rules",
       "toasts": {
         "deleted": "Discount rule deleted",
         "saved": "Discount rule saved"
@@ -1302,7 +1302,15 @@
       "activeTitle": "Credit Hold Active",
       "bypassDesc": "Temporarily bypass all credit holds to allow sales orders to proceed. This expires automatically at midnight on the selected date.",
       "overriddenDesc": "Temporarily bypass all credit holds to allow sales orders to proceed. This expires automatically at midnight on {date}.",
-      "overriddenTitle": "Credit Hold Overridden"
+      "overriddenTitle": "Credit Hold Overridden",
+      "reasons": {
+        "credit_limit_exceeded": "Credit limit exceeded",
+        "customer_archived": "Customer is archived",
+        "customer_credit_hold": "Manual credit hold (Customer)",
+        "customer_draft": "Customer is in draft state",
+        "group_credit_hold": "Manual credit hold (Customer Group)",
+        "overdue_balance": "Overdue balance"
+      }
     },
     "deliveryAddresses": "Delivery Addresses",
     "earlyPaymentDiscount": "Early Payment Discount %",
@@ -1317,7 +1325,8 @@
       "billingEmail": "Billing Email",
       "businessNumber": "Business Number",
       "childAccounts": "Child Accounts ({count})",
-      "discountRules": "Discount Rules",
+      "creditLimit": "Credit Limit",
+      "discountRules": "Product Discount Rules",
       "manage": "Manage",
       "parentCustomer": "Parent Customer",
       "taxRegistered": "Tax Registered"
@@ -2252,7 +2261,7 @@
     "bankAccount": "Bank Account",
     "bankDetails": "Bank Details",
     "cancel": "Cancel",
-    "creditHold": "Credit Hold",
+    "creditHold": "Manual Credit Hold",
     "creditLimit": "Credit Limit",
     "creditLines": "Credit Lines",
     "customer": "Customer",
@@ -2900,8 +2909,9 @@
       "activeDesc": "This order is blocked because the customer is on credit hold.",
       "activeTitle": "Credit Hold Active",
       "description": "This order is currently blocked because the customer is on credit hold. Providing an override will allow this order to be processed.",
+      "glBalance": "GL Balance",
       "noReasonError": "Please provide a reason.",
-      "overdue": "Overdue",
+      "overdue": "Overdue Invoices",
       "overriddenDesc": "The credit hold for this order has been manually overridden.",
       "overriddenTitle": "Credit Hold Overridden",
       "overrideBtn": "Override Hold",
@@ -2912,7 +2922,7 @@
       "success": "Credit hold overridden successfully.",
       "systemStatus": "System Status",
       "title": "Override Credit Hold",
-      "totalOutstanding": "Total Outstanding"
+      "totalOutstanding": "Total Invoices"
     },
     "customers": {
       "invoices": "Invoices",

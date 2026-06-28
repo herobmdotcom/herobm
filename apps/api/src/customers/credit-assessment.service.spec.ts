@@ -4,12 +4,13 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   customers,
-  tradingTerms,
+  salesOrders,
+  salesInvoices,
   glJournalLines,
   glJournalEntries,
   glAccounts,
+  locations,
 } from '../drizzle/herobm-core-schema';
-import { sql } from 'drizzle-orm';
 
 describe('CreditAssessmentService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -45,23 +46,14 @@ describe('CreditAssessmentService', () => {
         '00000000-0000-4000-8000-000000000000',
       );
       expect(result).toEqual({
-        totalArBalance: 0,
-        overdueBalance: 0,
+        totalInvoiceBalance: 0,
+        overdueInvoiceBalance: 0,
+        glBalance: 0,
         isOverdue: false,
       });
     });
 
-    it('should calculate correct net AR balance from GL entries', async () => {
-      const [term] = await pg.db
-        .insert(tradingTerms)
-        .values({
-          code: 'NET30',
-          days: 30,
-          description: 'Net 30',
-          type: 'net',
-        })
-        .returning();
-
+    it('should calculate correct balances from invoices and GL', async () => {
       const [acc] = await pg.db
         .insert(customers)
         .values({
@@ -69,11 +61,10 @@ describe('CreditAssessmentService', () => {
           customerNumber: 'CUST-1',
           currencyCode: 'USD',
           billingAddressCountry: 'AU',
-          tradingTermsId: term.tradingTermsId,
         })
         .returning();
 
-      // Create a recent entry
+      // Create GL entry
       const [entry] = await pg.db
         .insert(glJournalEntries)
         .values({
@@ -102,236 +93,55 @@ describe('CreditAssessmentService', () => {
         },
       ]);
 
-      const result = await service.assessCredit(acc.customerId);
-      expect(result.totalArBalance).toBe(300);
-      expect(result.overdueBalance).toBe(0);
-      expect(result.isOverdue).toBe(false);
-    });
-
-    it('should identify overdue debt using Balance Forward logic', async () => {
-      const [term] = await pg.db
-        .insert(tradingTerms)
-        .values({
-          code: 'NET30',
-          days: 30,
-          description: 'Net 30',
-          type: 'net',
-        })
+      const [loc] = await pg.db
+        .insert(locations)
+        .values({ name: 'Main Warehouse', code: 'MAIN' })
         .returning();
 
-      const [acc] = await pg.db
-        .insert(customers)
+      // Create Sales Order and Invoices
+      const [order] = await pg.db
+        .insert(salesOrders)
         .values({
-          name: 'Overdue Customer',
-          customerNumber: 'CUST-2',
+          customerId: acc.customerId,
+          orderNumber: 'SO-1',
           currencyCode: 'USD',
-          billingAddressCountry: 'AU',
-          tradingTermsId: term.tradingTermsId,
+          stateCode: 'confirmed',
+          baseTotalAmount: '1000',
+          fulfillmentLocationId: loc.locationId,
         })
         .returning();
 
-      // 1. Old Overdue Debt (50 days ago)
-      const oldDate = new Date();
-      oldDate.setDate(oldDate.getDate() - 50);
-
-      const [entryOld] = await pg.db
-        .insert(glJournalEntries)
-        .values({
-          entryNumber: 'JE-OLD',
-          entryDate: oldDate.toISOString(),
-          sourceType: 'manual',
-        })
-        .returning();
-
-      await pg.db.insert(glJournalLines).values({
-        journalEntryId: entryOld.journalEntryId,
-        partyId: acc.customerId,
-        partyType: 'customer',
-        debit: '1000',
-        credit: '0',
-        glAccountId: testGlAccountId,
-      });
-
-      // 2. Recent Debt (5 days ago)
-      const recentDate = new Date();
-      recentDate.setDate(recentDate.getDate() - 5);
-
-      const [entryRecent] = await pg.db
-        .insert(glJournalEntries)
-        .values({
-          entryNumber: 'JE-RECENT',
-          entryDate: recentDate.toISOString(),
-          sourceType: 'manual',
-        })
-        .returning();
-
-      await pg.db.insert(glJournalLines).values({
-        journalEntryId: entryRecent.journalEntryId,
-        partyId: acc.customerId,
-        partyType: 'customer',
-        debit: '500',
-        credit: '0',
-        glAccountId: testGlAccountId,
-      });
-
-      // 3. Partial Payment (total credits)
-      const [entryPay] = await pg.db
-        .insert(glJournalEntries)
-        .values({
-          entryNumber: 'JE-PAY',
-          entryDate: new Date().toISOString(),
-          sourceType: 'manual',
-        })
-        .returning();
-
-      await pg.db.insert(glJournalLines).values({
-        journalEntryId: entryPay.journalEntryId,
-        partyId: acc.customerId,
-        partyType: 'customer',
-        debit: '0',
-        credit: '400',
-        glAccountId: testGlAccountId,
-      });
-
-      // Calculation:
-      // Total Debits = 1000 + 500 = 1500
-      // Total Credits = 400
-      // Net AR = 1100
-      // Overdue Debits = 1000 (from JE-OLD)
-      // Overdue Balance = MAX(0, 1000 - 400) = 600
-
-      const result = await service.assessCredit(acc.customerId);
-      expect(result.totalArBalance).toBe(1100);
-      expect(result.overdueBalance).toBe(600);
-      expect(result.isOverdue).toBe(true);
-    });
-
-    it('should correctly assess overdue debt for Cash on Delivery terms', async () => {
-      const [term] = await pg.db
-        .insert(tradingTerms)
-        .values({
-          code: 'COD',
-          days: 0,
-          description: 'Cash on Delivery',
-          type: 'cash_on_delivery',
-        })
-        .returning();
-
-      const [acc] = await pg.db
-        .insert(customers)
-        .values({
-          name: 'COD Customer',
-          customerNumber: 'CUST-COD',
-          currencyCode: 'USD',
-          billingAddressCountry: 'AU',
-          tradingTermsId: term.tradingTermsId,
-        })
-        .returning();
-
-      // Debt from yesterday should be overdue
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
 
-      const [entry] = await pg.db
-        .insert(glJournalEntries)
-        .values({
-          entryNumber: 'JE-COD',
-          entryDate: yesterday.toISOString(),
-          sourceType: 'manual',
-        })
-        .returning();
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
 
-      await pg.db.insert(glJournalLines).values({
-        journalEntryId: entry.journalEntryId,
-        partyId: acc.customerId,
-        partyType: 'customer',
-        debit: '100',
-        credit: '0',
-        glAccountId: testGlAccountId,
-      });
-
-      const result = await service.assessCredit(acc.customerId);
-      expect(result.totalArBalance).toBe(100);
-      expect(result.overdueBalance).toBe(100); // Overdue immediately
-      expect(result.isOverdue).toBe(true);
-    });
-
-    it('should correctly assess overdue debt for End of Month terms', async () => {
-      const [term] = await pg.db
-        .insert(tradingTerms)
-        .values({
-          code: 'EOM30',
-          days: 30,
-          description: '30 Days EOM',
-          type: 'end_of_month',
-        })
-        .returning();
-
-      const [acc] = await pg.db
-        .insert(customers)
-        .values({
-          name: 'EOM Customer',
-          customerNumber: 'CUST-EOM',
-          currencyCode: 'USD',
-          billingAddressCountry: 'AU',
-          tradingTermsId: term.tradingTermsId,
-        })
-        .returning();
-
-      const today = new Date();
-      const lastMonthMid = new Date(
-        today.getFullYear(),
-        today.getMonth() - 1,
-        15,
-      );
-      const twoMonthsAgoMid = new Date(
-        today.getFullYear(),
-        today.getMonth() - 2,
-        15,
-      );
-
-      // Not overdue yet (due end of this month approx)
-      const [entry1] = await pg.db
-        .insert(glJournalEntries)
-        .values({
-          entryNumber: 'JE-EOM-1',
-          entryDate: lastMonthMid.toISOString(),
-          sourceType: 'manual',
-        })
-        .returning();
-
-      // Overdue (due end of last month approx)
-      const [entry2] = await pg.db
-        .insert(glJournalEntries)
-        .values({
-          entryNumber: 'JE-EOM-2',
-          entryDate: twoMonthsAgoMid.toISOString(),
-          sourceType: 'manual',
-        })
-        .returning();
-
-      await pg.db.insert(glJournalLines).values([
+      await pg.db.insert(salesInvoices).values([
         {
-          journalEntryId: entry1.journalEntryId,
-          partyId: acc.customerId,
-          partyType: 'customer',
-          debit: '100', // Not overdue
-          credit: '0',
-          glAccountId: testGlAccountId,
+          invoiceNumber: 'INV-1',
+          salesOrderId: order.salesOrderId,
+          dueDate: yesterday,
+          stateCode: 'unpaid',
+          totalAmount: '400',
+          outstandingAmount: '400',
+          currencyCode: 'USD',
         },
         {
-          journalEntryId: entry2.journalEntryId,
-          partyId: acc.customerId,
-          partyType: 'customer',
-          debit: '500', // Overdue
-          credit: '0',
-          glAccountId: testGlAccountId,
+          invoiceNumber: 'INV-2',
+          salesOrderId: order.salesOrderId,
+          dueDate: tomorrow,
+          stateCode: 'unpaid',
+          totalAmount: '600',
+          outstandingAmount: '600',
+          currencyCode: 'USD',
         },
       ]);
 
       const result = await service.assessCredit(acc.customerId);
-      expect(result.totalArBalance).toBe(600);
-      expect(result.overdueBalance).toBe(500); // Only the older invoice is overdue
+      expect(result.glBalance).toBe(300); // 500 - 200
+      expect(result.totalInvoiceBalance).toBe(1000); // 400 + 600
+      expect(result.overdueInvoiceBalance).toBe(400); // Only INV-1 is overdue
       expect(result.isOverdue).toBe(true);
     });
   });

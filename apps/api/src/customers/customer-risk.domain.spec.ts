@@ -23,8 +23,9 @@ describe('Customer Risk Domain', () => {
   };
 
   const baseAssessment: CreditAssessmentResult = {
-    totalArBalance: 0,
-    overdueBalance: 0,
+    totalInvoiceBalance: 0,
+    overdueInvoiceBalance: 0,
+    glBalance: 0,
     isOverdue: false,
   };
 
@@ -92,7 +93,7 @@ describe('Customer Risk Domain', () => {
     const result = resolveCustomerRiskProfile(
       { ...baseCustomer, creditLimit: '1000' },
       baseGroup,
-      { ...baseAssessment, totalArBalance: 500 },
+      { ...baseAssessment, totalInvoiceBalance: 500 },
       600, // 500 + 600 > 1000
       'hard',
     );
@@ -104,7 +105,7 @@ describe('Customer Risk Domain', () => {
     const result = resolveCustomerRiskProfile(
       { ...baseCustomer, creditLimit: '1000' },
       baseGroup,
-      { ...baseAssessment, totalArBalance: 500 },
+      { ...baseAssessment, totalInvoiceBalance: 500 },
       600, // 500 + 600 > 1000
       'soft',
     );

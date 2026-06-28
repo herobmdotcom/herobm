@@ -33,7 +33,18 @@ describe('AccountsService', () => {
       providers: [
         AccountsService,
         { provide: DRIZZLE, useValue: pg.db },
-        { provide: CreditAssessmentService, useValue: {} },
+        {
+          provide: CreditAssessmentService,
+          useValue: {
+            assessCreditBatch: jest.fn().mockResolvedValue({}),
+            assessCredit: jest.fn().mockResolvedValue({
+              glBalance: 0,
+              totalInvoiceBalance: 0,
+              overdueInvoiceBalance: 0,
+              isOverdue: false,
+            }),
+          },
+        },
         { provide: AppConfigService, useValue: {} },
       ],
     }).compile();

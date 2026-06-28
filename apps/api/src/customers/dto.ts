@@ -102,6 +102,7 @@ export class BaseAccountDto {
   @Transform(({ value }) => (value === '' ? null : value))
   @IsBoolean()
   isOnCreditHold?: boolean;
+
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
@@ -212,6 +213,8 @@ export class AccountResponseDto {
   isTaxRegistered?: boolean;
   creditLimit?: string;
   isOnCreditHold?: boolean;
+  isSalesBlocked?: boolean;
+  salesBlockReasons?: string[];
   overrideCreditHoldUntil?: Date;
   tradingTermsId?: string;
   earlyPaymentDiscount?: string;
@@ -272,7 +275,8 @@ export class AgedBalanceResponseDto {
 }
 
 export class CreditAssessmentResponseDto {
-  totalArBalance!: number;
-  overdueBalance!: number;
+  totalInvoiceBalance!: number;
+  overdueInvoiceBalance!: number;
+  glBalance!: number;
   isOverdue!: boolean;
 }

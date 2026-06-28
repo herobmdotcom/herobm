@@ -196,7 +196,60 @@ export class AccountsService {
       .from(customers)
       .where(whereClause);
 
-    return { data, page, limit, total: Number(count), nextCursor, prevCursor };
+    const customerIds = data.map((c) => c.customerId);
+    const assessments =
+      await this.creditAssessmentService.assessCreditBatch(customerIds);
+
+    const enrichedData = data.map((row) => {
+      const custProfile: CustomerProfile = {
+        stateCode: row.stateCode,
+        isOnCreditHold: Boolean(row.isOnCreditHold),
+        creditLimit: row.creditLimit?.toString() || null,
+        tradingTermsId: row.tradingTermsId,
+        overrideCreditHoldUntil: row.overrideCreditHoldUntil,
+        earlyPaymentDiscount: row.earlyPaymentDiscount?.toString() || null,
+        earlyPaymentDiscountDays: row.earlyPaymentDiscountDays,
+      };
+
+      let groupProfile: CustomerGroupProfile | null = null;
+      if (row.customerGroupId) {
+        groupProfile = {
+          stateCode: row.stateCode, // Groups don't have an independent stateCode
+          isOnCreditHold: Boolean(row.customerGroupIsOnCreditHold),
+          creditLimit: row.customerGroupCreditLimit?.toString() || null,
+          tradingTermsId: row.customerGroupTradingTermsId,
+        };
+      }
+
+      const risk = resolveCustomerRiskProfile(
+        custProfile,
+        groupProfile,
+        assessments[row.customerId] || {
+          glBalance: 0,
+          totalInvoiceBalance: 0,
+          overdueInvoiceBalance: 0,
+          isOverdue: false,
+        },
+        0,
+        'hard',
+        'confirm',
+      );
+
+      return {
+        ...row,
+        isSalesBlocked: risk.isSalesBlocked,
+        salesBlockReasons: risk.salesBlockReasons,
+      };
+    });
+
+    return {
+      data: enrichedData,
+      page,
+      limit,
+      total: Number(count),
+      nextCursor,
+      prevCursor,
+    };
   }
 
   async findOne(id: string, tx?: DrizzleDB) {
@@ -232,8 +285,8 @@ export class AccountsService {
       .where(eq(masterDataEvents.entityId, customer.customerId))
       .orderBy(sql`${masterDataEvents.createdOn} DESC`);
 
-    const [events, contactsResult, deliveryAddressesResult] = await Promise.all(
-      [
+    const [events, contactsResult, deliveryAddressesResult, creditAssessment] =
+      await Promise.all([
         eventsQuery,
         db.query.customerContacts
           .findMany({
@@ -248,17 +301,53 @@ export class AccountsService {
             ),
           })
           .catch(() => []),
-      ],
-    );
+        this.creditAssessmentService.assessCredit(customer.customerId, db),
+      ]);
 
-    // Use dynamic import workaround to avoid cyclic dependency if any, or just import them
-    // Actually, I should import customerContacts and customerDeliveryAddresses at the top.
+    // Fetch group if applicable
+    let groupProfile: CustomerGroupProfile | null = null;
+    if (customer.customerGroupId) {
+      const groups = await db
+        .select()
+        .from(customerGroups)
+        .where(eq(customerGroups.customerGroupId, customer.customerGroupId))
+        .limit(1);
+      if (groups.length) {
+        groupProfile = {
+          stateCode: customer.stateCode,
+          isOnCreditHold: groups[0].isOnCreditHold,
+          creditLimit: groups[0].creditLimit?.toString() || null,
+          tradingTermsId: groups[0].tradingTermsId,
+        };
+      }
+    }
+
+    const custProfile: CustomerProfile = {
+      stateCode: customer.stateCode,
+      isOnCreditHold: Boolean(customer.isOnCreditHold),
+      creditLimit: customer.creditLimit?.toString() || null,
+      tradingTermsId: customer.tradingTermsId,
+      overrideCreditHoldUntil: customer.overrideCreditHoldUntil,
+      earlyPaymentDiscount: customer.earlyPaymentDiscount?.toString() || null,
+      earlyPaymentDiscountDays: customer.earlyPaymentDiscountDays,
+    };
+
+    const risk = resolveCustomerRiskProfile(
+      custProfile,
+      groupProfile,
+      creditAssessment,
+      0,
+      'hard',
+      'confirm',
+    );
 
     return {
       ...customer,
       events,
       contacts: contactsResult,
       deliveryAddresses: deliveryAddressesResult,
+      isSalesBlocked: risk.isSalesBlocked,
+      salesBlockReasons: risk.salesBlockReasons,
     };
   }
 

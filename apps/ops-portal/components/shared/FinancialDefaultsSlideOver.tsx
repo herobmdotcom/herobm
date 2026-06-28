@@ -18,6 +18,7 @@ interface Option {
 export type FinancialDefaultsGroupData = {
   stateCode?: string | null;
   isOnCreditHold?: boolean | null;
+  creditLimit?: string | null;
   defaultArAccountId?: string | null;
   earlyPaymentDiscount?: number | string | null;
   earlyPaymentDiscountDays?: number | string | null;
@@ -164,6 +165,28 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
                   {!formData.isOnCreditHold ? tSuppliers('compliance.noBlock') : tSuppliers('compliance.blocked')}
                 </span>
               </div>
+            </div>
+          )}
+
+          {/* Credit Limit (Customer) */}
+          {groupType === 'customer' && (
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {tCustomers('fields.creditLimit')}
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                className="input text-sm w-full"
+                value={formData.creditLimit ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleChange('creditLimit', val === '' ? null : val);
+                }}
+                disabled={saving}
+                placeholder="0.00"
+              />
             </div>
           )}
 

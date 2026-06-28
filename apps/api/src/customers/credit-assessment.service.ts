@@ -12,8 +12,9 @@ import { eq, sql, and } from 'drizzle-orm';
 import { resolveEffectiveTradingTermsId } from './credit-control.utils';
 
 export interface CreditAssessmentResult {
-  totalArBalance: number;
-  overdueBalance: number;
+  totalInvoiceBalance: number;
+  overdueInvoiceBalance: number;
+  glBalance: number;
   isOverdue: boolean;
 }
 
@@ -24,118 +25,161 @@ export class CreditAssessmentService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   /**
-   * Calculates the current AR balance and overdue subset for an customer
-   * dynamically from the General Ledger.
-   * Uses a Balance Forward reduction strategy (all credits pay down oldest debts first).
+   * Calculates the current credit standing based on the Open Item strategy.
+   * Assesses total and overdue balances directly from unpaid sales invoices.
+   * Also fetches the GL Balance for transparency and unallocated payment discovery.
    */
   async assessCredit(
     customerId: string,
     tx?: DrizzleDB,
   ): Promise<CreditAssessmentResult> {
     const db = tx || this.db;
-    // 1. Fetch the customer, its group, and resolve its trading terms
+
+    // 1. Check if customer exists to return 0s quickly if not found
     const acctList = await db
-      .select({
-        customerId: customers.customerId,
-        accountTradingTermsId: customers.tradingTermsId,
-        groupTradingTermsId: customerGroups.tradingTermsId,
-      })
+      .select({ customerId: customers.customerId })
       .from(customers)
-      .leftJoin(
-        customerGroups,
-        eq(customers.customerGroupId, customerGroups.customerGroupId),
-      )
-      .leftJoin(
-        tradingTerms,
-        eq(customers.tradingTermsId, tradingTerms.tradingTermsId),
-      )
       .where(eq(customers.customerId, customerId))
       .limit(1);
 
     if (!acctList.length) {
-      return { totalArBalance: 0, overdueBalance: 0, isOverdue: false };
+      return {
+        totalInvoiceBalance: 0,
+        overdueInvoiceBalance: 0,
+        glBalance: 0,
+        isOverdue: false,
+      };
     }
 
-    const effectiveTermsId = resolveEffectiveTradingTermsId({
-      creditLimit: null,
-      isOnCreditHold: false,
-      tradingTermsId: acctList[0].accountTradingTermsId,
-      accountGroup: {
-        creditLimit: null,
-        isOnCreditHold: false,
-        tradingTermsId: acctList[0].groupTradingTermsId,
-      },
-    });
-
-    let allowedDays = 0;
-    let termType = 'net';
-    if (effectiveTermsId) {
-      const [terms] = await db
-        .select()
-        .from(tradingTerms)
-        .where(eq(tradingTerms.tradingTermsId, effectiveTermsId))
-        .limit(1);
-      if (terms) {
-        allowedDays = terms.days;
-        termType = terms.type;
-      }
-    }
-
-    // Determine the overdue condition based on the trading term type.
-    let overdueCondition = sql`e.entry_date + (${allowedDays} || ' days')::interval < CURRENT_DATE`;
-
-    if (termType === 'cash_on_delivery') {
-      overdueCondition = sql`e.entry_date < CURRENT_DATE`;
-    } else if (termType === 'end_of_month') {
-      // In PostgreSQL: find the last day of the invoice's month, then add allowedDays.
-      overdueCondition = sql`((date_trunc('month', e.entry_date) + interval '1 month') - interval '1 day')::date + (${allowedDays} || ' days')::interval < CURRENT_DATE`;
-    }
-
-    // 2. Query the GL for all entries related to this party.
-    // Calculate total debits, total credits, AND debits that are strictly older than the allowed due date.
-    const query = sql`
+    // 2. Query invoices for Open Item calculation
+    const invoicesQuery = sql`
       SELECT 
-        COALESCE(SUM(l.debit), 0) AS total_debits,
-        COALESCE(SUM(l.credit), 0) AS total_credits,
-        COALESCE(SUM(CASE 
-          WHEN ${overdueCondition} 
-          THEN l.debit ELSE 0 END), 0) AS overdue_debits
+        COALESCE(SUM(si.outstanding_amount), 0) AS total_invoice_balance,
+        COALESCE(SUM(CASE WHEN si.due_date < CURRENT_DATE THEN si.outstanding_amount ELSE 0 END), 0) AS overdue_invoice_balance
+      FROM herobm_core.sales_invoices si
+      JOIN herobm_core.sales_orders so ON so.sales_order_id = si.sales_order_id
+      WHERE so.customer_id = ${customerId}
+        AND si.state_code NOT IN ('draft', 'cancelled', 'paid')
+    `;
+
+    // 3. Query the GL for net balance transparency
+    const glQuery = sql`
+      SELECT 
+        COALESCE(SUM(l.debit), 0) - COALESCE(SUM(l.credit), 0) AS gl_balance
       FROM herobm_core.gl_journal_lines l
       JOIN herobm_core.gl_journal_entries e ON l.journal_entry_id = e.journal_entry_id
       WHERE l.party_id = ${customerId} AND l.party_type = 'customer'
     `;
 
-    const result = await db.execute(query);
-    const rows = (result as { rows?: unknown[] }).rows ?? result;
-    const aggs = rows as unknown as {
-      total_debits: string;
-      total_credits: string;
-      overdue_debits: string;
-    }[];
-    console.log(
-      'Credit Assessment Query Result for customer',
-      customerId,
-      ':',
-      aggs,
+    const [invoicesResult, glResult] = await Promise.all([
+      db.execute(invoicesQuery),
+      db.execute(glQuery),
+    ]);
+
+    const invoicesRows =
+      (invoicesResult as { rows?: unknown[] }).rows ?? invoicesResult;
+    const glRows = (glResult as { rows?: unknown[] }).rows ?? glResult;
+
+    const invoicesPayload =
+      (invoicesRows as unknown as Record<string, string>[])[0] || {};
+    const glPayload = (glRows as unknown as Record<string, string>[])[0] || {};
+
+    const totalInvoiceBalance = parseFloat(
+      invoicesPayload.total_invoice_balance || '0',
     );
-    const payload = aggs[0];
-
-    const totalDebits = parseFloat(payload?.total_debits || '0');
-    const totalCredits = parseFloat(payload?.total_credits || '0');
-    const overdueDebits = parseFloat(payload?.overdue_debits || '0');
-
-    // Net AR = Debits - Credits
-    const totalArBalance = totalDebits - totalCredits;
-
-    // Overdue Balance (Balance Forward Strategy):
-    // All paid credits inherently pay off the oldest debt lines first.
-    // Therefore, Overdue Debt = MAX(0, Overdue Debits - Total Credits)
-    const overdueBalance = Math.max(0, overdueDebits - totalCredits);
+    const overdueInvoiceBalance = parseFloat(
+      invoicesPayload.overdue_invoice_balance || '0',
+    );
+    const glBalance = parseFloat(glPayload.gl_balance || '0');
 
     return {
-      totalArBalance,
-      overdueBalance,
-      isOverdue: overdueBalance > 0,
+      totalInvoiceBalance,
+      overdueInvoiceBalance,
+      glBalance,
+      isOverdue: overdueInvoiceBalance > 0,
     };
+  }
+
+  /**
+   * Calculates the current credit standing for multiple customers in batch.
+   */
+  async assessCreditBatch(
+    customerIds: string[],
+    tx?: DrizzleDB,
+  ): Promise<Record<string, CreditAssessmentResult>> {
+    const db = tx || this.db;
+    const resultMap: Record<string, CreditAssessmentResult> = {};
+
+    if (!customerIds.length) {
+      return resultMap;
+    }
+
+    for (const id of customerIds) {
+      resultMap[id] = {
+        totalInvoiceBalance: 0,
+        overdueInvoiceBalance: 0,
+        glBalance: 0,
+        isOverdue: false,
+      };
+    }
+
+    const idsSql = sql.join(
+      customerIds.map((id) => sql`${id}`),
+      sql`, `,
+    );
+
+    const invoicesQuery = sql`
+      SELECT 
+        so.customer_id,
+        COALESCE(SUM(si.outstanding_amount), 0) AS total_invoice_balance,
+        COALESCE(SUM(CASE WHEN si.due_date < CURRENT_DATE THEN si.outstanding_amount ELSE 0 END), 0) AS overdue_invoice_balance
+      FROM herobm_core.sales_invoices si
+      JOIN herobm_core.sales_orders so ON so.sales_order_id = si.sales_order_id
+      WHERE so.customer_id IN (${idsSql})
+        AND si.state_code NOT IN ('draft', 'cancelled', 'paid')
+      GROUP BY so.customer_id
+    `;
+
+    const glQuery = sql`
+      SELECT 
+        l.party_id as customer_id,
+        COALESCE(SUM(l.debit), 0) - COALESCE(SUM(l.credit), 0) AS gl_balance
+      FROM herobm_core.gl_journal_lines l
+      JOIN herobm_core.gl_journal_entries e ON l.journal_entry_id = e.journal_entry_id
+      WHERE l.party_id IN (${idsSql}) AND l.party_type = 'customer'
+      GROUP BY l.party_id
+    `;
+
+    const [invoicesResult, glResult] = await Promise.all([
+      db.execute(invoicesQuery),
+      db.execute(glQuery),
+    ]);
+
+    const invoicesRows =
+      (invoicesResult as { rows?: unknown[] }).rows ?? invoicesResult;
+    const glRows = (glResult as { rows?: unknown[] }).rows ?? glResult;
+
+    for (const row of invoicesRows as Record<string, string>[]) {
+      const custId = row.customer_id;
+      if (resultMap[custId]) {
+        resultMap[custId].totalInvoiceBalance = parseFloat(
+          row.total_invoice_balance || '0',
+        );
+        resultMap[custId].overdueInvoiceBalance = parseFloat(
+          row.overdue_invoice_balance || '0',
+        );
+        resultMap[custId].isOverdue =
+          resultMap[custId].overdueInvoiceBalance > 0;
+      }
+    }
+
+    for (const row of glRows as Record<string, string>[]) {
+      const custId = row.customer_id;
+      if (resultMap[custId]) {
+        resultMap[custId].glBalance = parseFloat(row.gl_balance || '0');
+      }
+    }
+
+    return resultMap;
   }
 }

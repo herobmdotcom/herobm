@@ -497,12 +497,41 @@ export default function AccountDetailPage({
           </div>
         )}
 
-        {customer.isOnCreditHold && (
+        {customer.isSalesBlocked && (
           <div className="px-4 lg:px-6 pt-4">
             <EntityBanner
               type={customer.overrideCreditHoldUntil && new Date(customer.overrideCreditHoldUntil) > new Date() ? 'warning' : 'error'}
               title={customer.overrideCreditHoldUntil && new Date(customer.overrideCreditHoldUntil) > new Date() ? t('customers.creditHold.overriddenTitle') : t('customers.creditHold.activeTitle')}
-              description={customer.overrideCreditHoldUntil && new Date(customer.overrideCreditHoldUntil) > new Date() ? t('customers.creditHold.overriddenDesc', { date: new Date(customer.overrideCreditHoldUntil).toLocaleDateString() }) : t('customers.creditHold.activeDesc')}
+              description={customer.salesBlockReasons?.map(r => t(`customers.creditHold.reasons.${r}` as Parameters<typeof t>[0])).join(' • ') || t('customers.creditHold.activeDesc')}
+              action={
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                  {dto.overrideCreditHoldUntil && new Date(dto.overrideCreditHoldUntil) > new Date() && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm shrink-0 text-red-600 hover:bg-red-50 hover:border-red-200 bg-white"
+                      onClick={() => {
+                        updateField("overrideCreditHoldUntil", null);
+                        saveField("overrideCreditHoldUntil", null);
+                      }}
+                      disabled={!isEditable || saving}
+                    >
+                      {t("common.buttons.clear")}
+                    </button>
+                  )}
+                  <input
+                    type="date"
+                    className="input text-sm w-full md:w-auto bg-white"
+                    value={dto.overrideCreditHoldUntil ? new Date(dto.overrideCreditHoldUntil).toISOString().split('T')[0] : ''}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value).toISOString() : null;
+                      updateField("overrideCreditHoldUntil", date);
+                      saveField("overrideCreditHoldUntil", date);
+                    }}
+                    disabled={!isEditable || saving}
+                  />
+                </div>
+              }
             />
           </div>
         )}
@@ -962,21 +991,29 @@ export default function AccountDetailPage({
                   <span className="material-symbols-outlined">account_balance</span>
                   {t("salesOrders.creditHold.statusOverview")}
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
                       {t("salesOrders.creditHold.totalOutstanding")}
                     </label>
                     <p className="font-semibold text-lg">
-                      {creditAssessment ? formatAmount(creditAssessment.totalArBalance, dto.currencyCode || baseCurrency) : "—"}
+                      {creditAssessment ? formatAmount(creditAssessment.totalInvoiceBalance, dto.currencyCode || baseCurrency) : "—"}
                     </p>
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
                       {t("salesOrders.creditHold.overdue")}
                     </label>
-                    <p className={`font-semibold text-lg ${creditAssessment && creditAssessment.overdueBalance > 0 ? "text-red-600" : ""}`}>
-                      {creditAssessment ? formatAmount(creditAssessment.overdueBalance, dto.currencyCode || baseCurrency) : "—"}
+                    <p className={`font-semibold text-lg ${creditAssessment && creditAssessment.overdueInvoiceBalance > 0 ? "text-red-600" : ""}`}>
+                      {creditAssessment ? formatAmount(creditAssessment.overdueInvoiceBalance, dto.currencyCode || baseCurrency) : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>
+                      {t("salesOrders.creditHold.glBalance")}
+                    </label>
+                    <p className="font-semibold text-lg">
+                      {creditAssessment ? formatAmount(creditAssessment.glBalance, dto.currencyCode || baseCurrency) : "—"}
                     </p>
                   </div>
                   <div>
@@ -984,7 +1021,7 @@ export default function AccountDetailPage({
                       {t("portal.creditLimit")}
                     </label>
                     <p className="font-semibold text-lg">
-                      {dto.creditLimit ? formatAmount(parseFloat(dto.creditLimit), dto.currencyCode || baseCurrency) : "—"}
+                      {formatAmount(parseFloat(dto.creditLimit ?? (creditLimitInheritance.inheritedValue as string) ?? "0"), dto.currencyCode || baseCurrency)}
                     </p>
                   </div>
                   <div>
@@ -992,50 +1029,12 @@ export default function AccountDetailPage({
                       {t("salesOrders.creditHold.systemStatus")}
                     </label>
                     <p className="font-semibold text-lg flex items-center gap-1.5">
-                      {creditAssessment?.isOverdue ? (
+                      {dto.isSalesBlocked ? (
                         <><span className="w-2.5 h-2.5 rounded-full bg-red-500"></span><span className="text-red-700">Blocked</span></>
                       ) : (
                         <><span className="w-2.5 h-2.5 rounded-full bg-green-500"></span><span className="text-green-700">Good Standing</span></>
                       )}
                     </p>
-                  </div>
-                </div>
-                
-                <div className="mt-6 pt-4 border-t border-[rgba(196,198,205,0.4)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div>
-                    <h4 className="font-semibold text-sm text-[#041627]">{t("salesOrders.creditHold.title")}</h4>
-                    <p className="text-xs text-[var(--text-muted)] mt-1 max-w-xl">
-                      {dto.overrideCreditHoldUntil && new Date(dto.overrideCreditHoldUntil) > new Date() 
-                        ? t("customers.creditHold.overriddenDesc", { date: new Date(dto.overrideCreditHoldUntil).toLocaleDateString() })
-                        : t("customers.creditHold.bypassDesc")}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 w-full md:w-auto">
-                    {dto.overrideCreditHoldUntil && new Date(dto.overrideCreditHoldUntil) > new Date() && (
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm shrink-0 text-red-600 hover:bg-red-50 hover:border-red-200"
-                        onClick={() => {
-                          updateField("overrideCreditHoldUntil", null);
-                          saveField("overrideCreditHoldUntil", null);
-                        }}
-                        disabled={!isEditable || saving}
-                      >
-                        {t("common.buttons.clear")}
-                      </button>
-                    )}
-                    <input
-                      type="date"
-                      className="input text-sm w-full md:w-auto"
-                      value={dto.overrideCreditHoldUntil ? new Date(dto.overrideCreditHoldUntil).toISOString().split('T')[0] : ''}
-                      min={new Date().toISOString().split('T')[0]}
-                      onChange={(e) => {
-                        const date = e.target.value ? new Date(e.target.value).toISOString() : null;
-                        updateField("overrideCreditHoldUntil", date);
-                        saveField("overrideCreditHoldUntil", date);
-                      }}
-                      disabled={!isEditable || saving}
-                    />
                   </div>
                 </div>
               </div>
@@ -1141,31 +1140,8 @@ export default function AccountDetailPage({
                   </div>
                 </div>
 
-                {/* 3. Credit Hold */}
-                <div>
-                  <label
-                    className="block text-xs font-medium mb-1.5"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {t("portal.creditHold")}
-                  </label>
-                  <InheritedSelect
-                    className="input"
-                    disabled={!isEditable || saving || !canManageCredit}
-                    value={dto.isOnCreditHold === true ? 'true' : dto.isOnCreditHold === false ? 'false' : ''}
-                    onChange={(val) => {
-                      const boolVal = val === 'true' ? true : val === 'false' ? false : null;
-                      updateField("isOnCreditHold", boolVal);
-                      saveField("isOnCreditHold", boolVal);
-                    }}
-                    options={[
-                      { value: 'true', label: t("portal.yes") },
-                      { value: 'false', label: t("portal.no") }
-                    ]}
-                    inheritedValue={creditHoldInheritance.inheritedValue}
-                    inheritedSourceLabel={creditHoldInheritance.inheritedSourceLabel}
-                  />
-                </div>
+                {/* Empty column to align next row in 3-col desktop layout */}
+                <div className="hidden xl:block"></div>
 
                 {/* ── Row 2 ── */}
                 {/* 4. Business Number */}
@@ -1351,6 +1327,32 @@ export default function AccountDetailPage({
                         </span>
                     )}
                   </div>
+                </div>
+
+                {/* 9. Credit Hold */}
+                <div>
+                  <label
+                    className="block text-xs font-medium mb-1.5"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {t("portal.creditHold")}
+                  </label>
+                  <InheritedSelect
+                    className="input"
+                    disabled={!isEditable || saving || !canManageCredit}
+                    value={dto.isOnCreditHold === true ? 'true' : dto.isOnCreditHold === false ? 'false' : ''}
+                    onChange={(val) => {
+                      const boolVal = val === 'true' ? true : val === 'false' ? false : null;
+                      updateField("isOnCreditHold", boolVal);
+                      saveField("isOnCreditHold", boolVal);
+                    }}
+                    options={[
+                      { value: 'true', label: t("portal.yes") },
+                      { value: 'false', label: t("portal.no") }
+                    ]}
+                    inheritedValue={creditHoldInheritance.inheritedValue}
+                    inheritedSourceLabel={creditHoldInheritance.inheritedSourceLabel}
+                  />
                 </div>
 
                 <div>

@@ -156,8 +156,9 @@ describe('OrdersWriteService', () => {
     };
     mockCreditAssessmentService = {
       assessCredit: jest.fn().mockResolvedValue({
-        totalArBalance: 0,
-        overdueBalance: 0,
+        totalInvoiceBalance: 0,
+        overdueInvoiceBalance: 0,
+        glBalance: 0,
         isOverdue: false,
       }),
     };

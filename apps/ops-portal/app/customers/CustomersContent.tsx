@@ -34,9 +34,9 @@ export default function CustomersContent() {
       colId: 'status',
       headerName: tCommon('columns.status'),
       width: 120,
-      valueGetter: (params: { data?: { stateCode?: unknown, isOnCreditHold?: boolean } }) => {
+      valueGetter: (params: { data?: { stateCode?: unknown, isSalesBlocked?: boolean } }) => {
         if (!params.data) return '';
-        if (params.data.isOnCreditHold) return tCommon('columns.creditHold');
+        if (params.data.isSalesBlocked) return tCommon('columns.creditHold');
         if (!params.data.stateCode) return '';
         const s = String(params.data.stateCode).toLowerCase();
         return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(params.data.stateCode);

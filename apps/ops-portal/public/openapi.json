@@ -16413,6 +16413,15 @@
           "isOnCreditHold": {
             "type": "boolean"
           },
+          "isSalesBlocked": {
+            "type": "boolean"
+          },
+          "salesBlockReasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "overrideCreditHoldUntil": {
             "format": "date-time",
             "type": "string"
@@ -16546,10 +16555,13 @@
       "CreditAssessmentResponseDto": {
         "type": "object",
         "properties": {
-          "totalArBalance": {
+          "totalInvoiceBalance": {
             "type": "number"
           },
-          "overdueBalance": {
+          "overdueInvoiceBalance": {
+            "type": "number"
+          },
+          "glBalance": {
             "type": "number"
           },
           "isOverdue": {
@@ -16557,8 +16569,9 @@
           }
         },
         "required": [
-          "totalArBalance",
-          "overdueBalance",
+          "totalInvoiceBalance",
+          "overdueInvoiceBalance",
+          "glBalance",
           "isOverdue"
         ]
       },

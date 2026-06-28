@@ -7,7 +7,8 @@
  */
 
 export interface CreditAssessmentResponseDto {
-  totalArBalance: number;
-  overdueBalance: number;
+  totalInvoiceBalance: number;
+  overdueInvoiceBalance: number;
+  glBalance: number;
   isOverdue: boolean;
 }

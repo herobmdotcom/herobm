@@ -22,7 +22,10 @@ export interface AccountResponseDto {
   telephone1?: string;
   fax?: string;
   emailAddress1?: string;
+  isSalesBlocked?: boolean;
+  salesBlockReasons?: string[];
   customerGroupId?: string;
+  customerGroupCode?: string;
   parentCustomerId?: string;
   taxPositionId?: string;
   currencyCode: string;
