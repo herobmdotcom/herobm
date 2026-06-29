@@ -414,7 +414,7 @@ export class ChangeOrderStateDto {
   discrepanciesAcknowledged?: boolean;
 }
 
-export class EmailQuoteDto {
+export class EmailDocumentDto {
   @ApiProperty({ description: 'The recipient email address' })
   @IsEmail()
   emailAddress!: string;
@@ -429,10 +429,20 @@ export class EmailQuoteDto {
   @IsNotEmpty()
   body!: string;
 
-  @ApiPropertyOptional({ description: 'Text injected into the quote PDF' })
+  @ApiPropertyOptional({
+    description:
+      'The hook slug for the PDF template to use (e.g. sales-order-quote)',
+  })
   @IsOptional()
   @IsString()
-  quoteIntroText?: string;
+  hookSlug?: string;
+
+  @ApiPropertyOptional({
+    description: 'Custom text injected into the generated PDF',
+  })
+  @IsOptional()
+  @IsString()
+  customPdfText?: string;
 }
 
 export class ReallocateDemandDto {

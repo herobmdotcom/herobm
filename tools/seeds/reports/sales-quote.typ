@@ -66,8 +66,8 @@
 
 #v(1cm)
 
-#if "quoteIntroText" in data and data.quoteIntroText != "" [
-  #text(9pt)[#data.quoteIntroText]
+#if "customPdfText" in data and data.customPdfText != "" [
+  #text(9pt)[#data.customPdfText]
   #v(1cm)
 ]
 

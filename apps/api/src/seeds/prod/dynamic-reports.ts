@@ -27,7 +27,7 @@ const SEEDS: SeedData[] = [
     description:
       'System default template for generating Sales Invoices and rendering AR Ledger entries.',
     templatePath: '../../../../tools/seeds/reports/sales-invoice.typ',
-    outputPattern: 'Invoice-{{orderNumber}}.pdf',
+    outputPattern: 'Invoice-${orderNumber}.pdf',
   },
   {
     slug: 'sales-order-quote',
@@ -35,7 +35,7 @@ const SEEDS: SeedData[] = [
     contexts: ['sales-order'],
     description: 'System default template for generating Sales Quotes.',
     templatePath: '../../../../tools/seeds/reports/sales-quote.typ',
-    outputPattern: 'Quote-{{orderNumber}}.pdf',
+    outputPattern: 'Quote-${orderNumber}.pdf',
   },
   {
     slug: 'sales-order-confirmation',
@@ -45,7 +45,7 @@ const SEEDS: SeedData[] = [
       'System default template for generating Sales Order Confirmations.',
     templatePath:
       '../../../../tools/seeds/reports/sales-order-confirmation.typ',
-    outputPattern: 'Confirmation-{{orderNumber}}.pdf',
+    outputPattern: 'Confirmation-${orderNumber}.pdf',
   },
   {
     slug: 'pro-forma-invoice',
@@ -54,7 +54,7 @@ const SEEDS: SeedData[] = [
     description:
       'System default template for generating Pro Forma Invoices for confirmed orders.',
     templatePath: '../../../../tools/seeds/reports/pro-forma-invoice.typ',
-    outputPattern: 'ProForma-{{orderNumber}}.pdf',
+    outputPattern: 'ProForma-${orderNumber}.pdf',
   },
   {
     slug: 'sales-return',
@@ -63,7 +63,7 @@ const SEEDS: SeedData[] = [
     description:
       'System default template for generating Credit Notes for returned customer goods.',
     templatePath: '../../../../tools/seeds/reports/sales-credit.typ',
-    outputPattern: 'Credit-{{returnNumber}}.pdf',
+    outputPattern: 'Credit-${returnNumber}.pdf',
   },
   {
     slug: 'return-slip',
@@ -72,7 +72,7 @@ const SEEDS: SeedData[] = [
     description:
       'System default template for generating Return Slips for customers.',
     templatePath: '../../../../tools/seeds/reports/return-slip.typ',
-    outputPattern: 'Return-Slip-{{returnMeta.returnNumber}}.pdf',
+    outputPattern: 'Return-Slip-${returnMeta.returnNumber}.pdf',
   },
   {
     slug: 'shipping-docket',
@@ -81,7 +81,7 @@ const SEEDS: SeedData[] = [
     description:
       'System default template for generating Shipping Dockets that accompany dispatched goods.',
     templatePath: '../../../../tools/seeds/reports/shipping-docket.typ',
-    outputPattern: 'Docket-{{shipmentNumber}}.pdf',
+    outputPattern: 'Docket-${shipmentNumber}.pdf',
   },
   {
     slug: 'sales-return-credit',
@@ -90,7 +90,7 @@ const SEEDS: SeedData[] = [
     description:
       'System default template for generating Sales Credit Notes against returns.',
     templatePath: '../../../../tools/seeds/reports/sales-credit.typ',
-    outputPattern: 'Credit-{{returnMeta.returnNumber}}.pdf',
+    outputPattern: 'Credit-${returnMeta.returnNumber}.pdf',
   },
   {
     slug: 'picking-slip',
@@ -99,7 +99,7 @@ const SEEDS: SeedData[] = [
     description:
       'System default template for generating warehouse Picking Slips and Back-order reports.',
     templatePath: '../../../../tools/seeds/reports/picking-slip.typ',
-    outputPattern: 'Picking-Slip-{{orderNumber}}.pdf',
+    outputPattern: 'Picking-Slip-${orderNumber}.pdf',
   },
   {
     slug: 'theme-external',

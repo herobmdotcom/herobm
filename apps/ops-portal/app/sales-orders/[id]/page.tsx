@@ -35,7 +35,7 @@ import InvoicesSection from './InvoicesSection';
 import ReturnsSection from './ReturnsSection';
 import FulfillmentSection from './FulfillmentSection';
 import ShipmentsSection from './ShipmentsSection';
-import EmailQuoteDialog from './EmailQuoteDialog';
+import EmailDocumentDialog from './EmailDocumentDialog';
 
 import { formatLocationDisplay } from '@/lib/formatters';
 import OrderDetailsCard from './OrderDetailsCard';
@@ -154,7 +154,19 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     const [isAddressSlideOverOpen, setIsAddressSlideOverOpen] = useState(false);
 
     /* ── Quote Dialog ──────────────────────────────────────────────────────── */
-    const [showEmailQuoteDialog, setShowEmailQuoteDialog] = useState(false);
+    const [emailDialogConfig, setEmailDialogConfig] = useState<{
+        isOpen: boolean;
+        hookSlug: string;
+        title: string;
+        prefix: string;
+        docName: string;
+    }>({
+        isOpen: false,
+        hookSlug: '',
+        title: '',
+        prefix: '',
+        docName: ''
+    });
 
     /* ── Discrepancy Modal ─────────────────────────────────────────────────── */
     const [showDiscrepancyModal, setShowDiscrepancyModal] = useState(false);
@@ -412,7 +424,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         setEditNotes={setEditNotes}
                         saveHeader={saveHeader}
                         locations={locations}
-                        onEmailQuoteClick={() => setShowEmailQuoteDialog(true)}
+                        onEmailDocumentClick={(hookSlug, title, prefix, docName) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName })}
                         reportError={reportError}
                         setError={setError}
                         customerDeliveryAddresses={customerDeliveryAddresses}
@@ -1425,7 +1437,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     <ReturnsSection 
                         orderId={id}
                         order={order} 
-                        returns={returns} 
+                                                        returns={returns} 
                         returnsLoading={returnsLoading}
                         showCreateReturn={showCreateReturn}
                         setShowCreateReturn={setShowCreateReturn} 
@@ -1445,19 +1457,38 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
             </DetailsLayout>
 
-            <EmailQuoteDialog
-                isOpen={showEmailQuoteDialog}
-                orderId={id}
-                orderNumber={order?.orderNumber || ''}
-                customerReference={order?.customerOrderNumber}
-                customerId={order?.customerId || undefined}
-                onPreview={(text) => handleGenerateQuote(text)}
-                onClose={() => setShowEmailQuoteDialog(false)}
-                onSuccess={() => {
-                    setShowEmailQuoteDialog(false);
-                    toast.success('Email queued successfully!');
-                }}
-            />
+            {order && (
+                <EmailDocumentDialog
+                    isOpen={emailDialogConfig.isOpen}
+                    orderId={id}
+                    orderNumber={order.orderNumber}
+                    customerReference={order.customerOrderNumber}
+                    customerId={order.customerId!}
+                    hookSlug={emailDialogConfig.hookSlug}
+                    title={emailDialogConfig.title}
+                    defaultSubjectPrefix={emailDialogConfig.prefix}
+                    documentName={emailDialogConfig.docName}
+                    onClose={() => setEmailDialogConfig(prev => ({ ...prev, isOpen: false }))}
+                    onSuccess={() => {
+                        setEmailDialogConfig(prev => ({ ...prev, isOpen: false }));
+                        toast.success('Email queued successfully!');
+                    }}
+                    onPreview={async (customPdfText) => {
+                        try {
+                            const response = await api.pdfTemplatesControllerRunHook(emailDialogConfig.hookSlug, { customPdfText }, { 
+                                id: order.salesOrderId!, 
+                                context: 'sales-order'
+                            });
+                            const blob = response.data;
+                            const url = URL.createObjectURL(blob);
+                            window.open(url, '_blank');
+                        } catch (err) {
+                            reportError(err, 'OrderDetailPage:generateDocument');
+                            setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateReport'));
+                        }
+                    }}
+                />
+            )}
 
             {order?.customerId && (
                 <DeliveryAddressSlideOver

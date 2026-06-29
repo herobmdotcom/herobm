@@ -42,7 +42,7 @@ interface OrderDetailsCardProps {
     setEditDeliveryPostalCode: (val: string) => void;
     editDeliveryCountry: string;
     setEditDeliveryCountry: (val: string) => void;
-    onEmailQuoteClick: () => void;
+    onEmailDocumentClick: (hookSlug: string, title: string, prefix: string, docName: string) => void;
     reportError: (err: unknown, context: string) => void;
     setError: (err: string) => void;
 }
@@ -82,7 +82,7 @@ export default function OrderDetailsCard({
     setEditDeliveryPostalCode,
     editDeliveryCountry,
     setEditDeliveryCountry,
-    onEmailQuoteClick,
+    onEmailDocumentClick,
     reportError,
     setError
 }: OrderDetailsCardProps) {
@@ -102,45 +102,25 @@ export default function OrderDetailsCard({
                     {(order.stateCode === SALES_ORDER_STATE.DRAFT || order.stateCode === SALES_ORDER_STATE.QUOTED) && (
                         <button
                             className="btn btn-secondary btn-sm"
-                            onClick={onEmailQuoteClick}
+                            onClick={() => onEmailDocumentClick('sales-order-quote', 'Email Quote', 'Quote', 'Quote')}
                         >
-                            Quote PDF
+                            Email Quote
                         </button>
                     )}
                     {(order.stateCode !== SALES_ORDER_STATE.DRAFT && order.stateCode !== SALES_ORDER_STATE.QUOTED) && (
                         <button
                             className="btn btn-secondary btn-sm"
-                            onClick={async () => {
-                                try {
-                                    const response = await api.pdfTemplatesControllerRunHook('sales-order-confirmation', {}, { id: order.salesOrderId!, context: 'sales-order' });
-                                    const blob = response.data ;
-                                    const url = URL.createObjectURL(blob);
-                                    window.open(url, '_blank');
-                                } catch (err) {
-                                    reportError(err, 'OrderDetailPage:generateConfirmation');
-                                    setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateReport'));
-                                }
-                            }}
+                            onClick={() => onEmailDocumentClick('sales-order-confirmation', 'Email Confirmation', 'Order Confirmation', 'Confirmation')}
                         >
-                            {tSales('buttons.confirmationPdf')}
+                            Email Confirmation
                         </button>
                     )}
                     {(order.stateCode === SALES_ORDER_STATE.CONFIRMED || order.stateCode === SALES_ORDER_STATE.PICKING) && (
                         <button
                             className="btn btn-secondary btn-sm"
-                            onClick={async () => {
-                                try {
-                                    const response = await api.pdfTemplatesControllerRunHook('pro-forma-invoice', {}, { id: order.salesOrderId!, context: 'sales-order' });
-                                    const blob = response.data ;
-                                    const url = URL.createObjectURL(blob);
-                                    window.open(url, '_blank');
-                                } catch (err) {
-                                    reportError(err, 'OrderDetailPage:generateProForma');
-                                    setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateReport'));
-                                }
-                            }}
+                            onClick={() => onEmailDocumentClick('pro-forma-invoice', 'Email Pro-Forma Invoice', 'Pro-Forma Invoice', 'Pro-Forma')}
                         >
-                            {tSales('buttons.proFormaInvoice')}
+                            Email Pro-Forma
                         </button>
                     )}
                 </div>

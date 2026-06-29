@@ -93,7 +93,7 @@ The `eventType` is formed by combining the `entityType` and the action (e.g., `s
 | `webhook` | `created`, `updated`, `deleted` |
 | `app_settings` | `updated` |
 | `gl_settings` | `updated` |
-| `email` | `queued`, `sent`, `failed` |
+| `email` | `queued`, `sent`, `failed`, `dismissed` |
 | `api_key` | `created`, `deleted` |
 | `bin` | `created`, `deleted`, `updated` |
 | `gl_account` | `created`, `updated` |

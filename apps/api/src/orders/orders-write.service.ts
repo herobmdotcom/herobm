@@ -70,7 +70,7 @@ import {
 import { getCreditBlockedSql } from './orders.sql';
 import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
 import { EmailService } from '../email/email.service';
-import { EmailQuoteDto } from './dto';
+import { EmailDocumentDto } from './dto';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
 const VALID_STATES = getValidStates(STATE_TRANSITIONS);
@@ -1150,29 +1150,34 @@ export class OrdersWriteService {
     return await this.findOrder(id);
   }
 
-  async emailQuote(id: string, dto: EmailQuoteDto, user: JwtUser) {
+  async emailDocument(id: string, dto: EmailDocumentDto, user: JwtUser) {
     // 1. Verify order state
     const order = await this.findOne(id);
     if (!order) {
       throw new HttpException('Order not found', HttpStatus.NOT_FOUND);
     }
-    if (
-      order.stateCode !== SALES_ORDER_STATE.DRAFT &&
-      order.stateCode !== SALES_ORDER_STATE.QUOTED
-    ) {
-      throw new HttpException(
-        'Can only email quotes for orders in draft or quoted state',
-        HttpStatus.BAD_REQUEST,
-      );
+
+    const hookSlug = dto.hookSlug || 'sales-order-quote';
+
+    if (hookSlug === 'sales-order-quote') {
+      if (
+        order.stateCode !== SALES_ORDER_STATE.DRAFT &&
+        order.stateCode !== SALES_ORDER_STATE.QUOTED
+      ) {
+        throw new HttpException(
+          'Can only email quotes for orders in draft or quoted state',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
     }
 
     // 2. Generate PDF using the standard hook
     const { pdfBuffer, fileName } = await this.pdfTemplatesService.runHook(
-      'sales-order-quote',
+      hookSlug,
       id,
       DATA_SOURCE_CONTEXT.SALES_ORDER,
       user,
-      { quoteIntroText: dto.quoteIntroText },
+      { customPdfText: dto.customPdfText },
     );
 
     const base64Pdf = pdfBuffer.toString('base64');
@@ -1184,15 +1189,15 @@ export class OrdersWriteService {
         entityId: id,
         toAddress: dto.emailAddress,
         subject: dto.subject,
-        htmlBody: dto.body, // The macro text goes here
+        htmlBody: dto.body?.replace(/\n/g, '<br />') || '', // The macro text goes here, convert newlines to HTML
         attachments: [
           {
-            filename: fileName || `Quote-${order.orderNumber}.pdf`,
+            filename: fileName || `Document-${order.orderNumber}.pdf`,
             contentType: 'application/pdf',
             content: base64Pdf,
           },
         ],
-        actor: user.userId,
+        actor: user.username,
       });
     });
 

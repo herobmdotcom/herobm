@@ -141,7 +141,7 @@ import type {
   EmailControllerListEmailsParams,
   EmailControllerRetryEmail201,
   EmailControllerRetryEmailBody,
-  EmailQuoteDto,
+  EmailDocumentDto,
   EmptyBodyDto,
   EnrichmentControllerGetConfig200,
   EnrichmentControllerGetConfigParams,
@@ -241,7 +241,7 @@ import type {
   OrderPickingControllerGetPickingQueueParams,
   OrderPickingControllerGetShippingQueueParams,
   OrderResponseDto,
-  OrdersControllerEmailQuote201,
+  OrdersControllerEmailDocument201,
   OrdersControllerFindAll200,
   OrdersControllerFindAllParams,
   OrdersControllerFindOneParams,
@@ -6276,39 +6276,39 @@ export const ordersControllerTriggerTaxCalculation = async (id: string,
 
 
 /**
- * Generates a Quote PDF and queues it to be emailed to the customer.
- * @summary Email Quote
+ * Generates a Document PDF and queues it to be emailed to the customer.
+ * @summary Email Document
  */
-export type ordersControllerEmailQuoteResponse201 = {
-  data: OrdersControllerEmailQuote201
+export type ordersControllerEmailDocumentResponse201 = {
+  data: OrdersControllerEmailDocument201
   status: 201
 }
     
-export type ordersControllerEmailQuoteResponseSuccess = (ordersControllerEmailQuoteResponse201) & {
+export type ordersControllerEmailDocumentResponseSuccess = (ordersControllerEmailDocumentResponse201) & {
   headers: Headers;
 };
 ;
 
-export type ordersControllerEmailQuoteResponse = (ordersControllerEmailQuoteResponseSuccess)
+export type ordersControllerEmailDocumentResponse = (ordersControllerEmailDocumentResponseSuccess)
 
-export const getOrdersControllerEmailQuoteUrl = (id: string,) => {
+export const getOrdersControllerEmailDocumentUrl = (id: string,) => {
 
 
   
 
-  return `/sales-orders/${id}/email-quote`
+  return `/sales-orders/${id}/email-document`
 }
 
-export const ordersControllerEmailQuote = async (id: string,
-    emailQuoteDto: EmailQuoteDto, options?: RequestInit): Promise<ordersControllerEmailQuoteResponse> => {
+export const ordersControllerEmailDocument = async (id: string,
+    emailDocumentDto: EmailDocumentDto, options?: RequestInit): Promise<ordersControllerEmailDocumentResponse> => {
   
-  return customFetch<ordersControllerEmailQuoteResponse>(getOrdersControllerEmailQuoteUrl(id),
+  return customFetch<ordersControllerEmailDocumentResponse>(getOrdersControllerEmailDocumentUrl(id),
   {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      emailQuoteDto,)
+      emailDocumentDto,)
   }
 );}
 

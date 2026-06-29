@@ -898,7 +898,9 @@ export class ShipmentService {
         createdBy: salesOrderShipments.createdBy,
         createdOn: salesOrderShipments.createdOn,
         modifiedOn: salesOrderShipments.modifiedOn,
-        deliveryCompanyName: sql<string | null>`COALESCE(${salesOrders.deliveryCompanyName}, ${coreAccounts.name})`,
+        deliveryCompanyName: sql<
+          string | null
+        >`COALESCE(${salesOrders.deliveryCompanyName}, ${coreAccounts.name})`,
         deliveryName: salesOrders.deliveryName,
         deliveryPhone: salesOrders.deliveryPhone,
         deliveryAddressLine1: salesOrders.deliveryAddressLine1,

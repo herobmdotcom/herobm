@@ -2260,7 +2260,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/sales-orders/{id}/email-quote": {
+    "/sales-orders/{id}/email-document": {
         parameters: {
             query?: never;
             header?: never;
@@ -2270,10 +2270,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Email Quote
-         * @description Generates a Quote PDF and queues it to be emailed to the customer.
+         * Email Document
+         * @description Generates a Document PDF and queues it to be emailed to the customer.
          */
-        post: operations["OrdersController_emailQuote"];
+        post: operations["OrdersController_emailDocument"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7397,7 +7397,7 @@ export interface components {
             deliveryPostalCode?: string;
             deliveryCountry?: string;
         };
-        EmailQuoteDto: {
+        EmailDocumentDto: {
             /**
              * Format: email
              * @description The recipient email address
@@ -7407,8 +7407,10 @@ export interface components {
             subject: string;
             /** @description The text body for the email */
             body: string;
-            /** @description Text injected into the quote PDF */
-            quoteIntroText?: string;
+            /** @description The hook slug for the PDF template to use (e.g. sales-order-quote) */
+            hookSlug?: string;
+            /** @description Custom text injected into the generated PDF */
+            customPdfText?: string;
         };
         ChangeOrderStateDto: {
             discrepanciesAcknowledged?: boolean;
@@ -12376,7 +12378,7 @@ export interface operations {
             };
         };
     };
-    OrdersController_emailQuote: {
+    OrdersController_emailDocument: {
         parameters: {
             query?: never;
             header?: never;
@@ -12387,7 +12389,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EmailQuoteDto"];
+                "application/json": components["schemas"]["EmailDocumentDto"];
             };
         };
         responses: {

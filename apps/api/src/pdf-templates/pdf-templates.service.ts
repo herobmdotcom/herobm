@@ -457,7 +457,25 @@ export class PdfTemplatesService {
   ): string {
     const base = pattern || 'Report.pdf';
     return base.replace(/\$\{(.+?)\}/g, (_, key) => {
-      const val = data[key];
+      // Handle nested properties like returnMeta.returnNumber
+      const keys = key.split('.');
+      let val: unknown = data;
+      for (const k of keys) {
+        if (val === null || val === undefined) break;
+        val = (val as Record<string, unknown>)[k];
+      }
+
+      // Fallback for orderNumber and shipmentNumber which are often in header/meta
+      if (val === undefined && key === 'orderNumber' && data.header) {
+        val = (data.header as Record<string, unknown>).orderNumber;
+      }
+      if (val === undefined && key === 'shipmentNumber' && data.meta) {
+        val = (data.meta as Record<string, unknown>).shipmentNumber;
+      }
+      if (val === undefined && key === 'returnNumber' && data.returnMeta) {
+        val = (data.returnMeta as Record<string, unknown>).returnNumber;
+      }
+
       if (
         typeof val === 'string' ||
         typeof val === 'number' ||

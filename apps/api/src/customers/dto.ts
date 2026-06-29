@@ -69,12 +69,6 @@ export class BaseAccountDto {
   @IsString()
   currencyCode?: string;
   @IsOptional()
-  @Transform(({ value }) =>
-    value === '' || value === null ? null : String(value),
-  )
-  @IsNumberString()
-  customerDiscount?: string;
-  @IsOptional()
   @IsString()
   notes?: string;
   @IsOptional()

@@ -27,7 +27,10 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { SystemResource } from '@herobm/shared';
+import { emitEvent } from '../common/emit-event';
+import { EventType, EntityType } from '../common/event-types';
 
 @ApiTags('System')
 @ApiBearerAuth()
@@ -133,16 +136,52 @@ export class EmailController {
     description: 'Email dismissed',
     schema: { type: 'object', properties: {} },
   })
-  async dismissEmail(@Param('id') id: string) {
-    const [updated] = await this.db
-      .update(emailOutbox)
-      .set({ status: 'dismissed' })
-      .where(and(eq(emailOutbox.id, id), eq(emailOutbox.status, 'failed')))
-      .returning();
+  async dismissEmail(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    const updated = await this.db.transaction(async (tx) => {
+      const [updatedEmail] = await tx
+        .update(emailOutbox)
+        .set({ status: 'dismissed' })
+        .where(and(eq(emailOutbox.id, id), eq(emailOutbox.status, 'failed')))
+        .returning();
 
-    if (!updated) {
-      throw new BadRequestException('Email not found or not in failed state');
-    }
+      if (!updatedEmail) {
+        throw new BadRequestException('Email not found or not in failed state');
+      }
+
+      const payload = {
+        emailId: updatedEmail.id,
+        toAddress: updatedEmail.toAddress,
+        subject: updatedEmail.subject,
+      };
+
+      // 1. Log to EMAIL generic entity
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required because Drizzle transactions have complex inferred types
+      await emitEvent(tx as any, {
+        entityType: EntityType.EMAIL,
+        entityId: updatedEmail.id,
+        eventType: EventType.DISMISSED,
+        entityDisplayName: `Email to ${updatedEmail.toAddress}`,
+        payload,
+        actor: user.userId,
+      });
+
+      // 2. Log to business entity if present
+      if (updatedEmail.entityType && updatedEmail.entityId) {
+        // @sync-ignore - Dynamic dispatch is intentional for emails mapped to other entities
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Required because Drizzle transactions have complex inferred types
+        await emitEvent(tx as any, {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB entity type enum mappings are complex
+          entityType: updatedEmail.entityType as any,
+          entityId: updatedEmail.entityId,
+          eventType: `email.${EventType.DISMISSED}`,
+          entityDisplayName: `Email to ${updatedEmail.toAddress}`,
+          payload,
+          actor: user.userId,
+        });
+      }
+
+      return updatedEmail;
+    });
 
     return updated;
   }

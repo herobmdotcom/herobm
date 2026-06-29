@@ -5880,10 +5880,10 @@
         ]
       }
     },
-    "/sales-orders/{id}/email-quote": {
+    "/sales-orders/{id}/email-document": {
       "post": {
-        "description": "Generates a Quote PDF and queues it to be emailed to the customer.",
-        "operationId": "OrdersController_emailQuote",
+        "description": "Generates a Document PDF and queues it to be emailed to the customer.",
+        "operationId": "OrdersController_emailDocument",
         "parameters": [
           {
             "name": "id",
@@ -5899,7 +5899,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/EmailQuoteDto"
+                "$ref": "#/components/schemas/EmailDocumentDto"
               }
             }
           }
@@ -5921,7 +5921,7 @@
             }
           }
         },
-        "summary": "Email Quote",
+        "summary": "Email Document",
         "tags": [
           "Sales Orders"
         ]
@@ -16752,9 +16752,6 @@
           "currencyCode": {
             "type": "string"
           },
-          "customerDiscount": {
-            "type": "string"
-          },
           "notes": {
             "type": "string"
           },
@@ -16850,9 +16847,6 @@
             "format": "uuid"
           },
           "currencyCode": {
-            "type": "string"
-          },
-          "customerDiscount": {
             "type": "string"
           },
           "notes": {
@@ -20659,7 +20653,7 @@
           }
         }
       },
-      "EmailQuoteDto": {
+      "EmailDocumentDto": {
         "type": "object",
         "properties": {
           "emailAddress": {
@@ -20675,9 +20669,13 @@
             "type": "string",
             "description": "The text body for the email"
           },
-          "quoteIntroText": {
+          "hookSlug": {
             "type": "string",
-            "description": "Text injected into the quote PDF"
+            "description": "The hook slug for the PDF template to use (e.g. sales-order-quote)"
+          },
+          "customPdfText": {
+            "type": "string",
+            "description": "Custom text injected into the generated PDF"
           }
         },
         "required": [

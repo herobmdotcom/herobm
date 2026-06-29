@@ -22,18 +22,22 @@ interface Contact {
   isPrimary?: boolean;
 }
 
-interface EmailQuoteDialogProps {
+interface EmailDocumentDialogProps {
   isOpen: boolean;
   orderId: string;
   orderNumber: string;
   customerReference?: string | null;
   customerId?: string;
+  hookSlug: string;
+  title: string;
+  defaultSubjectPrefix: string;
+  documentName: string;
   onPreview: (pdfText: string) => void;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function EmailQuoteDialog({ isOpen, orderId, orderNumber, customerReference, customerId, onPreview, onClose, onSuccess }: EmailQuoteDialogProps) {
+export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, customerReference, customerId, hookSlug, title, defaultSubjectPrefix, documentName, onPreview, onClose, onSuccess }: EmailDocumentDialogProps) {
   const t = useTranslations('salesOrders');
   const tCommon = useTranslations('common');
 
@@ -47,7 +51,8 @@ export default function EmailQuoteDialog({ isOpen, orderId, orderNumber, custome
   // Form state
   const [selectedMacroId, setSelectedMacroId] = useState<string>('');
   const [selectedPdfMacroId, setSelectedPdfMacroId] = useState<string>('');
-  const [quoteIntroText, setQuoteIntroText] = useState('');
+  const [customPdfText, setCustomPdfText] = useState('');
+  const [supportsCustomText, setSupportsCustomText] = useState(false);
   const [toAddress, setToAddress] = useState('');
   const [isOtherSelected, setIsOtherSelected] = useState(false);
   const [subject, setSubject] = useState('');
@@ -60,14 +65,16 @@ export default function EmailQuoteDialog({ isOpen, orderId, orderNumber, custome
       setSelectedMacroId('');
       setSelectedPdfMacroId('');
       setBodyText('');
-      setQuoteIntroText('');
+      setCustomPdfText('');
+      setSupportsCustomText(false);
       
       const subjectSuffix = customerReference ? ` - ${customerReference}` : '';
-      setSubject(`Quote: ${orderNumber}${subjectSuffix}`);
+      setSubject(`${defaultSubjectPrefix}: ${orderNumber}${subjectSuffix}`);
       setIsOtherSelected(false);
       
       // Load initial data
       Promise.all([
+        loadTemplateConfig(),
         loadMacros(),
         loadCustomer(),
       ]).catch(err => {
@@ -76,12 +83,28 @@ export default function EmailQuoteDialog({ isOpen, orderId, orderNumber, custome
     }
   }, [isOpen, customerId]);
 
+  const loadTemplateConfig = async () => {
+    try {
+      const assignmentsRes = await api.pdfTemplatesControllerGetAssignments();
+      const assignment = assignmentsRes.data.find(a => a.hookSlug === hookSlug);
+      if (assignment?.reportId) {
+        const reportRes = await api.pdfTemplatesControllerGetReport(assignment.reportId);
+        const report = reportRes.data;
+        if (report?.template?.includes('customPdfText')) {
+          setSupportsCustomText(true);
+        }
+      }
+    } catch (err) {
+      // ignore
+    }
+  };
+
   const loadMacros = async () => {
     const [hookRes, generalRes] = await Promise.all([
-      api.macrosControllerFindAll({ macroType: 'sales-order-quote' }),
+      api.macrosControllerFindAll({ macroType: hookSlug }),
       api.macrosControllerFindAll({ macroType: 'general' }),
     ]);
-    const hookMacros = hookRes.data.filter((m: Macro) => m.macroType === 'sales-order-quote') as Macro[];
+    const hookMacros = hookRes.data.filter((m: Macro) => m.macroType === hookSlug) as Macro[];
     const generalMacros = generalRes.data.filter((m: Macro) => m.macroType === 'general') as Macro[];
     const combinedMacros = [...hookMacros, ...generalMacros];
     setMacros(combinedMacros);
@@ -94,9 +117,14 @@ export default function EmailQuoteDialog({ isOpen, orderId, orderNumber, custome
     try {
       const res = await api.accountsControllerFindOne(customerId);
       const customer = res.data as { emailAddress1?: string; contacts?: Contact[] };
-      setCustomerEmail1(customer.emailAddress1 || '');
       
-      const custContacts = (customer.contacts || []) as Contact[];
+      const trimmedCustomerEmail = (customer.emailAddress1 || '').trim();
+      setCustomerEmail1(trimmedCustomerEmail);
+      
+      const custContacts = (customer.contacts || []).map(c => ({
+        ...c,
+        email: c.email ? c.email.trim() : c.email
+      })) as Contact[];
       setContacts(custContacts);
       
       // Determine default TO address
@@ -107,8 +135,8 @@ export default function EmailQuoteDialog({ isOpen, orderId, orderNumber, custome
         setToAddress(primaryContact.email);
       } else if (firstContact && firstContact.email) {
         setToAddress(firstContact.email);
-      } else if (customer.emailAddress1) {
-        setToAddress(customer.emailAddress1);
+      } else if (trimmedCustomerEmail) {
+        setToAddress(trimmedCustomerEmail);
       }
     } catch (err: unknown) {
       reportError(err);
@@ -120,24 +148,25 @@ export default function EmailQuoteDialog({ isOpen, orderId, orderNumber, custome
 
   const handleMacroChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value;
-    setSelectedMacroId(id);
     const macro = macros.find(m => m.macroId === id);
     if (macro) {
-      setBodyText(macro.content);
+      setBodyText(prev => prev ? `${prev}\n\n${macro.content}` : macro.content);
     }
+    setSelectedMacroId('');
   };
 
   const handlePdfMacroChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const id = e.target.value;
-    setSelectedPdfMacroId(id);
     const macro = pdfMacros.find(m => m.macroId === id);
     if (macro) {
-      setQuoteIntroText(macro.content);
+      setCustomPdfText(prev => prev ? `${prev}\n\n${macro.content}` : macro.content);
     }
+    setSelectedPdfMacroId('');
   };
 
   const handleSend = async () => {
-    if (!toAddress) {
+    const trimmedAddress = toAddress.trim();
+    if (!trimmedAddress) {
       setError('Please provide a recipient email address.');
       return;
     }
@@ -149,11 +178,12 @@ export default function EmailQuoteDialog({ isOpen, orderId, orderNumber, custome
     setSending(true);
     setError(null);
     try {
-      await api.ordersControllerEmailQuote(orderId, {
-        emailAddress: toAddress,
+      await api.ordersControllerEmailDocument(orderId, {
+        emailAddress: trimmedAddress,
         subject,
         body: bodyText,
-        quoteIntroText,
+        hookSlug,
+        customPdfText,
       });
       onSuccess();
     } catch (err: unknown) {
@@ -169,7 +199,7 @@ export default function EmailQuoteDialog({ isOpen, orderId, orderNumber, custome
     <SlideOver
       isOpen={isOpen}
       onClose={onClose}
-      title="Email Quote"
+      title={title}
       footer={
         <div className="flex justify-end gap-2">
           <button
@@ -279,46 +309,51 @@ export default function EmailQuoteDialog({ isOpen, orderId, orderNumber, custome
             </select>
             <textarea
               className="input w-full font-sans text-sm"
-              rows={4}
+              rows={8}
               value={bodyText}
               onChange={(e) => setBodyText(e.target.value)}
               placeholder="Enter message for the customer..."
             />
           </div>
 
-          {/* Quote PDF Content */}
+          {/* Document PDF Content */}
           <div className="flex flex-col gap-3">
-            <label className="block text-sm font-medium mb-1 text-gray-700">Quote PDF Attachment</label>
-            <select
-              className="input w-full"
-              value={selectedPdfMacroId}
-              onChange={handlePdfMacroChange}
-            >
-              <option value="">{t('placeholders.selectMacro')}</option>
-              {pdfMacros.map(m => (
-                <option key={m.macroId} value={m.macroId}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
-            <textarea
-              className="input w-full font-sans text-sm"
-              rows={3}
-              value={quoteIntroText}
-              onChange={(e) => setQuoteIntroText(e.target.value)}
-              placeholder="Enter text to display on the quote PDF..."
-            />
+            <label className="block text-sm font-medium mb-1 text-gray-700">{documentName} PDF Attachment</label>
+            
+            {supportsCustomText && (
+              <>
+                <select
+                  className="input w-full"
+                  value={selectedPdfMacroId}
+                  onChange={handlePdfMacroChange}
+                >
+                  <option value="">{t('placeholders.selectMacro')}</option>
+                  {pdfMacros.map(m => (
+                    <option key={m.macroId} value={m.macroId}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+                <textarea
+                  className="input w-full font-sans text-sm"
+                  rows={6}
+                  value={customPdfText}
+                  onChange={(e) => setCustomPdfText(e.target.value)}
+                  placeholder={`Enter text to display on the ${documentName} PDF...`}
+                />
+              </>
+            )}
 
             {/* Attachment Preview */}
             <div className="flex items-center gap-2 mt-1">
               <span className="material-symbols-outlined text-gray-500 text-[18px]">attach_file</span>
               <button
                 type="button"
-                onClick={() => onPreview(quoteIntroText)}
+                onClick={() => onPreview(customPdfText)}
                 className="text-sm text-[var(--accent)] hover:underline text-left"
               >
                 {/* eslint-disable-next-line i18next/no-literal-string -- technical filename */}
-                Quote-{orderNumber}.pdf
+                {documentName}-{orderNumber}.pdf
               </button>
             </div>
           </div>

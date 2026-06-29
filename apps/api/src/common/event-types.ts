@@ -152,6 +152,7 @@ export const EventType = {
   QUEUED: 'queued',
   SENT: 'sent',
   FAILED: 'failed',
+  DISMISSED: 'dismissed',
 
   // ── Payment domain ──────────────────────────────────────────────────
   PAYMENT_SUBMITTED: 'payment_submitted',
@@ -195,6 +196,7 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'customer_group.created',
   'customer_group.deleted',
   'customer_group.updated',
+  'email.dismissed',
   'email.queued',
   'exchange_rate.created',
   'exchange_rate.deleted',

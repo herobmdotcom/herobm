@@ -1044,6 +1044,7 @@
       "credit_note_posted": "Credit Note Posted",
       "deleted": "Deleted",
       "email": {
+        "dismissed": "Email Dismissed",
         "failed": "Email Failed",
         "queued": "Email",
         "sent": "Email Sent"
@@ -2984,7 +2985,6 @@
       "failedToUpdateOrder": "Failed to update order",
       "noCurrency": "The selected customer does not have a currency configured."
     },
-    "generateQuoteTitle": "Generate Quote PDF",
     "invoicesCardHeading": "Sales Invoices",
     "labels": {
       "created": "Created",
@@ -2992,9 +2992,7 @@
       "customerPO": "Customer PO #",
       "fulfillmentLocation": "Fulfillment Location *",
       "notes": "Notes",
-      "orderName": "Order Name",
-      "quoteMacro": "Insert Template",
-      "quoteText": "Quote Text"
+      "orderName": "Order Name"
     },
     "lineItems": "Line items",
     "loadingInventory": "Loading inventory data...",
@@ -3018,7 +3016,6 @@
       "customerPO": "Customer purchase order",
       "notes": "Internal notes",
       "orderName": "Order name",
-      "quoteText": "Enter custom text for this quote...",
       "reason": "Reason",
       "returnNotes": "Return reason / notes",
       "searchCustomers": "Search customers...",
@@ -3036,9 +3033,6 @@
       "totalFees": "Total Fees"
     },
     "returnsHeading": "Returns",
-    "sections": {
-      "quoteText": "Quote Text"
-    },
     "selectLocation": "Select Location",
     "shortages": {
       "available": "Available",
