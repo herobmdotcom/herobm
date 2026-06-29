@@ -11,7 +11,7 @@ import type { ColDef, ICellRendererParams, ValueFormatterParams } from 'ag-grid-
 import { useTranslations } from 'next-intl';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { PURCHASE_ORDER_STATE } from '@herobm/shared';
+import { PURCHASE_ORDER_STATE, TRANSFER_ORDER_STATE } from '@herobm/shared';
 
 export interface AvailableElsewhereEntry {
   locationId: string;
@@ -44,6 +44,9 @@ export interface DemandRow {
   purchaseOrderId?: string;
   purchaseOrderNumber?: string;
   purchaseOrderState?: string;
+  transferOrderId?: string;
+  transferOrderNumber?: string;
+  transferOrderState?: string;
 }
 
 export default function DemandsContent() {
@@ -65,23 +68,54 @@ export default function DemandsContent() {
       pinned: 'left',
       checkboxSelection: true,
       headerCheckboxSelection: true,
+      cellRenderer: (params: ICellRendererParams<DemandRow>) => {
+        if (!params.data?.salesOrderId) return params.value;
+        return (
+          <Link href={`/sales-orders/${params.data.salesOrderId}`} className="text-[#006b5c] hover:underline">
+            {params.value}
+          </Link>
+        );
+      }
     },
     { field: 'productName', headerName: 'Product', flex: 1, minWidth: 150 },
     { field: 'productDescription', headerName: 'Description', flex: 2, minWidth: 200 },
     {
       field: 'purchaseOrderState',
       headerName: 'Status',
-      width: 160,
+      width: 140,
       valueFormatter: (params: ValueFormatterParams<DemandRow>) => {
+        if (params.data?.transferOrderId) {
+          // eslint-disable-next-line no-restricted-syntax -- legacy
+          return params.data.transferOrderState === 'draft' ? tPurchase('demandsContent.draft') : 'Transfer';
+        }
+        
         if (!params.data?.purchaseOrderId) {
           return tPurchase('demandsContent.pendingSupply');
         }
         
-        const label = params.data.purchaseOrderState === PURCHASE_ORDER_STATE.DRAFT ? tPurchase('demandsContent.draft') : tPurchase('demandsContent.ordered');
-        const poNumber = params.data.purchaseOrderNumber || '';
-        const displayPo = poNumber.length > 8 ? poNumber.substring(0, 8) + '...' : poNumber;
-        
-        return `${label} ${displayPo}`;
+        return params.data.purchaseOrderState === PURCHASE_ORDER_STATE.DRAFT ? tPurchase('demandsContent.draft') : tPurchase('demandsContent.ordered');
+      }
+    },
+    {
+      field: 'purchaseOrderNumber',
+      headerName: 'Document',
+      width: 160,
+      cellRenderer: (params: ICellRendererParams<DemandRow>) => {
+        if (params.data?.transferOrderId) {
+          return (
+            <Link href={`/transfers/${params.data.transferOrderId}`} className="text-[#006b5c] hover:underline">
+              {params.data.transferOrderNumber}
+            </Link>
+          );
+        }
+        if (params.data?.purchaseOrderId) {
+          return (
+            <Link href={`/purchase-orders/${params.data.purchaseOrderId}`} className="text-[#006b5c] hover:underline">
+              {params.data.purchaseOrderNumber}
+            </Link>
+          );
+        }
+        return <span className="text-slate-400">—</span>;
       }
     },
     {
@@ -146,7 +180,7 @@ export default function DemandsContent() {
             fetchAll
             rowIdField="id"
             rowSelection="multiple"
-            isRowSelectable={(rowNode) => !rowNode.data?.purchaseOrderId}
+            isRowSelectable={(rowNode) => !rowNode.data?.purchaseOrderId && !rowNode.data?.transferOrderId}
             onSelectionChanged={setSelectedRows}
             pageTitle={tPurchase('demandTitle')}
             headerActions={
@@ -156,16 +190,16 @@ export default function DemandsContent() {
                     <button
                       onClick={() => setIsLinkSlideOverOpen(true)}
                       disabled={selectedRows.length === 0}
-                      className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="px-4 py-2 text-sm rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                     >
-                      {tPurchase('demandsContent.allocateToPo')} {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
+                      {tPurchase('demandsContent.allocateToPo')}
                     </button>
                     <button
                       onClick={handleDraftPOs}
                       disabled={selectedRows.length === 0}
-                      className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="px-4 py-2 text-sm rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                     >
-                      {tPurchase('demandsContent.draftPos')} {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
+                      {tPurchase('demandsContent.draftPos')}
                     </button>
                   </div>
 
@@ -176,16 +210,16 @@ export default function DemandsContent() {
                     <button
                       onClick={() => setIsReallocateModalOpen(true)}
                       disabled={selectedRows.length === 0}
-                      className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#1A467F] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="px-4 py-2 text-sm rounded-lg transition-all bg-[#1A467F] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                     >
-                      {tPurchase('demandsContent.changeLocation')} {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
+                      {tPurchase('demandsContent.changeLocation')}
                     </button>
                     <button
                       onClick={() => setIsInternalTransferModalOpen(true)}
                       disabled={selectedRows.length === 0}
-                      className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#1A467F] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="px-4 py-2 text-sm rounded-lg transition-all bg-[#1A467F] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                     >
-                      {tPurchase('demandsContent.internalTransfer')} {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
+                      {tPurchase('demandsContent.internalTransfer')}
                     </button>
                   </div>
               </div>

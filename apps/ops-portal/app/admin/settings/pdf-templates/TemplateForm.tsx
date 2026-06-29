@@ -128,14 +128,6 @@ export function TemplateForm({ initialData, isNew }: { initialData?: Record<stri
       <div className="flex flex-col gap-4 w-full shrink-0">
         <div className="card p-6 flex flex-col gap-4 bg-white rounded-xl border border-[rgba(196,198,205,0.4)]">
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => router.push('/admin/settings/pdf-templates')} 
-              className="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-800 transition-colors flex items-center justify-center shrink-0"
-              title={t('buttons.returnToList')}
-            >
-              { }
-              <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-            </button>
             <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>
               {isNew ? t('newTemplate') : formData.name}
             </h2>

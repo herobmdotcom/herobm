@@ -26,6 +26,7 @@ import {
   EXPENSE_ROUTING_PRECEDENCE,
   GL_ACCOUNT_TYPE,
   GLAccountType,
+  DATA_SOURCE_CONTEXT,
 } from '@herobm/shared';
 import { JournalLineDto } from './dto';
 
@@ -73,7 +74,7 @@ export class GlService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.dataSourcesRegistry.register('financial-gl', {
+    this.dataSourcesRegistry.register(DATA_SOURCE_CONTEXT.FINANCIAL_GL, {
       fetchData: (filters: Record<string, unknown>) =>
         this.getBusinessReportData(filters),
     });

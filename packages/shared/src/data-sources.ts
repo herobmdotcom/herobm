@@ -1,0 +1,24 @@
+export const DATA_SOURCE_CONTEXT = {
+  SALES_ORDER: 'sales-order',
+  PICKING_SLIP: 'picking-slip',
+  SALES_INVOICE: 'sales-invoice',
+  SALES_RETURN: 'sales-return',
+  SHIPMENT: 'shipment',
+  THEME: 'theme',
+  SALES_PERFORMANCE_CUSTOMER: 'sales-performance-customer',
+  SALES_PERFORMANCE_PRODUCT: 'sales-performance-product',
+  SALES_PERFORMANCE_PRODUCT_GROUP: 'sales-performance-product-group',
+  SALES_PERFORMANCE_TREND: 'sales-performance-trend',
+  SALES_PERFORMANCE_SALESPERSON: 'sales-performance-salesperson',
+  FINANCIAL_GL: 'financial-gl',
+  INVENTORY_VALUATION: 'inventory-valuation',
+  INVENTORY_MOVEMENTS: 'inventory-movements',
+  INVENTORY_REPLENISHMENT: 'inventory-replenishment',
+  INVENTORY_QUARANTINE: 'inventory-quarantine',
+  PURCHASING_SUPPLIER: 'purchasing-supplier',
+  PURCHASING_PRODUCT: 'purchasing-product',
+  PURCHASING_TREND: 'purchasing-trend',
+  PURCHASING_OUTSTANDING: 'purchasing-outstanding',
+} as const;
+
+export type DataSourceContext = typeof DATA_SOURCE_CONTEXT[keyof typeof DATA_SOURCE_CONTEXT];

@@ -17,6 +17,7 @@ import {
   customers as coreAccounts,
   transferOrders,
 } from '../drizzle/herobm-core-schema';
+import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import { ConfigModule } from '@nestjs/config';
 import { OrdersController } from './orders.controller';
 import { OrderReturnsController } from './order-returns.controller';
@@ -48,6 +49,7 @@ import { SalesReturnCreditService } from '../pdf-templates/sales-return-credit.s
 
 import { ShippingDocketService } from '../pdf-templates/shipping-docket.service';
 import { BusinessReportsModule } from '../business-reports/business-reports.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -62,6 +64,7 @@ import { BusinessReportsModule } from '../business-reports/business-reports.modu
     InvoicesModule,
     EnrichmentModule,
     BusinessReportsModule,
+    EmailModule,
   ],
   controllers: [
     OrderPickingController,
@@ -101,7 +104,7 @@ export class OrdersModule implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.dataSourcesRegistry.register('sales-order', {
+    this.dataSourcesRegistry.register(DATA_SOURCE_CONTEXT.SALES_ORDER, {
       requiredPermissions: [{ resource: 'sales-orders', action: 'read' }],
       resolveData: async (
         id: string,
@@ -123,7 +126,7 @@ export class OrdersModule implements OnModuleInit {
       },
     });
 
-    this.dataSourcesRegistry.register('picking-slip', {
+    this.dataSourcesRegistry.register(DATA_SOURCE_CONTEXT.PICKING_SLIP, {
       requiredPermissions: [{ resource: 'sales-orders', action: 'read' }],
       resolveData: async (id: string, user: Record<string, unknown>) => {
         return (await this.pickingSlipService.assembleData(
@@ -148,7 +151,7 @@ export class OrdersModule implements OnModuleInit {
       },
     });
 
-    this.dataSourcesRegistry.register('sales-invoice', {
+    this.dataSourcesRegistry.register(DATA_SOURCE_CONTEXT.SALES_INVOICE, {
       requiredPermissions: [{ resource: 'sales-orders', action: 'read' }],
       resolveData: async (id: string, user: Record<string, unknown>) => {
         // Find corresponding orderId for the specified invoiceId
@@ -174,7 +177,7 @@ export class OrdersModule implements OnModuleInit {
       },
     });
 
-    this.dataSourcesRegistry.register('sales-return', {
+    this.dataSourcesRegistry.register(DATA_SOURCE_CONTEXT.SALES_RETURN, {
       requiredPermissions: [{ resource: 'sales-returns', action: 'read' }],
       resolveData: async (id: string, user: Record<string, unknown>) => {
         return (await this.reportSalesReturnCreditService.assembleData(
@@ -187,7 +190,7 @@ export class OrdersModule implements OnModuleInit {
       },
     });
 
-    this.dataSourcesRegistry.register('shipment', {
+    this.dataSourcesRegistry.register(DATA_SOURCE_CONTEXT.SHIPMENT, {
       requiredPermissions: [{ resource: 'sales-orders', action: 'read' }],
       resolveData: async (id: string, user: Record<string, unknown>) => {
         return (await this.shippingDocketService.assembleData(

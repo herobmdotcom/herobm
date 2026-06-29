@@ -553,7 +553,7 @@ export class PurchaseInvoiceService {
         actor,
       });
 
-      return this.findOne(invoiceId);
+      return this.findOne(invoiceId, tx);
     });
   }
 

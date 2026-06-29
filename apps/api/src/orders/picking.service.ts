@@ -26,6 +26,8 @@ import {
   transferOrders,
   transferOrderLines,
   transferOrderPicks,
+  transferOrderShipments,
+  transferOrderShipmentLines,
 } from '../drizzle/herobm-core-schema';
 import { InventoryService } from '../inventory/inventory.service';
 import {
@@ -221,14 +223,19 @@ export class PickingService {
       };
     });
 
-    const totalLines = lines.length;
-    const fullyPickedLines = summary.filter((s) => s.isFullyPicked).length;
+    const filteredSummary = summary.filter((s) => parseFloat(s.quantity) > 0);
+    const activePhysicalLines = filteredSummary.filter((s) => s.isPhysical);
+
+    const totalLines = activePhysicalLines.length;
+    const fullyPickedLines = activePhysicalLines.filter(
+      (s) => s.isFullyPicked,
+    ).length;
 
     return {
       totalLines,
       fullyPickedLines,
       isFullyPicked: totalLines > 0 && fullyPickedLines === totalLines,
-      lines: summary,
+      lines: filteredSummary,
       picks, // Include raw picks for UI
     };
   }
@@ -926,6 +933,63 @@ export class PickingService {
       )
       .orderBy(salesOrders.createdOn);
 
+    const rawTransferLines = await this.db
+      .select({
+        id: transferOrders.transferOrderId,
+        orderNumber: transferOrders.orderNumber,
+        name: sql<string | null>`NULL`,
+        customerName: locations.name,
+        customerOrderNumber: sql<string | null>`NULL`,
+        stateCode: transferOrders.stateCode,
+        createdOn: transferOrders.createdOn,
+        createdBy: transferOrders.createdBy,
+        currencyCode: sql<string | null>`NULL`,
+        isCreditBlocked: sql<boolean>`false`,
+        lineId: transferOrderLines.transferOrderLineId,
+        lineQuantity: transferOrderLines.quantity,
+        isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} = 'inventory' OR ${coreProducts.productType} IS NULL THEN true ELSE false END`,
+        pickedQty: sql<number>`COALESCE((
+          SELECT SUM(quantity)
+          FROM herobm_core.transfer_order_picks
+          WHERE transfer_order_line_id = ${transferOrderLines.transferOrderLineId}
+            AND state_code != ${TRANSFER_ORDER_PICK_STATE.CANCELLED}
+        ), 0)`,
+        shippedQty: sql<number>`COALESCE((
+          SELECT SUM(sl.quantity)
+          FROM herobm_core.transfer_order_shipment_lines sl
+          JOIN herobm_core.transfer_order_shipments s ON s.shipment_id = sl.shipment_id
+          WHERE sl.transfer_order_line_id = ${transferOrderLines.transferOrderLineId}
+             AND s.state_code != 'cancelled'
+        ), 0)`,
+      })
+      .from(transferOrders)
+      .innerJoin(
+        transferOrderLines,
+        eq(transferOrders.transferOrderId, transferOrderLines.transferOrderId),
+      )
+      .leftJoin(
+        locations,
+        eq(transferOrders.destinationLocationId, locations.locationId),
+      )
+      .leftJoin(
+        coreProducts,
+        eq(transferOrderLines.productId, coreProducts.productId),
+      )
+      .where(
+        and(
+          eq(transferOrders.stateCode, TRANSFER_ORDER_STATE.PICKING),
+          locationId
+            ? eq(transferOrders.sourceLocationId, locationId)
+            : undefined,
+        ),
+      )
+      .orderBy(transferOrders.createdOn);
+
+    const allLines = [
+      ...rawLines.map((r) => ({ ...r, type: 'sales_order' })),
+      ...rawTransferLines.map((r) => ({ ...r, type: 'transfer_order' })),
+    ];
+
     const orderMap = new Map<
       string,
       Record<string, unknown> & {
@@ -938,13 +1002,14 @@ export class PickingService {
         createdOn: Date | null;
         createdBy: string | null;
         currencyCode: string | null;
+        type: string;
         _totalPhysicalLines?: number;
         _fullyPickedLines?: number;
         _shippableLines?: number;
       }
     >();
 
-    for (const row of rawLines) {
+    for (const row of allLines) {
       if (!orderMap.has(row.id)) {
         orderMap.set(row.id, {
           id: row.id,
@@ -957,6 +1022,7 @@ export class PickingService {
           createdOn: row.createdOn,
           createdBy: row.createdBy,
           currencyCode: row.currencyCode,
+          type: row.type,
           _totalPhysicalLines: 0,
           _fullyPickedLines: 0,
           _shippableLines: 0,
@@ -966,9 +1032,9 @@ export class PickingService {
       const order = orderMap.get(row.id);
       if (!order) continue;
 
-      if (row.isPhysical) {
+      const ordered = parseFloat(row.lineQuantity ?? '0');
+      if (row.isPhysical && ordered > 0) {
         order._totalPhysicalLines = (order._totalPhysicalLines || 0) + 1;
-        const ordered = parseFloat(row.lineQuantity ?? '0');
         const picked = parseFloat(row.pickedQty?.toString() ?? '0');
         const shipped = parseFloat(row.shippedQty?.toString() ?? '0');
         const availableToShip = picked - shipped;
@@ -1023,6 +1089,14 @@ export class PickingService {
    * quantities and available-to-ship amounts, plus existing shipment summaries.
    */
   async getShippingContext(orderId: string) {
+    const [transferOrder] = await this.db
+      .select()
+      .from(transferOrders)
+      .where(eq(transferOrders.transferOrderId, orderId));
+    if (transferOrder) {
+      return this.getTransferShippingContext(orderId, transferOrder);
+    }
+
     const order = await findOrder(this.db, orderId);
 
     const lines = await this.db
@@ -1137,6 +1211,157 @@ export class PickingService {
 
     return {
       order,
+      lines: enrichedLines,
+      shipments: shipments.map((s) => ({
+        ...s,
+        lineCount: lineCountMap.get(s.shipmentId) ?? 0,
+      })),
+    };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for legacy code
+  private async getTransferShippingContext(orderId: string, order: any) {
+    const lines = await this.db
+      .select({
+        salesOrderLineId: transferOrderLines.transferOrderLineId, // alias to salesOrderLineId for UI compat
+        lineNumber: sql<number>`0`, // No line number on transfer orders
+        productId: transferOrderLines.productId,
+        productDescription: coreProducts.name,
+        quantity: transferOrderLines.quantity,
+        productNumber: coreProducts.productNumber,
+        productType: coreProducts.productType,
+      })
+      .from(transferOrderLines)
+      .leftJoin(
+        coreProducts,
+        eq(transferOrderLines.productId, coreProducts.productId),
+      )
+      .where(eq(transferOrderLines.transferOrderId, orderId));
+
+    // Get picked quantities
+    const pickedMap = new Map<string, number>();
+    const picks = await this.db
+      .select({
+        lineId: transferOrderPicks.transferOrderLineId,
+        totalPicked:
+          sql<number>`COALESCE(SUM(${transferOrderPicks.quantity}), 0)`.mapWith(
+            Number,
+          ),
+      })
+      .from(transferOrderPicks)
+      .where(
+        and(
+          eq(transferOrderPicks.transferOrderId, orderId),
+          sql`${transferOrderPicks.stateCode} != ${TRANSFER_ORDER_PICK_STATE.CANCELLED}`,
+        ),
+      )
+      .groupBy(transferOrderPicks.transferOrderLineId);
+
+    for (const p of picks) {
+      pickedMap.set(p.lineId, p.totalPicked);
+    }
+
+    // Get shipped quantities
+    const shippedMap = new Map<string, number>();
+    const shipmentsLines = await this.db
+      .select({
+        lineId: transferOrderShipmentLines.transferOrderLineId,
+        totalShipped:
+          sql<number>`COALESCE(SUM(${transferOrderShipmentLines.quantity}), 0)`.mapWith(
+            Number,
+          ),
+      })
+      .from(transferOrderShipmentLines)
+      .innerJoin(
+        transferOrderShipments,
+        eq(
+          transferOrderShipmentLines.shipmentId,
+          transferOrderShipments.shipmentId,
+        ),
+      )
+      .where(
+        and(
+          eq(transferOrderShipments.transferOrderId, orderId),
+          sql`${transferOrderShipments.stateCode} != 'cancelled'`,
+        ),
+      )
+      .groupBy(transferOrderShipmentLines.transferOrderLineId);
+
+    for (const s of shipmentsLines) {
+      shippedMap.set(s.lineId, s.totalShipped);
+    }
+
+    const enrichedLines = lines.map((line) => {
+      const ordered = parseFloat(line.quantity);
+      const isPhysical = true; // All transfer order lines are physical
+      const picked = pickedMap.get(line.salesOrderLineId) ?? 0;
+      const shipped = shippedMap.get(line.salesOrderLineId) ?? 0;
+      const availableToShip = Math.max(0, picked - shipped);
+
+      return {
+        salesOrderLineId: line.salesOrderLineId, // keep key for UI compatibility
+        lineNumber: line.lineNumber,
+        productId: line.productId,
+        productNumber: line.productNumber,
+        productDescription: line.productDescription || '',
+        isPhysical,
+        quantity: line.quantity,
+        quantityPicked: String(picked),
+        quantityShipped: String(shipped),
+        availableToShip: String(availableToShip),
+      };
+    });
+
+    // Existing shipments summary
+    const shipments = await this.db
+      .select({
+        shipmentId: transferOrderShipments.shipmentId,
+        shipmentNumber: transferOrderShipments.shipmentNumber,
+        stateCode: transferOrderShipments.stateCode,
+        notes: sql<string>`''`,
+        trackingNumber: sql<string>`''`,
+        createdOn: transferOrderShipments.createdOn,
+      })
+      .from(transferOrderShipments)
+      .where(
+        and(
+          eq(transferOrderShipments.transferOrderId, orderId),
+          sql`${transferOrderShipments.stateCode} != 'cancelled'`,
+        ),
+      )
+      .orderBy(desc(transferOrderShipments.createdOn));
+
+    // Get line counts per shipment
+    const shipmentIds = shipments.map((s) => s.shipmentId);
+    const lineCountMap = new Map<string, number>();
+    if (shipmentIds.length > 0) {
+      const lineCounts = await this.db
+        .select({
+          shipmentId: transferOrderShipmentLines.shipmentId,
+          lineCount: sql<number>`COUNT(*)`,
+        })
+        .from(transferOrderShipmentLines)
+        .where(inArray(transferOrderShipmentLines.shipmentId, shipmentIds))
+        .groupBy(transferOrderShipmentLines.shipmentId);
+
+      for (const row of lineCounts) {
+        lineCountMap.set(row.shipmentId, Number(row.lineCount));
+      }
+    }
+
+    const destLocation = await this.db.query.locations.findFirst({
+      where: eq(locations.locationId, order.destinationLocationId as string),
+    });
+
+    return {
+      order: {
+        id: order.transferOrderId,
+        orderNumber: order.orderNumber,
+        name: 'Internal Transfer',
+        type: 'transfer_order',
+        deliveryAddressLine1: destLocation?.name ?? 'Unknown Location',
+        shippingNotes: order.shippingNotes ?? null,
+      },
       lines: enrichedLines,
       shipments: shipments.map((s) => ({
         ...s,

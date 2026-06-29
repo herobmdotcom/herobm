@@ -24,6 +24,7 @@ import { randomUUID } from 'crypto';
 import { BadRequestException } from '@nestjs/common';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 import { CASBIN_ENFORCER } from '../auth/casbin.provider';
+import { DataSourceContext } from '@herobm/shared';
 import type { Enforcer } from 'casbin';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';

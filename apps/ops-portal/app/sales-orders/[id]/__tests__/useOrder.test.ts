@@ -152,7 +152,7 @@ describe('useOrder — computed values', () => {
         expect(result.current.isOrderDetailsEditable).toBe(true);
     });
 
-    it.each([SALES_ORDER_STATE.CANCELLED, SALES_ORDER_STATE.LEGACY, SALES_ORDER_STATE.ARCHIVED])(
+    it.each([SALES_ORDER_STATE.CANCELLED, SALES_ORDER_STATE.ARCHIVED])(
         'isOrderDetailsEditable is false for %s state',
         async (state) => {
             const order = makeOrder({ stateCode: state });
@@ -276,29 +276,7 @@ describe('useOrder — mutations', () => {
         );
     });
 
-    it('copyOrder calls POST and navigates to new order', async () => {
-        mockSdkMutate.mockImplementation(async (action) => {
-            if (action === 'create') return { data: { salesOrderId: 'so-002' } };
-            return {};
-        });
 
-        const { result } = renderHook(() => useOrder('so-001'));
-        await waitFor(() => expect(result.current.order).toBeTruthy());
-
-        await act(async () => { await result.current.copyOrder(); });
-
-        expect(mockSdkMutate).toHaveBeenCalledWith(
-            'create',
-            expect.objectContaining({
-                name: 'Copy of Test Order',
-                customerId: 'cust-1',
-                lines: expect.arrayContaining([
-                    expect.objectContaining({ productId: 'prod-1', quantity: '10' }),
-                ]),
-            }),
-        );
-        expect(mockPush).toHaveBeenCalledWith('/sales-orders/so-002');
-    });
 
     it('archiveOrder calls POST after confirm', async () => {
         jest.spyOn(window, 'confirm').mockReturnValue(true);

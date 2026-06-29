@@ -25,6 +25,8 @@ export interface PurchaseInvoiceResponseDto {
   earlyPaymentDiscountDays?: number;
   createdBy: string;
   createdOn: string;
+  invoiceDate?: string;
+  dueDate?: string;
   lines: InvoiceLineResponseDto[];
   allocations?: PurchaseInvoiceResponseDtoAllocationsItem[];
 }

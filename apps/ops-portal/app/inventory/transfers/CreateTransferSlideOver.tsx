@@ -131,7 +131,7 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
               {t('columns.sourceLocation')} *
             </label>
             <LocationSelect
@@ -143,7 +143,7 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
               {t('columns.destinationLocation')} *
             </label>
             <LocationSelect
@@ -157,7 +157,7 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
             {t('columns.notes')}
           </label>
           <textarea

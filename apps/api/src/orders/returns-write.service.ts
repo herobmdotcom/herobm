@@ -132,7 +132,6 @@ export class ReturnsWriteService {
     SALES_ORDER_STATE.PICKING,
     SALES_ORDER_STATE.SHIPPED,
     SALES_ORDER_STATE.INVOICED,
-    SALES_ORDER_STATE.LEGACY,
   ];
 
   /**
@@ -921,7 +920,7 @@ export class ReturnsWriteService {
   /**
    * List all returns globally, optionally filtered by state.
    */
-  async findGlobal(stateCode?: string) {
+  async findGlobal(stateCode?: string, locationId?: string) {
     let q = this.db.select().from(salesOrderReturns).$dynamic();
 
     if (stateCode) {
@@ -986,6 +985,10 @@ export class ReturnsWriteService {
         locationId: orderInfo?.locationId,
         lines,
       });
+    }
+
+    if (locationId) {
+      return result.filter(r => r.locationId === locationId);
     }
 
     return result;

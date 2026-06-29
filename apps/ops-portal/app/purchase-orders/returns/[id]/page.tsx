@@ -101,7 +101,6 @@ export default function PurchaseReturnDetailPage({ params }: { params: Promise<{
         <EntityHeader
           title={returnDetails.returnNumber}
           subtitle={`PO: ${returnDetails.orderNumber} • ${returnDetails.vendorName}`}
-          onBack={() => router.back()}
           badges={<span className="badge badge-info">{returnDetails.stateCode.toUpperCase()}</span>}
         />
       }

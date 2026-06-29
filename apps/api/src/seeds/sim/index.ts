@@ -26,6 +26,7 @@ import {
   tradingTerms,
 } from '../../drizzle/herobm-core-schema';
 import {
+  BIN_TYPE,
   SALES_ORDER_STATE,
   PURCHASE_ORDER_STATE,
   SHIPMENT_STATE,
@@ -154,7 +155,7 @@ async function seedMasterData(db: any): Promise<MasterData> {
         binId: loc.binId,
         zoneId: loc.zoneId,
         binNumber: 'A1-01',
-        binType: 'storage',
+        binType: BIN_TYPE.STORAGE,
       })
       .onConflictDoNothing();
   }

@@ -10,4 +10,5 @@ export interface UpdateTransferOrderDto {
   sourceLocationId?: string;
   destinationLocationId?: string;
   notes?: string;
+  shippingNotes?: string;
 }

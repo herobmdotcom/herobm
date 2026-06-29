@@ -5,6 +5,7 @@ import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import SlideOver from './SlideOver';
+import { InlineSettingsTable, InlineTableColumn } from './InlineSettingsTable';
 
 interface ProductGroup {
   productGroupId: string;
@@ -145,6 +146,100 @@ export default function DiscountMatrixSlideOver({
     }
   };
 
+  const handleSaveSettingsTable = async (row: DiscountRule, isNew: boolean) => {
+    try {
+      if (isNew) {
+        if (!row.productGroupId) throw new Error('Product group is required');
+        await api.discountMatrixControllerCreate({
+          ...(customerGroupId ? { customerGroupId } : {}),
+          ...(customerId ? { customerId } : {}),
+          productGroupId: row.productGroupId,
+          discountPercentage: row.discountPercentage || '0',
+        } as Parameters<typeof api.discountMatrixControllerCreate>[0]);
+      } else {
+        await api.discountMatrixControllerUpdate(row.discountMatrixId, {
+          discountPercentage: row.discountPercentage,
+        });
+      }
+      toast.success(t('toasts.saved'));
+      loadData();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : String(err));
+      throw err;
+    }
+  };
+
+  const handleDeleteSettingsTable = async (row: DiscountRule) => {
+    try {
+      await api.discountMatrixControllerDelete(row.discountMatrixId);
+      toast.success(t('toasts.deleted'));
+      loadData();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : String(err));
+      throw err;
+    }
+  };
+
+  const specificRuleColumns: InlineTableColumn<DiscountRule>[] = [
+    {
+      key: 'productGroupId',
+      title: t('productGroup'),
+      type: 'custom',
+      render: (row, isEditing, onChange) => {
+        const isNew = !row.discountMatrixId;
+        const currentPg = productGroups.find((p) => p.productGroupId === row.productGroupId);
+
+        if (isEditing && isNew) {
+          return (
+            <select
+              className="input w-full"
+              value={row.productGroupId || ''}
+              onChange={(e) => onChange?.(e.target.value)}
+            >
+              <option value="">{t('selectProductGroup')}</option>
+              {availableProductGroups.map((pg) => (
+                <option key={pg.productGroupId} value={pg.productGroupId}>
+                  {pg.groupCode} — {pg.name}
+                </option>
+              ))}
+            </select>
+          );
+        }
+        return currentPg ? `${currentPg.groupCode} — ${currentPg.name}` : row.productGroupId;
+      }
+    },
+    {
+      key: 'discountPercentage',
+      title: t('discountPercent'),
+      type: 'custom',
+      width: 120,
+      render: (row, isEditing, onChange) => {
+        if (isEditing) {
+          return (
+            <div className="relative">
+              <input
+                className="input w-full pr-6"
+                type="number"
+                step="0.01"
+                value={row.discountPercentage || ''}
+                onChange={(e) => onChange?.(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    // Let InlineSettingsTable handle save on enter via its own handlers if possible, 
+                    // but since this is custom, we might just update value.
+                    // InlineSettingsTable saves on enter by wrapping in a form, so propagation works.
+                  }
+                }}
+              />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-500">%</span>
+            </div>
+          );
+        }
+        return `${row.discountPercentage || 0}%`;
+      }
+    }
+  ];
+
   return (
     <SlideOver
       isOpen={open}
@@ -161,14 +256,7 @@ export default function DiscountMatrixSlideOver({
           <>
             {/* Wildcard (Base) Discount */}
             <div>
-              <label
-                className="text-xs font-semibold mb-2 block"
-                style={{
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
-              >
+              <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('baseDiscount')}
               </label>
               <div className="flex gap-2 items-center">
@@ -192,120 +280,26 @@ export default function DiscountMatrixSlideOver({
 
             {/* Product Group Rules */}
             <div>
-              <label
-                className="text-xs font-semibold mb-2 block"
-                style={{
-                  color: 'var(--text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                }}
-              >
+              <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('productGroupRules')}
               </label>
 
-              <table className="table-lines w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className="text-left font-semibold text-xs tracking-wider text-gray-500 uppercase">{t('productGroup')}</th>
-                    <th className="text-left font-semibold text-xs tracking-wider text-gray-500 uppercase" style={{ width: 120 }}>{t('discountPercent')}</th>
-                    <th style={{ width: 60, textAlign: 'right' }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {specificRules.map((r) => {
-                    const pg = productGroups.find(
-                      (p) => p.productGroupId === r.productGroupId,
-                    );
-                    return (
-                      <tr key={r.discountMatrixId}>
-                        <td className="font-mono text-xs">
-                          {pg ? `${pg.groupCode} — ${pg.name}` : r.productGroupId}
-                        </td>
-                        <td>
-                          <div className="relative">
-                            <input
-                              className="input pr-6"
-                              type="number"
-                              step="0.01"
-                              defaultValue={r.discountPercentage}
-                              style={{ width: 100 }}
-                              onBlur={(e) =>
-                                handleSaveSpecific(r.discountMatrixId, e.target.value)
-                              }
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter')
-                                  handleSaveSpecific(
-                                    r.discountMatrixId,
-                                    (e.target as HTMLInputElement).value,
-                                  );
-                              }}
-                            />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-500">%</span>
-                          </div>
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <button
-                            className="btn btn-ghost btn-xs text-gray-400 hover:text-gray-800"
-                            onClick={() => handleDelete(r.discountMatrixId)}
-                            title={tCommon('delete')}
-                          >
-                            {/* eslint-disable i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
-                            <span className="material-symbols-outlined text-base">
-                              close
-                            </span>
-                            {/* eslint-enable i18next/no-literal-string */}
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-
-                  {/* Add new rule row */}
-                  {availableProductGroups.length > 0 && (
-                    <tr style={{ background: 'var(--bg-secondary)' }}>
-                      <td>
-                        <select
-                          className="input text-xs w-full"
-                          value={newProductGroupId}
-                          onChange={(e) => setNewProductGroupId(e.target.value)}
-                        >
-                          <option value="">{t('selectProductGroup')}</option>
-                          {availableProductGroups.map((pg) => (
-                            <option key={pg.productGroupId} value={pg.productGroupId}>
-                              {pg.groupCode} — {pg.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <div className="relative">
-                          <input
-                            className="input pr-6"
-                            type="number"
-                            step="0.01"
-                            value={newDiscount}
-                            onChange={(e) => setNewDiscount(e.target.value)}
-                            placeholder="0"
-                            style={{ width: 100 }}
-                          />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-medium text-gray-500">%</span>
-                        </div>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <button
-                          className="btn btn-primary btn-xs"
-                          onClick={handleAdd}
-                          disabled={!newProductGroupId || !newDiscount}
-                        >
-                          {/* eslint-disable i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
-                          <span className="material-symbols-outlined text-base">add</span>
-                          {/* eslint-enable i18next/no-literal-string */}
-                        </button>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+              <InlineSettingsTable
+                columns={specificRuleColumns}
+                data={specificRules}
+                rowKey={(r) => r.discountMatrixId}
+                onSave={handleSaveSettingsTable}
+                onDelete={handleDeleteSettingsTable}
+                onAdd={() => ({
+                  discountMatrixId: '',
+                  customerGroupId: customerGroupId || null,
+                  customerId: customerId || null,
+                  productGroupId: null,
+                  discountPercentage: '',
+                })}
+                addLabel={tCommon('add')}
+                emptyLabel={t('noProductGroupRules')}
+              />
             </div>
           </>
         )}

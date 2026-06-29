@@ -190,6 +190,23 @@ export default function SystemSettingsPage() {
   const macroColumns: InlineTableColumn<Macro>[] = useMemo(() => [
     { key: 'name', title: tSettings('labels.name'), type: 'text', width: 200, placeholder: tSettings('labels.name') },
     { 
+      key: 'macroType', 
+      title: tSettings('labels.macroType'), 
+      type: 'select', 
+      options: [
+        { value: 'general', label: tSettings('macroTypes.general') },
+        { value: 'sales-order-quote', label: tSettings('macroTypes.salesOrderQuote') },
+        { value: 'sales-order-confirmation', label: tSettings('macroTypes.salesOrderConfirmation') },
+        { value: 'pro-forma-invoice', label: tSettings('macroTypes.proFormaInvoice') },
+        { value: 'sales-invoice', label: tSettings('macroTypes.salesInvoice') },
+        { value: 'picking-slip', label: tSettings('macroTypes.pickingSlip') },
+        { value: 'shipping-docket', label: tSettings('macroTypes.shippingDocket') },
+        { value: 'sales-return-credit', label: tSettings('macroTypes.salesReturnCredit') },
+        { value: 'return-slip', label: tSettings('macroTypes.returnSlip') }
+      ],
+      width: 200,
+    },
+    { 
       key: 'content', 
       title: tSettings('labels.content'), 
       type: 'textarea', 
@@ -202,7 +219,7 @@ export default function SystemSettingsPage() {
     if (!payload.name || !payload.content) { throw new Error(tCommon('errors.typeAndDateRequired')); }
     const apiPayload = {
       name: payload.name,
-      macroType: payload.macroType || 'text_template',
+      macroType: payload.macroType || 'general',
       content: payload.content,
     };
     if (isNew) {
@@ -258,7 +275,6 @@ export default function SystemSettingsPage() {
         <EntityHeader
           title={tSettings('title') + ' - ' + tCommon('system')}
           subtitle={tSettings('subtitle')}
-          onBack={() => router.push('/')}
           actions={
             <div className="flex items-center gap-2">
               <PageNav sections={navSections} />
@@ -602,7 +618,7 @@ export default function SystemSettingsPage() {
           rowKey={(row: Macro) => row.macroId}
             onSave={handleMacroSave}
             onDelete={handleMacroDelete}
-            onAdd={() => ({ name: '', macroType: 'text_template', content: '' } as Macro)}
+            onAdd={() => ({ name: '', macroType: 'general', content: '' } as Macro)}
             addLabel={tSettings('actions.create')}
             emptyLabel={macroLoading ? null : t('common.selectNone')}
           />

@@ -18,8 +18,8 @@ export class PutawayLineDto {
 
   @IsString()
   @IsNotEmpty()
-  @IsIn(['goods_receipt', 'sales_return'])
-  sourceType!: 'goods_receipt' | 'sales_return';
+  @IsIn(['goods_receipt', 'sales_return', 'transfer_receipt'])
+  sourceType!: 'goods_receipt' | 'sales_return' | 'transfer_receipt';
 
   @IsString()
   @IsNotEmpty()

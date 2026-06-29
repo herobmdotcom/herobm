@@ -6,6 +6,8 @@ import {
   ValidateNested,
   IsNumberString,
   IsUUID,
+  IsEmail,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -130,6 +132,10 @@ export class CreateOrderDto {
 
   @IsOptional()
   @IsString()
+  deliveryCustomerName?: string;
+
+  @IsOptional()
+  @IsString()
   deliveryName?: string;
 
   @IsOptional()
@@ -186,6 +192,10 @@ export class UpdateOrderDto {
   @IsOptional()
   @IsString()
   shippingNotes?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryCustomerName?: string;
 
   @IsOptional()
   @IsString()
@@ -325,6 +335,10 @@ export class CreateShipmentDto {
 
   @IsOptional()
   @IsString()
+  deliveryCustomerName?: string;
+
+  @IsOptional()
+  @IsString()
   trackingNumber?: string;
 
   @IsArray()
@@ -337,6 +351,10 @@ export class UpdateShipmentDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryCustomerName?: string;
 
   @IsOptional()
   @IsString()
@@ -390,8 +408,31 @@ export class ChangeOrderStateDto {
   @IsOptional()
   generateBackorders?: boolean;
 
+  @ApiPropertyOptional()
   @IsOptional()
+  @IsBoolean()
   discrepanciesAcknowledged?: boolean;
+}
+
+export class EmailQuoteDto {
+  @ApiProperty({ description: 'The recipient email address' })
+  @IsEmail()
+  emailAddress!: string;
+
+  @ApiProperty({ description: 'The email subject' })
+  @IsString()
+  @IsNotEmpty()
+  subject!: string;
+
+  @ApiProperty({ description: 'The text body for the email' })
+  @IsString()
+  @IsNotEmpty()
+  body!: string;
+
+  @ApiPropertyOptional({ description: 'Text injected into the quote PDF' })
+  @IsOptional()
+  @IsString()
+  quoteIntroText?: string;
 }
 
 export class ReallocateDemandDto {
@@ -656,6 +697,9 @@ export class OpenDemandDto {
   @ApiPropertyOptional() purchaseOrderId?: string | null;
   @ApiPropertyOptional() purchaseOrderNumber?: string | null;
   @ApiPropertyOptional() purchaseOrderState?: string | null;
+  @ApiPropertyOptional() transferOrderId?: string | null;
+  @ApiPropertyOptional() transferOrderNumber?: string | null;
+  @ApiPropertyOptional() transferOrderState?: string | null;
   @ApiProperty({ type: () => [OpenDemandLocationAvailabilityDto] })
   availableElsewhere!: OpenDemandLocationAvailabilityDto[];
 }

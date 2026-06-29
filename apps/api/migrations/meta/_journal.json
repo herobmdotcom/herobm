@@ -470,6 +470,48 @@
       "when": 1782218723096,
       "tag": "0066_busy_shinobi_shaw",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1782733477809,
+      "tag": "0067_certain_night_thrasher",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1782735394519,
+      "tag": "0068_square_spitfire",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1782735930347,
+      "tag": "0069_tearful_nightshade",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1782738109899,
+      "tag": "0070_strange_doorman",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1782739352969,
+      "tag": "0071_shallow_random",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1782739779671,
+      "tag": "0072_add_transfer_receipt_putaway_status",
+      "breakpoints": true
     }
   ]
 }

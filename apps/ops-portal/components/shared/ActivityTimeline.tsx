@@ -29,6 +29,7 @@ export function EventIcon({ type }: { type: string }) {
   if (typeLower.includes('stock') || typeLower.includes('inventory')) return <span>🏢</span>;
   if (typeLower.includes('invoice')) return <span>🧾</span>;
   if (typeLower.includes('payment')) return <span>💳</span>;
+  if (typeLower.includes('import')) return <span>📥</span>;
 
   const icons: Record<string, string> = {
     created: '🆕',

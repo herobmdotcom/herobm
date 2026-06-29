@@ -88,7 +88,12 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
         (pickingSummary?.lines ?? []).map(l => [l.salesOrderLineId, l])
     );
 
-    const physicalLines = (shippingCtx?.lines ?? []).filter(l => l.isPhysical);
+    const activeLines = (shippingCtx?.lines ?? []).filter(l => parseFloat(l.quantity) > 0);
+    const sortedLines = [...activeLines].sort((a, b) => {
+        if (a.isPhysical && !b.isPhysical) return -1;
+        if (!a.isPhysical && b.isPhysical) return 1;
+        return a.lineNumber - b.lineNumber;
+    });
 
     return (
         <div id="fulfillment-section" className="card">
@@ -112,7 +117,7 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                 <>
 
                     <DataTable
-                        data={physicalLines}
+                        data={sortedLines}
                         keyExtractor={(line) => line.salesOrderLineId}
                         columns={[
                             { header: t('columns.product') },
@@ -124,6 +129,7 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                         ]}
                         emptyMessage={t('noPhysicalLines')}
                         renderCustomRow={(line: ShippingLine, idx: number) => {
+                            const isPhysical = line.isPhysical;
                             const ordered = parseFloat(line.quantity);
                             const picked = parseFloat(line.quantityPicked);
                             const shipped = parseFloat(line.quantityShipped);
@@ -134,7 +140,7 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                             const isShipped = shipped >= ordered;
 
                             return (
-                                <tr key={line.salesOrderLineId} className={isShipped ? 'opacity-50' : ''}>
+                                <tr key={line.salesOrderLineId}>
                                     <td>
                                         <div className="font-bold text-sm">
                                             {line.productId ? (
@@ -148,28 +154,42 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                                         {ordered.toLocaleString()}
                                     </td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                        <span className={isPicked ? 'text-[var(--success)]' : picked > 0 ? 'text-[var(--warning)]' : ''}>
-                                            {picked.toLocaleString()}
-                                        </span>
-                                    </td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>
-                                        {onHand !== null ? onHand.toLocaleString() : '—'}
-                                    </td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                        <span className={isShipped ? 'text-[var(--success)]' : shipped > 0 ? 'text-[var(--warning)]' : ''}>
-                                            {shipped.toLocaleString()}
-                                        </span>
-                                    </td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                        <span className={available > 0 ? 'font-semibold text-[var(--accent)]' : 'text-[var(--text-muted)]'}>
-                                            {available.toLocaleString()}
-                                        </span>
-                                    </td>
+                                    {isPhysical ? (
+                                        <>
+                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                                <span className={isPicked ? 'text-[var(--success)]' : picked > 0 ? 'text-[var(--warning)]' : ''}>
+                                                    {picked.toLocaleString()}
+                                                </span>
+                                            </td>
+                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>
+                                                {onHand !== null ? onHand.toLocaleString() : '—'}
+                                            </td>
+                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                                <span className={isShipped ? 'text-[var(--success)]' : shipped > 0 ? 'text-[var(--warning)]' : ''}>
+                                                    {shipped.toLocaleString()}
+                                                </span>
+                                            </td>
+                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                                <span className={available > 0 ? 'font-semibold text-[var(--accent)]' : 'text-[var(--text-muted)]'}>
+                                                    {available.toLocaleString()}
+                                                </span>
+                                            </td>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                                <span className="text-[var(--text-muted)] text-xs">Not Required</span>
+                                            </td>
+                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>—</td>
+                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>—</td>
+                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>—</td>
+                                        </>
+                                    )}
                                 </tr>
                             );
                         }}
                         mobileCard={(line: ShippingLine) => {
+                            const isPhysical = line.isPhysical;
                             const ordered = parseFloat(line.quantity);
                             const picked = parseFloat(line.quantityPicked);
                             const shipped = parseFloat(line.quantityShipped);
@@ -180,7 +200,7 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                             const isShipped = shipped >= ordered;
 
                             return (
-                                <div className={`bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col ${isShipped ? 'opacity-60' : ''}`}>
+                                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                                     <div className="flex justify-between items-start gap-2 mb-2">
                                         <div className="font-semibold text-sm text-[var(--accent)]">
                                             {line.productId ? (
@@ -197,26 +217,39 @@ export default function FulfillmentSection({ orderId, pickingSummary, order }: P
                                         <MobileCardField label={t('columns.ordered')} value={
                                             <span className="font-semibold">{ordered.toLocaleString()}</span>
                                         } />
-                                        <MobileCardField label={t('columns.picked')} value={
-                                            <span className={isPicked ? 'text-[var(--success)] font-semibold' : picked > 0 ? 'text-[var(--warning)] font-semibold' : ''}>
-                                                {picked.toLocaleString()}
-                                            </span>
-                                        } />
-                                        <MobileCardField label={t('columns.onHand')} value={
-                                            <span className="text-[var(--text-muted)]">
-                                                {onHand !== null ? onHand.toLocaleString() : '—'}
-                                            </span>
-                                        } />
-                                        <MobileCardField label={t('columns.shipped')} value={
-                                            <span className={isShipped ? 'text-[var(--success)] font-semibold' : shipped > 0 ? 'text-[var(--warning)] font-semibold' : ''}>
-                                                {shipped.toLocaleString()}
-                                            </span>
-                                        } />
-                                        <MobileCardField label={t('columns.readyToShip')} value={
-                                            <span className={available > 0 ? 'font-semibold text-[var(--accent)]' : 'text-[var(--text-muted)]'}>
-                                                {available.toLocaleString()}
-                                            </span>
-                                        } />
+                                        {isPhysical ? (
+                                            <>
+                                                <MobileCardField label={t('columns.picked')} value={
+                                                    <span className={isPicked ? 'text-[var(--success)] font-semibold' : picked > 0 ? 'text-[var(--warning)] font-semibold' : ''}>
+                                                        {picked.toLocaleString()}
+                                                    </span>
+                                                } />
+                                                <MobileCardField label={t('columns.onHand')} value={
+                                                    <span className="text-[var(--text-muted)]">
+                                                        {onHand !== null ? onHand.toLocaleString() : '—'}
+                                                    </span>
+                                                } />
+                                                <MobileCardField label={t('columns.shipped')} value={
+                                                    <span className={isShipped ? 'text-[var(--success)] font-semibold' : shipped > 0 ? 'text-[var(--warning)] font-semibold' : ''}>
+                                                        {shipped.toLocaleString()}
+                                                    </span>
+                                                } />
+                                                <MobileCardField label={t('columns.readyToShip')} value={
+                                                    <span className={available > 0 ? 'font-semibold text-[var(--accent)]' : 'text-[var(--text-muted)]'}>
+                                                        {available.toLocaleString()}
+                                                    </span>
+                                                } />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <MobileCardField label={t('columns.picked')} value={
+                                                    <span className="text-[var(--text-muted)] text-xs">Not Required</span>
+                                                } />
+                                                <MobileCardField label={t('columns.onHand')} value={<span className="text-[var(--text-muted)]">—</span>} />
+                                                <MobileCardField label={t('columns.shipped')} value={<span className="text-[var(--text-muted)]">—</span>} />
+                                                <MobileCardField label={t('columns.readyToShip')} value={<span className="text-[var(--text-muted)]">—</span>} />
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             );

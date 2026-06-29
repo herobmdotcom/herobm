@@ -213,13 +213,12 @@ export function usePurchaseOrder(id: string) {
       PURCHASE_ORDER_STATE.RECEIVED, 
       PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED, 
       PURCHASE_ORDER_STATE.INVOICED, 
-      PURCHASE_ORDER_STATE.LEGACY, 
       PURCHASE_ORDER_STATE.ARCHIVED
     ].some(s => s === order?.stateCode)) {
       loadInvoices();
       loadAllocations();
     }
-    if ([PURCHASE_ORDER_STATE.INVOICED, PURCHASE_ORDER_STATE.LEGACY].some(s => s === order?.stateCode)) {
+    if ([PURCHASE_ORDER_STATE.INVOICED].some(s => s === order?.stateCode)) {
       loadReturns();
     }
   }, [order?.stateCode]);

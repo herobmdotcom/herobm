@@ -8,6 +8,7 @@
 
 export interface UpdateDeliveryAddressDto {
   addressName?: string;
+  companyName?: string;
   recipientName?: string;
   recipientPhone?: string;
   addressLine1?: string;

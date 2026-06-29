@@ -52,8 +52,12 @@ export class BackordersService {
    * Evaluates the Sales Order lines against real-time quantitative availability
    * to strictly determine if there are material inventory gaps.
    */
-  async evaluateGaps(salesOrderId: string): Promise<InventoryGap[]> {
-    const lines = await this.db
+  async evaluateGaps(
+    salesOrderId: string,
+    tx?: DrizzleDB,
+  ): Promise<InventoryGap[]> {
+    const db = tx || this.db;
+    const lines = await db
       .select({
         salesOrderLineId: salesOrderLineItems.salesOrderLineId,
         productId: salesOrderLineItems.productId,
@@ -70,7 +74,7 @@ export class BackordersService {
       )
       .where(eq(salesOrderLineItems.salesOrderId, salesOrderId));
 
-    const [header] = await this.db
+    const [header] = await db
       .select({ fulfillmentLocationId: salesOrders.fulfillmentLocationId })
       .from(salesOrders)
       .where(eq(salesOrders.salesOrderId, salesOrderId))
@@ -831,7 +835,7 @@ export class BackordersService {
         .where(eq(backorders.salesOrderLineId, demand.salesOrderLineId));
 
       // 6. Run gap evaluation for the order
-      const gaps = await this.evaluateGaps(demand.salesOrderId);
+      const gaps = await this.evaluateGaps(demand.salesOrderId, tx);
 
       // Filter the gaps to only the line we just touched
       const lineGaps = gaps.filter(

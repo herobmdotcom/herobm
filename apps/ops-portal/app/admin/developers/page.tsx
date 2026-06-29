@@ -147,7 +147,6 @@ export default function DevelopersPage() {
         <EntityHeader
           title="Developers"
           subtitle="Manage API access, webhooks, and rate limits"
-          onBack={() => router.push('/admin')}
           actions={<PageNav sections={navSections} />}
           showPrint={false}
         />

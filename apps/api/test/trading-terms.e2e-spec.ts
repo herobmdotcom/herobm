@@ -7,6 +7,13 @@ import { INestApplication } from '@nestjs/common';
 import { register } from 'prom-client';
 import { CreditAssessmentService } from '../src/customers/credit-assessment.service';
 
+import { DRIZZLE } from '../src/drizzle/drizzle.module';
+import {
+  salesOrders,
+  salesInvoices,
+  locations,
+} from '../src/drizzle/herobm-core-schema';
+import * as crypto from 'crypto';
 import request from 'supertest';
 
 describe('Trading Terms and Credit Assessments (e2e)', () => {
@@ -222,29 +229,32 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
         .expect(201);
       const customerId = custRes.body.customerId;
 
-      // Create a GL Journal for yesterday
+      // Create an overdue invoice for yesterday
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
 
-      await request(app.getHttpServer())
-        .post('/api/gl/journal-entries')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          memo: 'E2E Invoice Debt',
-          entryDate: yesterday.toISOString(),
-          stateCode: 'posted',
-          lines: [
-            {
-              accountId: arAccountId,
-              partyType: 'customer',
-              partyId: customerId,
-              debit: 1000,
-              credit: 0,
-            },
-            { accountId: salesAccountId, debit: 0, credit: 1000 },
-          ],
+      const db = app.get(DRIZZLE);
+      const locRes = await db.select().from(locations).limit(1);
+      const locId = locRes[0]?.locationId;
+      const [pastOrder] = await db
+        .insert(salesOrders)
+        .values({
+          customerId: customerId,
+          orderNumber: `SO-COD-${Date.now()}`,
+          currencyCode: 'USD',
+          fulfillmentLocationId: locId,
+          stateCode: 'invoiced',
         })
-        .expect(201);
+        .returning();
+      await db.insert(salesInvoices).values({
+        salesOrderId: pastOrder.salesOrderId,
+        invoiceNumber: `INV-COD-${Date.now()}`,
+        totalAmount: '1000.00',
+        outstandingAmount: '1000.00',
+        currencyCode: 'USD',
+        stateCode: 'unpaid',
+        dueDate: yesterday,
+      });
 
       const assessRes = await creditAssessmentService.assessCredit(customerId);
 
@@ -268,58 +278,52 @@ describe('Trading Terms and Credit Assessments (e2e)', () => {
 
       const today = new Date();
       // Mid last month -> Due end of THIS month (Not overdue yet)
-      const lastMonthMid = new Date(
-        today.getFullYear(),
-        today.getMonth() - 1,
-        15,
-      );
+      const future = new Date(today.getFullYear(), today.getMonth() + 1, 15);
+      const past = new Date(today.getFullYear(), today.getMonth() - 1, 15);
 
-      await request(app.getHttpServer())
-        .post('/api/gl/journal-entries')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          memo: 'Not Overdue Yet',
-          entryDate: lastMonthMid.toISOString(),
-          stateCode: 'posted',
-          lines: [
-            {
-              accountId: arAccountId,
-              partyType: 'customer',
-              partyId: customerId,
-              debit: 500,
-              credit: 0,
-            },
-            { accountId: salesAccountId, debit: 0, credit: 500 },
-          ],
+      const db = app.get(DRIZZLE);
+      const locRes = await db.select().from(locations).limit(1);
+      const locId = locRes[0]?.locationId;
+
+      const [pastOrder1] = await db
+        .insert(salesOrders)
+        .values({
+          customerId: customerId,
+          orderNumber: `SO-EOM1-${Date.now()}`,
+          currencyCode: 'USD',
+          fulfillmentLocationId: locId,
+          stateCode: 'invoiced',
         })
-        .expect(201);
+        .returning();
+      await db.insert(salesInvoices).values({
+        salesOrderId: pastOrder1.salesOrderId,
+        invoiceNumber: `INV-EOM1-${Date.now()}`,
+        totalAmount: '500.00',
+        outstandingAmount: '500.00',
+        currencyCode: 'USD',
+        stateCode: 'unpaid',
+        dueDate: future,
+      });
 
-      // Mid 2 months ago -> Due end of LAST month (Overdue now!)
-      const twoMonthsAgoMid = new Date(
-        today.getFullYear(),
-        today.getMonth() - 2,
-        15,
-      );
-
-      await request(app.getHttpServer())
-        .post('/api/gl/journal-entries')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          memo: 'Overdue Debt',
-          entryDate: twoMonthsAgoMid.toISOString(),
-          stateCode: 'posted',
-          lines: [
-            {
-              accountId: arAccountId,
-              partyType: 'customer',
-              partyId: customerId,
-              debit: 200,
-              credit: 0,
-            },
-            { accountId: salesAccountId, debit: 0, credit: 200 },
-          ],
+      const [pastOrder2] = await db
+        .insert(salesOrders)
+        .values({
+          customerId: customerId,
+          orderNumber: `SO-EOM2-${Date.now()}`,
+          currencyCode: 'USD',
+          fulfillmentLocationId: locId,
+          stateCode: 'invoiced',
         })
-        .expect(201);
+        .returning();
+      await db.insert(salesInvoices).values({
+        salesOrderId: pastOrder2.salesOrderId,
+        invoiceNumber: `INV-EOM2-${Date.now()}`,
+        totalAmount: '200.00',
+        outstandingAmount: '200.00',
+        currencyCode: 'USD',
+        stateCode: 'unpaid',
+        dueDate: past,
+      });
 
       const assessRes = await creditAssessmentService.assessCredit(customerId);
 

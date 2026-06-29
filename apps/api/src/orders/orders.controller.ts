@@ -38,6 +38,7 @@ import {
   EmptyBodyDto,
   ChangeOrderStateDto,
   OverrideCreditHoldDto,
+  EmailQuoteDto,
 } from './dto';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { AuthUser } from '../auth/auth-user.decorator';
@@ -143,6 +144,26 @@ export class OrdersController {
     @AuthUser() user: JwtUser,
   ) {
     return this.ordersWriteService.triggerTaxCalculation(id, user.username);
+  }
+
+  @Post(':id/email-quote')
+  @ApiBody({ type: EmailQuoteDto })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Email Quote',
+    description:
+      'Generates a Quote PDF and queues it to be emailed to the customer.',
+  })
+  @ApiCreatedResponse({
+    description: 'Email queued successfully.',
+    schema: { type: 'object', properties: { success: { type: 'boolean' } } },
+  })
+  async emailQuote(
+    @Param('id') id: string,
+    @Body() dto: EmailQuoteDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.ordersWriteService.emailQuote(id, dto, user);
   }
 
   @Patch(':id/state')

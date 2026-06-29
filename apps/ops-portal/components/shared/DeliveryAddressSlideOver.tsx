@@ -20,6 +20,7 @@ interface DeliveryAddressSlideOverProps {
   isOpen: boolean;
   onClose: () => void;
   customerId: string;
+  customerName?: string;
   addressId?: string;
   existingData?: Partial<api.CreateDeliveryAddressDto & { id?: string }>;
   allowUnsaved?: boolean;
@@ -31,6 +32,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
   isOpen,
   onClose,
   customerId,
+  customerName,
   addressId,
   existingData,
   allowUnsaved = false,
@@ -38,10 +40,12 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
   onSaved,
 }) => {
   const tCommon = useTranslations('common');
+  const t = useTranslations('deliveryAddress');
   const [saving, setSaving] = useState(false);
   const [saveToCustomer, setSaveToCustomer] = useState(true);
   const [dto, setDto] = useState({
     addressName: '',
+    companyName: '',
     recipientName: '',
     recipientPhone: '',
     addressLine1: '',
@@ -59,6 +63,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
       if (existingData) {
         setDto({
           addressName: existingData.addressName || '',
+          companyName: existingData.companyName !== undefined ? existingData.companyName : (!addressId ? (customerName || '') : ''),
           recipientName: existingData.recipientName || '',
           recipientPhone: existingData.recipientPhone || '',
           addressLine1: existingData.addressLine1 || '',
@@ -72,6 +77,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
       } else {
         setDto({
           addressName: '',
+          companyName: customerName || '',
           recipientName: '',
           recipientPhone: '',
           addressLine1: '',
@@ -92,7 +98,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
 
   const handleSave = async () => {
     if (!dto.addressLine1 || !dto.country) {
-      toast.error('Address Line 1 and Country are required');
+      toast.error(t('requiredError'));
       return;
     }
 
@@ -107,6 +113,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
       if (addressId) {
         const updatePayload: api.UpdateDeliveryAddressDto = {
           addressName: dto.addressName,
+          companyName: dto.companyName,
           recipientName: dto.recipientName,
           recipientPhone: dto.recipientPhone,
           addressLine1: dto.addressLine1,
@@ -118,12 +125,13 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
           isPrimary: dto.isPrimary,
         };
         await api.deliveryAddressesControllerUpdate(addressId, updatePayload);
-        toast.success('Address updated');
+        toast.success(t('updatedSuccess'));
         onSaved({ ...dto, id: addressId } as api.DeliveryAddressResponseDto, true);
       } else {
         const createPayload: api.CreateDeliveryAddressDto = {
           customerId,
           addressName: dto.addressName,
+          companyName: dto.companyName,
           recipientName: dto.recipientName,
           recipientPhone: dto.recipientPhone,
           addressLine1: dto.addressLine1,
@@ -135,7 +143,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
           isPrimary: dto.isPrimary,
         };
         const res = await api.deliveryAddressesControllerCreate(createPayload);
-        toast.success('Address created');
+        toast.success(t('createdSuccess'));
         onSaved({ ...dto, id: res.data.id } as api.DeliveryAddressResponseDto, true);
       }
       onClose();
@@ -150,7 +158,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
     <SlideOver
       isOpen={isOpen}
       onClose={onClose}
-      title={addressId ? 'Edit Delivery Address' : 'Add Delivery Address'}
+      title={addressId ? t('editAddress') : t('addAddress')}
       footer={
         <div className="flex justify-between items-center w-full">
           <div>
@@ -163,7 +171,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
                   disabled={saving}
                   className="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--primary)]"
                 />
-                <span>Save to customer record</span>
+                <span>{t('saveToCustomerRecord')}</span>
               </label>
             )}
           </div>
@@ -193,34 +201,46 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
     >
       <div className="flex flex-col gap-4 py-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Address Name
+          <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
+            {t('addressName')}
           </label>
           <input
             type="text"
             className="input"
             value={dto.addressName}
             onChange={(e) => handleChange('addressName', e.target.value)}
-            placeholder="e.g. Headquarters"
+            placeholder={t('addressNamePlaceholder')}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
+            {t('companyName')}
+          </label>
+          <input
+            type="text"
+            className="input"
+            value={dto.companyName}
+            onChange={(e) => handleChange('companyName', e.target.value)}
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Recipient Name
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
+              {t('contactPerson')}
             </label>
             <input
               type="text"
               className="input"
               value={dto.recipientName}
               onChange={(e) => handleChange('recipientName', e.target.value)}
-              placeholder="Attention to"
+              placeholder={t('contactPersonPlaceholder')}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Recipient Phone
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
+              {t('contactPhone')}
             </label>
             <PhoneInput
               international
@@ -229,7 +249,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
               className="input w-full flex items-center px-2 border border-[var(--border)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--accent)]"
               value={parseInitialPhone(dto.recipientPhone)}
               onChange={(value) => handleChange('recipientPhone', value || '')}
-              placeholder="Phone number"
+              placeholder={t('contactPhonePlaceholder')}
             />
             {dto.recipientPhone && !dto.recipientPhone.startsWith('+') && (
               <p className="text-xs text-orange-500 mt-1">{tCommon('rawPhone', { phone: dto.recipientPhone })}</p>
@@ -238,8 +258,8 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Address Line 1 *
+          <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
+            {t('addressLine1')}
           </label>
           <input
             type="text"
@@ -250,8 +270,8 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Address Line 2
+          <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
+            {t('addressLine2')}
           </label>
           <input
             type="text"
@@ -263,8 +283,8 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              City
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
+              {t('city')}
             </label>
             <input
               type="text"
@@ -274,8 +294,8 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              State / Province
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
+              {t('stateOrProvince')}
             </label>
             <input
               type="text"
@@ -288,8 +308,8 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Postal Code
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
+              {t('postalCode')}
             </label>
             <input
               type="text"
@@ -299,8 +319,8 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Country *
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
+              {t('country')}
             </label>
             <select
               className="input"
@@ -308,7 +328,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
               onChange={(e) => handleChange('country', e.target.value)}
             >
               <option value="" disabled>
-                Select Country
+                {t('selectCountry')}
               </option>
               {COUNTRIES.map((c) => (
                 <option key={c.code} value={c.code}>
@@ -331,7 +351,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
             htmlFor="isPrimaryDeliveryAddress"
             className="text-sm text-gray-700 cursor-pointer"
           >
-            Set as primary delivery address
+            {t('setAsPrimary')}
           </label>
         </div>
       </div>

@@ -208,8 +208,10 @@ describe('OrdersWriteService', () => {
 
       mockOrganizationService as any,
       {
-        lookup: jest.fn(),
+        getDetails: jest.fn(),
       } as any,
+      {} as any, // mockPdfTemplatesService
+      {} as any, // mockEmailService
     );
 
     (service as any).logger = {

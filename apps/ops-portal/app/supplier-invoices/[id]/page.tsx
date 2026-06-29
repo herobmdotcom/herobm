@@ -180,7 +180,6 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
         <EntityHeader
           title={invoice.invoiceNumber}
           subtitle={invoice.supplierInvoiceNumber ? `Supplier Ref: ${invoice.supplierInvoiceNumber}` : undefined}
-          onBack={() => router.push('/supplier-invoices')}
           badges={<StateBadge state={invoice.stateCode as ValidState} />}
           isSaving={saving}
           actions={

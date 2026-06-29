@@ -63,6 +63,9 @@ export class SalesQuoteService {
     );
     const data = assembleOrderData(orderDetail, this.appConfig.homeCurrency());
 
+    this.logger.log(
+      'SalesQuoteService options received: ' + JSON.stringify(options),
+    );
     const quoteIntroText = options?.quoteIntroText as string | undefined;
     if (quoteIntroText) {
       this.logger.log('Macro text received: ' + quoteIntroText);

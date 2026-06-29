@@ -221,7 +221,6 @@ export default function ReportViewer() {
       header={
         <EntityHeader
           title={loadedConfig ? `${report.name} - ${loadedConfig.name}` : report.name}
-          onBack={() => router.push('/reporting')}
           nav={undefined}
           actions={
             <div className="flex items-center gap-2">

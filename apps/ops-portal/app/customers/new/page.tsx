@@ -133,7 +133,6 @@ export default function NewAccountPage() {
         header={
           <EntityHeader
             title={t('customers.buttons.createCustomer')}
-            onBack={() => router.push('/customers')}
             actions={
               <>
                 <button

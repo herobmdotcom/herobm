@@ -464,13 +464,6 @@ export default function AccountDetailPage({
           <EntityHeader
             title={customer.name}
             subtitle={customer.customerNumber}
-            onBack={() => {
-              if (window.history.length > 1) {
-                router.back();
-              } else {
-                router.push("/customers");
-              }
-            }}
             isSaving={saving}
             isDirty={isDirty}
             onSave={handleSave}
@@ -502,7 +495,52 @@ export default function AccountDetailPage({
             <EntityBanner
               type={customer.overrideCreditHoldUntil && new Date(customer.overrideCreditHoldUntil) > new Date() ? 'warning' : 'error'}
               title={customer.overrideCreditHoldUntil && new Date(customer.overrideCreditHoldUntil) > new Date() ? t('customers.creditHold.overriddenTitle') : t('customers.creditHold.activeTitle')}
-              description={customer.salesBlockReasons?.map(r => t(`customers.creditHold.reasons.${r}` as Parameters<typeof t>[0])).join(' • ') || t('customers.creditHold.activeDesc')}
+              description={
+                customer.salesBlockReasons?.length
+                  ? customer.salesBlockReasons.map((r, index, array) => {
+                      const text = t(`customers.creditHold.reasons.${r}` as Parameters<typeof t>[0]);
+                      const isLast = index === array.length - 1;
+                      
+                      if (r === 'credit_limit_exceeded' && customer.creditAssessment) {
+                        const balance = formatAmount(customer.creditAssessment.totalInvoiceBalance, customer.currencyCode || baseCurrency);
+                        const limit = formatAmount(Number(customer.effectiveCreditLimit || 0), customer.currencyCode || baseCurrency);
+                        return (
+                          <span key={r}>
+                            {text} ({balance} / {limit})
+                            {!isLast && ' • '}
+                          </span>
+                        );
+                      } else if (r === 'overdue_balance' && customer.creditAssessment) {
+                        const overdue = formatAmount(customer.creditAssessment.overdueInvoiceBalance, customer.currencyCode || baseCurrency);
+                        return (
+                          <span key={r}>
+                            {text} ({overdue}
+                            {customer.creditAssessment.oldestOverdueInvoice && (
+                              <>
+                                {' - '}
+                                {customer.creditAssessment.oldestOverdueInvoiceId ? (
+                                  <Link href={`/sales-invoices/${customer.creditAssessment.oldestOverdueInvoiceId}`} className="underline hover:text-red-700">
+                                    {customer.creditAssessment.oldestOverdueInvoice}
+                                  </Link>
+                                ) : (
+                                  customer.creditAssessment.oldestOverdueInvoice
+                                )}
+                              </>
+                            )}
+                            )
+                            {!isLast && ' • '}
+                          </span>
+                        );
+                      }
+                      return (
+                        <span key={r}>
+                          {text}
+                          {!isLast && ' • '}
+                        </span>
+                      );
+                    })
+                  : t('customers.creditHold.activeDesc')
+              }
               action={
                 <div className="flex items-center gap-3 w-full md:w-auto">
                   {dto.overrideCreditHoldUntil && new Date(dto.overrideCreditHoldUntil) > new Date() && (
@@ -518,18 +556,23 @@ export default function AccountDetailPage({
                       {t("common.buttons.clear")}
                     </button>
                   )}
-                  <input
-                    type="date"
-                    className="input text-sm w-full md:w-auto bg-white"
-                    value={dto.overrideCreditHoldUntil ? new Date(dto.overrideCreditHoldUntil).toISOString().split('T')[0] : ''}
-                    min={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => {
-                      const date = e.target.value ? new Date(e.target.value).toISOString() : null;
-                      updateField("overrideCreditHoldUntil", date);
-                      saveField("overrideCreditHoldUntil", date);
-                    }}
-                    disabled={!isEditable || saving}
-                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium whitespace-nowrap">
+                      Override until:
+                    </span>
+                    <input
+                      type="date"
+                      className="input text-sm w-full md:w-auto bg-white"
+                      value={dto.overrideCreditHoldUntil ? new Date(dto.overrideCreditHoldUntil).toISOString().split('T')[0] : ''}
+                      min={new Date().toISOString().split('T')[0]}
+                      disabled={!isEditable || saving}
+                      onChange={(e) => {
+                        const date = e.target.value ? new Date(e.target.value) : null;
+                        updateField("overrideCreditHoldUntil", date);
+                        saveField("overrideCreditHoldUntil", date);
+                      }}
+                    />
+                  </div>
                 </div>
               }
             />
@@ -987,9 +1030,9 @@ export default function AccountDetailPage({
             {/* Credit Overview Card */}
             {canManageCredit && (
               <div id="credit-overview-section" className="card">
-                <h3 className="section-heading">
-                  <span className="material-symbols-outlined">account_balance</span>
-                  {t("salesOrders.creditHold.statusOverview")}
+                <h3 className="section-heading flex items-center gap-2">
+                  <span className="material-symbols-outlined shrink-0">info</span>
+                  <span>{t("salesOrders.creditHold.statusOverview")}</span>
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <div>
@@ -1758,6 +1801,7 @@ export default function AccountDetailPage({
               isOpen={isAddressSlideOverOpen}
               onClose={() => setIsAddressSlideOverOpen(false)}
               customerId={customer.customerId}
+              customerName={customer.name || ''}
               addressId={editingAddress?.id}
               existingData={editingAddress as any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Form component expects partial interface mismatches */}
               defaultCountry={customer.billingAddressCountry || undefined}

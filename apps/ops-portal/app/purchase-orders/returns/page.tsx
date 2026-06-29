@@ -216,7 +216,6 @@ function ReturnsFlow() {
         <EntityHeader
           title={t('title')}
           subtitle={t('subtitle')}
-          onBack={() => router.back()}
           isSaving={saving}
           actions={
             <button className="btn btn-primary" onClick={commitReturns} disabled={draftLines.length === 0 || saving}>

@@ -18,6 +18,7 @@ export interface TransferResponseDto {
   destinationLocationId: string;
   destinationLocationName?: string;
   notes?: string;
+  shippingNotes?: string;
   createdBy?: string;
   createdOn: string;
   lines?: TransferLineResponseDto[];

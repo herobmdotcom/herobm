@@ -5,12 +5,14 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { AppConfigResponseDtoCreditLimitBehavior } from './appConfigResponseDtoCreditLimitBehavior';
 import type { AppConfigResponseDtoTaxProviderMappings } from './appConfigResponseDtoTaxProviderMappings';
 import type { AppConfigResponseDtoEnrichmentProviderMappings } from './appConfigResponseDtoEnrichmentProviderMappings';
 
 export interface AppConfigResponseDto {
   defaultFulfillmentLocationId: string;
   apiRateLimit: string;
+  creditLimitBehavior?: AppConfigResponseDtoCreditLimitBehavior;
   taxProviderMappings?: AppConfigResponseDtoTaxProviderMappings;
   enrichmentProviderMappings?: AppConfigResponseDtoEnrichmentProviderMappings;
   smtpHost?: string;

@@ -141,6 +141,7 @@ import type {
   EmailControllerListEmailsParams,
   EmailControllerRetryEmail201,
   EmailControllerRetryEmailBody,
+  EmailQuoteDto,
   EmptyBodyDto,
   EnrichmentControllerGetConfig200,
   EnrichmentControllerGetConfigParams,
@@ -240,6 +241,7 @@ import type {
   OrderPickingControllerGetPickingQueueParams,
   OrderPickingControllerGetShippingQueueParams,
   OrderResponseDto,
+  OrdersControllerEmailQuote201,
   OrdersControllerFindAll200,
   OrdersControllerFindAllParams,
   OrdersControllerFindOneParams,
@@ -282,7 +284,6 @@ import type {
   PurchaseOrderResponseDto,
   PurchaseOrdersControllerFindAll200,
   PurchaseOrdersControllerFindAllParams,
-  PurchaseOrdersControllerFindOneParams,
   PurchaseOrdersControllerFindPendingLinesParams,
   PurchaseOrdersControllerFindReturnableLinesParams,
   PurchaseReturnResponseDto,
@@ -6275,6 +6276,45 @@ export const ordersControllerTriggerTaxCalculation = async (id: string,
 
 
 /**
+ * Generates a Quote PDF and queues it to be emailed to the customer.
+ * @summary Email Quote
+ */
+export type ordersControllerEmailQuoteResponse201 = {
+  data: OrdersControllerEmailQuote201
+  status: 201
+}
+    
+export type ordersControllerEmailQuoteResponseSuccess = (ordersControllerEmailQuoteResponse201) & {
+  headers: Headers;
+};
+;
+
+export type ordersControllerEmailQuoteResponse = (ordersControllerEmailQuoteResponseSuccess)
+
+export const getOrdersControllerEmailQuoteUrl = (id: string,) => {
+
+
+  
+
+  return `/sales-orders/${id}/email-quote`
+}
+
+export const ordersControllerEmailQuote = async (id: string,
+    emailQuoteDto: EmailQuoteDto, options?: RequestInit): Promise<ordersControllerEmailQuoteResponse> => {
+  
+  return customFetch<ordersControllerEmailQuoteResponse>(getOrdersControllerEmailQuoteUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emailQuoteDto,)
+  }
+);}
+
+
+
+/**
  * Update the processing state of a sales order.
  * @summary Change Order State
  */
@@ -6952,7 +6992,7 @@ export const orderReturnsControllerReceiveReturn = async (id: string,
 
 
 /**
- * Create a new shipment for a sales order.
+ * Create a new shipment for a sales order or transfer order.
  * @summary Create Shipment
  */
 export type orderShipmentsControllerCreateShipmentResponse201 = {
@@ -8312,6 +8352,43 @@ export const transfersControllerUpdate = async (id: string,
 
 
 /**
+ * Retrieve all shipments for a specific transfer order.
+ * @summary Find Shipments
+ */
+export type transfersControllerFindShipmentsResponse200 = {
+  data: ShipmentResponseDto[]
+  status: 200
+}
+    
+export type transfersControllerFindShipmentsResponseSuccess = (transfersControllerFindShipmentsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type transfersControllerFindShipmentsResponse = (transfersControllerFindShipmentsResponseSuccess)
+
+export const getTransfersControllerFindShipmentsUrl = (id: string,) => {
+
+
+  
+
+  return `/transfers/${id}/shipments`
+}
+
+export const transfersControllerFindShipments = async (id: string, options?: RequestInit): Promise<transfersControllerFindShipmentsResponse> => {
+  
+  return customFetch<transfersControllerFindShipmentsResponse>(getTransfersControllerFindShipmentsUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
  * Add a new line item to a transfer order.
  * @summary Add Transfer Line
  */
@@ -8938,6 +9015,7 @@ export const taxPositionsControllerRemove = async (id: string, options?: Request
 
 
 /**
+ * Returns the formatted ATO BAS summary for the specified date range
  * @summary Get ATO BAS Summary Report Data
  */
 export type taxBasControllerGetBasSummaryResponse200 = {
@@ -10795,6 +10873,128 @@ export const enrichmentControllerUpdateConfig = async (enrichmentControllerUpdat
 
 
 /**
+ * List emails in the outbox queue.
+ * @summary List emails
+ */
+export type emailControllerListEmailsResponse200 = {
+  data: EmailControllerListEmails200Item[]
+  status: 200
+}
+    
+export type emailControllerListEmailsResponseSuccess = (emailControllerListEmailsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type emailControllerListEmailsResponse = (emailControllerListEmailsResponseSuccess)
+
+export const getEmailControllerListEmailsUrl = (params?: EmailControllerListEmailsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/emails?${stringifiedParams}` : `/emails`
+}
+
+export const emailControllerListEmails = async (params?: EmailControllerListEmailsParams, options?: RequestInit): Promise<emailControllerListEmailsResponse> => {
+  
+  return customFetch<emailControllerListEmailsResponse>(getEmailControllerListEmailsUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Retry sending a failed email.
+ * @summary Retry a failed email
+ */
+export type emailControllerRetryEmailResponse201 = {
+  data: EmailControllerRetryEmail201
+  status: 201
+}
+    
+export type emailControllerRetryEmailResponseSuccess = (emailControllerRetryEmailResponse201) & {
+  headers: Headers;
+};
+;
+
+export type emailControllerRetryEmailResponse = (emailControllerRetryEmailResponseSuccess)
+
+export const getEmailControllerRetryEmailUrl = (id: string,) => {
+
+
+  
+
+  return `/emails/${id}/retry`
+}
+
+export const emailControllerRetryEmail = async (id: string,
+    emailControllerRetryEmailBody?: EmailControllerRetryEmailBody, options?: RequestInit): Promise<emailControllerRetryEmailResponse> => {
+  
+  return customFetch<emailControllerRetryEmailResponse>(getEmailControllerRetryEmailUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emailControllerRetryEmailBody,)
+  }
+);}
+
+
+
+/**
+ * Dismiss a failed email so it is no longer shown as an error.
+ * @summary Dismiss a failed email
+ */
+export type emailControllerDismissEmailResponse201 = {
+  data: EmailControllerDismissEmail201
+  status: 201
+}
+    
+export type emailControllerDismissEmailResponseSuccess = (emailControllerDismissEmailResponse201) & {
+  headers: Headers;
+};
+;
+
+export type emailControllerDismissEmailResponse = (emailControllerDismissEmailResponseSuccess)
+
+export const getEmailControllerDismissEmailUrl = (id: string,) => {
+
+
+  
+
+  return `/emails/${id}/dismiss`
+}
+
+export const emailControllerDismissEmail = async (id: string,
+    emailControllerDismissEmailBody?: EmailControllerDismissEmailBody, options?: RequestInit): Promise<emailControllerDismissEmailResponse> => {
+  
+  return customFetch<emailControllerDismissEmailResponse>(getEmailControllerDismissEmailUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      emailControllerDismissEmailBody,)
+  }
+);}
+
+
+
+/**
  * Retrieve a list of payments with optional filters for days and allocation status.
  * @summary Find All Payments
  */
@@ -12399,7 +12599,7 @@ export const purchaseOrdersControllerFindReturnableLines = async (params: Purcha
 
 
 /**
- * Retrieve a specific purchase order.
+ * Retrieve detailed information about a specific purchase order.
  * @summary Get Purchase Order
  */
 export type purchaseOrdersControllerFindOneResponse200 = {
@@ -12414,26 +12614,17 @@ export type purchaseOrdersControllerFindOneResponseSuccess = (purchaseOrdersCont
 
 export type purchaseOrdersControllerFindOneResponse = (purchaseOrdersControllerFindOneResponseSuccess)
 
-export const getPurchaseOrdersControllerFindOneUrl = (id: string,
-    params?: PurchaseOrdersControllerFindOneParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getPurchaseOrdersControllerFindOneUrl = (id: string,) => {
 
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
 
-  const stringifiedParams = normalizedParams.toString();
+  
 
-  return stringifiedParams.length > 0 ? `/purchase-orders/${id}?${stringifiedParams}` : `/purchase-orders/${id}`
+  return `/purchase-orders/${id}`
 }
 
-export const purchaseOrdersControllerFindOne = async (id: string,
-    params?: PurchaseOrdersControllerFindOneParams, options?: RequestInit): Promise<purchaseOrdersControllerFindOneResponse> => {
+export const purchaseOrdersControllerFindOne = async (id: string, options?: RequestInit): Promise<purchaseOrdersControllerFindOneResponse> => {
   
-  return customFetch<purchaseOrdersControllerFindOneResponse>(getPurchaseOrdersControllerFindOneUrl(id,params),
+  return customFetch<purchaseOrdersControllerFindOneResponse>(getPurchaseOrdersControllerFindOneUrl(id),
   {      
     ...options,
     method: 'GET'
@@ -15318,128 +15509,6 @@ export const eventsControllerPublish = async (publishEventDto: PublishEventDto, 
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       publishEventDto,)
-  }
-);}
-
-
-
-/**
- * List emails in the outbox queue.
- * @summary List emails
- */
-export type emailControllerListEmailsResponse200 = {
-  data: EmailControllerListEmails200Item[]
-  status: 200
-}
-    
-export type emailControllerListEmailsResponseSuccess = (emailControllerListEmailsResponse200) & {
-  headers: Headers;
-};
-;
-
-export type emailControllerListEmailsResponse = (emailControllerListEmailsResponseSuccess)
-
-export const getEmailControllerListEmailsUrl = (params?: EmailControllerListEmailsParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/emails?${stringifiedParams}` : `/emails`
-}
-
-export const emailControllerListEmails = async (params?: EmailControllerListEmailsParams, options?: RequestInit): Promise<emailControllerListEmailsResponse> => {
-  
-  return customFetch<emailControllerListEmailsResponse>(getEmailControllerListEmailsUrl(params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Retry sending a failed email.
- * @summary Retry a failed email
- */
-export type emailControllerRetryEmailResponse201 = {
-  data: EmailControllerRetryEmail201
-  status: 201
-}
-    
-export type emailControllerRetryEmailResponseSuccess = (emailControllerRetryEmailResponse201) & {
-  headers: Headers;
-};
-;
-
-export type emailControllerRetryEmailResponse = (emailControllerRetryEmailResponseSuccess)
-
-export const getEmailControllerRetryEmailUrl = (id: string,) => {
-
-
-  
-
-  return `/emails/${id}/retry`
-}
-
-export const emailControllerRetryEmail = async (id: string,
-    emailControllerRetryEmailBody?: EmailControllerRetryEmailBody, options?: RequestInit): Promise<emailControllerRetryEmailResponse> => {
-  
-  return customFetch<emailControllerRetryEmailResponse>(getEmailControllerRetryEmailUrl(id),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      emailControllerRetryEmailBody,)
-  }
-);}
-
-
-
-/**
- * Dismiss a failed email so it is no longer shown as an error.
- * @summary Dismiss a failed email
- */
-export type emailControllerDismissEmailResponse201 = {
-  data: EmailControllerDismissEmail201
-  status: 201
-}
-    
-export type emailControllerDismissEmailResponseSuccess = (emailControllerDismissEmailResponse201) & {
-  headers: Headers;
-};
-;
-
-export type emailControllerDismissEmailResponse = (emailControllerDismissEmailResponseSuccess)
-
-export const getEmailControllerDismissEmailUrl = (id: string,) => {
-
-
-  
-
-  return `/emails/${id}/dismiss`
-}
-
-export const emailControllerDismissEmail = async (id: string,
-    emailControllerDismissEmailBody?: EmailControllerDismissEmailBody, options?: RequestInit): Promise<emailControllerDismissEmailResponse> => {
-  
-  return customFetch<emailControllerDismissEmailResponse>(getEmailControllerDismissEmailUrl(id),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      emailControllerDismissEmailBody,)
   }
 );}
 

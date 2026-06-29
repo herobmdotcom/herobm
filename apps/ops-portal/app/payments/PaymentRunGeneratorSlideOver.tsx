@@ -284,7 +284,7 @@ export function PaymentRunGeneratorSlideOver({
         <div className="px-6 pt-6 pb-2 z-10">
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('targetDate')}
               </label>
               <input
@@ -296,7 +296,7 @@ export function PaymentRunGeneratorSlideOver({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('bankAccount')}
               </label>
               <select
@@ -317,7 +317,7 @@ export function PaymentRunGeneratorSlideOver({
           
           <div className="flex items-end gap-3 mt-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('autoSelectByBudget')}
               </label>
               <input

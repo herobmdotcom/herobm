@@ -43,6 +43,9 @@ import {
   goodsReceived,
   goodsReceivedLines,
   purchaseOrderLineItems,
+  transferOrders,
+  transferOrderReceipts,
+  transferOrderReceiptLines,
 } from '../drizzle/herobm-core-schema';
 import { randomUUID } from 'crypto';
 import { emitEvent } from '../common/emit-event';
@@ -1155,9 +1158,49 @@ export class InventoryService {
       )
       .where(and(...retConditions));
 
-    const [grLines, retLines] = await Promise.all([grQb, retQb]);
+    // 3. Transfer Receipts
+    const toConditions = [
+      inArray(transferOrderReceiptLines.putawayStatus, [
+        PUTAWAY_STATUS.PENDING_PUTAWAY,
+        PUTAWAY_STATUS.QUARANTINED,
+      ]),
+    ];
+    if (locationId) {
+      toConditions.push(eq(transferOrders.destinationLocationId, locationId));
+    }
 
-    const combined = [...grLines, ...retLines].sort((a, b) => {
+    const toQb = this.db
+      .select({
+        id: transferOrderReceiptLines.receiptLineId,
+        sourceType: sql<'transfer_receipt'>`'transfer_receipt'`,
+        referenceNumber: transferOrderReceipts.receiptNumber,
+        productId: transferOrderReceiptLines.productId,
+        productName: products.name,
+        productNumber: products.productNumber,
+        quantity: transferOrderReceiptLines.quantity,
+        putawayStatus: transferOrderReceiptLines.putawayStatus,
+        locationId: transferOrders.destinationLocationId,
+        createdOn: transferOrderReceipts.createdOn,
+        sourceBinCode: sql`CASE WHEN ${transferOrderReceiptLines.putawayStatus} = 'quarantined' THEN 'QUARANTINE' ELSE 'RECEIVING' END`,
+      })
+      .from(transferOrderReceiptLines)
+      .innerJoin(
+        transferOrderReceipts,
+        eq(transferOrderReceiptLines.receiptId, transferOrderReceipts.receiptId),
+      )
+      .innerJoin(
+        transferOrders,
+        eq(transferOrderReceipts.transferOrderId, transferOrders.transferOrderId),
+      )
+      .innerJoin(
+        products,
+        eq(transferOrderReceiptLines.productId, products.productId),
+      )
+      .where(and(...toConditions));
+
+    const [grLines, retLines, toLines] = await Promise.all([grQb, retQb, toQb]);
+
+    const combined = [...grLines, ...retLines, ...toLines].sort((a, b) => {
       const dateA = a.createdOn ? new Date(a.createdOn).getTime() : 0;
       const dateB = b.createdOn ? new Date(b.createdOn).getTime() : 0;
       return dateB - dateA; // descending
@@ -1230,6 +1273,45 @@ export class InventoryService {
               ? 'QUARANTINE'
               : 'RECEIVING';
           uomCode = grLine.uomCode || grLine.baseUom || 'EA';
+        } else if (lineDto.sourceType === 'transfer_receipt') {
+          const [toLine] = await tx
+            .select({
+              line: transferOrderReceiptLines,
+              locationId: transferOrders.destinationLocationId,
+              receiptNumber: transferOrderReceipts.receiptNumber,
+              baseUom: products.baseUom,
+            })
+            .from(transferOrderReceiptLines)
+            .innerJoin(
+              transferOrderReceipts,
+              eq(transferOrderReceiptLines.receiptId, transferOrderReceipts.receiptId),
+            )
+            .innerJoin(
+              transferOrders,
+              eq(transferOrderReceipts.transferOrderId, transferOrders.transferOrderId),
+            )
+            .leftJoin(
+              products,
+              eq(transferOrderReceiptLines.productId, products.productId),
+            )
+            .where(eq(transferOrderReceiptLines.receiptLineId, lineDto.lineId))
+            .limit(1);
+
+          if (!toLine)
+            throw new NotFoundException(`Line ${lineDto.lineId} not found`);
+
+          locationId = toLine.locationId;
+          productId = toLine.line.productId;
+          putawayStatus = toLine.line.putawayStatus;
+          referenceNumber = toLine.receiptNumber;
+          recordSourceType = 'TRANSFER_IN';
+          recordSourceId = toLine.line.receiptId;
+          linePrefix = toLine.line.receiptLineId.substring(0, 4);
+          sourceBinCode =
+            putawayStatus === PUTAWAY_STATUS.QUARANTINED
+              ? 'QUARANTINE'
+              : 'RECEIVING';
+          uomCode = toLine.baseUom || 'EA';
         } else {
           // sales_return
           const [retLine] = await tx
@@ -1367,6 +1449,13 @@ export class InventoryService {
             .update(goodsReceivedLines)
             .set({ putawayStatus: PUTAWAY_STATUS.COMPLETED })
             .where(eq(goodsReceivedLines.goodsReceivedLineId, lineDto.lineId));
+        } else if (lineDto.sourceType === 'transfer_receipt') {
+          await tx
+            .update(transferOrderReceiptLines)
+            .set({ putawayStatus: PUTAWAY_STATUS.COMPLETED })
+            .where(
+              eq(transferOrderReceiptLines.receiptLineId, lineDto.lineId),
+            );
         } else {
           await tx
             .update(salesOrderReturnLines)

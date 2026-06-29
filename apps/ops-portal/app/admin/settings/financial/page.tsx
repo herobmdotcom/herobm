@@ -1024,7 +1024,6 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
         <EntityHeader
           title={tSettings('title') + ' - ' + tCommon('financial')}
           subtitle={tSettings('subtitle')}
-          onBack={() => router.push('/')}
           actions={
             <div className="flex items-center gap-2">
               <PageNav sections={navSections} />

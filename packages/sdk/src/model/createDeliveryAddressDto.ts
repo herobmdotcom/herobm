@@ -9,6 +9,7 @@
 export interface CreateDeliveryAddressDto {
   customerId: string;
   addressName?: string;
+  companyName?: string;
   recipientName?: string;
   recipientPhone?: string;
   addressLine1: string;

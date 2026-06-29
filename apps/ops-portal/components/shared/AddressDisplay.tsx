@@ -1,6 +1,7 @@
 import React from 'react';
 
 export interface AddressDisplayProps {
+  companyName?: string;
   addressLine1?: string;
   addressLine2?: string;
   city?: string;
@@ -22,6 +23,7 @@ export function getCountryName(countryCode?: string): string {
 }
 
 export const AddressDisplay: React.FC<AddressDisplayProps> = ({
+  companyName,
   addressLine1,
   addressLine2,
   city,
@@ -35,6 +37,11 @@ export const AddressDisplay: React.FC<AddressDisplayProps> = ({
 
   return (
     <div className="mt-1 text-sm">
+      {companyName && (
+        <div className="font-semibold text-[var(--text-primary)]">
+          {companyName}
+        </div>
+      )}
       {(recipientName || phone) && (
         <div className="text-[var(--text-muted)] mb-1">
           {[recipientName, phone].filter(Boolean).join(' - ')}

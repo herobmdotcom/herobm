@@ -108,7 +108,6 @@ export default function NewProductPage() {
         header={
           <EntityHeader
             title={t('products.buttons.addProduct')}
-            onBack={() => router.push('/products')}
             actions={
               <>
                 <button

@@ -38,6 +38,7 @@ export class DeliveryAddressesService {
       .values({
         customerId: dto.customerId,
         addressName: dto.addressName,
+        companyName: dto.companyName,
         recipientName: dto.recipientName,
         recipientPhone: dto.recipientPhone,
         addressLine1: dto.addressLine1,
@@ -78,6 +79,7 @@ export class DeliveryAddressesService {
       .update(customerDeliveryAddresses)
       .set({
         addressName: dto.addressName,
+        companyName: dto.companyName,
         recipientName: dto.recipientName,
         recipientPhone: dto.recipientPhone,
         addressLine1: dto.addressLine1,

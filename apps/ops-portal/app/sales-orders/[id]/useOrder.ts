@@ -51,7 +51,6 @@ export function useOrder(id: string) {
         if (msg) toast.error(msg);
     };
     const [saving, setSaving] = useState(false);
-    const [copying, setCopying] = useState(false);
 
     const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
 
@@ -77,7 +76,9 @@ export function useOrder(id: string) {
     /* ── Delivery Addresses & Shipping Notes ─────────────────────── */
     const [customerDeliveryAddresses, setCustomerDeliveryAddresses] = useState<api.DeliveryAddressResponseDto[]>([]);
     const [customerCountry, setCustomerCountry] = useState<string | undefined>(undefined);
+    const [customerName, setCustomerName] = useState<string>('');
     const [editShippingNotes, setEditShippingNotes] = useState('');
+    const [editDeliveryCustomerName, setEditDeliveryCustomerName] = useState('');
     const [editDeliveryName, setEditDeliveryName] = useState('');
     const [editDeliveryPhone, setEditDeliveryPhone] = useState('');
     const [editDeliveryAddressLine1, setEditDeliveryAddressLine1] = useState('');
@@ -131,6 +132,7 @@ export function useOrder(id: string) {
             setEditNotes(orderData?.notes || '');
             setEditFulfillmentLocationId(orderData?.fulfillmentLocationId || '');
             setEditShippingNotes(orderData?.shippingNotes || '');
+            setEditDeliveryCustomerName(orderData?.deliveryCustomerName || '');
             setEditDeliveryName(orderData?.deliveryName || '');
             setEditDeliveryPhone(orderData?.deliveryPhone || '');
             setEditDeliveryAddressLine1(orderData?.deliveryAddressLine1 || '');
@@ -149,10 +151,12 @@ export function useOrder(id: string) {
                         const customer = res.data;
                         setCustomerDeliveryAddresses((customer.deliveryAddresses as unknown as api.DeliveryAddressResponseDto[]) || []);
                         setCustomerCountry(customer.billingAddressCountry || undefined);
+                        setCustomerName(customer.name || '');
                     })
                     .catch(() => {
                         setCustomerDeliveryAddresses([]);
                         setCustomerCountry(undefined);
+                        setCustomerName('');
                     });
             }
 
@@ -200,14 +204,13 @@ export function useOrder(id: string) {
 
     // Load returns and invoices when order state involves invoicing
     useEffect(() => {
-        if ([SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.LEGACY, SALES_ORDER_STATE.PICKING, SALES_ORDER_STATE.SHIPPED].some(s => s === order?.stateCode)) {
+        if ([SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.PICKING, SALES_ORDER_STATE.SHIPPED].some(s => s === order?.stateCode)) {
             loadInvoices();
         }
         if ([
             SALES_ORDER_STATE.PICKING,
             SALES_ORDER_STATE.SHIPPED,
-            SALES_ORDER_STATE.INVOICED, 
-            SALES_ORDER_STATE.LEGACY
+            SALES_ORDER_STATE.INVOICED
         ].some(s => s === order?.stateCode)) {
             loadReturns();
         }
@@ -236,6 +239,7 @@ export function useOrder(id: string) {
             editNotes !== (order.notes || '') ||
             editFulfillmentLocationId !== (order.fulfillmentLocationId || '') ||
             editShippingNotes !== (order.shippingNotes || '') ||
+            editDeliveryCustomerName !== (order.deliveryCustomerName || '') ||
             editDeliveryName !== (order.deliveryName || '') ||
             editDeliveryPhone !== (order.deliveryPhone || '') ||
             editDeliveryAddressLine1 !== (order.deliveryAddressLine1 || '') ||
@@ -246,8 +250,8 @@ export function useOrder(id: string) {
             editDeliveryCountry !== (order.deliveryCountry || '');
         setHeaderDirty(changed);
     }, [
-        editName, editPO, editNotes, editFulfillmentLocationId,
-        editShippingNotes, editDeliveryName, editDeliveryPhone,
+        editName, editPO, editNotes,        editFulfillmentLocationId, editNotes,
+        editShippingNotes, editDeliveryCustomerName, editDeliveryName, editDeliveryPhone,
         editDeliveryAddressLine1, editDeliveryAddressLine2,
         editDeliveryCity, editDeliveryState, editDeliveryPostalCode, editDeliveryCountry,
         order
@@ -266,6 +270,7 @@ export function useOrder(id: string) {
                 notes: editNotes ?? undefined,
                 fulfillmentLocationId: editFulfillmentLocationId || undefined, // keep || for UUID to prevent "" errors
                 shippingNotes: editShippingNotes ?? undefined,
+                deliveryCustomerName: editDeliveryCustomerName ?? undefined,
                 deliveryName: editDeliveryName ?? undefined,
                 deliveryPhone: editDeliveryPhone ?? undefined,
                 deliveryAddressLine1: editDeliveryAddressLine1 ?? undefined,
@@ -347,34 +352,7 @@ export function useOrder(id: string) {
         }
     };
 
-    const copyOrder = async () => {
-        if (!order) return;
-        setCopying(true);
-        try {
-            const res = await api.ordersControllerCreate({
-                salesOrderId: crypto.randomUUID(),
-                name: order.name ? `Copy of ${order.name}` : undefined,
-                customerId: order.customerId || '',
-                customerOrderNumber: order.customerOrderNumber || undefined,
-                notes: order.notes || undefined,
-                fulfillmentLocationId: order.fulfillmentLocationId || undefined,
-                lines: order.lines.map((l) => ({
-                    productId: l.productId && l.productId !== '' ? l.productId : '00000000-0000-0000-0000-000000000000',
-                    productDescription: l.productDescription,
-                    quantity: String(l.quantity),
-                    pricePerUnit: String(l.pricePerUnit),
-                    discountPercentage: String(l.discountPercentage || '0'),
-                    taxCategoryId: l.taxCategoryId || undefined,
-                    unitOfMeasure: l.unitOfMeasure || 'EA',
-                })),
-            });
-            router.push(`/sales-orders/${res.data.salesOrderId}`);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : tCommon('errors.failedToCopy'));
-        } finally {
-            setCopying(false);
-        }
-    };
+
 
     const updateLine = async (lineId: string, field: string, value: string) => {
         setSaving(true);
@@ -495,11 +473,11 @@ export function useOrder(id: string) {
     /* ── Computed values ─────────────────────────────────────────── */
 
     const isOrderDetailsEditable =
-        !([SALES_ORDER_STATE.CANCELLED, SALES_ORDER_STATE.LEGACY, SALES_ORDER_STATE.ARCHIVED] as string[]).includes((order?.stateCode as string) ?? '');
+        !([SALES_ORDER_STATE.CANCELLED, SALES_ORDER_STATE.ARCHIVED] as string[]).includes((order?.stateCode as string) ?? '');
 
     const isOrderLinesEditable = order?.stateCode === SALES_ORDER_STATE.DRAFT;
 
-    const isHeaderEditable = order?.stateCode !== SALES_ORDER_STATE.ARCHIVED && order?.stateCode !== SALES_ORDER_STATE.CANCELLED && order?.stateCode !== SALES_ORDER_STATE.LEGACY;
+    const isHeaderEditable = order?.stateCode !== SALES_ORDER_STATE.ARCHIVED && order?.stateCode !== SALES_ORDER_STATE.CANCELLED;
 
     const allowedTransitions = STATE_TRANSITIONS[order?.stateCode ?? ''] || [];
 
@@ -515,7 +493,7 @@ export function useOrder(id: string) {
 
     return {
         // Core
-        order, loading, error, setError, saving, setSaving, copying, locations,
+        order, loading, error, setError, saving, setSaving, locations,
 
         // Header editing
         editName, setEditName, editPO, setEditPO, editNotes, setEditNotes, headerDirty,
@@ -540,13 +518,15 @@ export function useOrder(id: string) {
         allowedTransitions, subtotal, totalTax,
 
         // Mutations
-        saveHeader, changeState, calculateTaxes, archiveOrder, unarchiveOrder, copyOrder,
+        saveHeader, changeState, calculateTaxes, archiveOrder, unarchiveOrder,
         updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
         loadOrder, loadReturns, loadInvoices,
         editFulfillmentLocationId, setEditFulfillmentLocationId,
         customerDeliveryAddresses,
         customerCountry,
+        customerName,
         editShippingNotes, setEditShippingNotes,
+        editDeliveryCustomerName, setEditDeliveryCustomerName,
         editDeliveryName, setEditDeliveryName,
         editDeliveryPhone, setEditDeliveryPhone,
         editDeliveryAddressLine1, setEditDeliveryAddressLine1,

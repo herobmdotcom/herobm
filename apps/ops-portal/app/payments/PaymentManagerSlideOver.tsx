@@ -628,7 +628,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
               <form id="create-payment-form" onSubmit={(e) => { e.preventDefault(); handleCreate(); }} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.type')}</label>
+                    <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">{t('manager.labels.type')}</label>
                     <select 
                       className="input w-full"
                       value={form.paymentType}
@@ -654,7 +654,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.mode')}</label>
+                    <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">{t('manager.labels.mode')}</label>
                     <select 
                       className="input w-full"
                       value={form.modeOfPayment}
@@ -670,7 +670,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                 </div>
                 
                 <div>
-                  <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.reference')}</label>
+                  <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">{t('manager.labels.reference')}</label>
                   <input 
                     type="text"
                     className="input w-full"
@@ -681,7 +681,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.glBank')}</label>
+                  <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">{t('manager.labels.glBank')}</label>
                   <GLAccountSelect 
                     value={form.glAccountBank}
                     onChange={(val, acc) => setForm({
@@ -705,7 +705,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
                 <div>
                   {!form.paymentType.startsWith('direct_') && (
-                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">
+                    <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
                       {form.paymentType.startsWith('customer_') ? t('customer') : t('supplier')}
                     </label>
                   )}
@@ -802,7 +802,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.totalAmount')}</label>
+                    <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">{t('manager.labels.totalAmount')}</label>
                     <div className="relative">
                       <input 
                         type="number"
@@ -821,7 +821,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.date')}</label>
+                    <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">{t('manager.labels.date')}</label>
                     <input 
                       type="date"
                       className="input w-full"

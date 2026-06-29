@@ -136,7 +136,6 @@ export default function NewSupplierPage() {
           <EntityHeader
             title={t('buttons.createSupplier')}
             subtitle={t('management')}
-            onBack={() => router.push('/suppliers')}
             isSaving={submitting}
             isDirty={isValid}
             onSave={handleSubmit}

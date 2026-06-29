@@ -449,13 +449,6 @@ export default function ProductDetailPage() {
           <EntityHeader
         title={product.productNumber}
         subtitle={product.name}
-        onBack={() => {
-          if (window.history.length > 1) {
-            router.back();
-          } else {
-            router.push('/products');
-          }
-        }}
         isSaving={saving}
         badges={
           <>

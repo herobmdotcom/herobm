@@ -153,7 +153,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
       <form id="contact-form" onSubmit={handleSave} className="flex flex-col gap-5 h-full">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
               {t('contactManagement.firstName')} <span className="text-red-500">*</span>
             </label>
             <input
@@ -165,7 +165,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
               {t('contactManagement.lastName')} <span className="text-red-500">*</span>
             </label>
             <input
@@ -179,7 +179,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+          <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
             {t('contactManagement.jobTitle')}
           </label>
           <input
@@ -191,7 +191,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+          <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
             {t('contactManagement.email')}
           </label>
           <input
@@ -204,7 +204,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
               {t('contactManagement.phone')}
             </label>
             <PhoneInput
@@ -220,7 +220,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
               {t('contactManagement.mobile')}
             </label>
             <PhoneInput

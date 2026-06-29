@@ -7,6 +7,7 @@
  */
 import type { InvoiceLineResponseDto } from './invoiceLineResponseDto';
 import type { SalesInvoiceResponseDtoAllocationsItem } from './salesInvoiceResponseDtoAllocationsItem';
+import type { SalesInvoiceResponseDtoEventsItem } from './salesInvoiceResponseDtoEventsItem';
 
 export interface SalesInvoiceResponseDto {
   invoiceId: string;
@@ -24,6 +25,10 @@ export interface SalesInvoiceResponseDto {
   earlyPaymentDiscountDays?: number;
   createdBy: string;
   createdOn: string;
+  invoiceDate?: string;
+  dueDate?: string;
   lines: InvoiceLineResponseDto[];
   allocations?: SalesInvoiceResponseDtoAllocationsItem[];
+  events?: SalesInvoiceResponseDtoEventsItem[];
+  termsDescription?: string;
 }

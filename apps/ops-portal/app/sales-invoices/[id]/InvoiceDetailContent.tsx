@@ -10,9 +10,12 @@ import { formatAmount } from '@/lib/currency';
 import { ValidState } from '@/types/states';
 import Link from 'next/link';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { useSalesInvoice } from './useSalesInvoice';
+import { useSalesInvoice, SalesInvoiceDetails } from './useSalesInvoice';
 import { useAuth } from '@/components/AuthGate';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
+import EntityBanner from '@/components/shared/EntityBanner';
+import ActivityTimeline from '@/components/shared/ActivityTimeline';
+import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
 
 import * as api from '@herobm/sdk';
 import { getErrorMessage, SALES_INVOICE_STATE, calculateEarlyPaymentDiscount } from '@herobm/shared';
@@ -23,7 +26,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
   const t = useTranslations('salesInvoices');
   const { permissions } = useAuth();
   const canManageGL = permissions.some(p => p.resource === 'gl' && p.action === 'write');
-  const { invoice, loading, error } = useSalesInvoice(id);
+  const { invoice, loading, error } = useSalesInvoice(id as string);
   const [cancelling, setCancelling] = React.useState(false);
   const [markingPaid, setMarkingPaid] = React.useState(false);
 
@@ -59,14 +62,92 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
     }
   };
 
+  const isOverdue = invoice.dueDate && new Date(invoice.dueDate) < new Date() && Number(invoice.outstandingAmount) > 0 && invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED;
+
+  const lineColumns: DataTableColumn<SalesInvoiceDetails['lines'][0]>[] = [
+    {
+      id: 'index',
+      header: '#',
+      width: 40,
+      render: (_, i) => <span style={{ color: 'var(--text-muted)' }}>{i + 1}</span>,
+    },
+    {
+      id: 'product',
+      header: t('columns.product'),
+      width: 150,
+      render: (line) => (
+        <Link href={`/products/${line.productId}`} className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+          {line.productNumber}
+        </Link>
+      )
+    },
+    {
+      id: 'description',
+      header: t('columns.description'),
+      render: (line) => line.description || '—',
+    },
+    {
+      id: 'qty',
+      header: t('columns.qty'),
+      width: 90,
+      align: 'right',
+      render: (line) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>{parseFloat(line.quantityInvoiced)}</span>,
+    },
+    {
+      id: 'price',
+      header: t('columns.price'),
+      width: 110,
+      align: 'right',
+      render: (line) => <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatAmount(parseFloat(line.pricePerUnit), invoice.currencyCode)}</span>,
+    },
+    {
+      id: 'amount',
+      header: t('columns.amount'),
+      width: 110,
+      align: 'right',
+      render: (line) => (
+        <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+          {formatAmount(parseFloat(line.amount), invoice.currencyCode)}
+        </span>
+      ),
+    }
+  ];
+
+  const linesFooter = (
+    <>
+      <tr style={{ borderTop: '2px solid var(--border)' }}>
+        <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+          {tCommon('subtotal')}
+        </td>
+        <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+          {formatAmount(parseFloat(invoice.totalAmount) - parseFloat(invoice.taxAmount), invoice.currencyCode)}
+        </td>
+      </tr>
+      <tr>
+        <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+          {tCommon('tax')}
+        </td>
+        <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+          {formatAmount(parseFloat(invoice.taxAmount), invoice.currencyCode)}
+        </td>
+      </tr>
+      <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
+        <td colSpan={5} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+          {tCommon('total')}
+        </td>
+        <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
+          {formatAmount(parseFloat(invoice.totalAmount), invoice.currencyCode)}
+        </td>
+      </tr>
+    </>
+  );
+
   return (
     <DetailsLayout
       header={
         <EntityHeader
           title={invoice.invoiceNumber}
           subtitle={`Customer: ${invoice.customerName}`}
-          onBack={() => router.push('/sales-invoices')}
-          badges={<StateBadge state={invoice.stateCode as ValidState} />}
           actions={
             <div className="flex items-center gap-2">
 
@@ -85,6 +166,15 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
       }
     >
       <div className="flex flex-col gap-3">
+        {isOverdue && (
+          <div className="px-4 lg:px-6 pt-4">
+            <EntityBanner
+              type="error"
+              title="Invoice Overdue"
+              description={`This invoice is overdue by ${Math.floor((new Date().getTime() - new Date(invoice.dueDate!).getTime()) / (1000 * 3600 * 24))} days. The outstanding balance is ${formatAmount(parseFloat(invoice.outstandingAmount), invoice.currencyCode)}.`}
+            />
+          </div>
+        )}
         <div className="card">
           <h3 className="section-heading flex items-center gap-2 mb-4">
             { }
@@ -136,8 +226,15 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
                 {t('date')}
               </label>
-              <div className="text-sm">{new Date(invoice.createdOn).toLocaleDateString()}</div>
+              <div className="text-sm">{new Date(invoice.invoiceDate || invoice.createdOn).toLocaleDateString()}</div>
             </div>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+                Trading Terms
+              </label>
+              <div className="text-sm">{invoice.termsDescription || '—'}</div>
+            </div>
+
             {invoice.earlyPaymentDiscount != null && invoice.earlyPaymentDiscountDays != null && (
               <div>
                 <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
@@ -182,84 +279,66 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           </div>
         </div>
 
+
+
+        {/* Status Card */}
+        <div className="card">
+          <h3 className="section-heading mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined shrink-0">info</span>
+            <span>Invoice Status</span>
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Status</label>
+              {isOverdue ? (
+                <span className="badge badge-overdue">{tCommon('states.overdue')}</span>
+              ) : (
+                <StateBadge state={invoice.stateCode as ValidState} />
+              )}
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Total Due</label>
+              <div className="text-lg font-semibold text-[var(--text-primary)]">
+                {formatAmount(parseFloat(invoice.outstandingAmount), invoice.currencyCode)}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Total Paid</label>
+              <div className="text-lg font-semibold text-[var(--text-primary)]">
+                {formatAmount(parseFloat(invoice.totalAmount) - parseFloat(invoice.outstandingAmount), invoice.currencyCode)}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Due Date</label>
+              <div className={`text-lg font-semibold ${isOverdue ? 'text-red-600' : 'text-[var(--text-primary)]'}`}>
+                {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading flex items-center gap-2">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
+              {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
               <span className="material-symbols-outlined shrink-0">list</span>
               <span>{t('lineItems')}</span>
             </h3>
           </div>
-          {/* Desktop Table */}
-          <div className="hidden sm:block overflow-x-auto">
-            <table className="table-lines min-w-[600px]">
-              <thead>
-              <tr>
-                <th style={{ width: 40 }}>#</th>
-                <th style={{ width: 150 }}>{t('columns.product')}</th>
-                <th>{t('columns.description')}</th>
-                <th style={{ width: 90, textAlign: 'right' }}>{t('columns.qty')}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{t('columns.price')}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{t('columns.amount')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoice.lines?.map((line, idx) => (
-                <tr key={line.lineId}>
-                  <td style={{ color: 'var(--text-muted)' }}>{idx + 1}</td>
-                  <td>
-                    <div className="font-semibold" style={{ color: 'var(--accent)' }}>
-                      {line.productNumber}
-                    </div>
-                  </td>
-                  <td>{line.description || '—'}</td>
-                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                    {parseFloat(line.quantityInvoiced)}
-                  </td>
-                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                    {formatAmount(parseFloat(line.pricePerUnit), invoice.currencyCode)}
-                  </td>
-                  <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                    {formatAmount(parseFloat(line.amount), invoice.currencyCode)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr style={{ borderTop: '2px solid var(--border)' }}>
-                <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  {tCommon('subtotal')}
-                </td>
-                <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                  {formatAmount(parseFloat(invoice.totalAmount) - parseFloat(invoice.taxAmount), invoice.currencyCode)}
-                </td>
-              </tr>
-              <tr>
-                <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  {tCommon('tax')}
-                </td>
-                <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                  {formatAmount(parseFloat(invoice.taxAmount), invoice.currencyCode)}
-                </td>
-              </tr>
-              <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
-                <td colSpan={5} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
-                  {tCommon('total')}
-                </td>
-                <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
-                  {formatAmount(parseFloat(invoice.totalAmount), invoice.currencyCode)}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-          </div>
-
-          {/* Mobile Cards */}
-          <div className="flex flex-col lg:hidden mt-2">
-            {invoice.lines?.map((line, idx) => (
+          {/* Line Items Table */}
+          <DataTable
+            data={invoice.lines || []}
+            columns={lineColumns}
+            keyExtractor={(line) => line.lineId}
+            emptyMessage={tCommon('orderReadView.noLineItems')}
+            footer={linesFooter}
+            mobileCard={(line, idx) => (
               <MobileLineItemCard
-                key={line.lineId}
-                title={line.productNumber}
+                title={
+                  <Link href={`/products/${line.productId}`} className="hover:underline">
+                    {line.productNumber}
+                  </Link>
+                }
                 subtitle={line.description || '—'}
                 topRightBadge={`#${idx + 1}`}
                 details={[
@@ -278,15 +357,12 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                   }
                 ]}
               />
-            ))}
-            {(!invoice.lines || invoice.lines.length === 0) && (
-              <div className="text-center text-sm text-[var(--text-muted)] py-4 border border-[var(--border)] rounded-lg">
-                {tCommon('orderReadView.noLineItems')}
-              </div>
             )}
-            
-            {/* Mobile Summary */}
-            <div className="mt-2 bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4">
+          />
+
+          {/* Mobile Summary */}
+          <div className="flex flex-col lg:hidden mt-2">
+            <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4">
               <table className="w-full text-sm">
                 <tbody>
                   <tr>
@@ -367,6 +443,18 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               </p>
             </div>
           )}
+        </div>
+
+        <div className="card">
+          <ActivityTimeline 
+            events={invoice.events && invoice.events.length > 0 ? invoice.events : [{
+              eventId: `import-${invoice.invoiceId}`,
+              eventType: 'imported',
+              payload: { note: 'Invoice imported from legacy system' },
+              actor: 'System',
+              createdOn: invoice.createdOn
+            }]} 
+          />
         </div>
       </div>
     </DetailsLayout>

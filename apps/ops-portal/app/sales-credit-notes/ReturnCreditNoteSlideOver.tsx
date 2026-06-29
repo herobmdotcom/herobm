@@ -85,7 +85,7 @@ export default function ReturnCreditNoteSlideOver({
                 </div>
 
                 <div className="form-control w-full">
-                    <label className="label text-sm font-medium">{t('internalNote')}</label>
+                    <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">{t('internalNote')}</label>
                     <textarea 
                         className="textarea textarea-bordered w-full"
                         placeholder="Reason for issuing credit note..."

@@ -153,7 +153,6 @@ export default function NewJournalEntryPage() {
       header={
         <EntityHeader
           title={t('newManualEntry')}
-          onBack={() => router.push('/general-ledger/journal-entries')}
           actions={
             <>
               <button

@@ -130,8 +130,7 @@ export default function ReturnsSection({
                 {!showCreateReturn && [
                     SALES_ORDER_STATE.PICKING,
                     SALES_ORDER_STATE.SHIPPED, 
-                    SALES_ORDER_STATE.INVOICED, 
-                    SALES_ORDER_STATE.LEGACY
+                    SALES_ORDER_STATE.INVOICED
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                 ].includes(order.stateCode as any) && (
                     <button

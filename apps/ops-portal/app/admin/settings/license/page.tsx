@@ -49,7 +49,6 @@ export default function LicensePage() {
         <EntityHeader
           title="License Management"
           subtitle="View system details and apply license keys"
-          onBack={() => router.push('/admin/settings/system')}
           actions={<PageNav sections={navSections} />}
           showPrint={false}
         />

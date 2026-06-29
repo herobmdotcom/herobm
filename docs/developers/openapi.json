@@ -5880,6 +5880,53 @@
         ]
       }
     },
+    "/sales-orders/{id}/email-quote": {
+      "post": {
+        "description": "Generates a Quote PDF and queues it to be emailed to the customer.",
+        "operationId": "OrdersController_emailQuote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailQuoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email queued successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Email Quote",
+        "tags": [
+          "Sales Orders"
+        ]
+      }
+    },
     "/sales-orders/{id}/state": {
       "patch": {
         "description": "Update the processing state of a sales order.",
@@ -6636,7 +6683,7 @@
     },
     "/sales-orders/{id}/shipments": {
       "post": {
-        "description": "Create a new shipment for a sales order.",
+        "description": "Create a new shipment for a sales order or transfer order.",
         "operationId": "OrderShipmentsController_createShipment",
         "parameters": [
           {
@@ -7159,6 +7206,14 @@
         "parameters": [
           {
             "name": "stateCode",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "locationId",
             "required": false,
             "in": "query",
             "schema": {
@@ -7951,6 +8006,14 @@
             }
           },
           {
+            "name": "destinationLocationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "fields",
             "required": false,
             "in": "query",
@@ -8099,6 +8162,41 @@
           }
         },
         "summary": "Update Transfer Order",
+        "tags": [
+          "Transfer Orders"
+        ]
+      }
+    },
+    "/transfers/{id}/shipments": {
+      "get": {
+        "description": "Retrieve all shipments for a specific transfer order.",
+        "operationId": "TransfersController_findShipments",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShipmentResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Find Shipments",
         "tags": [
           "Transfer Orders"
         ]
@@ -10721,6 +10819,160 @@
         ]
       }
     },
+    "/emails": {
+      "get": {
+        "description": "List emails in the outbox queue.",
+        "operationId": "EmailController_listEmails",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of emails",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List emails",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/emails/{id}/retry": {
+      "post": {
+        "description": "Retry sending a failed email.",
+        "operationId": "EmailController_retryEmail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Retry a failed email",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/emails/{id}/dismiss": {
+      "post": {
+        "description": "Dismiss a failed email so it is no longer shown as an error.",
+        "operationId": "EmailController_dismissEmail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Email dismissed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Dismiss a failed email",
+        "tags": [
+          "System"
+        ]
+      }
+    },
     "/payments": {
       "get": {
         "description": "Retrieve a list of payments with optional filters for days and allocation status.",
@@ -12681,22 +12933,13 @@
     },
     "/purchase-orders/{id}": {
       "get": {
-        "description": "Retrieve a specific purchase order.",
+        "description": "Retrieve detailed information about a specific purchase order.",
         "operationId": "PurchaseOrdersController_findOne",
         "parameters": [
           {
             "name": "id",
             "required": true,
             "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "fields",
-            "required": false,
-            "in": "query",
-            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
             "schema": {
               "type": "string"
             }
@@ -15656,160 +15899,6 @@
         ]
       }
     },
-    "/emails": {
-      "get": {
-        "description": "List emails in the outbox queue.",
-        "operationId": "EmailController_listEmails",
-        "parameters": [
-          {
-            "name": "entityType",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "entityId",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of emails",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "List emails",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/emails/{id}/retry": {
-      "post": {
-        "description": "Retry sending a failed email.",
-        "operationId": "EmailController_retryEmail",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {}
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Email updated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {}
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Retry a failed email",
-        "tags": [
-          "System"
-        ]
-      }
-    },
-    "/emails/{id}/dismiss": {
-      "post": {
-        "description": "Dismiss a failed email so it is no longer shown as an error.",
-        "operationId": "EmailController_dismissEmail",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {}
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Email dismissed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {}
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Dismiss a failed email",
-        "tags": [
-          "System"
-        ]
-      }
-    },
     "/user-settings": {
       "get": {
         "description": "Retrieves the settings for the currently authenticated user.",
@@ -16472,6 +16561,38 @@
             "items": {
               "type": "object"
             }
+          },
+          "creditAssessment": {
+            "type": "object",
+            "properties": {
+              "totalInvoiceBalance": {
+                "type": "number"
+              },
+              "overdueInvoiceBalance": {
+                "type": "number"
+              },
+              "glBalance": {
+                "type": "number"
+              },
+              "isOverdue": {
+                "type": "boolean"
+              },
+              "oldestOverdueInvoice": {
+                "type": "string"
+              },
+              "oldestOverdueInvoiceId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "totalInvoiceBalance",
+              "overdueInvoiceBalance",
+              "glBalance",
+              "isOverdue"
+            ]
+          },
+          "effectiveCreditLimit": {
+            "type": "string"
           }
         },
         "required": [
@@ -16533,6 +16654,9 @@
           "creditLimit": {
             "type": "string",
             "nullable": true
+          },
+          "stateCode": {
+            "type": "string"
           }
         },
         "required": [
@@ -16549,7 +16673,8 @@
           "discrepancyAmount",
           "currencyCode",
           "isOnCreditHold",
-          "creditLimit"
+          "creditLimit",
+          "stateCode"
         ]
       },
       "CreditAssessmentResponseDto": {
@@ -16792,9 +16917,6 @@
           "name": {
             "type": "string"
           },
-          "defaultDiscountPercentage": {
-            "type": "string"
-          },
           "defaultArAccountId": {
             "type": "string"
           },
@@ -16848,9 +16970,6 @@
           "name": {
             "type": "string"
           },
-          "defaultDiscountPercentage": {
-            "type": "string"
-          },
           "defaultArAccountId": {
             "type": "string",
             "format": "uuid"
@@ -16897,9 +17016,6 @@
             "type": "string"
           },
           "name": {
-            "type": "string"
-          },
-          "defaultDiscountPercentage": {
             "type": "string"
           },
           "defaultArAccountId": {
@@ -17723,7 +17839,8 @@
             "type": "string",
             "enum": [
               "goods_receipt",
-              "sales_return"
+              "sales_return",
+              "transfer_receipt"
             ]
           },
           "destinationBinId": {
@@ -19399,6 +19516,9 @@
           "apiRateLimit": {
             "type": "string"
           },
+          "creditLimitBehavior": {
+            "type": "object"
+          },
           "taxProviderMappings": {
             "type": "object"
           },
@@ -20452,6 +20572,9 @@
           "shippingNotes": {
             "type": "string"
           },
+          "deliveryCustomerName": {
+            "type": "string"
+          },
           "deliveryName": {
             "type": "string"
           },
@@ -20507,6 +20630,9 @@
           "shippingNotes": {
             "type": "string"
           },
+          "deliveryCustomerName": {
+            "type": "string"
+          },
           "deliveryName": {
             "type": "string"
           },
@@ -20533,16 +20659,43 @@
           }
         }
       },
+      "EmailQuoteDto": {
+        "type": "object",
+        "properties": {
+          "emailAddress": {
+            "type": "string",
+            "format": "email",
+            "description": "The recipient email address"
+          },
+          "subject": {
+            "type": "string",
+            "description": "The email subject"
+          },
+          "body": {
+            "type": "string",
+            "description": "The text body for the email"
+          },
+          "quoteIntroText": {
+            "type": "string",
+            "description": "Text injected into the quote PDF"
+          }
+        },
+        "required": [
+          "emailAddress",
+          "subject",
+          "body"
+        ]
+      },
       "ChangeOrderStateDto": {
         "type": "object",
         "properties": {
+          "discrepanciesAcknowledged": {
+            "type": "boolean"
+          },
           "stateCode": {
             "type": "string"
           },
           "generateBackorders": {
-            "type": "boolean"
-          },
-          "discrepanciesAcknowledged": {
             "type": "boolean"
           }
         },
@@ -20789,6 +20942,9 @@
           "notes": {
             "type": "string"
           },
+          "deliveryCustomerName": {
+            "type": "string"
+          },
           "trackingNumber": {
             "type": "string"
           },
@@ -20807,6 +20963,9 @@
         "type": "object",
         "properties": {
           "notes": {
+            "type": "string"
+          },
+          "deliveryCustomerName": {
             "type": "string"
           },
           "trackingNumber": {
@@ -20951,6 +21110,18 @@
             "nullable": true
           },
           "purchaseOrderState": {
+            "type": "string",
+            "nullable": true
+          },
+          "transferOrderId": {
+            "type": "string",
+            "nullable": true
+          },
+          "transferOrderNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "transferOrderState": {
             "type": "string",
             "nullable": true
           },
@@ -21313,6 +21484,9 @@
           "notes": {
             "type": "string"
           },
+          "shippingNotes": {
+            "type": "string"
+          },
           "createdBy": {
             "type": "string"
           },
@@ -21381,15 +21555,33 @@
           "quantity"
         ]
       },
-      "ReceiveTransferDto": {
+      "ReceiveTransferLineDto": {
         "type": "object",
         "properties": {
-          "destinationBinId": {
+          "transferOrderLineId": {
+            "type": "string"
+          },
+          "quantityReceived": {
             "type": "string"
           }
         },
         "required": [
-          "destinationBinId"
+          "transferOrderLineId",
+          "quantityReceived"
+        ]
+      },
+      "ReceiveTransferDto": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReceiveTransferLineDto"
+            }
+          }
+        },
+        "required": [
+          "lines"
         ]
       },
       "CreateTransferOrderLineDto": {
@@ -21419,6 +21611,9 @@
           "notes": {
             "type": "string"
           },
+          "shippingNotes": {
+            "type": "string"
+          },
           "lines": {
             "type": "array",
             "items": {
@@ -21442,6 +21637,9 @@
             "type": "string"
           },
           "notes": {
+            "type": "string"
+          },
+          "shippingNotes": {
             "type": "string"
           }
         }
@@ -21936,6 +22134,14 @@
             "format": "date-time",
             "type": "string"
           },
+          "invoiceDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "dueDate": {
+            "format": "date-time",
+            "type": "string"
+          },
           "lines": {
             "type": "array",
             "items": {
@@ -21947,6 +22153,15 @@
             "items": {
               "type": "object"
             }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "termsDescription": {
+            "type": "string"
           }
         },
         "required": [
@@ -22013,6 +22228,14 @@
             "type": "string"
           },
           "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "invoiceDate": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "dueDate": {
             "format": "date-time",
             "type": "string"
           },
@@ -25599,6 +25822,9 @@
           "addressName": {
             "type": "string"
           },
+          "companyName": {
+            "type": "string"
+          },
           "recipientName": {
             "type": "string"
           },
@@ -25652,6 +25878,10 @@
             "type": "string"
           },
           "addressName": {
+            "type": "string",
+            "nullable": true
+          },
+          "companyName": {
             "type": "string",
             "nullable": true
           },
@@ -25721,6 +25951,9 @@
         "type": "object",
         "properties": {
           "addressName": {
+            "type": "string"
+          },
+          "companyName": {
             "type": "string"
           },
           "recipientName": {

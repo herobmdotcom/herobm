@@ -8,5 +8,6 @@
 
 export interface UpdateShipmentDto {
   notes?: string;
+  deliveryCustomerName?: string;
   trackingNumber?: string;
 }

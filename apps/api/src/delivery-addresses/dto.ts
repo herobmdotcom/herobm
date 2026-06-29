@@ -20,6 +20,10 @@ export class CreateDeliveryAddressDto {
 
   @IsString()
   @IsOptional()
+  companyName?: string;
+
+  @IsString()
+  @IsOptional()
   recipientName?: string;
 
   @IsString()
@@ -66,6 +70,10 @@ export class UpdateDeliveryAddressDto {
 
   @IsString()
   @IsOptional()
+  companyName?: string;
+
+  @IsString()
+  @IsOptional()
   recipientName?: string;
 
   @IsString()
@@ -109,6 +117,7 @@ export class DeliveryAddressResponseDto {
   id!: string;
   customerId!: string;
   addressName?: string | null;
+  companyName?: string | null;
   recipientName?: string | null;
   recipientPhone?: string | null;
   addressLine1!: string | null;

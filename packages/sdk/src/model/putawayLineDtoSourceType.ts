@@ -13,4 +13,5 @@ export type PutawayLineDtoSourceType = typeof PutawayLineDtoSourceType[keyof typ
 export const PutawayLineDtoSourceType = {
   goods_receipt: 'goods_receipt',
   sales_return: 'sales_return',
+  transfer_receipt: 'transfer_receipt',
 } as const;

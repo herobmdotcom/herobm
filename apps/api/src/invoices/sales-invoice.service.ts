@@ -24,6 +24,7 @@ import {
   glJournalEntries,
   glJournalLines,
   tradingTerms,
+  systemEvents,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -136,6 +137,7 @@ export class SalesInvoiceService {
     let billingAddressLine1: string | null = null;
     let customerTermType: string | null = null;
     let customerTermDays: number | null = null;
+    let customerTermDescription: string | null = null;
     let earlyPaymentDiscount: string | null = null;
     let earlyPaymentDiscountDays: number | null = null;
 
@@ -238,6 +240,7 @@ export class SalesInvoiceService {
               | 'end_of_month'
               | 'cash_on_delivery';
             customerTermDays = term.days;
+            customerTermDescription = `${term.code} - ${term.description}`;
           }
         }
       }
@@ -517,6 +520,7 @@ export class SalesInvoiceService {
           exchangeRate: fx.rate.toString(),
           stateCode: SALES_INVOICE_STATE.DRAFT, // Start in draft and then transition
           notes: dto.notes,
+          termsDescription: customerTermDescription,
           invoiceDate,
           dueDate,
           earlyPaymentDiscount,
@@ -837,9 +841,12 @@ export class SalesInvoiceService {
         currencyCode: salesInvoices.currencyCode,
         stateCode: salesInvoices.stateCode,
         createdOn: salesInvoices.createdOn,
+        dueDate: salesInvoices.dueDate,
+        invoiceDate: salesInvoices.invoiceDate,
         notes: salesOrders.notes, // Or if salesInvoices has its own notes
         earlyPaymentDiscount: salesInvoices.earlyPaymentDiscount,
         earlyPaymentDiscountDays: salesInvoices.earlyPaymentDiscountDays,
+        termsDescription: salesInvoices.termsDescription,
       })
       .from(salesInvoices)
       .innerJoin(
@@ -902,7 +909,13 @@ export class SalesInvoiceService {
         ),
       );
 
-    return { ...invoice, lines, allocations };
+    const events = await this.db
+      .select()
+      .from(systemEvents)
+      .where(eq(systemEvents.entityId, invoiceId))
+      .orderBy(desc(systemEvents.createdOn));
+
+    return { ...invoice, lines, allocations, events };
   }
 
   /**

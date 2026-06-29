@@ -7,6 +7,9 @@ import {
   glJournalLines,
   glAccounts,
   users,
+  salesOrders,
+  salesInvoices,
+  locations,
 } from '../src/drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 import * as crypto from 'crypto';
@@ -206,33 +209,32 @@ describe('Credit Control Lifecycle (e2e)', () => {
     });
 
     const db = app.get(DRIZZLE);
-    const jeId = crypto.randomUUID();
     const entryDate = new Date();
     entryDate.setDate(entryDate.getDate() - 5);
 
-    await db.insert(glJournalEntries).values({
-      journalEntryId: jeId,
-      entryNumber: `JE-E2E-${suffix}`,
-      entryDate: entryDate.toISOString().split('T')[0],
-      sourceType: 'sales_invoice',
-    });
+    const locRes = await db.select().from(locations).limit(1);
+    const locId = locRes[0]?.locationId;
 
-    await db.insert(glJournalLines).values([
-      {
-        journalEntryId: jeId,
-        glAccountId: arAccountId,
-        partyType: 'customer',
-        partyId: customerId,
-        debit: '500.00',
-        credit: '0.00',
-      },
-      {
-        journalEntryId: jeId,
-        glAccountId: revAccountId,
-        debit: '0.00',
-        credit: '500.00',
-      },
-    ]);
+    const [pastOrder] = await db
+      .insert(salesOrders)
+      .values({
+        customerId: customerId,
+        orderNumber: `SO-E2E-${suffix}`,
+        currencyCode: 'USD',
+        fulfillmentLocationId: locId,
+        stateCode: 'invoiced',
+      })
+      .returning();
+
+    await db.insert(salesInvoices).values({
+      salesOrderId: pastOrder.salesOrderId,
+      invoiceNumber: `INV-E2E-${suffix}`,
+      totalAmount: '500.00',
+      outstandingAmount: '500.00',
+      currencyCode: 'USD',
+      stateCode: 'unpaid',
+      dueDate: entryDate,
+    });
 
     // Create Order 1
     const order1Res = await createOrder(customerId, 100);

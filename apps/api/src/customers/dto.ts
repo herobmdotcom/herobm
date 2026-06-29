@@ -134,12 +134,6 @@ export class BaseAccountGroupDto {
   @IsNotEmpty()
   name!: string;
   @IsOptional()
-  @Transform(({ value }) =>
-    value === '' || value === null ? null : String(value),
-  )
-  @IsNumberString()
-  defaultDiscountPercentage?: string;
-  @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   defaultArAccountId?: string;
@@ -229,13 +223,21 @@ export class AccountResponseDto {
   events?: unknown[];
   contacts?: unknown[];
   deliveryAddresses?: unknown[];
+  creditAssessment?: {
+    totalInvoiceBalance: number;
+    overdueInvoiceBalance: number;
+    glBalance: number;
+    isOverdue: boolean;
+    oldestOverdueInvoice?: string;
+    oldestOverdueInvoiceId?: string;
+  };
+  effectiveCreditLimit?: string;
 }
 
 export class AccountGroupResponseDto {
   customerGroupId!: string;
   groupCode!: string;
   name!: string;
-  defaultDiscountPercentage?: string;
   defaultArAccountId?: string;
   defaultRevenueAccountId?: string;
   defaultCostCenterId?: string;
@@ -272,6 +274,7 @@ export class AgedBalanceResponseDto {
   currencyCode!: string;
   isOnCreditHold!: boolean;
   creditLimit!: string | null;
+  stateCode!: string;
 }
 
 export class CreditAssessmentResponseDto {

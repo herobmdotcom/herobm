@@ -336,7 +336,6 @@ export default function UsersPage() {
         <EntityHeader
           title={t('title')}
           subtitle={t('subtitle')}
-          onBack={() => router.push('/')}
           showPrint={false}
         />
       }

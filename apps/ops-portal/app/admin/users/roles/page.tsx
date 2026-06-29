@@ -275,7 +275,6 @@ export default function RolesPage() {
         <EntityHeader
           title="Roles & Permissions"
           subtitle="Manage access control policies and inheritance"
-          onBack={() => router.push('/admin/users')}
           showPrint={false}
         />
       }

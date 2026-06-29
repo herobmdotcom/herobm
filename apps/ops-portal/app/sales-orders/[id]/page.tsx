@@ -35,7 +35,8 @@ import InvoicesSection from './InvoicesSection';
 import ReturnsSection from './ReturnsSection';
 import FulfillmentSection from './FulfillmentSection';
 import ShipmentsSection from './ShipmentsSection';
-import QuoteGenerationDialog from './QuoteGenerationDialog';
+import EmailQuoteDialog from './EmailQuoteDialog';
+
 import { formatLocationDisplay } from '@/lib/formatters';
 import OrderDetailsCard from './OrderDetailsCard';
 import OverrideCreditHoldModal from './OverrideCreditHoldModal';
@@ -76,6 +77,9 @@ interface BackorderItem {
     lineNumber?: number | string;
     salesOrderLineId?: string;
     purchaseOrderState?: string;
+    transferOrderId?: string;
+    transferOrderNumber?: string;
+    transferOrderState?: string;
 }
 
 function isBackTransition(
@@ -150,7 +154,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     const [isAddressSlideOverOpen, setIsAddressSlideOverOpen] = useState(false);
 
     /* ── Quote Dialog ──────────────────────────────────────────────────────── */
-    const [showQuoteDialog, setShowQuoteDialog] = useState(false);
+    const [showEmailQuoteDialog, setShowEmailQuoteDialog] = useState(false);
 
     /* ── Discrepancy Modal ─────────────────────────────────────────────────── */
     const [showDiscrepancyModal, setShowDiscrepancyModal] = useState(false);
@@ -197,7 +201,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
     // After null guard, destructure everything for JSX use
     const {
-        order, error, setError, saving, copying, locations,
+        order, error, setError, saving, locations,
         editName, setEditName, editPO, setEditPO, editNotes, setEditNotes, editFulfillmentLocationId, setEditFulfillmentLocationId, headerDirty,
         taxCategories,
         activeTab, setActiveTab, inventoryData, inventoryLoading,
@@ -205,13 +209,15 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
         invoices, pickingSummary,
         isOrderDetailsEditable, isOrderLinesEditable,
         allowedTransitions, subtotal, totalTax,
-        saveHeader, changeState, calculateTaxes, archiveOrder, unarchiveOrder, copyOrder,
+        saveHeader, changeState, calculateTaxes, archiveOrder, unarchiveOrder,
         updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
         loadOrder, loadReturns, loadInvoices,
         discrepanciesAcknowledged, setDiscrepanciesAcknowledged,
         customerDeliveryAddresses,
         customerCountry,
+        customerName,
         editShippingNotes, setEditShippingNotes,
+        editDeliveryCustomerName, setEditDeliveryCustomerName,
         editDeliveryName, setEditDeliveryName,
         editDeliveryPhone, setEditDeliveryPhone,
         editDeliveryAddressLine1, setEditDeliveryAddressLine1,
@@ -258,7 +264,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
         SALES_ORDER_STATE.PICKING, 
         SALES_ORDER_STATE.SHIPPED, 
         SALES_ORDER_STATE.INVOICED, 
-        SALES_ORDER_STATE.LEGACY, 
+        'legacy',
         SALES_ORDER_STATE.ARCHIVED
     ];
     const sections = {
@@ -289,6 +295,14 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     );
     const gapMap = new Map(gaps.map(g => [g.salesOrderLineId, g]));
 
+    const isDraft = order.stateCode === SALES_ORDER_STATE.DRAFT;
+    const isPreConfirmation = order.stateCode === SALES_ORDER_STATE.DRAFT || order.stateCode === SALES_ORDER_STATE.QUOTED;
+    const isShipped = ([SALES_ORDER_STATE.SHIPPED, SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.ARCHIVED, SALES_ORDER_STATE.CANCELLED] as string[]).includes(order.stateCode as string);
+    const activeBackorders = new Set((order.backorders || [])
+        .filter((bo: { stateCode?: string; productId?: string }) => bo.stateCode === BACKORDER_STATE.PENDING_SUPPLY || bo.stateCode === BACKORDER_STATE.AWAITING_RECEIPT)
+        .map((bo: { stateCode?: string; productId?: string }) => bo.productId)
+        .filter(Boolean));
+
     return (
         <>
             <DetailsLayout
@@ -296,13 +310,6 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     <EntityHeader
                         title={order.orderNumber}
                         subtitle={order.name === order.orderNumber ? null : (order.name || tSales('untitledOrder'))}
-                        onBack={() => {
-                          if (window.history.length > 1) {
-                            router.back();
-                          } else {
-                            router.push('/sales-orders');
-                          }
-                        }}
                         isSaving={saving}
                         badges={order.stateCode ? <StateBadge state={order.stateCode as ValidState} /> : ''}
                         nav={<PageNav sections={visibleSections} />}
@@ -366,7 +373,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                 </div>
             )}
 
-            {order.isCreditBlocked && (
+            {!isShipped && order.isCreditBlocked && (
                 <EntityBanner
                     type="error"
                     title={tSales('creditHold.activeTitle')}
@@ -383,7 +390,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     }
                 />
             )}
-            {!order.isCreditBlocked && order.creditHoldOverrideAt && (
+            {!isShipped && !order.isCreditBlocked && order.creditHoldOverrideAt && (
                 <EntityBanner
                     type="warning"
                     title={tSales('creditHold.overriddenTitle')}
@@ -405,15 +412,15 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         setEditNotes={setEditNotes}
                         saveHeader={saveHeader}
                         locations={locations}
-                        copyOrder={copyOrder}
-                        copying={copying}
-                        onQuoteClick={() => setShowQuoteDialog(true)}
+                        onEmailQuoteClick={() => setShowEmailQuoteDialog(true)}
                         reportError={reportError}
                         setError={setError}
                         customerDeliveryAddresses={customerDeliveryAddresses}
                         customerCountry={customerCountry}
                         editShippingNotes={editShippingNotes}
                         setEditShippingNotes={setEditShippingNotes}
+                        editDeliveryCustomerName={editDeliveryCustomerName}
+                        setEditDeliveryCustomerName={setEditDeliveryCustomerName}
                         editDeliveryName={editDeliveryName}
                         setEditDeliveryName={setEditDeliveryName}
                         editDeliveryPhone={editDeliveryPhone}
@@ -583,16 +590,23 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 align: 'right',
                                 render: (line: OrderLine) => {
                                     const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
-                                    const hasGap = gapMap.has(line.salesOrderLineId);
-                                    const warningIcon = hasGap ? (
+                                    
+                                    const hasGap = isPreConfirmation && gapMap.has(line.salesOrderLineId);
+                                    const isBackordered = !isPreConfirmation && line.productId && activeBackorders.has(line.productId);
+                                    const hasWarning = hasGap || isBackordered;
+                                    
+                                    const warningTitle = hasGap ? tSales('availabilityStatus.shortage') : tSales('availabilityStatus.backordered');
+                                    const warningColor = hasGap ? 'var(--danger)' : 'var(--warning)';
+                                    const warningIconStr = hasGap ? 'warning' : 'schedule';
+
+                                    const warningIcon = hasWarning ? (
                                         <>
                                             <span 
                                                 className="material-symbols-outlined" 
-                                                style={{ fontSize: 14, color: 'var(--danger)', position: isEditable ? 'absolute' : 'relative', left: isEditable ? -16 : undefined, top: isEditable ? '50%' : undefined, transform: isEditable ? 'translateY(-50%)' : undefined, verticalAlign: !isEditable ? 'middle' : undefined, marginRight: !isEditable ? 4 : 0, zIndex: 1 }}
-                                                title={tSales('availabilityStatus.shortage')}
+                                                style={{ fontSize: 14, color: warningColor, position: isEditable ? 'absolute' : 'relative', left: isEditable ? -16 : undefined, top: isEditable ? '50%' : undefined, transform: isEditable ? 'translateY(-50%)' : undefined, verticalAlign: !isEditable ? 'middle' : undefined, marginRight: !isEditable ? 4 : 0, zIndex: 1 }}
+                                                title={warningTitle}
                                             >
-                                                {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                                                {'warning'}
+                                                {warningIconStr}
                                             </span>
                                         </>
                                     ) : null;
@@ -606,7 +620,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     type="number"
                                                     min="0"
                                                     step="1"
-                                                    style={{ width: '100%', textAlign: 'right', borderColor: hasGap ? 'var(--danger)' : undefined }}
+                                                    style={{ width: '100%', textAlign: 'right', borderColor: hasWarning ? warningColor : undefined }}
                                                     defaultValue={line.quantity}
                                                     key={`qty-${line.salesOrderLineId}-${line.quantity}`}
                                                     onBlur={(e) => {
@@ -937,11 +951,20 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                             <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>{tSales('loadingInventory')}</p>
                         ) : (
                             <DataTable
-                                data={order.lines}
+                                data={(order.lines || []).filter((line: OrderLine) => {
+                                    const isCustom = !line.productId || line.productId === '00000000-0000-0000-0000-000000000000';
+                                    return line.productType !== 'non-stock' && line.productType !== 'service' && line.productType !== 'freight' && !isCustom;
+                                })}
                                 keyExtractor={(line: OrderLine, idx: number) => line.salesOrderLineId || idx}
+                                emptyMessage={tSales('noLineItemsShort')}
                                 columns={[
                                     { header: tSales('columns.lineNumber'), width: 40 },
                                     { header: tSales('columns.product') },
+                                    { header: tSales('columns.description') },
+                                    { header: tSales('columns.qty'), align: 'right' },
+                                    { header: tSales('columns.status') },
+                                    { header: tSales('columns.location'), align: 'right' },
+                                    { header: tSales('availabilityTable.avail'), align: 'right' },
                                 ]}
                                 renderCustomRow={(line: OrderLine, idx: number) => {
                                     const lineInventory = inventoryData.filter(
@@ -952,30 +975,6 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     );
                                     const gap = gapMap.get(line.salesOrderLineId);
                                     const canFulfil = !gap;
-
-                                    const isCustom = !line.productId || line.productId === '00000000-0000-0000-0000-000000000000';
-                                    if (line.productType === 'non-stock' || line.productType === 'service' || line.productType === 'freight' || isCustom) {
-                                        return (
-                                            <tr key={line.salesOrderLineId} style={{ backgroundColor: 'var(--bg-subtle)' }}>
-                                                <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
-                                                <td style={{ fontWeight: 600, fontSize: 12 }}>
-                                                    {line.productNumber || line.productId?.substring(0, 8) || '—'}
-                                                </td>
-                                                <td>
-                                                    {line.productDescription || '—'}
-                                                    <span className="ml-2 badge badge-sm badge-draft">
-                                                        {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., fallback value). */}
-                                                        {line.productType || 'custom'}
-                                                    </span>
-                                                </td>
-                                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{line.quantity}</td>
-                                                <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 12, fontStyle: 'italic' }}>
-                                                    {tSales('virtualFulfillmentBypass')}
-                                                </td>
-                                                <td style={{ textAlign: 'center' }}>✅</td>
-                                            </tr>
-                                        );
-                                    }
 
                                     return (
                                         <Fragment key={line.salesOrderLineId || idx}>
@@ -993,10 +992,9 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     </td>
                                                     <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{line.productDescription}</td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{line.quantity}</td>
-                                                    <td colSpan={6} style={{ textAlign: 'center', color: 'var(--danger)', fontSize: 12, fontStyle: 'italic' }}>
+                                                    <td colSpan={3} style={{ textAlign: 'center', color: 'var(--danger)', fontSize: 12, fontStyle: 'italic' }}>
                                                         {tSales('noInventoryFound')}
                                                     </td>
-                                                    <td style={{ textAlign: 'center' }}>❌</td>
                                                 </tr>
                                             ) : lineInventory.map((inv, idx: number) => (
                                                 <tr key={`${line.salesOrderLineId}-${inv.locationId}`}>
@@ -1016,28 +1014,48 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                             <td rowSpan={lineInventory.length} style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{line.quantity}</td>
                                                             <td rowSpan={lineInventory.length}>
                                                                 {(() => {
+                                                                    if (isShipped) {
+                                                                        return <span className="text-emerald-600 font-medium">{tSales('availabilityStatus.shipped')}</span>;
+                                                                    }
+                                                                    if (!isPreConfirmation) {
+                                                                        const pickedQty = parseFloat(line.quantityPicked || '0');
+                                                                        if (pickedQty > 0 && pickedQty >= parseFloat(line.quantity as string)) {
+                                                                            return <span className="text-emerald-600 font-medium">{tSales('availabilityStatus.picked')}</span>;
+                                                                        }
+                                                                        
+                                                                        const isBackordered = line.productId && activeBackorders.has(line.productId);
+                                                                        if (isBackordered) {
+                                                                            return <span className="text-amber-600 font-medium">{tSales('availabilityStatus.backordered')}</span>;
+                                                                        }
+                                                                        
+                                                                        const locId = editFulfillmentLocationId || order.fulfillmentLocationId;
+                                                                        const locInv = lineInventory.find(i => i.locationId === locId);
+                                                                        const isAtRisk = locInv && parseFloat(locInv.quantityAvailable || '0') < 0;
+                                                                        if (isAtRisk) {
+                                                                            return <span className="text-rose-600 font-medium">{tSales('availabilityStatus.atRisk')}</span>;
+                                                                        }
+                                                                        
+                                                                        return <span className="text-emerald-600 font-medium">{tSales('availabilityStatus.local')}</span>;
+                                                                    }
+                                                                    // Draft Logic
                                                                     if (canFulfil) {
-                                                                        return <span className="text-emerald-600 font-medium flex items-center gap-1">✅ {tSales('availabilityStatus.local')}</span>;
+                                                                        return <span className="text-emerald-600 font-medium">{tSales('availabilityStatus.local')}</span>;
                                                                     }
                                                                     if (gap && totalAvail >= gap.orderedQuantity) {
-                                                                        return <span className="text-amber-600 font-medium flex items-center gap-1">🚚 {tSales('availabilityStatus.others')}</span>;
+                                                                        return <span className="text-amber-600 font-medium">{tSales('availabilityStatus.others')}</span>;
                                                                     }
-                                                                    return <span className="text-rose-600 font-medium flex items-center gap-1">❌ {tSales('availabilityStatus.shortage')}</span>;
+                                                                    return <span className="text-rose-600 font-medium">{tSales('availabilityStatus.shortage')}</span>;
                                                                 })()}
                                                             </td>
                                                         </>
                                                     )}
-                                                    <td style={{ textAlign: 'right', fontSize: 12, color: inv.locationId === (editFulfillmentLocationId || order.fulfillmentLocationId) ? 'var(--accent)' : 'var(--text-muted)', fontWeight: inv.locationId === (editFulfillmentLocationId || order.fulfillmentLocationId) ? 600 : 400 }}>
-                                                        {inv.locationName}
+                                                    <td style={{ textAlign: 'right', fontSize: 12 }}>
+                                                        <Link href={`/products/${line.productId}?tab=inventory`} style={{ color: inv.locationId === (editFulfillmentLocationId || order.fulfillmentLocationId) ? 'var(--accent)' : 'var(--text-muted)', fontWeight: inv.locationId === (editFulfillmentLocationId || order.fulfillmentLocationId) ? 600 : 400, textDecoration: 'none' }}>
+                                                            {inv.locationName}
+                                                        </Link>
                                                     </td>
-                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{parseFloat(inv.quantityOnHand || '0')}</td>
-                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--danger)' }}>{parseFloat(inv.quantityCommitted || '0')}</td>
-                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--success)' }}>{parseFloat(inv.quantityOnOrder || '0')}</td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: parseFloat(inv.quantityAvailable || '0') > 0 ? 'var(--text-primary)' : 'var(--danger)' }}>
                                                         {parseFloat(inv.quantityAvailable || '0')}
-                                                    </td>
-                                                    <td style={{ textAlign: 'center' }}>
-                                                        {parseFloat(inv.quantityAvailable || '0') >= Number(line.quantity) ? '✅' : '⚠️'}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -1053,7 +1071,6 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     );
                                     const gap = gapMap.get(line.salesOrderLineId);
                                     const canFulfil = !gap;
-                                    const isCustom = !line.productId || line.productId === '00000000-0000-0000-0000-000000000000';
 
                                     return (
                                         <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
@@ -1064,13 +1081,11 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{line.lineNumber}</div>
                                             </div>
                                             <div className="text-sm text-slate-600 font-medium mb-3">
-                                                {line.productDescription} {isCustom && <span className="badge badge-sm badge-draft ml-2">{line.productType || tCommon('custom')}</span>}
+                                                {line.productDescription}
                                             </div>
                                             
-                                            {isCustom || line.productType === 'non-stock' || line.productType === 'service' || line.productType === 'freight' ? (
-                                                <div className="text-sm text-slate-500 italic text-center py-2 bg-slate-50 rounded border border-slate-100">{tSales('virtualFulfillmentBypass')} ✅</div>
-                                            ) : lineInventory.length === 0 ? (
-                                                <div className="text-sm text-rose-500 italic text-center py-2 bg-rose-50 rounded border border-rose-100">{tSales('noInventoryFound')} ❌</div>
+                                            {lineInventory.length === 0 ? (
+                                                <div className="text-sm text-rose-500 italic text-center py-2 bg-rose-50 rounded border border-rose-100">{tSales('noInventoryFound')}</div>
                                             ) : (
                                                 <>
                                                     <div className="flex justify-between items-center py-2 border-t border-slate-100">
@@ -1080,9 +1095,23 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     <div className="flex justify-between items-center py-2 border-b border-slate-100">
                                                         <span className="text-xs font-medium text-slate-500">{tSales('columns.fulfillment')}</span>
                                                         <span className="text-sm font-medium">
-                                                            {canFulfil ? <span className="text-emerald-600">✅ {tSales('availabilityStatus.local')}</span> :
-                                                             gap && totalAvail >= gap.orderedQuantity ? <span className="text-amber-600">🚚 {tSales('availabilityStatus.others')}</span> :
-                                                             <span className="text-rose-600">❌ {tSales('availabilityStatus.shortage')}</span>}
+                                                            {(() => {
+                                                                if (isShipped) return <span className="text-emerald-600 font-medium">{tSales('availabilityStatus.shipped')}</span>;
+                                                                if (!isPreConfirmation) {
+                                                                    const pickedQty = parseFloat(line.quantityPicked || '0');
+                                                                    if (pickedQty > 0 && pickedQty >= parseFloat(line.quantity as string)) return <span className="text-emerald-600 font-medium">{tSales('availabilityStatus.picked')}</span>;
+                                                                    const isBackordered = line.productId && activeBackorders.has(line.productId);
+                                                                    if (isBackordered) return <span className="text-amber-600 font-medium">{tSales('availabilityStatus.backordered')}</span>;
+                                                                    const locId = editFulfillmentLocationId || order.fulfillmentLocationId;
+                                                                    const locInv = lineInventory.find(i => i.locationId === locId);
+                                                                    const isAtRisk = locInv && parseFloat(locInv.quantityAvailable || '0') < 0;
+                                                                    if (isAtRisk) return <span className="text-rose-600 font-medium">{tSales('availabilityStatus.atRisk')}</span>;
+                                                                    return <span className="text-emerald-600 font-medium">{tSales('availabilityStatus.local')}</span>;
+                                                                }
+                                                                if (canFulfil) return <span className="text-emerald-600 font-medium">{tSales('availabilityStatus.local')}</span>;
+                                                                if (gap && totalAvail >= gap.orderedQuantity) return <span className="text-amber-600 font-medium">{tSales('availabilityStatus.others')}</span>;
+                                                                return <span className="text-rose-600 font-medium">{tSales('availabilityStatus.shortage')}</span>;
+                                                            })()}
                                                         </span>
                                                     </div>
                                                     
@@ -1091,12 +1120,10 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                         {lineInventory.map((inv) => (
                                                             <div key={inv.locationId} className="bg-slate-50 rounded p-2 text-xs flex flex-col gap-1 border border-slate-100">
                                                                 <div className="flex justify-between font-medium">
-                                                                    <span className={inv.locationId === (editFulfillmentLocationId || order.fulfillmentLocationId) ? 'text-[var(--accent)]' : ''}>{inv.locationName}</span>
+                                                                    <Link href={`/products/${line.productId}?tab=inventory`} className={inv.locationId === (editFulfillmentLocationId || order.fulfillmentLocationId) ? 'text-[var(--accent)]' : ''}>
+                                                                        {inv.locationName}
+                                                                    </Link>
                                                                     <span className={parseFloat(inv.quantityAvailable) >= parseFloat(line.quantity as string) ? 'text-emerald-600' : 'text-rose-600'}>{parseFloat(inv.quantityAvailable)} {tSales('availabilityTable.avail')}</span>
-                                                                </div>
-                                                                <div className="flex justify-between text-slate-500">
-                                                                    <span>{parseFloat(inv.quantityOnHand)} {tSales('availabilityTable.onHand')}</span>
-                                                                    <span>{parseFloat(inv.quantityCommitted)} {tSales('availabilityTable.cmt')} / {parseFloat(inv.quantityOnOrder)} {tSales('availabilityTable.in')}</span>
                                                                 </div>
                                                             </div>
                                                         ))}
@@ -1119,24 +1146,18 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     { header: tSales('columns.lineNumber') },
                                     { header: tSales('columns.product') },
                                     { header: tSales('columns.allocatedTo') },
-                                    { header: tSales('columns.status') },
+                                    { header: tSales('columns.soStatus') },
+                                    { header: tSales('columns.poStatus') },
                                     { header: tSales('columns.demandDate') },
                                 ]}
                                 renderCustomRow={(bo, bo_idx: number) => {
                                     const isPo = !!bo.purchaseOrderId;
-                                    const displayOrderNumber = isPo ? bo.purchaseOrderNumber || '—' : '—';
-                                    const displayStatus = isPo ? bo.purchaseOrderState || PURCHASE_ORDER_STATE.DRAFT : bo.stateCode || BACKORDER_STATE.PENDING_SUPPLY;
+                                    const isTo = !!bo.transferOrderId;
+                                    const isAllocated = isPo || isTo;
+                                    const displayOrderNumber = isPo ? bo.purchaseOrderNumber : isTo ? bo.transferOrderNumber : '—';
                                     
                                     return (
-                                        <tr 
-                                            key={bo_idx} 
-                                            className={isPo ? "cursor-pointer hover:bg-gray-50" : ""} 
-                                            onClick={() => {
-                                                if (isPo) {
-                                                    router.push(`/purchase-orders/${bo.purchaseOrderId}`);
-                                                }
-                                            }}
-                                        >
+                                        <tr key={bo_idx}>
                                             <td className="w-12 text-center text-[var(--text-muted)] font-medium">
                                                 {bo.lineNumber || '—'}
                                             </td>
@@ -1144,15 +1165,30 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 {bo.productNumber || '—'}
                                                 <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tSales('demandedQty', { qty: bo.quantity || '0' })}</div>
                                             </td>
-                                            <td style={{ color: isPo ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 400 }}>{displayOrderNumber}</td>
                                             <td>
-                                                {isPo ? (
-                                                    <div className="flex flex-col gap-1 items-start">
-                                                        <span className="badge badge-sm badge-success">{tSales('allocated')}</span>
-                                                        <StateBadge state={bo.purchaseOrderState as ValidState} />
-                                                    </div>
+                                                {isAllocated ? (
+                                                    <Link 
+                                                        href={isPo ? `/purchase-orders/${bo.purchaseOrderId}` : `/transfers/${bo.transferOrderId}`}
+                                                        className="text-[var(--accent)] font-medium hover:underline"
+                                                    >
+                                                        {displayOrderNumber}
+                                                    </Link>
+                                                ) : (
+                                                    <span className="text-[var(--text-muted)] font-normal">{displayOrderNumber}</span>
+                                                )}
+                                            </td>
+                                            <td>
+                                                {isAllocated ? (
+                                                    <span className="badge badge-success">{tSales('allocated')}</span>
                                                 ) : (
                                                     <span className="badge badge-draft">{tSales('openDemandBadge')}</span>
+                                                )}
+                                            </td>
+                                            <td>
+                                                {isAllocated ? (
+                                                    <StateBadge state={(isPo ? bo.purchaseOrderState : bo.transferOrderState) as ValidState} />
+                                                ) : (
+                                                    <span className="text-gray-400">—</span>
                                                 )}
                                             </td>
                                             <td>{new Date(bo.createdOn).toLocaleDateString()}</td>
@@ -1161,17 +1197,12 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 }}
                                 mobileCard={(bo) => {
                                     const isPo = !!bo.purchaseOrderId;
-                                    const displayOrderNumber = isPo ? bo.purchaseOrderNumber || '—' : '—';
+                                    const isTo = !!bo.transferOrderId;
+                                    const isAllocated = isPo || isTo;
+                                    const displayOrderNumber = isPo ? bo.purchaseOrderNumber : isTo ? bo.transferOrderNumber : '—';
                                     
                                     return (
-                                        <div 
-                                            className={`bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col ${isPo ? 'cursor-pointer active:bg-gray-50' : ''}`}
-                                            onClick={() => {
-                                                if (isPo) {
-                                                    router.push(`/purchase-orders/${bo.purchaseOrderId}`);
-                                                }
-                                            }}
-                                        >
+                                        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
                                             <div className="flex justify-between items-start gap-2 mb-2">
                                                 <div className="font-semibold text-sm text-[var(--text-primary)]">
                                                     {bo.productNumber || '—'}
@@ -1181,19 +1212,32 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                             
                                             <div className="flex flex-col gap-0 border-t border-slate-100 pt-1 mt-2">
                                                 <MobileCardField label={tSales('columns.allocatedTo')} value={
-                                                    <span className={isPo ? 'text-[var(--accent)]' : 'text-slate-400'}>{displayOrderNumber}</span>
+                                                    isAllocated ? (
+                                                        <Link 
+                                                            href={isPo ? `/purchase-orders/${bo.purchaseOrderId}` : `/transfers/${bo.transferOrderId}`}
+                                                            className="text-[var(--accent)] font-medium hover:underline"
+                                                        >
+                                                            {displayOrderNumber}
+                                                        </Link>
+                                                    ) : (
+                                                        <span className="text-slate-400">{displayOrderNumber}</span>
+                                                    )
                                                 } />
                                                 <MobileCardField label={tSales('columns.demandDate')} value={
                                                     new Date(bo.createdOn).toLocaleDateString()
                                                 } />
                                                 <MobileCardField label={tSales('demandedQty', { qty: bo.quantity || '0' })} value={
-                                                    isPo ? (
-                                                        <div className="flex flex-col gap-1 items-end mt-1">
-                                                            <span className="badge badge-sm badge-success">{tSales('allocated')}</span>
-                                                            <StateBadge state={bo.purchaseOrderState as ValidState} />
-                                                        </div>
+                                                    isAllocated ? (
+                                                        <span className="badge badge-success">{tSales('allocated')}</span>
                                                     ) : (
-                                                        <span className="badge badge-draft mt-1">{tSales('openDemandBadge')}</span>
+                                                        <span className="badge badge-draft">{tSales('openDemandBadge')}</span>
+                                                    )
+                                                } />
+                                                <MobileCardField label={tSales('columns.poStatus')} value={
+                                                    isAllocated ? (
+                                                        <StateBadge state={(isPo ? bo.purchaseOrderState : bo.transferOrderState) as ValidState} />
+                                                    ) : (
+                                                        <span className="text-gray-400">—</span>
                                                     )
                                                 } />
                                             </div>
@@ -1229,6 +1273,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     } else {
                                         const addr = customerDeliveryAddresses.find(a => a.id === e.target.value);
                                         if (addr) {
+                                            setEditDeliveryCustomerName(addr.companyName || '');
                                             setEditDeliveryName(addr.recipientName || '');
                                             setEditDeliveryPhone(addr.recipientPhone || '');
                                             setEditDeliveryAddressLine1(addr.addressLine1 || '');
@@ -1260,7 +1305,36 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 ))}
                                 <option value="other">Other...</option>
                             </select>
+                            {selectedAddressId === 'other' && editDeliveryAddressLine1 && (
+                                <div className="text-sm px-1 mb-2" style={{ color: 'var(--text-color)' }}>
+                                    <div>{editDeliveryAddressLine1}</div>
+                                    {editDeliveryAddressLine2 && <div>{editDeliveryAddressLine2}</div>}
+                                    <div>
+                                        {editDeliveryCity}{editDeliveryState ? `, ${editDeliveryState}` : ''} {editDeliveryPostalCode}
+                                    </div>
+                                    <div>{editDeliveryCountry}</div>
+                                    {isOrderDetailsEditable && (
+                                        <button 
+                                            className="text-xs hover:underline mt-1 inline-flex items-center"
+                                            style={{ color: 'var(--brand-blue)' }}
+                                            onClick={() => setIsAddressSlideOverOpen(true)}
+                                        >
+                                            Edit Address
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                             <div className="grid grid-cols-2 gap-4 mb-2 mt-2">
+                                <div className="col-span-2">
+                                    <input
+                                        className="input w-full"
+                                        disabled={!isOrderDetailsEditable}
+                                        placeholder="Company Name"
+                                        value={editDeliveryCustomerName}
+                                        onChange={e => setEditDeliveryCustomerName(e.target.value)}
+                                        onBlur={() => saveHeader()}
+                                    />
+                                </div>
                                 <input
                                     className="input w-full"
                                     disabled={!isOrderDetailsEditable}
@@ -1371,10 +1445,18 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
             </DetailsLayout>
 
-            <QuoteGenerationDialog
-                isOpen={showQuoteDialog}
-                onClose={() => setShowQuoteDialog(false)}
-                onGenerate={handleGenerateQuote}
+            <EmailQuoteDialog
+                isOpen={showEmailQuoteDialog}
+                orderId={id}
+                orderNumber={order?.orderNumber || ''}
+                customerReference={order?.customerOrderNumber}
+                customerId={order?.customerId || undefined}
+                onPreview={(text) => handleGenerateQuote(text)}
+                onClose={() => setShowEmailQuoteDialog(false)}
+                onSuccess={() => {
+                    setShowEmailQuoteDialog(false);
+                    toast.success('Email queued successfully!');
+                }}
             />
 
             {order?.customerId && (
@@ -1382,9 +1464,22 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     isOpen={isAddressSlideOverOpen}
                     onClose={() => setIsAddressSlideOverOpen(false)}
                     customerId={order.customerId}
+                    customerName={customerName}
                     allowUnsaved={true}
                     defaultCountry={customerCountry}
+                    existingData={{
+                        companyName: editDeliveryCustomerName,
+                        recipientName: editDeliveryName,
+                        recipientPhone: editDeliveryPhone,
+                        addressLine1: editDeliveryAddressLine1,
+                        addressLine2: editDeliveryAddressLine2,
+                        city: editDeliveryCity,
+                        stateOrProvince: editDeliveryState,
+                        postalCode: editDeliveryPostalCode,
+                        country: editDeliveryCountry,
+                    }}
                     onSaved={(addr, saved) => {
+                        setEditDeliveryCustomerName(addr.companyName || '');
                         setEditDeliveryName(addr.recipientName || '');
                         setEditDeliveryPhone(addr.recipientPhone || '');
                         setEditDeliveryAddressLine1(addr.addressLine1 || '');
@@ -1397,6 +1492,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                             customerDeliveryAddresses.push(addr as api.DeliveryAddressResponseDto);
                         }
                         saveHeader({
+                            deliveryCustomerName: addr.companyName || undefined,
                             deliveryName: addr.recipientName || undefined,
                             deliveryPhone: addr.recipientPhone || undefined,
                             deliveryAddressLine1: addr.addressLine1 || undefined,

@@ -13,6 +13,7 @@ import { TRANSFER_ORDER_STATE } from '@herobm/shared';
 import { TransferLineResponseDto } from '@herobm/sdk';
 import ProductSearchInput, { Product } from '@/components/shared/ProductSearchInput';
 import { MobileCardField } from '@/components/shared/DataTable';
+import ShipmentsSection from './ShipmentsSection';
 
 export default function TransferDetailsClient({ id }: { id: string }) {
   const router = useRouter();
@@ -27,6 +28,8 @@ export default function TransferDetailsClient({ id }: { id: string }) {
     clearError,
     editNotes,
     setEditNotes,
+    editShippingNotes,
+    setEditShippingNotes,
     saveHeader,
     addLine,
     updateLine,
@@ -88,7 +91,6 @@ export default function TransferDetailsClient({ id }: { id: string }) {
             source: order.sourceLocationName || order.sourceLocationId || '',
             destination: order.destinationLocationName || order.destinationLocationId || ''
           })}
-          onBack={() => router.push('/inventory/transfers')}
           isSaving={saving}
           badges={<StateBadge state={order.stateCode as ValidState} />}
           actions={
@@ -170,8 +172,19 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
                 onBlur={saveHeader}
-                disabled={!isEditable}
                 placeholder={tTransfers('placeholders.notes')}
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {tTransfers('columns.shippingNotes')}
+              </label>
+              <input
+                className="input w-full"
+                value={editShippingNotes}
+                onChange={(e) => setEditShippingNotes(e.target.value)}
+                onBlur={saveHeader}
+                placeholder={tTransfers('placeholders.shippingNotes')}
               />
             </div>
           </div>
@@ -320,6 +333,9 @@ export default function TransferDetailsClient({ id }: { id: string }) {
             )}
           </div>
         </div>
+
+        {/* Shipments Section */}
+        <ShipmentsSection orderId={id} />
 
         {/* Activity Timeline */}
         <div className="card">

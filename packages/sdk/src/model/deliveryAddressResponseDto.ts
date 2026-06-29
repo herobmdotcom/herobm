@@ -12,6 +12,8 @@ export interface DeliveryAddressResponseDto {
   /** @nullable */
   addressName?: string | null;
   /** @nullable */
+  companyName?: string | null;
+  /** @nullable */
   recipientName?: string | null;
   /** @nullable */
   recipientPhone?: string | null;

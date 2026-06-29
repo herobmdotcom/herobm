@@ -18,6 +18,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ShipmentService } from './shipment.service';
+import { TransferService } from './transfers/transfers.service';
 import {
   CasbinGuard,
   CasbinResource,
@@ -35,25 +36,42 @@ import {
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { transferOrders } from '../drizzle/herobm-core-schema';
+import { eq } from 'drizzle-orm';
+import { Inject } from '@nestjs/common';
+
 @ApiTags('Warehouse')
 @Controller('sales-orders')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SALES_ORDERS)
 export class OrderShipmentsController {
-  constructor(private readonly shipmentService: ShipmentService) {}
+  constructor(
+    private readonly shipmentService: ShipmentService,
+    private readonly transfersService: TransferService,
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+  ) {}
 
   @Post(':id/shipments')
   @ApiCreatedResponse({ type: ShipmentResponseDto })
   @CasbinAction('handle')
   @ApiOperation({
     summary: 'Create Shipment',
-    description: 'Create a new shipment for a sales order.',
+    description: 'Create a new shipment for a sales order or transfer order.',
   })
-  createShipment(
+  async createShipment(
     @Param('id') id: string,
     @Body() body: CreateShipmentDto,
     @AuthUser() user: JwtUser,
   ) {
+    const isTransfer = await this.db.query.transferOrders.findFirst({
+      where: eq(transferOrders.transferOrderId, id),
+    });
+
+    if (isTransfer) {
+      return this.transfersService.createShipment(id, body, user.username);
+    }
     return this.shipmentService.createShipment(id, body, user.username);
   }
 

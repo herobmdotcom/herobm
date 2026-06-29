@@ -11,7 +11,6 @@ export interface UpdateAccountGroupDto {
   earlyPaymentDiscountDays?: number;
   groupCode?: string;
   name?: string;
-  defaultDiscountPercentage?: string;
   defaultArAccountId?: string;
   defaultRevenueAccountId?: string;
   defaultCostCenterId?: string;

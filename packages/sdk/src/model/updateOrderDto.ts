@@ -12,6 +12,7 @@ export interface UpdateOrderDto {
   notes?: string;
   fulfillmentLocationId?: string;
   shippingNotes?: string;
+  deliveryCustomerName?: string;
   deliveryName?: string;
   deliveryPhone?: string;
   deliveryAddressLine1?: string;

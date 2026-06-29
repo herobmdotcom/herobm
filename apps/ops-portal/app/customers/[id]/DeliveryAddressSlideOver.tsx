@@ -129,7 +129,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
     >
       <div className="flex flex-col gap-4 py-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
             {t('addressName')}
           </label>
           <input
@@ -142,7 +142,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
             {t('addressLine1')}
           </label>
           <input
@@ -154,7 +154,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
             {t('addressLine2')}
           </label>
           <input
@@ -167,7 +167,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
               {t('city')}
             </label>
             <input
@@ -178,7 +178,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
               {t('stateOrProvince')}
             </label>
             <input
@@ -192,7 +192,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
               {t('postalCode')}
             </label>
             <input
@@ -203,7 +203,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
               {t('country')}
             </label>
             <select

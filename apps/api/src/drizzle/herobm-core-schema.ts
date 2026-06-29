@@ -174,6 +174,7 @@ export const salesOrders = herobmCore.table(
     exchangeRate: numeric('exchange_rate').notNull().default('1'),
     notes: text('notes'),
     shippingNotes: text('shipping_notes'),
+    deliveryCustomerName: text('delivery_customer_name'),
     deliveryName: text('delivery_name'),
     deliveryPhone: text('delivery_phone'),
     deliveryAddressLine1: text('delivery_address_line1'),
@@ -454,6 +455,7 @@ export const salesOrderShipments = herobmCore.table(
       .default(SHIPMENT_STATE.DISPATCHED),
     notes: text('notes'),
     trackingNumber: text('tracking_number'),
+    deliveryCustomerName: text('delivery_customer_name'),
     fulfillmentLocationId: uuid('fulfillment_location_id').references(
       () => locations.locationId,
     ),
@@ -766,6 +768,7 @@ export const transferOrders = herobmCore.table(
       .notNull()
       .default(TRANSFER_ORDER_STATE.CONFIRMED),
     notes: text('notes'),
+    shippingNotes: text('shipping_notes'),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -927,6 +930,16 @@ export const transferOrderReceiptLines = herobmCore.table(
       .notNull()
       .references(() => bins.binId),
     quantity: numeric('quantity').notNull(),
+    putawayStatus: text('putaway_status', {
+      enum: [
+        PUTAWAY_STATUS.AWAITING_MATCHING,
+        PUTAWAY_STATUS.PENDING_PUTAWAY,
+        PUTAWAY_STATUS.QUARANTINED,
+        PUTAWAY_STATUS.COMPLETED,
+      ],
+    })
+      .notNull()
+      .default(PUTAWAY_STATUS.PENDING_PUTAWAY),
   },
   (t) => ({
     receiptIdx: index('idx_transfer_order_receipt_lines_receipt').on(
@@ -1561,11 +1574,13 @@ export const customers = herobmCore.table(
     customerGroupId: uuid('customer_group_id').references(
       () => customerGroups.customerGroupId,
     ),
+    parentCustomerId: uuid('parent_customer_id'), // Self-reference added in relations
     stateCode: text('state_code').notNull().default(CUSTOMER_STATE.ACTIVE),
     taxPositionId: uuid('tax_position_id').references(
       () => taxPositions.taxPositionId,
     ),
     currencyCode: text('currency_code').notNull(),
+    customerDiscount: numeric('customer_discount'),
     tradingTermsId: uuid('trading_terms_id').references(
       () => tradingTerms.tradingTermsId,
     ),
@@ -1624,6 +1639,7 @@ export const customerDeliveryAddresses = herobmCore.table(
       .notNull()
       .references(() => customers.customerId),
     addressName: text('address_name'),
+    companyName: text('company_name'),
     recipientName: text('recipient_name'),
     recipientPhone: text('recipient_phone'),
     addressLine1: text('address_line1'),

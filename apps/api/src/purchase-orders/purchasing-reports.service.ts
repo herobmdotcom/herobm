@@ -1,4 +1,5 @@
 import { Injectable, Inject, OnModuleInit, Logger } from '@nestjs/common';
+import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
@@ -25,19 +26,19 @@ export class PurchasingReportsService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.registry.register('purchasing-supplier', {
+    this.registry.register(DATA_SOURCE_CONTEXT.PURCHASING_SUPPLIER, {
       fetchData: (filters: Record<string, unknown>) =>
         this.getPurchasesBySupplier(filters),
     });
-    this.registry.register('purchasing-product', {
+    this.registry.register(DATA_SOURCE_CONTEXT.PURCHASING_PRODUCT, {
       fetchData: (filters: Record<string, unknown>) =>
         this.getPurchasesByProduct(filters),
     });
-    this.registry.register('purchasing-trend', {
+    this.registry.register(DATA_SOURCE_CONTEXT.PURCHASING_TREND, {
       fetchData: (filters: Record<string, unknown>) =>
         this.getPurchaseTrend(filters),
     });
-    this.registry.register('purchasing-outstanding', {
+    this.registry.register(DATA_SOURCE_CONTEXT.PURCHASING_OUTSTANDING, {
       fetchData: (filters: Record<string, unknown>) =>
         this.getOutstandingPOs(filters),
     });

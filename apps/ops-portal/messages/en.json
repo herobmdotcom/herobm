@@ -592,6 +592,7 @@
         "inactive": "Inactive",
         "isDefault": "Default",
         "logoUrl": "Logo URL",
+        "macroType": "Macro Type",
         "mappings": "Mappings",
         "name": "Name",
         "noRecordsFound": "No records found.",
@@ -613,6 +614,17 @@
         "unrealisedFxGain": "Unrealised FX Gain",
         "unrealisedFxLoss": "Unrealised FX Loss",
         "website": "Website"
+      },
+      "macroTypes": {
+        "general": "General",
+        "pickingSlip": "Picking Slip",
+        "proFormaInvoice": "Pro-forma Invoice",
+        "returnSlip": "Return Slip",
+        "salesInvoice": "Sales Invoice",
+        "salesOrderConfirmation": "Sales Order Confirmation",
+        "salesOrderQuote": "Sales Quote",
+        "salesReturnCredit": "Sales Credit Note",
+        "shippingDocket": "Shipping Docket"
       },
       "none": "None",
       "placeholders": {
@@ -964,6 +976,7 @@
     "configure": "Configure",
     "confirm": "Confirm",
     "confirmDelete": "Are you sure you want to delete this item?",
+    "contact": "Contact",
     "copiedToClipboard": "Copied to clipboard",
     "copy": "Copy",
     "copying": "Copying...",
@@ -1207,6 +1220,7 @@
       "invoiced": "Invoiced",
       "legacy": "Legacy",
       "ordered": "Ordered",
+      "overdue": "Overdue",
       "paid": "Paid",
       "partially_paid": "Partial",
       "partially_received": "Part Recd",
@@ -1469,11 +1483,17 @@
     "addressName": "Address Name",
     "addressNamePlaceholder": "e.g. Headquarters",
     "city": "City",
+    "companyName": "Company Name",
+    "contactPerson": "Contact Person",
+    "contactPersonPlaceholder": "Attention to",
+    "contactPhone": "Contact Phone",
+    "contactPhonePlaceholder": "Phone number",
     "country": "Country *",
     "createdSuccess": "Address created",
     "editAddress": "Edit Delivery Address",
     "postalCode": "Postal Code",
     "requiredError": "Address Line 1 and Country are required",
+    "saveToCustomerRecord": "Save to customer record",
     "selectCountry": "Select Country",
     "setAsPrimary": "Set as primary delivery address",
     "stateOrProvince": "State / Province",
@@ -2599,11 +2619,11 @@
       "unknown": "Unknown"
     },
     "demandsContent": {
-      "allocateToPo": "Allocate to PO",
-      "changeLocation": "Change Location",
+      "allocateToPo": "Allocate",
+      "changeLocation": "Relocate",
       "draft": "Draft",
-      "draftPos": "Draft POs",
-      "internalTransfer": "Internal Transfer",
+      "draftPos": "New PO",
+      "internalTransfer": "Transfer",
       "ordered": "Ordered",
       "pendingSupply": "Pending Supply"
     },
@@ -2825,8 +2845,13 @@
     "archivedBannerTitle": "This record is archived.",
     "availability": "Availability",
     "availabilityStatus": {
-      "local": "In Stock (Local)",
+      "allocated": "Allocated",
+      "atRisk": "At Risk",
+      "backordered": "Backordered",
+      "local": "In Stock",
       "others": "In Stock (Other)",
+      "picked": "Picked",
+      "shipped": "Shipped",
       "shortage": "Stock Shortage"
     },
     "availabilityTable": {
@@ -2885,6 +2910,7 @@
       "orderNumber": "Order No.",
       "ordered": "Ordered",
       "picked": "Picked",
+      "poStatus": "PO Status",
       "postConfirmation": "Post-Confirmation",
       "product": "Product",
       "qty": "Qty",
@@ -2895,6 +2921,7 @@
       "reserved": "Reserved",
       "returnQty": "Return Qty",
       "shipped": "Shipped",
+      "soStatus": "SO Status",
       "state": "State",
       "status": "Status",
       "tax": "Tax",
@@ -3605,6 +3632,7 @@
       "product": "Product",
       "received": "Received",
       "shipped": "Shipped",
+      "shippingNotes": "Shipping Instructions",
       "sourceLocation": "Source Location",
       "status": "Status"
     },
@@ -3621,7 +3649,8 @@
       "searchProduct": "Add product... (search)",
       "searchTransfer": "Search or scan transfers...",
       "selectDestinationLocation": "Select Destination Location",
-      "selectSourceLocation": "Select Source Location"
+      "selectSourceLocation": "Select Source Location",
+      "shippingNotes": "Shipping instructions..."
     },
     "removeLine": "Remove line",
     "status": {

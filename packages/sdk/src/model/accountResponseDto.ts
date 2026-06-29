@@ -8,6 +8,7 @@
 import type { AccountResponseDtoEventsItem } from './accountResponseDtoEventsItem';
 import type { AccountResponseDtoContactsItem } from './accountResponseDtoContactsItem';
 import type { AccountResponseDtoDeliveryAddressesItem } from './accountResponseDtoDeliveryAddressesItem';
+import type { AccountResponseDtoCreditAssessment } from './accountResponseDtoCreditAssessment';
 
 export interface AccountResponseDto {
   customerId: string;
@@ -22,10 +23,7 @@ export interface AccountResponseDto {
   telephone1?: string;
   fax?: string;
   emailAddress1?: string;
-  isSalesBlocked?: boolean;
-  salesBlockReasons?: string[];
   customerGroupId?: string;
-  customerGroupCode?: string;
   parentCustomerId?: string;
   taxPositionId?: string;
   currencyCode: string;
@@ -38,6 +36,8 @@ export interface AccountResponseDto {
   isTaxRegistered?: boolean;
   creditLimit?: string;
   isOnCreditHold?: boolean;
+  isSalesBlocked?: boolean;
+  salesBlockReasons?: string[];
   overrideCreditHoldUntil?: string;
   tradingTermsId?: string;
   earlyPaymentDiscount?: string;
@@ -51,4 +51,6 @@ export interface AccountResponseDto {
   events?: AccountResponseDtoEventsItem[];
   contacts?: AccountResponseDtoContactsItem[];
   deliveryAddresses?: AccountResponseDtoDeliveryAddressesItem[];
+  creditAssessment?: AccountResponseDtoCreditAssessment;
+  effectiveCreditLimit?: string;
 }

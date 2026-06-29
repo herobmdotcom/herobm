@@ -19,7 +19,7 @@ import {
   getAggregationPeriod,
   getAggregationSql,
 } from '../common/utils/date-range.util';
-import { SALES_ORDER_STATE } from '@herobm/shared';
+import { SALES_ORDER_STATE, DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
 
 export interface UnifiedOrderRow {
@@ -44,26 +44,41 @@ export class OrdersService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.dataSourcesRegistry.register('sales-performance-customer', {
-      fetchData: (filters: Record<string, unknown>) =>
-        this.getSalesPerformanceByCustomer(filters),
-    });
-    this.dataSourcesRegistry.register('sales-performance-product', {
-      fetchData: (filters: Record<string, unknown>) =>
-        this.getSalesPerformanceByProduct(filters),
-    });
-    this.dataSourcesRegistry.register('sales-performance-product-group', {
-      fetchData: (filters: Record<string, unknown>) =>
-        this.getSalesPerformanceByProductGroup(filters),
-    });
-    this.dataSourcesRegistry.register('sales-performance-trend', {
-      fetchData: (filters: Record<string, unknown>) =>
-        this.getSalesPerformanceTrend(filters),
-    });
-    this.dataSourcesRegistry.register('sales-performance-salesperson', {
-      fetchData: (filters: Record<string, unknown>) =>
-        this.getSalesPerformanceBySalesperson(filters),
-    });
+    this.dataSourcesRegistry.register(
+      DATA_SOURCE_CONTEXT.SALES_PERFORMANCE_CUSTOMER,
+      {
+        fetchData: (filters: Record<string, unknown>) =>
+          this.getSalesPerformanceByCustomer(filters),
+      },
+    );
+    this.dataSourcesRegistry.register(
+      DATA_SOURCE_CONTEXT.SALES_PERFORMANCE_PRODUCT,
+      {
+        fetchData: (filters: Record<string, unknown>) =>
+          this.getSalesPerformanceByProduct(filters),
+      },
+    );
+    this.dataSourcesRegistry.register(
+      DATA_SOURCE_CONTEXT.SALES_PERFORMANCE_PRODUCT_GROUP,
+      {
+        fetchData: (filters: Record<string, unknown>) =>
+          this.getSalesPerformanceByProductGroup(filters),
+      },
+    );
+    this.dataSourcesRegistry.register(
+      DATA_SOURCE_CONTEXT.SALES_PERFORMANCE_TREND,
+      {
+        fetchData: (filters: Record<string, unknown>) =>
+          this.getSalesPerformanceTrend(filters),
+      },
+    );
+    this.dataSourcesRegistry.register(
+      DATA_SOURCE_CONTEXT.SALES_PERFORMANCE_SALESPERSON,
+      {
+        fetchData: (filters: Record<string, unknown>) =>
+          this.getSalesPerformanceBySalesperson(filters),
+      },
+    );
   }
 
   private getSalesPerformanceConditions(filters: Record<string, unknown>) {
@@ -82,7 +97,6 @@ export class OrdersService implements OnModuleInit {
       inArray(salesOrders.stateCode, [
         SALES_ORDER_STATE.SHIPPED,
         SALES_ORDER_STATE.INVOICED,
-        SALES_ORDER_STATE.LEGACY,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Bypass strict array type check for inArray operator
       ] as any[]),
     );

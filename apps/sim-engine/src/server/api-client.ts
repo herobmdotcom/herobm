@@ -1,6 +1,6 @@
 export async function fetchProductsFromApi(): Promise<any[]> {
   const apiUrl = process.env.API_URL || 'http://localhost:3001';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'password123';
+  const adminPassword = process.env.ADMIN_PASSWORD;
 
   try {
     // 1. Log in to get JWT

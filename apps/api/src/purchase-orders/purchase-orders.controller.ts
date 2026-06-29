@@ -120,11 +120,11 @@ export class PurchaseOrdersController {
   @CasbinAction('read')
   @ApiOperation({
     summary: 'Get Purchase Order',
-    description: 'Retrieve a specific purchase order.',
+    description:
+      'Retrieve detailed information about a specific purchase order.',
   })
-  @ApiFieldMask()
   @ApiOkResponse({ type: PurchaseOrderResponseDto })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string): Promise<PurchaseOrderResponseDto> {
     return this.purchaseOrdersService.findOne(id);
   }
 

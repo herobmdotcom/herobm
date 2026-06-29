@@ -24,6 +24,11 @@ import {
   systemEvents,
   warehouseEvents,
   salesOrderPicks,
+  transferOrders,
+  transferOrderShipments,
+  transferOrderShipmentLines,
+  transferOrderLines,
+  locations,
 } from '../drizzle/herobm-core-schema';
 import { AppConfigService } from '../settings/app-config.service';
 import { getValuationStrategy } from '../inventory/valuation';
@@ -170,6 +175,7 @@ export class ShipmentService {
             stateCode: SHIPMENT_STATE.DRAFT, // Create as draft first, then transition to dispatched
             notes: dto.notes,
             trackingNumber: dto.trackingNumber,
+            deliveryCustomerName: dto.deliveryCustomerName ?? order.deliveryCustomerName,
             fulfillmentLocationId: shipmentLocationId,
             createdBy: actor,
           })
@@ -914,7 +920,103 @@ export class ShipmentService {
       .limit(1);
 
     if (rows.length === 0) {
-      throw new NotFoundException(`Shipment '${shipmentId}' not found`);
+      // Try fetching as a Transfer Order Shipment instead
+      const transferRows = await this.db
+        .select({
+          shipmentId: transferOrderShipments.shipmentId,
+          shipmentNumber: transferOrderShipments.shipmentNumber,
+          salesOrderId: transferOrderShipments.transferOrderId,
+          orderNumber: transferOrders.orderNumber,
+          customerId: locations.locationId,
+          customerName: locations.name,
+          stateCode: transferOrderShipments.stateCode,
+          notes: sql<string | null>`NULL`,
+          trackingNumber: transferOrderShipments.trackingNumber,
+          createdBy: transferOrderShipments.shippedBy,
+          createdOn: transferOrderShipments.createdOn,
+          modifiedOn: transferOrderShipments.shippedOn,
+          deliveryName: locations.name,
+          deliveryPhone: sql<string | null>`NULL`,
+          deliveryAddressLine1: locations.addressLine1,
+          deliveryAddressLine2: sql<string | null>`NULL`,
+          deliveryCity: locations.city,
+          deliveryState: locations.state,
+          deliveryPostalCode: locations.postCode,
+          deliveryCountry: locations.country,
+          shippingNotes: sql<string | null>`NULL`,
+        })
+        .from(transferOrderShipments)
+        .innerJoin(
+          transferOrders,
+          eq(
+            transferOrderShipments.transferOrderId,
+            transferOrders.transferOrderId,
+          ),
+        )
+        .leftJoin(
+          locations,
+          eq(transferOrders.destinationLocationId, locations.locationId),
+        )
+        .where(eq(transferOrderShipments.shipmentId, shipmentId))
+        .limit(1);
+
+      if (transferRows.length === 0) {
+        throw new NotFoundException(`Shipment '${shipmentId}' not found`);
+      }
+
+      const shipment = transferRows[0];
+
+      const lines = await this.db
+        .select({
+          shipmentLineId: transferOrderShipmentLines.shipmentLineId,
+          salesOrderLineId: transferOrderShipmentLines.transferOrderLineId,
+          quantityShipped: transferOrderShipmentLines.quantity,
+          productId: transferOrderLines.productId,
+          productNumber: coreProducts.productNumber,
+          productDescription: coreProducts.name,
+          orderNumber: transferOrders.orderNumber,
+        })
+        .from(transferOrderShipmentLines)
+        .innerJoin(
+          transferOrderLines,
+          eq(
+            transferOrderShipmentLines.transferOrderLineId,
+            transferOrderLines.transferOrderLineId,
+          ),
+        )
+        .innerJoin(
+          transferOrders,
+          eq(
+            transferOrderLines.transferOrderId,
+            transferOrders.transferOrderId,
+          ),
+        )
+        .leftJoin(
+          coreProducts,
+          eq(transferOrderLines.productId, coreProducts.productId),
+        )
+        .where(eq(transferOrderShipmentLines.shipmentId, shipmentId));
+
+      const events = await this.db
+        .select({
+          eventId: warehouseEvents.eventId,
+          entityType: warehouseEvents.entityType,
+          entityId: warehouseEvents.entityId,
+          eventType: warehouseEvents.eventType,
+          payload: warehouseEvents.payload,
+          actor: warehouseEvents.actor,
+          createdOn: warehouseEvents.createdOn,
+        })
+        .from(warehouseEvents)
+        .where(
+          and(
+            eq(warehouseEvents.entityType, EntityType.SHIPMENT),
+            eq(warehouseEvents.entityId, shipmentId),
+          ),
+        )
+        .orderBy(desc(warehouseEvents.createdOn));
+
+      return { ...shipment, lines, events };
     }
 
     const shipment = rows[0];

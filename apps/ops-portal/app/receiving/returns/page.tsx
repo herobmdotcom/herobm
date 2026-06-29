@@ -1,17 +1,62 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { usePersistedSetting } from '@/hooks/usePersistedSetting';
+import { useSettings } from '@/components/SettingsProvider';
+import { reportError } from '@/lib/api';
+import * as api from '@herobm/sdk';
 import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';
 import ReceiveReturnSlideOver from './ReceiveReturnSlideOver';
 import { RETURN_STATE } from '@herobm/shared';
 
+function LocationFilter({ locations, selectedLocationId, setSelectedLocationId, tCommon }: { locations: api.InventoryLocationResponseDto[], selectedLocationId: string, setSelectedLocationId: (v: string) => void, tCommon: ReturnType<typeof useTranslations> }) {
+    return (
+        <div className="flex items-center gap-2">
+            <select
+                value={selectedLocationId}
+                onChange={(e) => {
+                    setSelectedLocationId(e.target.value);
+                }}
+                className="input text-sm w-48"
+            >
+                <option value="">{tCommon('filters.allLocations')}</option>
+                {locations.map((loc) => (
+                    <option key={loc.locationId} value={loc.locationId}>
+                        {loc.code} - {loc.name}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+}
+
 export default function ReceivingReturnsPage() {
     const tCommon = useTranslations('common');
     useDocumentTitle('Customer Returns Queue');
     const [refreshKey, setRefreshKey] = useState(0);
+
+    const { app } = useSettings();
+    const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
+    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('receivingReturnsLocationId', '');
+    
+    useEffect(() => {
+        api.inventoryControllerFindAllLocations()
+            .then(res => setLocations(res.data))
+            .catch(reportError);
+    }, []);
+
+    useEffect(() => {
+        if (locReady && locations.length > 0) {
+            const isValidSaved = selectedLocationId && locations.some(l => l.locationId === selectedLocationId);
+            const defaultLocId = isValidSaved ? selectedLocationId : (app?.defaultFulfillmentLocationId || locations[0].locationId);
+            if (defaultLocId !== selectedLocationId) {
+                setSelectedLocationId(defaultLocId as string);
+            }
+        }
+    }, [locReady, locations, selectedLocationId, app?.defaultFulfillmentLocationId, setSelectedLocationId]);
 
     const [slideOverOpen, setSlideOverOpen] = useState(false);
     const [selectedReturn, setSelectedReturn] = useState<Record<string, unknown> | null>(null);
@@ -28,8 +73,8 @@ export default function ReceivingReturnsPage() {
 
     const triggerRefresh = useCallback(() => setRefreshKey(k => k + 1), []);
 
-    // Fetch confirmed and partially received returns globally
-    const gridEndpoint = `/api/sales-returns?stateCode=${RETURN_STATE.CONFIRMED},${RETURN_STATE.PARTIALLY_RECEIVED}`;
+    // Fetch confirmed and partially received returns globally, filtered by location
+    const gridEndpoint = `/api/sales-returns?stateCode=${RETURN_STATE.CONFIRMED},${RETURN_STATE.PARTIALLY_RECEIVED}${selectedLocationId ? `&locationId=${selectedLocationId}` : ''}`;
 
     const gridColumns: Record<string, unknown>[] = useMemo(() => [
         { field: 'returnNumber', headerName: 'Return No', width: 140 },
@@ -51,6 +96,15 @@ export default function ReceivingReturnsPage() {
         { field: 'notes', headerName: tCommon('columns.notes'), flex: 1, minWidth: 200 }
     ], [tCommon]);
 
+    const headerActions = (
+        <LocationFilter 
+            locations={locations} 
+            selectedLocationId={selectedLocationId} 
+            setSelectedLocationId={setSelectedLocationId} 
+            tCommon={tCommon} 
+        />
+    );
+
     return (
         <>
             <DataGrid 
@@ -62,6 +116,7 @@ export default function ReceivingReturnsPage() {
                 rowIdField="returnId"
                 onRowClicked={handleReceive}
                 pageTitle="Customer Returns"
+                headerActions={headerActions}
             />
             
             <ReceiveReturnSlideOver 

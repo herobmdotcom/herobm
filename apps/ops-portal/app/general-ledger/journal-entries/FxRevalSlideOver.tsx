@@ -144,7 +144,7 @@ export default function FxRevalSlideOver({ isOpen, onClose, onSuccess }: FxReval
         <div className="space-y-4">
           <div className="flex items-end gap-4">
             <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+              <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
                 Revaluation Date
               </label>
               <input

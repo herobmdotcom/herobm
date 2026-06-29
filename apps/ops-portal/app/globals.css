@@ -44,6 +44,7 @@
 .badge-danger { background: rgba(71, 85, 105, 0.1); color: #475569; }
 .badge-info { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
 .badge-secondary { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+.badge-overdue { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
 
 /* Utility Modifiers */
 .badge-sm {

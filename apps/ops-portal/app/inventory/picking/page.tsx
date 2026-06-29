@@ -247,8 +247,8 @@ export default function PickingPage() {
         }
     };
 
-    const { itemsToPick, unavailableItems, pickedItems, shippedItems } = useMemo(() => {
-        if (!pickingSummary) return { itemsToPick: [], unavailableItems: [], pickedItems: [], shippedItems: [] };
+    const { itemsToPick, unavailableItems, pickedItems, shippedItems, nonPhysicalItems } = useMemo(() => {
+        if (!pickingSummary) return { itemsToPick: [], unavailableItems: [], pickedItems: [], shippedItems: [], nonPhysicalItems: [] };
         
         const toPick = pickingSummary.lines.filter(l => parseFloat(l.remaining) > 0 && parseFloat(l.onHand) > 0 && l.isPhysical);
         const unavailable = pickingSummary.lines.filter(l => parseFloat(l.remaining) > 0 && parseFloat(l.onHand) <= 0 && l.isPhysical);
@@ -263,7 +263,9 @@ export default function PickingPage() {
             return { ...p, line };
         });
 
-        return { itemsToPick: toPick, unavailableItems: unavailable, pickedItems: picked, shippedItems: shipped };
+        const nonPhysical = pickingSummary.lines.filter(l => parseFloat(l.quantity) > 0 && !l.isPhysical);
+
+        return { itemsToPick: toPick, unavailableItems: unavailable, pickedItems: picked, shippedItems: shipped, nonPhysicalItems: nonPhysical };
     }, [pickingSummary]);
 
     return (
@@ -840,6 +842,71 @@ export default function PickingPage() {
                                                                 <div className="text-xs font-medium flex items-center gap-1">
                                                                     {parseFloat(pick.quantity).toLocaleString()}
                                                                 </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Non-Physical Table */}
+                                    {nonPhysicalItems.length > 0 && (
+                                        <div>
+                                            <h4 className="section-heading !mb-4 !text-[var(--text-muted)]">Non-Stock Items</h4>
+                                            <table className="table-lines opacity-70 hidden lg:table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>{t('columns.product')}</th>
+                                                        <th style={{ textAlign: 'right' }}>{t('columns.ordered')}</th>
+                                                        <th>{t('columns.action')}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {nonPhysicalItems.map((line, idx) => (
+                                                        <tr key={`non-physical-${line.salesOrderLineId}-${idx}`}>
+                                                            <td>
+                                                                <div className="font-bold">
+                                                                    {line.productNumber}
+                                                                    <span className="ml-2 uppercase text-[10px] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded font-bold text-[var(--text-muted)]">{line.productType}</span>
+                                                                </div>
+                                                                <div className="text-xs text-[var(--text-muted)] truncate max-w-[250px]">{line.productDescription}</div>
+                                                            </td>
+                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">
+                                                                <div>{parseFloat(line.quantity).toLocaleString()}</div>
+                                                            </td>
+                                                            <td>
+                                                                <span className="ml-2 text-xs text-[var(--text-muted)] inline-flex items-center">
+                                                                    Not Required
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                            <div className="flex flex-col gap-3 lg:hidden opacity-70">
+                                                {nonPhysicalItems.map((line, idx) => (
+                                                    <div key={`mobile-non-physical-${line.salesOrderLineId}-${idx}`} className="bg-[var(--bg-primary)] p-3 rounded-lg border border-[var(--border)]">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div className="min-w-0 flex-1 pr-2">
+                                                                <div className="font-bold text-sm text-[var(--text-primary)] truncate">
+                                                                    {line.productNumber}
+                                                                </div>
+                                                                <div className="text-xs text-[var(--text-muted)] mt-0.5">
+                                                                    <span className="uppercase text-[10px] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded mr-2 font-bold text-[var(--text-muted)]">{line.productType}</span>
+                                                                    {line.productDescription}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-col items-end gap-2 shrink-0">
+                                                                <span className="text-xs text-[var(--text-muted)] inline-flex items-center">
+                                                                    Not Required
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="grid grid-cols-1 gap-2 bg-[var(--bg-card)] p-2 rounded border border-[var(--border)] mt-2">
+                                                            <div>
+                                                                <div className="text-[10px] text-[var(--text-muted)] uppercase mb-0.5">{t('columns.ordered')}</div>
+                                                                <div className="text-xs font-medium">{parseFloat(line.quantity).toLocaleString()}</div>
                                                             </div>
                                                         </div>
                                                     </div>

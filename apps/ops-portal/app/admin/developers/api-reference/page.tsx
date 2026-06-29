@@ -15,7 +15,6 @@ export default function ApiReferencePage() {
         <EntityHeader
           title="API Reference"
           subtitle="Interactive API documentation"
-          onBack={() => router.push('/admin/developers')}
           showPrint={false}
         />
       }

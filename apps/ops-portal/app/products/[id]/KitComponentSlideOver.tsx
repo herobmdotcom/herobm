@@ -136,7 +136,7 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
     >
       <form id="kit-component-form" onSubmit={(e) => { e.preventDefault(); handleSave(e); }} className="flex flex-col gap-5 h-full">
           <div>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+            <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
               {t('componentProduct')}
             </label>
             {dto.childProductId ? (
@@ -163,7 +163,7 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('columns.parentQuantity')}
               </label>
               <input
@@ -178,7 +178,7 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('columns.quantity')}
               </label>
               <input
@@ -196,7 +196,7 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
 
           <div className={dto.parentQuantity !== '1' ? 'grid grid-cols-2 gap-4' : ''}>
             <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
                 {t('columns.sequenceNumber')}
               </label>
               <input
@@ -211,7 +211,7 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
             
             {dto.parentQuantity !== '1' && (
               <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">
                   {t('fractionalBehavior.label')}
                 </label>
                 <select

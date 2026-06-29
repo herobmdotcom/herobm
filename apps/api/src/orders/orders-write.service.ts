@@ -30,6 +30,7 @@ import {
   products as coreProducts,
   backorders,
   purchaseOrders,
+  transferOrders,
   locations,
   productUoms,
   productComponents,
@@ -44,6 +45,7 @@ import {
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { findOrderLine as sharedFindOrderLine } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
+import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import { EntityType, EventType } from '../common/event-types';
 import { getExchangeRateForCurrency } from '../common/fx-helper';
 
@@ -66,6 +68,10 @@ import {
   resolveEffectiveTradingTermsId,
 } from '../customers/credit-control.utils';
 import { getCreditBlockedSql } from './orders.sql';
+import { PdfTemplatesService } from '../pdf-templates/pdf-templates.service';
+import { EmailService } from '../email/email.service';
+import { EmailQuoteDto } from './dto';
+import type { JwtUser } from '../auth/auth-user.decorator';
 
 const VALID_STATES = getValidStates(STATE_TRANSITIONS);
 
@@ -86,6 +92,8 @@ export class OrdersWriteService {
     private readonly appConfig: AppConfigService,
     private readonly organizationService: OrganizationService,
     private readonly enrichmentService: EnrichmentService,
+    private readonly pdfTemplatesService: PdfTemplatesService,
+    private readonly emailService: EmailService,
   ) {}
 
   private readonly logger = new Logger(OrdersWriteService.name);
@@ -476,6 +484,7 @@ export class OrdersWriteService {
           exchangeRate: fx.rate.toString(),
           notes: dto.notes,
           shippingNotes: dto.shippingNotes,
+          deliveryCustomerName: dto.deliveryCustomerName ?? customer.name,
           deliveryName: dto.deliveryName,
           deliveryPhone: dto.deliveryPhone,
           deliveryAddressLine1: dto.deliveryAddressLine1,
@@ -1139,6 +1148,54 @@ export class OrdersWriteService {
     });
 
     return await this.findOrder(id);
+  }
+
+  async emailQuote(id: string, dto: EmailQuoteDto, user: JwtUser) {
+    // 1. Verify order state
+    const order = await this.findOne(id);
+    if (!order) {
+      throw new HttpException('Order not found', HttpStatus.NOT_FOUND);
+    }
+    if (
+      order.stateCode !== SALES_ORDER_STATE.DRAFT &&
+      order.stateCode !== SALES_ORDER_STATE.QUOTED
+    ) {
+      throw new HttpException(
+        'Can only email quotes for orders in draft or quoted state',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // 2. Generate PDF using the standard hook
+    const { pdfBuffer, fileName } = await this.pdfTemplatesService.runHook(
+      'sales-order-quote',
+      id,
+      DATA_SOURCE_CONTEXT.SALES_ORDER,
+      user,
+      { quoteIntroText: dto.quoteIntroText },
+    );
+
+    const base64Pdf = pdfBuffer.toString('base64');
+
+    // 3. Queue email
+    await this.db.transaction(async (tx) => {
+      await this.emailService.queueEmail(tx, {
+        entityType: 'sales_order',
+        entityId: id,
+        toAddress: dto.emailAddress,
+        subject: dto.subject,
+        htmlBody: dto.body, // The macro text goes here
+        attachments: [
+          {
+            filename: fileName || `Quote-${order.orderNumber}.pdf`,
+            contentType: 'application/pdf',
+            content: base64Pdf,
+          },
+        ],
+      });
+    });
+
+    return { success: true };
   }
 
   /**
@@ -1926,6 +1983,9 @@ export class OrdersWriteService {
         purchaseOrderId: backorders.purchaseOrderId,
         purchaseOrderNumber: purchaseOrders.orderNumber,
         purchaseOrderState: purchaseOrders.stateCode,
+        transferOrderId: backorders.transferOrderId,
+        transferOrderNumber: transferOrders.orderNumber,
+        transferOrderState: transferOrders.stateCode,
         createdOn: backorders.createdOn,
       })
       .from(backorders)
@@ -1933,6 +1993,10 @@ export class OrdersWriteService {
       .leftJoin(
         purchaseOrders,
         eq(backorders.purchaseOrderId, purchaseOrders.purchaseOrderId),
+      )
+      .leftJoin(
+        transferOrders,
+        eq(backorders.transferOrderId, transferOrders.transferOrderId),
       )
       .leftJoin(
         salesOrderLineItems,

@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { DataSourceContext } from '@herobm/shared';
 
 export interface DataSourceProvider {
   // Used by Business Reports (Ag-Grid / Recharts)
@@ -26,7 +27,7 @@ export class DataSourcesRegistry {
   private readonly logger = new Logger(DataSourcesRegistry.name);
   private readonly providers = new Map<string, DataSourceProvider>();
 
-  register(slug: string, provider: DataSourceProvider) {
+  register(slug: DataSourceContext, provider: DataSourceProvider) {
     if (this.providers.has(slug)) {
       this.logger.warn(
         `Data source provider for "${slug}" is being overwritten.`,

@@ -44,6 +44,8 @@ export class PurchaseInvoiceResponseDto {
   @ApiPropertyOptional() earlyPaymentDiscountDays?: number;
   @ApiProperty() createdBy!: string;
   @ApiProperty() createdOn!: Date;
+  @ApiPropertyOptional() invoiceDate?: Date;
+  @ApiPropertyOptional() dueDate?: Date;
 
   @ApiProperty({ type: () => [InvoiceLineResponseDto] })
   lines!: InvoiceLineResponseDto[];
@@ -73,12 +75,20 @@ export class SalesInvoiceResponseDto {
   @ApiPropertyOptional() earlyPaymentDiscountDays?: number;
   @ApiProperty() createdBy!: string;
   @ApiProperty() createdOn!: Date;
+  @ApiPropertyOptional() invoiceDate?: Date;
+  @ApiPropertyOptional() dueDate?: Date;
 
   @ApiProperty({ type: () => [InvoiceLineResponseDto] })
   lines!: InvoiceLineResponseDto[];
 
   @ApiPropertyOptional({ type: () => [Object] })
   allocations?: Record<string, unknown>[];
+
+  @ApiPropertyOptional({ type: () => [Object] })
+  events?: Record<string, unknown>[];
+
+  @ApiPropertyOptional()
+  termsDescription?: string;
 }
 
 export class SalesInvoiceListResponseDto {

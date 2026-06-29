@@ -1817,10 +1817,15 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
       name: 'E2E Default Customer',
       currencyCode: 'AUD', // testData
       billingAddressCountry: 'AU',
+      creditLimit: '1000000000',
     })
     .onConflictDoUpdate({
       target: customers.customerId,
-      set: { name: 'E2E Default Customer', billingAddressCountry: 'AU' },
+      set: {
+        name: 'E2E Default Customer',
+        billingAddressCountry: 'AU',
+        creditLimit: '1000000000',
+      },
     });
 
   // Seed vendor

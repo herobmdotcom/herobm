@@ -46,7 +46,6 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
         <>
             <div className="hidden lg:flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider whitespace-nowrap">{tCommon('columns.location')}</label>
                     <select
                         value={selectedLocationId}
                         onChange={(e) => {
@@ -63,7 +62,6 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                     </select>
                 </div>
                 <div className="flex items-center gap-2">
-                    <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider whitespace-nowrap">{tCommon('columns.date')}</label>
                     <select
                         value={days}
                         onChange={(e) => setDays(e.target.value)}
@@ -89,7 +87,6 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                 {open && (
                     <div className="absolute left-0 right-0 sm:left-auto sm:right-0 top-full mt-2 w-full sm:w-64 bg-white -[0_4px_24px_rgba(0,0,0,0.12)] rounded-xl border border-[var(--border)] p-4 z-50 flex flex-col gap-4">
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{tCommon('columns.location')}</label>
                             <select
                                 value={selectedLocationId}
                                 onChange={(e) => {
@@ -106,7 +103,6 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                             </select>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">{tCommon('columns.date')}</label>
                             <select
                                 value={days}
                                 onChange={(e) => setDays(e.target.value)}

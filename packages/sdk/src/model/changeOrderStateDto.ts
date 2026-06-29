@@ -7,7 +7,7 @@
  */
 
 export interface ChangeOrderStateDto {
+  discrepanciesAcknowledged?: boolean;
   stateCode: string;
   generateBackorders?: boolean;
-  discrepanciesAcknowledged?: boolean;
 }

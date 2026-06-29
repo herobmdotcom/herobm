@@ -8,11 +8,11 @@ export interface EntityHeaderProps {
   title: string | React.ReactNode;
   subtitle?: string | React.ReactNode;
   badges?: React.ReactNode;
-  onBack?: () => void;
   isSaving?: boolean;
   isDirty?: boolean;
   onSave?: () => void;
   saveLabel?: string;
+
   actions?: React.ReactNode;
   /** Optional section quick-nav rendered below the subtitle */
   nav?: React.ReactNode;
@@ -24,7 +24,6 @@ export default function EntityHeader({
   title,
   subtitle,
   badges,
-  onBack,
   isSaving,
   isDirty,
   onSave,
@@ -42,15 +41,7 @@ export default function EntityHeader({
           {nav && <div className="hidden lg:block">{nav}</div>}
           <div className="flex items-center justify-between lg:justify-end w-full lg:w-auto">
             <div className="lg:hidden">
-              {onBack && (
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={onBack}
-                  aria-label="Go back"
-                >
-                  ←
-                </button>
-              )}
+
             </div>
             <div className="flex flex-wrap items-center gap-2 justify-end">
               {showPrint && <PrintButton />}
@@ -71,15 +62,7 @@ export default function EntityHeader({
         {/* Title Section */}
         <div className="order-2 lg:order-1 min-w-0 flex items-start gap-5">
           <div className="hidden lg:block">
-            {onBack && (
-              <button
-                className="btn btn-secondary btn-sm mt-1"
-                onClick={onBack}
-                aria-label="Go back"
-              >
-                ←
-              </button>
-            )}
+
           </div>
           <div className="min-w-0">
             <div className="flex flex-row items-center gap-2 sm:gap-3 mb-1">

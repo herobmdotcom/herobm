@@ -227,6 +227,10 @@ export class OrganizationResponseDto {
 export class AppConfigResponseDto {
   @ApiProperty() defaultFulfillmentLocationId!: string;
   @ApiProperty() apiRateLimit!: string;
+  @ApiProperty({ required: false }) creditLimitBehavior?:
+    | 'hard'
+    | 'soft'
+    | 'notify';
   @ApiProperty({ required: false }) taxProviderMappings?: Record<
     string,
     string

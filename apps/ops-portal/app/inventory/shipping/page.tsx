@@ -30,6 +30,7 @@ interface ShippingOrder {
     shippabilityStatus: 'ready' | 'partial';
     totalShippableLines: number;
     totalLines: number;
+    type?: 'sales_order' | 'transfer_order';
 }
 
 interface ShippingLine {
@@ -43,6 +44,7 @@ interface ShippingLine {
     quantityPicked: string;
     quantityShipped: string;
     availableToShip: string;
+    productType?: string;
 }
 
 interface ShipmentSummary {
@@ -214,13 +216,30 @@ export default function ShippingPage() {
 
     // ── Computed ─────────────────────────────────────────────────
 
-    const shippableLines = useMemo(() => {
+    const activeLines = useMemo(() => {
         if (!context) return [];
-        return context.lines.filter(l => parseFloat(l.availableToShip) > 0);
+        return context.lines.filter(l => parseFloat(l.quantity) > 0);
     }, [context]);
 
+    const activePhysicalLines = useMemo(() => {
+        return activeLines.filter(l => l.isPhysical);
+    }, [activeLines]);
+
+    const shippableLines = useMemo(() => {
+        return activePhysicalLines.filter(l => parseFloat(l.availableToShip) > 0);
+    }, [activePhysicalLines]);
+
+    const sortedLines = useMemo(() => {
+        return [...activeLines].sort((a, b) => {
+            if (a.isPhysical === b.isPhysical) {
+                return a.lineNumber - b.lineNumber;
+            }
+            return a.isPhysical ? -1 : 1;
+        });
+    }, [activeLines]);
+
     const totalShippable = shippableLines.length;
-    const totalLines = context?.lines.filter(l => l.isPhysical).length ?? 0;
+    const totalLines = activePhysicalLines.length;
 
     const actionFormContent = (
         <>
@@ -239,7 +258,7 @@ export default function ShippingPage() {
                     {/* Header */}
                     <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex justify-between items-center">
                         <h2 className="text-sm text-[var(--text-primary)] uppercase tracking-wider truncate mr-4 flex items-center gap-4">
-                            <Link href={`/sales-orders/${selectedOrder.id}`} className="font-bold shrink-0 hover:text-[var(--accent)] hover:underline transition-colors">
+                            <Link href={selectedOrder.type === 'transfer_order' ? `/inventory/transfers/${selectedOrder.id}` : `/sales-orders/${selectedOrder.id}`} className="font-bold shrink-0 hover:text-[var(--accent)] hover:underline transition-colors">
                                 {selectedOrder.orderNumber}
                             </Link>
                             <span className="text-[var(--text-muted)] opacity-50">&middot;</span>
@@ -272,7 +291,8 @@ export default function ShippingPage() {
                                             <div className="flex-1">
                                                 { }
                                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                                                    Delivery Address
+                                                    {/* eslint-disable-next-line no-restricted-syntax -- legacy */}
+                                                    {context.order.type === 'transfer_order' ? 'Destination Location' : 'Delivery Address'}
                                                 </label>
                                                 <div className="p-3 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg">
                                                     <AddressDisplay
@@ -284,6 +304,7 @@ export default function ShippingPage() {
                                                         country={context.order.deliveryCountry}
                                                         phone={context.order.deliveryPhone}
                                                         recipientName={context.order.deliveryName}
+                                                        companyName={context.order.deliveryCustomerName ?? undefined}
                                                     />
                                                 </div>
                                             </div>
@@ -334,15 +355,19 @@ export default function ShippingPage() {
                                 <div>
                                     {/* Mobile Cards */}
                                     <div className="lg:hidden flex flex-col gap-3">
-                                        {context.lines.filter(l => l.isPhysical).map(line => {
+                                        {sortedLines.map(line => {
                                             const available = parseFloat(line.availableToShip);
-                                            const hasStock = available > 0;
+                                            const isPhysical = line.isPhysical;
+                                            const hasStock = isPhysical && available > 0;
                                             return (
-                                                <div key={line.salesOrderLineId} className={`p-4 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg ${!hasStock ? 'opacity-50' : ''}`}>
+                                                <div key={line.salesOrderLineId} className={`p-4 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg ${isPhysical && !hasStock ? 'opacity-50' : ''}`}>
                                                     <div className="flex justify-between items-start mb-2">
                                                         <div>
                                                             <div className="font-bold">{line.productNumber}</div>
-                                                            <div className="text-xs text-[var(--text-muted)] mt-0.5">{line.productDescription}</div>
+                                                            <div className="text-xs text-[var(--text-muted)] mt-0.5">
+                                                                {!isPhysical && <span className="uppercase text-[10px] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded mr-2 font-bold">{line.productType}</span>}
+                                                                {line.productDescription}
+                                                            </div>
                                                         </div>
                                                         <div className="text-right flex flex-col items-end">
                                                             <div className="text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('columns.qtyToShip')}</div>
@@ -388,7 +413,7 @@ export default function ShippingPage() {
                                                 </div>
                                             );
                                         })}
-                                        {context.lines.filter(l => l.isPhysical).length === 0 && (
+                                        {sortedLines.length === 0 && (
                                             <div className="py-6 text-center text-sm text-[var(--text-muted)] border border-[var(--border)] rounded-lg">
                                                 {t('noPhysicalLines')}
                                             </div>
@@ -408,27 +433,31 @@ export default function ShippingPage() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {context.lines.filter(l => l.isPhysical).map(line => {
+                                            {sortedLines.map(line => {
                                                 const available = parseFloat(line.availableToShip);
-                                                const hasStock = available > 0;
+                                                const isPhysical = line.isPhysical;
+                                                const hasStock = isPhysical && available > 0;
                                                 return (
-                                                    <tr key={line.salesOrderLineId} className={!hasStock ? 'opacity-50' : ''}>
+                                                    <tr key={line.salesOrderLineId} className={isPhysical && !hasStock ? 'opacity-50' : ''}>
                                                         <td>
-                                                            <div className="font-bold">{line.productNumber}</div>
+                                                            <div className="font-bold">
+                                                                {line.productNumber}
+                                                                {!isPhysical && <span className="ml-2 uppercase text-[10px] bg-[var(--bg-secondary)] px-1.5 py-0.5 rounded font-bold text-[var(--text-muted)]">{line.productType}</span>}
+                                                            </div>
                                                             <div className="text-xs text-[var(--text-muted)] truncate max-w-[250px]">{line.productDescription}</div>
                                                         </td>
                                                         <td style={{ textAlign: 'right' }}>
                                                             {parseFloat(line.quantity).toLocaleString()}
                                                         </td>
                                                         <td style={{ textAlign: 'right' }}>
-                                                            {parseFloat(line.quantityPicked).toLocaleString()}
+                                                            {isPhysical ? parseFloat(line.quantityPicked).toLocaleString() : '-'}
                                                         </td>
                                                         <td style={{ textAlign: 'right' }}>
-                                                            {parseFloat(line.quantityShipped).toLocaleString()}
+                                                            {isPhysical ? parseFloat(line.quantityShipped).toLocaleString() : '-'}
                                                         </td>
                                                         <td style={{ textAlign: 'right' }}>
                                                             <span className={hasStock ? 'font-semibold text-[var(--success)]' : 'text-[var(--text-muted)]'}>
-                                                                {available.toLocaleString()}
+                                                                {isPhysical ? available.toLocaleString() : '-'}
                                                             </span>
                                                         </td>
                                                         <td style={{ textAlign: 'right' }}>
@@ -455,7 +484,7 @@ export default function ShippingPage() {
                                                     </tr>
                                                 );
                                             })}
-                                            {context.lines.filter(l => l.isPhysical).length === 0 && (
+                                            {sortedLines.length === 0 && (
                                                 <tr>
                                                     <td colSpan={6} className="py-6 text-center text-sm text-[var(--text-muted)]">
                                                         {t('noPhysicalLines')}

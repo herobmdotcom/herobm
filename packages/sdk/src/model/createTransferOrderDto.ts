@@ -11,5 +11,6 @@ export interface CreateTransferOrderDto {
   sourceLocationId: string;
   destinationLocationId: string;
   notes?: string;
+  shippingNotes?: string;
   lines: CreateTransferOrderLineDto[];
 }

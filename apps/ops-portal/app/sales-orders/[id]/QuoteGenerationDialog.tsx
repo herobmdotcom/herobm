@@ -45,10 +45,13 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
     setLoading(true);
     setError(null);
     try {
-      const res = await api.macrosControllerFindAll({ macroType: 'text_template' } );
-      const data = res.data;
-      const textMacros = data.filter((m: Macro) => m.macroType === 'text_template') as Macro[];
-      setMacros(textMacros);
+      const [hookRes, generalRes] = await Promise.all([
+        api.macrosControllerFindAll({ macroType: 'sales-order-quote' }),
+        api.macrosControllerFindAll({ macroType: 'general' }),
+      ]);
+      const hookMacros = hookRes.data.filter((m: Macro) => m.macroType === 'sales-order-quote') as Macro[];
+      const generalMacros = generalRes.data.filter((m: Macro) => m.macroType === 'general') as Macro[];
+      setMacros([...hookMacros, ...generalMacros]);
     } catch (err: unknown) {
       setError(getErrorMessage(err) || 'Failed to load macros');
     } finally {

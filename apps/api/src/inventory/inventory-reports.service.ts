@@ -1,4 +1,5 @@
 import { Injectable, Inject, OnModuleInit, Logger } from '@nestjs/common';
+import { DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { DataSourcesRegistry } from '../data-sources/data-sources.registry';
@@ -27,19 +28,19 @@ export class InventoryReportsService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.registry.register('inventory-valuation', {
+    this.registry.register(DATA_SOURCE_CONTEXT.INVENTORY_VALUATION, {
       fetchData: (filters: Record<string, unknown>) =>
         this.getInventoryValuation(filters),
     });
-    this.registry.register('inventory-movements', {
+    this.registry.register(DATA_SOURCE_CONTEXT.INVENTORY_MOVEMENTS, {
       fetchData: (filters: Record<string, unknown>) =>
         this.getInventoryMovements(filters),
     });
-    this.registry.register('inventory-replenishment', {
+    this.registry.register(DATA_SOURCE_CONTEXT.INVENTORY_REPLENISHMENT, {
       fetchData: (filters: Record<string, unknown>) =>
         this.getInventoryReplenishment(filters),
     });
-    this.registry.register('inventory-quarantine', {
+    this.registry.register(DATA_SOURCE_CONTEXT.INVENTORY_QUARANTINE, {
       fetchData: (filters: Record<string, unknown>) =>
         this.getInventoryQuarantine(filters),
     });

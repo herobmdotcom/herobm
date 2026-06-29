@@ -19,7 +19,8 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { TransferService } from './transfers.service';
-import { ApiPaginatedResponse, PaginationQuery } from '../../common/pagination';
+import { ShipmentResponseDto } from '../dto';
+import { ApiPaginatedResponse } from '../../common/pagination';
 import {
   CreateTransferOrderDto,
   UpdateTransferOrderDto,
@@ -32,6 +33,7 @@ import {
   PickLineDto,
   ReceiveTransferDto,
   EmptyBodyDto,
+  TransferPaginationQuery,
 } from './dto';
 import {
   CasbinGuard,
@@ -155,7 +157,7 @@ export class TransfersController {
   ) {
     return this.transferService.receiveTransferOrder(
       id,
-      body.destinationBinId,
+      body.lines,
       user.username,
     );
   }
@@ -198,7 +200,7 @@ export class TransfersController {
   })
   @ApiPaginatedResponse(TransferResponseDto)
   @ApiFieldMask()
-  async findAll(@Query() query: PaginationQuery) {
+  async findAll(@Query() query: TransferPaginationQuery) {
     return this.transferService.findAll(query);
   }
 
@@ -212,6 +214,17 @@ export class TransfersController {
   @ApiFieldMask()
   async findOne(@Param('id') id: string) {
     return this.transferService.findOne(id);
+  }
+
+  @Get(':id/shipments')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find Shipments',
+    description: 'Retrieve all shipments for a specific transfer order.',
+  })
+  @ApiOkResponse({ type: [ShipmentResponseDto] })
+  async findShipments(@Param('id') id: string) {
+    return this.transferService.findShipments(id);
   }
 
   @Post()

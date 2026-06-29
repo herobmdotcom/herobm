@@ -11,6 +11,7 @@ export interface SalesInvoiceDetails {
   customerId: string;
   customerName: string;
   invoiceDate: string;
+  dueDate?: string;
   createdOn: string;
   totalAmount: string;
   taxAmount: string;
@@ -18,8 +19,10 @@ export interface SalesInvoiceDetails {
   currencyCode: string;
   stateCode: string;
   notes?: string;
+  termsDescription?: string;
   earlyPaymentDiscount?: string | null;
   earlyPaymentDiscountDays?: number | null;
+  events?: { eventId: string; eventType: string; payload: Record<string, unknown>; actor: string; createdOn: string }[];
   lines: Array<{
     lineId: string;
     productId: string;

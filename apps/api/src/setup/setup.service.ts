@@ -14,6 +14,7 @@ import {
   locations,
   glAccounts,
   pipelineJobs,
+  tradingTerms,
 } from '../drizzle/herobm-core-schema';
 import {
   ExecuteSetupDto,
@@ -558,6 +559,14 @@ export class SetupService {
     const tableCols = getTableColumns(entry.table);
     const colNames = Object.keys(tableCols).map((k) => tableCols[k].name);
 
+    const tradingTermsMap = new Map<string, string>();
+    if (colNames.includes('termsDescription')) {
+      const allTerms = await this.db.select().from(tradingTerms);
+      for (const term of allTerms) {
+        tradingTermsMap.set(term.code.toLowerCase(), `${term.code} - ${term.description}`);
+      }
+    }
+
     this.log(jobId, `Starting CSV parsing for strategy: ${strategy}...`);
 
     const records: Record<string, unknown>[] = [];
@@ -579,6 +588,10 @@ export class SetupService {
           if (col === 'address1Country' && dbRecord[col]) {
             dbRecord[col] =
               getCountryCode(dbRecord[col] as string) || dbRecord[col];
+          }
+          if (col === 'termsDescription' && dbRecord[col]) {
+            const raw = (dbRecord[col] as string).trim();
+            dbRecord[col] = tradingTermsMap.get(raw.toLowerCase()) || raw;
           }
           if (col === 'currencyCode') {
             dbRecord[col] = mapCurrencyCode(dbRecord[col] as string | null);

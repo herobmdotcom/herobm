@@ -17,6 +17,7 @@ export default function BalancesContent() {
   const [agingBasis, setAgingBasis] = useState<'invoiceDate' | 'dueDate'>('dueDate');
   const [isLoading, setIsLoading] = useState(true);
   const t = useTranslations('common');
+  const tStates = useTranslations('common.states');
 
   const fetchBalances = async (basis: 'invoiceDate' | 'dueDate') => {
     setIsLoading(true);
@@ -38,52 +39,28 @@ export default function BalancesContent() {
     { field: 'accountNumber', headerName: 'Account No.', width: 120 },
     { field: 'customerName', headerName: 'Customer Name', flex: 1, minWidth: 200 },
     {
+      colId: 'status',
+      headerName: t('columns.status'),
+      width: 120,
+      valueGetter: (params) => {
+        if (!params.data) return '';
+        if (params.data.isOnCreditHold) return t('columns.creditHold');
+        if (!params.data.stateCode) return '';
+        const s = String(params.data.stateCode).toLowerCase();
+        return tStates.has(s as Parameters<typeof tStates>[0]) ? tStates(s as Parameters<typeof tStates>[0]) : String(params.data.stateCode);
+      }
+    },
+    {
       field: 'creditLimit',
       headerName: 'Credit Limit',
       width: 120,
       type: 'numericColumn',
       valueFormatter: (params) => {
-        if (!params.value) return 'No Limit';
+        if (params.value == null || params.value === '') {
+          return formatAmount(0, params.data?.currencyCode || 'USD');
+        }
         return formatAmount(Number(params.value), params.data?.currencyCode || 'USD');
       },
-    },
-    {
-      field: 'isOnCreditHold',
-      headerName: 'On Hold',
-      width: 100,
-      cellRenderer: (params: { value: boolean }) => {
-        if (params.value) {
-          return <span className="px-2 py-0.5 rounded text-xs font-bold bg-[var(--danger)] text-white">Hold</span>;
-        }
-        return '';
-      },
-    },
-    {
-      field: 'glBalance',
-      headerName: 'GL Balance',
-      width: 150,
-      type: 'numericColumn',
-      valueFormatter: (params) => formatAmount(params.value, params.data?.currencyCode || 'USD'),
-    },
-    {
-      field: 'totalOutstanding',
-      headerName: 'Total Invoices',
-      width: 150,
-      type: 'numericColumn',
-      valueFormatter: (params) => formatAmount(params.value, params.data?.currencyCode || 'USD'),
-    },
-    {
-      field: 'discrepancyAmount',
-      headerName: 'Discrepancy',
-      width: 150,
-      type: 'numericColumn',
-      cellStyle: (params) => {
-        if (params.value && params.value > 0.01) {
-          return { color: 'var(--danger)', fontWeight: 'bold' };
-        }
-        return { color: 'var(--success)', fontWeight: 'normal' };
-      },
-      valueFormatter: (params) => formatAmount(params.value, params.data?.currencyCode || 'USD'),
     },
     {
       field: 'current',
@@ -118,6 +95,33 @@ export default function BalancesContent() {
       headerName: '90+ Days',
       width: 150,
       type: 'numericColumn',
+      valueFormatter: (params) => formatAmount(params.value, params.data?.currencyCode || 'USD'),
+    },
+    {
+      field: 'totalOutstanding',
+      headerName: 'Total Invoices',
+      width: 150,
+      type: 'numericColumn',
+      valueFormatter: (params) => formatAmount(params.value, params.data?.currencyCode || 'USD'),
+    },
+    {
+      field: 'glBalance',
+      headerName: 'GL Balance',
+      width: 150,
+      type: 'numericColumn',
+      valueFormatter: (params) => formatAmount(params.value, params.data?.currencyCode || 'USD'),
+    },
+    {
+      field: 'discrepancyAmount',
+      headerName: 'Discrepancy',
+      width: 150,
+      type: 'numericColumn',
+      cellStyle: (params) => {
+        if (params.value && params.value > 0.01) {
+          return { color: 'var(--danger)', fontWeight: 'bold' };
+        }
+        return { color: 'var(--success)', fontWeight: 'normal' };
+      },
       valueFormatter: (params) => formatAmount(params.value, params.data?.currencyCode || 'USD'),
     },
   ], []);

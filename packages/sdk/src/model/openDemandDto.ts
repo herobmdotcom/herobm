@@ -35,5 +35,11 @@ export interface OpenDemandDto {
   purchaseOrderNumber?: string | null;
   /** @nullable */
   purchaseOrderState?: string | null;
+  /** @nullable */
+  transferOrderId?: string | null;
+  /** @nullable */
+  transferOrderNumber?: string | null;
+  /** @nullable */
+  transferOrderState?: string | null;
   availableElsewhere: OpenDemandLocationAvailabilityDto[];
 }

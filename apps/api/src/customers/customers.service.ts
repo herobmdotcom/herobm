@@ -348,6 +348,8 @@ export class AccountsService {
       deliveryAddresses: deliveryAddressesResult,
       isSalesBlocked: risk.isSalesBlocked,
       salesBlockReasons: risk.salesBlockReasons,
+      creditAssessment,
+      effectiveCreditLimit: risk.effectiveCreditLimit,
     };
   }
 
@@ -360,8 +362,13 @@ export class AccountsService {
         c.name as "customerName",
         c.customer_number as "accountNumber",
         c.currency_code as "currencyCode",
-        c.is_on_credit_hold as "isOnCreditHold",
-        c.credit_limit as "creditLimit",
+        c.state_code as "stateCode",
+        c.is_on_credit_hold as "cIsOnCreditHold",
+        c.credit_limit as "cCreditLimit",
+        c.override_credit_hold_until as "cOverride",
+        c.customer_group_id as "customerGroupId",
+        g.is_on_credit_hold as "gIsOnCreditHold",
+        g.credit_limit as "gCreditLimit",
         COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} >= CURRENT_DATE THEN i.outstanding_amount ELSE 0 END), 0) as "current",
         COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '30 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days1To30",
         COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '30 days' AND i.${sql.raw(basisCol)} >= CURRENT_DATE - INTERVAL '60 days' THEN i.outstanding_amount ELSE 0 END), 0) as "days31To60",
@@ -369,10 +376,11 @@ export class AccountsService {
         COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '90 days' OR i.${sql.raw(basisCol)} IS NULL THEN i.outstanding_amount ELSE 0 END), 0) as "days90Plus",
         COALESCE(SUM(i.outstanding_amount), 0) as "totalOutstanding"
       FROM herobm_core.customers c
+      LEFT JOIN herobm_core.customer_groups g ON c.customer_group_id = g.customer_group_id
       JOIN herobm_core.sales_orders so ON so.customer_id = c.customer_id
       JOIN herobm_core.sales_invoices i ON i.sales_order_id = so.sales_order_id
       WHERE i.outstanding_amount > 0 AND i.state_code NOT IN (${SALES_INVOICE_STATE.DRAFT}, ${SALES_INVOICE_STATE.CANCELLED}, ${SALES_INVOICE_STATE.PAID})
-      GROUP BY c.customer_id, c.name, c.customer_number, c.currency_code, c.is_on_credit_hold, c.credit_limit
+      GROUP BY c.customer_id, c.name, c.customer_number, c.currency_code, c.state_code, c.is_on_credit_hold, c.credit_limit, c.override_credit_hold_until, c.customer_group_id, g.is_on_credit_hold, g.credit_limit
     `;
 
     const glQuery = sql`
@@ -405,12 +413,54 @@ export class AccountsService {
     return invoicesRows.map((row) => {
       const glBalance = glMap.get(row.customerId as string) || 0;
       const totalOutstanding = Number(row.totalOutstanding);
+      const current = Number(row.current);
+      const overdueInvoiceBalance = totalOutstanding - current;
+
+      const custProfile = {
+        stateCode: row.stateCode as string,
+        isOnCreditHold: Boolean(row.cIsOnCreditHold),
+        creditLimit:
+          row.cCreditLimit !== null
+            ? String(row.cCreditLimit as string | number)
+            : null,
+        tradingTermsId: null,
+        overrideCreditHoldUntil: row.cOverride
+          ? new Date(row.cOverride as string)
+          : null,
+      };
+
+      const groupProfile = row.customerGroupId
+        ? {
+            stateCode: row.stateCode as string,
+            isOnCreditHold: Boolean(row.gIsOnCreditHold),
+            creditLimit:
+              row.gCreditLimit !== null
+                ? String(row.gCreditLimit as string | number)
+                : null,
+            tradingTermsId: null,
+          }
+        : null;
+
+      const risk = resolveCustomerRiskProfile(
+        custProfile,
+        groupProfile,
+        {
+          totalInvoiceBalance: totalOutstanding,
+          overdueInvoiceBalance,
+          glBalance,
+          isOverdue: overdueInvoiceBalance > 0,
+        },
+        0,
+        'hard',
+        'confirm',
+      );
+
       return {
         customerId: row.customerId as string,
         customerName: row.customerName as string,
         accountNumber: row.accountNumber as string,
         currencyCode: row.currencyCode,
-        current: Number(row.current),
+        current,
         days1To30: Number(row.days1To30),
         days31To60: Number(row.days31To60),
         days61To90: Number(row.days61To90),
@@ -418,9 +468,9 @@ export class AccountsService {
         totalOutstanding,
         glBalance,
         discrepancyAmount: Math.abs(totalOutstanding - glBalance),
-        isOnCreditHold: Boolean(row.isOnCreditHold),
-        creditLimit:
-          row.creditLimit !== null ? (row.creditLimit as string) : null,
+        isOnCreditHold: risk.isSalesBlocked,
+        creditLimit: risk.effectiveCreditLimit,
+        stateCode: row.stateCode as string,
       };
     });
   }

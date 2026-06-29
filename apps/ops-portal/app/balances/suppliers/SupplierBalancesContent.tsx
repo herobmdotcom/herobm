@@ -41,7 +41,9 @@ export default function SupplierBalancesContent() {
       width: 120,
       type: 'numericColumn',
       valueFormatter: (params) => {
-        if (!params.value) return 'No Limit';
+        if (params.value == null || params.value === '') {
+          return formatAmount(0, params.data?.currencyCode || 'USD');
+        }
         return formatAmount(Number(params.value), params.data?.currencyCode || 'USD');
       },
     },

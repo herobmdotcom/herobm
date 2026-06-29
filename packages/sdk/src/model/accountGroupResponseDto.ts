@@ -12,7 +12,6 @@ export interface AccountGroupResponseDto {
   customerGroupId: string;
   groupCode: string;
   name: string;
-  defaultDiscountPercentage?: string;
   defaultArAccountId?: string;
   defaultRevenueAccountId?: string;
   defaultCostCenterId?: string;

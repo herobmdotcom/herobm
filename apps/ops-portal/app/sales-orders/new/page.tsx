@@ -114,6 +114,7 @@ export default function NewOrderPage() {
   const router = useRouter();
 
   const [customerId, setCustomerId] = useState('');
+  const [customerName, setCustomerName] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerDiscount, setCustomerDiscount] = useState('0');
   const [discountRules, setDiscountRules] = useState<DiscountRule[]>([]);
@@ -127,6 +128,7 @@ export default function NewOrderPage() {
   const [customerDeliveryAddresses, setCustomerDeliveryAddresses] = useState<api.DeliveryAddressResponseDto[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [isAddressSlideOverOpen, setIsAddressSlideOverOpen] = useState(false);
+  const [deliveryCustomerName, setDeliveryCustomerName] = useState('');
   const [deliveryName, setDeliveryName] = useState('');
   const [deliveryPhone, setDeliveryPhone] = useState('');
   const [deliveryAddressLine1, setDeliveryAddressLine1] = useState('');
@@ -184,6 +186,7 @@ export default function NewOrderPage() {
   // Select customer logic
   const selectCustomer = async (a: Customer) => {
     setCustomerId(a.customerId);
+    setCustomerName(a.name || '');
     setCustomerSearch(`${a.customerNumber} — ${a.name}`);
     
     // Fetch discount rules for this customer
@@ -215,6 +218,7 @@ export default function NewOrderPage() {
       });
 
     setShippingNotes('');
+    setDeliveryCustomerName(a.name || '');
     setDeliveryName('');
     setDeliveryPhone('');
     setDeliveryAddressLine1('');
@@ -324,6 +328,7 @@ export default function NewOrderPage() {
         fulfillmentLocationId: fulfillmentLocationId || undefined,
         notes: notes || undefined,
         shippingNotes: shippingNotes || undefined,
+        deliveryCustomerName: deliveryCustomerName || undefined,
         deliveryName: deliveryName || undefined,
         deliveryPhone: deliveryPhone || undefined,
         deliveryAddressLine1: deliveryAddressLine1 || undefined,
@@ -369,7 +374,6 @@ export default function NewOrderPage() {
         header={
           <EntityHeader
             title={tSales('salesOrders.createTitle')}
-            onBack={() => router.push('/sales-orders')}
             actions={
               <>
                 <button
@@ -945,6 +949,7 @@ export default function NewOrderPage() {
                     } else {
                       const addr = customerDeliveryAddresses.find(a => a.id === val);
                       if (addr) {
+                        setDeliveryCustomerName(addr.companyName || '');
                         setDeliveryName(addr.recipientName || '');
                         setDeliveryPhone(addr.recipientPhone || '');
                         setDeliveryAddressLine1(addr.addressLine1 || '');
@@ -966,6 +971,14 @@ export default function NewOrderPage() {
                   <option value="other">Other...</option>
                 </select>
                 <div className="grid grid-cols-2 gap-4 mb-2 mt-2">
+                  <div className="col-span-2">
+                    <input
+                      className="input w-full"
+                      placeholder="Company Name"
+                      value={deliveryCustomerName}
+                      onChange={(e) => setDeliveryCustomerName(e.target.value)}
+                    />
+                  </div>
                   <input
                     className="input w-full"
                     placeholder="Attention To"
@@ -1032,9 +1045,11 @@ export default function NewOrderPage() {
           isOpen={isAddressSlideOverOpen}
           onClose={() => setIsAddressSlideOverOpen(false)}
           customerId={customerId}
+          customerName={customerName}
           allowUnsaved={true}
           defaultCountry={customerCountry}
           onSaved={(addr, saved) => {
+            setDeliveryCustomerName(addr.companyName || '');
             setDeliveryName(addr.recipientName || '');
             setDeliveryPhone(addr.recipientPhone || '');
             setDeliveryAddressLine1(addr.addressLine1 || '');

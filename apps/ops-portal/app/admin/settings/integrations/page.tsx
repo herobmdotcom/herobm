@@ -261,7 +261,6 @@ export default function IntegrationsSettingsPage() {
         <EntityHeader
           title="Integrations & Enrichment"
           subtitle="Manage external integrations, data providers, and API keys"
-          onBack={() => router.push('/admin/settings/system')}
           showPrint={false}
         />
       }

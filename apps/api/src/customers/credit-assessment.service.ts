@@ -16,6 +16,8 @@ export interface CreditAssessmentResult {
   overdueInvoiceBalance: number;
   glBalance: number;
   isOverdue: boolean;
+  oldestOverdueInvoice?: string;
+  oldestOverdueInvoiceId?: string;
 }
 
 @Injectable()
@@ -55,7 +57,9 @@ export class CreditAssessmentService {
     const invoicesQuery = sql`
       SELECT 
         COALESCE(SUM(si.outstanding_amount), 0) AS total_invoice_balance,
-        COALESCE(SUM(CASE WHEN si.due_date < CURRENT_DATE THEN si.outstanding_amount ELSE 0 END), 0) AS overdue_invoice_balance
+        COALESCE(SUM(CASE WHEN si.due_date < CURRENT_DATE THEN si.outstanding_amount ELSE 0 END), 0) AS overdue_invoice_balance,
+        (array_agg(si.invoice_number ORDER BY si.due_date ASC) FILTER (WHERE si.due_date < CURRENT_DATE))[1] AS oldest_overdue_invoice,
+        (array_agg(si.invoice_id ORDER BY si.due_date ASC) FILTER (WHERE si.due_date < CURRENT_DATE))[1] AS oldest_overdue_invoice_id
       FROM herobm_core.sales_invoices si
       JOIN herobm_core.sales_orders so ON so.sales_order_id = si.sales_order_id
       WHERE so.customer_id = ${customerId}
@@ -97,6 +101,9 @@ export class CreditAssessmentService {
       overdueInvoiceBalance,
       glBalance,
       isOverdue: overdueInvoiceBalance > 0,
+      oldestOverdueInvoice: invoicesPayload.oldest_overdue_invoice || undefined,
+      oldestOverdueInvoiceId:
+        invoicesPayload.oldest_overdue_invoice_id || undefined,
     };
   }
 
@@ -132,7 +139,9 @@ export class CreditAssessmentService {
       SELECT 
         so.customer_id,
         COALESCE(SUM(si.outstanding_amount), 0) AS total_invoice_balance,
-        COALESCE(SUM(CASE WHEN si.due_date < CURRENT_DATE THEN si.outstanding_amount ELSE 0 END), 0) AS overdue_invoice_balance
+        COALESCE(SUM(CASE WHEN si.due_date < CURRENT_DATE THEN si.outstanding_amount ELSE 0 END), 0) AS overdue_invoice_balance,
+        (array_agg(si.invoice_number ORDER BY si.due_date ASC) FILTER (WHERE si.due_date < CURRENT_DATE))[1] AS oldest_overdue_invoice,
+        (array_agg(si.invoice_id ORDER BY si.due_date ASC) FILTER (WHERE si.due_date < CURRENT_DATE))[1] AS oldest_overdue_invoice_id
       FROM herobm_core.sales_invoices si
       JOIN herobm_core.sales_orders so ON so.sales_order_id = si.sales_order_id
       WHERE so.customer_id IN (${idsSql})
@@ -170,6 +179,10 @@ export class CreditAssessmentService {
         );
         resultMap[custId].isOverdue =
           resultMap[custId].overdueInvoiceBalance > 0;
+        resultMap[custId].oldestOverdueInvoice =
+          row.oldest_overdue_invoice || undefined;
+        resultMap[custId].oldestOverdueInvoiceId =
+          row.oldest_overdue_invoice_id || undefined;
       }
     }
 

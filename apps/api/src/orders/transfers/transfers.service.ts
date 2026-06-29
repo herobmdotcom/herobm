@@ -39,7 +39,9 @@ import {
   UpdateTransferOrderDto,
   CreateTransferOrderLineDto,
   UpdateTransferOrderLineDto,
+  TransferPaginationQuery,
 } from './dto';
+import { CreateShipmentDto } from '../dto';
 import { InventoryService } from '../../inventory/inventory.service';
 import { emitEvent } from '../../common/emit-event';
 import { EntityType, EventType } from '../../common/event-types';
@@ -50,6 +52,7 @@ import {
   TRANSFER_ORDER_PICK_STATE,
   TRANSFER_ORDER_PICK_TRANSITIONS,
   getValidStates,
+  SHIPMENT_STATE,
 } from '@herobm/shared';
 import type {
   TransferOrderState,
@@ -191,8 +194,9 @@ export class TransferService {
   // Picking
   // -------------------------------------------------------------------------
 
-  async getPickingSummary(transferOrderId: string) {
-    const order = await this.db.query.transferOrders.findFirst({
+  async getPickingSummary(transferOrderId: string, tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const order = await db.query.transferOrders.findFirst({
       where: eq(transferOrders.transferOrderId, transferOrderId),
     });
 
@@ -200,11 +204,11 @@ export class TransferService {
       throw new NotFoundException('Transfer Order not found');
     }
 
-    const sourceLoc = await this.db.query.locations.findFirst({
+    const sourceLoc = await db.query.locations.findFirst({
       where: eq(locations.locationId, order.sourceLocationId),
     });
 
-    const lines = await this.db
+    const lines = await db
       .select({
         transferOrderLineId: transferOrderLines.transferOrderLineId,
         salesOrderLineId: transferOrderLines.transferOrderLineId, // Alias for UI
@@ -222,7 +226,7 @@ export class TransferService {
       )
       .where(eq(transferOrderLines.transferOrderId, transferOrderId));
 
-    const picks = await this.db
+    const picks = await db
       .select({
         pickId: transferOrderPicks.pickId,
         transferOrderId: transferOrderPicks.transferOrderId,
@@ -247,7 +251,7 @@ export class TransferService {
     );
     const binStock =
       productIds.length > 0
-        ? await this.db
+        ? await db
             .select({
               productId: binContents.productId,
               binId: bins.binId,
@@ -315,17 +319,23 @@ export class TransferService {
       };
     });
 
-    const isFullyPicked = enrichedLines.every(
-      (l: Record<string, unknown>) => l.isFullyPicked,
+    const filteredLines = enrichedLines.filter(
+      (l: Record<string, unknown>) => parseFloat(l.quantity as string) > 0,
     );
+    const activePhysicalLines = filteredLines.filter(
+      (l: Record<string, unknown>) => l.isPhysical,
+    );
+    const totalLines = activePhysicalLines.length;
+    const fullyPickedLines = activePhysicalLines.filter(
+      (l: Record<string, unknown>) => l.isFullyPicked,
+    ).length;
+    const isFullyPicked = totalLines > 0 && totalLines === fullyPickedLines;
 
     return {
-      totalLines: lines.length,
-      fullyPickedLines: enrichedLines.filter(
-        (l: Record<string, unknown>) => l.isFullyPicked,
-      ).length,
+      totalLines,
+      fullyPickedLines,
       isFullyPicked,
-      lines: enrichedLines,
+      lines: filteredLines,
       picks,
     };
   }
@@ -416,12 +426,6 @@ export class TransferService {
       });
     });
 
-    // Automatically ship if fully picked
-    const summary = await this.getPickingSummary(transferOrderId);
-    if (summary.isFullyPicked) {
-      await this.shipTransferOrder(transferOrderId, actor);
-    }
-
     return result;
   }
 
@@ -467,6 +471,232 @@ export class TransferService {
   // -------------------------------------------------------------------------
   // Shipping
   // -------------------------------------------------------------------------
+
+  async createShipment(
+    transferOrderId: string,
+    dto: CreateShipmentDto,
+    actor: string,
+  ) {
+    return await this.db.transaction(async (tx) => {
+      const order = await tx.query.transferOrders.findFirst({
+        where: eq(transferOrders.transferOrderId, transferOrderId),
+      });
+
+      if (!order) throw new NotFoundException('Transfer Order not found');
+      if (
+        order.stateCode !== TRANSFER_ORDER_STATE.PICKING &&
+        order.stateCode !== TRANSFER_ORDER_STATE.CONFIRMED
+      ) {
+        throw new BadRequestException(
+          'Transfer order must be picking or released to ship',
+        );
+      }
+
+      // 1) Get the INTRA_TRANSIT bin for the source location
+      const [transitBin] = await tx
+        .select({ binId: bins.binId })
+        .from(bins)
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+        .where(
+          and(
+            eq(zones.locationId, order.sourceLocationId),
+            eq(bins.binNumber, 'INTRA_TRANSIT'),
+          ),
+        );
+
+      if (!transitBin) {
+        throw new BadRequestException(
+          'Source location is missing INTRA_TRANSIT system bin. Please contact support.',
+        );
+      }
+
+      // 2) Find picks matching the requested lines
+      const picks = await tx.query.transferOrderPicks.findMany({
+        where: and(
+          eq(transferOrderPicks.transferOrderId, transferOrderId),
+          eq(transferOrderPicks.stateCode, TRANSFER_ORDER_PICK_STATE.PICKED),
+        ),
+      });
+
+      // Filter and allocate quantities
+      const requestedLines = dto.lines.filter(
+        (l) => parseFloat(l.quantityShipped) > 0,
+      );
+      if (requestedLines.length === 0) {
+        throw new BadRequestException(
+          'At least one line must have a quantity > 0',
+        );
+      }
+
+      // Generate Shipment Number
+      const shipmentPrefix = `TSH-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-`;
+      const lastShipment = await tx
+        .select({ shipmentNumber: transferOrderShipments.shipmentNumber })
+        .from(transferOrderShipments)
+        .where(
+          sql`${transferOrderShipments.shipmentNumber} LIKE ${shipmentPrefix + '%'}`,
+        )
+        .orderBy(desc(transferOrderShipments.shipmentNumber))
+        .limit(1);
+
+      let nextNum = 1;
+      if (lastShipment.length > 0) {
+        const parts = lastShipment[0].shipmentNumber.split('-');
+        nextNum = parseInt(parts[2], 10) + 1;
+      }
+      const shipmentNumber = `${shipmentPrefix}${String(nextNum).padStart(3, '0')}`;
+      const shipmentId = uuidv4();
+
+      await tx.insert(transferOrderShipments).values({
+        shipmentId,
+        transferOrderId,
+        shipmentNumber,
+        stateCode: TRANSFER_ORDER_STATE.SHIPPED,
+        shippedBy: actor,
+      });
+
+      const inventoryLines: {
+        productId: string;
+        binId: string;
+        quantity: number;
+        uomCode: string;
+      }[] = [];
+
+      const productIds = Array.from(new Set(picks.map((p) => p.productId)));
+      const productUoms = await tx
+        .select({ productId: products.productId, baseUom: products.baseUom })
+        .from(products)
+        .where(inArray(products.productId, productIds));
+      const uomMap = new Map(productUoms.map((p) => [p.productId, p.baseUom]));
+
+      for (const line of requestedLines) {
+        let remainingToShip = parseFloat(line.quantityShipped);
+        const linePicks = picks.filter(
+          (p) => p.transferOrderLineId === line.salesOrderLineId,
+        );
+
+        for (const pick of linePicks) {
+          if (remainingToShip <= 0) break;
+          const pickQty = parseFloat(pick.quantity);
+          const shipQty = Math.min(pickQty, remainingToShip);
+
+          remainingToShip -= shipQty;
+
+          // A. Create shipment line
+          await tx.insert(transferOrderShipmentLines).values({
+            shipmentLineId: uuidv4(),
+            shipmentId,
+            transferOrderLineId: pick.transferOrderLineId,
+            productId: pick.productId,
+            pickId: pick.pickId,
+            quantity: shipQty.toString(),
+          });
+
+          const uomCode = uomMap.get(pick.productId) || 'EA';
+
+          // B. Decrease from source pick bin
+          inventoryLines.push({
+            productId: pick.productId,
+            binId: pick.binId!,
+            quantity: -shipQty,
+            uomCode,
+          });
+
+          // C. Increase into INTRA_TRANSIT bin
+          inventoryLines.push({
+            productId: pick.productId,
+            binId: transitBin.binId,
+            quantity: shipQty,
+            uomCode,
+          });
+
+          // D. Mark pick as shipped or partial
+          if (shipQty === pickQty) {
+            await tx
+              .update(transferOrderPicks)
+              // eslint-disable-next-line no-restricted-syntax -- Needed for legacy code
+              .set({ stateCode: TRANSFER_ORDER_PICK_STATE.SHIPPED as string })
+              .where(eq(transferOrderPicks.pickId, pick.pickId));
+          } else {
+            await tx
+              .update(transferOrderPicks)
+              .set({ quantity: (pickQty - shipQty).toString() })
+              .where(eq(transferOrderPicks.pickId, pick.pickId));
+            await tx.insert(transferOrderPicks).values({
+              ...pick,
+              pickId: uuidv4(),
+              quantity: shipQty.toString(),
+              stateCode: TRANSFER_ORDER_PICK_STATE.SHIPPED as string,
+            });
+          }
+
+          // E. Update shipped quantity on order line
+          await tx
+            .update(transferOrderLines)
+            .set({
+              quantityShipped: sql`${transferOrderLines.quantityShipped} + ${shipQty}`,
+            })
+            .where(
+              eq(
+                transferOrderLines.transferOrderLineId,
+                pick.transferOrderLineId,
+              ),
+            );
+        }
+        if (remainingToShip > 0) {
+          throw new BadRequestException(
+            `Cannot ship more than picked for line ${line.salesOrderLineId}`,
+          );
+        }
+      }
+
+      await this.inventoryService.recordInventoryMovement(tx, {
+        entryNumber: `TR-DISP-${order.orderNumber}`,
+        sourceType: 'TO_DISPATCH',
+        sourceId: transferOrderId,
+        memo: `Dispatch to INTRA_TRANSIT`,
+        userId: actor,
+        lines: inventoryLines,
+      });
+
+      // Update transfer order status
+      const summary = await this.getPickingSummary(
+        transferOrderId,
+        tx as unknown as DrizzleDB,
+      );
+      const isFullyShipped = summary.lines.every(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for legacy code
+        (l: any) => parseFloat(l.quantityShipped) >= parseFloat(l.quantity),
+      );
+
+      if (isFullyShipped) {
+        await this.changeTransferState(
+          transferOrderId,
+          TRANSFER_ORDER_STATE.SHIPPED,
+          actor,
+          tx,
+        );
+      } else {
+        await this.changeTransferState(
+          transferOrderId,
+          TRANSFER_ORDER_STATE.PICKING,
+          actor,
+          tx,
+        );
+      }
+
+      await emitEvent(tx as unknown as DrizzleDB, {
+        entityType: EntityType.TRANSFER_ORDER,
+        entityId: transferOrderId,
+        eventType: EventType.STOCK_DISPATCHED,
+        entityDisplayName: order.orderNumber,
+        actor,
+        payload: { shipmentId, shipmentNumber },
+      });
+
+      return { shipmentId, shipmentNumber };
+    });
+  }
 
   async shipTransferOrder(transferOrderId: string, actor: string) {
     return await this.db.transaction(async (tx) => {
@@ -763,7 +993,7 @@ export class TransferService {
       await tx
         .update(transferOrderShipments)
         // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
-        .set({ stateCode: TRANSFER_ORDER_STATE.CANCELLED })
+        .set({ stateCode: SHIPMENT_STATE.CANCELLED })
         .where(eq(transferOrderShipments.shipmentId, shipmentId));
 
       // Revert order state to PICKING
@@ -800,7 +1030,7 @@ export class TransferService {
         eq(transferOrderShipments.transferOrderId, transferOrderId),
         eq(
           transferOrderShipments.stateCode,
-          TRANSFER_ORDER_STATE.SHIPPED as string,
+          SHIPMENT_STATE.DISPATCHED as string,
         ),
       ),
     });
@@ -821,7 +1051,7 @@ export class TransferService {
 
   async receiveTransferOrder(
     transferOrderId: string,
-    destinationBinId: string,
+    lines: { transferOrderLineId: string; quantityReceived: string }[],
     actor: string,
   ) {
     return await this.db.transaction(async (tx) => {
@@ -830,13 +1060,17 @@ export class TransferService {
       });
 
       if (!order) throw new NotFoundException('Transfer Order not found');
-      if (order.stateCode !== TRANSFER_ORDER_STATE.SHIPPED) {
+      if (
+        order.stateCode !== TRANSFER_ORDER_STATE.SHIPPED &&
+        order.stateCode !== TRANSFER_ORDER_STATE.PARTIALLY_RECEIVED
+      ) {
         throw new BadRequestException(
-          'Transfer order must be shipped to receive',
+          'Transfer order must be shipped or partially received to receive items',
         );
       }
 
       // 1) Verify destination bin is valid for the destination location
+      // Using RECEIVING bin for general receipt
       const [destBin] = await tx
         .select({ binId: bins.binId })
         .from(bins)
@@ -844,15 +1078,16 @@ export class TransferService {
         .where(
           and(
             eq(zones.locationId, order.destinationLocationId),
-            eq(bins.binId, destinationBinId),
+            eq(bins.binNumber, 'RECEIVING'),
           ),
         );
 
       if (!destBin) {
         throw new BadRequestException(
-          'Invalid destination bin for receiving location',
+          'Destination location is missing RECEIVING system bin. Please contact support.',
         );
       }
+      const destinationBinId = destBin.binId;
 
       // 2) Get the INTRA_TRANSIT bin for the source location (where stock currently resides)
       const [transitBin] = await tx
@@ -923,20 +1158,33 @@ export class TransferService {
         .where(inArray(products.productId, productIds));
       const uomMap = new Map(productUoms.map((p) => [p.productId, p.baseUom]));
 
-      for (const line of orderLines) {
-        const shipped = parseFloat(line.quantityShipped || '0');
-        const received = parseFloat(line.quantityReceived || '0');
-        const toReceive = shipped - received;
+      const lineUpdates = new Map<string, number>();
+      for (const line of lines) {
+        lineUpdates.set(
+          line.transferOrderLineId,
+          parseFloat(line.quantityReceived),
+        );
+      }
 
-        if (toReceive > 0) {
-          totalReceived += toReceive;
+      for (const line of orderLines) {
+        const qtyToReceive = lineUpdates.get(line.transferOrderLineId) || 0;
+        
+        if (qtyToReceive > 0) {
+          const shipped = parseFloat(line.quantityShipped || '0');
+          const previouslyReceived = parseFloat(line.quantityReceived || '0');
+          
+          if (previouslyReceived + qtyToReceive > shipped) {
+            throw new BadRequestException(`Cannot receive more than shipped quantity for line ${line.transferOrderLineId}`);
+          }
+
+          totalReceived += qtyToReceive;
 
           receiptLinesInsert.push({
             receiptLineId: uuidv4(),
             receiptId,
             transferOrderLineId: line.transferOrderLineId,
             productId: line.productId,
-            quantity: toReceive.toString(),
+            quantity: qtyToReceive.toString(),
             binId: destinationBinId,
           });
 
@@ -944,7 +1192,7 @@ export class TransferService {
           inventoryLines.push({
             productId: line.productId,
             binId: transitBin.binId,
-            quantity: -toReceive,
+            quantity: -qtyToReceive,
             uomCode: uomMap.get(line.productId) || 'EA',
           });
 
@@ -952,7 +1200,7 @@ export class TransferService {
           inventoryLines.push({
             productId: line.productId,
             binId: destinationBinId,
-            quantity: toReceive,
+            quantity: qtyToReceive,
             uomCode: uomMap.get(line.productId) || 'EA',
           });
 
@@ -960,7 +1208,7 @@ export class TransferService {
           await tx
             .update(transferOrderLines)
             .set({
-              quantityReceived: sql`${transferOrderLines.quantityReceived} + ${toReceive.toString()}`,
+              quantityReceived: sql`${transferOrderLines.quantityReceived} + ${qtyToReceive.toString()}`,
             })
             .where(
               eq(
@@ -989,13 +1237,30 @@ export class TransferService {
         lines: inventoryLines,
       });
 
-      // 6) Update Order State
+      // 6) Check if fully received
+      const updatedOrderLines = await tx.query.transferOrderLines.findMany({
+        where: eq(transferOrderLines.transferOrderId, transferOrderId),
+      });
+
+      const isFullyReceived = updatedOrderLines.every((l) => {
+        return parseFloat(l.quantityReceived || '0') >= parseFloat(l.quantityShipped || '0');
+      });
+
+      const nextState = isFullyReceived ? TRANSFER_ORDER_STATE.RECEIVED : TRANSFER_ORDER_STATE.PARTIALLY_RECEIVED;
+
+      // Update Order State
       await this.changeTransferState(
         transferOrderId,
-        TRANSFER_ORDER_STATE.RECEIVED,
+        nextState,
         actor,
         tx,
       );
+
+      // We also need to update the receipt state
+      await tx.update(transferOrderReceipts)
+        // eslint-disable-next-line no-restricted-syntax
+        .set({ stateCode: nextState as string })
+        .where(eq(transferOrderReceipts.receiptId, receiptId));
 
       await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.TRANSFER_ORDER,
@@ -1026,10 +1291,7 @@ export class TransferService {
     }
 
     const [order] = await tx
-      .select({
-        stateCode: transferOrders.stateCode,
-        orderNumber: transferOrders.orderNumber,
-      })
+      .select()
       .from(transferOrders)
       .where(eq(transferOrders.transferOrderId, transferOrderId));
 
@@ -1037,6 +1299,10 @@ export class TransferService {
       throw new NotFoundException(
         `Transfer Order ${transferOrderId} not found`,
       );
+    }
+
+    if (order.stateCode === newState) {
+      return order;
     }
 
     if (
@@ -1131,7 +1397,7 @@ export class TransferService {
   // CRUD
   // -------------------------------------------------------------------------
 
-  async findAll(query?: PaginationQuery) {
+  async findAll(query?: TransferPaginationQuery) {
     const { page, limit, cursor, direction, searchTerm, states } =
       parsePagination(query);
 
@@ -1167,6 +1433,12 @@ export class TransferService {
       }
     }
 
+    if (query?.destinationLocationId) {
+      conditions.push(
+        eq(transferOrders.destinationLocationId, query.destinationLocationId),
+      );
+    }
+
     const destLoc = alias(locations, 'destLoc');
     const sourceLoc = alias(locations, 'sourceLoc');
 
@@ -1182,6 +1454,7 @@ export class TransferService {
         createdBy: transferOrders.createdBy,
         createdOn: transferOrders.createdOn,
         notes: transferOrders.notes,
+        shippingNotes: transferOrders.shippingNotes,
         score: scoreSql,
       })
       .from(transferOrders)
@@ -1274,6 +1547,52 @@ export class TransferService {
     return { data, page, limit, total: Number(count), nextCursor, prevCursor };
   }
 
+  async findShipments(transferOrderId: string) {
+    const data = await this.db
+      .select({
+        shipmentId: transferOrderShipments.shipmentId,
+        shipmentNumber: transferOrderShipments.shipmentNumber,
+        stateCode: transferOrderShipments.stateCode,
+        notes: sql<string | null>`NULL`,
+        trackingNumber: transferOrderShipments.trackingNumber,
+        createdOn: transferOrderShipments.createdOn,
+        createdBy: transferOrderShipments.shippedBy,
+      })
+      .from(transferOrderShipments)
+      .where(eq(transferOrderShipments.transferOrderId, transferOrderId))
+      .orderBy(desc(transferOrderShipments.createdOn));
+
+    if (data.length === 0) return [];
+
+    const shipmentIds = data.map((s) => s.shipmentId);
+
+    const linesData = await this.db
+      .select({
+        shipmentLineId: transferOrderShipmentLines.shipmentLineId,
+        shipmentId: transferOrderShipmentLines.shipmentId,
+        salesOrderLineId: transferOrderShipmentLines.transferOrderLineId, // mapping to match UI
+        quantityShipped: transferOrderShipmentLines.quantity,
+      })
+      .from(transferOrderShipmentLines)
+      .where(
+        sql`${transferOrderShipmentLines.shipmentId} IN (${sql.join(
+          shipmentIds.map((id) => sql`${id}`),
+          sql`, `,
+        )})`,
+      );
+
+    const linesMap = new Map<string, any[]>();
+    for (const line of linesData) {
+      if (!linesMap.has(line.shipmentId)) linesMap.set(line.shipmentId, []);
+      linesMap.get(line.shipmentId)!.push(line);
+    }
+
+    return data.map((s) => ({
+      ...s,
+      lines: linesMap.get(s.shipmentId) || [],
+    }));
+  }
+
   async findOne(id: string) {
     const destLoc = alias(locations, 'destLoc');
     const sourceLoc = alias(locations, 'sourceLoc');
@@ -1291,6 +1610,7 @@ export class TransferService {
         createdBy: transferOrders.createdBy,
         createdOn: transferOrders.createdOn,
         notes: transferOrders.notes,
+        shippingNotes: transferOrders.shippingNotes,
       })
       .from(transferOrders)
       .leftJoin(
@@ -1369,6 +1689,7 @@ export class TransferService {
         sourceLocationId: dto.sourceLocationId,
         destinationLocationId: dto.destinationLocationId,
         notes: dto.notes,
+        shippingNotes: dto.shippingNotes,
         stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
         createdBy: actor,
       });
@@ -1405,9 +1726,11 @@ export class TransferService {
     if (!existing) throw new NotFoundException('Transfer order not found');
 
     if (existing.stateCode !== TRANSFER_ORDER_STATE.CONFIRMED) {
-      throw new BadRequestException(
-        'Cannot edit an order that is already in progress',
-      );
+      if (dto.sourceLocationId || dto.destinationLocationId) {
+        throw new BadRequestException(
+          'Cannot edit locations on an order that is already in progress',
+        );
+      }
     }
 
     const updates: Record<string, unknown> = { modifiedOn: new Date() };
@@ -1415,6 +1738,8 @@ export class TransferService {
     if (dto.destinationLocationId)
       updates.destinationLocationId = dto.destinationLocationId;
     if (dto.notes !== undefined) updates.notes = dto.notes;
+    if (dto.shippingNotes !== undefined)
+      updates.shippingNotes = dto.shippingNotes;
 
     if (Object.keys(updates).length > 1) {
       const [updatedRecord] = await this.db

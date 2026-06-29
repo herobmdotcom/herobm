@@ -18,11 +18,10 @@ import { AppConfigService } from './app-config.service';
 import { AppConfigResponseDto, UpdateAppConfigDto } from './dto';
 import { EncryptionService } from '../common/encryption.service';
 
-interface AppConfigResponse {
-  smtpPass?: string;
+type AppConfigResponse = Partial<AppConfigResponseDto> & {
   smtpPassEncrypted?: string | null;
   [key: string]: unknown;
-}
+};
 
 interface UpdatePayload extends Partial<UpdateAppConfigDto> {
   smtpPassEncrypted?: string;
@@ -42,9 +41,9 @@ export class AppConfigController {
   @ApiOkResponse({ type: AppConfigResponseDto })
   @CasbinAction('read')
   @ApiOperation({ summary: 'get', description: 'get operation' })
-  async get() {
+  async get(): Promise<AppConfigResponseDto> {
     const settings = this.appConfigService.getAppSettingsRaw();
-    if (!settings) return {};
+    if (!settings) return {} as AppConfigResponseDto;
 
     const response = { ...settings } as AppConfigResponse;
     if (response.smtpPassEncrypted) {
@@ -52,7 +51,7 @@ export class AppConfigController {
     }
     delete response.smtpPassEncrypted;
 
-    return response;
+    return response as unknown as AppConfigResponseDto;
   }
 
   @Patch()

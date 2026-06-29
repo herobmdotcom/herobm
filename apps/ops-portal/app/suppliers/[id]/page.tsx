@@ -412,13 +412,6 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           <EntityHeader
             title={supplier.name}
             subtitle={supplier.vendorNumber}
-            onBack={() => {
-              if (window.history.length > 1) {
-                router.back();
-              } else {
-                router.push('/suppliers');
-              }
-            }}
             isSaving={saving}
             badges={<SupplierStatusBadges mode="header" profile={resolveSupplierRiskProfile(supplier)} stateCode={supplier.stateCode} />}
             nav={<PageNav sections={visibleSections} />}

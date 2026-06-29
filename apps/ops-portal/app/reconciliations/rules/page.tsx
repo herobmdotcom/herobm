@@ -310,7 +310,7 @@ export default function RulesEnginePage() {
 
   return (
     <DetailsLayout
-      header={<EntityHeader title="Rules" onBack={() => router.push('/reconciliations')} />}
+      header={<EntityHeader title="Rules" />}
     >
       <div className="flex flex-col h-full overflow-hidden w-full max-w-[1400px]">
         <div className="flex-1 flex flex-col h-full min-w-0 pb-8 overflow-y-auto space-y-12 mt-4">

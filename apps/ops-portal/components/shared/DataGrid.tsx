@@ -1418,11 +1418,11 @@ export default function DataGrid<T>({
                 </div>
                 
                 <div className="flex items-center justify-between gap-3 w-full lg:w-auto relative overflow-x-auto hide-scrollbar sm:overflow-visible pb-1 -mb-1">
-                  <div className={`transition-all duration-300 lg:bg-transparent rounded-lg shrink-0 ${search ? 'w-[calc(100vw-80px)] lg:w-auto lg:flex-1 lg:max-w-[280px] lg:ml-6' : 'w-[44px] focus-within:w-[calc(100vw-80px)] lg:focus-within:w-auto lg:w-auto lg:flex-1 lg:max-w-[280px] lg:ml-6'}`}>
+                  <div className={`transition-all duration-300 lg:bg-transparent rounded-lg shrink-0 lg:shrink lg:min-w-[140px] ${search ? 'w-[calc(100vw-80px)] lg:w-auto lg:flex-1 lg:max-w-[280px] lg:ml-6' : 'w-[44px] focus-within:w-[calc(100vw-80px)] lg:focus-within:w-auto lg:w-auto lg:flex-1 lg:max-w-[280px] lg:ml-6'}`}>
                     {searchInputNode}
                   </div>
                   {(headerFilters || headerActions) && (
-                    <div className={`flex-1 min-w-0 ml-auto flex items-center justify-end gap-3 ${headerFilters ? '' : 'hidden lg:flex'}`}>
+                    <div className={`flex-1 min-w-0 lg:flex-none ml-auto flex items-center justify-end gap-3 ${headerFilters ? '' : 'hidden lg:flex'}`}>
                       {headerFilters}
                       {headerActions && (
                         <div className="hidden lg:block shrink-0">

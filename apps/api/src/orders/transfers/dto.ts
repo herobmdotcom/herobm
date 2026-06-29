@@ -7,6 +7,13 @@ import {
   IsNumberString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { PaginationQuery } from '../../common/pagination';
+
+export class TransferPaginationQuery extends PaginationQuery {
+  @IsOptional()
+  @IsString()
+  destinationLocationId?: string;
+}
 
 export class CreateTransferOrderLineDto {
   @IsString()
@@ -30,6 +37,10 @@ export class CreateTransferOrderDto {
   @IsString()
   notes?: string;
 
+  @IsOptional()
+  @IsString()
+  shippingNotes?: string;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateTransferOrderLineDto)
@@ -48,6 +59,10 @@ export class UpdateTransferOrderDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  shippingNotes?: string;
 }
 
 export class UpdateTransferOrderLineDto {
@@ -76,10 +91,20 @@ export class PickLineDto {
   quantity!: string;
 }
 
-export class ReceiveTransferDto {
+export class ReceiveTransferLineDto {
   @IsString()
   @IsNotEmpty()
-  destinationBinId!: string;
+  transferOrderLineId!: string;
+
+  @IsNumberString()
+  quantityReceived!: string;
+}
+
+export class ReceiveTransferDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ReceiveTransferLineDto)
+  lines!: ReceiveTransferLineDto[];
 }
 
 export class EmptyBodyDto {}
@@ -115,6 +140,7 @@ export class TransferResponseDto {
   @ApiProperty() destinationLocationId!: string;
   @ApiPropertyOptional() destinationLocationName?: string;
   @ApiPropertyOptional() notes?: string;
+  @ApiPropertyOptional() shippingNotes?: string;
   @ApiPropertyOptional() createdBy?: string;
   @ApiProperty() createdOn!: Date;
   @ApiPropertyOptional({ type: [TransferLineResponseDto] })

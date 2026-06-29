@@ -613,6 +613,14 @@ export class PurchaseOrdersService {
     // also included so callers that know about POs can use them directly.
     return {
       ...order,
+      name: order.name,
+      vendorId: order.vendorId,
+      currencyCode: order.currencyCode,
+      notes: order.notes,
+      referenceNumber: order.referenceNumber,
+      stateCode: order.stateCode,
+      deliveryLocationId: order.deliveryLocationId,
+      expectedDate: order.expectedDate,
       salesOrderId: order.purchaseOrderId,
       source: 'app' as const,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
@@ -1141,7 +1149,6 @@ export class PurchaseOrdersService {
         PURCHASE_ORDER_STATE.ORDERED,
         PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
         PURCHASE_ORDER_STATE.RECEIVED,
-        PURCHASE_ORDER_STATE.LEGACY,
       ]),
     ];
 

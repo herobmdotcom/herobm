@@ -20,6 +20,7 @@ import {
   UseGuards,
   UnauthorizedException,
   HttpCode,
+  ValidationPipe,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { PdfTemplatesService } from './pdf-templates.service';
@@ -73,7 +74,7 @@ export class PdfTemplatesController {
     @Query('context') context: string,
     @AuthUser() user: JwtUser,
     @Res() res: Response,
-    @Body() body?: RunHookBodyDto,
+    @Body() body?: Record<string, unknown>,
   ) {
     if (!id || !context) {
       throw new UnauthorizedException('Missing id or context parameter');

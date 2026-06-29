@@ -22,4 +22,5 @@ export interface AgedBalanceResponseDto {
   isOnCreditHold: boolean;
   /** @nullable */
   creditLimit: string | null;
+  stateCode: string;
 }

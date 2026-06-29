@@ -107,7 +107,7 @@ export default function AdHocCreditNoteSlideOver({
         >
             <div className="flex flex-col gap-4">
                 <div className="form-control w-full">
-                    <label className="label text-sm font-medium">{t('customer')}</label>
+                    <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">{t('customer')}</label>
                     <CustomerSelect
                         value={customerId}
                         onChange={(acc) => setCustomerId(acc?.customerId || '')}
@@ -117,7 +117,7 @@ export default function AdHocCreditNoteSlideOver({
                 </div>
 
                 <div className="form-control w-full">
-                    <label className="label text-sm font-medium">{t('internalNote')}</label>
+                    <label className="block text-sm font-medium mb-1.5 text-[var(--text-muted)]">{t('internalNote')}</label>
                     <textarea 
                         className="textarea textarea-bordered w-full"
                         placeholder="Reason for issuing credit note..."

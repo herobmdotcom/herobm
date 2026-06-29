@@ -5,7 +5,8 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { ReceiveTransferLineDto } from './receiveTransferLineDto';
 
 export interface ReceiveTransferDto {
-  destinationBinId: string;
+  lines: ReceiveTransferLineDto[];
 }

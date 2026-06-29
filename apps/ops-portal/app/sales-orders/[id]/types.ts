@@ -17,6 +17,7 @@ export interface OrderLine {
     productUoms?: import('@herobm/shared').ProductUom[];
     fulfillmentLocationId?: string | null;
     isPostConfirmation?: boolean | null;
+    quantityPicked?: string | null;
 }
 
 export interface TaxCategory {
@@ -57,6 +58,7 @@ export interface OrderDetail {
     notes: string | null;
     discrepanciesAcknowledged?: boolean;
     shippingNotes?: string | null;
+    deliveryCustomerName?: string | null;
     deliveryName?: string | null;
     deliveryPhone?: string | null;
     deliveryAddressLine1?: string | null;
@@ -167,9 +169,11 @@ export interface SalesInvoice {
     invoiceId: string;
     invoiceNumber: string;
     totalAmount: string;
+    outstandingAmount?: string;
     taxAmount: string;
     stateCode?: string;
     createdOn: string;
     createdBy: string;
+    dueDate?: string;
     lines?: InvoiceLine[];
 }

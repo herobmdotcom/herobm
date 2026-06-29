@@ -33,8 +33,12 @@ export class GlobalReturnsController {
       'Retrieve all sales returns across all orders, optionally filtered by state.',
   })
   @ApiQuery({ name: 'stateCode', required: false })
-  async findGlobalReturns(@Query('stateCode') stateCode?: string) {
-    const data = await this.returnsWriteService.findGlobal(stateCode);
+  @ApiQuery({ name: 'locationId', required: false })
+  async findGlobalReturns(
+    @Query('stateCode') stateCode?: string,
+    @Query('locationId') locationId?: string,
+  ) {
+    const data = await this.returnsWriteService.findGlobal(stateCode, locationId);
     return { data, meta: { total: data.length } };
   }
 }

@@ -57,6 +57,7 @@ import {
   locations,
   inventoryLevels,
   purchaseOrders,
+  transferOrders,
 } from '../drizzle/herobm-core-schema';
 import { sql, eq, and, inArray } from 'drizzle-orm';
 
@@ -98,6 +99,9 @@ export class AllocationsController {
         purchaseOrderId: backorders.purchaseOrderId,
         purchaseOrderNumber: purchaseOrders.orderNumber,
         purchaseOrderState: purchaseOrders.stateCode,
+        transferOrderId: backorders.transferOrderId,
+        transferOrderNumber: transferOrders.orderNumber,
+        transferOrderState: transferOrders.stateCode,
       })
       .from(backorders)
       .leftJoin(
@@ -124,6 +128,10 @@ export class AllocationsController {
       .leftJoin(
         purchaseOrders,
         eq(backorders.purchaseOrderId, purchaseOrders.purchaseOrderId),
+      )
+      .leftJoin(
+        transferOrders,
+        eq(backorders.transferOrderId, transferOrders.transferOrderId),
       )
       .where(
         inArray(backorders.stateCode, [

@@ -21,7 +21,6 @@ export default function WebhooksClientPage({ title, subtitle, html }: Props) {
         <EntityHeader
           title={title}
           subtitle={subtitle}
-          onBack={() => router.push('/admin/developers')}
           showPrint={false}
         />
       }

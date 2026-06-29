@@ -24,6 +24,8 @@ interface OrderDetailsCardProps {
     customerCountry?: string;
     editShippingNotes: string;
     setEditShippingNotes: (val: string) => void;
+    editDeliveryCustomerName: string;
+    setEditDeliveryCustomerName: (val: string) => void;
     editDeliveryName: string;
     setEditDeliveryName: (val: string) => void;
     editDeliveryPhone: string;
@@ -40,9 +42,7 @@ interface OrderDetailsCardProps {
     setEditDeliveryPostalCode: (val: string) => void;
     editDeliveryCountry: string;
     setEditDeliveryCountry: (val: string) => void;
-    copyOrder: () => void;
-    copying: boolean;
-    onQuoteClick: () => void;
+    onEmailQuoteClick: () => void;
     reportError: (err: unknown, context: string) => void;
     setError: (err: string) => void;
 }
@@ -64,6 +64,8 @@ export default function OrderDetailsCard({
     customerCountry,
     editShippingNotes,
     setEditShippingNotes,
+    editDeliveryCustomerName,
+    setEditDeliveryCustomerName,
     editDeliveryName,
     setEditDeliveryName,
     editDeliveryPhone,
@@ -80,16 +82,12 @@ export default function OrderDetailsCard({
     setEditDeliveryPostalCode,
     editDeliveryCountry,
     setEditDeliveryCountry,
-    copyOrder,
-    copying,
-    onQuoteClick,
+    onEmailQuoteClick,
     reportError,
     setError
 }: OrderDetailsCardProps) {
     const tSales = useTranslations('salesOrders');
     const tCommon = useTranslations('common');
-    const [menuOpen, setMenuOpen] = useState(false);
-
     return (
         <div className="card">
             <div className="flex items-center justify-between gap-4 mb-4">
@@ -100,76 +98,50 @@ export default function OrderDetailsCard({
                     </span>
                     {tSales('orderDetails')}
                 </h2>
-                <div className="relative">
-                    <button
-                        className="btn btn-secondary btn-sm px-2"
-                        onClick={() => setMenuOpen(!menuOpen)}
-                    >
-                        { }
-                        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
-                            more_vert
-                        </span>
-                    </button>
-                    {menuOpen && (
-                        <>
-                            <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                            <div 
-                                className="absolute right-0 top-full mt-1 bg-[var(--bg-card)] border border-[var(--border)] rounded-md p-1 z-50 min-w-[150px] flex flex-col gap-1"
-                                onClick={() => setMenuOpen(false)}
-                            >
-                                {(order.stateCode === SALES_ORDER_STATE.DRAFT || order.stateCode === SALES_ORDER_STATE.QUOTED) && (
-                                    <button
-                                        className="text-sm px-3 py-2 text-left hover:bg-[var(--bg-secondary)] rounded-md w-full transition-colors"
-                                        onClick={onQuoteClick}
-                                    >
-                                        {tSales('buttons.createQuote')}
-                                    </button>
-                                )}
-                                {(order.stateCode !== SALES_ORDER_STATE.DRAFT && order.stateCode !== SALES_ORDER_STATE.QUOTED) && (
-                                    <button
-                                        className="text-sm px-3 py-2 text-left hover:bg-[var(--bg-secondary)] rounded-md w-full transition-colors"
-                                        onClick={async () => {
-                                            try {
-                                                const response = await api.pdfTemplatesControllerRunHook('sales-order-confirmation', {}, { id: order.salesOrderId!, context: 'sales-order' });
-                                                const blob = response.data ;
-                                                const url = URL.createObjectURL(blob);
-                                                window.open(url, '_blank');
-                                            } catch (err) {
-                                                reportError(err, 'OrderDetailPage:generateConfirmation');
-                                                setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateReport'));
-                                            }
-                                        }}
-                                    >
-                                        {tSales('buttons.confirmationPdf')}
-                                    </button>
-                                )}
-                                {(order.stateCode === SALES_ORDER_STATE.CONFIRMED || order.stateCode === SALES_ORDER_STATE.PICKING) && (
-                                    <button
-                                        className="text-sm px-3 py-2 text-left hover:bg-[var(--bg-secondary)] rounded-md w-full transition-colors"
-                                        onClick={async () => {
-                                            try {
-                                                const response = await api.pdfTemplatesControllerRunHook('pro-forma-invoice', {}, { id: order.salesOrderId!, context: 'sales-order' });
-                                                const blob = response.data ;
-                                                const url = URL.createObjectURL(blob);
-                                                window.open(url, '_blank');
-                                            } catch (err) {
-                                                reportError(err, 'OrderDetailPage:generateProForma');
-                                                setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateReport'));
-                                            }
-                                        }}
-                                    >
-                                        {tSales('buttons.proFormaInvoice')}
-                                    </button>
-                                )}
-                                <button
-                                    className="text-sm px-3 py-2 text-left hover:bg-[var(--bg-secondary)] rounded-md w-full transition-colors"
-                                    onClick={copyOrder}
-                                    disabled={copying}
-                                >
-                                    {copying ? tCommon('copying') : tSales('buttons.copyOrder')}
-                                </button>
-                            </div>
-                        </>
+                <div className="flex items-center gap-2">
+                    {(order.stateCode === SALES_ORDER_STATE.DRAFT || order.stateCode === SALES_ORDER_STATE.QUOTED) && (
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={onEmailQuoteClick}
+                        >
+                            Quote PDF
+                        </button>
+                    )}
+                    {(order.stateCode !== SALES_ORDER_STATE.DRAFT && order.stateCode !== SALES_ORDER_STATE.QUOTED) && (
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={async () => {
+                                try {
+                                    const response = await api.pdfTemplatesControllerRunHook('sales-order-confirmation', {}, { id: order.salesOrderId!, context: 'sales-order' });
+                                    const blob = response.data ;
+                                    const url = URL.createObjectURL(blob);
+                                    window.open(url, '_blank');
+                                } catch (err) {
+                                    reportError(err, 'OrderDetailPage:generateConfirmation');
+                                    setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateReport'));
+                                }
+                            }}
+                        >
+                            {tSales('buttons.confirmationPdf')}
+                        </button>
+                    )}
+                    {(order.stateCode === SALES_ORDER_STATE.CONFIRMED || order.stateCode === SALES_ORDER_STATE.PICKING) && (
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={async () => {
+                                try {
+                                    const response = await api.pdfTemplatesControllerRunHook('pro-forma-invoice', {}, { id: order.salesOrderId!, context: 'sales-order' });
+                                    const blob = response.data ;
+                                    const url = URL.createObjectURL(blob);
+                                    window.open(url, '_blank');
+                                } catch (err) {
+                                    reportError(err, 'OrderDetailPage:generateProForma');
+                                    setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateReport'));
+                                }
+                            }}
+                        >
+                            {tSales('buttons.proFormaInvoice')}
+                        </button>
                     )}
                 </div>
             </div>

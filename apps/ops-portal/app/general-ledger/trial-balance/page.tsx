@@ -86,7 +86,6 @@ export default function TrialBalancePage() {
       header={
         <EntityHeader
           title={t('title')}
-          onBack={() => router.back()}
           actions={
             <div className="flex items-center gap-4">
               <select

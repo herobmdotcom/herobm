@@ -255,7 +255,6 @@ export default function NewPurchaseOrderPage() {
         header={
           <EntityHeader
             title={t('purchaseOrders.createTitle')}
-            onBack={() => router.push('/purchase-orders')}
             actions={
               <>
                 <button

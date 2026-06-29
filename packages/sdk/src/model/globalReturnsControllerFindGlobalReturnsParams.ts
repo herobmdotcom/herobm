@@ -8,4 +8,5 @@
 
 export type GlobalReturnsControllerFindGlobalReturnsParams = {
 stateCode?: string;
+locationId?: string;
 };

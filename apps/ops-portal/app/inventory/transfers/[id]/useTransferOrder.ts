@@ -10,6 +10,7 @@ export function useTransferOrder(id: string) {
   
   // Header edit state
   const [editNotes, setEditNotes] = useState('');
+  const [editShippingNotes, setEditShippingNotes] = useState('');
   const [editSourceLoc, setEditSourceLoc] = useState('');
   const [editDestLoc, setEditDestLoc] = useState('');
 
@@ -20,6 +21,7 @@ export function useTransferOrder(id: string) {
       const res = orderRes.data;
       setOrder(res);
       setEditNotes(res.notes || '');
+      setEditShippingNotes(res.shippingNotes || '');
       setEditSourceLoc(res.sourceLocationId || '');
       setEditDestLoc(res.destinationLocationId || '');
       setError(null);
@@ -36,12 +38,13 @@ export function useTransferOrder(id: string) {
 
   const saveHeader = async () => {
     if (!order) return;
-    if (order.notes === editNotes && order.sourceLocationId === editSourceLoc && order.destinationLocationId === editDestLoc) return;
+    if (order.notes === editNotes && order.shippingNotes === editShippingNotes && order.sourceLocationId === editSourceLoc && order.destinationLocationId === editDestLoc) return;
 
     try {
       setSaving(true);
       await api.transfersControllerUpdate(id, {
         notes: editNotes !== order.notes ? editNotes : undefined,
+        shippingNotes: editShippingNotes !== order.shippingNotes ? editShippingNotes : undefined,
         sourceLocationId: editSourceLoc !== order.sourceLocationId ? editSourceLoc : undefined,
         destinationLocationId: editDestLoc !== order.destinationLocationId ? editDestLoc : undefined,
       });
@@ -113,10 +116,10 @@ export function useTransferOrder(id: string) {
     }
   };
 
-  const receiveOrder = async (destinationBinId: string) => {
+  const receiveOrder = async (lines: import('@herobm/sdk').ReceiveTransferLineDto[]) => {
     try {
       setSaving(true);
-      await api.transfersControllerReceiveTransferOrder(id, { destinationBinId });
+      await api.transfersControllerReceiveTransferOrder(id, { lines });
       await loadOrder();
     } catch (e: unknown) {
       setError(getErrorMessage(e) || 'Failed to receive order');
@@ -145,6 +148,8 @@ export function useTransferOrder(id: string) {
     clearError: () => setError(null),
     editNotes,
     setEditNotes,
+    editShippingNotes,
+    setEditShippingNotes,
     editSourceLoc,
     setEditSourceLoc,
     editDestLoc,

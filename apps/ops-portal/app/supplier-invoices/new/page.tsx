@@ -183,7 +183,6 @@ export default function NewPurchaseInvoicePage() {
         header={
           <EntityHeader
             title="Enter Supplier Invoice"
-            onBack={() => router.push(initialPurchaseOrderId ? `/purchase-orders/${initialPurchaseOrderId}` : '/supplier-invoices')}
             actions={
               <>
                 <button

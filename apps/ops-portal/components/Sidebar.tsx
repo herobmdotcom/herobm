@@ -39,7 +39,8 @@ export default function Sidebar() {
           icon: 'move_to_inbox',
           subItems: [
             { href: '/receiving', label: 'Supplier Receipts' },
-            { href: '/receiving/returns', label: 'Customer Returns' }
+            { href: '/receiving/returns', label: 'Customer Returns' },
+            { href: '/receiving/transfers', label: 'Incoming Transfers' }
           ]
         },
         { href: '/inventory/putaway', label: 'Putaway', icon: 'pallet' },

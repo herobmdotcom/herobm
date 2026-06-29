@@ -137,13 +137,6 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
       <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto">
         <div className="flex flex-col gap-4 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] p-6 lg:p-8">
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => router.push('/reporting/config')} 
-              className="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-800 transition-colors flex items-center justify-center shrink-0"
-              title={t('buttons.returnToList')}
-            >
-              <span className="material-symbols-outlined text-[20px]">{`arrow_back`}</span>
-            </button>
             <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>
               {initialData ? formData.name || t('titles.edit') : t('titles.new')}
             </h2>

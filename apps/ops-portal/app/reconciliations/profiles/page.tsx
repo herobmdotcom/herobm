@@ -220,7 +220,7 @@ export default function ProfilesPage() {
 
   return (
     <DetailsLayout
-      header={<EntityHeader title="Import Profiles" onBack={() => router.push('/reconciliations')} />}
+      header={<EntityHeader title="Import Profiles" />}
     >
       <div className="flex flex-col h-full overflow-hidden w-full max-w-[1400px] mt-4">
         <div className="card">

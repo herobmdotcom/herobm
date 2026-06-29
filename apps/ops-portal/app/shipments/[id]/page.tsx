@@ -43,6 +43,7 @@ interface ShipmentDetail {
   lines: ShipmentLine[];
   events: TimelineEvent[];
   deliveryName?: string;
+  deliveryCustomerName?: string | null;
   deliveryPhone?: string;
   deliveryAddressLine1?: string;
   deliveryAddressLine2?: string;
@@ -120,7 +121,6 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
         <EntityHeader
           title={shipment.shipmentNumber}
           subtitle={`${t('shipmentDetails')} • ${new Date(shipment.createdOn).toLocaleDateString()}`}
-          onBack={() => router.push('/shipments')}
           badges={<StateBadge state={shipment.stateCode as ValidState} />}
           actions={
             shipment.stateCode === SHIPMENT_STATE.DISPATCHED && (
@@ -178,11 +178,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
                 {t('columns.customer')}
               </label>
               <div className="text-sm" style={{ paddingTop: 6 }}>
-                {shipment.customerName ? (
-                  <Link href={`/customers/${shipment.customerId}`} className="text-[var(--accent)] hover:underline">
-                    {shipment.customerName}
-                  </Link>
-                ) : '—'}
+                {shipment.customerName || '—'}
               </div>
             </div>
             
@@ -232,6 +228,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
                                 country={shipment.deliveryCountry}
                                 phone={shipment.deliveryPhone}
                                 recipientName={shipment.deliveryName}
+                                companyName={shipment.deliveryCustomerName ?? undefined}
                             />
                         </div>
                     </div>
@@ -273,7 +270,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
             renderCustomRow={(line) => (
                 <tr key={line.shipmentLineId}>
                     <td style={{ fontWeight: 500 }}>
-                        <Link href={`/sales-orders/${shipment.salesOrderId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                        <Link href={line.orderNumber?.startsWith('TO-') ? `/inventory/transfers/${shipment.salesOrderId}` : `/sales-orders/${shipment.salesOrderId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
                             {line.orderNumber}
                         </Link>
                     </td>
@@ -306,7 +303,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
                   {
                     label: t('columns.orderNumber'),
                     value: (
-                        <Link href={`/sales-orders/${shipment.salesOrderId}`} className="font-semibold text-[var(--accent)] hover:underline">
+                        <Link href={line.orderNumber?.startsWith('TO-') ? `/inventory/transfers/${shipment.salesOrderId}` : `/sales-orders/${shipment.salesOrderId}`} className="font-semibold text-[var(--accent)] hover:underline">
                             {line.orderNumber}
                         </Link>
                     )

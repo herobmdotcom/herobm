@@ -11,6 +11,8 @@ import { useAuth } from '@/components/AuthGate';
 
 import type { OrderDetail, TaxCategory, SalesInvoice } from './types';
 import { computeLinePrice, SALES_ORDER_STATE, SALES_INVOICE_STATE, getErrorMessage } from '@herobm/shared';
+import StateBadge from '@/components/StateBadge';
+import { ValidState } from '@/types/states';
 import type { NewInvoiceLine } from './useOrder';
 import { calculateInvoiceableQuantities } from '@/lib/sales-order-utils';
 import { useSettings } from '@/components/SettingsProvider';
@@ -249,180 +251,54 @@ export default function InvoicesSection({
                     </div>
                 </div>
             )}
-            <div className="space-y-3">
+            <div className="flex flex-col gap-2">
                 {invoices.map(inv => (
-                    <div key={inv.invoiceId} style={{ marginBottom: 12, padding: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card, #fff)' }}>
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                                <Link href={`/sales-invoices/${inv.invoiceId}`} className="text-[var(--accent)] hover:underline">
-                                    <strong style={{ fontSize: 13 }}>{inv.invoiceNumber}</strong>
-                                </Link>
-                                {inv.stateCode === SALES_INVOICE_STATE.CANCELLED && (
-                                    <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-100 text-red-700">
-                                        {tCommon('states.cancelled')}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={async () => {
-                                        try {
-                                            const response = await api.pdfTemplatesControllerRunHook('sales-invoice', {}, { id: inv.invoiceId, context: 'sales-invoice' });
-                                            const blob = response.data ;
-                                            const url = URL.createObjectURL(blob);
-                                            window.open(url, '_blank');
-                                        } catch (err) {
-                                            const { reportError } = await import('@/lib/api');
-                                            reportError(err, 'OrderDetailPage:printInvoice');
-                                            setError(getErrorMessage(err));
-                                        }
-                                    }}
-                                >
-                                    {tSales('buttons.printInvoice')}
-                                </button>
+                    <Link
+                        key={inv.invoiceId}
+                        href={`/sales-invoices/${inv.invoiceId}`}
+                        className="flex items-center justify-between p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors group"
+                    >
+                        <div className="flex items-center gap-3">
+                            { }
+                            <span className="material-symbols-outlined text-[var(--text-muted)] text-lg">request_quote</span>
+                            <div>
+                                <div className="font-bold text-sm text-[var(--text-primary)]">
+                                    {inv.invoiceNumber}
+                                </div>
+                                <div className="text-xs text-[var(--text-muted)]">
+                                    {new Date(inv.createdOn).toLocaleDateString()} &middot; {inv.lines?.length || 0}
+                                    {/* eslint-disable-next-line i18next/no-literal-string -- UI technical layout */}
+                                    <span> lines </span> &middot; <span className="font-medium text-[var(--text-primary)]">{formatAmount(parseFloat(inv.totalAmount || '0'), order.currencyCode || baseCurrency)}</span>
+                                </div>
                             </div>
                         </div>
-                        
-                        {inv.lines && inv.lines.length > 0 && (() => {
-                            const cc = order.currencyCode || baseCurrency;
-                            const sortedLines = [...inv.lines].sort((a, b) => {
-                                const aIdx = order.lines.findIndex((ol) => ol.salesOrderLineId === a.salesOrderLineId);
-                                const bIdx = order.lines.findIndex((ol) => ol.salesOrderLineId === b.salesOrderLineId);
-                                return aIdx - bIdx;
-                            });
-
-                            // Centralised pricing — compute per-line then sum
-                            let subtotal = 0;
-                            let calculatedTaxTotal = 0;
-                            const linePricing = sortedLines.map((il) => {
-                                const orderLine = order.lines.find(ol => ol.salesOrderLineId === il.salesOrderLineId);
-                                const disc = parseFloat(orderLine?.discountPercentage || '0');
-                                const taxCat = taxCategories.find(c => c.taxCategoryId === orderLine?.taxCategoryId);
-                                const taxRate = parseFloat(taxCat?.rate || '0');
-                                const pricing = computeLinePrice({
-                                    quantity: parseFloat(il.quantityInvoiced),
-                                    pricePerUnit: parseFloat(il.pricePerUnit || orderLine?.pricePerUnit || '0'),
-                                    discountPercentage: disc,
-                                    taxRate: taxRate,
-                                });
-                                subtotal += pricing.amount;
-                                calculatedTaxTotal += pricing.tax;
-                                return { il, orderLine, disc, taxRate, pricing };
-                            });
-                            
-                            // Prefer the explicit DB taxAmount to handle imported legacy shipments safely
-                            const dbTaxAmount = inv.taxAmount != null ? parseFloat(inv.taxAmount as string) : 0;
-                            const effectiveTaxTotal = dbTaxAmount !== 0 ? dbTaxAmount : calculatedTaxTotal;
-                            const grandTotal = subtotal + effectiveTaxTotal;
-
-                            return (
-                                <DataTable
-                                    data={linePricing}
-                                    keyExtractor={({ il }, idx) => il.invoiceLineId || idx}
-                                    columns={[
-                                        { header: tSales('columns.product') },
-                                        { header: tSales('columns.description') },
-                                        { header: tSales('columns.qty'), align: 'right' },
-                                        { header: tSales('columns.unitPrice'), align: 'right' },
-                                        { header: tSales('columns.discountPct'), align: 'right' },
-                                        { header: tSales('columns.tax'), align: 'right' },
-                                        { header: tSales('columns.amount'), align: 'right' }
-                                    ]}
-                                    renderCustomRow={({ il, orderLine, disc, taxRate, pricing }) => (
-                                        <tr key={il.lineId || il.invoiceLineId}>
-                                            <td style={{ fontWeight: 600, fontSize: 12 }}>
-                                                {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
-                                            </td>
-                                            <td>{orderLine?.productDescription || '—'}</td>
-                                            <td style={{ textAlign: 'right' }}>{il.quantityInvoiced}</td>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                                {formatAmount(parseFloat(il.pricePerUnit || orderLine?.pricePerUnit || '0'), cc)}
-                                            </td>
-                                            <td style={{ textAlign: 'right', color: disc > 0 ? 'inherit' : 'var(--text-muted)' }}>
-                                                {disc.toFixed(1)}%
-                                            </td>
-                                            <td style={{ textAlign: 'right', color: taxRate > 0 ? 'inherit' : 'var(--text-muted)' }}>
-                                                {taxRate.toFixed(1)}%
-                                            </td>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-                                                {formatAmount(pricing.amount, cc)}
-                                            </td>
-                                        </tr>
-                                    )}
-                                    mobileCard={({ il, orderLine, disc, taxRate, pricing }) => (
-                                        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col">
-                                            <div className="flex justify-between items-start gap-2 mb-2">
-                                                <div className="font-semibold text-sm text-[var(--accent)]">
-                                                    {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
-                                                </div>
-                                            </div>
-                                            <div className="text-sm text-slate-600 font-medium mb-3">
-                                                {orderLine?.productDescription || '—'}
-                                            </div>
-                                            
-                                            <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
-                                                <MobileCardField label={tSales('columns.qty')} value={
-                                                    <span className="font-semibold">{il.quantityInvoiced}</span>
-                                                } />
-                                                <MobileCardField label={tSales('columns.unitPrice')} value={
-                                                    <span>{formatAmount(parseFloat(il.pricePerUnit || orderLine?.pricePerUnit || '0'), cc)}</span>
-                                                } />
-                                                {disc > 0 && (
-                                                    <MobileCardField label={tSales('columns.discountPct')} value={
-                                                        <span>{disc.toFixed(1)}%</span>
-                                                    } />
-                                                )}
-                                                {taxRate > 0 && (
-                                                    <MobileCardField label={tSales('columns.tax')} value={
-                                                        <span>{taxRate.toFixed(1)}%</span>
-                                                    } />
-                                                )}
-                                                <MobileCardField label={tSales('columns.amount')} value={
-                                                    <span className="font-bold text-[var(--accent)] text-base">{formatAmount(pricing.amount, cc)}</span>
-                                                } />
-                                            </div>
-                                        </div>
-                                    )}
-                                    footer={(
-                                        <>
-                                            <tr className="hidden lg:table-row" style={{ borderTop: '1px solid var(--border)' }}>
-                                                <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>{tSales('totals.subtotal')}</td>
-                                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(subtotal, cc)}</td>
-                                            </tr>
-                                            <tr className="hidden lg:table-row">
-                                                <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>{tSales('totals.tax')}</td>
-                                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(effectiveTaxTotal, cc)}</td>
-                                            </tr>
-                                            <tr className="hidden lg:table-row">
-                                                <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>{tSales('totals.total')}</td>
-                                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 13 }}>{formatAmount(grandTotal, cc)}</td>
-                                            </tr>
-                                            
-                                            <tr className="lg:hidden">
-                                                <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tSales('totals.subtotal')}</td>
-                                                <td className="py-1 text-sm font-semibold text-right tabular-nums">{formatAmount(subtotal, cc)}</td>
-                                            </tr>
-                                            <tr className="lg:hidden">
-                                                <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tSales('totals.tax')}</td>
-                                                <td className="py-1 text-sm font-semibold text-right tabular-nums">{formatAmount(effectiveTaxTotal, cc)}</td>
-                                            </tr>
-                                            <tr className="lg:hidden">
-                                                <td className="py-2 text-sm font-bold text-[var(--accent)] text-right pr-4">{tSales('totals.total')}</td>
-                                                <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums">{formatAmount(grandTotal, cc)}</td>
-                                            </tr>
-                                        </>
-                                    )}
-                                />
-                            );
-                        })()}
-
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
-                            {inv.createdBy
-                                ? `Created ${new Date(inv.createdOn).toLocaleDateString()} by ${inv.createdBy}`
-                                : `Created ${new Date(inv.createdOn).toLocaleDateString()}`}
+                        <div className="flex items-center gap-3">
+                            {inv.stateCode && (() => {
+                                const isOverdue = inv.dueDate && new Date(inv.dueDate) < new Date() && Number(inv.outstandingAmount || 0) > 0 && inv.stateCode !== SALES_INVOICE_STATE.CANCELLED;
+                                if (isOverdue) {
+                                    return <span className="badge badge-overdue">{tCommon('states.overdue')}</span>;
+                                }
+                                return <StateBadge state={inv.stateCode as ValidState} />;
+                            })()}
+                            <button
+                                className="btn btn-secondary flex items-center justify-center p-2 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors"
+                                title={tSales('buttons.printInvoice')}
+                                onClick={async (e) => {
+                                    e.preventDefault();
+                                    try {
+                                        const res = await api.pdfTemplatesControllerRunHook('sales-invoice', {}, { id: inv.invoiceId, context: 'sales-invoice' });
+                                        const url = URL.createObjectURL(res.data as Blob);
+                                        window.open(url, '_blank');
+                                    } catch (err) {
+                                        setError(getErrorMessage(err));
+                                    }
+                                }}
+                            >
+                                <span className="material-symbols-outlined text-[20px]">print</span>
+                                <span className="sr-only">{tSales('buttons.printInvoice')}</span>
+                            </button>
                         </div>
-                    </div>
+                    </Link>
                 ))}
                 {invoices.length === 0 && (
                     <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
