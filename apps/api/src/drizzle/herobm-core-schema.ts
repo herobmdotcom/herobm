@@ -1602,7 +1602,6 @@ export const customers = herobmCore.table(
       () => taxPositions.taxPositionId,
     ),
     currencyCode: text('currency_code').notNull(),
-    customerDiscount: numeric('customer_discount'),
     tradingTermsId: uuid('trading_terms_id').references(
       () => tradingTerms.tradingTermsId,
     ),
@@ -1731,7 +1730,7 @@ export const suppliers = herobmCore.table(
     notes: text('notes'),
     bankAccountName: text('bank_account_name'),
     bankBsb: text('bank_bsb'),
-    bankAccountNumber: text('bank_number'),
+    bankAccountNumber: text('bank_account_number'),
     businessNumber: text('business_number'),
     isTaxRegistered: boolean('is_tax_registered').notNull().default(false),
     taxPositionId: uuid('tax_position_id').references(
