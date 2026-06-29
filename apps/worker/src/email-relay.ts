@@ -94,7 +94,42 @@ export async function pollEmailOutbox(db: any) {
       return;
     }
 
+    const { pgSchema, uuid, text, jsonb, timestamp } = require('drizzle-orm/pg-core');
+    const getEventTable = (eType: string) => {
+      let targetTableName = 'system_events';
+      if (['sales_order', 'sales_invoice', 'sales_return'].includes(eType)) targetTableName = 'sales_events';
+      else if (['purchase_order', 'purchase_invoice', 'purchase_return'].includes(eType)) targetTableName = 'procurement_events';
+      else if (['product', 'customer', 'supplier', 'product_supplier'].includes(eType)) targetTableName = 'master_data_events';
+      else if (['shipment', 'transfer_order', 'warehouse', 'location', 'zone', 'bin'].includes(eType)) targetTableName = 'warehouse_events';
+      else if (['payment', 'csv_mapping_profile', 'tax_category', 'tax_position', 'tax_position_mapping', 'exchange_rate', 'cost_center', 'activity', 'gl_account'].includes(eType)) targetTableName = 'financial_events';
+      else if (['inventory_ledger'].includes(eType)) targetTableName = 'inventory_events';
+      else if (['user'].includes(eType)) targetTableName = 'user_events';
+      else if (['reconciliation_rule', 'bank_statement_line', 'gl_match_group', 'gl_reconciliation'].includes(eType)) targetTableName = 'reconciliation_events';
+      else if (['product_group', 'customer_group', 'supplier_group'].includes(eType)) targetTableName = 'group_events';
+      else if (['email'].includes(eType)) targetTableName = 'email_events';
+      else if (['business_report'].includes(eType)) targetTableName = 'business_report_events';
+      else if (['integration'].includes(eType)) targetTableName = 'integration_events';
+
+      return pgSchema('herobm_core').table(targetTableName, {
+        eventId: uuid('event_id').primaryKey(),
+        entityType: text('entity_type').notNull(),
+        entityId: uuid('entity_id').notNull(),
+        eventType: text('event_type').notNull(),
+        payload: jsonb('payload'),
+        actor: text('actor'),
+        createdOn: timestamp('created_on', { withTimezone: true }),
+      });
+    };
+
+    const emailEventsTable = getEventTable('email');
+
     for (const email of pendingEmails) {
+      const [queuedEvent] = await db
+        .select({ actor: emailEventsTable.actor })
+        .from(emailEventsTable)
+        .where(and(eq(emailEventsTable.entityId, email.id), eq(emailEventsTable.eventType, 'queued')))
+        .limit(1);
+      const actor = queuedEvent?.actor || null;
       try {
         logger.info(`Sending email ${email.id} to ${email.toAddress}`);
 
@@ -138,39 +173,38 @@ export async function pollEmailOutbox(db: any) {
           if (attachmentNames.length > 0) {
             payload.attachments = attachmentNames;
           }
-          
-          let targetTableName = 'system_events';
-          if (['sales_order', 'sales_invoice', 'sales_return'].includes(email.entityType)) targetTableName = 'sales_events';
-          else if (['purchase_order', 'purchase_invoice', 'purchase_return'].includes(email.entityType)) targetTableName = 'procurement_events';
-          else if (['product', 'customer', 'supplier', 'product_supplier'].includes(email.entityType)) targetTableName = 'master_data_events';
-          else if (['shipment', 'transfer_order', 'warehouse', 'location', 'zone', 'bin'].includes(email.entityType)) targetTableName = 'warehouse_events';
-          else if (['payment', 'csv_mapping_profile', 'tax_category', 'tax_position', 'tax_position_mapping', 'exchange_rate', 'cost_center', 'activity', 'gl_account'].includes(email.entityType)) targetTableName = 'financial_events';
-          else if (['inventory_ledger'].includes(email.entityType)) targetTableName = 'inventory_events';
-          else if (['user'].includes(email.entityType)) targetTableName = 'user_events';
-          else if (['reconciliation_rule', 'bank_statement_line', 'gl_match_group', 'gl_reconciliation'].includes(email.entityType)) targetTableName = 'reconciliation_events';
-          else if (['product_group', 'customer_group', 'supplier_group'].includes(email.entityType)) targetTableName = 'group_events';
-          else if (['email'].includes(email.entityType)) targetTableName = 'email_events';
-          else if (['business_report'].includes(email.entityType)) targetTableName = 'business_report_events';
-          else if (['integration'].includes(email.entityType)) targetTableName = 'integration_events';
 
-          const { pgSchema, uuid, text, jsonb, timestamp } = require('drizzle-orm/pg-core');
-          const dynamicTable = pgSchema('herobm_core').table(targetTableName, {
-            eventId: uuid('event_id').primaryKey(),
-            entityType: text('entity_type').notNull(),
-            entityId: uuid('entity_id').notNull(),
-            eventType: text('event_type').notNull(),
-            payload: jsonb('payload'),
-            createdOn: timestamp('created_on', { withTimezone: true }),
-          });
-
-          await db.insert(dynamicTable).values({
+          // Always log to the EMAIL generic entity
+          await db.insert(emailEventsTable).values({
             eventId: crypto.randomUUID(),
-            entityType: email.entityType,
-            entityId: email.entityId,
-            eventType: 'email.sent',
+            entityType: 'email',
+            entityId: email.id,
+            eventType: 'sent',
             payload,
+            actor,
             createdOn: new Date()
           });
+          
+          if (email.entityType && email.entityId) {
+            const dynamicTable = getEventTable(email.entityType);
+            await db.insert(dynamicTable).values({
+              eventId: crypto.randomUUID(),
+              entityType: email.entityType,
+              entityId: email.entityId,
+              eventType: 'email.sent',
+              payload,
+              actor,
+              createdOn: new Date()
+            });
+            await db.insert(outbox).values({
+              outboxId: crypto.randomUUID(),
+              entityType: email.entityType,
+              entityId: email.entityId,
+              eventType: 'email.sent',
+              payload,
+              createdOn: new Date()
+            });
+          }
           await db.insert(outbox).values({
             outboxId: crypto.randomUUID(),
             entityType: email.entityType,
@@ -199,29 +233,45 @@ export async function pollEmailOutbox(db: any) {
           })
           .where(eq(emailOutbox.id, email.id));
 
-        if (status === 'failed' && email.entityType && email.entityId) {
+        if (status === 'failed') {
           const payload = {
             emailId: email.id,
             toAddress: email.toAddress,
             subject: email.subject,
             error: err.message,
           };
-          await db.insert(systemEvents).values({
+
+          // Always log to the EMAIL generic entity
+          await db.insert(emailEventsTable).values({
             eventId: crypto.randomUUID(),
-            entityType: email.entityType,
-            entityId: email.entityId,
-            eventType: 'email.failed',
+            entityType: 'email',
+            entityId: email.id,
+            eventType: 'failed',
             payload,
+            actor,
             createdOn: new Date()
           });
-          await db.insert(outbox).values({
-            outboxId: crypto.randomUUID(),
-            entityType: email.entityType,
-            entityId: email.entityId,
-            eventType: 'email.failed',
-            payload,
-            createdOn: new Date()
-          });
+
+          if (email.entityType && email.entityId) {
+            const dynamicTable = getEventTable(email.entityType);
+            await db.insert(dynamicTable).values({
+              eventId: crypto.randomUUID(),
+              entityType: email.entityType,
+              entityId: email.entityId,
+              eventType: 'email.failed',
+              payload,
+              actor,
+              createdOn: new Date()
+            });
+            await db.insert(outbox).values({
+              outboxId: crypto.randomUUID(),
+              entityType: email.entityType,
+              entityId: email.entityId,
+              eventType: 'email.failed',
+              payload,
+              createdOn: new Date()
+            });
+          }
         }
       }
     }
