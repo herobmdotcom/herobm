@@ -1192,6 +1192,7 @@ export class OrdersWriteService {
             content: base64Pdf,
           },
         ],
+        actor: user.id,
       });
     });
 

@@ -211,7 +211,7 @@ export default function SystemSettingsPage() {
       title: tSettings('labels.content'), 
       type: 'textarea', 
       placeholder: tSettings('labels.content'),
-      render: (row) => <span className="text-sm whitespace-pre-wrap">{row.content}</span>
+      render: (row, isEditing) => isEditing ? undefined : <span className="text-sm whitespace-pre-wrap">{row.content}</span>
     }
   ], [tSettings]);
 

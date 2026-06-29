@@ -1043,6 +1043,11 @@
       "created": "Created",
       "credit_note_posted": "Credit Note Posted",
       "deleted": "Deleted",
+      "email": {
+        "failed": "Email Failed",
+        "queued": "Email",
+        "sent": "Email Sent"
+      },
       "line_added": "Line Added",
       "line_removed": "Line Removed",
       "line_updated": "Line Updated",

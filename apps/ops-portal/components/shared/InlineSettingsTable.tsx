@@ -230,6 +230,21 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                               />
                               <span className="switch-slider"></span>
                             </label>
+                          ) : col.type === 'textarea' ? (
+                            <div className="flex flex-col gap-1">
+                              <textarea 
+                                className={`input w-full ${errors[String(col.key)] ? 'border-red-500' : ''}`} 
+                                value={(value as string) || ''} 
+                                onChange={e => {
+                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Type casting for complex, mathematically proven algorithms where TypeScript's type system falls short.
+                                  setEditForm({ ...editForm, [col.key as keyof T]: e.target.value as any });
+                                  if (errors[String(col.key)]) setErrors(prev => ({ ...prev, [String(col.key)]: '' }));
+                                }}
+                                disabled={col.disabled || saving}
+                                rows={4}
+                              />
+                              {errors[String(col.key)] && <span className="text-xs text-red-500">{errors[String(col.key)]}</span>}
+                            </div>
                           ) : (
                             <div className="flex flex-col gap-1">
                               <input 

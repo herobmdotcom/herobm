@@ -16,6 +16,7 @@ export interface QueueEmailParams {
   subject: string;
   htmlBody: string;
   attachments?: { filename: string; contentType: string; content?: string }[];
+  actor?: string;
 }
 
 @Injectable()
@@ -59,18 +60,7 @@ export class EmailService {
       eventType: EventType.QUEUED,
       entityDisplayName: `Email to ${params.toAddress}`,
       payload: payload,
+      actor: params.actor,
     });
-
-    // 2. Optional event logging if linked to an entity
-    if (params.entityType && params.entityId) {
-      // @sync-ignore
-      await emitEvent(tx, {
-        entityType: params.entityType,
-        entityId: params.entityId,
-        eventType: `email.${EventType.QUEUED}`,
-        entityDisplayName: `Email to ${params.toAddress}`,
-        payload: payload,
-      });
-    }
   }
 }
