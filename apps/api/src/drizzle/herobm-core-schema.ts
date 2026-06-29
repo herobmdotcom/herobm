@@ -36,12 +36,20 @@ import {
   PurchaseDebitNoteState,
   ReturnState,
   SalesOrderPickState,
+  TransferOrderPickState,
+  PaymentState,
+  CustomerState,
+  ProductState,
+  SupplierState,
+  SalesInvoiceState,
+  GoodsReceivedState,
   CurrencyDef,
   SALES_ORDER_STATE,
   PURCHASE_ORDER_STATE,
   SHIPMENT_STATE,
   RETURN_STATE,
   SALES_ORDER_PICK_STATE,
+  TRANSFER_ORDER_PICK_STATE,
   PRODUCT_STATE,
   SUPPLIER_STATE,
   CUSTOMER_STATE,
@@ -174,7 +182,7 @@ export const salesOrders = herobmCore.table(
     exchangeRate: numeric('exchange_rate').notNull().default('1'),
     notes: text('notes'),
     shippingNotes: text('shipping_notes'),
-    deliveryCustomerName: text('delivery_customer_name'),
+    deliveryCompanyName: text('delivery_company_name'),
     deliveryName: text('delivery_name'),
     deliveryPhone: text('delivery_phone'),
     deliveryAddressLine1: text('delivery_address_line1'),
@@ -455,7 +463,7 @@ export const salesOrderShipments = herobmCore.table(
       .default(SHIPMENT_STATE.DISPATCHED),
     notes: text('notes'),
     trackingNumber: text('tracking_number'),
-    deliveryCustomerName: text('delivery_customer_name'),
+    deliveryCompanyName: text('delivery_company_name'),
     fulfillmentLocationId: uuid('fulfillment_location_id').references(
       () => locations.locationId,
     ),
@@ -826,8 +834,9 @@ export const transferOrderPicks = herobmCore.table(
     binId: uuid('bin_id').references(() => bins.binId),
     quantity: numeric('quantity').notNull(),
     stateCode: text('state_code')
+      .$type<TransferOrderPickState>()
       .notNull()
-      .default(SALES_ORDER_PICK_STATE.PICKED),
+      .default(TRANSFER_ORDER_PICK_STATE.PICKED),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -851,7 +860,11 @@ export const transferOrderShipments = herobmCore.table(
     shipmentNumber: text('shipment_number').unique().notNull(),
     trackingNumber: text('tracking_number'),
     carrierId: uuid('carrier_id'), // if carriers exist
-    stateCode: text('state_code').notNull().default(SHIPMENT_STATE.DISPATCHED),
+    notes: text('notes'),
+    stateCode: text('state_code')
+      .$type<ShipmentState>()
+      .notNull()
+      .default(SHIPMENT_STATE.DISPATCHED),
     shippedBy: text('shipped_by'),
     shippedOn: timestamp('shipped_on', { withTimezone: true }).defaultNow(),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -1282,7 +1295,10 @@ export const customerGroups = herobmCore.table('customer_groups', {
   customerGroupId: uuid('customer_group_id').primaryKey().defaultRandom(),
   groupCode: text('group_code').unique().notNull(),
   name: text('name').notNull(),
-  stateCode: text('state_code').notNull().default(CUSTOMER_STATE.ACTIVE),
+  stateCode: text('state_code')
+    .$type<CustomerState>()
+    .notNull()
+    .default(CUSTOMER_STATE.ACTIVE),
 
   defaultArAccountId: uuid('default_ar_account_id').references(
     () => glAccounts.glAccountId,
@@ -1484,7 +1500,10 @@ export const products = herobmCore.table('products', {
   ),
   externalTaxCode: text('external_tax_code'),
   alternateProductNumber: text('alternate_product_number'),
-  stateCode: text('state_code').notNull().default(PRODUCT_STATE.ACTIVE),
+  stateCode: text('state_code')
+    .$type<ProductState>()
+    .notNull()
+    .default(PRODUCT_STATE.ACTIVE),
   notes: text('notes'),
   sourceId: text('source_id').unique(),
   source: text('source').notNull().default('app'),
@@ -1575,7 +1594,10 @@ export const customers = herobmCore.table(
       () => customerGroups.customerGroupId,
     ),
     parentCustomerId: uuid('parent_customer_id'), // Self-reference added in relations
-    stateCode: text('state_code').notNull().default(CUSTOMER_STATE.ACTIVE),
+    stateCode: text('state_code')
+      .$type<CustomerState>()
+      .notNull()
+      .default(CUSTOMER_STATE.ACTIVE),
     taxPositionId: uuid('tax_position_id').references(
       () => taxPositions.taxPositionId,
     ),
@@ -1701,12 +1723,15 @@ export const suppliers = herobmCore.table(
     }),
     blockNotes: text('block_notes'),
     currencyCode: text('currency_code').notNull(),
-    stateCode: text('state_code').notNull().default(CUSTOMER_STATE.ACTIVE),
+    stateCode: text('state_code')
+      .$type<SupplierState>()
+      .notNull()
+      .default(SUPPLIER_STATE.ACTIVE),
     externalId: text('external_id'),
     notes: text('notes'),
     bankAccountName: text('bank_account_name'),
     bankBsb: text('bank_bsb'),
-    bankAccountNumber: text('bank_account_number'),
+    bankAccountNumber: text('bank_number'),
     businessNumber: text('business_number'),
     isTaxRegistered: boolean('is_tax_registered').notNull().default(false),
     taxPositionId: uuid('tax_position_id').references(
@@ -1763,7 +1788,10 @@ export const productSuppliers = herobmCore.table(
     purchaseUnit: text('purchase_unit'),
     effectiveFrom: timestamp('effective_from', { withTimezone: true }),
     effectiveTo: timestamp('effective_to', { withTimezone: true }),
-    stateCode: text('state_code').notNull().default(SUPPLIER_STATE.ACTIVE),
+    stateCode: text('state_code')
+      .$type<SupplierState>()
+      .notNull()
+      .default(SUPPLIER_STATE.ACTIVE),
     sourceId: text('source_id').unique(),
     source: text('source').notNull().default('app'),
     createdBy: text('created_by'),
@@ -1848,7 +1876,10 @@ export const salesInvoices = herobmCore.table(
     baseOutstandingAmount: numeric('base_outstanding_amount').default('0'),
     currencyCode: text('currency_code').notNull(),
     exchangeRate: numeric('exchange_rate').notNull().default('1'),
-    stateCode: text('state_code').notNull().default(SALES_INVOICE_STATE.DRAFT),
+    stateCode: text('state_code')
+      .$type<SalesInvoiceState>()
+      .notNull()
+      .default(SALES_INVOICE_STATE.DRAFT),
     invoiceDate: timestamp('invoice_date', { withTimezone: true }),
     dueDate: timestamp('due_date', { withTimezone: true }),
     termsDescription: text('terms_description'),
@@ -2555,6 +2586,7 @@ export const goodsReceived = herobmCore.table('goods_received', {
   packingSlipNumber: text('packing_slip_number'),
   notes: text('notes'),
   stateCode: text('state_code')
+    .$type<GoodsReceivedState>()
     .notNull()
     .default(GOODS_RECEIVED_STATE.RECEIVED), // received | invoiced | archived
   createdBy: text('created_by'),

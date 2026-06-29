@@ -484,7 +484,7 @@ export class OrdersWriteService {
           exchangeRate: fx.rate.toString(),
           notes: dto.notes,
           shippingNotes: dto.shippingNotes,
-          deliveryCustomerName: dto.deliveryCustomerName ?? customer.name,
+          deliveryCompanyName: dto.deliveryCompanyName ?? customer.name,
           deliveryName: dto.deliveryName,
           deliveryPhone: dto.deliveryPhone,
           deliveryAddressLine1: dto.deliveryAddressLine1,
@@ -877,7 +877,7 @@ export class OrdersWriteService {
         await tx
           .update(backorders)
           .set({
-            stateCode: SALES_ORDER_STATE.CANCELLED as string,
+            stateCode: SALES_ORDER_STATE.CANCELLED,
             modifiedOn: new Date(),
           })
           .where(eq(backorders.salesOrderId, id));
@@ -993,7 +993,7 @@ export class OrdersWriteService {
 
     const previousState =
       ((lastEvent[0]?.payload as Record<string, unknown>)?.from as string) ||
-      (SALES_ORDER_STATE.CANCELLED as string);
+      SALES_ORDER_STATE.CANCELLED;
 
     return await this.changeSalesOrderState(id, previousState, actor);
   }

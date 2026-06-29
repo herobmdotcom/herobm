@@ -66,7 +66,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
           companyName: existingData.companyName !== undefined ? existingData.companyName : (!addressId ? (customerName || '') : ''),
           recipientName: existingData.recipientName || '',
           recipientPhone: existingData.recipientPhone || '',
-          addressLine1: existingData.addressLine1 || '',
+          addressLine1: existingData.addressLine1?.replace(/[\r\n]+/g, ' ') || '',
           addressLine2: existingData.addressLine2 || '',
           city: existingData.city || '',
           stateOrProvince: existingData.stateOrProvince || '',
@@ -207,7 +207,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
           <input
             type="text"
             className="input"
-            value={dto.addressName}
+            value={dto.addressName || ''}
             onChange={(e) => handleChange('addressName', e.target.value)}
             placeholder={t('addressNamePlaceholder')}
           />
@@ -220,7 +220,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
           <input
             type="text"
             className="input"
-            value={dto.companyName}
+            value={dto.companyName || ''}
             onChange={(e) => handleChange('companyName', e.target.value)}
           />
         </div>
@@ -233,7 +233,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
             <input
               type="text"
               className="input"
-              value={dto.recipientName}
+              value={dto.recipientName || ''}
               onChange={(e) => handleChange('recipientName', e.target.value)}
               placeholder={t('contactPersonPlaceholder')}
             />
@@ -264,7 +264,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
           <input
             type="text"
             className="input"
-            value={dto.addressLine1}
+            value={dto.addressLine1 || ''}
             onChange={(e) => handleChange('addressLine1', e.target.value)}
           />
         </div>
@@ -276,7 +276,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
           <input
             type="text"
             className="input"
-            value={dto.addressLine2}
+            value={dto.addressLine2 || ''}
             onChange={(e) => handleChange('addressLine2', e.target.value)}
           />
         </div>
@@ -289,7 +289,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
             <input
               type="text"
               className="input"
-              value={dto.city}
+              value={dto.city || ''}
               onChange={(e) => handleChange('city', e.target.value)}
             />
           </div>
@@ -300,7 +300,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
             <input
               type="text"
               className="input"
-              value={dto.stateOrProvince}
+              value={dto.stateOrProvince || ''}
               onChange={(e) => handleChange('stateOrProvince', e.target.value)}
             />
           </div>
@@ -314,7 +314,7 @@ export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> =
             <input
               type="text"
               className="input"
-              value={dto.postalCode}
+              value={dto.postalCode || ''}
               onChange={(e) => handleChange('postalCode', e.target.value)}
             />
           </div>

@@ -52,6 +52,7 @@ import { BackordersService } from '../orders/backorders.service';
 import { PurchaseOrdersService } from '../purchase-orders/purchase-orders.service';
 import {
   RECEIPT_STATE,
+  GoodsReceivedState,
   RECEIPT_TRANSITIONS,
   PURCHASE_ORDER_STATE,
   PURCHASE_ORDER_TRANSITIONS,
@@ -137,7 +138,7 @@ export class GoodsReceivedService {
           locationId: createDto.locationId,
           packingSlipNumber: createDto.packingSlipNumber,
           notes: createDto.notes,
-          stateCode: RECEIPT_STATE.RECEIVED as string,
+          stateCode: RECEIPT_STATE.RECEIVED,
           createdBy: userId,
         })
         .returning();
@@ -795,7 +796,7 @@ export class GoodsReceivedService {
    */
   async changeReceiptState(
     receiptId: string,
-    newState: string,
+    newState: GoodsReceivedState,
     actor: string,
     tx: DrizzleDB,
   ) {

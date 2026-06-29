@@ -53,6 +53,7 @@ export class ProductsWriteService {
         .values({
           ...dto,
           productType: dto.productType ?? 'inventory',
+          stateCode: dto.stateCode as ProductState | undefined,
           createdBy: actor,
         })
         .returning();
@@ -216,7 +217,7 @@ export class ProductsWriteService {
       throw new NotFoundException(`Product '${productId}' not found`);
     }
 
-    const currentState = existing.stateCode as ProductState;
+    const currentState = existing.stateCode;
 
     if (currentState === newState) {
       return existing;

@@ -38,7 +38,10 @@ export class GlobalReturnsController {
     @Query('stateCode') stateCode?: string,
     @Query('locationId') locationId?: string,
   ) {
-    const data = await this.returnsWriteService.findGlobal(stateCode, locationId);
+    const data = await this.returnsWriteService.findGlobal(
+      stateCode,
+      locationId,
+    );
     return { data, meta: { total: data.length } };
   }
 }

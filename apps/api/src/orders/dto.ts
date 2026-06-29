@@ -132,7 +132,7 @@ export class CreateOrderDto {
 
   @IsOptional()
   @IsString()
-  deliveryCustomerName?: string;
+  deliveryCompanyName?: string;
 
   @IsOptional()
   @IsString()
@@ -195,7 +195,7 @@ export class UpdateOrderDto {
 
   @IsOptional()
   @IsString()
-  deliveryCustomerName?: string;
+  deliveryCompanyName?: string;
 
   @IsOptional()
   @IsString()
@@ -335,7 +335,7 @@ export class CreateShipmentDto {
 
   @IsOptional()
   @IsString()
-  deliveryCustomerName?: string;
+  deliveryCompanyName?: string;
 
   @IsOptional()
   @IsString()
@@ -354,7 +354,7 @@ export class UpdateShipmentDto {
 
   @IsOptional()
   @IsString()
-  deliveryCustomerName?: string;
+  deliveryCompanyName?: string;
 
   @IsOptional()
   @IsString()

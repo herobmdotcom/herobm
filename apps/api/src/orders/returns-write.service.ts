@@ -988,7 +988,7 @@ export class ReturnsWriteService {
     }
 
     if (locationId) {
-      return result.filter(r => r.locationId === locationId);
+      return result.filter((r) => r.locationId === locationId);
     }
 
     return result;

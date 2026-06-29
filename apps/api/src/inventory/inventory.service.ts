@@ -1186,11 +1186,17 @@ export class InventoryService {
       .from(transferOrderReceiptLines)
       .innerJoin(
         transferOrderReceipts,
-        eq(transferOrderReceiptLines.receiptId, transferOrderReceipts.receiptId),
+        eq(
+          transferOrderReceiptLines.receiptId,
+          transferOrderReceipts.receiptId,
+        ),
       )
       .innerJoin(
         transferOrders,
-        eq(transferOrderReceipts.transferOrderId, transferOrders.transferOrderId),
+        eq(
+          transferOrderReceipts.transferOrderId,
+          transferOrders.transferOrderId,
+        ),
       )
       .innerJoin(
         products,
@@ -1284,11 +1290,17 @@ export class InventoryService {
             .from(transferOrderReceiptLines)
             .innerJoin(
               transferOrderReceipts,
-              eq(transferOrderReceiptLines.receiptId, transferOrderReceipts.receiptId),
+              eq(
+                transferOrderReceiptLines.receiptId,
+                transferOrderReceipts.receiptId,
+              ),
             )
             .innerJoin(
               transferOrders,
-              eq(transferOrderReceipts.transferOrderId, transferOrders.transferOrderId),
+              eq(
+                transferOrderReceipts.transferOrderId,
+                transferOrders.transferOrderId,
+              ),
             )
             .leftJoin(
               products,
@@ -1453,9 +1465,7 @@ export class InventoryService {
           await tx
             .update(transferOrderReceiptLines)
             .set({ putawayStatus: PUTAWAY_STATUS.COMPLETED })
-            .where(
-              eq(transferOrderReceiptLines.receiptLineId, lineDto.lineId),
-            );
+            .where(eq(transferOrderReceiptLines.receiptLineId, lineDto.lineId));
         } else {
           await tx
             .update(salesOrderReturnLines)

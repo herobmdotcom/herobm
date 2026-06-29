@@ -43,7 +43,7 @@ interface ShipmentDetail {
   lines: ShipmentLine[];
   events: TimelineEvent[];
   deliveryName?: string;
-  deliveryCustomerName?: string | null;
+  deliveryCompanyName?: string | null;
   deliveryPhone?: string;
   deliveryAddressLine1?: string;
   deliveryAddressLine2?: string;
@@ -86,7 +86,11 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
 
     setIsCancelling(true);
     try {
-      await api.orderShipmentsControllerCancelShipment(shipment.salesOrderId, shipment.shipmentId, { body: JSON.stringify({}) });
+      if (shipment.shipmentNumber?.startsWith('TSH-')) {
+        await api.transfersControllerCancelTransferOrderShipment(shipment.salesOrderId, { body: JSON.stringify({}) });
+      } else {
+        await api.orderShipmentsControllerCancelShipment(shipment.salesOrderId, shipment.shipmentId, { body: JSON.stringify({}) });
+      }
       loadShipment();
     } catch (err: unknown) {
       reportError(err, 'ShipmentDetailPage.handleCancel');
@@ -228,7 +232,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
                                 country={shipment.deliveryCountry}
                                 phone={shipment.deliveryPhone}
                                 recipientName={shipment.deliveryName}
-                                companyName={shipment.deliveryCustomerName ?? undefined}
+                                companyName={shipment.deliveryCompanyName ?? undefined}
                             />
                         </div>
                     </div>

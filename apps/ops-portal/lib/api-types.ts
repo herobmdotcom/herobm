@@ -116,6 +116,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/customers/aged-balances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Aged Balances
+         * @description Retrieve aged balances for all customers with outstanding invoices.
+         */
+        get: operations["AccountsController_getAgedBalances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/customers/{id}": {
         parameters: {
             query?: never;
@@ -138,6 +158,26 @@ export interface paths {
          * @description Update an existing customer.
          */
         patch: operations["AccountsController_update"];
+        trace?: never;
+    };
+    "/customers/{id}/credit-assessment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Credit Assessment
+         * @description Retrieve the credit assessment for a customer.
+         */
+        get: operations["AccountsController_getCreditAssessment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/customers/{id}/archive": {
@@ -668,26 +708,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/inventory/movements": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Movements
-         * @description Retrieve inventory movements.
-         */
-        get: operations["InventoryController_getMovements"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/inventory/ledger": {
         parameters: {
             query?: never;
@@ -768,7 +788,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/inventory/quarantine/{lineId}": {
+    "/inventory/quarantine/move": {
         parameters: {
             query?: never;
             header?: never;
@@ -778,10 +798,50 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Toggle Quarantine
-         * @description Toggle quarantine state for an inventory item.
+         * Move to/from Quarantine
+         * @description Move stock between quarantine and regular storage.
          */
-        post: operations["InventoryController_toggleQuarantine"];
+        post: operations["InventoryController_quarantineMove"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move Stock manually
+         * @description Manually move stock between bins in the same location.
+         */
+        post: operations["InventoryController_moveStock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inventory/adjust": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adjust Stock manually
+         * @description Manually adjust stock levels to match a physical count.
+         */
+        post: operations["InventoryController_adjustStock"];
         delete?: never;
         options?: never;
         head?: never;
@@ -905,7 +965,7 @@ export interface paths {
         };
         /**
          * Get Trial Balance
-         * @description Calculate and retrieve the trial balance as of a specific date.
+         * @description Calculate and retrieve the trial balance as of a specific date, optionally with periodic activity.
          */
         get: operations["GlController_getTrialBalance"];
         put?: never;
@@ -958,6 +1018,46 @@ export interface paths {
          * @description Update the general ledger configuration settings.
          */
         patch: operations["GlController_updateSettings"];
+        trace?: never;
+    };
+    "/gl/fx-revaluation/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get FX Revaluation Candidates
+         * @description Calculates Unrealised FX Gains/Losses on open foreign currency balances and returns proposed adjustments without posting them.
+         */
+        get: operations["GlController_getFxCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/fx-revaluation/commit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Commit Period-End FX Revaluation
+         * @description Commits the user-approved FX Revaluation adjustments and automatically generates their corresponding reversing journals for the following day.
+         */
+        post: operations["GlController_commitFxRevaluation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/gl/settings/reload": {
@@ -1228,7 +1328,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/gl/bank-feeds/profiles/{glAccountId}": {
+    "/gl/bank-feeds/profiles": {
         parameters: {
             query?: never;
             header?: never;
@@ -1237,25 +1337,9 @@ export interface paths {
         };
         /**
          * Get Mapping Profiles
-         * @description Retrieves all mapping profiles for a specific GL account.
+         * @description Retrieves all mapping profiles.
          */
         get: operations["BankFeedsController_getProfiles"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/gl/bank-feeds/profiles": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
         put?: never;
         /**
          * Create Mapping Profile
@@ -1263,6 +1347,30 @@ export interface paths {
          */
         post: operations["BankFeedsController_createProfile"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-feeds/profiles/{profileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update Mapping Profile
+         * @description Updates an existing CSV mapping profile.
+         */
+        put: operations["BankFeedsController_updateProfile"];
+        post?: never;
+        /**
+         * Delete Mapping Profile
+         * @description Deletes a CSV mapping profile.
+         */
+        delete: operations["BankFeedsController_deleteProfile"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1300,7 +1408,11 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        /**
+         * Update Rule
+         * @description Updates an existing reconciliation rule.
+         */
+        put: operations["BankFeedsController_updateRule"];
         post?: never;
         /**
          * Delete Rule
@@ -1366,6 +1478,126 @@ export interface paths {
          * @description Manually links a bank line to a specific journal line.
          */
         post: operations["BankStatementController_manualMatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-statement/lines/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create bank statement lines in bulk
+         * @description Manually creates multiple bank statement lines at once.
+         */
+        post: operations["BankStatementController_createLinesBulk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-statement/match-bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Bulk match bank statement lines and journal lines
+         * @description Links an N:M set of bank lines and journal lines together.
+         */
+        post: operations["BankStatementController_matchBulk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-statement/auto-match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Auto match bank statement lines
+         * @description Runs auto-matching rules and suggests smart matches.
+         */
+        post: operations["BankStatementController_autoMatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-statement/unmatch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unmatch items
+         * @description Breaks a match group, and reverses any rule-generated entries.
+         */
+        post: operations["BankStatementController_unmatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-statement/lines/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete bank statement line
+         * @description Deletes a bank statement line that has not been reconciled.
+         */
+        delete: operations["BankStatementController_deleteLine"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/gl/bank-statement/match-group/{matchGroupId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get match group
+         * @description Retrieves metadata about a match group
+         */
+        get: operations["BankStatementController_getMatchGroup"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1537,11 +1769,39 @@ export interface paths {
          */
         get: operations["TradingTermsController_findAll"];
         put?: never;
-        post?: never;
+        /**
+         * Create trading term
+         * @description Create a new trading term
+         */
+        post: operations["TradingTermsController_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/settings/trading-terms/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete trading term
+         * @description Delete an existing trading term
+         */
+        delete: operations["TradingTermsController_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update trading term
+         * @description Update an existing trading term
+         */
+        patch: operations["TradingTermsController_update"];
         trace?: never;
     };
     "/settings/cost-centers": {
@@ -1675,6 +1935,138 @@ export interface paths {
          */
         post: operations["ActivitiesController_import"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings/license-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get License Status
+         * @description Get the current license status.
+         */
+        get: operations["LicenseController_getStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/settings/license": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply License
+         * @description Apply a new license key.
+         */
+        post: operations["LicenseController_applyLicense"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/business-reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List available business reports
+         * @description Returns a list of available business reports
+         */
+        get: operations["BusinessReportsController_getReports"];
+        put?: never;
+        /**
+         * Create a business report
+         * @description Creates a new business report configuration
+         */
+        post: operations["BusinessReportsController_createReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/business-reports/hooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List available data source hooks
+         * @description Returns a list of all registered business report data source hooks
+         */
+        get: operations["BusinessReportsController_getHooks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/business-reports/{slug}/data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fetch data for a business report
+         * @description Returns data for a specific business report
+         */
+        post: operations["BusinessReportsController_runReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/business-reports/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a business report by ID
+         * @description Returns the configuration for a specific business report
+         */
+        get: operations["BusinessReportsController_getReportById"];
+        /**
+         * Update a business report
+         * @description Updates an existing business report configuration
+         */
+        put: operations["BusinessReportsController_updateReport"];
+        post?: never;
+        /**
+         * Delete a business report
+         * @description Deletes an existing business report configuration
+         */
+        delete: operations["BusinessReportsController_deleteReport"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1868,6 +2260,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sales-orders/{id}/email-quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Email Quote
+         * @description Generates a Quote PDF and queues it to be emailed to the customer.
+         */
+        post: operations["OrdersController_emailQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sales-orders/{id}/state": {
         parameters: {
             query?: never;
@@ -1886,6 +2298,26 @@ export interface paths {
          * @description Update the processing state of a sales order.
          */
         patch: operations["OrdersController_changeState"];
+        trace?: never;
+    };
+    "/sales-orders/{id}/override-credit-hold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Override Credit Hold
+         * @description Temporarily overrides a credit hold for this specific order.
+         */
+        post: operations["OrdersController_overrideCreditHold"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/sales-orders/{id}/archive": {
@@ -2139,7 +2571,7 @@ export interface paths {
         put?: never;
         /**
          * Create Shipment
-         * @description Create a new shipment for a sales order.
+         * @description Create a new shipment for a sales order or transfer order.
          */
         post: operations["OrderShipmentsController_createShipment"];
         delete?: never;
@@ -2724,6 +3156,26 @@ export interface paths {
         patch: operations["TransfersController_update"];
         trace?: never;
     };
+    "/transfers/{id}/shipments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find Shipments
+         * @description Retrieve all shipments for a specific transfer order.
+         */
+        get: operations["TransfersController_findShipments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transfers/{id}/lines": {
         parameters: {
             query?: never;
@@ -2820,7 +3272,139 @@ export interface paths {
         patch: operations["TaxCategoriesController_update"];
         trace?: never;
     };
-    "/reports/hooks/{hookSlug}/run": {
+    "/tax-positions/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all tax position mappings (ignores path param for now)
+         * @description Retrieves all mappings across all tax positions. In the future this may be scoped.
+         */
+        get: operations["TaxPositionMappingsController_findAll"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tax-positions/{taxPositionId}/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a new mapping for a tax position
+         * @description Creates a mapping rule that translates a source tax category to a destination category for this position.
+         */
+        post: operations["TaxPositionMappingsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tax-positions/{taxPositionId}/mappings/{sourceTaxCategoryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a mapping from a tax position
+         * @description Deletes a specific tax category mapping from a tax position.
+         */
+        delete: operations["TaxPositionMappingsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tax-positions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all tax positions
+         * @description Retrieves a list of all configured tax positions.
+         */
+        get: operations["TaxPositionsController_findAll"];
+        put?: never;
+        /**
+         * Create a new tax position
+         * @description Creates a new tax position for business context tax rules.
+         */
+        post: operations["TaxPositionsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tax-positions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a tax position by id
+         * @description Retrieves a specific tax position by its unique identifier.
+         */
+        get: operations["TaxPositionsController_findOne"];
+        /**
+         * Update a tax position
+         * @description Updates an existing tax position.
+         */
+        put: operations["TaxPositionsController_update"];
+        post?: never;
+        /**
+         * Delete a tax position
+         * @description Deletes a tax position. This will also cascade delete any associated mappings.
+         */
+        delete: operations["TaxPositionsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tax/bas-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get ATO BAS Summary Report Data
+         * @description Returns the formatted ATO BAS summary for the specified date range
+         */
+        get: operations["TaxBasController_getBasSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pdf-templates/hooks/{hookSlug}/run": {
         parameters: {
             query?: never;
             header?: never;
@@ -2833,14 +3417,14 @@ export interface paths {
          * Run Hook
          * @description Execute a specific reporting hook and generate a PDF document.
          */
-        post: operations["ReportsController_runHook"];
+        post: operations["PdfTemplatesController_runHook"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/reports/hooks": {
+    "/pdf-templates/hooks": {
         parameters: {
             query?: never;
             header?: never;
@@ -2851,7 +3435,7 @@ export interface paths {
          * Get Hooks
          * @description Retrieve a list of available reporting hooks.
          */
-        get: operations["ReportsController_getHooks"];
+        get: operations["PdfTemplatesController_getHooks"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2860,7 +3444,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/reports/hook-assignments": {
+    "/pdf-templates/hook-assignments": {
         parameters: {
             query?: never;
             header?: never;
@@ -2871,7 +3455,7 @@ export interface paths {
          * Get Hook Assignments
          * @description Retrieve current template assignments for reporting hooks.
          */
-        get: operations["ReportsController_getAssignments"];
+        get: operations["PdfTemplatesController_getAssignments"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2880,7 +3464,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/reports/hook-assignments/{hook}": {
+    "/pdf-templates/hook-assignments/{hook}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2897,10 +3481,10 @@ export interface paths {
          * Update Hook Assignment
          * @description Update the assigned template and context for a reporting hook.
          */
-        patch: operations["ReportsController_updateAssignment"];
+        patch: operations["PdfTemplatesController_updateAssignment"];
         trace?: never;
     };
-    "/reports/hooks/{slug}/random-id": {
+    "/pdf-templates/hooks/{slug}/random-id": {
         parameters: {
             query?: never;
             header?: never;
@@ -2911,7 +3495,7 @@ export interface paths {
          * Get Random ID
          * @description Fetch a random valid entity ID for a given reporting context (used for previewing).
          */
-        get: operations["ReportsController_getRandomId"];
+        get: operations["PdfTemplatesController_getRandomId"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2920,7 +3504,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/reports": {
+    "/pdf-templates": {
         parameters: {
             query?: never;
             header?: never;
@@ -2931,20 +3515,20 @@ export interface paths {
          * Get All Reports
          * @description Retrieve a list of all configured report templates.
          */
-        get: operations["ReportsController_getAllReports"];
+        get: operations["PdfTemplatesController_getAllReports"];
         put?: never;
         /**
          * Create Report
          * @description Create a new custom report template.
          */
-        post: operations["ReportsController_createReport"];
+        post: operations["PdfTemplatesController_createReport"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/reports/{id}": {
+    "/pdf-templates/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2955,24 +3539,24 @@ export interface paths {
          * Get Report
          * @description Retrieve the details and template content of a specific report.
          */
-        get: operations["ReportsController_getReport"];
+        get: operations["PdfTemplatesController_getReport"];
         put?: never;
         post?: never;
         /**
          * Delete Report
          * @description Remove a report template from the system.
          */
-        delete: operations["ReportsController_deleteReport"];
+        delete: operations["PdfTemplatesController_deleteReport"];
         options?: never;
         head?: never;
         /**
          * Update Report
          * @description Modify the configuration or content of an existing report template.
          */
-        patch: operations["ReportsController_updateReport"];
+        patch: operations["PdfTemplatesController_updateReport"];
         trace?: never;
     };
-    "/reports/preview": {
+    "/pdf-templates/preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -2985,7 +3569,7 @@ export interface paths {
          * Preview Report
          * @description Generate a preview PDF of a report template using mock or real entity data.
          */
-        post: operations["ReportsController_preview"];
+        post: operations["PdfTemplatesController_preview"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3092,6 +3676,26 @@ export interface paths {
         patch: operations["InvoiceDetailController_changeSalesInvoiceState"];
         trace?: never;
     };
+    "/sales-invoices/{id}/admin-mark-paid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark Sales Invoice as Paid (Admin)
+         * @description Marks a sales invoice as paid without generating a GL entry.
+         */
+        post: operations["InvoiceDetailController_adminMarkSalesInvoicePaid"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sales-invoices": {
         parameters: {
             query?: never;
@@ -3158,6 +3762,26 @@ export interface paths {
          * @description Update a purchase invoice
          */
         patch: operations["InvoiceDetailController_updateInvoice"];
+        trace?: never;
+    };
+    "/purchase-invoices/{id}/admin-mark-paid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark Purchase Invoice as Paid (Admin)
+         * @description Marks a purchase invoice as paid without generating a GL entry.
+         */
+        post: operations["InvoiceDetailController_adminMarkPurchaseInvoicePaid"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/purchase-invoices/{id}/post": {
@@ -3348,6 +3972,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sales-credit-notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find Credit Notes
+         * @description Retrieve a list of sales credit notes.
+         */
+        get: operations["SalesCreditNotesController_findAll"];
+        put?: never;
+        /**
+         * Create Credit Note
+         * @description Create a credit note from a return.
+         */
+        post: operations["SalesCreditNotesController_createCreditNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-credit-notes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Credit Note
+         * @description Retrieve a sales credit note by ID.
+         */
+        get: operations["SalesCreditNotesController_findOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sales-credit-notes/{id}/post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Credit Note
+         * @description Post an existing credit note.
+         */
+        post: operations["SalesCreditNotesController_postCreditNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/enrichment/lookup": {
         parameters: {
             query?: never;
@@ -3440,6 +4128,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/emails": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List emails
+         * @description List emails in the outbox queue.
+         */
+        get: operations["EmailController_listEmails"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/emails/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry a failed email
+         * @description Retry sending a failed email.
+         */
+        post: operations["EmailController_retryEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/emails/{id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dismiss a failed email
+         * @description Dismiss a failed email so it is no longer shown as an error.
+         */
+        post: operations["EmailController_dismissEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/payments": {
         parameters: {
             query?: never;
@@ -3464,6 +4212,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/payments/run-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Payment Run Candidates
+         * @description Fetch eligible invoices for a payment run on a target date.
+         */
+        get: operations["PaymentsController_getPaymentRunCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payments/generate-run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Payment Run
+         * @description Generates a new payment run batch for eligible supplier invoices.
+         */
+        post: operations["PaymentsController_generatePaymentRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/payments/{id}": {
         parameters: {
             query?: never;
@@ -3478,7 +4266,11 @@ export interface paths {
         get: operations["PaymentsController_findOne"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Remove Draft Payment
+         * @description Permanently deletes a payment in the DRAFT state.
+         */
+        delete: operations["PaymentsController_remove"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3624,86 +4416,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/dashboard/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Summary
-         * @description Retrieves key metrics and statistics for the dashboard.
-         */
-        get: operations["DashboardController_getSummary"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/dashboard/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Universal Search
-         * @description Performs a global search across multiple entity types.
-         */
-        get: operations["DashboardController_search"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/dashboard/timeline": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Timeline
-         * @description Retrieves a chronological list of recent system events.
-         */
-        get: operations["DashboardController_getTimeline"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/telemetry/client-errors": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Report Client Error
-         * @description Ingests frontend application errors for monitoring.
-         */
-        post: operations["TelemetryController_reportClientError"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/suppliers": {
         parameters: {
             query?: never;
@@ -3722,6 +4434,26 @@ export interface paths {
          * @description Register a new supplier.
          */
         post: operations["SuppliersController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/suppliers/aged-balances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Aged Balances
+         * @description Retrieve aged balances for all suppliers with outstanding invoices.
+         */
+        get: operations["SuppliersController_getAgedBalances"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3932,6 +4664,86 @@ export interface paths {
         patch: operations["SupplierGroupsController_update"];
         trace?: never;
     };
+    "/dashboard/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Summary
+         * @description Retrieves key metrics and statistics for the dashboard.
+         */
+        get: operations["DashboardController_getSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Universal Search
+         * @description Performs a global search across multiple entity types.
+         */
+        get: operations["DashboardController_search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Timeline
+         * @description Retrieves a chronological list of recent system events.
+         */
+        get: operations["DashboardController_getTimeline"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/telemetry/client-errors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report Client Error
+         * @description Ingests frontend application errors for monitoring.
+         */
+        post: operations["TelemetryController_reportClientError"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/purchase-orders": {
         parameters: {
             query?: never;
@@ -4005,7 +4817,7 @@ export interface paths {
         };
         /**
          * Get Purchase Order
-         * @description Retrieve a specific purchase order.
+         * @description Retrieve detailed information about a specific purchase order.
          */
         get: operations["PurchaseOrdersController_findOne"];
         put?: never;
@@ -4208,6 +5020,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/purchase-orders/{id}/returns/{returnId}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Purchase Return
+         * @description Cancel a draft or staged purchase return.
+         */
+        post: operations["PurchaseReturnsController_cancelReturn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/purchase-returns": {
         parameters: {
             query?: never;
@@ -4255,7 +5087,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Find Debit Notes
+         * @description Retrieve a list of purchase debit notes.
+         */
+        get: operations["PurchaseDebitNotesController_findAll"];
         put?: never;
         /**
          * Create Debit Note
@@ -4282,6 +5118,66 @@ export interface paths {
          * @description Post an existing debit note.
          */
         post: operations["PurchaseDebitNotesController_postDebitNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/data-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List all registered data sources
+         * @description Retrieves a list of all available data sources registered in the system.
+         */
+        get: operations["DataSourcesController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/data-sources/{slug}/sample-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get sample data for Business Reports (fetchData format)
+         * @description Retrieves sample data suitable for Business Reports preview.
+         */
+        get: operations["DataSourcesController_getSampleReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/data-sources/{slug}/sample-record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get sample data for PDF Templates (resolveData format)
+         * @description Retrieves a sample record suitable for PDF template preview and context generation.
+         */
+        get: operations["DataSourcesController_getSampleRecord"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4495,6 +5391,46 @@ export interface paths {
          */
         post: operations["SetupController_executeElt"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/setup/active-job": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Active Job
+         * @description Returns the ID and type of the currently running job, if any.
+         */
+        get: operations["SetupController_getActiveJob"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/setup/active-job/{jobId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Stop Active Job
+         * @description Forcibly terminates a running background job.
+         */
+        delete: operations["SetupController_stopJob"];
         options?: never;
         head?: never;
         patch?: never;
@@ -5048,6 +5984,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/user-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get user settings
+         * @description Retrieves the settings for the currently authenticated user.
+         */
+        get: operations["UserSettingsController_getSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update user settings
+         * @description Updates specific sections of the settings for the currently authenticated user.
+         */
+        patch: operations["UserSettingsController_updateSettings"];
+        trace?: never;
+    };
+    "/contacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Contact
+         * @description Create a new contact for a given entity.
+         */
+        post: operations["ContactsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contacts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Contact
+         * @description Hard delete an existing contact.
+         */
+        delete: operations["ContactsController_remove"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Contact
+         * @description Update an existing contact.
+         */
+        patch: operations["ContactsController_update"];
+        trace?: never;
+    };
+    "/delivery-addresses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a new delivery address
+         * @description Create a new delivery address for a customer.
+         */
+        post: operations["DeliveryAddressesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/delivery-addresses/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update an existing delivery address
+         * @description Update an existing delivery address.
+         */
+        put: operations["DeliveryAddressesController_update"];
+        post?: never;
+        /**
+         * Delete a delivery address
+         * @description Delete a delivery address.
+         */
+        delete: operations["DeliveryAddressesController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5064,6 +6112,11 @@ export interface components {
         MeResponseDto: {
             username: string;
             role: string;
+            permissions?: {
+                resource: string;
+                action: string;
+                effect: string;
+            }[];
         };
         PermissionDto: {
             resource: string;
@@ -5080,7 +6133,7 @@ export interface components {
             permissions: components["schemas"]["PermissionDto"][];
             inherits?: string[];
         };
-        SuccessResponseDto: {
+        RolesSuccessResponseDto: {
             success?: boolean;
         };
         PaginatedResponse: {
@@ -5094,21 +6147,18 @@ export interface components {
             customerId: string;
             customerNumber: string;
             name: string;
-            address1Line1?: string;
-            address1Line2?: string;
-            address1City?: string;
-            address1StateOrProvince?: string;
-            address1PostalCode?: string;
-            address1Country: string;
+            billingAddressLine1?: string;
+            billingAddressLine2?: string;
+            billingAddressCity?: string;
+            billingAddressStateOrProvince?: string;
+            billingAddressPostalCode?: string;
+            billingAddressCountry: string;
             telephone1?: string;
             fax?: string;
             emailAddress1?: string;
-            primaryContactName?: string;
-            primaryContactEmail?: string;
-            primaryContactPhone?: string;
             customerGroupId?: string;
             parentCustomerId?: string;
-            taxCategoryId?: string;
+            taxPositionId?: string;
             currencyCode: string;
             customerDiscount?: string;
             notes?: string;
@@ -5117,6 +6167,15 @@ export interface components {
             bankAccountNumber?: string;
             businessNumber?: string;
             isTaxRegistered?: boolean;
+            creditLimit?: string;
+            isOnCreditHold?: boolean;
+            isSalesBlocked?: boolean;
+            salesBlockReasons?: string[];
+            /** Format: date-time */
+            overrideCreditHoldUntil?: string;
+            tradingTermsId?: string;
+            earlyPaymentDiscount?: string;
+            earlyPaymentDiscountDays?: number;
             stateCode: string;
             sourceId?: string;
             source: string;
@@ -5125,37 +6184,62 @@ export interface components {
             createdOn?: string;
             /** Format: date-time */
             modifiedOn?: string;
-            customerGroupName?: string;
-            customerGroupCode?: string;
-            customerGroupTradingTermsId?: string;
-            customerGroupCreditLimit?: string;
-            customerGroupIsOnCreditHold?: boolean;
-            gstCategoryName?: string;
             events?: Record<string, never>[];
+            contacts?: Record<string, never>[];
+            deliveryAddresses?: Record<string, never>[];
+            creditAssessment?: {
+                totalInvoiceBalance: number;
+                overdueInvoiceBalance: number;
+                glBalance: number;
+                isOverdue: boolean;
+                oldestOverdueInvoice?: string;
+                oldestOverdueInvoiceId?: string;
+            };
+            effectiveCreditLimit?: string;
+        };
+        Object: Record<string, never>;
+        AgedBalanceResponseDto: {
+            customerId: string;
+            customerName: string;
+            accountNumber: string;
+            current: number;
+            days1To30: number;
+            days31To60: number;
+            days61To90: number;
+            days90Plus: number;
+            totalOutstanding: number;
+            glBalance: number;
+            discrepancyAmount: number;
+            currencyCode: string;
+            isOnCreditHold: boolean;
+            creditLimit: string | null;
+            stateCode: string;
+        };
+        CreditAssessmentResponseDto: {
+            totalInvoiceBalance: number;
+            overdueInvoiceBalance: number;
+            glBalance: number;
+            isOverdue: boolean;
         };
         CreateAccountDto: {
             customerNumber: string;
             name: string;
-            address1Line1?: string;
-            address1Line2?: string;
-            address1City?: string;
-            address1StateOrProvince?: string;
-            address1PostalCode?: string;
-            address1Country: string;
+            billingAddressLine1?: string;
+            billingAddressLine2?: string;
+            billingAddressCity?: string;
+            billingAddressStateOrProvince?: string;
+            billingAddressPostalCode?: string;
+            billingAddressCountry: string;
             telephone1?: string;
             fax?: string;
             /** Format: email */
             emailAddress1?: string;
-            primaryContactName?: string;
-            /** Format: email */
-            primaryContactEmail?: string;
-            primaryContactPhone?: string;
             /** Format: uuid */
             customerGroupId?: string;
             /** Format: uuid */
             parentCustomerId?: string;
             /** Format: uuid */
-            taxCategoryId?: string;
+            taxPositionId?: string;
             currencyCode?: string;
             customerDiscount?: string;
             notes?: string;
@@ -5164,30 +6248,34 @@ export interface components {
             bankAccountNumber?: string;
             businessNumber?: string;
             isTaxRegistered?: boolean;
+            creditLimit?: string;
+            isOnCreditHold?: boolean;
+            /** Format: uuid */
+            tradingTermsId?: string;
+            /** Format: date-time */
+            overrideCreditHoldUntil?: string;
+            earlyPaymentDiscount?: string;
+            earlyPaymentDiscountDays?: number;
         };
         UpdateAccountDto: {
+            customerNumber?: string;
             name?: string;
-            address1Line1?: string;
-            address1Line2?: string;
-            address1City?: string;
-            address1StateOrProvince?: string;
-            address1PostalCode?: string;
-            address1Country?: string;
+            billingAddressLine1?: string;
+            billingAddressLine2?: string;
+            billingAddressCity?: string;
+            billingAddressStateOrProvince?: string;
+            billingAddressPostalCode?: string;
+            billingAddressCountry?: string;
             telephone1?: string;
             fax?: string;
             /** Format: email */
             emailAddress1?: string;
-            primaryContactName?: string;
-            /** Format: email */
-            primaryContactEmail?: string;
-            primaryContactPhone?: string;
             /** Format: uuid */
             customerGroupId?: string;
-            stateCode?: string;
             /** Format: uuid */
             parentCustomerId?: string;
             /** Format: uuid */
-            taxCategoryId?: string;
+            taxPositionId?: string;
             currencyCode?: string;
             customerDiscount?: string;
             notes?: string;
@@ -5196,27 +6284,39 @@ export interface components {
             bankAccountNumber?: string;
             businessNumber?: string;
             isTaxRegistered?: boolean;
+            creditLimit?: string;
+            isOnCreditHold?: boolean;
+            /** Format: uuid */
+            tradingTermsId?: string;
+            /** Format: date-time */
+            overrideCreditHoldUntil?: string;
+            earlyPaymentDiscount?: string;
+            earlyPaymentDiscountDays?: number;
         };
         EmptyBodyDto: Record<string, never>;
         AccountGroupResponseDto: {
+            earlyPaymentDiscount?: string;
+            earlyPaymentDiscountDays?: number;
             customerGroupId: string;
             groupCode: string;
             name: string;
-            defaultDiscountPercentage?: string;
             defaultArAccountId?: string;
             defaultRevenueAccountId?: string;
             defaultCostCenterId?: string;
             defaultActivityId?: string;
+            stateCode?: string;
             isOnCreditHold?: boolean;
             creditLimit?: string;
             tradingTermsId?: string;
+            taxPositionId?: string;
             /** Format: date-time */
             modifiedOn?: string;
         };
         CreateAccountGroupDto: {
+            earlyPaymentDiscount?: string;
+            earlyPaymentDiscountDays?: number;
             groupCode: string;
             name: string;
-            defaultDiscountPercentage?: string;
             /** Format: uuid */
             defaultArAccountId?: string;
             /** Format: uuid */
@@ -5225,11 +6325,17 @@ export interface components {
             defaultCostCenterId?: string;
             /** Format: uuid */
             defaultActivityId?: string;
+            /** Format: uuid */
+            tradingTermsId?: string;
+            /** Format: uuid */
+            taxPositionId?: string;
+            creditLimit?: string;
         };
         UpdateAccountGroupDto: {
+            earlyPaymentDiscount?: string;
+            earlyPaymentDiscountDays?: number;
             groupCode?: string;
             name?: string;
-            defaultDiscountPercentage?: string;
             /** Format: uuid */
             defaultArAccountId?: string;
             /** Format: uuid */
@@ -5238,6 +6344,11 @@ export interface components {
             defaultCostCenterId?: string;
             /** Format: uuid */
             defaultActivityId?: string;
+            /** Format: uuid */
+            tradingTermsId?: string;
+            /** Format: uuid */
+            taxPositionId?: string;
+            creditLimit?: string;
         };
         ProductResponseDto: {
             id: string;
@@ -5261,6 +6372,7 @@ export interface components {
             baseUom: string;
             defaultSalesUomId: string | null;
             defaultPurchaseUomId: string | null;
+            weight: string | null;
             tenantId: string;
             /** Format: date-time */
             createdAt: string;
@@ -5288,6 +6400,7 @@ export interface components {
             productGroupId?: string;
             notes?: string;
             stateCode?: string;
+            baseUom: string;
         };
         UpdateProductDto: {
             productNumber?: string;
@@ -5311,10 +6424,6 @@ export interface components {
             notes?: string;
             stateCode?: string;
             baseUom?: string;
-            /** Format: uuid */
-            defaultSalesUomId?: string | null;
-            /** Format: uuid */
-            defaultPurchaseUomId?: string | null;
         };
         AddSupplierDto: {
             /** Format: uuid */
@@ -5442,13 +6551,7 @@ export interface components {
             locationId: string;
             code: string;
             name: string;
-        };
-        InventoryMovementResponseDto: {
-            id: string;
-            productId: string;
-            quantity: string;
-            /** Format: date-time */
-            date: string;
+            zones?: Record<string, never>[];
         };
         InventoryLedgerResponseDto: {
             id: string;
@@ -5481,7 +6584,7 @@ export interface components {
         PutawayLineDto: {
             lineId: string;
             /** @enum {string} */
-            sourceType: "goods_receipt" | "sales_return";
+            sourceType: "goods_receipt" | "sales_return" | "transfer_receipt";
             destinationBinId: string;
             quantity: string;
             newTotalQuantity?: string;
@@ -5492,9 +6595,35 @@ export interface components {
         InventorySuccessResponseDto: {
             success: boolean;
         };
-        ToggleQuarantineDto: {
+        QuarantineMoveDto: {
+            productId?: string;
+            sourceBinId?: string;
+            targetBinId?: string;
+            quantity?: string;
             /** @enum {string} */
-            sourceType: "goods_receipt" | "sales_return";
+            sourceType?: "goods_receipt" | "sales_return" | "manual";
+            lineId?: string;
+            reason?: string;
+        };
+        MoveStockLineDto: {
+            productId: string;
+            sourceBinId: string;
+            targetBinId: string;
+            quantity: string;
+        };
+        MoveStockDto: {
+            lines: components["schemas"]["MoveStockLineDto"][];
+            reason?: string;
+        };
+        AdjustStockLineDto: {
+            /** Format: uuid */
+            productId: string;
+            /** Format: uuid */
+            binId: string;
+            newQuantity: string;
+        };
+        AdjustStockDto: {
+            lines: components["schemas"]["AdjustStockLineDto"][];
             reason?: string;
         };
         GlAccountResponseDto: {
@@ -5540,6 +6669,10 @@ export interface components {
             partyId?: string | null;
             debit: number;
             credit: number;
+            foreignDebit?: number;
+            foreignCredit?: number;
+            foreignCurrencyCode?: string;
+            exchangeRate?: number;
             memo?: string;
         };
         CreateJournalEntryDto: {
@@ -5551,10 +6684,17 @@ export interface components {
             actor?: string;
         };
         TrialBalanceResponseDto: {
-            accountId: string;
             accountCode: string;
             name: string;
-            balance: number;
+            accountType: string;
+            isGroup: boolean;
+            openingBalance: number;
+            periodDebit: number;
+            periodCredit: number;
+            closingBalance: number;
+            ytdDebit: number;
+            ytdCredit: number;
+            ytdBalance: number;
         };
         GeneralLedgerResponseDto: {
             glEntryId: string;
@@ -5562,6 +6702,20 @@ export interface components {
         SettingsResponseDto: {
             id: string;
             accountMetadataSchema?: Record<string, never>;
+        };
+        FxRevalCandidatesResponseDto: {
+            success: boolean;
+            revaluationDate: string;
+            candidates: components["schemas"]["JournalLineDto"][];
+        };
+        CommitFxRevaluationDto: {
+            revaluationDate: string;
+            lines: components["schemas"]["JournalLineDto"][];
+        };
+        FxRevalCommitResponseDto: {
+            success: boolean;
+            revaluationDate: string;
+            entriesGenerated: number;
         };
         SuccessMessageResponseDto: {
             success: boolean;
@@ -5656,43 +6810,101 @@ export interface components {
             unmatchedCount: number;
         };
         MappingProfileResponseDto: {
-            profileId: string;
-            /** Format: uuid */
-            glAccountId: string;
             name: string;
             dateColumn: string;
-            amountColumn: string;
+            amountColumn?: string;
+            debitColumn?: string;
+            creditColumn?: string;
             descriptionColumn: string;
+            typeColumn?: string;
+            payeeColumn?: string;
             referenceColumn?: string;
             headerRows: number;
+            profileId: string;
         };
         CreateMappingProfileDto: {
-            /** Format: uuid */
-            glAccountId: string;
             name: string;
             dateColumn: string;
-            amountColumn: string;
+            amountColumn?: string;
+            debitColumn?: string;
+            creditColumn?: string;
             descriptionColumn: string;
+            typeColumn?: string;
+            payeeColumn?: string;
             referenceColumn?: string;
             headerRows: number;
         };
+        UpdateMappingProfileDto: {
+            name?: string;
+            dateColumn?: string;
+            amountColumn?: string;
+            debitColumn?: string;
+            creditColumn?: string;
+            descriptionColumn?: string;
+            typeColumn?: string;
+            payeeColumn?: string;
+            referenceColumn?: string;
+            headerRows?: number;
+        };
         ReconciliationRuleResponseDto: {
+            glAccountIds?: string[];
+            conditionType?: string;
+            conditionValue?: string;
+            typeCondition?: string;
+            payeeConditionType?: string;
+            payeeConditionValue?: string;
             ruleId: string;
-            /** Format: uuid */
-            glAccountId?: string;
-            conditionType: string;
-            conditionValue: string;
+            amountMin?: number;
+            amountMax?: number;
             /** Format: uuid */
             targetGlAccountId: string;
+            /** Format: uuid */
+            costCenterId?: string;
+            /** Format: uuid */
+            activityId?: string;
+            partyType?: string;
+            partyId?: string;
+            memo?: string;
             priority?: number;
         };
         CreateReconciliationRuleDto: {
-            /** Format: uuid */
-            glAccountId?: string;
-            conditionType: string;
-            conditionValue: string;
+            glAccountIds?: string[];
+            conditionType?: string;
+            conditionValue?: string;
+            typeCondition?: string;
+            payeeConditionType?: string;
+            payeeConditionValue?: string;
+            amountMin?: number;
+            amountMax?: number;
             /** Format: uuid */
             targetGlAccountId: string;
+            /** Format: uuid */
+            costCenterId?: string;
+            /** Format: uuid */
+            activityId?: string;
+            partyType?: string;
+            partyId?: string;
+            memo?: string;
+            priority?: number;
+        };
+        UpdateReconciliationRuleDto: {
+            glAccountIds?: string[];
+            conditionType?: string;
+            conditionValue?: string;
+            typeCondition?: string;
+            payeeConditionType?: string;
+            payeeConditionValue?: string;
+            amountMin?: number;
+            amountMax?: number;
+            /** Format: uuid */
+            targetGlAccountId?: string;
+            /** Format: uuid */
+            costCenterId?: string;
+            /** Format: uuid */
+            activityId?: string;
+            partyType?: string;
+            partyId?: string;
+            memo?: string;
             priority?: number;
         };
         MatchedJournalLineDto: {
@@ -5710,19 +6922,88 @@ export interface components {
             description: string;
             amount: number;
             reference?: string | null;
+            type?: string | null;
+            payee?: string | null;
             isReconciled: boolean;
             matchedJournalLineId?: string | null;
             matchedJournalLine?: components["schemas"]["MatchedJournalLineDto"] | null;
+            matchGroupId?: string | null;
         };
         BankStatementConfirmMatchDto: {
             /** @description Optional reconciliation ID to link the matched ledger line to */
             reconciliationId?: string;
+        };
+        MatchConfirmedResponseDto: {
+            /** @description Whether the match was successful */
+            success: boolean;
         };
         BankStatementManualMatchDto: {
             /** @description The journal line ID to link against */
             journalLineId: string;
             /** @description Optional reconciliation ID to link the matched ledger line to */
             reconciliationId?: string;
+        };
+        CreateBankStatementLineDto: {
+            glAccountId: string;
+            /** Format: date */
+            date: string;
+            description: string;
+            amount: number;
+            reference?: string | null;
+            type?: string | null;
+            payee?: string | null;
+        };
+        BankStatementBulkMatchDto: {
+            bankLineIds: string[];
+            journalLineIds: string[];
+            /** @description Reconciliation ID to link the lines to */
+            reconciliationId: string;
+        };
+        AutoMatchRequestDto: {
+            glAccountId: string;
+            reconciliationId?: string;
+            dryRun?: boolean;
+            ignoredStatementLineIds?: string[];
+        };
+        AutoMatchSmartMatchDto: {
+            bankLineIds: string[];
+            journalLineIds: string[];
+            /** @enum {string} */
+            confidence: "high" | "medium";
+            date: string;
+            description: string;
+            amount: number;
+        };
+        AutoMatchProposedRuleMatchDto: {
+            bankLineId: string;
+            date: string;
+            description: string;
+            amount: number;
+            ruleId: string;
+            targetGlAccountId: string;
+        };
+        AutoMatchResponseDto: {
+            autoMatchedCount: number;
+            smartMatchedCount: number;
+            unmatchedCount: number;
+            smartMatches: components["schemas"]["AutoMatchSmartMatchDto"][];
+            proposedRuleMatches?: components["schemas"]["AutoMatchProposedRuleMatchDto"][];
+        };
+        UnmatchRequestDto: {
+            matchGroupId: string;
+        };
+        BankStatementSuccessResponseDto: {
+            success: boolean;
+        };
+        BankStatementMatchGroupResponseDto: {
+            matchGroupId: string;
+            matchType: string;
+            ruleName?: string | null;
+            createdBy: string;
+            /** Format: date-time */
+            createdOn: string;
+            bankLines?: Record<string, never>[];
+            ledgerLines?: Record<string, never>[];
         };
         UomResponseDto: {
             uomCode: string;
@@ -5787,18 +7068,61 @@ export interface components {
         AppConfigResponseDto: {
             defaultFulfillmentLocationId: string;
             apiRateLimit: string;
+            creditLimitBehavior?: Record<string, never>;
             taxProviderMappings?: Record<string, never>;
             enrichmentProviderMappings?: Record<string, never>;
+            smtpHost?: string;
+            smtpPort?: number;
+            smtpUser?: string;
+            smtpPass?: string;
+            smtpFromAddress?: string;
+            defaultPurchaseTaxCategoryId?: string;
+            defaultSalesTaxCategoryId?: string;
+            defaultCustomerTermsId?: string;
+            defaultSupplierTermsId?: string;
+            defaultCustomerTaxPositionId?: string;
+            defaultSupplierTaxPositionId?: string;
         };
         UpdateAppConfigDto: {
             defaultFulfillmentLocationId?: string;
+            /** @enum {string} */
+            creditLimitBehavior?: "hard" | "soft" | "notify";
+            defaultCustomerTermsId?: string;
+            defaultSupplierTermsId?: string;
+            defaultCustomerTaxPositionId?: string;
+            defaultSupplierTaxPositionId?: string;
+            defaultPurchaseTaxCategoryId?: string;
+            defaultSalesTaxCategoryId?: string;
             apiRateLimit?: string;
             taxProviderMappings?: Record<string, never>;
             enrichmentProviderMappings?: Record<string, never>;
+            smtpHost?: string;
+            smtpPort?: number;
+            smtpUser?: string;
+            smtpPass?: string;
+            smtpFromAddress?: string;
         };
         TradingTermResponseDto: {
             id: string;
-            name: string;
+            code: string;
+            description: string;
+            days: number;
+            type: string;
+        };
+        CreateTradingTermDto: {
+            code: string;
+            description: string;
+            days: number;
+            type: string;
+        };
+        UpdateTradingTermDto: {
+            code?: string;
+            description?: string;
+            days?: number;
+            type?: string;
+        };
+        SettingsSuccessResponseDto: {
+            success: boolean;
         };
         CostCenterResponseDto: {
             id: string;
@@ -5834,6 +7158,48 @@ export interface components {
             name?: string;
             isActive?: boolean;
         };
+        LicenseStatusDto: {
+            /** @enum {string} */
+            state: "active" | "warning" | "read_only";
+            /** @enum {string} */
+            type: "trial" | "perpetual" | "none";
+            /** Format: date-time */
+            expiresAt: string | null;
+            warningMessage: string | null;
+            systemId: string | null;
+            licenseHash: string | null;
+        };
+        CreateBusinessReportDto: {
+            /** @description The unique slug of the report configuration */
+            slug: string;
+            /** @description The name of the report */
+            name: string;
+            /** @description Description of the report */
+            description?: string;
+            /** @description The data source hook */
+            dataSourceHook: string;
+            /** @description UI configuration as JSON object */
+            uiConfig?: Record<string, never>;
+        };
+        BusinessReportResponseDto: {
+            id: string;
+            slug: string;
+            name: string;
+            description?: string;
+            dataSourceHook: string;
+            uiConfig?: Record<string, never>;
+            isSystem: boolean;
+        };
+        UpdateBusinessReportDto: {
+            /** @description The name of the report */
+            name?: string;
+            /** @description Description of the report */
+            description?: string;
+            /** @description The data source hook */
+            dataSourceHook?: string;
+            /** @description UI configuration as JSON object */
+            uiConfig?: Record<string, never>;
+        };
         PickingQueueOrderDto: {
             id: string;
             orderNumber: string;
@@ -5845,6 +7211,7 @@ export interface components {
             createdOn: string;
             createdBy: string;
             currencyCode?: string | null;
+            isCreditBlocked: boolean;
             type?: string;
             pickabilityStatus: string;
             hasAllocation: boolean;
@@ -5910,6 +7277,7 @@ export interface components {
             createdOn: string;
             createdBy: string;
             currencyCode?: string | null;
+            isCreditBlocked: boolean;
             shippabilityStatus: string;
             totalShippableLines: number;
             totalLines: number;
@@ -5944,6 +7312,15 @@ export interface components {
             notes?: string;
             /** Format: date-time */
             createdOn?: string;
+            deliveryName?: string;
+            deliveryPhone?: string;
+            deliveryAddressLine1?: string;
+            deliveryAddressLine2?: string;
+            deliveryCity?: string;
+            deliveryState?: string;
+            deliveryPostalCode?: string;
+            deliveryCountry?: string;
+            shippingNotes?: string;
         };
         ShippingContextDto: {
             lines: components["schemas"]["ShippingContextLineDto"][];
@@ -5964,6 +7341,9 @@ export interface components {
             taxProvider?: string | null;
             sourceId?: string | null;
             source: string;
+            isCreditBlocked?: boolean;
+            /** Format: date-time */
+            creditHoldOverrideAt?: string | null;
             createdBy?: string | null;
             /** Format: date-time */
             createdOn?: string | null;
@@ -5989,6 +7369,16 @@ export interface components {
             customerOrderNumber?: string;
             notes?: string;
             fulfillmentLocationId?: string;
+            shippingNotes?: string;
+            deliveryCompanyName?: string;
+            deliveryName?: string;
+            deliveryPhone?: string;
+            deliveryAddressLine1?: string;
+            deliveryAddressLine2?: string;
+            deliveryCity?: string;
+            deliveryState?: string;
+            deliveryPostalCode?: string;
+            deliveryCountry?: string;
             lines: components["schemas"]["CreateOrderLineDto"][];
         };
         UpdateOrderDto: {
@@ -5996,11 +7386,38 @@ export interface components {
             customerOrderNumber?: string;
             notes?: string;
             fulfillmentLocationId?: string;
+            shippingNotes?: string;
+            deliveryCompanyName?: string;
+            deliveryName?: string;
+            deliveryPhone?: string;
+            deliveryAddressLine1?: string;
+            deliveryAddressLine2?: string;
+            deliveryCity?: string;
+            deliveryState?: string;
+            deliveryPostalCode?: string;
+            deliveryCountry?: string;
+        };
+        EmailQuoteDto: {
+            /**
+             * Format: email
+             * @description The recipient email address
+             */
+            emailAddress: string;
+            /** @description The email subject */
+            subject: string;
+            /** @description The text body for the email */
+            body: string;
+            /** @description Text injected into the quote PDF */
+            quoteIntroText?: string;
         };
         ChangeOrderStateDto: {
+            discrepanciesAcknowledged?: boolean;
             stateCode: string;
             generateBackorders?: boolean;
-            discrepanciesAcknowledged?: boolean;
+        };
+        OverrideCreditHoldDto: {
+            /** @description Reason for overriding the credit hold */
+            reason: string;
         };
         UpdateOrderLineDto: {
             quantity?: string;
@@ -6067,11 +7484,13 @@ export interface components {
         };
         CreateShipmentDto: {
             notes?: string;
+            deliveryCompanyName?: string;
             trackingNumber?: string;
             lines: components["schemas"]["CreateShipmentLineDto"][];
         };
         UpdateShipmentDto: {
             notes?: string;
+            deliveryCompanyName?: string;
             trackingNumber?: string;
         };
         ChangeShipmentStateDto: {
@@ -6113,6 +7532,9 @@ export interface components {
             purchaseOrderId?: string | null;
             purchaseOrderNumber?: string | null;
             purchaseOrderState?: string | null;
+            transferOrderId?: string | null;
+            transferOrderNumber?: string | null;
+            transferOrderState?: string | null;
             availableElsewhere: components["schemas"]["OpenDemandLocationAvailabilityDto"][];
         };
         PoAllocationDto: {
@@ -6210,6 +7632,7 @@ export interface components {
             destinationLocationId: string;
             destinationLocationName?: string;
             notes?: string;
+            shippingNotes?: string;
             createdBy?: string;
             /** Format: date-time */
             createdOn: string;
@@ -6226,8 +7649,12 @@ export interface components {
             binId: string;
             quantity: string;
         };
+        ReceiveTransferLineDto: {
+            transferOrderLineId: string;
+            quantityReceived: string;
+        };
         ReceiveTransferDto: {
-            destinationBinId: string;
+            lines: components["schemas"]["ReceiveTransferLineDto"][];
         };
         CreateTransferOrderLineDto: {
             productId: string;
@@ -6237,12 +7664,14 @@ export interface components {
             sourceLocationId: string;
             destinationLocationId: string;
             notes?: string;
+            shippingNotes?: string;
             lines: components["schemas"]["CreateTransferOrderLineDto"][];
         };
         UpdateTransferOrderDto: {
             sourceLocationId?: string;
             destinationLocationId?: string;
             notes?: string;
+            shippingNotes?: string;
         };
         UpdateTransferOrderLineDto: {
             quantity?: string;
@@ -6253,21 +7682,45 @@ export interface components {
             title: string;
             type: string;
             rate?: string;
-            isDefault: boolean;
         };
         CreateTaxCategoryDto: {
             code: string;
             title: string;
             type: Record<string, never>;
             rate?: string;
-            isDefault?: boolean;
         };
         UpdateTaxCategoryDto: {
             code?: string;
             title?: string;
             type?: Record<string, never>;
             rate?: string;
-            isDefault?: boolean;
+        };
+        TaxPositionMappingResponseDto: {
+            taxPositionId: string;
+            sourceTaxCategoryId: string;
+            destinationTaxCategoryId: string;
+        };
+        CreateTaxPositionMappingDto: {
+            sourceTaxCategoryId: string;
+            destinationTaxCategoryId: string;
+        };
+        TaxPositionResponseDto: {
+            taxPositionId: string;
+            code: string;
+            title: string;
+        };
+        CreateTaxPositionDto: {
+            code: string;
+            title: string;
+        };
+        UpdateTaxPositionDto: {
+            code?: string;
+            title?: string;
+        };
+        BasSummaryRowDto: {
+            id: string;
+            description: string;
+            amount: number;
         };
         RunHookBodyDto: Record<string, never>;
         HookDto: {
@@ -6356,11 +7809,19 @@ export interface components {
             stateCode: string;
             notes?: string;
             salesOrderId?: string;
+            earlyPaymentDiscount?: string;
+            earlyPaymentDiscountDays?: number;
             createdBy: string;
             /** Format: date-time */
             createdOn: string;
+            /** Format: date-time */
+            invoiceDate?: string;
+            /** Format: date-time */
+            dueDate?: string;
             lines: components["schemas"]["InvoiceLineResponseDto"][];
             allocations?: Record<string, never>[];
+            events?: Record<string, never>[];
+            termsDescription?: string;
         };
         PurchaseInvoiceResponseDto: {
             invoiceId: string;
@@ -6375,9 +7836,15 @@ export interface components {
             stateCode: string;
             notes?: string;
             purchaseOrderId?: string;
+            earlyPaymentDiscount?: string;
+            earlyPaymentDiscountDays?: number;
             createdBy: string;
             /** Format: date-time */
             createdOn: string;
+            /** Format: date-time */
+            invoiceDate?: string;
+            /** Format: date-time */
+            dueDate?: string;
             lines: components["schemas"]["InvoiceLineResponseDto"][];
             allocations?: Record<string, never>[];
         };
@@ -6403,11 +7870,20 @@ export interface components {
             /** Format: uuid */
             purchaseOrderId?: string;
             currencyCode: string;
+            invoiceDate?: string;
             totalAmount: number;
             taxAmount: number;
             notes?: string;
             receiptFilename?: string;
             lines?: components["schemas"]["CreateStandaloneInvoiceLineDto"][];
+        };
+        UpdatePurchaseInvoiceDto: {
+            supplierInvoiceNumber?: string;
+            receiptFilename?: string;
+            notes?: string;
+            taxAmount?: string;
+            currencyCode?: string;
+            vendorId?: string;
         };
         UpdateInvoiceLineDto: {
             description?: string;
@@ -6456,11 +7932,33 @@ export interface components {
             recentEvents: components["schemas"]["OutboxEventDto"][];
         };
         SyncEventsResponseDto: {
-            data: string[];
+            events: components["schemas"]["OutboxEventDto"][];
+            total: number;
         };
         DeleteEventsResponseDto: {
             deleted: number;
             eventType: string;
+        };
+        SalesCreditNoteResponseDto: {
+            creditNoteId: string;
+            creditNoteNumber: string;
+            stateCode: string;
+        };
+        CreateSalesCreditNoteLineDto: {
+            description: string;
+            amount: number;
+            /** Format: uuid */
+            accountId: string;
+            /** Format: uuid */
+            taxCategoryId?: string;
+        };
+        CreateSalesCreditNoteDto: {
+            /** Format: uuid */
+            returnId?: string;
+            /** Format: uuid */
+            customerId?: string;
+            notes?: string;
+            lines?: components["schemas"]["CreateSalesCreditNoteLineDto"][];
         };
         EnrichmentPayloadDto: {
             /** @description Dynamic payload for the enrichment provider */
@@ -6484,13 +7982,52 @@ export interface components {
             createdBy: string;
             partyName: string;
         };
+        PaymentRunCandidateResponseDto: {
+            invoiceId: string;
+            invoiceNumber: string;
+            supplierId: string;
+            supplierName: string;
+            dueDate: Record<string, never>;
+            invoiceDate: Record<string, never>;
+            totalAmount: Record<string, never>;
+            outstandingAmount: Record<string, never>;
+            earlyPaymentDiscount: string | null;
+            earlyPaymentDiscountDays: number | null;
+            cashAmount: number;
+            discountAmount: number;
+            hasDiscountOpportunity: boolean;
+            isDueSoon: boolean;
+        };
+        GeneratePaymentRunDto: {
+            targetDate: string;
+            /** Format: uuid */
+            glAccountBank: string;
+            invoiceIds: string[];
+        };
+        GeneratePaymentRunResponseDto: {
+            generatedPayments: number;
+            totalCashAmount: number;
+            totalDiscountAmount: number;
+        };
+        PaymentLineDto: {
+            /** Format: uuid */
+            accountId: string;
+            amount: number;
+            memo?: string;
+        };
+        AllocationDto: {
+            referenceType: Record<string, never>;
+            /** Format: uuid */
+            referenceId: string;
+            allocatedAmount: number;
+            discountAmount?: number;
+        };
         CreatePaymentDto: {
             /** Format: uuid */
             paymentId: string;
             paymentType: Record<string, never>;
-            partyType: Record<string, never>;
             /** Format: uuid */
-            partyId: string;
+            partyId?: string;
             paymentDate: string;
             modeOfPayment: Record<string, never>;
             totalAmount: number;
@@ -6499,15 +8036,14 @@ export interface components {
             referenceNumber?: string;
             currencyCode: string;
             submitImmediately?: boolean;
-        };
-        AllocationDto: {
-            referenceType: Record<string, never>;
-            /** Format: uuid */
-            referenceId: string;
-            allocatedAmount: number;
+            lines?: components["schemas"]["PaymentLineDto"][];
+            allocations?: components["schemas"]["AllocationDto"][];
         };
         AllocatePaymentDto: {
             allocations: components["schemas"]["AllocationDto"][];
+        };
+        ConfirmRejectResponseDto: {
+            success: boolean;
         };
         BatchPaymentActionDto: {
             paymentIds: string[];
@@ -6515,17 +8051,9 @@ export interface components {
         ExportAbaResponseDto: {
             fileContent: string;
         };
-        ConfirmRejectResponseDto: {
-            success: boolean;
-        };
-        ClientErrorDto: {
-            message: string;
-            stack?: string;
-            component?: string;
-            /** Format: uri */
-            url?: string;
-        };
         SupplierResponseDto: {
+            earlyPaymentDiscount?: string | null;
+            earlyPaymentDiscountDays?: number | null;
             id: string;
             vendorNumber: string;
             name: string;
@@ -6539,7 +8067,6 @@ export interface components {
             fax: string | null;
             emailAddress1: string | null;
             tradingTermsId: string | null;
-            earlyPaymentDiscount: string | null;
             creditLimit: string | null;
             isPurchasingBlocked: boolean;
             purchasingBlockReason: string | null;
@@ -6554,6 +8081,7 @@ export interface components {
             bankAccountNumber: string | null;
             businessNumber: string | null;
             isTaxRegistered: boolean;
+            taxPositionId: string | null;
             stateCode: string | null;
             tenantId: string;
             /** Format: date-time */
@@ -6561,7 +8089,25 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        SupplierAgedBalanceResponseDto: {
+            supplierId: string;
+            supplierName: string;
+            supplierNumber: string;
+            currencyCode: string;
+            isPaymentBlocked: boolean;
+            creditLimit?: string | null;
+            glBalance: number;
+            totalOutstanding: number;
+            discrepancyAmount: number;
+            current: number;
+            days1To30: number;
+            days31To60: number;
+            days61To90: number;
+            days90Plus: number;
+        };
         CreateSupplierDto: {
+            earlyPaymentDiscount?: string;
+            earlyPaymentDiscountDays?: number;
             vendorNumber: string;
             name: string;
             address1Line1?: string;
@@ -6576,7 +8122,6 @@ export interface components {
             emailAddress1?: string;
             /** Format: uuid */
             tradingTermsId?: string;
-            earlyPaymentDiscount?: string;
             creditLimit?: string;
             isPurchasingBlocked?: boolean;
             /** @enum {string} */
@@ -6594,8 +8139,13 @@ export interface components {
             bankAccountNumber?: string;
             businessNumber?: string;
             isTaxRegistered?: boolean;
+            /** Format: uuid */
+            taxPositionId?: string;
         };
         UpdateSupplierDto: {
+            earlyPaymentDiscount?: string;
+            earlyPaymentDiscountDays?: number;
+            vendorNumber?: string;
             name?: string;
             address1Line1?: string;
             address1Line2?: string;
@@ -6609,7 +8159,6 @@ export interface components {
             emailAddress1?: string;
             /** Format: uuid */
             tradingTermsId?: string;
-            earlyPaymentDiscount?: string;
             creditLimit?: string;
             isPurchasingBlocked?: boolean;
             /** @enum {string} */
@@ -6625,9 +8174,10 @@ export interface components {
             bankAccountName?: string;
             bankBsb?: string;
             bankAccountNumber?: string;
-            stateCode?: string;
             businessNumber?: string;
             isTaxRegistered?: boolean;
+            /** Format: uuid */
+            taxPositionId?: string;
         };
         CreateSupplierExpiryDto: {
             /** @enum {string} */
@@ -6642,13 +8192,14 @@ export interface components {
             notes?: string;
         };
         SupplierGroupResponseDto: {
+            earlyPaymentDiscount?: string | null;
+            earlyPaymentDiscountDays?: number | null;
             id: string;
             groupCode: string;
             name: string;
             defaultApAccountId: string | null;
             defaultExpenseAccountId: string | null;
             tradingTermsId: string | null;
-            earlyPaymentDiscount: string | null;
             creditLimit: string | null;
             isPurchasingBlocked: boolean;
             purchasingBlockReason: string | null;
@@ -6657,6 +8208,7 @@ export interface components {
             blockNotes: string | null;
             defaultCostCenterId: string | null;
             defaultActivityId: string | null;
+            taxPositionId: string | null;
             tenantId: string;
             /** Format: date-time */
             createdAt: string;
@@ -6664,6 +8216,8 @@ export interface components {
             updatedAt: string;
         };
         CreateSupplierGroupDto: {
+            earlyPaymentDiscount?: string;
+            earlyPaymentDiscountDays?: number;
             groupCode: string;
             name: string;
             /** Format: uuid */
@@ -6672,7 +8226,6 @@ export interface components {
             defaultExpenseAccountId?: string;
             /** Format: uuid */
             tradingTermsId?: string;
-            earlyPaymentDiscount?: string;
             creditLimit?: string;
             isPurchasingBlocked?: boolean;
             /** @enum {string} */
@@ -6685,8 +8238,12 @@ export interface components {
             defaultCostCenterId?: string;
             /** Format: uuid */
             defaultActivityId?: string;
+            /** Format: uuid */
+            taxPositionId?: string;
         };
         UpdateSupplierGroupDto: {
+            earlyPaymentDiscount?: string;
+            earlyPaymentDiscountDays?: number;
             groupCode?: string;
             name?: string;
             /** Format: uuid */
@@ -6695,7 +8252,6 @@ export interface components {
             defaultExpenseAccountId?: string;
             /** Format: uuid */
             tradingTermsId?: string;
-            earlyPaymentDiscount?: string;
             creditLimit?: string;
             isPurchasingBlocked?: boolean;
             /** @enum {string} */
@@ -6708,6 +8264,15 @@ export interface components {
             defaultCostCenterId?: string;
             /** Format: uuid */
             defaultActivityId?: string;
+            /** Format: uuid */
+            taxPositionId?: string;
+        };
+        ClientErrorDto: {
+            message: string;
+            stack?: string;
+            component?: string;
+            /** Format: uri */
+            url?: string;
         };
         CreatePurchaseOrderLineDto: {
             productId?: string;
@@ -6728,6 +8293,7 @@ export interface components {
             currencyCode?: string;
             notes?: string;
             referenceNumber?: string;
+            expectedDate?: string;
             lines?: components["schemas"]["CreatePurchaseOrderLineDto"][];
         };
         PurchaseOrderLineResponseDto: {
@@ -6763,6 +8329,8 @@ export interface components {
             createdOn?: string | null;
             /** Format: date-time */
             modifiedOn?: string | null;
+            /** Format: date-time */
+            expectedDate?: string | null;
             vendorName?: string;
         };
         UpdatePurchaseOrderDto: {
@@ -6773,6 +8341,7 @@ export interface components {
             referenceNumber?: string;
             stateCode?: string;
             deliveryLocationId?: string;
+            expectedDate?: string;
         };
         ChangeStateDto: {
             stateCode: string;
@@ -6833,6 +8402,20 @@ export interface components {
             modifiedOn?: string | null;
             lines?: components["schemas"]["PurchaseReturnLineResponseDto"][];
         };
+        PurchaseDebitNoteResponseDto: {
+            debitNoteId: string;
+            debitNoteNumber: string;
+            returnId: string;
+            purchaseOrderId: string;
+            stateCode: string;
+            totalAmount: string;
+            taxAmount: string;
+            feeAmount: string;
+            /** Format: date-time */
+            createdOn?: string | null;
+            /** Format: date-time */
+            modifiedOn?: string | null;
+        };
         CreateDebitNoteLineDto: {
             purchaseOrderLineId: string;
             quantityInvoiced: string;
@@ -6848,19 +8431,17 @@ export interface components {
             feeAmount?: string;
             notes?: string;
         };
-        PurchaseDebitNoteResponseDto: {
-            debitNoteId: string;
-            debitNoteNumber: string;
-            returnId: string;
-            purchaseOrderId: string;
-            stateCode: string;
-            totalAmount: string;
-            taxAmount: string;
-            feeAmount: string;
-            /** Format: date-time */
-            createdOn?: string | null;
-            /** Format: date-time */
-            modifiedOn?: string | null;
+        DataSourceItemDto: {
+            slug: string;
+            name: string;
+        };
+        SampleReportDto: {
+            isMockData: boolean;
+            data: Record<string, never>[];
+        };
+        SampleRecordDto: {
+            isMockData: boolean;
+            data: Record<string, never>;
         };
         SystemLogResponseDto: {
             lines: string[];
@@ -6924,7 +8505,7 @@ export interface components {
             zoneId: string;
             binNumber: string;
             /** @enum {string} */
-            binType?: "storage" | "pick" | "bulk" | "receiving" | "staging" | "quarantine" | "in_transit";
+            binType: "storage" | "pick" | "bulk" | "receiving" | "staging" | "quarantine" | "in_transit";
             isConsignment?: boolean;
             isBonded?: boolean;
             isUnavailable?: boolean;
@@ -6982,17 +8563,25 @@ export interface components {
             port?: number;
         };
         ExecuteEltDto: {
+            /** @description If provided, all legacy invoices (sales and purchase) with a due date before this date will be considered paid. */
+            legacyInvoicesPaidBeforeDate?: string;
             dbConfig?: components["schemas"]["DbConfigDto"];
-            abmImport?: boolean;
-            odooImport?: boolean;
+            /** @enum {string} */
+            source?: "abm" | "odoo";
             resumeExtraction?: boolean;
             skipExtraction?: boolean;
             defaultLocationCode?: string;
             baseCurrency?: string;
             defaultTaxCategoryCode?: string;
+            enableCustomImports?: boolean;
+            importInventoryFromLocations?: boolean;
         };
         JobResultDto: {
             jobId: string;
+        };
+        ActiveJobDto: {
+            jobId?: string | null;
+            type?: string | null;
         };
         JobProgressDto: {
             status: string;
@@ -7092,7 +8681,7 @@ export interface components {
         };
         CreateMacroDto: {
             name: string;
-            macroType?: string;
+            macroType: string;
             content: string;
         };
         MacroResponseDto: {
@@ -7241,6 +8830,109 @@ export interface components {
             /** @description The payload of the event */
             payload: Record<string, never>;
         };
+        UserSettingsResponseDto: {
+            dashboardConfig?: Record<string, never>;
+            reportConfigs?: Record<string, never>;
+            preferences?: Record<string, never>;
+        };
+        UpdateUserSettingsDto: {
+            /** @description Dashboard configuration layout and pinned widgets */
+            dashboardConfig?: Record<string, never>;
+            /** @description Saved report configurations and filters */
+            reportConfigs?: Record<string, never>;
+            /** @description Generic UI preferences */
+            preferences?: Record<string, never>;
+        };
+        CreateContactDto: {
+            /** @enum {string} */
+            entityType: "customer";
+            /** Format: uuid */
+            entityId: string;
+            firstName: string;
+            lastName: string;
+            /** Format: email */
+            email?: string;
+            phone?: string;
+            mobile?: string;
+            jobTitle?: string;
+            isPrimary?: boolean;
+        };
+        ContactResponseDto: {
+            id: string;
+            firstName: string;
+            lastName: string;
+            email?: string | null;
+            phone?: string | null;
+            mobile?: string | null;
+            jobTitle?: string | null;
+            isPrimary: boolean;
+            /** Format: date-time */
+            createdOn: string | null;
+            /** Format: date-time */
+            modifiedOn: string | null;
+        };
+        UpdateContactDto: {
+            firstName?: string;
+            lastName?: string;
+            /** Format: email */
+            email?: string;
+            phone?: string;
+            mobile?: string;
+            jobTitle?: string;
+            isPrimary?: boolean;
+        };
+        CreateDeliveryAddressDto: {
+            /** Format: uuid */
+            customerId: string;
+            addressName?: string;
+            companyName?: string;
+            recipientName?: string;
+            recipientPhone?: string;
+            addressLine1: string;
+            addressLine2?: string | null;
+            city?: string | null;
+            stateOrProvince?: string | null;
+            postalCode?: string | null;
+            country: string;
+            isPrimary?: boolean;
+        };
+        DeliveryAddressResponseDto: {
+            id: string;
+            customerId: string;
+            addressName?: string | null;
+            companyName?: string | null;
+            recipientName?: string | null;
+            recipientPhone?: string | null;
+            addressLine1: string | null;
+            addressLine2?: string | null;
+            city?: string | null;
+            stateOrProvince?: string | null;
+            postalCode?: string | null;
+            country: string | null;
+            isPrimary: boolean;
+            sourceId?: string | null;
+            source: string;
+            /** Format: date-time */
+            createdOn?: string | null;
+            /** Format: date-time */
+            modifiedOn?: string | null;
+        };
+        UpdateDeliveryAddressDto: {
+            addressName?: string;
+            companyName?: string;
+            recipientName?: string;
+            recipientPhone?: string;
+            addressLine1?: string;
+            addressLine2?: string | null;
+            city?: string | null;
+            stateOrProvince?: string | null;
+            postalCode?: string | null;
+            country?: string;
+            isPrimary?: boolean;
+        };
+        DeleteDeliveryAddressSuccessDto: {
+            success: boolean;
+        };
     };
     responses: never;
     parameters: never;
@@ -7373,7 +9065,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SuccessResponseDto"];
+                    "application/json": components["schemas"]["RolesSuccessResponseDto"];
                 };
             };
         };
@@ -7381,6 +9073,17 @@ export interface operations {
     AccountsController_findAll: {
         parameters: {
             query?: {
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
+                customerId?: string;
+                vendorId?: string;
+                days?: number;
+                purchaseOrderId?: string;
                 /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
                 fields?: string;
             };
@@ -7421,6 +9124,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccountResponseDto"];
+                };
+            };
+        };
+    };
+    AccountsController_getAgedBalances: {
+        parameters: {
+            query?: {
+                agingBasis?: "invoiceDate" | "dueDate";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgedBalanceResponseDto"][];
                 };
             };
         };
@@ -7470,6 +9194,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccountResponseDto"];
+                };
+            };
+        };
+    };
+    AccountsController_getCreditAssessment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreditAssessmentResponseDto"];
                 };
             };
         };
@@ -7644,6 +9389,17 @@ export interface operations {
     ProductsController_findAll: {
         parameters: {
             query?: {
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
+                customerId?: string;
+                vendorId?: string;
+                days?: number;
+                purchaseOrderId?: string;
                 /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
                 fields?: string;
             };
@@ -8144,6 +9900,17 @@ export interface operations {
     InventoryController_findAll: {
         parameters: {
             query?: {
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
+                customerId?: string;
+                vendorId?: string;
+                days?: number;
+                purchaseOrderId?: string;
                 locationNo?: string;
                 /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
                 fields?: string;
@@ -8214,7 +9981,19 @@ export interface operations {
     InventoryController_findBins: {
         parameters: {
             query?: {
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
+                customerId?: string;
+                vendorId?: string;
+                days?: number;
+                purchaseOrderId?: string;
                 locationNo?: string;
+                binType?: string;
             };
             header?: never;
             path?: never;
@@ -8323,27 +10102,6 @@ export interface operations {
             };
         };
     };
-    InventoryController_getMovements: {
-        parameters: {
-            query?: {
-                days?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InventoryMovementResponseDto"][];
-                };
-            };
-        };
-    };
     InventoryController_getLedger: {
         parameters: {
             query?: {
@@ -8431,22 +10189,68 @@ export interface operations {
             };
         };
     };
-    InventoryController_toggleQuarantine: {
+    InventoryController_quarantineMove: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                lineId: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ToggleQuarantineDto"];
+                "application/json": components["schemas"]["QuarantineMoveDto"];
             };
         };
         responses: {
-            /** @description Quarantine state toggled */
+            /** @description Quarantine move successful */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventorySuccessResponseDto"];
+                };
+            };
+        };
+    };
+    InventoryController_moveStock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveStockDto"];
+            };
+        };
+        responses: {
+            /** @description Move successful */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventorySuccessResponseDto"];
+                };
+            };
+        };
+    };
+    InventoryController_adjustStock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustStockDto"];
+            };
+        };
+        responses: {
+            /** @description Adjustment successful */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -8533,6 +10337,7 @@ export interface operations {
                 fromDate?: string;
                 toDate?: string;
                 sourceType?: string;
+                sourceId?: string;
                 q?: string;
                 limit?: string;
                 page?: string;
@@ -8623,6 +10428,7 @@ export interface operations {
         parameters: {
             query?: {
                 asOfDate?: string;
+                periodStart?: string;
             };
             header?: never;
             path?: never;
@@ -8707,6 +10513,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SettingsResponseDto"];
+                };
+            };
+        };
+    };
+    GlController_getFxCandidates: {
+        parameters: {
+            query: {
+                revaluationDate: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FxRevalCandidatesResponseDto"];
+                };
+            };
+        };
+    };
+    GlController_commitFxRevaluation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommitFxRevaluationDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FxRevalCommitResponseDto"];
                 };
             };
         };
@@ -9049,9 +10899,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                glAccountId: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -9080,6 +10928,52 @@ export interface operations {
         };
         responses: {
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MappingProfileResponseDto"];
+                };
+            };
+        };
+    };
+    BankFeedsController_updateProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMappingProfileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MappingProfileResponseDto"];
+                };
+            };
+        };
+    };
+    BankFeedsController_deleteProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9122,6 +11016,31 @@ export interface operations {
         };
         responses: {
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReconciliationRuleResponseDto"];
+                };
+            };
+        };
+    };
+    BankFeedsController_updateRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ruleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateReconciliationRuleDto"];
+            };
+        };
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9196,7 +11115,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["MatchConfirmedResponseDto"];
                 };
             };
         };
@@ -9222,7 +11141,143 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": Record<string, never>;
+                    "application/json": components["schemas"]["MatchConfirmedResponseDto"];
+                };
+            };
+        };
+    };
+    BankStatementController_createLinesBulk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBankStatementLineDto"][];
+            };
+        };
+        responses: {
+            /** @description Lines created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatchConfirmedResponseDto"];
+                };
+            };
+        };
+    };
+    BankStatementController_matchBulk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BankStatementBulkMatchDto"];
+            };
+        };
+        responses: {
+            /** @description Match confirmed */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatchConfirmedResponseDto"];
+                };
+            };
+        };
+    };
+    BankStatementController_autoMatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoMatchRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoMatchResponseDto"];
+                };
+            };
+        };
+    };
+    BankStatementController_unmatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnmatchRequestDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankStatementSuccessResponseDto"];
+                };
+            };
+        };
+    };
+    BankStatementController_deleteLine: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankStatementSuccessResponseDto"];
+                };
+            };
+        };
+    };
+    BankStatementController_getMatchGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                matchGroupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BankStatementMatchGroupResponseDto"];
                 };
             };
         };
@@ -9563,6 +11618,75 @@ export interface operations {
             };
         };
     };
+    TradingTermsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTradingTermDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TradingTermResponseDto"];
+                };
+            };
+        };
+    };
+    TradingTermsController_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsSuccessResponseDto"];
+                };
+            };
+        };
+    };
+    TradingTermsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTradingTermDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TradingTermResponseDto"];
+                };
+            };
+        };
+    };
     CostCentersController_findAll: {
         parameters: {
             query?: {
@@ -9791,6 +11915,203 @@ export interface operations {
             };
         };
     };
+    LicenseController_getStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LicenseStatusDto"];
+                };
+            };
+        };
+    };
+    LicenseController_applyLicense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    licenseKey?: string;
+                };
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LicenseStatusDto"];
+                };
+            };
+        };
+    };
+    BusinessReportsController_getReports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>[];
+                };
+            };
+        };
+    };
+    BusinessReportsController_createReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBusinessReportDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessReportResponseDto"];
+                };
+            };
+        };
+    };
+    BusinessReportsController_getHooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    BusinessReportsController_runReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Object"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>[];
+                };
+            };
+        };
+    };
+    BusinessReportsController_getReportById: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    BusinessReportsController_updateReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBusinessReportDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BusinessReportResponseDto"];
+                };
+            };
+        };
+    };
+    BusinessReportsController_deleteReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
     OrderPickingController_getPickingQueue: {
         parameters: {
             query?: {
@@ -9926,6 +12247,17 @@ export interface operations {
     OrdersController_findAll: {
         parameters: {
             query?: {
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
+                customerId?: string;
+                vendorId?: string;
+                days?: number;
+                purchaseOrderId?: string;
                 /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
                 fields?: string;
             };
@@ -10044,6 +12376,34 @@ export interface operations {
             };
         };
     };
+    OrdersController_emailQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailQuoteDto"];
+            };
+        };
+        responses: {
+            /** @description Email queued successfully. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success?: boolean;
+                    };
+                };
+            };
+        };
+    };
     OrdersController_changeState: {
         parameters: {
             query?: never;
@@ -10056,6 +12416,31 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ChangeOrderStateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderResponseDto"];
+                };
+            };
+        };
+    };
+    OrdersController_overrideCreditHold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OverrideCreditHoldDto"];
             };
         };
         responses: {
@@ -10714,6 +13099,7 @@ export interface operations {
         parameters: {
             query?: {
                 stateCode?: string;
+                locationId?: string;
             };
             header?: never;
             path?: never;
@@ -10824,7 +13210,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": Record<string, never>;
+                "application/json": components["schemas"]["EmptyBodyDto"];
             };
         };
         responses: {
@@ -10849,7 +13235,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": Record<string, never>;
+                "application/json": components["schemas"]["EmptyBodyDto"];
             };
         };
         responses: {
@@ -11150,6 +13536,18 @@ export interface operations {
     TransfersController_findAll: {
         parameters: {
             query?: {
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
+                customerId?: string;
+                vendorId?: string;
+                days?: number;
+                purchaseOrderId?: string;
+                destinationLocationId?: string;
                 /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
                 fields?: string;
             };
@@ -11239,6 +13637,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TransferResponseDto"];
+                };
+            };
+        };
+    };
+    TransfersController_findShipments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShipmentResponseDto"][];
                 };
             };
         };
@@ -11431,7 +13850,207 @@ export interface operations {
             };
         };
     };
-    ReportsController_runHook: {
+    TaxPositionMappingsController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxPositionMappingResponseDto"][];
+                };
+            };
+        };
+    };
+    TaxPositionMappingsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taxPositionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaxPositionMappingDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxPositionMappingResponseDto"];
+                };
+            };
+        };
+    };
+    TaxPositionMappingsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                taxPositionId: string;
+                sourceTaxCategoryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxPositionMappingResponseDto"];
+                };
+            };
+        };
+    };
+    TaxPositionsController_findAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxPositionResponseDto"][];
+                };
+            };
+        };
+    };
+    TaxPositionsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaxPositionDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxPositionResponseDto"];
+                };
+            };
+        };
+    };
+    TaxPositionsController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxPositionResponseDto"];
+                };
+            };
+        };
+    };
+    TaxPositionsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaxPositionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxPositionResponseDto"];
+                };
+            };
+        };
+    };
+    TaxPositionsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxPositionResponseDto"];
+                };
+            };
+        };
+    };
+    TaxBasController_getBasSummary: {
+        parameters: {
+            query?: {
+                /** @description Start date of the reporting period (YYYY-MM-DD) */
+                fromDate?: string;
+                /** @description End date of the reporting period (YYYY-MM-DD) */
+                toDate?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Returns the ATO BAS Summary layout */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BasSummaryRowDto"][];
+                };
+            };
+        };
+    };
+    PdfTemplatesController_runHook: {
         parameters: {
             query: {
                 id: string;
@@ -11460,7 +14079,7 @@ export interface operations {
             };
         };
     };
-    ReportsController_getHooks: {
+    PdfTemplatesController_getHooks: {
         parameters: {
             query?: never;
             header?: never;
@@ -11479,7 +14098,7 @@ export interface operations {
             };
         };
     };
-    ReportsController_getAssignments: {
+    PdfTemplatesController_getAssignments: {
         parameters: {
             query?: never;
             header?: never;
@@ -11498,7 +14117,7 @@ export interface operations {
             };
         };
     };
-    ReportsController_updateAssignment: {
+    PdfTemplatesController_updateAssignment: {
         parameters: {
             query?: never;
             header?: never;
@@ -11523,7 +14142,7 @@ export interface operations {
             };
         };
     };
-    ReportsController_getRandomId: {
+    PdfTemplatesController_getRandomId: {
         parameters: {
             query?: never;
             header?: never;
@@ -11544,7 +14163,7 @@ export interface operations {
             };
         };
     };
-    ReportsController_getAllReports: {
+    PdfTemplatesController_getAllReports: {
         parameters: {
             query?: never;
             header?: never;
@@ -11563,7 +14182,7 @@ export interface operations {
             };
         };
     };
-    ReportsController_createReport: {
+    PdfTemplatesController_createReport: {
         parameters: {
             query?: never;
             header?: never;
@@ -11586,7 +14205,7 @@ export interface operations {
             };
         };
     };
-    ReportsController_getReport: {
+    PdfTemplatesController_getReport: {
         parameters: {
             query?: never;
             header?: never;
@@ -11607,7 +14226,7 @@ export interface operations {
             };
         };
     };
-    ReportsController_deleteReport: {
+    PdfTemplatesController_deleteReport: {
         parameters: {
             query?: never;
             header?: never;
@@ -11628,7 +14247,7 @@ export interface operations {
             };
         };
     };
-    ReportsController_updateReport: {
+    PdfTemplatesController_updateReport: {
         parameters: {
             query?: never;
             header?: never;
@@ -11653,7 +14272,7 @@ export interface operations {
             };
         };
     };
-    ReportsController_preview: {
+    PdfTemplatesController_preview: {
         parameters: {
             query?: never;
             header?: never;
@@ -11790,14 +14409,47 @@ export interface operations {
             };
         };
     };
+    InvoiceDetailController_adminMarkSalesInvoicePaid: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesInvoiceResponseDto"];
+                };
+            };
+        };
+    };
     InvoiceDetailController_getSalesInvoicesGlobal: {
         parameters: {
             query?: {
-                days?: string;
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
                 customerId?: string;
+                vendorId?: string;
+                days?: number;
+                purchaseOrderId?: string;
                 invoiceId?: string;
                 balanceStatus?: string;
-                limit?: string;
             };
             header?: never;
             path?: never;
@@ -11810,7 +14462,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SalesInvoiceResponseDto"][];
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["SalesInvoiceResponseDto"][];
+                    };
                 };
             };
         };
@@ -11818,11 +14472,19 @@ export interface operations {
     InvoiceDetailController_getPurchaseInvoicesGlobal: {
         parameters: {
             query?: {
-                days?: string;
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
+                customerId?: string;
                 vendorId?: string;
+                days?: number;
+                purchaseOrderId?: string;
                 invoiceId?: string;
                 balanceStatus?: string;
-                limit?: string;
             };
             header?: never;
             path?: never;
@@ -11835,7 +14497,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"][];
+                    "application/json": components["schemas"]["PaginatedResponse"] & {
+                        data?: components["schemas"]["PurchaseInvoiceResponseDto"][];
+                    };
                 };
             };
         };
@@ -11895,7 +14559,32 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateInvoiceLineDto"];
+                "application/json": components["schemas"]["UpdatePurchaseInvoiceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseInvoiceResponseDto"];
+                };
+            };
+        };
+    };
+    InvoiceDetailController_adminMarkPurchaseInvoicePaid: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
             };
         };
         responses: {
@@ -12173,6 +14862,100 @@ export interface operations {
             };
         };
     };
+    SalesCreditNotesController_findAll: {
+        parameters: {
+            query?: {
+                customerId?: string;
+                balanceStatus?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesCreditNoteResponseDto"][];
+                };
+            };
+        };
+    };
+    SalesCreditNotesController_createCreditNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSalesCreditNoteDto"];
+            };
+        };
+        responses: {
+            /** @description Created Credit Note */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesCreditNoteResponseDto"];
+                };
+            };
+        };
+    };
+    SalesCreditNotesController_findOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The requested credit note */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesCreditNoteResponseDto"];
+                };
+            };
+        };
+    };
+    SalesCreditNotesController_postCreditNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            /** @description Posted Credit Note */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalesCreditNoteResponseDto"];
+                };
+            };
+        };
+    };
     EnrichmentController_lookup: {
         parameters: {
             query: {
@@ -12342,7 +15125,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": Record<string, never>;
+                "application/json": components["schemas"]["Object"];
             };
         };
         responses: {
@@ -12357,11 +15140,88 @@ export interface operations {
             };
         };
     };
+    EmailController_listEmails: {
+        parameters: {
+            query?: {
+                entityType?: string;
+                entityId?: string;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of emails */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>[];
+                };
+            };
+        };
+    };
+    EmailController_retryEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Email updated */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    EmailController_dismissEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Email dismissed */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
     PaymentsController_findAll: {
         parameters: {
             query?: {
                 days?: string;
                 allocation?: string;
+                partyId?: string;
                 /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
                 fields?: string;
             };
@@ -12406,6 +15266,50 @@ export interface operations {
             };
         };
     };
+    PaymentsController_getPaymentRunCandidates: {
+        parameters: {
+            query: {
+                targetDate: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentRunCandidateResponseDto"][];
+                };
+            };
+        };
+    };
+    PaymentsController_generatePaymentRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratePaymentRunDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeneratePaymentRunResponseDto"];
+                };
+            };
+        };
+    };
     PaymentsController_findOne: {
         parameters: {
             query?: {
@@ -12426,6 +15330,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaymentResponseDto"];
+                };
+            };
+        };
+    };
+    PaymentsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Payment successfully deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmRejectResponseDto"];
                 };
             };
         };
@@ -12597,100 +15523,20 @@ export interface operations {
             };
         };
     };
-    DashboardController_getSummary: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-        };
-    };
-    DashboardController_search: {
-        parameters: {
-            query: {
-                q: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>[];
-                };
-            };
-        };
-    };
-    DashboardController_getTimeline: {
-        parameters: {
-            query: {
-                types: string;
-                limit: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": Record<string, never>[];
-                };
-            };
-        };
-    };
-    TelemetryController_reportClientError: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClientErrorDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EmptyBodyDto"];
-                };
-            };
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     SuppliersController_findAll: {
         parameters: {
             query?: {
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
+                customerId?: string;
+                vendorId?: string;
+                days?: number;
+                purchaseOrderId?: string;
                 /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
                 fields?: string;
             };
@@ -12735,9 +15581,42 @@ export interface operations {
             };
         };
     };
+    SuppliersController_getAgedBalances: {
+        parameters: {
+            query?: {
+                agingBasis?: "invoiceDate" | "dueDate";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierAgedBalanceResponseDto"][];
+                };
+            };
+        };
+    };
     SuppliersController_findByProduct: {
         parameters: {
-            query?: never;
+            query?: {
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
+                customerId?: string;
+                vendorId?: string;
+                days?: number;
+                purchaseOrderId?: string;
+            };
             header?: never;
             path: {
                 productId: string;
@@ -12809,7 +15688,19 @@ export interface operations {
     };
     SuppliersController_findSupplierProducts: {
         parameters: {
-            query?: never;
+            query?: {
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
+                customerId?: string;
+                vendorId?: string;
+                days?: number;
+                purchaseOrderId?: string;
+            };
             header?: never;
             path: {
                 id: string;
@@ -12882,7 +15773,19 @@ export interface operations {
     };
     SuppliersController_findSupplierExpiries: {
         parameters: {
-            query?: never;
+            query?: {
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
+                customerId?: string;
+                vendorId?: string;
+                days?: number;
+                purchaseOrderId?: string;
+            };
             header?: never;
             path: {
                 id: string;
@@ -13091,9 +15994,111 @@ export interface operations {
             };
         };
     };
+    DashboardController_getSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    DashboardController_search: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>[];
+                };
+            };
+        };
+    };
+    DashboardController_getTimeline: {
+        parameters: {
+            query: {
+                types: string;
+                limit: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>[];
+                };
+            };
+        };
+    };
+    TelemetryController_reportClientError: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClientErrorDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmptyBodyDto"];
+                };
+            };
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     PurchaseOrdersController_findAll: {
         parameters: {
             query?: {
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
+                customerId?: string;
+                vendorId?: string;
+                days?: number;
+                purchaseOrderId?: string;
                 /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
                 fields?: string;
             };
@@ -13183,10 +16188,7 @@ export interface operations {
     };
     PurchaseOrdersController_findOne: {
         parameters: {
-            query?: {
-                /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
-                fields?: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 id: string;
@@ -13498,6 +16500,32 @@ export interface operations {
             };
         };
     };
+    PurchaseReturnsController_cancelReturn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                returnId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmptyBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseReturnResponseDto"];
+                };
+            };
+        };
+    };
     GlobalPurchaseReturnsController_getPurchaseReturns: {
         parameters: {
             query?: {
@@ -13536,6 +16564,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GlobalPurchaseReturnDto"];
+                };
+            };
+        };
+    };
+    PurchaseDebitNotesController_findAll: {
+        parameters: {
+            query?: {
+                vendorId?: string;
+                balanceStatus?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseDebitNoteResponseDto"][];
                 };
             };
         };
@@ -13584,6 +16634,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PurchaseDebitNoteResponseDto"];
+                };
+            };
+        };
+    };
+    DataSourcesController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of data sources */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataSourceItemDto"][];
+                };
+            };
+        };
+    };
+    DataSourcesController_getSampleReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sample report data */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SampleReportDto"];
+                };
+            };
+        };
+    };
+    DataSourcesController_getSampleRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sample record data */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SampleRecordDto"];
                 };
             };
         };
@@ -13878,6 +16992,46 @@ export interface operations {
             };
         };
     };
+    SetupController_getActiveJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveJobDto"];
+                };
+            };
+        };
+    };
+    SetupController_stopJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
     SetupController_getProgress: {
         parameters: {
             query?: never;
@@ -13987,6 +17141,17 @@ export interface operations {
     GoodsReceivedController_findAll: {
         parameters: {
             query?: {
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
+                customerId?: string;
+                vendorId?: string;
+                days?: number;
+                purchaseOrderId?: string;
                 /** @description Comma separated list of fields to include in the response (e.g. "id,name") */
                 fields?: string;
             };
@@ -14032,6 +17197,16 @@ export interface operations {
     GoodsReceivedController_findAllLines: {
         parameters: {
             query?: {
+                q?: string;
+                page?: number;
+                cursor?: string;
+                direction?: components["schemas"]["Object"];
+                limit?: number;
+                state?: string;
+                includeArchived?: boolean;
+                customerId?: string;
+                vendorId?: string;
+                days?: number;
                 purchaseOrderId?: string;
                 putawayStatus?: string;
                 locationId?: string;
@@ -14746,6 +17921,189 @@ export interface operations {
                         success?: boolean;
                         outboxId?: string;
                     };
+                };
+            };
+        };
+    };
+    UserSettingsController_getSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserSettingsResponseDto"];
+                };
+            };
+        };
+    };
+    UserSettingsController_updateSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserSettingsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserSettingsResponseDto"];
+                };
+            };
+        };
+    };
+    ContactsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateContactDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContactResponseDto"];
+                };
+            };
+        };
+    };
+    ContactsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    ContactsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateContactDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContactResponseDto"];
+                };
+            };
+        };
+    };
+    DeliveryAddressesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDeliveryAddressDto"];
+            };
+        };
+        responses: {
+            /** @description The created delivery address */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryAddressResponseDto"];
+                };
+            };
+        };
+    };
+    DeliveryAddressesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDeliveryAddressDto"];
+            };
+        };
+        responses: {
+            /** @description The updated delivery address */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryAddressResponseDto"];
+                };
+            };
+        };
+    };
+    DeliveryAddressesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Delivery address deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteDeliveryAddressSuccessDto"];
                 };
             };
         };

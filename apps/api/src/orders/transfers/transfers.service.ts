@@ -551,8 +551,10 @@ export class TransferService {
         shipmentId,
         transferOrderId,
         shipmentNumber,
-        stateCode: TRANSFER_ORDER_STATE.SHIPPED,
+        stateCode: SHIPMENT_STATE.DISPATCHED,
         shippedBy: actor,
+        trackingNumber: dto.trackingNumber,
+        notes: dto.notes,
       });
 
       const inventoryLines: {
@@ -615,7 +617,7 @@ export class TransferService {
             await tx
               .update(transferOrderPicks)
               // eslint-disable-next-line no-restricted-syntax -- Needed for legacy code
-              .set({ stateCode: TRANSFER_ORDER_PICK_STATE.SHIPPED as string })
+              .set({ stateCode: TRANSFER_ORDER_PICK_STATE.SHIPPED })
               .where(eq(transferOrderPicks.pickId, pick.pickId));
           } else {
             await tx
@@ -626,7 +628,7 @@ export class TransferService {
               ...pick,
               pickId: uuidv4(),
               quantity: shipQty.toString(),
-              stateCode: TRANSFER_ORDER_PICK_STATE.SHIPPED as string,
+              stateCode: TRANSFER_ORDER_PICK_STATE.SHIPPED,
             });
           }
 
@@ -651,7 +653,7 @@ export class TransferService {
       }
 
       await this.inventoryService.recordInventoryMovement(tx, {
-        entryNumber: `TR-DISP-${order.orderNumber}`,
+        entryNumber: `TR-DISP-${shipmentNumber}`,
         sourceType: 'TO_DISPATCH',
         sourceId: transferOrderId,
         memo: `Dispatch to INTRA_TRANSIT`,
@@ -692,6 +694,15 @@ export class TransferService {
         entityDisplayName: order.orderNumber,
         actor,
         payload: { shipmentId, shipmentNumber },
+      });
+
+      await emitEvent(tx as unknown as DrizzleDB, {
+        entityType: EntityType.SHIPMENT,
+        entityId: shipmentId,
+        eventType: EventType.SHIPMENT_CREATED,
+        entityDisplayName: shipmentNumber,
+        actor,
+        payload: { transferOrderId, shipmentNumber },
       });
 
       return { shipmentId, shipmentNumber };
@@ -768,7 +779,7 @@ export class TransferService {
         shipmentId,
         transferOrderId,
         shipmentNumber,
-        stateCode: TRANSFER_ORDER_STATE.SHIPPED,
+        stateCode: SHIPMENT_STATE.DISPATCHED,
         shippedBy: actor,
       });
 
@@ -823,7 +834,7 @@ export class TransferService {
         await tx
           .update(transferOrderPicks)
           // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
-          .set({ stateCode: TRANSFER_ORDER_PICK_STATE.SHIPPED as string })
+          .set({ stateCode: TRANSFER_ORDER_PICK_STATE.SHIPPED })
           .where(eq(transferOrderPicks.pickId, pick.pickId));
 
         // E. Update shipped quantity on order line
@@ -1020,6 +1031,18 @@ export class TransferService {
         },
       });
 
+      await emitEvent(tx as unknown as DrizzleDB, {
+        entityType: EntityType.SHIPMENT,
+        entityId: shipmentId,
+        eventType: EventType.STATUS_CHANGED,
+        entityDisplayName: shipment.shipmentNumber,
+        actor,
+        payload: {
+          from: SHIPMENT_STATE.DISPATCHED,
+          to: SHIPMENT_STATE.CANCELLED,
+        },
+      });
+
       return { success: true };
     });
   }
@@ -1028,10 +1051,7 @@ export class TransferService {
     const shipment = await this.db.query.transferOrderShipments.findFirst({
       where: and(
         eq(transferOrderShipments.transferOrderId, transferOrderId),
-        eq(
-          transferOrderShipments.stateCode,
-          SHIPMENT_STATE.DISPATCHED as string,
-        ),
+        eq(transferOrderShipments.stateCode, SHIPMENT_STATE.DISPATCHED),
       ),
     });
 
@@ -1168,13 +1188,15 @@ export class TransferService {
 
       for (const line of orderLines) {
         const qtyToReceive = lineUpdates.get(line.transferOrderLineId) || 0;
-        
+
         if (qtyToReceive > 0) {
           const shipped = parseFloat(line.quantityShipped || '0');
           const previouslyReceived = parseFloat(line.quantityReceived || '0');
-          
+
           if (previouslyReceived + qtyToReceive > shipped) {
-            throw new BadRequestException(`Cannot receive more than shipped quantity for line ${line.transferOrderLineId}`);
+            throw new BadRequestException(
+              `Cannot receive more than shipped quantity for line ${line.transferOrderLineId}`,
+            );
           }
 
           totalReceived += qtyToReceive;
@@ -1243,24 +1265,18 @@ export class TransferService {
       });
 
       const isFullyReceived = updatedOrderLines.every((l) => {
-        return parseFloat(l.quantityReceived || '0') >= parseFloat(l.quantityShipped || '0');
+        return (
+          parseFloat(l.quantityReceived || '0') >=
+          parseFloat(l.quantityShipped || '0')
+        );
       });
 
-      const nextState = isFullyReceived ? TRANSFER_ORDER_STATE.RECEIVED : TRANSFER_ORDER_STATE.PARTIALLY_RECEIVED;
+      const nextState = isFullyReceived
+        ? TRANSFER_ORDER_STATE.RECEIVED
+        : TRANSFER_ORDER_STATE.PARTIALLY_RECEIVED;
 
       // Update Order State
-      await this.changeTransferState(
-        transferOrderId,
-        nextState,
-        actor,
-        tx,
-      );
-
-      // We also need to update the receipt state
-      await tx.update(transferOrderReceipts)
-        // eslint-disable-next-line no-restricted-syntax
-        .set({ stateCode: nextState as string })
-        .where(eq(transferOrderReceipts.receiptId, receiptId));
+      await this.changeTransferState(transferOrderId, nextState, actor, tx);
 
       await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.TRANSFER_ORDER,
@@ -1371,7 +1387,7 @@ export class TransferService {
 
     await tx
       .update(transferOrderPicks)
-      .set({ stateCode: newState as string, modifiedOn: new Date() })
+      .set({ stateCode: newState, modifiedOn: new Date() })
       .where(eq(transferOrderPicks.pickId, pickId));
 
     if (newState === TRANSFER_ORDER_PICK_STATE.CANCELLED) {
@@ -1581,7 +1597,7 @@ export class TransferService {
         )})`,
       );
 
-    const linesMap = new Map<string, any[]>();
+    const linesMap = new Map<string, typeof linesData>();
     for (const line of linesData) {
       if (!linesMap.has(line.shipmentId)) linesMap.set(line.shipmentId, []);
       linesMap.get(line.shipmentId)!.push(line);

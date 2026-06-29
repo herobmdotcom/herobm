@@ -201,7 +201,7 @@ export class SuppliersWriteService {
       throw new NotFoundException(`Supplier '${vendorId}' not found`);
     }
 
-    const currentState = existing.stateCode as SupplierState;
+    const currentState = existing.stateCode;
 
     if (currentState === newState) {
       return existing;

@@ -36,7 +36,6 @@ export default function TransferDetailsClient({ id }: { id: string }) {
     removeLine,
     shipOrder,
     cancelOrder,
-    cancelShipment,
   } = useTransferOrder(id);
 
   useDocumentTitle(order ? tTransfers('transferTitle', { number: order.orderNumber }) : null);
@@ -67,18 +66,11 @@ export default function TransferDetailsClient({ id }: { id: string }) {
     TRANSFER_ORDER_STATE.CONFIRMED,
     TRANSFER_ORDER_STATE.PICKING,
   ] as string[]).includes(order.stateCode);
-  const canCancelShipment = order.stateCode === TRANSFER_ORDER_STATE.SHIPPED;
   const headerDirty = order.notes !== editNotes;
 
   const handleCancelOrder = async () => {
     if (window.confirm(tTransfers('cancelConfirm'))) {
       await cancelOrder();
-    }
-  };
-
-  const handleCancelShipment = async () => {
-    if (window.confirm(tTransfers('cancelShipmentConfirm'))) {
-      await cancelShipment();
     }
   };
 
@@ -95,17 +87,6 @@ export default function TransferDetailsClient({ id }: { id: string }) {
           badges={<StateBadge state={order.stateCode as ValidState} />}
           actions={
             <div className="flex gap-2">
-              {canCancelShipment && (
-                <button
-                  className="btn btn-danger btn-sm"
-                  onClick={handleCancelShipment}
-                  disabled={saving}
-                >
-                  {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                  <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>{'close'}</span>
-                  {tTransfers('cancelShipment')}
-                </button>
-              )}
               {canCancelOrder && (
                 <button
                   className="btn btn-danger btn-sm"

@@ -37,14 +37,14 @@ export const AddressDisplay: React.FC<AddressDisplayProps> = ({
 
   return (
     <div className="mt-1 text-sm">
-      {companyName && (
-        <div className="font-semibold text-[var(--text-primary)]">
-          {companyName}
+      {(recipientName || phone) && (
+        <div>
+          Attn: {[recipientName, phone ? `(${phone})` : null].filter(Boolean).join(' ')}
         </div>
       )}
-      {(recipientName || phone) && (
-        <div className="text-[var(--text-muted)] mb-1">
-          {[recipientName, phone].filter(Boolean).join(' - ')}
+      {companyName && (
+        <div>
+          {companyName}
         </div>
       )}
       {addressLine1 && <div>{addressLine1}</div>}

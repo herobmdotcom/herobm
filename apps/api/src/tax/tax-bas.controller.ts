@@ -21,7 +21,11 @@ export class TaxBasController {
 
   @Get('bas-summary')
   @CasbinAction('read')
-  @ApiOperation({ summary: 'Get ATO BAS Summary Report Data', description: 'Returns the formatted ATO BAS summary for the specified date range' })
+  @ApiOperation({
+    summary: 'Get ATO BAS Summary Report Data',
+    description:
+      'Returns the formatted ATO BAS summary for the specified date range',
+  })
   @ApiOkResponse({
     description: 'Returns the ATO BAS Summary layout',
     type: [BasSummaryRowDto],

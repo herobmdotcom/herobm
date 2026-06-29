@@ -339,7 +339,7 @@ describe('ShipmentService', () => {
     it('should reject updating a cancelled shipment', async () => {
       await pg.db
         .update(salesOrderShipments)
-        .set({ stateCode: SHIPMENT_STATE.CANCELLED as any })
+        .set({ stateCode: SHIPMENT_STATE.CANCELLED })
         .where(
           eq(
             salesOrderShipments.shipmentId,

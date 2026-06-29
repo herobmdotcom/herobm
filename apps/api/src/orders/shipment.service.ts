@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc, and, gte } from 'drizzle-orm';
+import { eq, sql, desc, and, gte, or } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -175,7 +175,8 @@ export class ShipmentService {
             stateCode: SHIPMENT_STATE.DRAFT, // Create as draft first, then transition to dispatched
             notes: dto.notes,
             trackingNumber: dto.trackingNumber,
-            deliveryCustomerName: dto.deliveryCustomerName ?? order.deliveryCustomerName,
+            deliveryCompanyName:
+              dto.deliveryCompanyName ?? order.deliveryCompanyName,
             fulfillmentLocationId: shipmentLocationId,
             createdBy: actor,
           })
@@ -897,6 +898,7 @@ export class ShipmentService {
         createdBy: salesOrderShipments.createdBy,
         createdOn: salesOrderShipments.createdOn,
         modifiedOn: salesOrderShipments.modifiedOn,
+        deliveryCompanyName: sql<string | null>`COALESCE(${salesOrders.deliveryCompanyName}, ${coreAccounts.name})`,
         deliveryName: salesOrders.deliveryName,
         deliveryPhone: salesOrders.deliveryPhone,
         deliveryAddressLine1: salesOrders.deliveryAddressLine1,
@@ -930,11 +932,12 @@ export class ShipmentService {
           customerId: locations.locationId,
           customerName: locations.name,
           stateCode: transferOrderShipments.stateCode,
-          notes: sql<string | null>`NULL`,
+          notes: transferOrders.notes,
           trackingNumber: transferOrderShipments.trackingNumber,
           createdBy: transferOrderShipments.shippedBy,
           createdOn: transferOrderShipments.createdOn,
           modifiedOn: transferOrderShipments.shippedOn,
+          deliveryCompanyName: sql<string | null>`NULL`,
           deliveryName: locations.name,
           deliveryPhone: sql<string | null>`NULL`,
           deliveryAddressLine1: locations.addressLine1,
@@ -943,7 +946,7 @@ export class ShipmentService {
           deliveryState: locations.state,
           deliveryPostalCode: locations.postCode,
           deliveryCountry: locations.country,
-          shippingNotes: sql<string | null>`NULL`,
+          shippingNotes: transferOrders.shippingNotes,
         })
         .from(transferOrderShipments)
         .innerJoin(

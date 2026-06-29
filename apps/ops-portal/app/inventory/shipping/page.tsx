@@ -304,7 +304,7 @@ export default function ShippingPage() {
                                                         country={context.order.deliveryCountry}
                                                         phone={context.order.deliveryPhone}
                                                         recipientName={context.order.deliveryName}
-                                                        companyName={context.order.deliveryCustomerName ?? undefined}
+                                                        companyName={context.order.deliveryCompanyName ?? undefined}
                                                     />
                                                 </div>
                                             </div>

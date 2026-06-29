@@ -58,7 +58,7 @@ export interface OrderDetail {
     notes: string | null;
     discrepanciesAcknowledged?: boolean;
     shippingNotes?: string | null;
-    deliveryCustomerName?: string | null;
+    deliveryCompanyName?: string | null;
     deliveryName?: string | null;
     deliveryPhone?: string | null;
     deliveryAddressLine1?: string | null;

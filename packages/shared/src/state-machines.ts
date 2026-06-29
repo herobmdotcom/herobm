@@ -99,7 +99,6 @@ export const SHIPMENT_STATE = {
   CANCELLED: 'cancelled',
   DISPATCHED: 'dispatched',
   DRAFT: 'draft',
-  SHIPPED: 'shipped',
 } as const;
 
 export const RECONCILIATION_STATE = {
@@ -438,7 +437,6 @@ export const SALES_INVOICE_LIFECYCLE: Record<string, number> = {
 export const SHIPMENT_LIFECYCLE: Record<string, number> = {
   [SHIPMENT_STATE.CANCELLED]: 0,
   [SHIPMENT_STATE.DISPATCHED]: 1,
-  [SHIPMENT_STATE.SHIPPED]: 2,
 };
 
 export const RECONCILIATION_LIFECYCLE: Record<string, number> = {

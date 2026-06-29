@@ -24,8 +24,8 @@ interface OrderDetailsCardProps {
     customerCountry?: string;
     editShippingNotes: string;
     setEditShippingNotes: (val: string) => void;
-    editDeliveryCustomerName: string;
-    setEditDeliveryCustomerName: (val: string) => void;
+    editDeliveryCompanyName: string;
+    setEditDeliveryCompanyName: (val: string) => void;
     editDeliveryName: string;
     setEditDeliveryName: (val: string) => void;
     editDeliveryPhone: string;
@@ -64,8 +64,8 @@ export default function OrderDetailsCard({
     customerCountry,
     editShippingNotes,
     setEditShippingNotes,
-    editDeliveryCustomerName,
-    setEditDeliveryCustomerName,
+    editDeliveryCompanyName,
+    setEditDeliveryCompanyName,
     editDeliveryName,
     setEditDeliveryName,
     editDeliveryPhone,

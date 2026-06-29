@@ -276,8 +276,7 @@ export class AccountsWriteService {
     if (existing.length === 0) {
       throw new NotFoundException(`Customer '${customerId}' not found`);
     }
-
-    const currentState = existing[0].stateCode as CustomerState;
+    const currentState = existing[0].stateCode;
 
     if (currentState === newState) {
       return existing[0];

@@ -50,6 +50,7 @@ import {
   SALES_INVOICE_STATE,
   SALES_INVOICE_TRANSITIONS,
   SALES_ORDER_STATE,
+  SalesOrderState,
   getValidStates,
   getErrorMessage,
 } from '@herobm/shared';
@@ -113,10 +114,12 @@ export class SalesInvoiceService {
 
     const order = orderRows[0];
     if (
-      ![SALES_ORDER_STATE.SHIPPED, SALES_ORDER_STATE.PICKING].includes(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- State code Drizzle enum mismatch
-        order.stateCode as any,
-      )
+      !(
+        [
+          SALES_ORDER_STATE.SHIPPED,
+          SALES_ORDER_STATE.PICKING,
+        ] as SalesOrderState[]
+      ).includes(order.stateCode)
     ) {
       throw new BadRequestException(
         `Order ${order.orderNumber} must be in 'shipped' or 'picking' state to generate an invoice. Currently: '${order.stateCode}'.`,

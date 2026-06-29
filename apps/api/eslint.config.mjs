@@ -136,6 +136,16 @@ export default tseslint.config(
           // ADV-051: No Raw State Strings
           selector: "Literal[value=/^(active|inactive|archived|discontinued|draft|pending_putaway|awaiting_matching|quarantined|matched|unmatched|ambiguous)$/]:not(ImportDeclaration > Literal):not(TSLiteralType > Literal):not(CallExpression[callee.name=/^(describe|it|test|t|tCommon)$/] > Literal):not(JSXAttribute > Literal)",
           message: "ADV-051: Do not use raw string literals for state machine statuses. Import and use the appropriate constant from @herobm/shared."
+        },
+        {
+          // ADV-060: Forbid Type Assertions on State Constants
+          selector: "TSAsExpression > MemberExpression[object.name=/[A-Z_]+_STATE/]",
+          message: "ADV-060: Do not use 'as string' or other type assertions on State constants. This bypasses Drizzle's strict schema type checks."
+        },
+        {
+          // ADV-061: Forbid Type Assertions on stateCode Columns
+          selector: "CallExpression[callee.name=/^(eq|inArray|set)$/] TSAsExpression > MemberExpression[property.name='stateCode'], CallExpression[callee.name=/^(eq|inArray|set)$/] ObjectExpression > Property[key.name='stateCode'] > TSAsExpression",
+          message: "ADV-061: Do not use type assertions on stateCode columns in Drizzle queries. Ensure the schema uses .$type<SpecificState>()."
         }
       ]
     },

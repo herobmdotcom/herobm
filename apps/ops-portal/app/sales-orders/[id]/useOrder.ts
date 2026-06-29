@@ -78,7 +78,7 @@ export function useOrder(id: string) {
     const [customerCountry, setCustomerCountry] = useState<string | undefined>(undefined);
     const [customerName, setCustomerName] = useState<string>('');
     const [editShippingNotes, setEditShippingNotes] = useState('');
-    const [editDeliveryCustomerName, setEditDeliveryCustomerName] = useState('');
+    const [editDeliveryCompanyName, setEditDeliveryCompanyName] = useState('');
     const [editDeliveryName, setEditDeliveryName] = useState('');
     const [editDeliveryPhone, setEditDeliveryPhone] = useState('');
     const [editDeliveryAddressLine1, setEditDeliveryAddressLine1] = useState('');
@@ -132,7 +132,7 @@ export function useOrder(id: string) {
             setEditNotes(orderData?.notes || '');
             setEditFulfillmentLocationId(orderData?.fulfillmentLocationId || '');
             setEditShippingNotes(orderData?.shippingNotes || '');
-            setEditDeliveryCustomerName(orderData?.deliveryCustomerName || '');
+            setEditDeliveryCompanyName(orderData?.deliveryCompanyName || '');
             setEditDeliveryName(orderData?.deliveryName || '');
             setEditDeliveryPhone(orderData?.deliveryPhone || '');
             setEditDeliveryAddressLine1(orderData?.deliveryAddressLine1 || '');
@@ -239,7 +239,7 @@ export function useOrder(id: string) {
             editNotes !== (order.notes || '') ||
             editFulfillmentLocationId !== (order.fulfillmentLocationId || '') ||
             editShippingNotes !== (order.shippingNotes || '') ||
-            editDeliveryCustomerName !== (order.deliveryCustomerName || '') ||
+            editDeliveryCompanyName !== (order.deliveryCompanyName || '') ||
             editDeliveryName !== (order.deliveryName || '') ||
             editDeliveryPhone !== (order.deliveryPhone || '') ||
             editDeliveryAddressLine1 !== (order.deliveryAddressLine1 || '') ||
@@ -251,7 +251,7 @@ export function useOrder(id: string) {
         setHeaderDirty(changed);
     }, [
         editName, editPO, editNotes,        editFulfillmentLocationId, editNotes,
-        editShippingNotes, editDeliveryCustomerName, editDeliveryName, editDeliveryPhone,
+        editShippingNotes, editDeliveryCompanyName, editDeliveryName, editDeliveryPhone,
         editDeliveryAddressLine1, editDeliveryAddressLine2,
         editDeliveryCity, editDeliveryState, editDeliveryPostalCode, editDeliveryCountry,
         order
@@ -270,7 +270,7 @@ export function useOrder(id: string) {
                 notes: editNotes ?? undefined,
                 fulfillmentLocationId: editFulfillmentLocationId || undefined, // keep || for UUID to prevent "" errors
                 shippingNotes: editShippingNotes ?? undefined,
-                deliveryCustomerName: editDeliveryCustomerName ?? undefined,
+                deliveryCompanyName: editDeliveryCompanyName ?? undefined,
                 deliveryName: editDeliveryName ?? undefined,
                 deliveryPhone: editDeliveryPhone ?? undefined,
                 deliveryAddressLine1: editDeliveryAddressLine1 ?? undefined,
@@ -526,7 +526,7 @@ export function useOrder(id: string) {
         customerCountry,
         customerName,
         editShippingNotes, setEditShippingNotes,
-        editDeliveryCustomerName, setEditDeliveryCustomerName,
+        editDeliveryCompanyName, setEditDeliveryCompanyName,
         editDeliveryName, setEditDeliveryName,
         editDeliveryPhone, setEditDeliveryPhone,
         editDeliveryAddressLine1, setEditDeliveryAddressLine1,

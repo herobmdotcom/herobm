@@ -128,7 +128,7 @@ export default function NewOrderPage() {
   const [customerDeliveryAddresses, setCustomerDeliveryAddresses] = useState<api.DeliveryAddressResponseDto[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [isAddressSlideOverOpen, setIsAddressSlideOverOpen] = useState(false);
-  const [deliveryCustomerName, setDeliveryCustomerName] = useState('');
+  const [deliveryCompanyName, setDeliveryCompanyName] = useState('');
   const [deliveryName, setDeliveryName] = useState('');
   const [deliveryPhone, setDeliveryPhone] = useState('');
   const [deliveryAddressLine1, setDeliveryAddressLine1] = useState('');
@@ -218,7 +218,7 @@ export default function NewOrderPage() {
       });
 
     setShippingNotes('');
-    setDeliveryCustomerName(a.name || '');
+    setDeliveryCompanyName(a.name || '');
     setDeliveryName('');
     setDeliveryPhone('');
     setDeliveryAddressLine1('');
@@ -328,7 +328,7 @@ export default function NewOrderPage() {
         fulfillmentLocationId: fulfillmentLocationId || undefined,
         notes: notes || undefined,
         shippingNotes: shippingNotes || undefined,
-        deliveryCustomerName: deliveryCustomerName || undefined,
+        deliveryCompanyName: deliveryCompanyName || undefined,
         deliveryName: deliveryName || undefined,
         deliveryPhone: deliveryPhone || undefined,
         deliveryAddressLine1: deliveryAddressLine1 || undefined,
@@ -949,7 +949,7 @@ export default function NewOrderPage() {
                     } else {
                       const addr = customerDeliveryAddresses.find(a => a.id === val);
                       if (addr) {
-                        setDeliveryCustomerName(addr.companyName || '');
+                        setDeliveryCompanyName(addr.companyName || '');
                         setDeliveryName(addr.recipientName || '');
                         setDeliveryPhone(addr.recipientPhone || '');
                         setDeliveryAddressLine1(addr.addressLine1 || '');
@@ -975,8 +975,8 @@ export default function NewOrderPage() {
                     <input
                       className="input w-full"
                       placeholder="Company Name"
-                      value={deliveryCustomerName}
-                      onChange={(e) => setDeliveryCustomerName(e.target.value)}
+                      value={deliveryCompanyName}
+                      onChange={(e) => setDeliveryCompanyName(e.target.value)}
                     />
                   </div>
                   <input
@@ -1049,7 +1049,7 @@ export default function NewOrderPage() {
           allowUnsaved={true}
           defaultCountry={customerCountry}
           onSaved={(addr, saved) => {
-            setDeliveryCustomerName(addr.companyName || '');
+            setDeliveryCompanyName(addr.companyName || '');
             setDeliveryName(addr.recipientName || '');
             setDeliveryPhone(addr.recipientPhone || '');
             setDeliveryAddressLine1(addr.addressLine1 || '');

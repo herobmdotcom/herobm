@@ -4,6 +4,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { suppliers } from '../drizzle/herobm-core-schema';
+import { SUPPLIER_STATE } from '@herobm/shared';
 import { eq } from 'drizzle-orm';
 
 describe('SuppliersService', () => {
@@ -96,7 +97,7 @@ describe('SuppliersService', () => {
           name: 'Risk Vendor',
           currencyCode: 'EUR',
           address1Country: 'AU',
-          stateCode: 'INACTIVE',
+          stateCode: SUPPLIER_STATE.INACTIVE,
         })
         .returning();
 

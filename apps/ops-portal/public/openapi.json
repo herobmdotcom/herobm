@@ -20572,7 +20572,7 @@
           "shippingNotes": {
             "type": "string"
           },
-          "deliveryCustomerName": {
+          "deliveryCompanyName": {
             "type": "string"
           },
           "deliveryName": {
@@ -20630,7 +20630,7 @@
           "shippingNotes": {
             "type": "string"
           },
-          "deliveryCustomerName": {
+          "deliveryCompanyName": {
             "type": "string"
           },
           "deliveryName": {
@@ -20942,7 +20942,7 @@
           "notes": {
             "type": "string"
           },
-          "deliveryCustomerName": {
+          "deliveryCompanyName": {
             "type": "string"
           },
           "trackingNumber": {
@@ -20965,7 +20965,7 @@
           "notes": {
             "type": "string"
           },
-          "deliveryCustomerName": {
+          "deliveryCompanyName": {
             "type": "string"
           },
           "trackingNumber": {

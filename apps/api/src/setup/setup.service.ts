@@ -563,7 +563,10 @@ export class SetupService {
     if (colNames.includes('termsDescription')) {
       const allTerms = await this.db.select().from(tradingTerms);
       for (const term of allTerms) {
-        tradingTermsMap.set(term.code.toLowerCase(), `${term.code} - ${term.description}`);
+        tradingTermsMap.set(
+          term.code.toLowerCase(),
+          `${term.code} - ${term.description}`,
+        );
       }
     }
 

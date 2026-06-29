@@ -512,6 +512,13 @@
       "when": 1782739779671,
       "tag": "0072_add_transfer_receipt_putaway_status",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1782742414180,
+      "tag": "0073_dusty_thunderbolt_ross",
+      "breakpoints": true
     }
   ]
 }

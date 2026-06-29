@@ -306,7 +306,7 @@ describe('FxRevaluationService', () => {
         outstandingAmount: '1000',
         currencyCode: 'USD',
         exchangeRate: '1.40', // 1000 USD = 1400 AUD
-        stateCode: 'approved',
+        stateCode: 'invoiced',
         invoiceDate: new Date('2026-01-15'),
       });
 

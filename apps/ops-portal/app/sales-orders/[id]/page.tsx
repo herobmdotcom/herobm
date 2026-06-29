@@ -217,7 +217,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
         customerCountry,
         customerName,
         editShippingNotes, setEditShippingNotes,
-        editDeliveryCustomerName, setEditDeliveryCustomerName,
+        editDeliveryCompanyName, setEditDeliveryCompanyName,
         editDeliveryName, setEditDeliveryName,
         editDeliveryPhone, setEditDeliveryPhone,
         editDeliveryAddressLine1, setEditDeliveryAddressLine1,
@@ -419,8 +419,8 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         customerCountry={customerCountry}
                         editShippingNotes={editShippingNotes}
                         setEditShippingNotes={setEditShippingNotes}
-                        editDeliveryCustomerName={editDeliveryCustomerName}
-                        setEditDeliveryCustomerName={setEditDeliveryCustomerName}
+                        editDeliveryCompanyName={editDeliveryCompanyName}
+                        setEditDeliveryCompanyName={setEditDeliveryCompanyName}
                         editDeliveryName={editDeliveryName}
                         setEditDeliveryName={setEditDeliveryName}
                         editDeliveryPhone={editDeliveryPhone}
@@ -1273,7 +1273,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     } else {
                                         const addr = customerDeliveryAddresses.find(a => a.id === e.target.value);
                                         if (addr) {
-                                            setEditDeliveryCustomerName(addr.companyName || '');
+                                            setEditDeliveryCompanyName(addr.companyName || '');
                                             setEditDeliveryName(addr.recipientName || '');
                                             setEditDeliveryPhone(addr.recipientPhone || '');
                                             setEditDeliveryAddressLine1(addr.addressLine1 || '');
@@ -1330,8 +1330,8 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         className="input w-full"
                                         disabled={!isOrderDetailsEditable}
                                         placeholder="Company Name"
-                                        value={editDeliveryCustomerName}
-                                        onChange={e => setEditDeliveryCustomerName(e.target.value)}
+                                        value={editDeliveryCompanyName}
+                                        onChange={e => setEditDeliveryCompanyName(e.target.value)}
                                         onBlur={() => saveHeader()}
                                     />
                                 </div>
@@ -1468,7 +1468,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     allowUnsaved={true}
                     defaultCountry={customerCountry}
                     existingData={{
-                        companyName: editDeliveryCustomerName,
+                        companyName: editDeliveryCompanyName,
                         recipientName: editDeliveryName,
                         recipientPhone: editDeliveryPhone,
                         addressLine1: editDeliveryAddressLine1,
@@ -1479,7 +1479,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         country: editDeliveryCountry,
                     }}
                     onSaved={(addr, saved) => {
-                        setEditDeliveryCustomerName(addr.companyName || '');
+                        setEditDeliveryCompanyName(addr.companyName || '');
                         setEditDeliveryName(addr.recipientName || '');
                         setEditDeliveryPhone(addr.recipientPhone || '');
                         setEditDeliveryAddressLine1(addr.addressLine1 || '');
@@ -1492,7 +1492,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                             customerDeliveryAddresses.push(addr as api.DeliveryAddressResponseDto);
                         }
                         saveHeader({
-                            deliveryCustomerName: addr.companyName || undefined,
+                            deliveryCompanyName: addr.companyName || undefined,
                             deliveryName: addr.recipientName || undefined,
                             deliveryPhone: addr.recipientPhone || undefined,
                             deliveryAddressLine1: addr.addressLine1 || undefined,

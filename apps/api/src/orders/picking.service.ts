@@ -827,7 +827,7 @@ export class PickingService {
       throw new BadRequestException(`Pick ${pickId} not found`);
     }
 
-    const allowed = SALES_ORDER_PICK_TRANSITIONS[pick.stateCode as string];
+    const allowed = SALES_ORDER_PICK_TRANSITIONS[pick.stateCode];
     if (!allowed || !allowed.includes(newState)) {
       throw new BadRequestException(
         `Cannot transition pick from '${pick.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
