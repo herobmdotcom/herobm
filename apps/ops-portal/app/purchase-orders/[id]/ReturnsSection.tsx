@@ -224,7 +224,7 @@ function ReturnCard({
             const bIdx = orderLines.findIndex((ol) => ol.purchaseOrderLineId === b.purchaseOrderLineId);
             return aIdx - bIdx;
           })}
-          keyField="returnLineId"
+          keyExtractor={(row) => row.returnLineId}
           mobileCard={(rl, idx) => {
             const orderLine = orderLines.find(
               (ol) => ol.purchaseOrderLineId === rl.purchaseOrderLineId,

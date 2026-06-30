@@ -197,6 +197,15 @@ export default function Sidebar() {
             { href: '/admin/developers/webhooks-api', label: 'Docs: Webhooks' },
           ]
         },
+        {
+          href: '/admin/email/outbox',
+          label: 'Email',
+          icon: 'mail',
+          subItems: [
+            { href: '/admin/email/outbox', label: 'Outbox' },
+            { href: '/admin/email/settings', label: 'SMTP Settings' },
+          ]
+        },
         { 
           href: '/admin/import/csv', 
           label: 'Import', 

@@ -61,6 +61,27 @@ export interface InventoryGap {
   locationId: string | null;
 }
 
+export const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+export const LEGACY_CUSTOM_LINE_ID = '00000000-0000-4000-8000-000000000000';
+
+/**
+ * Centralized check to determine if a line represents a physical product
+ * that requires picking, shipping, or physical return.
+ */
+export function isPhysicalProductLine(line: { productId?: string | null, productType?: string | null }): boolean {
+  if (!line) return false;
+  const isCustom = !line.productId || line.productId === CUSTOM_LINE_ID || line.productId === LEGACY_CUSTOM_LINE_ID;
+  if (isCustom) return false;
+  
+  // If productType is explicitly set, only 'inventory' is physical
+  if (line.productType) {
+    return line.productType === 'inventory';
+  }
+  
+  // If productType is missing but it has a valid productId, assume physical (legacy fallback)
+  return true;
+}
+
 /**
  * Centralized logic for calculating inventory shortages.
  * Handles string-to-number conversion and location fallback.
@@ -85,16 +106,13 @@ export function calculateInventoryGaps(
   }
 
   const gaps: InventoryGap[] = [];
-  const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
-
   for (const line of lines) {
-    const isCustom = !line.productId || line.productId === CUSTOM_LINE_ID;
+    const isPhysical = isPhysicalProductLine(line);
     
-    // Only check physical inventory products, and exclude Kit parent items
-    const isInventory = line.productType === 'inventory' || (!line.productType && !isCustom);
+    // Exclude Kit parent items from gaps (components are calculated separately)
     const isKitParent = line.structureType === 'kit';
     
-    if (!isInventory || isCustom || isKitParent || !line.productId) continue;
+    if (!isPhysical || isKitParent || !line.productId) continue;
 
     const pid = line.productId;
     const locId = line.fulfillmentLocationId || headerLocationId;

@@ -5,9 +5,11 @@
  * Core API System endpoints
  * OpenAPI spec version: 1.0
  */
+import type { UpdateReturnLineDtoResolution } from './updateReturnLineDtoResolution';
 
 export interface UpdateReturnLineDto {
   quantityReturned?: string;
   reason?: string;
   returnFee?: string;
+  resolution?: UpdateReturnLineDtoResolution;
 }

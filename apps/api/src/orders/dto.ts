@@ -8,9 +8,11 @@ import {
   IsUUID,
   IsEmail,
   IsBoolean,
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { RETURN_RESOLUTION, type ReturnResolution } from '@herobm/shared';
 
 export class ReturnLineResponseDto {
   @ApiProperty() lineId!: string;
@@ -22,6 +24,8 @@ export class ReturnResponseDto {
   @ApiProperty() returnId!: string;
   @ApiProperty() returnNumber!: string;
   @ApiProperty() stateCode!: string;
+  @ApiPropertyOptional() locationId?: string;
+  @ApiPropertyOptional() locationName?: string;
   @ApiPropertyOptional() notes?: string;
   @ApiProperty({ type: () => [ReturnLineResponseDto] })
   lines!: ReturnLineResponseDto[];
@@ -245,6 +249,10 @@ export class CreateReturnLineDto {
   reason?: string;
 
   @IsOptional()
+  @IsIn(Object.values(RETURN_RESOLUTION))
+  resolution?: ReturnResolution;
+
+  @IsOptional()
   @IsNumberString()
   returnFee?: string;
 }
@@ -253,6 +261,10 @@ export class CreateReturnDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsUUID()
+  locationId?: string;
 
   @IsArray()
   @ValidateNested({ each: true })
@@ -281,6 +293,10 @@ export class AddReturnLineDto {
   @IsOptional()
   @IsNumberString()
   returnFee?: string;
+
+  @IsOptional()
+  @IsIn(['refund', 'replace'])
+  resolution?: 'refund' | 'replace';
 }
 
 export class UpdateReturnLineDto {
@@ -295,6 +311,10 @@ export class UpdateReturnLineDto {
   @IsOptional()
   @IsNumberString()
   returnFee?: string;
+
+  @IsOptional()
+  @IsIn(['refund', 'replace'])
+  resolution?: 'refund' | 'replace';
 }
 
 export class ReceiveReturnLineDto {

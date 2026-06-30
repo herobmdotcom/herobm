@@ -51,9 +51,9 @@ import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import { BackordersService } from '../orders/backorders.service';
 import { PurchaseOrdersService } from '../purchase-orders/purchase-orders.service';
 import {
-  RECEIPT_STATE,
+  GOODS_RECEIVED_STATE,
   GoodsReceivedState,
-  RECEIPT_TRANSITIONS,
+  GOODS_RECEIVED_TRANSITIONS,
   PURCHASE_ORDER_STATE,
   PURCHASE_ORDER_TRANSITIONS,
   BACKORDER_STATE,
@@ -66,7 +66,7 @@ import {
   BIN_TYPE,
 } from '@herobm/shared';
 
-const VALID_GRN_STATES = getValidStates(RECEIPT_TRANSITIONS);
+const VALID_GRN_STATES = getValidStates(GOODS_RECEIVED_TRANSITIONS);
 
 @Injectable()
 export class GoodsReceivedService {
@@ -138,7 +138,7 @@ export class GoodsReceivedService {
           locationId: createDto.locationId,
           packingSlipNumber: createDto.packingSlipNumber,
           notes: createDto.notes,
-          stateCode: RECEIPT_STATE.RECEIVED,
+          stateCode: GOODS_RECEIVED_STATE.RECEIVED,
           createdBy: userId,
         })
         .returning();
@@ -569,7 +569,7 @@ export class GoodsReceivedService {
         );
       }
 
-      if (receipt.stateCode === RECEIPT_STATE.CANCELLED) {
+      if (receipt.stateCode === GOODS_RECEIVED_STATE.CANCELLED) {
         throw new BadRequestException('Receipt is already cancelled.');
       }
 
@@ -779,7 +779,7 @@ export class GoodsReceivedService {
       // 6. Update GR state
       await this.changeReceiptState(
         goodsReceivedId,
-        RECEIPT_STATE.CANCELLED,
+        GOODS_RECEIVED_STATE.CANCELLED,
         userId,
         tx,
       );
@@ -819,7 +819,7 @@ export class GoodsReceivedService {
       throw new NotFoundException(`Receipt ${receiptId} not found`);
     }
 
-    const allowed = RECEIPT_TRANSITIONS[receipt.stateCode];
+    const allowed = GOODS_RECEIVED_TRANSITIONS[receipt.stateCode];
     if (!allowed || !allowed.includes(newState)) {
       throw new BadRequestException(
         `Cannot transition receipt from '${receipt.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,

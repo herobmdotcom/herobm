@@ -4,12 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"vite\" \"tsx src/agents/basic-agent.ts\"",
     "build": "tsc -b && vite build",
+    "start": "concurrently \"tsx src/server/server.ts\" \"tsx src/agents/basic-agent.ts\"",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@herobm/sdk": "^0.1.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

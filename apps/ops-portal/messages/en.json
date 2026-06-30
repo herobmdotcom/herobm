@@ -206,6 +206,38 @@
         "saved": "Discount rule saved"
       }
     },
+    "emailOutbox": {
+      "actions": {
+        "dismiss": "Dismiss",
+        "inProgress": "...",
+        "retry": "Retry"
+      },
+      "autoRefresh": "Auto-refresh",
+      "columns": {
+        "date": "Date",
+        "entityType": "Entity Type",
+        "retries": "Retries",
+        "status": "Status",
+        "subject": "Subject",
+        "to": "To"
+      },
+      "confirmDismiss": "Are you sure you want to dismiss this failed email?",
+      "errors": {
+        "dismissFailed": "Failed to dismiss email: ",
+        "loadFailed": "Failed to load emails",
+        "retryFailed": "Failed to retry email: "
+      },
+      "loading": "Loading emails...",
+      "noEmails": "No emails found",
+      "refresh": "Refresh",
+      "status": {
+        "dismissed": "Dismissed",
+        "failed": "Failed",
+        "sent": "Sent"
+      },
+      "subtitle": "Monitor and manage outbound emails",
+      "title": "Email Outbox"
+    },
     "eventQueue": {
       "actions": {
         "clear": "Clear",
@@ -1269,6 +1301,7 @@
     "unknown": "Unknown",
     "unknownProduct": "Unknown Product",
     "updated": "Updated",
+    "viewDetails": "View Details",
     "yes": "Yes"
   },
   "confirm": {
@@ -1531,7 +1564,7 @@
       "readyToShip": "Ready to ship",
       "shipped": "Fully shipped"
     },
-    "title": "Picking & Shipping"
+    "title": "Fulfillment"
   },
   "generalLedger": {
     "reconciliations": {
@@ -2003,6 +2036,8 @@
       "editLocation": "Edit Location",
       "editZone": "Edit Zone",
       "fields": {
+        "addressLine1": "Address Line 1",
+        "addressLine2": "Address Line 2",
         "binNumber": "Bin Number",
         "binType": "Bin Type",
         "bonded": "Bonded Bin",
@@ -2010,7 +2045,9 @@
         "consignment": "Consignment Stock",
         "country": "Country",
         "flags": "Flags",
+        "postalCode": "Postal Code",
         "source": "Source",
+        "stateOrProvince": "State / Province",
         "unavailable": "Unavailable (Locked)",
         "zoneCode": "Zone Code",
         "zoneName": "Zone Name"

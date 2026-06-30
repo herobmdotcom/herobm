@@ -533,6 +533,27 @@
       "when": 1782744000000,
       "tag": "0075_drop_redundant_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1782848148074,
+      "tag": "0076_add_resolution",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1782851095450,
+      "tag": "0077_add_return_location",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1782851095451,
+      "tag": "0078_locations_address",
+      "breakpoints": true
     }
   ]
 }

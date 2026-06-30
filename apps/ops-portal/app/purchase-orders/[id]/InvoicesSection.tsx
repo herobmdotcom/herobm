@@ -213,7 +213,7 @@ export default function InvoicesSection({
                                     <DataTable
                                         columns={columns}
                                         data={linePricing}
-                                        keyField={(item) => item.il.invoiceLineId || (item.il as unknown as Record<string, string>).lineId || item.il.purchaseOrderLineId}
+                                        keyExtractor={(item) => item.il.invoiceLineId || (item.il as unknown as Record<string, string>).lineId || item.il.purchaseOrderLineId}
                                         mobileCard={({ il, orderLine, disc, taxRate, pricing }) => (
                                             <MobileLineItemCard
                                                 title={orderLine?.productNumber || il.productNumber || il.productId?.substring(0, 8) || '—'}

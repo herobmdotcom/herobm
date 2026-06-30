@@ -273,6 +273,7 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   'sales_order.tax_calculated',
   'sales_order.unarchived',
   'sales_order.updated',
+  'sales_return.created',
   'sales_return.status_changed',
   'sales_return.updated',
   'shipment.shipment_created',

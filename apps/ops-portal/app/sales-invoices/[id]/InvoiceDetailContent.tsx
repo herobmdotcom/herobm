@@ -338,7 +338,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                 {tCommon('notesCardHeading')}
               </label>
               {invoice.notes ? (
-                <div className="text-sm bg-gray-50 p-3 rounded">{invoice.notes}</div>
+                <div className="text-sm">{invoice.notes}</div>
               ) : (
                 <div className="text-sm" style={{ color: 'var(--text-muted)' }}>—</div>
               )}
@@ -521,8 +521,8 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
         title={emailDialogConfig.title}
         defaultSubjectPrefix={emailDialogConfig.prefix}
         documentName={emailDialogConfig.docName}
-        targetId={emailDialogConfig.targetId}
-        contextSlug={emailDialogConfig.contextSlug}
+        targetId={emailDialogConfig.targetId || ''}
+        contextSlug={emailDialogConfig.contextSlug || ''}
         onClose={() => setEmailDialogConfig(prev => ({ ...prev, isOpen: false }))}
         onSuccess={() => {
           setEmailDialogConfig(prev => ({ ...prev, isOpen: false }));

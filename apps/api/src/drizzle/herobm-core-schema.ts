@@ -327,6 +327,7 @@ export const salesOrderReturns = herobmCore.table(
       .$type<ReturnState>()
       .notNull()
       .default(RETURN_STATE.DRAFT),
+    locationId: uuid('location_id').references(() => locations.locationId),
     notes: text('notes'),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -360,6 +361,9 @@ export const salesOrderReturnLines = herobmCore.table(
     quantityReturned: numeric('quantity_returned').notNull(),
     quantityReceived: numeric('quantity_received').default('0'),
     reason: text('reason'),
+    resolution: text('resolution', { enum: ['refund', 'replace'] })
+      .notNull()
+      .default('refund'),
     returnFee: numeric('return_fee').default('0'), // absolute fee in order currency
     putawayStatus: text('putaway_status', {
       enum: [
@@ -1013,10 +1017,11 @@ export const locations = herobmCore.table('locations', {
   code: text('code').notNull().unique(), // e.g. "SIN"
   name: text('name').notNull(),
   addressLine1: text('address_line_1'),
+  addressLine2: text('address_line_2'),
   city: text('city'),
-  state: text('state'),
+  stateOrProvince: text('state_or_province'),
   country: text('country'),
-  postCode: text('post_code'),
+  postalCode: text('postal_code'),
   sourceId: text('source_id').unique(),
   source: text('source').notNull().default('app'),
   createdBy: text('created_by'),

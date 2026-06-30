@@ -3,16 +3,14 @@
 cd "$(dirname "$0")/.."
 
 PROFILE=""
-ENABLE_SWAGGER="false"
-ENABLE_MCP="false"
-ENABLE_DBT_DOCS="false"
+ENABLE_SWAGGER="true"
+ENABLE_MCP="true"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -Profile) PROFILE="$2"; shift ;;
         -WithSwagger|--with-swagger) ENABLE_SWAGGER="true" ;;
-        -Mcp|--mcp) ENABLE_MCP="true" ;;
-        -WithDbt|--with-dbt) ENABLE_DBT_DOCS="true" ;;
+        -NoMcp|--no-mcp) ENABLE_MCP="false" ;;
     esac
     shift
 done
@@ -73,12 +71,8 @@ if [ "$ENABLE_MCP" == "true" ]; then
     MCP_PID=$!
 fi
 
-if [ "$ENABLE_DBT_DOCS" == "true" ]; then
-    echo -e "\e[36mdbt docs will be served\e[0m"
-    (cd pipelines/abm_transform && ../../.venv/bin/dbt docs serve) &
-    DBT_PID=$!
-fi
+
 
 # Cleanup when user terminates the script
-trap "kill $API_PID $FE_PID $MCP_PID $DBT_PID 2>/dev/null" EXIT
+trap "kill $API_PID $FE_PID 2>/dev/null" EXIT
 wait

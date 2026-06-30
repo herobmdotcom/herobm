@@ -133,6 +133,8 @@ down-portal-api:
 
 
 
+
+
 # Queue Worker (Outbox relay)
 build-worker:
 	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
@@ -146,6 +148,10 @@ down-redis:
 
 up-maildev:
 	$(COMPOSE_CMD) --profile dev up -d maildev
+
+down-maildev:
+	$(COMPOSE_CMD) --profile dev stop maildev
+	-podman rm -f maildev
 
 # Run absolutely everything
 up-all: build-worker check-postgres-logs
@@ -251,10 +257,7 @@ import-legacy:
 
 # --- Schema Reference & Docs ---
 
-dev-docs-dbt:
-	"$(VENV_PYTHON)" tools/dbt_docs_generate.py
-
-dev-docs-schema: dev-docs-dbt
+dev-docs-schema:
 	"$(VENV_PYTHON)" tools/generate_schema_reference.py
 
 dev-docs-api: build-api
@@ -363,7 +366,7 @@ test-api-cov:
 	npm run test:cov -w apps/api
 
 test-api-e2e:
-	@echo "[e2e-preflight] ENV_FILE=$(ENV_FILE) EFFECTIVE_PROFILE=$(EFFECTIVE_PROFILE) POSTGRES_DB=$(POSTGRES_DB) USE_PGLITE=$(USE_PGLITE)"
+	@echo "[e2e-preflight] ENV_FILE=$(ENV_FILE) EFFECTIVE_PROFILE=$(EFFECTIVE_PROFILE) POSTGRES_DB=$(POSTGRES_DB) USE_PGLITE=$(USE_PGLITE) TEST_API_URL=$(TEST_API_URL)"
 	npm run $(TEST_E2E_TARGET) -w apps/api
 
 # --- Portal (unified, containerised) ---
@@ -526,6 +529,7 @@ test-single:
 test-structural:
 	@python infra/tests/test_docker_env_alignment.py
 	@npx tsx infra/test-utils/run-structural.ts
+	@npx knip
 
 test-heavy:
 	@powershell -ExecutionPolicy Bypass -File scripts/run-heavy.ps1

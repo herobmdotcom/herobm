@@ -24,11 +24,15 @@ export class CreateLocationDto {
 
   @IsOptional()
   @IsString()
+  addressLine2?: string;
+
+  @IsOptional()
+  @IsString()
   city?: string;
 
   @IsOptional()
   @IsString()
-  state?: string;
+  stateOrProvince?: string;
 
   @IsOptional()
   @IsString()
@@ -36,7 +40,7 @@ export class CreateLocationDto {
 
   @IsOptional()
   @IsString()
-  postCode?: string;
+  postalCode?: string;
 }
 
 export class CreateZoneDto {
@@ -86,10 +90,11 @@ export class LocationResponseDto {
   code!: string;
   name!: string;
   addressLine1?: string;
+  addressLine2?: string;
   city?: string;
-  state?: string;
+  stateOrProvince?: string;
   country?: string;
-  postCode?: string;
+  postalCode?: string;
   createdAt!: Date;
   updatedAt!: Date;
 }

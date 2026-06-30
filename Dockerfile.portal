@@ -26,7 +26,7 @@ COPY packages/ ./packages/
 # Only copy package.json for the portal app right now to cache deps
 COPY apps/ops-portal/package*.json ./apps/ops-portal/
 
-RUN npm ci
+RUN npm install
 
 # npm ci in monorepo workspaces often skips platform-specific optional
 # native binaries. Explicitly install all required ones for the build

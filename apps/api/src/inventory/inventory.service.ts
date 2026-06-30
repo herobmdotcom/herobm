@@ -1474,8 +1474,14 @@ export class InventoryService {
         }
 
         const [[product], [destBin]] = await Promise.all([
-          tx.select({ name: products.name }).from(products).where(eq(products.productId, productId)),
-          tx.select({ binNumber: bins.binNumber }).from(bins).where(eq(bins.binId, lineDto.destinationBinId))
+          tx
+            .select({ name: products.name })
+            .from(products)
+            .where(eq(products.productId, productId)),
+          tx
+            .select({ binNumber: bins.binNumber })
+            .from(bins)
+            .where(eq(bins.binId, lineDto.destinationBinId)),
         ]);
 
         await emitEvent(tx as unknown as DrizzleDB, {
@@ -1857,9 +1863,18 @@ export class InventoryService {
       });
 
       const [[productObj], [sourceBinObj], [targetBinObj]] = await Promise.all([
-        tx.select({ name: products.name }).from(products).where(eq(products.productId, productId)),
-        tx.select({ binNumber: bins.binNumber }).from(bins).where(eq(bins.binId, sourceBin.binId)),
-        tx.select({ binNumber: bins.binNumber }).from(bins).where(eq(bins.binId, targetBinId))
+        tx
+          .select({ name: products.name })
+          .from(products)
+          .where(eq(products.productId, productId)),
+        tx
+          .select({ binNumber: bins.binNumber })
+          .from(bins)
+          .where(eq(bins.binId, sourceBin.binId)),
+        tx
+          .select({ binNumber: bins.binNumber })
+          .from(bins)
+          .where(eq(bins.binId, targetBinId)),
       ]);
 
       await emitEvent(tx as unknown as DrizzleDB, {

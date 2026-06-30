@@ -859,10 +859,12 @@ export class PickingService {
           .select({ name: coreProducts.name })
           .from(coreProducts)
           .where(eq(coreProducts.productId, pick.productId)),
-        pick.binId ? tx
-          .select({ binNumber: bins.binNumber })
-          .from(bins)
-          .where(eq(bins.binId, pick.binId)) : Promise.resolve([null]),
+        pick.binId
+          ? tx
+              .select({ binNumber: bins.binNumber })
+              .from(bins)
+              .where(eq(bins.binId, pick.binId))
+          : Promise.resolve([null]),
       ]);
       await emitEvent(tx, {
         entityType: EntityType.WAREHOUSE,

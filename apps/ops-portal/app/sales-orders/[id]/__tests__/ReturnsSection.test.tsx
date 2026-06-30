@@ -110,6 +110,8 @@ const draftReturn: OrderReturn = {
         returnLineId: 'rl-1',
         salesOrderLineId: 'L1',
         quantityReturned: '2',
+        quantityReceived: '0',
+        resolution: 'refund',
         reason: 'Defective',
         returnFee: '10.00',
     }],

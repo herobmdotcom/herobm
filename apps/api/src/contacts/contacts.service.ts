@@ -53,7 +53,11 @@ export class ContactsService {
         entityId: dto.entityId,
         eventType: EventType.UPDATED,
         entityDisplayName: 'Customer',
-        payload: { action: 'contact_created', contactId: newContact.id, contactName: newContact.fullName },
+        payload: {
+          action: 'contact_created',
+          contactId: newContact.id,
+          contactName: newContact.fullName,
+        },
         actor: 'system',
       });
 
@@ -106,7 +110,11 @@ export class ContactsService {
       entityId: contact.customerId,
       eventType: EventType.UPDATED,
       entityDisplayName: 'Customer',
-      payload: { action: 'contact_updated', contactId: id, contactName: updatedContact.fullName },
+      payload: {
+        action: 'contact_updated',
+        contactId: id,
+        contactName: updatedContact.fullName,
+      },
       actor: 'system',
     });
 
@@ -129,7 +137,11 @@ export class ContactsService {
       entityId: contact.customerId,
       eventType: EventType.UPDATED,
       entityDisplayName: 'Customer',
-      payload: { action: 'contact_deleted', contactId: id, contactName: contact.fullName },
+      payload: {
+        action: 'contact_deleted',
+        contactId: id,
+        contactName: contact.fullName,
+      },
       actor: 'system',
     });
   }

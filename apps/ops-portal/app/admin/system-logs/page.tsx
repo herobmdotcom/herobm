@@ -82,7 +82,9 @@ export default function SystemLogsPage() {
 
   return (
     <>
-      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
+      <style>{`main { background-color: #ffffff !important; }`}</style>
+      <div className="w-full p-6 lg:p-8 flex flex-col">
+        <div style={{ maxWidth: 1200, width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 'calc(100vh - 150px)' }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4 shrink-0">
           <div>
@@ -192,6 +194,7 @@ export default function SystemLogsPage() {
           )}
         </div>
       </div>
+    </div>
     </>
   );
 }

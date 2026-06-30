@@ -7,10 +7,10 @@ import {
   ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ReturnsWriteService } from './returns-write.service';
-import { GlobalReturnListResponseDto } from './dto';
+import { GlobalReturnListResponseDto, ReturnResponseDto } from './dto';
 import {
   CasbinGuard,
   CasbinResource,
@@ -43,5 +43,16 @@ export class GlobalReturnsController {
       locationId,
     );
     return { data, meta: { total: data.length } };
+  }
+
+  @Get(':id')
+  @ApiOkResponse({ type: ReturnResponseDto })
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find Return by ID',
+    description: 'Retrieve a specific sales return by its ID.',
+  })
+  async findOne(@Param('id') id: string) {
+    return this.returnsWriteService.findOne(id);
   }
 }

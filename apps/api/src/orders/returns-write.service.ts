@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
+import { OrdersWriteService } from './orders-write.service';
+import { randomUUID } from 'crypto';
 import { eq, sql, and, desc, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -23,6 +25,7 @@ import {
   products as coreProducts,
   customers as coreAccounts,
   customerGroups,
+  locations,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -42,6 +45,7 @@ import {
   RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
   getValidStates,
   PUTAWAY_STATUS,
+  RETURN_RESOLUTION,
 } from '@herobm/shared';
 import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
@@ -52,6 +56,7 @@ import {
   AddReturnLineDto,
   UpdateReturnLineDto,
   ReceiveReturnDto,
+  CreateOrderDto,
 } from './dto';
 
 const VALID_RETURN_STATES = getValidStates(RETURN_STATE_TRANSITIONS);
@@ -66,6 +71,7 @@ export class ReturnsWriteService {
     private readonly glService: GlService,
     private readonly appConfig: AppConfigService,
     private readonly creditNoteService: SalesCreditNoteService,
+    private readonly ordersWriteService: OrdersWriteService,
   ) {}
 
   private readonly logger = new Logger(ReturnsWriteService.name);
@@ -198,6 +204,7 @@ export class ReturnsWriteService {
             returnNumber,
             salesOrderId,
             stateCode: RETURN_STATE.DRAFT,
+            locationId: dto.locationId || order.fulfillmentLocationId,
             notes: dto.notes,
             createdBy: actor,
           })
@@ -209,6 +216,7 @@ export class ReturnsWriteService {
           salesOrderLineId: line.salesOrderLineId,
           quantityReturned: line.quantityReturned,
           reason: line.reason,
+          resolution: line.resolution || RETURN_RESOLUTION.REFUND,
           returnFee: line.returnFee ?? '0',
         }));
 
@@ -224,6 +232,18 @@ export class ReturnsWriteService {
           payload: {
             returnId: ret.returnId,
             returnNumber,
+            lineCount: lineValues.length,
+          },
+          actor,
+        });
+
+        await emitEvent(innerTx, {
+          entityType: EntityType.SALES_RETURN,
+          entityId: ret.returnId,
+          eventType: EventType.CREATED,
+          entityDisplayName: returnNumber,
+          payload: {
+            salesOrderId,
             lineCount: lineValues.length,
           },
           actor,
@@ -281,9 +301,18 @@ export class ReturnsWriteService {
             entityDisplayName: order.orderNumber,
             payload: {
               returnId,
+              returnNumber: existing.returnNumber,
               changes: audit.changes,
-              previousValues: audit.previousValues,
             },
+            actor,
+          });
+
+          await emitEvent(innerTx, {
+            entityType: EntityType.SALES_RETURN,
+            entityId: returnId,
+            eventType: EventType.UPDATED,
+            entityDisplayName: existing.returnNumber,
+            payload: audit.changes,
             actor,
           });
         }
@@ -332,9 +361,15 @@ export class ReturnsWriteService {
           .returning();
 
         if (newState === RETURN_STATE.PROCESSED) {
-          throw new BadRequestException(
-            `Returns can only be moved to PROCESSED by creating a Credit Note.`,
+          // 1. Generate Credit Note for refunded items
+          await this.creditNoteService.createCreditNote(
+            { returnId, lines: [] },
+            actor,
+            innerTx,
           );
+
+          // 2. Generate Zero-Dollar Replacement Order for replaced items
+          await this.createReplacementOrder(existing, returnId, actor, innerTx);
         }
 
         const [order] = await innerTx
@@ -352,6 +387,18 @@ export class ReturnsWriteService {
             from: existing.stateCode,
             to: newState,
             returnNumber: existing.returnNumber,
+          },
+          actor,
+        });
+
+        await emitEvent(innerTx, {
+          entityType: EntityType.SALES_RETURN,
+          entityId: returnId,
+          eventType: EventType.STATUS_CHANGED,
+          entityDisplayName: existing.returnNumber,
+          payload: {
+            from: existing.stateCode,
+            to: newState,
           },
           actor,
         });
@@ -428,6 +475,7 @@ export class ReturnsWriteService {
             salesOrderLineId: dto.salesOrderLineId,
             quantityReturned: dto.quantityReturned,
             reason: dto.reason,
+            resolution: dto.resolution || RETURN_RESOLUTION.REFUND,
             returnFee: dto.returnFee ?? '0',
           })
           .returning();
@@ -463,7 +511,63 @@ export class ReturnsWriteService {
   }
 
   /**
-   * Receive return lines (partial or full)
+   * Generates a zero-dollar replacement order for any returned items marked as 'replace'.
+   */
+  private async createReplacementOrder(
+    existingReturn: typeof salesOrderReturns.$inferSelect,
+    returnId: string,
+    actor: string,
+    tx: DrizzleDB,
+  ) {
+    const replaceLines = await tx
+      .select({
+        productId: salesOrderLineItems.productId,
+        quantityReturned: salesOrderReturnLines.quantityReturned,
+        pricePerUnit: salesOrderLineItems.pricePerUnit,
+      })
+      .from(salesOrderReturnLines)
+      .innerJoin(
+        salesOrderLineItems,
+        eq(
+          salesOrderReturnLines.salesOrderLineId,
+          salesOrderLineItems.salesOrderLineId,
+        ),
+      )
+      .where(
+        and(
+          eq(salesOrderReturnLines.returnId, returnId),
+          eq(salesOrderReturnLines.resolution, RETURN_RESOLUTION.REPLACE),
+        ),
+      );
+
+    if (replaceLines.length === 0) return;
+
+    const [originalOrder] = await tx
+      .select()
+      .from(salesOrders)
+      .where(eq(salesOrders.salesOrderId, existingReturn.salesOrderId));
+
+    const newOrderDto: CreateOrderDto = {
+      salesOrderId: randomUUID(),
+      customerId: originalOrder.customerId!,
+      customerOrderNumber: originalOrder.customerOrderNumber
+        ? `${originalOrder.customerOrderNumber}-REP`
+        : `REP-${existingReturn.returnNumber}`,
+      notes: `Replacement order for return ${existingReturn.returnNumber}`,
+      lines: replaceLines.map((rl) => ({
+        productId: rl.productId!,
+        quantity: rl.quantityReturned,
+        pricePerUnit: rl.pricePerUnit || '0',
+        discountPercentage: '100', // 100% discount for replacements
+      })),
+    };
+
+    // Note: this creates its own transaction. Since it inserts independent records, it will not deadlock.
+    await this.ordersWriteService.create(newOrderDto, actor);
+  }
+
+  /**
+   * Fetch a return by ID (throws NotFoundException if missing).
    */
   async receiveReturnLines(
     returnId: string,
@@ -872,14 +976,87 @@ export class ReturnsWriteService {
    * Get a single return with its lines.
    */
   async findOne(returnId: string) {
-    const ret = await this.findReturn(returnId);
+    const rows = await this.db
+      .select({
+        returnId: salesOrderReturns.returnId,
+        returnNumber: salesOrderReturns.returnNumber,
+        salesOrderId: salesOrderReturns.salesOrderId,
+        orderNumber: salesOrders.orderNumber,
+        customerId: salesOrders.customerId,
+        customerName: coreAccounts.name,
+        stateCode: salesOrderReturns.stateCode,
+        locationId: salesOrderReturns.locationId,
+        locationName: locations.name,
+        createdOn: salesOrderReturns.createdOn,
+        createdBy: salesOrderReturns.createdBy,
+        notes: salesOrderReturns.notes,
+        currencyCode: salesOrders.currencyCode,
+      })
+      .from(salesOrderReturns)
+      .innerJoin(
+        salesOrders,
+        eq(salesOrderReturns.salesOrderId, salesOrders.salesOrderId),
+      )
+      .leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.customerId),
+      )
+      .leftJoin(
+        locations,
+        eq(salesOrderReturns.locationId, locations.locationId),
+      )
+      .where(eq(salesOrderReturns.returnId, returnId))
+      .limit(1);
+
+    if (rows.length === 0) {
+      throw new NotFoundException(`Return '${returnId}' not found`);
+    }
+    const ret = rows[0];
 
     const lines = await this.db
-      .select()
+      .select({
+        returnLineId: salesOrderReturnLines.returnLineId,
+        salesOrderLineId: salesOrderReturnLines.salesOrderLineId,
+        quantityReturned: salesOrderReturnLines.quantityReturned,
+        reason: salesOrderReturnLines.reason,
+        resolution: salesOrderReturnLines.resolution,
+        returnFee: salesOrderReturnLines.returnFee,
+        productId: salesOrderLineItems.productId,
+        productNumber: coreProducts.productNumber,
+        description: coreProducts.name,
+      })
       .from(salesOrderReturnLines)
+      .innerJoin(
+        salesOrderLineItems,
+        eq(
+          salesOrderReturnLines.salesOrderLineId,
+          salesOrderLineItems.salesOrderLineId,
+        ),
+      )
+      .innerJoin(
+        coreProducts,
+        eq(salesOrderLineItems.productId, coreProducts.productId),
+      )
       .where(eq(salesOrderReturnLines.returnId, returnId));
 
-    return { ...ret, lines };
+    const events = await this.db
+      .select()
+      .from(salesEvents)
+      .where(eq(salesEvents.entityId, returnId))
+      .orderBy(desc(salesEvents.createdOn));
+
+    const [creditNote] = await this.db
+      .select({ creditNoteNumber: salesCreditNotes.creditNoteNumber })
+      .from(salesCreditNotes)
+      .where(eq(salesCreditNotes.returnId, returnId))
+      .limit(1);
+
+    return {
+      ...ret,
+      lines,
+      events,
+      creditNoteNumber: creditNote?.creditNoteNumber ?? null,
+    };
   }
 
   /**

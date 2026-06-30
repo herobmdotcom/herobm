@@ -28,7 +28,7 @@ interface DeliveryAddressSlideOverProps {
   onSaved: (address: api.DeliveryAddressResponseDto, saved: boolean) => void;
 }
 
-export const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> = ({
+const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> = ({
   isOpen,
   onClose,
   customerId,

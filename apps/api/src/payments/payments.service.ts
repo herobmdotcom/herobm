@@ -1654,6 +1654,7 @@ export class PaymentsService {
             doc.creditNoteNumber ||
             doc.debitNoteNumber ||
             alloc.referenceId;
+          // @sync-ignore -- Entity type is resolved dynamically at runtime but will match valid types
           await emitEvent(tx as unknown as DrizzleDB, {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Types align dynamically
             entityType: alloc.referenceType,

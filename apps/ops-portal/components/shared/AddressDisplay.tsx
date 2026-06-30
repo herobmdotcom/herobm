@@ -12,7 +12,7 @@ export interface AddressDisplayProps {
   recipientName?: string;
 }
 
-export function getCountryName(countryCode?: string): string {
+function getCountryName(countryCode?: string): string {
   if (!countryCode) return '';
   try {
     const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
@@ -22,7 +22,7 @@ export function getCountryName(countryCode?: string): string {
   }
 }
 
-export const AddressDisplay: React.FC<AddressDisplayProps> = ({
+const AddressDisplay: React.FC<AddressDisplayProps> = ({
   companyName,
   addressLine1,
   addressLine2,

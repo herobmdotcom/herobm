@@ -38,6 +38,11 @@ import {
   getErrorMessage,
   getValidStates,
 } from '@herobm/shared';
+import { getAvailableToCredit } from '../orders/order-math.utils';
+import {
+  getCommittedPerLine,
+  getInvoicedPerLine,
+} from '../orders/shipment-helpers';
 
 const VALID_CN_STATES = getValidStates(SALES_CREDIT_NOTE_TRANSITIONS);
 
@@ -206,11 +211,54 @@ export class SalesCreditNoteService {
         }
       }
 
-      // 4. Fetch return lines + join to order lines for pricing + tax
+      // 4. Fetch return lines (ONLY refunds) + join to order lines for pricing + tax
       const returnLines = await innerTx
         .select()
         .from(salesOrderReturnLines)
-        .where(eq(salesOrderReturnLines.returnId, returnId));
+        .where(
+          and(
+            eq(salesOrderReturnLines.returnId, returnId),
+            eq(salesOrderReturnLines.resolution, 'refund'),
+          ),
+        );
+
+      if (returnLines.length === 0) {
+        this.logger.log(
+          'No refund lines found on return — skipping credit note generation',
+        );
+        return null;
+      }
+
+      // Pre-fetch shipping and invoicing stats for the order
+      const shippedQtyMap = await getCommittedPerLine(
+        innerTx,
+        ret.salesOrderId,
+      );
+      const invoicedQtyMap = await getInvoicedPerLine(
+        innerTx,
+        ret.salesOrderId,
+      );
+
+      const priorCredits = await innerTx
+        .select({
+          salesOrderLineId: salesCreditNoteLines.salesOrderLineId,
+          quantityCredited: salesCreditNoteLines.quantityCredited,
+        })
+        .from(salesCreditNoteLines)
+        .innerJoin(
+          salesCreditNotes,
+          eq(salesCreditNoteLines.creditNoteId, salesCreditNotes.creditNoteId),
+        )
+        .where(eq(salesCreditNotes.salesOrderId, ret.salesOrderId));
+
+      const creditedQtyMap = new Map<string, number>();
+      for (const pc of priorCredits) {
+        const current = creditedQtyMap.get(pc.salesOrderLineId!) || 0;
+        creditedQtyMap.set(
+          pc.salesOrderLineId!,
+          current + parseFloat(pc.quantityCredited),
+        );
+      }
 
       let totalCreditAmount = 0;
       let totalTaxAmount = 0;
@@ -260,8 +308,23 @@ export class SalesCreditNoteService {
 
         const unitPrice = parseFloat(orderLine.pricePerUnit || '0');
         const disc = parseFloat(orderLine.discountPercentage || '0');
-        const qty = parseFloat(rl.quantityReturned || '0');
+        const refundedQty = parseFloat(rl.quantityReturned || '0');
         const fee = parseFloat(rl.returnFee || '0');
+
+        const shipped = shippedQtyMap.get(rl.salesOrderLineId) || 0;
+        const invoiced = invoicedQtyMap.get(rl.salesOrderLineId) || 0;
+        const previouslyCredited = creditedQtyMap.get(rl.salesOrderLineId) || 0;
+
+        const creditableQty = getAvailableToCredit(
+          shipped,
+          invoiced,
+          refundedQty,
+          previouslyCredited,
+        );
+
+        if (creditableQty <= 0) continue;
+
+        const qty = creditableQty;
 
         // Resolve per-line tax rate
         let taxRate = 0;
@@ -286,7 +349,7 @@ export class SalesCreditNoteService {
 
         cnLineValues.push({
           salesOrderLineId: rl.salesOrderLineId,
-          quantityCredited: rl.quantityReturned,
+          quantityCredited: String(qty),
           pricePerUnit: orderLine.pricePerUnit || '0',
           amount: pricing.amount.toFixed(2),
           taxAmount: pricing.tax.toFixed(2),
@@ -541,10 +604,12 @@ export class SalesCreditNoteService {
         actor,
       });
 
-      const [customer] = order.customerId ? await innerTx
-        .select({ name: coreAccounts.name })
-        .from(coreAccounts)
-        .where(eq(coreAccounts.customerId, order.customerId)) : [null];
+      const [customer] = order.customerId
+        ? await innerTx
+            .select({ name: coreAccounts.name })
+            .from(coreAccounts)
+            .where(eq(coreAccounts.customerId, order.customerId))
+        : [null];
 
       // 9. Outbox event
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle transaction type mismatch with Outbox emitter

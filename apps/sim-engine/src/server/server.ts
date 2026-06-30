@@ -27,6 +27,7 @@ let currentState: 'READY' | 'WAITING_FOR_AGENTS' = 'READY';
 let currentEvent: SimEvent | null = null;
 let registeredAgents: Set<string> = new Set();
 let pendingAcks: Set<string> = new Set();
+let agentLogs: { timestamp: string; agentId: string; message: string; level: string }[] = [];
 
 const FAKETIME_PATH = process.env.FAKETIME_TIMESTAMP_FILE || '/etc/faketime/faketime.rc';
 
@@ -52,7 +53,8 @@ app.get('/api/state', (_req, res) => {
     currentEvent,
     registeredAgents: Array.from(registeredAgents),
     pendingAcks: Array.from(pendingAcks),
-    upcomingEvents: timeline.getAllEvents()
+    upcomingEvents: timeline.getAllEvents(),
+    agentLogs: agentLogs.slice(-100) // return last 100 logs
   });
 });
 
@@ -92,6 +94,15 @@ app.post('/api/sim/register', (req, res) => {
   const { agentId } = req.body;
   if (!agentId) return res.status(400).json({ error: 'agentId required' });
   registeredAgents.add(agentId);
+  res.json({ success: true });
+});
+
+app.post('/api/sim/logs', (req, res) => {
+  const { agentId, message, level = 'info' } = req.body;
+  if (!agentId || !message) return res.status(400).json({ error: 'agentId and message required' });
+  agentLogs.push({ timestamp: new Date().toISOString(), agentId, message, level });
+  // Keep logs bounded
+  if (agentLogs.length > 500) agentLogs = agentLogs.slice(-500);
   res.json({ success: true });
 });
 

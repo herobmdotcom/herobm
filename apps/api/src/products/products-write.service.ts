@@ -562,7 +562,7 @@ export class ProductsWriteService {
         tx
           .select({ binNumber: bins.binNumber })
           .from(bins)
-          .where(eq(bins.binId, existing[0].binId))
+          .where(eq(bins.binId, existing[0].binId)),
       ]);
 
       await emitEvent(tx, {
@@ -570,8 +570,8 @@ export class ProductsWriteService {
         entityId: existing[0].productId,
         eventType: EventType.UPDATED,
         entityDisplayName: product.name,
-        payload: { 
-          action: 'unlinked_default_bin', 
+        payload: {
+          action: 'unlinked_default_bin',
           binId: existing[0].binId,
           binNumber: bin?.binNumber,
         },

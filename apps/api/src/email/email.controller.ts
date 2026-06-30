@@ -20,7 +20,7 @@ import {
 } from '@nestjs/swagger';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
 import { emailOutbox } from '../drizzle/herobm-core-schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, or } from 'drizzle-orm';
 import { AuthGuard } from '@nestjs/passport';
 import {
   CasbinGuard,
@@ -31,6 +31,10 @@ import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
 import { SystemResource } from '@herobm/shared';
 import { emitEvent } from '../common/emit-event';
 import { EventType, EntityType } from '../common/event-types';
+import { AppConfigService } from '../settings/app-config.service';
+import { EncryptionService } from '../common/encryption.service';
+import * as nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 @ApiTags('System')
 @ApiBearerAuth()
@@ -38,7 +42,11 @@ import { EventType, EntityType } from '../common/event-types';
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
 export class EmailController {
-  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private db: DrizzleDB,
+    private appConfigService: AppConfigService,
+    private encryptionService: EncryptionService,
+  ) {}
 
   @Get()
   @CasbinAction('read')
@@ -85,6 +93,7 @@ export class EmailController {
         status: emailOutbox.status,
         retries: emailOutbox.retries,
         lastError: emailOutbox.lastError,
+        nextRetryAt: emailOutbox.nextRetryAt,
         createdAt: emailOutbox.createdAt,
         processedAt: emailOutbox.processedAt,
         attachments: emailOutbox.attachments,
@@ -115,11 +124,21 @@ export class EmailController {
         lastError: null,
         nextRetryAt: null,
       })
-      .where(and(eq(emailOutbox.id, id), eq(emailOutbox.status, 'failed')))
+      .where(
+        and(
+          eq(emailOutbox.id, id),
+          or(
+            eq(emailOutbox.status, 'failed'),
+            eq(emailOutbox.status, 'pending'),
+          ),
+        ),
+      )
       .returning();
 
     if (!updated) {
-      throw new BadRequestException('Email not found or not in failed state');
+      throw new BadRequestException(
+        'Email not found or not in a retryable state',
+      );
     }
 
     return updated;
@@ -141,11 +160,21 @@ export class EmailController {
       const [updatedEmail] = await tx
         .update(emailOutbox)
         .set({ status: 'dismissed' })
-        .where(and(eq(emailOutbox.id, id), eq(emailOutbox.status, 'failed')))
+        .where(
+          and(
+            eq(emailOutbox.id, id),
+            or(
+              eq(emailOutbox.status, 'failed'),
+              eq(emailOutbox.status, 'pending'),
+            ),
+          ),
+        )
         .returning();
 
       if (!updatedEmail) {
-        throw new BadRequestException('Email not found or not in failed state');
+        throw new BadRequestException(
+          'Email not found or not in a dismissible state',
+        );
       }
 
       const payload = {
@@ -184,5 +213,42 @@ export class EmailController {
     });
 
     return updated;
+  }
+
+  @Get('test-connection')
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'test-connection',
+    description: 'Test SMTP connection',
+  })
+  @ApiOkResponse({ schema: { type: 'object', properties: {} } })
+  async testConnection() {
+    const settings = this.appConfigService.getAppSettingsRaw();
+    if (!settings || !settings.smtpHost) {
+      throw new BadRequestException('SMTP configuration is missing.');
+    }
+
+    let smtpPass = '';
+    if (settings.smtpPassEncrypted) {
+      smtpPass = this.encryptionService.decrypt(settings.smtpPassEncrypted);
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: settings.smtpHost,
+      port: Number(settings.smtpPort) || 587,
+      secure: Number(settings.smtpPort) === 465,
+      auth: {
+        user: settings.smtpUser,
+        pass: smtpPass,
+      },
+    } as SMTPTransport.Options);
+
+    try {
+      await transporter.verify();
+      return { success: true, message: 'SMTP connection successful' };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new BadRequestException(`SMTP connection failed: ${message}`);
+    }
   }
 }

@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 import Link from 'next/link';
 import type { OrderDetail } from './types';
-import { SALES_ORDER_STATE } from '@herobm/shared';
+import { SALES_ORDER_STATE, DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
 interface OrderDetailsCardProps {
     order: OrderDetail;
@@ -42,7 +42,7 @@ interface OrderDetailsCardProps {
     setEditDeliveryPostalCode: (val: string) => void;
     editDeliveryCountry: string;
     setEditDeliveryCountry: (val: string) => void;
-    onEmailDocumentClick: (hookSlug: string, title: string, prefix: string, docName: string, targetId?: string, contextSlug?: string) => void;
+    onEmailDocumentClick: (hookSlug: string, title: string, prefix: string, docName: string, targetId: string, contextSlug: string) => void;
     reportError: (err: unknown, context: string) => void;
     setError: (err: string) => void;
 }
@@ -89,7 +89,7 @@ export default function OrderDetailsCard({
     const tSales = useTranslations('salesOrders');
     const tCommon = useTranslations('common');
     return (
-        <div className="card">
+        <div id="details-section" className="card">
             <div className="flex items-center justify-between gap-4 mb-4">
                 <h2 className="section-heading mb-0">
                     { }
@@ -102,23 +102,25 @@ export default function OrderDetailsCard({
                     {(order.stateCode === SALES_ORDER_STATE.DRAFT || order.stateCode === SALES_ORDER_STATE.QUOTED) && (
                         <button
                             className="btn btn-secondary btn-sm"
-                            onClick={() => onEmailDocumentClick('sales-order-quote', 'Email Quote', 'Quote', 'Quote')}
+                            onClick={() => onEmailDocumentClick('sales-order-quote', 'Email Quote', 'Quote', 'Quote', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
                         >
+                            <span className="material-symbols-outlined text-base">mail</span>
                             Email Quote
                         </button>
                     )}
-                    {(order.stateCode !== SALES_ORDER_STATE.DRAFT && order.stateCode !== SALES_ORDER_STATE.QUOTED) && (
+                    {order.stateCode !== SALES_ORDER_STATE.DRAFT && (
                         <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => onEmailDocumentClick('sales-order-confirmation', 'Email Confirmation', 'Order Confirmation', 'Confirmation')}
+                            className="btn btn-secondary btn-sm flex items-center gap-1"
+                            onClick={() => onEmailDocumentClick('sales-order-confirmation', 'Email Confirmation', 'Order Confirmation', 'Confirmation', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
                         >
+                            <span className="material-symbols-outlined text-base">mail</span>
                             Email Confirmation
                         </button>
                     )}
-                    {(order.stateCode === SALES_ORDER_STATE.CONFIRMED || order.stateCode === SALES_ORDER_STATE.PICKING) && (
+                    {order.stateCode !== SALES_ORDER_STATE.DRAFT && order.stateCode !== SALES_ORDER_STATE.QUOTED && (
                         <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => onEmailDocumentClick('pro-forma-invoice', 'Email Pro-Forma Invoice', 'Pro-Forma Invoice', 'Pro-Forma')}
+                            className="btn btn-secondary btn-sm flex items-center gap-1"
+                            onClick={() => onEmailDocumentClick('pro-forma-invoice', 'Email Pro-Forma Invoice', 'Pro-Forma Invoice', 'Pro-Forma', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
                         >
                             Email Pro-Forma
                         </button>

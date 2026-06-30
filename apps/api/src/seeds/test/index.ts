@@ -45,8 +45,8 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
       name: 'Test Location',
       addressLine1: '123 Test St',
       city: 'Test City',
-      state: 'TX',
-      postCode: '12345',
+      stateOrProvince: 'TX',
+      postalCode: '12345',
       country: 'USA',
     })
     .onConflictDoNothing();

@@ -7239,6 +7239,38 @@
         ]
       }
     },
+    "/sales-returns/{id}": {
+      "get": {
+        "description": "Retrieve a specific sales return by its ID.",
+        "operationId": "GlobalReturnsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReturnResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Find Return by ID",
+        "tags": [
+          "Sales Returns"
+        ]
+      }
+    },
     "/allocations/open": {
       "get": {
         "description": "Retrieve pending or awaiting-receipt backorders across all sales orders.",
@@ -10968,6 +11000,35 @@
           }
         ],
         "summary": "Dismiss a failed email",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/emails/test-connection": {
+      "get": {
+        "description": "Test SMTP connection",
+        "operationId": "EmailController_testConnection",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "test-connection",
         "tags": [
           "System"
         ]
@@ -20762,6 +20823,13 @@
           "reason": {
             "type": "string"
           },
+          "resolution": {
+            "type": "string",
+            "enum": [
+              "refund",
+              "replace"
+            ]
+          },
           "returnFee": {
             "type": "string"
           }
@@ -20776,6 +20844,10 @@
         "properties": {
           "notes": {
             "type": "string"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
           },
           "lines": {
             "type": "array",
@@ -20817,6 +20889,12 @@
             "type": "string"
           },
           "stateCode": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "locationName": {
             "type": "string"
           },
           "notes": {
@@ -20873,6 +20951,13 @@
           },
           "returnFee": {
             "type": "string"
+          },
+          "resolution": {
+            "type": "string",
+            "enum": [
+              "refund",
+              "replace"
+            ]
           }
         },
         "required": [
@@ -20891,6 +20976,13 @@
           },
           "returnFee": {
             "type": "string"
+          },
+          "resolution": {
+            "type": "string",
+            "enum": [
+              "refund",
+              "replace"
+            ]
           }
         }
       },
@@ -24378,16 +24470,19 @@
           "addressLine1": {
             "type": "string"
           },
+          "addressLine2": {
+            "type": "string"
+          },
           "city": {
             "type": "string"
           },
-          "state": {
+          "stateOrProvince": {
             "type": "string"
           },
           "country": {
             "type": "string"
           },
-          "postCode": {
+          "postalCode": {
             "type": "string"
           }
         },
@@ -24411,16 +24506,19 @@
           "addressLine1": {
             "type": "string"
           },
+          "addressLine2": {
+            "type": "string"
+          },
           "city": {
             "type": "string"
           },
-          "state": {
+          "stateOrProvince": {
             "type": "string"
           },
           "country": {
             "type": "string"
           },
-          "postCode": {
+          "postalCode": {
             "type": "string"
           },
           "createdAt": {
@@ -24452,16 +24550,19 @@
           "addressLine1": {
             "type": "string"
           },
+          "addressLine2": {
+            "type": "string"
+          },
           "city": {
             "type": "string"
           },
-          "state": {
+          "stateOrProvince": {
             "type": "string"
           },
           "country": {
             "type": "string"
           },
-          "postCode": {
+          "postalCode": {
             "type": "string"
           }
         }

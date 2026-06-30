@@ -6,4 +6,4 @@
  * OpenAPI spec version: 1.0
  */
 
-export type BankStatementControllerConfirmMatch200 = { [key: string]: unknown };
+export type EmailControllerTestConnection200 = { [key: string]: unknown };

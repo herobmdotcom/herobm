@@ -32,8 +32,12 @@ interface Location {
   locationId: string;
   code: string;
   name: string;
+  addressLine1: string | null;
+  addressLine2: string | null;
   city: string | null;
+  stateOrProvince: string | null;
   country: string | null;
+  postalCode: string | null;
   source: string;
   zones: Zone[];
 }
@@ -574,18 +578,22 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
   const t = useTranslations('common');
   const tLoc = useTranslations('inventory.locations');
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ code: '', name: '', city: '', country: '' });
+  const [formData, setFormData] = useState({ code: '', name: '', addressLine1: '', addressLine2: '', city: '', stateOrProvince: '', country: '', postalCode: '' });
 
   useEffect(() => {
     if (editingLocation) {
       setFormData({ 
         code: editingLocation.code, 
         name: editingLocation.name, 
+        addressLine1: editingLocation.addressLine1 || '',
+        addressLine2: editingLocation.addressLine2 || '',
         city: editingLocation.city || '', 
-        country: editingLocation.country || '' 
+        stateOrProvince: editingLocation.stateOrProvince || '',
+        country: editingLocation.country || '',
+        postalCode: editingLocation.postalCode || ''
       });
     } else {
-      setFormData({ code: '', name: '', city: '', country: '' });
+      setFormData({ code: '', name: '', addressLine1: '', addressLine2: '', city: '', stateOrProvince: '', country: '', postalCode: '' });
     }
   }, [editingLocation, isOpen]);
 
@@ -636,6 +644,22 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
           />
         </div>
         <div className="flex flex-col gap-1.5">
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.addressLine1')}</label>
+          <input 
+            className="input" 
+            value={formData.addressLine1} 
+            onChange={e => setFormData({...formData, addressLine1: e.target.value})}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.addressLine2')}</label>
+          <input 
+            className="input" 
+            value={formData.addressLine2} 
+            onChange={e => setFormData({...formData, addressLine2: e.target.value})}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
           <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.city')}</label>
           <input 
             className="input" 
@@ -644,11 +668,27 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
           />
         </div>
         <div className="flex flex-col gap-1.5">
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.stateOrProvince')}</label>
+          <input 
+            className="input" 
+            value={formData.stateOrProvince} 
+            onChange={e => setFormData({...formData, stateOrProvince: e.target.value})}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
           <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.country')}</label>
           <input 
             className="input" 
             value={formData.country} 
             onChange={e => setFormData({...formData, country: e.target.value})}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.postalCode')}</label>
+          <input 
+            className="input" 
+            value={formData.postalCode} 
+            onChange={e => setFormData({...formData, postalCode: e.target.value})}
           />
         </div>
         <div className="flex justify-end gap-3 mt-4">

@@ -5,14 +5,12 @@ cd "$(dirname "$0")/.."
 PROFILE=""
 ENABLE_SWAGGER="true"
 ENABLE_MCP="true"
-ENABLE_DBT_DOCS="false"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -Profile) PROFILE="$2"; shift ;;
         -NoSwagger|--no-swagger) ENABLE_SWAGGER="false" ;;
         -NoMcp|--no-mcp) ENABLE_MCP="false" ;;
-        -WithDbt|--with-dbt) ENABLE_DBT_DOCS="true" ;;
     esac
     shift
 done
@@ -58,21 +56,20 @@ echo -e "\e[36mPortal will start on port $FE_PORT\e[0m"
 # The pipeline log dir Needs to be absolute or relative correctly
 LOG_DIR="$(pwd)/logs"
 
+
+
 # Start API in background
 eval "env ENV_FILE='$ENV_FILE' PORT=$API_PORT PIPELINE_LOG_DIR='$LOG_DIR' $ENV_EXPORTS npm run start:dev -w apps/api &"
 API_PID=$!
 
-# Start FE in foreground
+
+# Start FE in background
 eval "env ENV_FILE='$ENV_FILE' API_URL='http://localhost:$API_PORT' $ENV_EXPORTS npm run dev:local -w apps/ops-portal -- -p $FE_PORT &"
 FE_PID=$!
 
 
-if [ "$ENABLE_DBT_DOCS" == "true" ]; then
-    echo -e "\e[36mdbt docs will be served\e[0m"
-    (cd pipelines/abm_transform && ../../.venv/bin/dbt docs serve) &
-    DBT_PID=$!
-fi
+
 
 # Cleanup when user terminates the script
-trap "kill $API_PID $FE_PID $MCP_PID $DBT_PID 2>/dev/null" EXIT
+trap "kill $API_PID $FE_PID 2>/dev/null" EXIT
 wait

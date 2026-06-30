@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import {
   Injectable,
   Inject,
@@ -25,6 +26,8 @@ import {
   glJournalLines,
   tradingTerms,
   systemEvents,
+  salesOrderReturns,
+  salesOrderReturnLines,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -53,7 +56,9 @@ import {
   SalesOrderState,
   getValidStates,
   getErrorMessage,
+  RETURN_STATE,
 } from '@herobm/shared';
+import { getAvailableToInvoice } from '../orders/order-math.utils';
 
 const VALID_INVOICE_STATES = getValidStates(SALES_INVOICE_TRANSITIONS);
 
@@ -308,6 +313,34 @@ export class SalesInvoiceService {
     // Fetch shipped quantities strictly natively to enforce invoicing bounds
     const shippedQtyMap = await getCommittedPerLine(this.db, salesOrderId);
 
+    // Fetch processed refunds to ensure we do not over-invoice
+    const processedRefunds = await this.db
+      .select({
+        salesOrderLineId: salesOrderReturnLines.salesOrderLineId,
+        quantityReturned: salesOrderReturnLines.quantityReturned,
+      })
+      .from(salesOrderReturnLines)
+      .innerJoin(
+        salesOrderReturns,
+        eq(salesOrderReturnLines.returnId, salesOrderReturns.returnId),
+      )
+      .where(
+        and(
+          eq(salesOrderReturns.salesOrderId, salesOrderId),
+          eq(salesOrderReturns.stateCode, RETURN_STATE.PROCESSED),
+          eq(salesOrderReturnLines.resolution, 'refund'),
+        ),
+      );
+
+    const refundedQtyByLine = new Map<string, number>();
+    for (const retLine of processedRefunds) {
+      const current = refundedQtyByLine.get(retLine.salesOrderLineId) || 0;
+      refundedQtyByLine.set(
+        retLine.salesOrderLineId,
+        current + parseFloat(retLine.quantityReturned),
+      );
+    }
+
     // 3. Compute the strictly typed AR payload bounds natively
     let rawTotal = 0;
     let rawTax = 0;
@@ -349,6 +382,8 @@ export class SalesInvoiceService {
         shippedQty = orderedQty;
       }
 
+      const refundedQty = refundedQtyByLine.get(line.salesOrderLineId) || 0;
+
       // Determine how much to invoice dynamically
       let qtyToInvoice = 0;
       if (dto.lines) {
@@ -357,8 +392,12 @@ export class SalesInvoiceService {
         );
         qtyToInvoice = reqLine ? reqLine.quantityToInvoice : 0;
       } else {
-        // Default fallback logic natively caps at strictly the shipped quantities
-        qtyToInvoice = Math.max(0, shippedQty - prevInvoicedQty);
+        // Default fallback logic natively caps at strictly the shipped quantities minus invoiced and refunded
+        qtyToInvoice = getAvailableToInvoice(
+          shippedQty,
+          prevInvoicedQty,
+          refundedQty,
+        );
       }
 
       if (qtyToInvoice <= 0) {
@@ -368,9 +407,14 @@ export class SalesInvoiceService {
       // We allow strict bounds locally natively
       // If there are rounding issues we may need to tune this, but mathematically
       // we check for precision mathematically:
-      if (prevInvoicedQty + qtyToInvoice > shippedQty + 0.001) {
+      const availableToInvoice = getAvailableToInvoice(
+        shippedQty,
+        prevInvoicedQty,
+        refundedQty,
+      );
+      if (qtyToInvoice > availableToInvoice + 0.001) {
         throw new BadRequestException(
-          `Cannot invoice more than shipped quantity for line ${line.lineNumber}. Requested: ${qtyToInvoice}, Remaining Shipped: ${Math.max(0, shippedQty - prevInvoicedQty)}`,
+          `Cannot invoice more than available quantity for line ${line.lineNumber}. Requested: ${qtyToInvoice}, Remaining: ${availableToInvoice}`,
         );
       }
 
@@ -512,6 +556,7 @@ export class SalesInvoiceService {
       const [invoice] = await tx
         .insert(salesInvoices)
         .values({
+          invoiceId: randomUUID(),
           invoiceNumber,
           salesOrderId,
           totalAmount: String(combinedTotal), // AR takes the whole amount dynamically
@@ -846,7 +891,7 @@ export class SalesInvoiceService {
         createdOn: salesInvoices.createdOn,
         dueDate: salesInvoices.dueDate,
         invoiceDate: salesInvoices.invoiceDate,
-        notes: salesOrders.notes, // Or if salesInvoices has its own notes
+        notes: salesInvoices.notes,
         earlyPaymentDiscount: salesInvoices.earlyPaymentDiscount,
         earlyPaymentDiscountDays: salesInvoices.earlyPaymentDiscountDays,
         termsDescription: salesInvoices.termsDescription,

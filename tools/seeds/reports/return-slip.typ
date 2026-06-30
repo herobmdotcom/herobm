@@ -29,10 +29,6 @@
   gutter: 10pt,
   [
     #text(12pt, weight: "semibold")[#data.header.orderNumber] \
-    #if data.header.name != "" [
-      #v(-0.1cm)
-      #text(9pt, fill: luma(120))[#data.header.name]
-    ]
     #if "returnMeta" in data [
       #v(0.1cm)
       #text(10pt, weight: "semibold")[#data.returnMeta.returnNumber]
@@ -62,13 +58,34 @@
       row-gutter: 8pt,
       column-gutter: 12pt,
       text(9pt, weight: "bold", fill: luma(80))[Date:], data.header.orderDate,
-      text(9pt, weight: "bold", fill: luma(80))[Customer PO:], if data.header.customerOrderNumber != "" [#data.header.customerOrderNumber] else [—],
-      text(9pt, weight: "bold", fill: luma(80))[Currency:], data.header.currencyCode,
+      text(9pt, weight: "bold", fill: luma(80))[Customer PO:], if data.header.customerOrderNumber != "" [#data.header.customerOrderNumber] else [—]
     )
   ]
 )
 
-#v(1cm)
+#v(0.6cm)
+
+// ── Return To Info ─────────────────────────────────────────────────────────
+#if "returnToAddress" in data and data.returnToAddress != none [
+  #grid(
+    columns: (1fr),
+    gutter: 5pt,
+    [
+      #text(9pt, weight: "bold", fill: luma(80))[RETURN TO] \
+      #v(0.1cm)
+      #text(11pt, weight: "semibold")[#data.returnToAddress.name] \
+      #if data.returnToAddress.addressLine1 != "" [#text(10pt)[#data.returnToAddress.addressLine1] \]
+      #if data.returnToAddress.addressLine2 != "" [#text(10pt)[#data.returnToAddress.addressLine2] \]
+      #if data.returnToAddress.city != "" or data.returnToAddress.stateOrProvince != "" or data.returnToAddress.postalCode != "" [
+        #text(10pt)[#data.returnToAddress.city #data.returnToAddress.stateOrProvince #data.returnToAddress.postalCode] \
+      ]
+      #if data.returnToAddress.country != "" [#text(10pt)[#data.returnToAddress.country] \]
+    ]
+  )
+  #v(0.6cm)
+] else [
+  #v(1cm)
+]
 
 // ── Table: Order Lines ──────────────────────────────────────────────────────
 #table(

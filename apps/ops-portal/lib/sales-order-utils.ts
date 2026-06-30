@@ -1,4 +1,4 @@
-import type { OrderLine, SalesInvoice } from '@/app/sales-orders/[id]/types';
+import type { OrderLine, SalesInvoice, OrderReturn } from '@/app/sales-orders/[id]/types';
 
 /**
  * A picking line summary — shape mirrors the API response.
@@ -31,6 +31,7 @@ export function calculateInvoiceableQuantities(
     orderLines: OrderLine[],
     invoices: SalesInvoice[],
     pickingLines: PickingLine[] | undefined | null,
+    returns?: OrderReturn[],
 ): InvoiceableQty[] {
     return orderLines
         .map((line) => {
@@ -43,6 +44,15 @@ export function calculateInvoiceableQuantities(
                 return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
             }, 0);
 
+            // Sum already-refunded across all processed returns
+            const refundedQty = (returns || []).reduce((sum, ret) => {
+                if (ret.stateCode !== 'processed') return sum;
+                const retLine = ret.lines?.find(
+                    (rl) => rl.salesOrderLineId === line.salesOrderLineId && rl.resolution === 'refund',
+                );
+                return sum + (retLine ? parseFloat(retLine.quantityReturned || '0') : 0);
+            }, 0);
+
             // Find shipped from picking
             const pLine = pickingLines?.find(
                 (pl) => pl.salesOrderLineId === line.salesOrderLineId,
@@ -52,7 +62,7 @@ export function calculateInvoiceableQuantities(
                     ? parseFloat(pLine.quantityShipped)
                     : 0;
 
-            const maxQty = Math.max(0, shippedQty - invoicedQty);
+            const maxQty = Math.max(0, shippedQty - invoicedQty - refundedQty);
 
             return {
                 salesOrderLineId: line.salesOrderLineId,

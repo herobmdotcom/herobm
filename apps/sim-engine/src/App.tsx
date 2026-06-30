@@ -7,6 +7,7 @@ interface SimState {
   registeredAgents: string[];
   pendingAcks: string[];
   upcomingEvents: any[];
+  agentLogs: { timestamp: string; agentId: string; message: string; level: string }[];
 }
 
 function App() {
@@ -121,38 +122,71 @@ function App() {
           )}
         </div>
 
-        {/* Right Column: Timeline */}
-        <div style={{ flex: 1, backgroundColor: '#2d2d2d', padding: '1.5rem', borderRadius: '8px' }}>
-          <h2>Upcoming Timeline ({simState.upcomingEvents.length} events)</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-            {simState.upcomingEvents.map((evt: any) => (
-              <div key={evt.id} style={{ background: '#3f3f46', padding: '1rem', borderRadius: '4px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <strong>{evt.type}</strong>
-                  <span style={{ color: '#a1a1aa' }}>{new Date(evt.timestamp).toLocaleString()}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
-                  <div style={{ fontSize: '0.875rem', color: '#d4d4d8' }}>
-                    ID: {evt.id}
+        {/* Right Column: Timeline & Logs */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
+          <div style={{ backgroundColor: '#2d2d2d', padding: '1.5rem', borderRadius: '8px' }}>
+            <h2>Agent Logs</h2>
+            <div style={{ 
+              backgroundColor: '#000', 
+              padding: '1rem', 
+              borderRadius: '4px', 
+              marginTop: '1rem', 
+              height: '300px', 
+              overflowY: 'auto',
+              fontFamily: 'monospace',
+              fontSize: '0.875rem'
+            }}>
+              {simState.agentLogs?.length === 0 ? (
+                <div style={{ color: '#6b7280' }}>No agent logs yet...</div>
+              ) : (
+                simState.agentLogs?.map((log, idx) => (
+                  <div key={idx} style={{ 
+                    marginBottom: '0.25rem',
+                    color: log.level === 'error' ? '#ef4444' : log.level === 'warn' ? '#f59e0b' : '#d1d5db'
+                  }}>
+                    <span style={{ color: '#6b7280', marginRight: '0.5rem' }}>{new Date(log.timestamp).toLocaleTimeString()}</span>
+                    <span style={{ color: '#8b5cf6', marginRight: '0.5rem' }}>[{log.agentId}]</span>
+                    {log.message}
                   </div>
-                  <button 
-                    onClick={() => toggleExpand(evt.id)}
-                    style={{ background: 'transparent', color: '#3b82f6', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}
-                  >
-                    {expandedEventId === evt.id ? 'Hide Details' : 'Show Details'}
-                  </button>
-                </div>
-                {expandedEventId === evt.id && (
-                  <pre style={{ background: '#000', padding: '1rem', borderRadius: '4px', overflowX: 'auto', marginTop: '1rem', fontSize: '0.875rem' }}>
-                    {JSON.stringify(evt.payload, null, 2)}
-                  </pre>
-                )}
-              </div>
-            ))}
-            {simState.upcomingEvents.length === 0 && (
-              <p style={{ color: '#a1a1aa' }}>Timeline is empty. Generate an epoch.</p>
-            )}
+                ))
+              )}
+            </div>
           </div>
+
+          <div style={{ backgroundColor: '#2d2d2d', padding: '1.5rem', borderRadius: '8px' }}>
+            <h2>Upcoming Timeline ({simState.upcomingEvents.length} events)</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+              {simState.upcomingEvents.map((evt: any) => (
+                <div key={evt.id} style={{ background: '#3f3f46', padding: '1rem', borderRadius: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <strong>{evt.type}</strong>
+                    <span style={{ color: '#a1a1aa' }}>{new Date(evt.timestamp).toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                    <div style={{ fontSize: '0.875rem', color: '#d4d4d8' }}>
+                      ID: {evt.id}
+                    </div>
+                    <button 
+                      onClick={() => toggleExpand(evt.id)}
+                      style={{ background: 'transparent', color: '#3b82f6', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}
+                    >
+                      {expandedEventId === evt.id ? 'Hide Details' : 'Show Details'}
+                    </button>
+                  </div>
+                  {expandedEventId === evt.id && (
+                    <pre style={{ background: '#000', padding: '1rem', borderRadius: '4px', overflowX: 'auto', marginTop: '1rem', fontSize: '0.875rem' }}>
+                      {JSON.stringify(evt.payload, null, 2)}
+                    </pre>
+                  )}
+                </div>
+              ))}
+              {simState.upcomingEvents.length === 0 && (
+                <p style={{ color: '#a1a1aa' }}>Timeline is empty. Generate an epoch.</p>
+              )}
+            </div>
+          </div>
+
         </div>
 
       </div>

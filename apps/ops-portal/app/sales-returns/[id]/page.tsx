@@ -1,0 +1,10 @@
+import SalesReturnDetailContent from './SalesReturnDetailContent';
+
+export const metadata = {
+  title: 'Sales Return | HeroBM',
+};
+
+export default async function SalesReturnPage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  return <SalesReturnDetailContent id={params.id} />;
+}

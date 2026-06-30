@@ -122,14 +122,14 @@ export const GOODS_RECEIVED_STATE = {
   RECEIVED: 'received',
 } as const;
 
-export const RECEIPT_STATE = GOODS_RECEIVED_STATE;
+
 
 export const GOODS_RECEIVED_TRANSITIONS: Record<string, string[]> = {
   [GOODS_RECEIVED_STATE.RECEIVED]: [GOODS_RECEIVED_STATE.CANCELLED],
   [GOODS_RECEIVED_STATE.CANCELLED]: [],
 };
 
-export const RECEIPT_TRANSITIONS = GOODS_RECEIVED_TRANSITIONS;
+
 
 export const SALES_ORDER_PICK_STATE = {
   CANCELLED: 'cancelled',
@@ -216,6 +216,11 @@ export const RETURN_STATE = {
   PARTIALLY_RECEIVED: 'partially_received',
   RECEIVED: 'received',
   PROCESSED: 'processed',
+} as const;
+
+export const RETURN_RESOLUTION = {
+  REFUND: 'refund',
+  REPLACE: 'replace',
 } as const;
 
 export const RETURN_TRANSITIONS: Record<string, string[]> = {
@@ -367,6 +372,7 @@ export type ShipmentState = typeof SHIPMENT_STATE[keyof typeof SHIPMENT_STATE];
 export type GoodsReceivedState = typeof GOODS_RECEIVED_STATE[keyof typeof GOODS_RECEIVED_STATE];
 export type PurchaseReturnState = typeof PURCHASE_RETURN_STATE[keyof typeof PURCHASE_RETURN_STATE];
 export type ReturnState = typeof RETURN_STATE[keyof typeof RETURN_STATE];
+export type ReturnResolution = typeof RETURN_RESOLUTION[keyof typeof RETURN_RESOLUTION];
 export type SalesCreditNoteState = typeof SALES_CREDIT_NOTE_STATE[keyof typeof SALES_CREDIT_NOTE_STATE];
 export type SalesOrderPickState = typeof SALES_ORDER_PICK_STATE[keyof typeof SALES_ORDER_PICK_STATE];
 export type BackorderState = typeof BACKORDER_STATE[keyof typeof BACKORDER_STATE];
@@ -449,7 +455,7 @@ export const GOODS_RECEIVED_LIFECYCLE: Record<string, number> = {
   [GOODS_RECEIVED_STATE.RECEIVED]: 1,
 };
 
-export const RECEIPT_LIFECYCLE = GOODS_RECEIVED_LIFECYCLE;
+
 
 export const PURCHASE_RETURN_LIFECYCLE: Record<string, number> = {
   [PURCHASE_RETURN_STATE.CANCELLED]: 0,

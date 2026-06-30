@@ -11,10 +11,11 @@ export interface LocationResponseDto {
   code: string;
   name: string;
   addressLine1?: string;
+  addressLine2?: string;
   city?: string;
-  state?: string;
+  stateOrProvince?: string;
   country?: string;
-  postCode?: string;
+  postalCode?: string;
   createdAt: string;
   updatedAt: string;
 }

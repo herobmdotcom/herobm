@@ -22,9 +22,8 @@ if ($activeProfile) {
 
 $enableSwagger = if ($NoSwagger) { 'false' } else { 'true' }
 $enableMcp = if ($NoMcp) { 'false' } else { 'true' }
-$enableDbtDocs = if ($WithDbt) { 'true' } else { 'false' }
 
-$envInjection = "`$env:ENV_FILE='$envFile'; `$env:ENABLE_SWAGGER='$enableSwagger'; "
+$envInjection = "`$env:ENV_FILE='$envFile'; `$env:ENABLE_SWAGGER='$enableSwagger'; `$env:ENABLE_MCP='$enableMcp'; "
 $apiPort = 3002
 $fePort = 4301
 if (Test-Path $envFile) {
@@ -41,6 +40,9 @@ if (Test-Path $envFile) {
 } else {
     Write-Host "Warning: $envFile not found!" -ForegroundColor Yellow
 }
+
+$proxyPort = [int]$apiPort - 1
+$rustPort = [int]$apiPort + 1
 
 Write-Host "Starting local Dev Environment..." -ForegroundColor Green
 Write-Host "API will start on port $apiPort" -ForegroundColor Cyan
@@ -60,28 +62,23 @@ function Kill-Port {
         }
     }
 }
-
 Kill-Port $apiPort
 Kill-Port $fePort
 Kill-Port 9092
 
 # Start API in a new window
 $apiCmd = $envInjection + "`$env:PORT=$apiPort; `$env:PIPELINE_LOG_DIR='$PSScriptRoot\..\logs'; npm run start:dev -w apps/api"
-Start-Process pwsh -ArgumentList "-NoExit", "-Command", $apiCmd
+Start-Process pwsh -ArgumentList "-NoExit", "-Command", "`"$apiCmd`""
 
 # Start FE in a new window
 $feCmd = $envInjection + "`$env:API_URL='http://localhost:$apiPort'; npm run dev:local -w apps/ops-portal -- -p $fePort"
-Start-Process pwsh -ArgumentList "-NoExit", "-Command", $feCmd
+Start-Process pwsh -ArgumentList "-NoExit", "-Command", "`"$feCmd`""
 
 # Start Worker in a new window
 $workerCmd = $envInjection + "`$env:PORT=9092; npm run dev -w apps/worker"
-Start-Process pwsh -ArgumentList "-NoExit", "-Command", $workerCmd
+Start-Process pwsh -ArgumentList "-NoExit", "-Command", "`"$workerCmd`""
 
 
-if ($enableDbtDocs -eq 'true') {
-    Write-Host "dbt docs will be served" -ForegroundColor Cyan
-    $dbtCmd = $envInjection + "Push-Location pipelines\abm_transform; ..\..\.venv\Scripts\dbt docs serve; Pop-Location"
-    Start-Process pwsh -ArgumentList "-NoExit", "-Command", $dbtCmd
-}
+
 
 Pop-Location

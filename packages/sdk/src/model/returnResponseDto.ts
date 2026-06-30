@@ -11,6 +11,8 @@ export interface ReturnResponseDto {
   returnId: string;
   returnNumber: string;
   stateCode: string;
+  locationId?: string;
+  locationName?: string;
   notes?: string;
   lines: ReturnLineResponseDto[];
 }

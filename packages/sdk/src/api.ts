@@ -141,6 +141,7 @@ import type {
   EmailControllerListEmailsParams,
   EmailControllerRetryEmail201,
   EmailControllerRetryEmailBody,
+  EmailControllerTestConnection200,
   EmailDocumentDto,
   EmptyBodyDto,
   EnrichmentControllerGetConfig200,
@@ -7489,6 +7490,43 @@ export const globalReturnsControllerFindGlobalReturns = async (params?: GlobalRe
 
 
 /**
+ * Retrieve a specific sales return by its ID.
+ * @summary Find Return by ID
+ */
+export type globalReturnsControllerFindOneResponse200 = {
+  data: ReturnResponseDto
+  status: 200
+}
+    
+export type globalReturnsControllerFindOneResponseSuccess = (globalReturnsControllerFindOneResponse200) & {
+  headers: Headers;
+};
+;
+
+export type globalReturnsControllerFindOneResponse = (globalReturnsControllerFindOneResponseSuccess)
+
+export const getGlobalReturnsControllerFindOneUrl = (id: string,) => {
+
+
+  
+
+  return `/sales-returns/${id}`
+}
+
+export const globalReturnsControllerFindOne = async (id: string, options?: RequestInit): Promise<globalReturnsControllerFindOneResponse> => {
+  
+  return customFetch<globalReturnsControllerFindOneResponse>(getGlobalReturnsControllerFindOneUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
  * Retrieve pending or awaiting-receipt backorders across all sales orders.
  * @summary Get Open Demands
  */
@@ -10989,6 +11027,43 @@ export const emailControllerDismissEmail = async (id: string,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       emailControllerDismissEmailBody,)
+  }
+);}
+
+
+
+/**
+ * Test SMTP connection
+ * @summary test-connection
+ */
+export type emailControllerTestConnectionResponse200 = {
+  data: EmailControllerTestConnection200
+  status: 200
+}
+    
+export type emailControllerTestConnectionResponseSuccess = (emailControllerTestConnectionResponse200) & {
+  headers: Headers;
+};
+;
+
+export type emailControllerTestConnectionResponse = (emailControllerTestConnectionResponseSuccess)
+
+export const getEmailControllerTestConnectionUrl = () => {
+
+
+  
+
+  return `/emails/test-connection`
+}
+
+export const emailControllerTestConnection = async ( options?: RequestInit): Promise<emailControllerTestConnectionResponse> => {
+  
+  return customFetch<emailControllerTestConnectionResponse>(getEmailControllerTestConnectionUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 

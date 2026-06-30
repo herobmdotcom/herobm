@@ -14,7 +14,7 @@ import { useTranslations } from 'next-intl';
 import EntityHeader from '@/components/shared/EntityHeader';
 import EntityBanner from '@/components/shared/EntityBanner';
 import { useAuth } from '@/components/shared/AuthGate';
-import { SystemResource } from '@herobm/shared';
+import { SystemResource, isPhysicalProductLine } from '@herobm/shared';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import DeliveryAddressSlideOver from '@/components/shared/DeliveryAddressSlideOver';
 import PhoneInput from 'react-phone-number-input';
@@ -57,7 +57,8 @@ import {
     isBackTransition as sharedIsBackTransition,
     cap,
     calculateUomPriceAdjustment,
-    calculateInventoryGaps
+    calculateInventoryGaps,
+    DATA_SOURCE_CONTEXT
 } from '@herobm/shared';
 import type { ProductUom } from '@herobm/shared';
 import StateBadge, { StateName } from '@/components/StateBadge';
@@ -160,14 +161,16 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
         title: string;
         prefix: string;
         docName: string;
-        targetId?: string;
-        contextSlug?: string;
+        targetId: string;
+        contextSlug: string;
     }>({
         isOpen: false,
         hookSlug: '',
         title: '',
         prefix: '',
-        docName: ''
+        docName: '',
+        targetId: '',
+        contextSlug: ''
     });
 
     /* ── Discrepancy Modal ─────────────────────────────────────────────────── */
@@ -965,10 +968,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                             <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>{tSales('loadingInventory')}</p>
                         ) : (
                             <DataTable
-                                data={(order.lines || []).filter((line: OrderLine) => {
-                                    const isCustom = !line.productId || line.productId === '00000000-0000-0000-0000-000000000000';
-                                    return line.productType !== 'non-stock' && line.productType !== 'service' && line.productType !== 'freight' && !isCustom;
-                                })}
+                                data={(order.lines || []).filter(isPhysicalProductLine)}
                                 keyExtractor={(line: OrderLine, idx: number) => line.salesOrderLineId || idx}
                                 emptyMessage={tSales('noLineItemsShort')}
                                 columns={[
@@ -1427,6 +1427,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         orderId={id}
                         order={order} 
                         invoices={invoices} 
+                        returns={returns}
                         taxCategories={taxCategories}
                         pickingSummary={pickingSummary}
                         setError={setError}
@@ -1450,6 +1451,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         pickingSummary={pickingSummary}
                         taxCategories={taxCategories}
                         locations={locations}
+                        onEmailDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName, targetId, contextSlug })}
                     />
                 )}
 
@@ -1481,8 +1483,8 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     onPreview={async (customPdfText?: string) => {
                         try {
                             const response = await api.pdfTemplatesControllerRunHook(emailDialogConfig.hookSlug, { customPdfText }, { 
-                                id: order.salesOrderId!, 
-                                context: 'sales-order'
+                                id: emailDialogConfig.targetId || order.salesOrderId!, 
+                                context: emailDialogConfig.contextSlug || DATA_SOURCE_CONTEXT.SALES_ORDER
                             });
                             const blob = response.data;
                             const url = URL.createObjectURL(blob);

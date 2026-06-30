@@ -9,5 +9,6 @@ import type { CreateReturnLineDto } from './createReturnLineDto';
 
 export interface CreateReturnDto {
   notes?: string;
+  locationId?: string;
   lines: CreateReturnLineDto[];
 }

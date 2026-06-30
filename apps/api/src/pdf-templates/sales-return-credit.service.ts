@@ -7,7 +7,7 @@ import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
 import { resolveOrderDetail } from './report-data.helper';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { taxCategories } from '../drizzle/herobm-core-schema';
+import { taxCategories, locations } from '../drizzle/herobm-core-schema';
 import { computeLinePrice, computeReturnCreditSummary } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 
@@ -27,6 +27,15 @@ export interface SalesReturnCreditData {
     creditNoteState: string | null;
     notes: string;
   };
+  returnToAddress: {
+    name: string;
+    addressLine1: string;
+    addressLine2: string;
+    city: string;
+    stateOrProvince: string;
+    country: string;
+    postalCode: string;
+  } | null;
   lines: Array<{
     lineNumber: number;
     productNumber: string;
@@ -88,6 +97,27 @@ export class SalesReturnCreditService {
       source,
     );
 
+    let returnToAddress = null;
+    if (orderDetail.fulfillmentLocationId) {
+      const rows = await this.db
+        .select()
+        .from(locations)
+        .where(eq(locations.locationId, orderDetail.fulfillmentLocationId))
+        .limit(1);
+      if (rows.length > 0) {
+        const loc = rows[0];
+        returnToAddress = {
+          name: loc.name || '',
+          addressLine1: loc.addressLine1 || '',
+          addressLine2: loc.addressLine2 || '',
+          city: loc.city || '',
+          stateOrProvince: loc.stateOrProvince || '',
+          country: loc.country || '',
+          postalCode: loc.postalCode || '',
+        };
+      }
+    }
+
     const taxRateMap = await this.buildtaxRateMap();
 
     // Map order lines by id
@@ -111,6 +141,8 @@ export class SalesReturnCreditService {
       if (!orderLine) continue;
 
       const qty = parseFloat(rl.quantityReturned || '0');
+      if (qty <= 0) continue;
+
       const unitPrice = parseFloat(orderLine.pricePerUnit || '0');
       const disc = parseFloat(orderLine.discountPercentage || '0');
       const fee = parseFloat(rl.returnFee || '0');
@@ -204,6 +236,7 @@ export class SalesReturnCreditService {
         creditNoteState,
         notes: ret.notes || '',
       },
+      returnToAddress,
       lines,
       summary: {
         subtotal: creditSummary.subtotal.toFixed(2),

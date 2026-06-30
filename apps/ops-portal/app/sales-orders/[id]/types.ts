@@ -110,8 +110,10 @@ export interface ReturnLine {
     returnLineId: string;
     salesOrderLineId: string;
     quantityReturned: string;
+    quantityReceived: string | null;
     reason: string | null;
-    returnFee: string;
+    resolution: 'refund' | 'replace';
+    returnFee: string | null;
 }
 
 export interface OrderReturn {
@@ -174,6 +176,7 @@ export interface SalesInvoice {
     stateCode?: string;
     createdOn: string;
     createdBy: string;
+    invoiceDate?: string;
     dueDate?: string;
     lines?: InvoiceLine[];
 }

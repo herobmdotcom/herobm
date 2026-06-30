@@ -1,8 +1,8 @@
 import { eq, sql, isNull, lte, and, or } from 'drizzle-orm';
 import * as nodemailer from 'nodemailer';
-import crypto from 'crypto';
 import { emailOutbox, appSettings, outbox, systemEvents } from './schema';
 import { relayLogger as logger } from './logger';
+import { deriveEncryptionKey, decrypt } from '@herobm/shared';
 
 export async function pollEmailOutbox(db: any) {
   try {
@@ -39,35 +39,19 @@ export async function pollEmailOutbox(db: any) {
     // Need to use the same logic as EncryptionService in API
     let smtpPass = '';
     if (settings.smtpPassEncrypted) {
-      const rawKey = process.env.ENCRYPTION_KEY;
+      let rawKey = process.env.ENCRYPTION_KEY;
       if (!rawKey) {
-        logger.error('ENCRYPTION_KEY environment variable is required to decrypt SMTP password.');
-        return;
+        logger.warn('ENCRYPTION_KEY is not set. Falling back to JWT_SECRET for development.');
+        rawKey = process.env.JWT_SECRET;
+      }
+      if (!rawKey) {
+        throw new Error('No encryption key configured');
       }
 
-      // Decrypt logic matching apps/api/src/common/encryption.service.ts
+      // Decrypt logic using shared encryption primitives
       try {
-        const parts = settings.smtpPassEncrypted.split(':');
-        if (parts.length === 3) {
-          const [ivHex, authTagHex, encryptedHex] = parts;
-          const iv = Buffer.from(ivHex, 'hex');
-          const authTag = Buffer.from(authTagHex, 'hex');
-          const encryptedText = Buffer.from(encryptedHex, 'hex');
-
-          // The EncryptionService generates a 32-byte key
-          let encryptionKey: Buffer;
-          if (rawKey.length === 64) {
-            encryptionKey = Buffer.from(rawKey, 'hex');
-          } else {
-            encryptionKey = crypto.scryptSync(rawKey, 'salt', 32);
-          }
-
-          const decipher = crypto.createDecipheriv('aes-256-gcm', encryptionKey, iv);
-          decipher.setAuthTag(authTag);
-          let decrypted = decipher.update(encryptedText, undefined, 'utf8');
-          decrypted += decipher.final('utf8');
-          smtpPass = decrypted;
-        }
+        const encryptionKey = deriveEncryptionKey(rawKey);
+        smtpPass = decrypt(settings.smtpPassEncrypted, encryptionKey);
       } catch (err) {
         logger.error({ err }, 'Failed to decrypt SMTP password. Check ENCRYPTION_KEY.');
         return;
@@ -90,7 +74,21 @@ export async function pollEmailOutbox(db: any) {
       await transporter.verify();
       logger.debug('SMTP Server connection verified successfully.');
     } catch (err: any) {
-      logger.error({ err: err.message }, 'Failed to connect to SMTP server. Skipping batch.');
+      logger.error({ err: err.message }, 'Failed to connect to SMTP server. Marking batch as failed.');
+      for (const email of pendingEmails) {
+        const retries = Number(email.retries || 0) + 1;
+        const status = retries >= 5 ? 'failed' : 'pending';
+        const nextRetryAt = new Date(Date.now() + Math.pow(2, retries - 1) * 60000);
+        await db
+          .update(emailOutbox)
+          .set({
+            retries: retries.toString(),
+            status,
+            lastError: 'SMTP Connection Failed: ' + err.message,
+            nextRetryAt,
+          })
+          .where(eq(emailOutbox.id, email.id));
+      }
       return;
     }
 

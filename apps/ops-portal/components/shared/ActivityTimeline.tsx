@@ -12,7 +12,7 @@ export interface TimelineEvent {
   createdOn: string;
 }
 
-export function EventIcon({ type }: { type: string }) {
+function EventIcon({ type }: { type: string }) {
   const tCommon = useTranslations('common.eventTypes');
   const typeLower = (type || '').toLowerCase();
 

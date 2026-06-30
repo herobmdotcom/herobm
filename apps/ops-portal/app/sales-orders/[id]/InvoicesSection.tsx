@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 import { useAuth } from '@/components/AuthGate';
 
-import type { OrderDetail, TaxCategory, SalesInvoice } from './types';
+import { SalesInvoice, TaxCategory, OrderDetail, OrderReturn } from './types';
 import { computeLinePrice, SALES_ORDER_STATE, SALES_INVOICE_STATE, getErrorMessage } from '@herobm/shared';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
@@ -22,8 +22,9 @@ interface InvoicesSectionProps {
     order: OrderDetail;
 
     invoices: SalesInvoice[];
+    returns?: OrderReturn[];
     taxCategories: TaxCategory[];
-    onEmailDocumentClick?: (hookSlug: string, title: string, prefix: string, docName: string, targetId?: string, contextSlug?: string) => void;
+    onEmailDocumentClick?: (hookSlug: string, title: string, prefix: string, docName: string, targetId: string, contextSlug: string) => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   pickingSummary: Record<string, any> | null;
     setError: (msg: string) => void;
@@ -33,7 +34,7 @@ interface InvoicesSectionProps {
 }
 
 export default function InvoicesSection({
-    orderId, order, invoices, taxCategories,
+    orderId, order, invoices, returns, taxCategories,
     pickingSummary, setError, loadInvoices, loadOrder, onEmailDocumentClick
 }: InvoicesSectionProps) {
     const { baseCurrency } = useSettings();
@@ -53,7 +54,7 @@ export default function InvoicesSection({
     const handleCreateClick = () => {
         setShowCreateInvoice(true);
         const linesToInvoice = calculateInvoiceableQuantities(
-            order.lines, invoices, pickingSummary?.lines,
+            order.lines, invoices, pickingSummary?.lines, returns
         ).map(l => ({
             salesOrderLineId: l.salesOrderLineId,
             quantityToInvoice: l.defaultQty,
@@ -115,20 +116,11 @@ export default function InvoicesSection({
             </div>
 
             {showCreateInvoice && (
-                <div style={{ marginBottom: 16, padding: 16, borderRadius: 8, background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                    <div className="flex items-center justify-between mb-3">
-                        <strong style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            { }
-                            <span className="material-symbols-outlined text-[16px]">request_quote</span>
+                <div style={{ marginBottom: 16, padding: 16, borderRadius: 8, border: '1px solid var(--border)' }}>
+                    <div className="mb-3">
+                        <strong style={{ fontSize: 13, display: 'flex', alignItems: 'center' }}>
                             New Invoice
                         </strong>
-                        <button
-                            style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16 }}
-                            onClick={handleCancel}
-                        >
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                            <span aria-hidden>✕</span>
-                        </button>
                     </div>
                     <div style={{ marginBottom: 12 }}>
                         <input className="input w-full" placeholder="Invoice Notes (optional)" value={newInvoiceNotes} onChange={e => setNewInvoiceNotes(e.target.value)} />
@@ -178,8 +170,14 @@ export default function InvoicesSection({
                                                 color: 'var(--text)', fontSize: 13, textAlign: 'right',
                                             }}
                                             value={nl.quantityToInvoice}
-                                            onChange={e => { const updated = [...newInvoiceLines]; updated[idx].quantityToInvoice = e.target.value; setNewInvoiceLines(updated); }}
-                                            placeholder={nl.maxQuantity.toString()}
+                                            onChange={e => {
+                                                const updated = [...newInvoiceLines];
+                                                let val = e.target.value;
+                                                if (val === '') val = '0';
+                                                else if (val.startsWith('0') && val.length > 1) val = val.replace(/^0+/, '') || '0';
+                                                updated[idx].quantityToInvoice = val;
+                                                setNewInvoiceLines(updated);
+                                            }}
                                         />
                                     </td>
                                 </tr>
@@ -232,8 +230,14 @@ export default function InvoicesSection({
                                                     color: 'var(--text)', fontSize: 13, textAlign: 'right',
                                                 }}
                                                 value={nl.quantityToInvoice}
-                                                onChange={e => { const updated = [...newInvoiceLines]; updated[idx].quantityToInvoice = e.target.value; setNewInvoiceLines(updated); }}
-                                                placeholder={nl.maxQuantity.toString()}
+                                                onChange={e => {
+                                                    const updated = [...newInvoiceLines];
+                                                    let val = e.target.value;
+                                                    if (val === '') val = '0';
+                                                    else if (val.startsWith('0') && val.length > 1) val = val.replace(/^0+/, '') || '0';
+                                                    updated[idx].quantityToInvoice = val;
+                                                    setNewInvoiceLines(updated);
+                                                }}
                                             />
                                         </div>
                                     </div>
@@ -242,9 +246,9 @@ export default function InvoicesSection({
                         }}
                     />
                     
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 mt-4">
                         <button className="btn btn-primary btn-sm" disabled={invoicing || newInvoiceLines.every(l => !l.quantityToInvoice || parseFloat(l.quantityToInvoice) <= 0)} onClick={handleGenerate}>
-                            {tSales('buttons.generateInvoice')}
+                            {tSales('buttons.createInvoice')}
                         </button>
                         <button className="btn btn-secondary btn-sm" onClick={handleCancel}>
                             {tCommon('cancel')}
@@ -267,7 +271,7 @@ export default function InvoicesSection({
                                     {inv.invoiceNumber}
                                 </div>
                                 <div className="text-xs text-[var(--text-muted)]">
-                                    {new Date(inv.createdOn).toLocaleDateString()} &middot; {inv.lines?.length || 0}
+                                    {inv.invoiceDate || inv.createdOn ? new Date((inv.invoiceDate || inv.createdOn) as string).toLocaleDateString() : '—'} &middot; {inv.lines?.length || 0}
                                     {/* eslint-disable-next-line i18next/no-literal-string -- UI technical layout */}
                                     <span> lines </span> &middot; <span className="font-medium text-[var(--text-primary)]">{formatAmount(parseFloat(inv.totalAmount || '0'), order.currencyCode || baseCurrency)}</span>
                                 </div>

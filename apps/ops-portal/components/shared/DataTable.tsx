@@ -21,6 +21,10 @@ export interface DataTableProps<T> {
   renderCustomRow?: (row: T, index: number, visibleCols: DataTableColumn<T>[]) => React.ReactNode;
   /** Render prop for the mobile card view. If provided, table is hidden on mobile and this is shown. */
   mobileCard?: (row: T, index: number) => React.ReactNode;
+  /** Optional function to determine if a row should be expanded */
+  isRowExpanded?: (row: T, index: number) => boolean;
+  /** Optional function to render the expanded content below a row */
+  renderExpandedRow?: (row: T, index: number) => React.ReactNode;
   /** Wrapper class for the entire container */
   className?: string;
 }
@@ -33,6 +37,8 @@ export function DataTable<T>({
   footer,
   renderCustomRow,
   mobileCard,
+  isRowExpanded,
+  renderExpandedRow,
   className = '',
 }: DataTableProps<T>) {
   const visibleCols = columns.filter((c) => !c.hidden);
@@ -57,23 +63,34 @@ export function DataTable<T>({
                 return <React.Fragment key={keyExtractor(row, i)}>{renderCustomRow(row, i, visibleCols)}</React.Fragment>;
               }
 
+              const isExpanded = isRowExpanded?.(row, i) && renderExpandedRow;
+
               return (
-                <tr key={keyExtractor(row, i)}>
-                  {visibleCols.map((col, j) => {
-                    let content: React.ReactNode = null;
-                    if (col.render) {
-                      content = col.render(row, i);
-                    } else if (col.accessor) {
-                      content = typeof col.accessor === 'function' ? col.accessor(row) : String(row[col.accessor as keyof T] as unknown);
-                    }
-                    
-                    return (
-                      <td key={col.id || j} style={{ textAlign: col.align }}>
-                        {content}
+                <React.Fragment key={keyExtractor(row, i)}>
+                  <tr>
+                    {visibleCols.map((col, j) => {
+                      let content: React.ReactNode = null;
+                      if (col.render) {
+                        content = col.render(row, i);
+                      } else if (col.accessor) {
+                        content = typeof col.accessor === 'function' ? col.accessor(row) : String(row[col.accessor as keyof T] as unknown);
+                      }
+                      
+                      return (
+                        <td key={col.id || j} style={{ textAlign: col.align }}>
+                          {content}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  {isExpanded && (
+                    <tr key={`${keyExtractor(row, i)}-expanded`}>
+                      <td colSpan={visibleCols.length} style={{ padding: 0 }}>
+                        {renderExpandedRow(row, i)}
                       </td>
-                    );
-                  })}
-                </tr>
+                    </tr>
+                  )}
+                </React.Fragment>
               );
             })}
             

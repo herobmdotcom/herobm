@@ -32,8 +32,8 @@ interface EmailDocumentDialogProps {
   title: string;
   defaultSubjectPrefix: string;
   documentName: string;
-  targetId?: string;
-  contextSlug?: string;
+  targetId: string;
+  contextSlug: string;
   onPreview: (customText?: string) => void;
   onClose: () => void;
   onSuccess: () => void;

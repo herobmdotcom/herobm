@@ -173,8 +173,14 @@ export class TransferService {
       }
 
       const [[sourceLoc], [destLoc]] = await Promise.all([
-        tx.select({ name: locations.name }).from(locations).where(eq(locations.locationId, sourceLocationId)),
-        tx.select({ name: locations.name }).from(locations).where(eq(locations.locationId, destLocationId))
+        tx
+          .select({ name: locations.name })
+          .from(locations)
+          .where(eq(locations.locationId, sourceLocationId)),
+        tx
+          .select({ name: locations.name })
+          .from(locations)
+          .where(eq(locations.locationId, destLocationId)),
       ]);
 
       await emitEvent(tx as unknown as DrizzleDB, {
@@ -423,7 +429,12 @@ export class TransferService {
         );
       }
 
-      const [bin] = binId ? await tx.select({ binNumber: bins.binNumber }).from(bins).where(eq(bins.binId, binId)) : [null];
+      const [bin] = binId
+        ? await tx
+            .select({ binNumber: bins.binNumber })
+            .from(bins)
+            .where(eq(bins.binId, binId))
+        : [null];
 
       await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.WAREHOUSE,
@@ -431,7 +442,13 @@ export class TransferService {
         eventType: EventType.PICK_CREATED,
         entityDisplayName: `Pick for ${order?.orderNumber || transferOrderId}`,
         actor,
-        payload: { pickId: lineId, transferOrderId, quantity, binId, binNumber: bin?.binNumber },
+        payload: {
+          pickId: lineId,
+          transferOrderId,
+          quantity,
+          binId,
+          binNumber: bin?.binNumber,
+        },
       });
     });
 

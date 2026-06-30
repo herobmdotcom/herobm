@@ -16,7 +16,7 @@ services:
     environment:
       API_URL: http://custom-api:3001
       ADMIN_PASSWORD: ${DEV_ADMIN_PASSWORD}
-    command: ["npx", "tsx", "src/server/server.ts"]
+    command: ["npm", "run", "start"]
     depends_on:
       postgres-custom:
         condition: service_healthy

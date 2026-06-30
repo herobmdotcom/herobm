@@ -20,6 +20,7 @@ import {
   RETURN_STATE,
   SALES_ORDER_STATE,
   SALES_CREDIT_NOTE_STATE,
+  RETURN_RESOLUTION,
 } from '@herobm/shared';
 
 import request from 'supertest';
@@ -177,7 +178,8 @@ describe('API E2E — Sales Order Returns', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     const binId =
-      binsRes.body.data[0]?.binId || '00000000-0000-4000-8000-000000000003';
+      binsRes.body.data.find((b: any) => b.typeCode === 'STORAGE')?.binId ||
+      '00000000-0000-4000-8000-000000000003';
 
     const detail = await request(app.getHttpServer())
       .get(`/api/sales-orders/${orderId}`)
@@ -187,13 +189,15 @@ describe('API E2E — Sales Order Returns', () => {
     const shipLines: { salesOrderLineId: string; quantityShipped: string }[] =
       [];
     for (const line of detail.body.lines) {
-      await request(app.getHttpServer())
+      const pickRes = await request(app.getHttpServer())
         .post(
           `/api/sales-orders/${orderId}/picking/lines/${line.salesOrderLineId}`,
         )
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ binId, quantity: line.quantity })
-        .expect(201);
+        .send({ binId, quantity: line.quantity });
+      if (pickRes.status >= 400) console.error('Pick error:', pickRes.body);
+      expect(pickRes.status).toBe(201);
+
       shipLines.push({
         salesOrderLineId: line.salesOrderLineId,
         quantityShipped: line.quantity,
@@ -206,15 +210,18 @@ describe('API E2E — Sales Order Returns', () => {
       .send({ lines: shipLines })
       .expect(201);
 
-    // shipped state is auto-transitioned, now transition to invoiced
-    await request(app.getHttpServer())
-      .patch(`/api/sales-orders/${orderId}/state`)
+    const invRes = await request(app.getHttpServer())
+      .post(`/api/sales-orders/${orderId}/invoice`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        stateCode: SALES_ORDER_STATE.INVOICED,
-        generateBackorders: false,
+        lines: shipLines.map((l) => ({
+          salesOrderLineId: l.salesOrderLineId,
+          quantityToInvoice: parseFloat(l.quantityShipped),
+        })),
       })
-      .expect(200);
+      .expect(201);
+
+    // Creating the invoice for the full amount auto-transitions the order state to INVOICED.
 
     // Get line IDs
     const detailFinal = await request(app.getHttpServer())
@@ -222,6 +229,92 @@ describe('API E2E — Sales Order Returns', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
+    const lineIds = detailFinal.body.lines.map(
+      (l: { salesOrderLineId: string }) => l.salesOrderLineId,
+    );
+    return { orderId, lineIds };
+  }
+
+  async function createShippedOrder(): Promise<{
+    orderId: string;
+    lineIds: string[];
+  }> {
+    const res = await request(app.getHttpServer())
+      .post('/api/sales-orders')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        fulfillmentLocationId: locationId,
+        customerId: validCustomerId,
+        name: 'E2E-RET Test Order (Shipped Only)',
+        deliveryAddressLine1: 'Test Address',
+        lines: [
+          {
+            productId: validProductId,
+            productDescription: 'Product A',
+            quantity: '10',
+            pricePerUnit: '25.00',
+          },
+          {
+            productId: secondProductId,
+            productDescription: 'Product B',
+            quantity: '5',
+            pricePerUnit: '50.00',
+          },
+        ],
+      })
+      .expect(201);
+    const orderId = res.body.salesOrderId;
+    for (const state of [
+      SALES_ORDER_STATE.QUOTED,
+      SALES_ORDER_STATE.CONFIRMED,
+      SALES_ORDER_STATE.PICKING,
+    ]) {
+      await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: state, generateBackorders: false })
+        .expect(200);
+    }
+    const binsRes = await request(app.getHttpServer())
+      .get('/api/inventory/bins')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const binId =
+      binsRes.body.data.find((b: any) => b.typeCode === 'STORAGE')?.binId ||
+      '00000000-0000-4000-8000-000000000003';
+
+    const detail = await request(app.getHttpServer())
+      .get(`/api/sales-orders/${orderId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const shipLines: { salesOrderLineId: string; quantityShipped: string }[] =
+      [];
+    for (const line of detail.body.lines) {
+      const pickRes = await request(app.getHttpServer())
+        .post(
+          `/api/sales-orders/${orderId}/picking/lines/${line.salesOrderLineId}`,
+        )
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ binId, quantity: line.quantity });
+      if (pickRes.status >= 400) console.error('Pick error:', pickRes.body);
+      expect(pickRes.status).toBe(201);
+
+      shipLines.push({
+        salesOrderLineId: line.salesOrderLineId,
+        quantityShipped: line.quantity,
+      });
+    }
+
+    const shipRes = await request(app.getHttpServer())
+      .post(`/api/sales-orders/${orderId}/shipments`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ lines: shipLines })
+      .expect(201);
+
+    const detailFinal = await request(app.getHttpServer())
+      .get(`/api/sales-orders/${orderId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
     const lineIds = detailFinal.body.lines.map(
       (l: { salesOrderLineId: string }) => l.salesOrderLineId,
     );
@@ -333,7 +426,6 @@ describe('API E2E — Sales Order Returns', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // Verify return is back to 1 line
       const detail = await request(app.getHttpServer())
         .get(`/api/sales-orders/${orderId}/returns/${returnId}`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -342,7 +434,20 @@ describe('API E2E — Sales Order Returns', () => {
       expect(detail.body.lines).toHaveLength(1);
     });
 
-    it('PATCH /returns/:returnId/state — confirms then processes the return', async () => {
+    it('POST /returns/:returnId/lines — adds a replacement return line', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/returns/${returnId}/lines`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          salesOrderLineId: lineIds[1],
+          quantityReturned: '2',
+          reason: 'Replacement requested',
+          resolution: RETURN_RESOLUTION.REPLACE,
+        })
+        .expect(201);
+    });
+
+    it('PATCH /returns/:returnId/state — processes return, generating credit and replacement', async () => {
       await request(app.getHttpServer())
         .patch(`/api/sales-orders/${orderId}/returns/${returnId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -355,20 +460,131 @@ describe('API E2E — Sales Order Returns', () => {
         .send({ stateCode: RETURN_STATE.RECEIVED, locationId: mainLocationId })
         .expect(200);
 
-      const res = await request(app.getHttpServer())
-        .post(`/api/sales-credit-notes`)
+      const beforeProcess = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${orderId}/returns/${returnId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ returnId })
-        .expect(201);
+        .expect(200);
 
-      expect(res.body.stateCode).toBe(SALES_CREDIT_NOTE_STATE.POSTED);
+      // Now set to PROCESSED - this should trigger Credit Note and Replacement Order
+      await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}/returns/${returnId}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: RETURN_STATE.PROCESSED })
+        .expect(200);
 
-      // Verify return was marked PROCESSED automatically
       const retRes = await request(app.getHttpServer())
         .get(`/api/sales-orders/${orderId}/returns/${returnId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
       expect(retRes.body.stateCode).toBe(RETURN_STATE.PROCESSED);
+
+      // Verify Credit Note was created
+      const cns = await request(app.getHttpServer())
+        .get(`/api/sales-credit-notes`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      const ourCn = cns.body.find((cn: any) => cn.salesOrderId === orderId);
+      expect(ourCn).toBeDefined();
+
+      // Verify Replacement Order was created
+      const orders = await request(app.getHttpServer())
+        .get(`/api/sales-orders`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      const replacement = orders.body.data.find(
+        (o: any) =>
+          o.customerOrderNumber?.endsWith('-REP') ||
+          o.customerOrderNumber?.startsWith('REP-'),
+      );
+      expect(replacement).toBeDefined();
+    });
+  });
+
+  // =========================================================================
+  // Return lifecycle (Not Invoiced)
+  // =========================================================================
+
+  describe('Return lifecycle (Not Invoiced)', () => {
+    let orderId: string;
+    let lineIds: string[];
+    let returnId: string;
+
+    beforeAll(async () => {
+      const result = await createShippedOrder();
+      orderId = result.orderId;
+      lineIds = result.lineIds;
+    });
+
+    it('processes return for un-invoiced order (no credit note, still replacement)', async () => {
+      // 1. Create Return
+      const retRes = await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/returns`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          notes: 'Not invoiced return',
+          lines: [
+            {
+              salesOrderLineId: lineIds[0],
+              quantityReturned: '3',
+              reason: 'Damaged',
+              resolution: RETURN_RESOLUTION.REFUND, // Refund, but not invoiced
+            },
+            {
+              salesOrderLineId: lineIds[1],
+              quantityReturned: '2',
+              reason: 'Wrong item',
+              resolution: RETURN_RESOLUTION.REPLACE, // Replace
+            },
+          ],
+        })
+        .expect(201);
+      returnId = retRes.body.returnId;
+
+      // 2. Process Return
+      await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}/returns/${returnId}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: RETURN_STATE.CONFIRMED, generateBackorders: false })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}/returns/${returnId}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: RETURN_STATE.RECEIVED, locationId: mainLocationId })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}/returns/${returnId}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: RETURN_STATE.PROCESSED })
+        .expect(200);
+
+      // 3. Verify NO Credit Note was created (because invoicedQty = 0)
+      const cns = await request(app.getHttpServer())
+        .get(`/api/sales-credit-notes`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      const ourCn = cns.body.data?.find(
+        (cn: any) => cn.salesOrderId === orderId,
+      );
+      expect(ourCn).toBeUndefined(); // Should NOT exist!
+
+      // 4. Verify Replacement Order WAS created
+      const orders = await request(app.getHttpServer())
+        .get(`/api/sales-orders`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const returnDoc = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${orderId}/returns/${returnId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const repPattern = `REP-${returnDoc.body.returnNumber}`;
+      const replacement = orders.body.data.find(
+        (o: any) => o.customerOrderNumber === repPattern,
+      );
+      expect(replacement).toBeDefined();
     });
   });
 

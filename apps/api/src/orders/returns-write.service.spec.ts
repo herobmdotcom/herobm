@@ -5,6 +5,7 @@ import { InventoryService } from '../inventory/inventory.service';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
+import { OrdersWriteService } from './orders-write.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { emitEvent } from '../common/emit-event';
@@ -146,6 +147,12 @@ describe('ReturnsWriteService', () => {
               creditNoteId: 'cn-001',
               creditNoteNumber: 'CN-TEST-0001',
             }),
+          },
+        },
+        {
+          provide: OrdersWriteService,
+          useValue: {
+            updateOrderState: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
@@ -522,6 +529,7 @@ describe('ReturnsWriteService', () => {
       [RETURN_STATE.CONFIRMED, RETURN_STATE.RECEIVED],
       [RETURN_STATE.CONFIRMED, RETURN_STATE.CANCELLED],
       [RETURN_STATE.PARTIALLY_RECEIVED, RETURN_STATE.RECEIVED],
+      [RETURN_STATE.RECEIVED, RETURN_STATE.PROCESSED],
     ])('should allow transition %s → %s', async (from, to) => {
       await setupWithState(from as ReturnState);
       await expect(
@@ -544,7 +552,6 @@ describe('ReturnsWriteService', () => {
       [RETURN_STATE.PROCESSED, RETURN_STATE.CONFIRMED],
       [RETURN_STATE.CANCELLED, RETURN_STATE.DRAFT],
       [RETURN_STATE.CONFIRMED, RETURN_STATE.DRAFT],
-      [RETURN_STATE.RECEIVED, RETURN_STATE.PROCESSED],
       [RETURN_STATE.RECEIVED, RETURN_STATE.CONFIRMED],
     ])('should reject transition %s → %s', async (from, to) => {
       await setupWithState(from as ReturnState);

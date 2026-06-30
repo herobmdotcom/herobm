@@ -9,7 +9,7 @@ import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
 import JsonBrowserModal from '@/components/shared/JsonBrowserModal';
 
-export function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unknown>, isNew?: boolean }) {
+function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unknown>, isNew?: boolean }) {
   const t = useTranslations('admin.reporting.form');
   const [formData, setFormData] = useState({
     name: (initialData?.name as string) || '',

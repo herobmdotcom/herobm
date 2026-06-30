@@ -674,7 +674,10 @@ export class OrdersWriteService {
         await tx.insert(salesOrderLineItems).values(lineValues);
       }
 
-      const [customerObj] = await tx.select({ name: coreAccounts.name }).from(coreAccounts).where(eq(coreAccounts.customerId, dto.customerId));
+      const [customerObj] = await tx
+        .select({ name: coreAccounts.name })
+        .from(coreAccounts)
+        .where(eq(coreAccounts.customerId, dto.customerId));
 
       // Audit + outbox
       await emitEvent(tx, {
@@ -1475,8 +1478,18 @@ export class OrdersWriteService {
       await this.setTaxIsStale(orderId, isExternalTax, tx);
 
       const [[product], [taxCategory]] = await Promise.all([
-        dto.productId ? tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, dto.productId)) : Promise.resolve([null]),
-        taxCategoryId ? tx.select({ title: taxCategories.title }).from(taxCategories).where(eq(taxCategories.taxCategoryId, taxCategoryId)) : Promise.resolve([null])
+        dto.productId
+          ? tx
+              .select({ name: coreProducts.name })
+              .from(coreProducts)
+              .where(eq(coreProducts.productId, dto.productId))
+          : Promise.resolve([null]),
+        taxCategoryId
+          ? tx
+              .select({ title: taxCategories.title })
+              .from(taxCategories)
+              .where(eq(taxCategories.taxCategoryId, taxCategoryId))
+          : Promise.resolve([null]),
       ]);
 
       await emitEvent(tx, {
@@ -1695,8 +1708,18 @@ export class OrdersWriteService {
       await this.setTaxIsStale(orderId, isExternalTax, tx);
 
       const [[product], [taxCategory]] = await Promise.all([
-        dto.productId ? tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, dto.productId)) : Promise.resolve([null]),
-        taxCategoryId ? tx.select({ title: taxCategories.title }).from(taxCategories).where(eq(taxCategories.taxCategoryId, taxCategoryId)) : Promise.resolve([null])
+        dto.productId
+          ? tx
+              .select({ name: coreProducts.name })
+              .from(coreProducts)
+              .where(eq(coreProducts.productId, dto.productId))
+          : Promise.resolve([null]),
+        taxCategoryId
+          ? tx
+              .select({ title: taxCategories.title })
+              .from(taxCategories)
+              .where(eq(taxCategories.taxCategoryId, taxCategoryId))
+          : Promise.resolve([null]),
       ]);
 
       await emitEvent(tx, {
@@ -1945,7 +1968,12 @@ export class OrdersWriteService {
       const isExternalTax = resolvedTax.taxProvider !== 'internal';
       await this.setTaxIsStale(orderId, isExternalTax, tx);
 
-      const [product] = existingLine.productId ? await tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, existingLine.productId)) : [null];
+      const [product] = existingLine.productId
+        ? await tx
+            .select({ name: coreProducts.name })
+            .from(coreProducts)
+            .where(eq(coreProducts.productId, existingLine.productId))
+        : [null];
 
       await emitEvent(tx, {
         entityType: EntityType.SALES_ORDER,

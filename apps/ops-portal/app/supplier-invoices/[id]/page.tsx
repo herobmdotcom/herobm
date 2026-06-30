@@ -920,7 +920,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
               <DataTable
                 columns={allocationColumns}
                 data={displayAllocations}
-                keyField="allocationId"
+                keyExtractor={(row) => row.allocationId}
                 mobileCard={(alloc) => (
                   <MobileLineItemCard
                     title={

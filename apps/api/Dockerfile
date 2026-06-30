@@ -11,7 +11,7 @@ COPY packages/shared ./packages/shared
 # Build API
 WORKDIR /app/apps/api
 COPY apps/api/package*.json ./
-RUN npm ci
+RUN npm install
 
 ENV NODE_ENV=production
 

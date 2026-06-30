@@ -25,7 +25,6 @@ if ($activeProfile) {
 # -----------------------------------------------------------------------------
 $enableSwagger = if ($WithSwagger) { 'true' } else { 'false' }
 $enableMcp = if ($Mcp) { 'true' } else { 'false' }
-$enableDbtDocs = if ($WithDbt) { 'true' } else { 'false' }
 
 $envInjection = "`$env:ENV_FILE='$envFile'; `$env:ENABLE_SWAGGER='$enableSwagger'; "
 $apiPort = if ($env:API_PORT) { $env:API_PORT } else { 3001 }
@@ -68,10 +67,6 @@ if ($enableMcp -eq 'true') {
     Start-Process pwsh -ArgumentList "-NoExit", "-Command", $mcpCmd
 }
 
-if ($enableDbtDocs -eq 'true') {
-    Write-Host "dbt docs will be served" -ForegroundColor Cyan
-    $dbtCmd = $envInjection + "Push-Location pipelines\abm_transform; ..\..\.venv\Scripts\dbt docs serve; Pop-Location"
-    Start-Process pwsh -ArgumentList "-NoExit", "-Command", $dbtCmd
-}
+
 
 Pop-Location

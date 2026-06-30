@@ -20,7 +20,7 @@ export {
   CUSTOMER_TRANSITIONS,
   SUPPLIER_TRANSITIONS,
   PRODUCT_TRANSITIONS,
-  RECEIPT_TRANSITIONS,
+
   PUTAWAY_STATUS,
   MATCH_STATUS,
   
@@ -35,6 +35,7 @@ export {
   PURCHASE_RETURN_SHIPMENT_STATE,
   PURCHASE_DEBIT_NOTE_STATE,
   RETURN_STATE,
+  RETURN_RESOLUTION,
   SALES_CREDIT_NOTE_STATE,
   SALES_ORDER_PICK_STATE,
   BACKORDER_STATE,
@@ -45,7 +46,7 @@ export {
   TRANSFER_ORDER_PICK_STATE,
   SUPPLIER_STATE,
   PRODUCT_STATE,
-  RECEIPT_STATE,
+
   PAYMENT_TYPE,
   // Lifecycle ordinals (for UI forward/backward styling)
   SALES_ORDER_LIFECYCLE,
@@ -62,7 +63,7 @@ export {
   SALES_CREDIT_NOTE_LIFECYCLE,
   SALES_ORDER_PICK_LIFECYCLE,
   BACKORDER_LIFECYCLE,
-  RECEIPT_LIFECYCLE,
+
 
   // Helpers
   getAllowedTransitions,
@@ -83,6 +84,7 @@ export type {
   PurchaseReturnShipmentState,
   PurchaseDebitNoteState,
   ReturnState,
+  ReturnResolution,
   SalesCreditNoteState,
   SalesOrderPickState,
   BackorderState,
@@ -137,6 +139,7 @@ export {
   calculateInventoryGaps,
   calculateAvailableQuantity,
   BIN_TYPE,
+  isPhysicalProductLine,
 } from './inventory';
 export type { InventoryLevelMinimal, OrderLineMinimal, InventoryGap, InventoryLevelData } from './inventory';
 
@@ -154,9 +157,9 @@ export {
 } from './accounting';
 export type { GLAccountType, AgedBalanceRow, AgedTotals } from './accounting';
 
-export {
-  getErrorMessage,
-} from './errors';
+export * from './currency';
+export * from './encryption';
+export * from './errors';
 export * from './invoice-discounts';
 
 export { SystemResource } from './permissions';

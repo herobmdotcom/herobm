@@ -945,8 +945,8 @@ export class ShipmentService {
           deliveryAddressLine1: locations.addressLine1,
           deliveryAddressLine2: sql<string | null>`NULL`,
           deliveryCity: locations.city,
-          deliveryState: locations.state,
-          deliveryPostalCode: locations.postCode,
+          deliveryState: locations.stateOrProvince,
+          deliveryPostalCode: locations.postalCode,
           deliveryCountry: locations.country,
           shippingNotes: transferOrders.shippingNotes,
         })

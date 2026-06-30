@@ -5,11 +5,6 @@
     "apps/*",
     "packages/*"
   ],
-  "dependencies": {
-    "class-transformer": "^0.5.1",
-    "class-validator": "^0.15.1",
-    "libphonenumber-js": "^1.13.6"
-  },
   "scripts": {
     "seed": "npm run seed -w apps/api",
     "test": "make test-api",

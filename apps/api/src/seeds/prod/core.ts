@@ -1764,6 +1764,7 @@ async function seedReports(db: SeedDB, dryRun: boolean) {
         set: {
           name: r.name,
           slug: r.slug,
+          template: templateContent,
           outputNamePattern: r.output_name_pattern,
         },
       })
