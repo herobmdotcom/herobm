@@ -272,7 +272,7 @@ describe('API E2E — Sales Invoices', () => {
 
       expect(badInvoiceRes.status).toBe(400);
       expect(badInvoiceRes.body.message).toMatch(
-        /Cannot invoice more than shipped quantity/,
+        /Cannot invoice more than available quantity/,
       );
     });
 

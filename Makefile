@@ -329,24 +329,6 @@ rebuild-worker:
 	$(COMPOSE_CMD) up -d --no-build --no-deps outbox-worker
 	$(COMPOSE_CMD) ps
 
-# --- Simulation Targets ---
-rebuild-sim-images:
-	podman build -t localhost/herobm_custom-api:latest -f Dockerfile.api .
-	podman build -t localhost/herobm_ops-portal:latest -f Dockerfile.portal .
-	podman build -t localhost/herobm_pipeline-runner:latest -f Dockerfile.pipeline .
-	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
-	podman build -t localhost/postgres-custom-sim:latest -f Dockerfile.postgres.sim .
-	podman build -t localhost/herobm_sim-engine:latest -f apps/sim-engine/Dockerfile .
-
-up-sim: rebuild-sim-images
-	podman-compose -f docker-compose.sim.yml up -d --no-build
-	podman-compose -f docker-compose.sim.yml ps
-
-USE_PGLITE ?= true
-
-query-sim-db:
-	@podman exec -i postgres-custom-sim psql -U postgres -d herobm_volzau -c "$(QUERY)"
-
 ifeq ($(USE_PGLITE),true)
   TEST_API_TARGET = test:pglite
 else

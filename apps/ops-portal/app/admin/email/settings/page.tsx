@@ -7,8 +7,6 @@ import { toast } from 'react-hot-toast';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { getErrorMessage } from '@herobm/shared';
-// eslint-disable-next-line no-restricted-imports -- Endpoint is not yet in SDK
-import { apiFetch } from '@/lib/api';
 
 export default function SmtpSettingsPage() {
   useDocumentTitle('SMTP Settings');
@@ -32,20 +30,18 @@ export default function SmtpSettingsPage() {
     loadData();
   }, []);
 
-  const updateField = async (field: string, value: unknown) => {
+  const updateField = async (field: keyof api.AppConfigResponseDto, value: unknown) => {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic field update
-      setForm((prev: any) => ({ ...prev, [field]: value }));
+      setForm((prev) => ({ ...prev, [field]: value }));
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic payload construction
-      const payload: any = { [field]: value };
+      const payload: Partial<api.AppConfigResponseDto> = { [field]: value };
       
       // If we're updating port, ensure it's a number
       if (field === 'smtpPort' && value) {
         payload[field] = Number(value);
       }
       
-      await api.appConfigControllerUpdate(payload);
+      await api.appConfigControllerUpdate(payload as unknown as api.UpdateAppConfigDto);
       toast.success('Updated ' + field);
     } catch (err: unknown) {
       toast.error('Failed to update: ' + getErrorMessage(err));
@@ -55,7 +51,7 @@ export default function SmtpSettingsPage() {
   const testConnection = async () => {
     try {
       const toastId = toast.loading('Testing connection...');
-      await apiFetch('/api/emails/test-connection');
+      await api.emailControllerTestConnection();
       toast.success('SMTP connection successful', { id: toastId });
     } catch (err: unknown) {
       toast.error('Test failed: ' + getErrorMessage(err));

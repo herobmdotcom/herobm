@@ -3,11 +3,21 @@
 import React from 'react';
 import SlideOver from '@/components/shared/SlideOver';
 
+export interface SlideOverEvent {
+  outboxId: string;
+  eventType: string;
+  entityType?: string;
+  aggregateType?: string;
+  entityId?: string;
+  aggregateId?: string;
+  createdOn: string | number | Date;
+  payload?: unknown;
+}
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Any type for unknown event payload
-  event: any | null;
+  event: SlideOverEvent | null;
 }
 
 export default function EventPayloadSlideOver({ isOpen, onClose, event }: Props) {

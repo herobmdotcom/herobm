@@ -20,7 +20,6 @@
         "**/jest.config.*",
         "**/jest.setup.*",
         "apps/ops-portal/e2e/**",
-        "apps/sim-engine/**",
         "apps/mcp-server/**"
       ],
       "ignoreDependencies": [

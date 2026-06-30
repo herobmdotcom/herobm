@@ -51,6 +51,8 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         BEGIN
             FOR r IN SELECT sales_order_id FROM herobm_core.sales_orders WHERE name LIKE 'E2E-OW%'
             LOOP
+                DELETE FROM herobm_core.sales_credit_note_lines WHERE credit_note_id IN (SELECT credit_note_id FROM herobm_core.sales_credit_notes WHERE return_id IN (SELECT return_id FROM herobm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id));
+                DELETE FROM herobm_core.sales_credit_notes WHERE return_id IN (SELECT return_id FROM herobm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
                 DELETE FROM herobm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM herobm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
                 DELETE FROM herobm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
                 DELETE FROM herobm_core.sales_order_picks WHERE sales_order_id = r.sales_order_id;
