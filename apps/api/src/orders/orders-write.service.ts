@@ -35,6 +35,7 @@ import {
   productUoms,
   productComponents,
   tradingTerms,
+  taxCategories,
 } from '../drizzle/herobm-core-schema';
 import {
   CreateOrderDto,
@@ -673,6 +674,8 @@ export class OrdersWriteService {
         await tx.insert(salesOrderLineItems).values(lineValues);
       }
 
+      const [customerObj] = await tx.select({ name: coreAccounts.name }).from(coreAccounts).where(eq(coreAccounts.customerId, dto.customerId));
+
       // Audit + outbox
       await emitEvent(tx, {
         entityType: EntityType.SALES_ORDER,
@@ -682,6 +685,7 @@ export class OrdersWriteService {
         payload: {
           orderNumber,
           customerId: dto.customerId,
+          customerName: customerObj?.name,
           lineCount: lineValues.length,
         },
         actor,
@@ -731,6 +735,36 @@ export class OrdersWriteService {
               .fulfillmentLocationId as string,
           })
           .where(eq(salesOrderLineItems.salesOrderId, id));
+
+        const [loc] = await tx
+          .select({ name: locations.name })
+          .from(locations)
+          .where(
+            eq(
+              locations.locationId,
+              audit.changes.fulfillmentLocationId as string,
+            ),
+          );
+        if (loc) {
+          audit.changes.fulfillmentLocation = loc.name;
+          delete audit.changes.fulfillmentLocationId;
+        }
+      }
+
+      if (audit.previousValues.fulfillmentLocationId) {
+        const [loc] = await tx
+          .select({ name: locations.name })
+          .from(locations)
+          .where(
+            eq(
+              locations.locationId,
+              audit.previousValues.fulfillmentLocationId as string,
+            ),
+          );
+        if (loc) {
+          audit.previousValues.fulfillmentLocation = loc.name;
+          delete audit.previousValues.fulfillmentLocationId;
+        }
       }
 
       if (audit.hasChanges) {
@@ -1171,11 +1205,14 @@ export class OrdersWriteService {
       }
     }
 
+    const targetId = dto.targetId || id;
+    const contextSlug = dto.contextSlug || DATA_SOURCE_CONTEXT.SALES_ORDER;
+
     // 2. Generate PDF using the standard hook
     const { pdfBuffer, fileName } = await this.pdfTemplatesService.runHook(
       hookSlug,
-      id,
-      DATA_SOURCE_CONTEXT.SALES_ORDER,
+      targetId,
+      contextSlug,
       user,
       { customPdfText: dto.customPdfText },
     );
@@ -1437,6 +1474,11 @@ export class OrdersWriteService {
 
       await this.setTaxIsStale(orderId, isExternalTax, tx);
 
+      const [[product], [taxCategory]] = await Promise.all([
+        dto.productId ? tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, dto.productId)) : Promise.resolve([null]),
+        taxCategoryId ? tx.select({ title: taxCategories.title }).from(taxCategories).where(eq(taxCategories.taxCategoryId, taxCategoryId)) : Promise.resolve([null])
+      ]);
+
       await emitEvent(tx, {
         entityType: EntityType.SALES_ORDER,
         entityId: orderId,
@@ -1445,8 +1487,10 @@ export class OrdersWriteService {
         payload: {
           lineId: parentLineId,
           productId: dto.productId,
+          productName: product?.name,
           quantity: dto.quantity,
           taxCategoryId,
+          taxCategoryName: taxCategory?.title,
         },
         actor,
       });
@@ -1650,6 +1694,11 @@ export class OrdersWriteService {
 
       await this.setTaxIsStale(orderId, isExternalTax, tx);
 
+      const [[product], [taxCategory]] = await Promise.all([
+        dto.productId ? tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, dto.productId)) : Promise.resolve([null]),
+        taxCategoryId ? tx.select({ title: taxCategories.title }).from(taxCategories).where(eq(taxCategories.taxCategoryId, taxCategoryId)) : Promise.resolve([null])
+      ]);
+
       await emitEvent(tx, {
         entityType: EntityType.SALES_ORDER,
         entityId: orderId,
@@ -1658,8 +1707,10 @@ export class OrdersWriteService {
         payload: {
           lineId: parentLineId,
           productId: dto.productId,
+          productName: product?.name,
           quantity: dto.quantity,
           taxCategoryId,
+          taxCategoryName: taxCategory?.title,
           pricePerUnit: dto.pricePerUnit,
         },
         actor,
@@ -1894,6 +1945,8 @@ export class OrdersWriteService {
       const isExternalTax = resolvedTax.taxProvider !== 'internal';
       await this.setTaxIsStale(orderId, isExternalTax, tx);
 
+      const [product] = existingLine.productId ? await tx.select({ name: coreProducts.name }).from(coreProducts).where(eq(coreProducts.productId, existingLine.productId)) : [null];
+
       await emitEvent(tx, {
         entityType: EntityType.SALES_ORDER,
         entityId: orderId,
@@ -1902,6 +1955,7 @@ export class OrdersWriteService {
         payload: {
           lineId,
           productId: existingLine.productId,
+          productName: product?.name,
           quantity: existingLine.quantity,
         },
         actor,

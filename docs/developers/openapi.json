@@ -20676,6 +20676,14 @@
           "customPdfText": {
             "type": "string",
             "description": "Custom text injected into the generated PDF"
+          },
+          "targetId": {
+            "type": "string",
+            "description": "The target entity ID, if different from the order ID"
+          },
+          "contextSlug": {
+            "type": "string",
+            "description": "The context slug for the report data source"
           }
         },
         "required": [

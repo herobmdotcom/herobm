@@ -23,6 +23,7 @@ interface InvoicesSectionProps {
 
     invoices: SalesInvoice[];
     taxCategories: TaxCategory[];
+    onEmailDocumentClick?: (hookSlug: string, title: string, prefix: string, docName: string, targetId?: string, contextSlug?: string) => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   pickingSummary: Record<string, any> | null;
     setError: (msg: string) => void;
@@ -33,7 +34,7 @@ interface InvoicesSectionProps {
 
 export default function InvoicesSection({
     orderId, order, invoices, taxCategories,
-    pickingSummary, setError, loadInvoices, loadOrder,
+    pickingSummary, setError, loadInvoices, loadOrder, onEmailDocumentClick
 }: InvoicesSectionProps) {
     const { baseCurrency } = useSettings();
     const { permissions } = useAuth();
@@ -282,20 +283,16 @@ export default function InvoicesSection({
                             })()}
                             <button
                                 className="btn btn-secondary flex items-center justify-center p-2 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors"
-                                title={tSales('buttons.printInvoice')}
-                                onClick={async (e) => {
+                                title={tSales('buttons.emailInvoice')}
+                                onClick={(e) => {
                                     e.preventDefault();
-                                    try {
-                                        const res = await api.pdfTemplatesControllerRunHook('sales-invoice', {}, { id: inv.invoiceId, context: 'sales-invoice' });
-                                        const url = URL.createObjectURL(res.data as Blob);
-                                        window.open(url, '_blank');
-                                    } catch (err) {
-                                        setError(getErrorMessage(err));
+                                    if (onEmailDocumentClick) {
+                                        onEmailDocumentClick('sales-invoice', 'Email Sales Invoice', 'Invoice', 'Sales Invoice', inv.invoiceId, 'sales-invoice');
                                     }
                                 }}
                             >
-                                <span className="material-symbols-outlined text-[20px]">print</span>
-                                <span className="sr-only">{tSales('buttons.printInvoice')}</span>
+                                <span className="material-symbols-outlined text-[20px]">mail</span>
+                                <span className="sr-only">Email Invoice</span>
                             </button>
                         </div>
                     </Link>

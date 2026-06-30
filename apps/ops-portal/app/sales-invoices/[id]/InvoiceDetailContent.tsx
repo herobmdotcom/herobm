@@ -16,6 +16,7 @@ import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 import EntityBanner from '@/components/shared/EntityBanner';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
+import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
 
 import * as api from '@herobm/sdk';
 import { getErrorMessage, SALES_INVOICE_STATE, calculateEarlyPaymentDiscount } from '@herobm/shared';
@@ -29,6 +30,21 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
   const { invoice, loading, error } = useSalesInvoice(id as string);
   const [cancelling, setCancelling] = React.useState(false);
   const [markingPaid, setMarkingPaid] = React.useState(false);
+  const [emailDialogConfig, setEmailDialogConfig] = React.useState<{
+    isOpen: boolean;
+    hookSlug: string;
+    title: string;
+    prefix: string;
+    docName: string;
+    targetId?: string;
+    contextSlug?: string;
+  }>({
+    isOpen: false,
+    hookSlug: '',
+    title: '',
+    prefix: '',
+    docName: ''
+  });
 
   useDocumentTitle(invoice ? `Invoice ${invoice.invoiceNumber}` : t('loading'));
 
@@ -113,6 +129,39 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
     }
   ];
 
+  const allocationColumns: DataTableColumn<NonNullable<SalesInvoiceDetails['allocations']>[0]>[] = [
+    {
+      id: 'paymentNo',
+      header: t('columns.paymentNo'),
+      width: 250,
+      render: (alloc) => (
+        <span className="font-semibold cursor-pointer hover:underline" style={{ color: 'var(--accent)' }} onClick={() => router.push(`/payments?paymentId=${alloc.paymentId}`)}>
+          {alloc.paymentNumber}
+        </span>
+      ),
+    },
+    {
+      id: 'date',
+      header: t('columns.date'),
+      width: 150,
+      render: (alloc) => (
+        <span style={{ color: 'var(--text-secondary)' }}>
+          {new Date(alloc.paymentDate).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      id: 'allocatedAmount',
+      header: t('columns.allocatedAmount'),
+      align: 'right',
+      render: (alloc) => (
+        <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+          {formatAmount(parseFloat(alloc.allocatedAmount), alloc.currencyCode)}
+        </span>
+      ),
+    }
+  ];
+
   const linesFooter = (
     <>
       <tr style={{ borderTop: '2px solid var(--border)' }}>
@@ -153,7 +202,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
 
               {invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && (
                 <button
-                  className="btn btn-secondary btn-sm text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                  className="btn btn-danger btn-sm"
                   onClick={handleCancel}
                   disabled={cancelling}
                 >
@@ -176,11 +225,29 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           </div>
         )}
         <div className="card">
-          <h3 className="section-heading flex items-center gap-2 mb-4">
-            { }
-            <span className="material-symbols-outlined shrink-0">receipt_long</span>
-            <span>{t('invoiceDetails')}</span>
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-heading flex items-center gap-2">
+              { }
+              <span className="material-symbols-outlined shrink-0">receipt_long</span>
+              <span>{t('invoiceDetails')}</span>
+            </h3>
+            {invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => setEmailDialogConfig({
+                  isOpen: true,
+                  hookSlug: 'sales-invoice',
+                  title: 'Email Sales Invoice',
+                  prefix: 'Invoice',
+                  docName: 'Sales Invoice',
+                  targetId: invoice.invoiceId,
+                  contextSlug: 'sales-invoice'
+                })}
+              >
+                Email Invoice
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
@@ -407,42 +474,29 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               </button>
             )}
           </div>
-          {invoice.allocations && invoice.allocations.length > 0 ? (
-            <div className="overflow-x-auto -mx-5 sm:mx-0 px-5 sm:px-0">
-              <table className="table-lines min-w-[500px]">
-                <thead>
-                  <tr>
-                    <th style={{ width: 150 }}>{t('columns.paymentNo')}</th>
-                    <th style={{ width: 150 }}>{t('columns.date')}</th>
-                    <th style={{ textAlign: 'right' }}>{t('columns.allocatedAmount')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoice.allocations.map((alloc) => (
-                    <tr key={alloc.allocationId}>
-                      <td className="font-semibold text-[var(--accent)]">
-                        <span className="cursor-pointer hover:underline" onClick={() => router.push(`/payments?paymentId=${alloc.paymentId}`)}>
-                          {alloc.paymentNumber}
-                        </span>
-                      </td>
-                      <td style={{ color: 'var(--text-secondary)' }}>
-                        {new Date(alloc.paymentDate).toLocaleDateString()}
-                      </td>
-                      <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                        {formatAmount(parseFloat(alloc.allocatedAmount), alloc.currencyCode)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="overflow-x-auto -mx-5 sm:mx-0 px-5 sm:px-0">
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                {t('paymentAllocationsDesc')}
-              </p>
-            </div>
-          )}
+          <DataTable
+            data={invoice.allocations || []}
+            columns={allocationColumns}
+            keyExtractor={(alloc) => alloc.allocationId}
+            emptyMessage={t('paymentAllocationsDesc')}
+            mobileCard={(alloc) => (
+              <MobileLineItemCard
+                title={
+                  <span className="cursor-pointer hover:underline font-semibold" style={{ color: 'var(--accent)' }} onClick={() => router.push(`/payments?paymentId=${alloc.paymentId}`)}>
+                    {alloc.paymentNumber}
+                  </span>
+                }
+                subtitle={new Date(alloc.paymentDate).toLocaleDateString()}
+                details={[
+                  {
+                    label: t('columns.allocatedAmount'),
+                    value: formatAmount(parseFloat(alloc.allocatedAmount), alloc.currencyCode),
+                    isHighlighted: true
+                  }
+                ]}
+              />
+            )}
+          />
         </div>
 
         <div className="card">
@@ -457,6 +511,37 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           />
         </div>
       </div>
+      <EmailDocumentDialog
+        isOpen={emailDialogConfig.isOpen}
+        orderId={invoice.salesOrderId!}
+        orderNumber={invoice.invoiceNumber}
+        customerReference={''}
+        customerId={invoice.customerId!}
+        hookSlug={emailDialogConfig.hookSlug}
+        title={emailDialogConfig.title}
+        defaultSubjectPrefix={emailDialogConfig.prefix}
+        documentName={emailDialogConfig.docName}
+        targetId={emailDialogConfig.targetId}
+        contextSlug={emailDialogConfig.contextSlug}
+        onClose={() => setEmailDialogConfig(prev => ({ ...prev, isOpen: false }))}
+        onSuccess={() => {
+          setEmailDialogConfig(prev => ({ ...prev, isOpen: false }));
+          alert('Email queued successfully!');
+        }}
+        onPreview={async (customPdfText?: string) => {
+          try {
+            const response = await api.pdfTemplatesControllerRunHook(emailDialogConfig.hookSlug, { customPdfText }, { 
+              id: invoice.invoiceId, 
+              context: emailDialogConfig.hookSlug
+            });
+            const blob = new Blob([response.data as BlobPart], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, '_blank');
+          } catch (err: unknown) {
+            alert(getErrorMessage(err) || 'Failed to preview PDF');
+          }
+        }}
+      />
     </DetailsLayout>
   );
 }

@@ -28,18 +28,12 @@
   columns: (1fr, 1fr),
   gutter: 10pt,
   [
-    #text(12pt, weight: "semibold")[#data.header.orderNumber] \
-    #if data.header.name != "" [
-      #v(-0.1cm)
-      #text(9pt, fill: luma(120))[#data.header.name]
-    ]
+    #text(9pt, fill: luma(120))[Order No:] #h(4pt) #text(11pt, weight: "semibold")[#data.header.orderNumber] \
     #if "invoiceMeta" in data [
       #v(0.1cm)
-      #text(10pt, weight: "semibold")[#data.invoiceMeta.invoiceNumber]
-      #if data.invoiceMeta.totalInvoices > 1 [
-        #h(6pt)
-        #text(9pt, fill: luma(100))[(Invoice #data.invoiceMeta.sequenceNumber of #data.invoiceMeta.totalInvoices)]
-      ]
+      #text(9pt, fill: luma(120))[Invoice No:] #h(4pt) #text(11pt, weight: "semibold")[#data.invoiceMeta.invoiceNumber]
+      #h(6pt)
+      #text(9pt, fill: luma(100))[(Invoice \##data.invoiceMeta.sequenceNumber of #data.invoiceMeta.totalInvoices)]
     ]
   ],
   align(right)[
@@ -68,6 +62,11 @@
       text(9pt, weight: "bold", fill: luma(80))[Date:], data.header.orderDate,
       text(9pt, weight: "bold", fill: luma(80))[Customer PO:], if data.header.customerOrderNumber != "" [#data.header.customerOrderNumber] else [—],
       text(9pt, weight: "bold", fill: luma(80))[Currency:], data.header.currencyCode,
+      ..if "invoiceMeta" in data and data.invoiceMeta.dueDate != none {
+        (text(9pt, weight: "bold", fill: luma(80))[Due Date:], data.invoiceMeta.dueDate)
+      } else {
+        ()
+      }
     )
   ]
 )

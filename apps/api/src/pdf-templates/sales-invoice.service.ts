@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
 import { join } from 'path';
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, and, ne } from 'drizzle-orm';
 import { OrdersService } from '../orders/orders.service';
 import { OrdersWriteService } from '../orders/orders-write.service';
 import { SalesQuoteData } from './sales-quote.service';
@@ -12,6 +12,7 @@ import {
   salesInvoiceLines,
   taxCategories,
 } from '../drizzle/herobm-core-schema';
+import { SALES_INVOICE_STATE } from '@herobm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 
 @Injectable()
@@ -109,7 +110,12 @@ export class SalesInvoiceService {
         invoiceNumber: salesInvoices.invoiceNumber,
       })
       .from(salesInvoices)
-      .where(eq(salesInvoices.salesOrderId, orderId))
+      .where(
+        and(
+          eq(salesInvoices.salesOrderId, orderId),
+          ne(salesInvoices.stateCode, SALES_INVOICE_STATE.CANCELLED),
+        ),
+      )
       .orderBy(asc(salesInvoices.createdOn));
 
     const totalInvoices = allOrderInvoices.length;
@@ -120,6 +126,9 @@ export class SalesInvoiceService {
       ...invoiceData,
       invoiceMeta: {
         invoiceNumber: invoice.invoiceNumber,
+        dueDate: invoice.dueDate
+          ? new Date(invoice.dueDate).toLocaleDateString('en-IE')
+          : null,
         sequenceNumber,
         totalInvoices,
         orderTotal: fullOrderData.summary.totalAmount,

@@ -361,6 +361,11 @@ export class PickingService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
+      const [bin] = await tx
+        .select({ binNumber: bins.binNumber })
+        .from(bins)
+        .where(eq(bins.binId, binId));
+
       await emitEvent(tx, {
         entityType: EntityType.WAREHOUSE,
         entityId: newPick.pickId,
@@ -371,6 +376,7 @@ export class PickingService {
           salesOrderId: orderId,
           quantityPicked: quantity,
           binId,
+          binNumber: bin?.binNumber,
         },
         actor,
       });
@@ -844,10 +850,20 @@ export class PickingService {
       .returning();
 
     if (newState === SALES_ORDER_PICK_STATE.CANCELLED) {
-      const [order] = await tx
-        .select({ orderNumber: salesOrders.orderNumber })
-        .from(salesOrders)
-        .where(eq(salesOrders.salesOrderId, pick.salesOrderId));
+      const [[order], [product], [bin]] = await Promise.all([
+        tx
+          .select({ orderNumber: salesOrders.orderNumber })
+          .from(salesOrders)
+          .where(eq(salesOrders.salesOrderId, pick.salesOrderId)),
+        tx
+          .select({ name: coreProducts.name })
+          .from(coreProducts)
+          .where(eq(coreProducts.productId, pick.productId)),
+        pick.binId ? tx
+          .select({ binNumber: bins.binNumber })
+          .from(bins)
+          .where(eq(bins.binId, pick.binId)) : Promise.resolve([null]),
+      ]);
       await emitEvent(tx, {
         entityType: EntityType.WAREHOUSE,
         entityId: pickId,
@@ -858,8 +874,10 @@ export class PickingService {
           salesOrderId: pick.salesOrderId,
           salesOrderLineId: pick.salesOrderLineId,
           productId: pick.productId,
-          quantity: pick.quantity,
+          productName: product?.name,
+          quantityPicked: pick.quantity,
           binId: pick.binId,
+          binNumber: bin?.binNumber,
         },
         actor,
       });

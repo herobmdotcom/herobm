@@ -42,7 +42,7 @@ interface OrderDetailsCardProps {
     setEditDeliveryPostalCode: (val: string) => void;
     editDeliveryCountry: string;
     setEditDeliveryCountry: (val: string) => void;
-    onEmailDocumentClick: (hookSlug: string, title: string, prefix: string, docName: string) => void;
+    onEmailDocumentClick: (hookSlug: string, title: string, prefix: string, docName: string, targetId?: string, contextSlug?: string) => void;
     reportError: (err: unknown, context: string) => void;
     setError: (err: string) => void;
 }

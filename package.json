@@ -15,11 +15,14 @@
     "test": "make test-api",
     "verify": "make verify-local",
     "typecheck": "make typecheck-portal",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present",
+    "knip": "knip",
+    "knip-report": "knip --reporter markdown > knip-report.md"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",
-    "@types/es-aggregate-error": "^1.0.6"
+    "@types/es-aggregate-error": "^1.0.6",
+    "knip": "^6.23.0"
   },
   "overrides": {
     "react": "^19.0.0",

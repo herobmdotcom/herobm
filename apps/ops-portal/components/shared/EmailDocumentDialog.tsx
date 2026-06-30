@@ -32,12 +32,14 @@ interface EmailDocumentDialogProps {
   title: string;
   defaultSubjectPrefix: string;
   documentName: string;
-  onPreview: (pdfText: string) => void;
+  targetId?: string;
+  contextSlug?: string;
+  onPreview: (customText?: string) => void;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, customerReference, customerId, hookSlug, title, defaultSubjectPrefix, documentName, onPreview, onClose, onSuccess }: EmailDocumentDialogProps) {
+export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, customerReference, customerId, hookSlug, title, defaultSubjectPrefix, documentName, targetId, contextSlug, onPreview, onClose, onSuccess }: EmailDocumentDialogProps) {
   const t = useTranslations('salesOrders');
   const tCommon = useTranslations('common');
 
@@ -184,6 +186,8 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
         body: bodyText,
         hookSlug,
         customPdfText,
+        targetId,
+        contextSlug,
       });
       onSuccess();
     } catch (err: unknown) {

@@ -849,6 +849,11 @@ export class BackordersService {
         await this.generateDemand(demand.salesOrderId, lineGaps, actor, tx);
       }
 
+      const [loc] = await tx
+        .select({ name: locations.name })
+        .from(locations)
+        .where(eq(locations.locationId, newLocationId));
+
       // 8. Emit an event indicating reallocation
       await emitEvent(tx, {
         entityType: EntityType.SALES_ORDER,
@@ -858,7 +863,7 @@ export class BackordersService {
         actor,
         payload: {
           lineId: demand.salesOrderLineId,
-          newLocationId,
+          fulfillmentLocation: loc?.name || newLocationId,
           stillHasShortage: lineGaps.length > 0,
         },
       });

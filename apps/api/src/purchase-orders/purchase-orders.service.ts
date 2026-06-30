@@ -279,6 +279,11 @@ export class PurchaseOrdersService {
         await tx.insert(purchaseOrderLineItems).values(lineValues);
       }
 
+      const [vendor] = await tx
+        .select({ name: coreSuppliers.name })
+        .from(coreSuppliers)
+        .where(eq(coreSuppliers.vendorId, createDto.vendorId));
+
       console.log('[DEBUG] PO create - emitting event');
       await emitEvent(tx, {
         entityType: EntityType.PURCHASE_ORDER,
@@ -288,6 +293,7 @@ export class PurchaseOrdersService {
         payload: {
           orderNumber: order.orderNumber,
           vendorId: createDto.vendorId,
+          vendorName: vendor?.name,
           lineCount: createDto.lines?.length || 0,
         },
         actor: userId,
@@ -876,6 +882,11 @@ export class PurchaseOrdersService {
         taxCategoryId,
       });
 
+      const [product] = await tx
+        .select({ name: products.name })
+        .from(products)
+        .where(eq(products.productId, lineDto.productId));
+
       await emitEvent(tx, {
         entityType: EntityType.PURCHASE_ORDER,
         entityId: orderId,
@@ -883,6 +894,7 @@ export class PurchaseOrdersService {
         entityDisplayName: existing.orderNumber,
         payload: {
           productId: lineDto.productId,
+          productName: product?.name,
           quantity: lineDto.quantity,
           pricePerUnit: lineDto.pricePerUnit,
         },

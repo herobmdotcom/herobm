@@ -117,7 +117,7 @@ export class GoodsReceivedService {
 
       // 2. Validate location
       const [location] = await tx
-        .select({ locationId: locations.locationId })
+        .select({ locationId: locations.locationId, name: locations.name })
         .from(locations)
         .where(eq(locations.locationId, createDto.locationId))
         .limit(1);
@@ -533,6 +533,7 @@ export class GoodsReceivedService {
           vendorId: createDto.vendorId,
           vendorName: vendor.name,
           locationId: createDto.locationId,
+          locationName: location.name,
           packingSlipNumber: createDto.packingSlipNumber,
           lineCount: createDto.lines?.length || 0,
         },

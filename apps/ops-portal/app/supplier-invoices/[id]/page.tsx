@@ -14,6 +14,7 @@ import POMatchingPanel from '@/components/shared/POMatchingPanel';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
+import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
 import { cap, isBackTransition, PURCHASE_INVOICE_LIFECYCLE, PURCHASE_INVOICE_STATE, MATCH_STATUS, calculateEarlyPaymentDiscount, getErrorMessage } from '@herobm/shared';
 import * as api from '@herobm/sdk';
 import { useAuth } from '@/components/AuthGate';
@@ -120,6 +121,42 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
   const isEditable = invoice.stateCode === PURCHASE_INVOICE_STATE.DRAFT;
   const canEditLines = isEditable && !isMatchingMode;
   const isBack = (from: string, to: string) => isBackTransition(PURCHASE_INVOICE_LIFECYCLE, from, to);
+
+  const allocationColumns: DataTableColumn<typeof displayAllocations[0]>[] = [
+    {
+      id: 'paymentNo',
+      header: t('columns.paymentNo'),
+      width: 250,
+      render: (alloc) => (
+        alloc.paymentId ? (
+          <span className="font-semibold cursor-pointer hover:underline" style={{ color: 'var(--accent)' }} onClick={() => setSelectedPaymentId(alloc.paymentId)}>
+            {alloc.paymentNumber}
+          </span>
+        ) : (
+          <span className="font-semibold">{alloc.paymentNumber}</span>
+        )
+      )
+    },
+    {
+      id: 'date',
+      header: t('columns.date'),
+      render: (alloc) => (
+        <span style={{ color: 'var(--text-secondary)' }}>
+          {new Date(alloc.paymentDate).toLocaleDateString()}
+        </span>
+      )
+    },
+    {
+      id: 'allocatedAmount',
+      header: t('columns.allocatedAmount'),
+      align: 'right',
+      render: (alloc) => (
+        <span className="font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {formatAmount(parseFloat(alloc.allocatedAmount), alloc.currencyCode)}
+        </span>
+      )
+    }
+  ];
 
   const InvoiceAllocationCell = ({ line }: { line: PurchaseInvoiceDetails['lines'][0] }) => {
     if (line.matchStatus === MATCH_STATUS.MATCHED) {
@@ -879,50 +916,20 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
             )}
           </div>
           {displayAllocations && displayAllocations.length > 0 ? (
-            <>
-              <div className="hidden lg:block overflow-x-auto">
-                <table className="w-full text-left border-collapse mt-2">
-                  <thead>
-                    <tr className="border-b border-[var(--border)]">
-                      <th className="py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.paymentNo')}</th>
-                      <th className="py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.date')}</th>
-                      <th className="py-2 text-xs font-semibold text-right" style={{ color: 'var(--text-muted)' }}>{t('columns.allocatedAmount')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {displayAllocations.map((alloc) => (
-                      <tr key={alloc.allocationId} className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--bg-card-hover)] transition-colors">
-                        <td className="py-2 text-sm font-medium">
-                          {alloc.paymentId ? (
-                            <span className="text-[var(--accent)] cursor-pointer hover:underline" onClick={() => setSelectedPaymentId(alloc.paymentId)}>
-                              {alloc.paymentNumber}
-                            </span>
-                          ) : (
-                            <span>{alloc.paymentNumber}</span>
-                          )}
-                        </td>
-                        <td className="py-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                          {new Date(alloc.paymentDate).toLocaleDateString()}
-                        </td>
-                        <td className="py-2 text-sm font-semibold text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                          {formatAmount(parseFloat(alloc.allocatedAmount), alloc.currencyCode)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="flex flex-col lg:hidden gap-3 mt-2">
-                {displayAllocations.map((alloc) => (
+            <div className="mt-2">
+              <DataTable
+                columns={allocationColumns}
+                data={displayAllocations}
+                keyField="allocationId"
+                mobileCard={(alloc) => (
                   <MobileLineItemCard
-                    key={alloc.allocationId}
                     title={
                       alloc.paymentId ? (
-                        <span className="text-[var(--accent)] cursor-pointer hover:underline" onClick={() => setSelectedPaymentId(alloc.paymentId)}>
+                        <span className="font-semibold cursor-pointer hover:underline" style={{ color: 'var(--accent)' }} onClick={() => setSelectedPaymentId(alloc.paymentId)}>
                           {alloc.paymentNumber}
                         </span>
                       ) : (
-                        <span>{alloc.paymentNumber}</span>
+                        <span className="font-semibold">{alloc.paymentNumber}</span>
                       )
                     }
                     subtitle={new Date(alloc.paymentDate).toLocaleDateString()}
@@ -934,9 +941,9 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                       }
                     ]}
                   />
-                ))}
-              </div>
-            </>
+                )}
+              />
+            </div>
           ) : (
             <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
               {t('noPaymentsAllocated')}

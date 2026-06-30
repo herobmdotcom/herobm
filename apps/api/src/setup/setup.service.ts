@@ -885,7 +885,10 @@ export class SetupService {
               entityId: existingApp.settingsId,
               eventType: EventType.UPDATED,
               entityDisplayName: 'App Settings',
-              payload: { defaultFulfillmentLocationId: loc.locationId },
+              payload: { 
+                defaultFulfillmentLocationId: loc.locationId,
+                defaultFulfillmentLocationName: loc.name
+              },
             });
           }
         }

@@ -22,7 +22,6 @@ export interface CreateAccountDto {
   parentCustomerId?: string;
   taxPositionId?: string;
   currencyCode?: string;
-  customerDiscount?: string;
   notes?: string;
   bankAccountName?: string;
   bankBsb?: string;

@@ -229,6 +229,17 @@ export class PaymentsService {
         parseFloat(dto.totalAmount?.toString() || '0') * fx.rate
       ).toFixed(2);
 
+      let initialUnallocated = parseFloat(dto.totalAmount?.toString() || '0');
+      let baseInitialUnallocated = parseFloat(baseAmount);
+
+      if (dto.allocations && dto.allocations.length > 0) {
+        for (const alloc of dto.allocations) {
+          const allocAmt = parseFloat(alloc.allocatedAmount.toString() || '0');
+          initialUnallocated -= allocAmt;
+          baseInitialUnallocated -= allocAmt * fx.rate;
+        }
+      }
+
       const [payment] = await tx
         .insert(paymentEntries)
         .values({
@@ -239,9 +250,9 @@ export class PaymentsService {
           paymentDate: new Date(dto.paymentDate),
           modeOfPayment: dto.modeOfPayment,
           totalAmount: dto.totalAmount?.toString() || '0',
-          unallocatedAmount: dto.totalAmount?.toString() || '0',
+          unallocatedAmount: initialUnallocated.toString(),
           baseTotalAmount: baseAmount,
-          baseUnallocatedAmount: baseAmount,
+          baseUnallocatedAmount: baseInitialUnallocated.toFixed(2),
           glAccountBank: dto.glAccountBank,
           referenceNumber: dto.referenceNumber,
           currencyCode: dto.currencyCode,
@@ -1630,6 +1641,29 @@ export class PaymentsService {
               allocationId: alloc.allocationId,
               referenceType: alloc.referenceType,
               referenceId: alloc.referenceId,
+              allocatedAmount: alloc.allocatedAmount,
+              newOutstandingBalance: newOutstanding,
+            },
+            actor,
+          });
+
+          // Also emit to the invoice event stream
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic document table access
+          const entityDisplayName =
+            doc.invoiceNumber ||
+            doc.creditNoteNumber ||
+            doc.debitNoteNumber ||
+            alloc.referenceId;
+          await emitEvent(tx as unknown as DrizzleDB, {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Types align dynamically
+            entityType: alloc.referenceType,
+            entityId: alloc.referenceId,
+            eventType: EventType.PAYMENT_ALLOCATED,
+            entityDisplayName,
+            payload: {
+              paymentId: paymentId,
+              paymentNumber: payment.paymentNumber,
+              allocationId: alloc.allocationId,
               allocatedAmount: alloc.allocatedAmount,
               newOutstandingBalance: newOutstanding,
             },

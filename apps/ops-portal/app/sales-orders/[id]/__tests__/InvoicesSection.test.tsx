@@ -137,7 +137,7 @@ describe('InvoicesSection — rendering', () => {
             lines: [],
         };
         render(<InvoicesSection {...defaultProps} invoices={[invoice]} />);
-        expect(screen.getByText('buttons.printInvoice')).toBeInTheDocument();
+        expect(screen.getByText('Email Invoice')).toBeInTheDocument();
     });
 
     it('shows Create Invoice button for shipped state', () => {
@@ -276,15 +276,10 @@ describe('InvoicesSection — create invoice form', () => {
     });
 });
 
-describe('InvoicesSection — PDF download', () => {
-    it('clicking Print PDF triggers blob fetch and opens window', async () => {
+describe('InvoicesSection — Email Invoice Trigger', () => {
+    it('clicking Email Invoice calls onEmailDocumentClick', async () => {
         const user = userEvent.setup();
-        const mockOpen = jest.fn();
-        jest.spyOn(window, 'open').mockImplementation(mockOpen);
-        // jsdom doesn't have URL.createObjectURL — define it
-        const origCreateObjectURL = URL.createObjectURL;
-        URL.createObjectURL = jest.fn().mockReturnValue('blob:mock-url');
-
+        const onEmailDocumentClick = jest.fn();
         const invoice: SalesInvoice = {
             invoiceId: 'inv-1',
             invoiceNumber: 'INV-001',
@@ -295,21 +290,10 @@ describe('InvoicesSection — PDF download', () => {
             lines: [],
         };
 
-        render(<InvoicesSection {...defaultProps} invoices={[invoice]} />);
-        await user.click(screen.getByText('buttons.printInvoice'));
-
-        const api = require('@herobm/sdk');
-        await waitFor(() => {
-            expect(api.pdfTemplatesControllerRunHook).toHaveBeenCalledWith(
-                'sales-invoice',
-                {},
-                expect.objectContaining({ id: 'inv-1', context: 'sales-invoice' })
-            );
-            expect(mockOpen).toHaveBeenCalledWith('blob:mock-url', '_blank');
-        });
-
-        URL.createObjectURL = origCreateObjectURL;
-        jest.restoreAllMocks();
+        render(<InvoicesSection {...defaultProps} invoices={[invoice]} onEmailDocumentClick={onEmailDocumentClick} />);
+        await user.click(screen.getByText('Email Invoice'));
+        
+        expect(onEmailDocumentClick).toHaveBeenCalledWith('sales-invoice', 'Email Sales Invoice', 'Invoice', 'Sales Invoice', 'inv-1', 'sales-invoice');
     });
 });
 

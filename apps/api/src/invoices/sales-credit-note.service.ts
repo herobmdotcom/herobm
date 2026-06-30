@@ -541,6 +541,11 @@ export class SalesCreditNoteService {
         actor,
       });
 
+      const [customer] = order.customerId ? await innerTx
+        .select({ name: coreAccounts.name })
+        .from(coreAccounts)
+        .where(eq(coreAccounts.customerId, order.customerId)) : [null];
+
       // 9. Outbox event
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle transaction type mismatch with Outbox emitter
       await emitEvent(innerTx as any, {
@@ -556,6 +561,7 @@ export class SalesCreditNoteService {
           salesOrderId: ret.salesOrderId,
           orderNumber: order.orderNumber,
           customerId: order.customerId,
+          customerName: customer?.name,
           totalCredit: totalCreditAmount,
           totalTax: totalTaxAmount,
           totalFees,

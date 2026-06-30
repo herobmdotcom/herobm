@@ -1473,6 +1473,11 @@ export class InventoryService {
             .where(eq(salesOrderReturnLines.returnLineId, lineDto.lineId));
         }
 
+        const [[product], [destBin]] = await Promise.all([
+          tx.select({ name: products.name }).from(products).where(eq(products.productId, productId)),
+          tx.select({ binNumber: bins.binNumber }).from(bins).where(eq(bins.binId, lineDto.destinationBinId))
+        ]);
+
         await emitEvent(tx as unknown as DrizzleDB, {
           entityType: EntityType.WAREHOUSE,
           entityId: lineDto.lineId,
@@ -1482,8 +1487,10 @@ export class InventoryService {
             lineId: lineDto.lineId,
             sourceType: lineDto.sourceType,
             productId,
+            productName: product?.name,
             quantityPutaway: lineDto.quantity,
             destinationBinId: lineDto.destinationBinId,
+            destinationBinNumber: destBin?.binNumber,
           },
           actor: userId,
         });
@@ -1849,6 +1856,12 @@ export class InventoryService {
         ],
       });
 
+      const [[productObj], [sourceBinObj], [targetBinObj]] = await Promise.all([
+        tx.select({ name: products.name }).from(products).where(eq(products.productId, productId)),
+        tx.select({ binNumber: bins.binNumber }).from(bins).where(eq(bins.binId, sourceBin.binId)),
+        tx.select({ binNumber: bins.binNumber }).from(bins).where(eq(bins.binId, targetBinId))
+      ]);
+
       await emitEvent(tx as unknown as DrizzleDB, {
         entityType: EntityType.WAREHOUSE,
         entityId: dto.sourceBinId,
@@ -1856,10 +1869,13 @@ export class InventoryService {
         entityDisplayName: reference,
         payload: {
           productId,
+          productName: productObj?.name,
           sourceBinId: sourceBin.binId,
+          sourceBinNumber: sourceBinObj?.binNumber,
           targetBinId,
+          targetBinNumber: targetBinObj?.binNumber,
           quantity: quantityToMove,
-          reason: dto.reason,
+          reason: dto.reason || 'None',
           isUnquarantining,
         },
         actor: userId,

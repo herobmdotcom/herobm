@@ -1,6 +1,4 @@
-
 @import "tailwindcss";
-@import "../theme.css";
 
 /* Status badges */
 .badge {
@@ -279,7 +277,7 @@ select.input:not([multiple]):not([size]) {
 }
 
 
-/* STITCH UI GLOBAL THEME */
+/* HeroBM Global Theme */
 
 :root {
 
@@ -296,13 +294,25 @@ select.input:not([multiple]):not([size]) {
   --accent-hover: #005145;
   --accent-glow: #FFFFFF;
   --brand-navy: #041627;
+}
 
-  /* Fill the <main> container, absorbing its 2rem padding without breaking out to sidebar */
-        background-color: var(--bg-primary);
+/* Base resets */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: 'Inter', sans-serif;
-      flex: 1;
-    }
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ── Collapsible card chevron rotation ────────────────────────────────── */
+details summary::-webkit-details-marker { display: none; }
+details[open] > summary .details-chevron {
+  transform: rotate(90deg);
+}
 
 /* Active Sidebar Item Shadow Match */
 aside nav a[style*="var(--accent-glow)"] {

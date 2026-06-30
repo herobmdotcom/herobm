@@ -35,7 +35,7 @@ import InvoicesSection from './InvoicesSection';
 import ReturnsSection from './ReturnsSection';
 import FulfillmentSection from './FulfillmentSection';
 import ShipmentsSection from './ShipmentsSection';
-import EmailDocumentDialog from './EmailDocumentDialog';
+import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
 
 import { formatLocationDisplay } from '@/lib/formatters';
 import OrderDetailsCard from './OrderDetailsCard';
@@ -160,6 +160,8 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
         title: string;
         prefix: string;
         docName: string;
+        targetId?: string;
+        contextSlug?: string;
     }>({
         isOpen: false,
         hookSlug: '',
@@ -424,7 +426,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         setEditNotes={setEditNotes}
                         saveHeader={saveHeader}
                         locations={locations}
-                        onEmailDocumentClick={(hookSlug, title, prefix, docName) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName })}
+                        onEmailDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName, targetId, contextSlug })}
                         reportError={reportError}
                         setError={setError}
                         customerDeliveryAddresses={customerDeliveryAddresses}
@@ -1430,6 +1432,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         setError={setError}
                         loadInvoices={loadInvoices}
                         loadOrder={loadOrder}
+                        onEmailDocumentClick={(hookSlug, title, prefix, docName, targetId, contextSlug) => setEmailDialogConfig({ isOpen: true, hookSlug, title, prefix, docName, targetId, contextSlug })}
                     />
                 )}
 
@@ -1468,12 +1471,14 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     title={emailDialogConfig.title}
                     defaultSubjectPrefix={emailDialogConfig.prefix}
                     documentName={emailDialogConfig.docName}
+                    targetId={emailDialogConfig.targetId}
+                    contextSlug={emailDialogConfig.contextSlug}
                     onClose={() => setEmailDialogConfig(prev => ({ ...prev, isOpen: false }))}
                     onSuccess={() => {
                         setEmailDialogConfig(prev => ({ ...prev, isOpen: false }));
                         toast.success('Email queued successfully!');
                     }}
-                    onPreview={async (customPdfText) => {
+                    onPreview={async (customPdfText?: string) => {
                         try {
                             const response = await api.pdfTemplatesControllerRunHook(emailDialogConfig.hookSlug, { customPdfText }, { 
                                 id: order.salesOrderId!, 

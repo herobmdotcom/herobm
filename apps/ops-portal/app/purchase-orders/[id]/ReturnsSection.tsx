@@ -8,6 +8,7 @@ import * as api from '@herobm/sdk';
 import { PURCHASE_RETURN_STATE } from '@herobm/shared';
 import InitiateReturnModal from './InitiateReturnModal';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
+import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
 
 interface PriceWarningPayload {
   poPrice: string;
@@ -152,89 +153,79 @@ function ReturnCard({
         )}
       </div>
 
-      {/* Desktop Table */}
-      <div className="hidden lg:block overflow-x-auto">
-        <table className="table-lines w-full">
-          <thead>
-            <tr>
-              <th>{tPurchase('columns.product')}</th>
-              <th>{tPurchase('columns.description')}</th>
-              <th style={{ textAlign: 'right' }}>{tPurchase('columns.unitPrice')}</th>
-              <th style={{ textAlign: 'right' }}>{tPurchase('columns.qtyReturned')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[...r.lines]
-              .sort((a, b) => {
-                const aIdx = orderLines.findIndex((ol) => ol.purchaseOrderLineId === a.purchaseOrderLineId);
-                const bIdx = orderLines.findIndex((ol) => ol.purchaseOrderLineId === b.purchaseOrderLineId);
-                return aIdx - bIdx;
-              })
-              .map((rl) => {
-                const orderLine = orderLines.find(
-                  (ol) => ol.purchaseOrderLineId === rl.purchaseOrderLineId,
-                );
-                return (
-                  <tr key={rl.returnLineId}>
-                    <td style={{ fontWeight: 600, fontSize: 12 }}>
-                      {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
-                    </td>
-                    <td>{orderLine?.productDescription || rl.productDescription || '—'}</td>
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                      {(() => {
-                        const relatedEvents = events?.filter(e => e.payload && e.payload.returnId === r.returnId) || [];
-                        const priceWarning = relatedEvents.find(e => e.eventType === 'price_discrepancy_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
-                        
-                        if (priceWarning) {
-                          const payload = priceWarning.payload as unknown as PriceWarningPayload;
-                          return (
-                            <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }} title="Price discrepancy warning">
-                              <span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: 11, color: 'var(--text-muted)' }}>
-                                {parseFloat(payload.poPrice).toFixed(2)}
-                              </span>
-                              <strong style={{ fontSize: 12 }}>
-                                {currencyCode ? `${currencyCode} ` : ''}
-                                {parseFloat(payload.invoicePrice).toFixed(2)}
-                              </strong>
-                            </div>
-                          );
-                        }
-                        const poPrice = orderLine ? parseFloat(orderLine.pricePerUnit).toFixed(2) : '—';
-                        if (poPrice === '—') return poPrice;
-                        return currencyCode ? `${currencyCode} ${poPrice}` : poPrice;
-                      })()}
-                    </td>
-                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                      {(() => {
-                        const relatedEvents = events?.filter(e => e.payload && e.payload.returnId === r.returnId) || [];
-                        const qtyWarning = relatedEvents.find(e => e.eventType === 'over_returned_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
-                        
-                        if (qtyWarning) {
-                          return (
-                            <span style={{ color: '#d97706', fontWeight: 600 }} title="Over-returned warning">
-                              {parseFloat(rl.quantityReturned || '0')}*
-                            </span>
-                          );
-                        }
-                        return parseFloat(rl.quantityReturned || '0');
-                      })()}
-                    </td>
-                  </tr>
-                );
-              })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile Cards */}
-      <div className="flex flex-col lg:hidden mt-2">
-        {[...r.lines]
-          .sort((a, b) => {
+      <div className="mt-2">
+        <DataTable
+          columns={[
+            {
+              id: 'product',
+              header: tPurchase('columns.product'),
+              render: (rl) => {
+                const orderLine = orderLines.find((ol) => ol.purchaseOrderLineId === rl.purchaseOrderLineId);
+                return <span style={{ fontWeight: 600, fontSize: 12 }}>{orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}</span>;
+              }
+            },
+            {
+              id: 'description',
+              header: tPurchase('columns.description'),
+              render: (rl) => {
+                const orderLine = orderLines.find((ol) => ol.purchaseOrderLineId === rl.purchaseOrderLineId);
+                return orderLine?.productDescription || rl.productDescription || '—';
+              }
+            },
+            {
+              id: 'unitPrice',
+              header: tPurchase('columns.unitPrice'),
+              align: 'right',
+              render: (rl) => {
+                const orderLine = orderLines.find((ol) => ol.purchaseOrderLineId === rl.purchaseOrderLineId);
+                const relatedEvents = events?.filter(e => e.payload && e.payload.returnId === r.returnId) || [];
+                const priceWarning = relatedEvents.find(e => e.eventType === 'price_discrepancy_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
+                
+                if (priceWarning) {
+                  const payload = priceWarning.payload as unknown as PriceWarningPayload;
+                  return (
+                    <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }} title="Price discrepancy warning">
+                      <span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: 11, color: 'var(--text-muted)' }}>
+                        {parseFloat(payload.poPrice).toFixed(2)}
+                      </span>
+                      <strong style={{ fontSize: 12 }}>
+                        {currencyCode ? `${currencyCode} ` : ''}
+                        {parseFloat(payload.invoicePrice).toFixed(2)}
+                      </strong>
+                    </div>
+                  );
+                }
+                const poPrice = orderLine ? parseFloat(orderLine.pricePerUnit).toFixed(2) : '—';
+                if (poPrice === '—') return poPrice;
+                return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{currencyCode ? `${currencyCode} ${poPrice}` : poPrice}</span>;
+              }
+            },
+            {
+              id: 'qty',
+              header: tPurchase('columns.qtyReturned'),
+              align: 'right',
+              render: (rl) => {
+                const relatedEvents = events?.filter(e => e.payload && e.payload.returnId === r.returnId) || [];
+                const qtyWarning = relatedEvents.find(e => e.eventType === 'over_returned_warning' && e.payload?.purchaseOrderLineId === rl.purchaseOrderLineId);
+                
+                if (qtyWarning) {
+                  return (
+                    <span style={{ color: '#d97706', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }} title="Over-returned warning">
+                      {parseFloat(rl.quantityReturned || '0')}*
+                    </span>
+                  );
+                }
+                return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{parseFloat(rl.quantityReturned || '0')}</span>;
+              }
+            }
+          ]}
+          data={[...r.lines].sort((a, b) => {
             const aIdx = orderLines.findIndex((ol) => ol.purchaseOrderLineId === a.purchaseOrderLineId);
             const bIdx = orderLines.findIndex((ol) => ol.purchaseOrderLineId === b.purchaseOrderLineId);
             return aIdx - bIdx;
-          })
-          .map((rl, idx) => {
+          })}
+          keyField="returnLineId"
+          mobileCard={(rl, idx) => {
             const orderLine = orderLines.find(
               (ol) => ol.purchaseOrderLineId === rl.purchaseOrderLineId,
             );
@@ -245,7 +236,6 @@ function ReturnCard({
             
             return (
               <MobileLineItemCard
-                key={rl.returnLineId}
                 title={orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
                 subtitle={orderLine?.productDescription || rl.productDescription || '—'}
                 topRightBadge={`#${idx + 1}`}
@@ -285,7 +275,8 @@ function ReturnCard({
                 ]}
               />
             );
-        })}
+          }}
+        />
       </div>
 
       <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>

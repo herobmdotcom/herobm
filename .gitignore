@@ -16,6 +16,8 @@ yarn-error.log*
 
 # Docker
 docker-compose.override.yml
+# Knip Output
+knip-report.md
 
 # OS files
 Thumbs.db

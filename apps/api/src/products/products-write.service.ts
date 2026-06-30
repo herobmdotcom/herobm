@@ -15,6 +15,7 @@ import {
   productDefaultBins,
   productComponents,
   productSuppliers,
+  bins,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -511,6 +512,11 @@ export class ProductsWriteService {
         })
         .returning();
 
+      const [bin] = await tx
+        .select({ binNumber: bins.binNumber })
+        .from(bins)
+        .where(eq(bins.binId, dto.binId));
+
       await emitEvent(tx, {
         entityType: EntityType.PRODUCT,
         entityId: productId,
@@ -519,6 +525,7 @@ export class ProductsWriteService {
         payload: {
           action: 'linked_default_bin',
           binId: dto.binId,
+          binNumber: bin?.binNumber,
           isPrimary: dto.isPrimaryPerLocation,
         },
         actor,
@@ -547,17 +554,27 @@ export class ProductsWriteService {
         .delete(productDefaultBins)
         .where(eq(productDefaultBins.productDefaultBinId, productDefaultBinId));
 
-      const [product] = await tx
-        .select({ name: coreProducts.name })
-        .from(coreProducts)
-        .where(eq(coreProducts.productId, existing[0].productId));
+      const [[product], [bin]] = await Promise.all([
+        tx
+          .select({ name: coreProducts.name })
+          .from(coreProducts)
+          .where(eq(coreProducts.productId, existing[0].productId)),
+        tx
+          .select({ binNumber: bins.binNumber })
+          .from(bins)
+          .where(eq(bins.binId, existing[0].binId))
+      ]);
 
       await emitEvent(tx, {
         entityType: EntityType.PRODUCT,
         entityId: existing[0].productId,
         eventType: EventType.UPDATED,
         entityDisplayName: product.name,
-        payload: { action: 'unlinked_default_bin', binId: existing[0].binId },
+        payload: { 
+          action: 'unlinked_default_bin', 
+          binId: existing[0].binId,
+          binNumber: bin?.binNumber,
+        },
         actor,
       });
     });

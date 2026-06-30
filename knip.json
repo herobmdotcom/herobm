@@ -1,0 +1,30 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema-json-bindings.json",
+  "workspaces": {
+    ".": {
+      "ignore": [
+        "**/scratch/**",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx",
+        "**/*.e2e-spec.ts",
+        "infra/tests/**",
+        "infra/heavy_tests/**",
+        "infra/test-utils/**",
+        "**/scripts/**",
+        "**/tools/**",
+        "scripts/**",
+        "tools/**",
+        "apps/api/test/**",
+        "**/*test*.*",
+        "**/jest.config.*",
+        "**/jest.setup.*",
+        "apps/ops-portal/e2e/**",
+        "apps/sim-engine/**",
+        "apps/mcp-server/**"
+      ]
+    }
+  },
+  "jest": false
+}

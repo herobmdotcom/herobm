@@ -17,4 +17,8 @@ export interface EmailDocumentDto {
   hookSlug?: string;
   /** Custom text injected into the generated PDF */
   customPdfText?: string;
+  /** The target entity ID, if different from the order ID */
+  targetId?: string;
+  /** The context slug for the report data source */
+  contextSlug?: string;
 }

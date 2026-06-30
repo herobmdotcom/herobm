@@ -443,6 +443,20 @@ export class EmailDocumentDto {
   @IsOptional()
   @IsString()
   customPdfText?: string;
+
+  @ApiPropertyOptional({
+    description: 'The target entity ID, if different from the order ID',
+  })
+  @IsOptional()
+  @IsString()
+  targetId?: string;
+
+  @ApiPropertyOptional({
+    description: 'The context slug for the report data source',
+  })
+  @IsOptional()
+  @IsString()
+  contextSlug?: string;
 }
 
 export class ReallocateDemandDto {

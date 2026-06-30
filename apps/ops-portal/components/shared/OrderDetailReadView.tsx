@@ -14,6 +14,7 @@ import { useTranslations } from 'next-intl';
 import { computeOrderTotals } from '@herobm/shared';
 import MobileLineItemCard from './MobileLineItemCard';
 import EntityBanner from './EntityBanner';
+import { DataTable, DataTableColumn } from './DataTable';
 
 /* ── Type definitions ────────────────────────────────────────────── */
 
@@ -97,6 +98,89 @@ export default function OrderDetailReadView({
   const { subtotal, totalTax, totalAmount: grandTotal } = computeOrderTotals(order.lines);
   const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
   const cc = order.currencyCode || 'EUR';
+
+  const columns: DataTableColumn<OrderLine>[] = [
+    {
+      id: 'lineNumber',
+      header: '#',
+      width: 40,
+      render: (line) => <span style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</span>
+    },
+    {
+      id: 'product',
+      header: tCols('product'),
+      render: (line) => (
+        <span style={{ fontWeight: 600, fontSize: 12 }}>
+          {line.productNumber || line.productId?.substring(0, 8) || '—'}
+        </span>
+      )
+    },
+    {
+      id: 'description',
+      header: tCols('description'),
+      render: (line) => line.productDescription || '—'
+    },
+    {
+      id: 'qty',
+      header: tCols('qty'),
+      width: 90,
+      align: 'right',
+      render: (line) => (
+        <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {line.quantity}
+        </span>
+      )
+    },
+    {
+      id: 'unitPrice',
+      header: tCols('unitPrice'),
+      width: 110,
+      align: 'right',
+      render: (line) => (
+        <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {formatAmount(parseFloat(line.pricePerUnit || '0'), cc)}
+        </span>
+      )
+    },
+    {
+      id: 'discountPct',
+      header: tCols('discountPct'),
+      width: 80,
+      align: 'right',
+      render: (line) => (
+        <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+          {line.discountPercentage || '0'}%
+        </span>
+      )
+    },
+    {
+      id: 'tax',
+      header: tCols('tax'),
+      width: 110,
+      align: 'right',
+      render: (line) => {
+        const amt = parseFloat(line.amount || '0');
+        const tax = parseFloat(line.tax || '0');
+        if (amt > 0 && tax > 0) {
+          const pct = (tax / amt) * 100;
+          return <span style={{ fontSize: 12 }}>{`${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`}</span>;
+        }
+        if (amt > 0 && tax === 0) return <span style={{ fontSize: 12 }}>{tRV('exempt')}</span>;
+        return <span style={{ fontSize: 12 }}>—</span>;
+      }
+    },
+    {
+      id: 'amount',
+      header: tCols('amount'),
+      width: 110,
+      align: 'right',
+      render: (line) => (
+        <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+          {formatAmount(parseFloat(line.amount || '0'), cc)}
+        </span>
+      )
+    }
+  ];
 
   return (
     <>
@@ -209,83 +293,15 @@ export default function OrderDetailReadView({
         >
           {tRV('lineItems')}
         </h3>
-        
-        {/* Desktop Table */}
-        <div className="hidden lg:block overflow-x-auto">
-          <table className="table-lines w-full">
-            <thead>
-            <tr>
-              <th style={{ width: 40 }}>#</th>
-              <th>{tCols('product')}</th>
-              <th>{tCols('description')}</th>
-              <th style={{ width: 90, textAlign: 'right' }}>{tCols('qty')}</th>
-              <th style={{ width: 110, textAlign: 'right' }}>{tCols('unitPrice')}</th>
-              <th style={{ width: 80, textAlign: 'right' }}>{tCols('discountPct')}</th>
-              <th style={{ width: 110, textAlign: 'right' }}>{tCols('tax')}</th>
-              <th style={{ width: 110, textAlign: 'right' }}>{tCols('amount')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {order.lines.map((line) => (
-              <tr key={line.salesOrderLineId}>
-                <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
-                <td style={{ fontWeight: 600, fontSize: 12 }}>
-                  {line.productNumber || line.productId?.substring(0, 8) || '—'}
-                </td>
-                <td>{line.productDescription || '—'}</td>
-                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                  {line.quantity}
-                </td>
-                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                  {formatAmount(parseFloat(line.pricePerUnit || '0'), cc)}
-                </td>
-                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                  {line.discountPercentage || '0'}%
-                </td>
-                <td style={{ textAlign: 'right', fontSize: 12 }}>
-                  {(() => {
-                    const amt = parseFloat(line.amount || '0');
-                    const tax = parseFloat(line.tax || '0');
-                    if (amt > 0 && tax > 0) {
-                      const pct = (tax / amt) * 100;
-                      return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
-                    }
-                    if (amt > 0 && tax === 0) return tRV('exempt');
-                    return '—';
-                  })()}
-                </td>
-                <td
-                  style={{
-                    textAlign: 'right',
-                    fontWeight: 600,
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
-                >
-                  {formatAmount(parseFloat(line.amount || '0'), cc)}
-                </td>
-              </tr>
-            ))}
-            {order.lines.length === 0 && (
-              <tr>
-                <td
-                  colSpan={8}
-                  style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
-                >
-                  {tRV('noLineItems')}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-        {/* Mobile Cards */}
-        <div className="flex flex-col lg:hidden mt-2">
-          {order.lines.map((line, idx) => {
+        <DataTable
+          columns={columns}
+          data={order.lines}
+          keyField="salesOrderLineId"
+          emptyMessage={tRV('noLineItems')}
+          mobileCard={(line, idx) => {
             const hasDiscount = parseFloat(line.discountPercentage || '0') > 0;
             return (
               <MobileLineItemCard
-                key={line.salesOrderLineId}
                 title={line.productNumber || line.productId?.substring(0, 8) || '—'}
                 subtitle={line.productDescription || '—'}
                 topRightBadge={`#${line.lineNumber || idx + 1}`}
@@ -327,13 +343,8 @@ export default function OrderDetailReadView({
                 ]}
               />
             );
-          })}
-          {order.lines.length === 0 && (
-            <div className="text-center text-sm text-[var(--text-muted)] py-4 border border-[var(--border)] rounded-lg">
-              {tRV('noLineItems')}
-            </div>
-          )}
-        </div>
+          }}
+        />
       </div>
 
       {/* ── Totals summary ──────────────────────────────────────── */}

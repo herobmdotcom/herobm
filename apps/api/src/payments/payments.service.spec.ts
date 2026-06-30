@@ -270,6 +270,32 @@ describe('PaymentsService', () => {
       expect(parseFloat(payment.unallocatedAmount)).toBe(1000);
     });
 
+    it('should correctly decrement unallocatedAmount if allocations are provided', async () => {
+      const payment = await service.createPaymentEntry(
+        {
+          paymentId: '00000000-0000-4000-8000-000000000010',
+          paymentType: PAYMENT_TYPE.CUSTOMER_RECEIPT,
+          partyId: customerId,
+          paymentDate: new Date().toISOString(),
+          modeOfPayment: 'EFT',
+          totalAmount: 1000,
+          glAccountBank: bankAccountId,
+          currencyCode: 'AUD',
+          allocations: [
+            {
+              referenceType: 'sales_invoice',
+              referenceId: '00000000-0000-4000-8000-111111111111',
+              allocatedAmount: 400,
+            },
+          ],
+        },
+        'admin',
+      );
+
+      expect(parseFloat(payment.totalAmount)).toBe(1000);
+      expect(parseFloat(payment.unallocatedAmount)).toBe(600);
+    });
+
     it('should throw BadRequestException if supplier is blocked for payment', async () => {
       mockSuppliersService.assessRisk.mockResolvedValueOnce({
         isPaymentBlocked: true,

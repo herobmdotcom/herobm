@@ -144,6 +144,9 @@ down-redis:
 	$(COMPOSE_CMD) stop outbox-worker
 	$(COMPOSE_CMD) rm -f outbox-worker
 
+up-maildev:
+	$(COMPOSE_CMD) --profile dev up -d maildev
+
 # Run absolutely everything
 up-all: build-worker check-postgres-logs
 	$(COMPOSE_CMD) --profile "*" up -d

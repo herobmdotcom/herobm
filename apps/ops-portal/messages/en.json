@@ -2880,6 +2880,7 @@
       "createQuote": "Create Quote",
       "createReturn": "Create Return",
       "customLine": "+ Custom Line",
+      "emailInvoice": "Email Invoice",
       "generate": "Generate",
       "generateInvoice": "Generate Invoice",
       "printInvoice": "Invoice PDF",
