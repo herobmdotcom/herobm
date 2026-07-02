@@ -43,14 +43,6 @@ beforeAll(async () => {
           -- 1. Sales Orders & related (Invoices, Shipments, GL)
           FOR r_so IN SELECT sales_order_id FROM herobm_core.sales_orders WHERE name LIKE 'E2E%'
           LOOP
-              -- Delete Invoices and their GL entries
-              FOR r_inv IN SELECT invoice_id FROM herobm_core.sales_invoices WHERE sales_order_id = r_so.sales_order_id
-              LOOP
-                  DELETE FROM herobm_core.gl_journal_lines WHERE journal_entry_id IN (SELECT journal_entry_id FROM herobm_core.gl_journal_entries WHERE source_id::text = r_inv.invoice_id::text);
-                  DELETE FROM herobm_core.gl_journal_entries WHERE source_id::text = r_inv.invoice_id::text;
-                  DELETE FROM herobm_core.sales_invoice_lines WHERE invoice_id = r_inv.invoice_id;
-                  DELETE FROM herobm_core.sales_invoices WHERE invoice_id = r_inv.invoice_id;
-              END LOOP;
               -- Delete Credit Notes and their GL entries
               FOR r_inv IN SELECT credit_note_id FROM herobm_core.sales_credit_notes WHERE return_id IN (SELECT return_id FROM herobm_core.sales_order_returns WHERE sales_order_id = r_so.sales_order_id)
               LOOP
@@ -58,6 +50,15 @@ beforeAll(async () => {
                   DELETE FROM herobm_core.gl_journal_entries WHERE source_id::text = r_inv.credit_note_id::text;
                   DELETE FROM herobm_core.sales_credit_note_lines WHERE credit_note_id = r_inv.credit_note_id;
                   DELETE FROM herobm_core.sales_credit_notes WHERE credit_note_id = r_inv.credit_note_id;
+              END LOOP;
+
+              -- Delete Invoices and their GL entries
+              FOR r_inv IN SELECT invoice_id FROM herobm_core.sales_invoices WHERE sales_order_id = r_so.sales_order_id
+              LOOP
+                  DELETE FROM herobm_core.gl_journal_lines WHERE journal_entry_id IN (SELECT journal_entry_id FROM herobm_core.gl_journal_entries WHERE source_id::text = r_inv.invoice_id::text);
+                  DELETE FROM herobm_core.gl_journal_entries WHERE source_id::text = r_inv.invoice_id::text;
+                  DELETE FROM herobm_core.sales_invoice_lines WHERE invoice_id = r_inv.invoice_id;
+                  DELETE FROM herobm_core.sales_invoices WHERE invoice_id = r_inv.invoice_id;
               END LOOP;
               
               DELETE FROM herobm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM herobm_core.sales_order_returns WHERE sales_order_id = r_so.sales_order_id);

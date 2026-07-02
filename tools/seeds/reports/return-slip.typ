@@ -28,9 +28,11 @@
   columns: (1fr, 1fr),
   gutter: 10pt,
   [
+    #text(9pt, weight: "bold", fill: luma(80))[ORDER] \
     #text(12pt, weight: "semibold")[#data.header.orderNumber] \
     #if "returnMeta" in data [
       #v(0.1cm)
+      #text(9pt, weight: "bold", fill: luma(80))[RETURN] \
       #text(10pt, weight: "semibold")[#data.returnMeta.returnNumber]
     ]
   ],
@@ -71,15 +73,15 @@
     columns: (1fr),
     gutter: 5pt,
     [
-      #text(9pt, weight: "bold", fill: luma(80))[RETURN TO] \
+      #text(9pt, weight: "bold", fill: luma(80))[SHIP TO] \
       #v(0.1cm)
       #text(11pt, weight: "semibold")[#data.returnToAddress.name] \
-      #if data.returnToAddress.addressLine1 != "" [#text(10pt)[#data.returnToAddress.addressLine1] \]
-      #if data.returnToAddress.addressLine2 != "" [#text(10pt)[#data.returnToAddress.addressLine2] \]
+      #if data.returnToAddress.addressLine1 != "" [#text(10pt)[#data.returnToAddress.addressLine1] \ ]
+      #if data.returnToAddress.addressLine2 != "" [#text(10pt)[#data.returnToAddress.addressLine2] \ ]
       #if data.returnToAddress.city != "" or data.returnToAddress.stateOrProvince != "" or data.returnToAddress.postalCode != "" [
         #text(10pt)[#data.returnToAddress.city #data.returnToAddress.stateOrProvince #data.returnToAddress.postalCode] \
       ]
-      #if data.returnToAddress.country != "" [#text(10pt)[#data.returnToAddress.country] \]
+      #if data.returnToAddress.country != "" [#text(10pt)[#data.returnToAddress.country] \ ]
     ]
   )
   #v(0.6cm)
@@ -115,11 +117,7 @@
 
 #v(0.6cm)
 
-#if "returnMeta" in data and data.returnMeta.notes != "" [
-  #text(9pt, weight: "semibold")[Notes:] \
-  #text(9pt)[#data.returnMeta.notes]
-  #v(1cm)
-]
+
 
 #text(8pt, fill: luma(120), style: "italic")[
   Please include this slip with your returned goods.

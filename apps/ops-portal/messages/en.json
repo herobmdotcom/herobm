@@ -3066,7 +3066,12 @@
     "postConfirmationLineWarningTitle": "Add Post-Confirmation Line",
     "returns": {
       "creditNote": "Credit Note",
+      "customer": "Customer",
+      "date": "Date",
       "netCredit": "Net Credit",
+      "orderNo": "Order No.",
+      "returnDetails": "Return Details",
+      "returnLocation": "Return Location",
       "totalCredit": "Total Credit",
       "totalFees": "Total Fees"
     },

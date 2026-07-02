@@ -98,11 +98,12 @@ export class SalesReturnCreditService {
     );
 
     let returnToAddress = null;
-    if (orderDetail.fulfillmentLocationId) {
+    const locId = ret.locationId || orderDetail.fulfillmentLocationId;
+    if (locId) {
       const rows = await this.db
         .select()
         .from(locations)
-        .where(eq(locations.locationId, orderDetail.fulfillmentLocationId))
+        .where(eq(locations.locationId, locId))
         .limit(1);
       if (rows.length > 0) {
         const loc = rows[0];

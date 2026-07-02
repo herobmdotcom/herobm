@@ -488,7 +488,7 @@ describe('API E2E — Sales Order Returns', () => {
       const ourCn = cns.body.find((cn: any) => cn.salesOrderId === orderId);
       expect(ourCn).toBeDefined();
 
-      // Verify Replacement Order was created
+      // Verify Replacement Order was NOT created
       const orders = await request(app.getHttpServer())
         .get(`/api/sales-orders`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -498,7 +498,7 @@ describe('API E2E — Sales Order Returns', () => {
           o.customerOrderNumber?.endsWith('-REP') ||
           o.customerOrderNumber?.startsWith('REP-'),
       );
-      expect(replacement).toBeDefined();
+      expect(replacement).toBeUndefined();
     });
   });
 
@@ -571,7 +571,7 @@ describe('API E2E — Sales Order Returns', () => {
       );
       expect(ourCn).toBeUndefined(); // Should NOT exist!
 
-      // 4. Verify Replacement Order WAS created
+      // 4. Verify Replacement Order was NOT created
       const orders = await request(app.getHttpServer())
         .get(`/api/sales-orders`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -586,7 +586,7 @@ describe('API E2E — Sales Order Returns', () => {
       const replacement = orders.body.data.find(
         (o: any) => o.customerOrderNumber === repPattern,
       );
-      expect(replacement).toBeDefined();
+      expect(replacement).toBeUndefined();
     });
   });
 

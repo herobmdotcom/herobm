@@ -26,6 +26,7 @@ import {
   customers as coreAccounts,
   customerGroups,
   locations,
+  taxCategories,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -270,9 +271,12 @@ export class ReturnsWriteService {
   ) {
     const existing = await this.findReturn(returnId, tx);
 
-    if (existing.stateCode !== RETURN_STATE.DRAFT) {
+    if (
+      existing.stateCode !== RETURN_STATE.DRAFT &&
+      existing.stateCode !== RETURN_STATE.CONFIRMED
+    ) {
       throw new BadRequestException(
-        `Cannot update return in state '${existing.stateCode}'. Must be draft.`,
+        `Cannot update return in state '${existing.stateCode}'. Must be draft or confirmed.`,
       );
     }
 
@@ -367,9 +371,6 @@ export class ReturnsWriteService {
             actor,
             innerTx,
           );
-
-          // 2. Generate Zero-Dollar Replacement Order for replaced items
-          await this.createReplacementOrder(existing, returnId, actor, innerTx);
         }
 
         const [order] = await innerTx
@@ -508,62 +509,6 @@ export class ReturnsWriteService {
     );
 
     return result;
-  }
-
-  /**
-   * Generates a zero-dollar replacement order for any returned items marked as 'replace'.
-   */
-  private async createReplacementOrder(
-    existingReturn: typeof salesOrderReturns.$inferSelect,
-    returnId: string,
-    actor: string,
-    tx: DrizzleDB,
-  ) {
-    const replaceLines = await tx
-      .select({
-        productId: salesOrderLineItems.productId,
-        quantityReturned: salesOrderReturnLines.quantityReturned,
-        pricePerUnit: salesOrderLineItems.pricePerUnit,
-      })
-      .from(salesOrderReturnLines)
-      .innerJoin(
-        salesOrderLineItems,
-        eq(
-          salesOrderReturnLines.salesOrderLineId,
-          salesOrderLineItems.salesOrderLineId,
-        ),
-      )
-      .where(
-        and(
-          eq(salesOrderReturnLines.returnId, returnId),
-          eq(salesOrderReturnLines.resolution, RETURN_RESOLUTION.REPLACE),
-        ),
-      );
-
-    if (replaceLines.length === 0) return;
-
-    const [originalOrder] = await tx
-      .select()
-      .from(salesOrders)
-      .where(eq(salesOrders.salesOrderId, existingReturn.salesOrderId));
-
-    const newOrderDto: CreateOrderDto = {
-      salesOrderId: randomUUID(),
-      customerId: originalOrder.customerId!,
-      customerOrderNumber: originalOrder.customerOrderNumber
-        ? `${originalOrder.customerOrderNumber}-REP`
-        : `REP-${existingReturn.returnNumber}`,
-      notes: `Replacement order for return ${existingReturn.returnNumber}`,
-      lines: replaceLines.map((rl) => ({
-        productId: rl.productId!,
-        quantity: rl.quantityReturned,
-        pricePerUnit: rl.pricePerUnit || '0',
-        discountPercentage: '100', // 100% discount for replacements
-      })),
-    };
-
-    // Note: this creates its own transaction. Since it inserts independent records, it will not deadlock.
-    await this.ordersWriteService.create(newOrderDto, actor);
   }
 
   /**
@@ -1024,6 +969,9 @@ export class ReturnsWriteService {
         productId: salesOrderLineItems.productId,
         productNumber: coreProducts.productNumber,
         description: coreProducts.name,
+        pricePerUnit: salesOrderLineItems.pricePerUnit,
+        discountPercentage: salesOrderLineItems.discountPercentage,
+        taxRate: taxCategories.rate,
       })
       .from(salesOrderReturnLines)
       .innerJoin(
@@ -1036,6 +984,10 @@ export class ReturnsWriteService {
       .innerJoin(
         coreProducts,
         eq(salesOrderLineItems.productId, coreProducts.productId),
+      )
+      .leftJoin(
+        taxCategories,
+        eq(salesOrderLineItems.taxCategoryId, taxCategories.taxCategoryId),
       )
       .where(eq(salesOrderReturnLines.returnId, returnId));
 

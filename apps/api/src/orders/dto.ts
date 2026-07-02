@@ -18,6 +18,12 @@ export class ReturnLineResponseDto {
   @ApiProperty() lineId!: string;
   @ApiProperty() description!: string;
   @ApiProperty() quantityReturned!: string;
+  @ApiProperty() pricePerUnit!: string;
+  @ApiProperty() discountPercentage!: string;
+  @ApiProperty() taxRate!: string;
+  @ApiProperty() returnFee!: string;
+  @ApiPropertyOptional() reason?: string;
+  @ApiPropertyOptional() resolution?: string;
 }
 
 export class ReturnResponseDto {
@@ -276,6 +282,10 @@ export class UpdateReturnDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsUUID()
+  locationId?: string;
 }
 
 export class AddReturnLineDto {

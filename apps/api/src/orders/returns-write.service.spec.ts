@@ -426,11 +426,14 @@ describe('ReturnsWriteService', () => {
       expect(result.notes).toBe('Updated notes');
     });
 
-    it('should reject update on confirmed return', async () => {
+    it('should allow update on confirmed return', async () => {
       await setupForUpdate(RETURN_STATE.CONFIRMED);
-      await expect(
-        service.updateReturn(returnId, { notes: 'Test' }, 'admin'),
-      ).rejects.toThrow(BadRequestException);
+      const res = await service.updateReturn(
+        returnId,
+        { notes: 'Test' },
+        'admin',
+      );
+      expect(res.notes).toBe('Test');
     });
 
     it('should reject update on processed return', async () => {

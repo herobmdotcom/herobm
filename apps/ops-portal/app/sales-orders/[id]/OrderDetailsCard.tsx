@@ -110,10 +110,9 @@ export default function OrderDetailsCard({
                     )}
                     {order.stateCode !== SALES_ORDER_STATE.DRAFT && (
                         <button
-                            className="btn btn-secondary btn-sm flex items-center gap-1"
+                            className="btn btn-secondary btn-sm"
                             onClick={() => onEmailDocumentClick('sales-order-confirmation', 'Email Confirmation', 'Order Confirmation', 'Confirmation', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
                         >
-                            <span className="material-symbols-outlined text-base">mail</span>
                             Email Confirmation
                         </button>
                     )}

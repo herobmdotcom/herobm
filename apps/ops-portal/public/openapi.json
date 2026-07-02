@@ -20871,12 +20871,34 @@
           },
           "quantityReturned": {
             "type": "string"
+          },
+          "pricePerUnit": {
+            "type": "string"
+          },
+          "discountPercentage": {
+            "type": "string"
+          },
+          "taxRate": {
+            "type": "string"
+          },
+          "returnFee": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "resolution": {
+            "type": "string"
           }
         },
         "required": [
           "lineId",
           "description",
-          "quantityReturned"
+          "quantityReturned",
+          "pricePerUnit",
+          "discountPercentage",
+          "taxRate",
+          "returnFee"
         ]
       },
       "ReturnResponseDto": {
@@ -20919,6 +20941,10 @@
         "properties": {
           "notes": {
             "type": "string"
+          },
+          "locationId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },

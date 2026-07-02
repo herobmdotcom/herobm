@@ -10,4 +10,10 @@ export interface ReturnLineResponseDto {
   lineId: string;
   description: string;
   quantityReturned: string;
+  pricePerUnit: string;
+  discountPercentage: string;
+  taxRate: string;
+  returnFee: string;
+  reason?: string;
+  resolution?: string;
 }

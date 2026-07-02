@@ -28,6 +28,9 @@ export interface SalesReturnDetails {
     reason?: string;
     resolution?: string;
     returnFee?: string;
+    pricePerUnit: string;
+    discountPercentage?: string;
+    taxRate?: string;
     feeMode?: string;
   }>;
 }
@@ -37,13 +40,18 @@ export function useSalesReturn(id: string) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
 
   const fetchReturn = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.globalReturnsControllerFindOne(id);
+      const [res, locs] = await Promise.all([
+        api.globalReturnsControllerFindOne(id),
+        api.inventoryControllerFindAllLocations()
+      ]);
       setRet((res.data as unknown) as SalesReturnDetails);
+      setLocations(locs.data as api.InventoryLocationResponseDto[]);
     } catch (err) {
       reportError(err, 'useSalesReturn');
       setError(err as Error);
@@ -56,5 +64,13 @@ export function useSalesReturn(id: string) {
     fetchReturn();
   }, [id]);
 
-  return { ret, loading, saving, error, fetchReturn, setSaving, setError };
+  return {
+    ret,
+    locations,
+    loading,
+    error,
+    saving,
+    setSaving,
+    fetchReturn
+  };
 }

@@ -8,4 +8,5 @@
 
 export interface UpdateReturnDto {
   notes?: string;
+  locationId?: string;
 }
