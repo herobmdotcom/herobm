@@ -5,8 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import EntityHeader from '@/components/shared/EntityHeader';
-import DetailsLayout from '@/components/shared/DetailsLayout';
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import { Button } from '@/components/shared/Button';
 import { useTranslations } from 'next-intl';
@@ -332,15 +331,11 @@ export default function UsersPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <DetailsLayout
-      header={
-        <EntityHeader
-          title={t('title')}
-          subtitle={t('subtitle')}
-          showPrint={false}
-        />
-      }
-    >
+    <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
+      <ContentPageHeader
+        title={t('title')}
+        subtitle={t('subtitle')}
+      />
       <div className="flex flex-col gap-6">
         <div className="card">
           <div className="flex items-center justify-between mb-4">
@@ -398,6 +393,6 @@ export default function UsersPage() {
           <ActivityTimeline events={allEvents} />
         </div>
       </div>
-    </DetailsLayout>
+    </div>
   );
 }

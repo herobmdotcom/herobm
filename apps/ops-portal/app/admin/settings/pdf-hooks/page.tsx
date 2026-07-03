@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
 import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
-import EntityHeader from '@/components/shared/EntityHeader';
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import { useRouter } from 'next/navigation';
 
 interface Assignment {
@@ -120,14 +120,11 @@ export default function ReportingHooksPage() {
   ], [t, templates]);
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 0' }}>
-      <div className="mb-6">
-        <EntityHeader
-          title={t('title')}
-          subtitle={t('subtitle')}
-          showPrint={false}
-        />
-      </div>
+    <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
+      <ContentPageHeader
+        title={t('title')}
+        subtitle={t('subtitle')}
+      />
 
       <div className="card mb-6">
         <InlineSettingsTable

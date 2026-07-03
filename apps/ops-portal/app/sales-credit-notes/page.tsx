@@ -30,8 +30,8 @@ export default function ReturnsQueuePage() {
 
     const triggerRefresh = useCallback(() => setRefreshKey(k => k + 1), []);
 
-    // Fetch received returns waiting for a credit note
-    const gridEndpoint = `/api/sales-returns?stateCode=${RETURN_STATE.RECEIVED}`;
+    // Fetch received returns waiting for a credit note (must have credit value > 0)
+    const gridEndpoint = `/api/sales-returns?stateCode=${RETURN_STATE.RECEIVED}&requireCredit=true`;
 
     const gridColumns: Record<string, unknown>[] = useMemo(() => [
         { field: 'returnNumber', headerName: 'Return No', width: 140 },

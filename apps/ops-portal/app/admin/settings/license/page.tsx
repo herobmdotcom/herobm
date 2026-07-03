@@ -6,8 +6,7 @@ import React, { useState } from 'react';
 import { useLicense } from '@/components/LicenseProvider';
 import { licenseControllerApplyLicense, LicenseStatusDtoState, LicenseStatusDtoType } from '@herobm/sdk';
 import toast from 'react-hot-toast';
-import DetailsLayout from '@/components/shared/DetailsLayout';
-import EntityHeader from '@/components/shared/EntityHeader';
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import { Button } from '@/components/shared/Button';
 import PageNav from '@/components/shared/PageNav';
 import EntityBanner from '@/components/shared/EntityBanner';
@@ -46,16 +45,13 @@ export default function LicensePage() {
   ];
 
   return (
-    <DetailsLayout
-      header={
-        <EntityHeader
-          title="License Management"
-          subtitle="View system details and apply license keys"
-          actions={<PageNav sections={navSections} />}
-          showPrint={false}
-        />
-      }
-    >
+    <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
+      <ContentPageHeader
+        title="License Management"
+        subtitle="View system details and apply license keys"
+      >
+        <PageNav sections={navSections} />
+      </ContentPageHeader>
       <div className="flex flex-col gap-6">
         <div id="system-details" className="card">
           <h3 className="section-heading mb-4">
@@ -69,7 +65,7 @@ export default function LicensePage() {
                 </label>
                 <div className="flex items-center gap-2">
                   <input
-                    className="input font-mono text-sm bg-slate-50 dark:bg-slate-950 flex-1"
+                    className="input font-mono text-sm flex-1"
                     value={status?.systemId || 'N/A'}
                     disabled
                   />
@@ -154,7 +150,7 @@ export default function LicensePage() {
           </p>
           
           <textarea
-            className="w-full h-32 p-3 font-mono text-sm border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 rounded focus:ring-2 focus:ring-primary-500 outline-none mb-4"
+            className="w-full h-32 p-3 font-mono text-sm border border-[rgba(196,198,205,0.4)] rounded focus:ring-2 focus:ring-primary-500 outline-none mb-4"
             placeholder="eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9..."
             value={licenseKey}
             onChange={(e) => setLicenseKey(e.target.value)}
@@ -172,6 +168,6 @@ export default function LicensePage() {
           </div>
         </div>
       </div>
-    </DetailsLayout>
+    </div>
   );
 }

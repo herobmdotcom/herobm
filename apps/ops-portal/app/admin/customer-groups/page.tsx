@@ -11,7 +11,7 @@ import { getErrorMessage, CUSTOMER_STATE } from '@herobm/shared';
 import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
 import FinancialDefaultsSlideOver from '@/components/shared/FinancialDefaultsSlideOver';
 import { Button } from '@/components/shared/Button';
-import { DataPageHeader } from '@/components/shared/DataPageHeader';
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 
 export default function AccountGroupsAdmin() {
   useDocumentTitle('Customer Groups');
@@ -209,8 +209,8 @@ export default function AccountGroupsAdmin() {
   };
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 0' }}>
-      <DataPageHeader 
+    <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
+      <ContentPageHeader 
         title={t('title')} 
         subtitle={t('subtitle')} 
       />

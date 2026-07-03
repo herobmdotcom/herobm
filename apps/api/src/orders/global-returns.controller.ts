@@ -34,14 +34,28 @@ export class GlobalReturnsController {
   })
   @ApiQuery({ name: 'stateCode', required: false })
   @ApiQuery({ name: 'locationId', required: false })
+  @ApiQuery({ name: 'requireCredit', required: false, type: Boolean })
   async findGlobalReturns(
     @Query('stateCode') stateCode?: string,
     @Query('locationId') locationId?: string,
+    @Query('requireCredit') requireCredit?: boolean,
   ) {
-    const data = await this.returnsWriteService.findGlobal(
-      stateCode,
-      locationId,
-    );
+    let data = await this.returnsWriteService.findGlobal(stateCode, locationId);
+
+    if (requireCredit) {
+      const filtered = [];
+      for (const ret of data) {
+        const creditTotal =
+          await this.returnsWriteService.creditNoteService.calculateReturnCreditTotal(
+            ret.returnId,
+          );
+        if (creditTotal > 0) {
+          filtered.push(ret);
+        }
+      }
+      data = filtered;
+    }
+
     return { data, meta: { total: data.length } };
   }
 

@@ -72,7 +72,7 @@ else
   DEV_LOCAL_CMD = bash scripts/dev-local.sh
   PROD_LOCAL_CMD = bash scripts/prod-local.sh
   CLEAN_BUILD_CMD = bash scripts/clean-build.sh
-  COMPOSE_CMD = podman-compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
+  COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 0.0.0.0
 endif
 export BIND_IP
@@ -108,7 +108,7 @@ DBT_DIR = pipelines/$(SOURCE)_transform
 check-postgres-logs:
 ifneq ($(OS),Windows_NT)
 	@mkdir -p ./logs
-	@podman unshare chown -R 70:70 ./logs
+	-@podman unshare chown -R 70:70 ./logs 2>/dev/null || true
 endif
 
 # --------------------------------------------------------------------------

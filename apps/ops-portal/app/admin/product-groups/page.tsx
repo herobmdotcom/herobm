@@ -7,6 +7,7 @@ import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
 import FinancialDefaultsSlideOver from '@/components/shared/FinancialDefaultsSlideOver';
 import { Button } from '@/components/shared/Button';
@@ -130,15 +131,11 @@ export default function ProductGroupsAdmin() {
   };
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 0' }}>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{t('title')}</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            {t('subtitle')}
-          </p>
-        </div>
-      </div>
+    <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
+      <ContentPageHeader
+        title={t('title')}
+        subtitle={t('subtitle')}
+      />
 
       <div className="card mb-6">
         <InlineSettingsTable

@@ -4,9 +4,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect } from 'react';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
-import EntityHeader from '@/components/shared/EntityHeader';
-import DetailsLayout from '@/components/shared/DetailsLayout';
-import { Button } from '@/components/shared/Button';
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import { getErrorMessage } from '@herobm/shared';
 
 export default function SmtpSettingsPage() {
@@ -60,20 +58,18 @@ export default function SmtpSettingsPage() {
   };
 
   return (
-    <DetailsLayout
-      header={
-        <EntityHeader
-          title="SMTP Settings"
-          subtitle="Configure outbound email server"
-          showPrint={false}
-          actions={
-            <Button variant="secondary" onClick={testConnection}>
-              Test Connection
-            </Button>
+    <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
+      <ContentPageHeader
+        title="SMTP Settings"
+        subtitle="Configure outbound email server"
+        actions={[
+          {
+            label: 'Test Connection',
+            onClick: testConnection,
+            variant: 'secondary'
           }
-        />
-      }
-    >
+        ]}
+      />
       <div className="flex flex-col gap-6" style={{ maxWidth: 800 }}>
         <div className="card">
           <h3 className="section-heading mb-4 flex items-center gap-2">
@@ -165,6 +161,6 @@ export default function SmtpSettingsPage() {
           )}
         </div>
       </div>
-    </DetailsLayout>
+    </div>
   );
 }

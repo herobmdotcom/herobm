@@ -710,6 +710,128 @@ export class SalesCreditNoteService {
     return result;
   }
 
+  /**
+   * Calculate the total credit amount for a return to determine if a credit note is needed.
+   */
+  async calculateReturnCreditTotal(
+    returnId: string,
+    tx?: DrizzleDB,
+  ): Promise<number> {
+    const innerTx = tx || this.db;
+    const [ret] = await innerTx
+      .select({ salesOrderId: salesOrderReturns.salesOrderId })
+      .from(salesOrderReturns)
+      .where(eq(salesOrderReturns.returnId, returnId))
+      .limit(1);
+    if (!ret) return 0;
+
+    const returnLines = await innerTx
+      .select({
+        salesOrderLineId: salesOrderReturnLines.salesOrderLineId,
+        quantityReturned: salesOrderReturnLines.quantityReturned,
+        returnFee: salesOrderReturnLines.returnFee,
+      })
+      .from(salesOrderReturnLines)
+      .where(
+        and(
+          eq(salesOrderReturnLines.returnId, returnId),
+          eq(salesOrderReturnLines.resolution, 'refund'),
+        ),
+      );
+
+    if (returnLines.length === 0) return 0;
+
+    const shippedQtyMap = await getCommittedPerLine(innerTx, ret.salesOrderId);
+    const invoicedQtyMap = await getInvoicedPerLine(innerTx, ret.salesOrderId);
+
+    const priorCredits = await innerTx
+      .select({
+        salesOrderLineId: salesCreditNoteLines.salesOrderLineId,
+        quantityCredited: salesCreditNoteLines.quantityCredited,
+      })
+      .from(salesCreditNoteLines)
+      .innerJoin(
+        salesCreditNotes,
+        eq(salesCreditNoteLines.creditNoteId, salesCreditNotes.creditNoteId),
+      )
+      .where(eq(salesCreditNotes.salesOrderId, ret.salesOrderId));
+
+    const creditedQtyMap = new Map<string, number>();
+    for (const pc of priorCredits) {
+      const current = creditedQtyMap.get(pc.salesOrderLineId!) || 0;
+      creditedQtyMap.set(
+        pc.salesOrderLineId!,
+        current + parseFloat(pc.quantityCredited),
+      );
+    }
+
+    const creditLineInputs: Array<{
+      quantity: number;
+      pricePerUnit: number;
+      discountPercentage: number;
+      taxRate: number;
+      returnFee: number;
+    }> = [];
+
+    for (const rl of returnLines) {
+      const orderLine = await innerTx
+        .select({
+          pricePerUnit: salesOrderLineItems.pricePerUnit,
+          discountPercentage: salesOrderLineItems.discountPercentage,
+          taxCategoryId: salesOrderLineItems.taxCategoryId,
+        })
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId))
+        .limit(1)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle select intersection is too complex for static inference
+        .then((r: any[]) => r[0]);
+
+      if (!orderLine) continue;
+
+      const unitPrice = parseFloat(orderLine.pricePerUnit || '0');
+      const disc = parseFloat(orderLine.discountPercentage || '0');
+      const refundedQty = parseFloat(rl.quantityReturned || '0');
+      const fee = parseFloat(rl.returnFee || '0');
+
+      const shipped = shippedQtyMap.get(rl.salesOrderLineId) || 0;
+      const invoiced = invoicedQtyMap.get(rl.salesOrderLineId) || 0;
+      const previouslyCredited = creditedQtyMap.get(rl.salesOrderLineId) || 0;
+
+      const creditableQty = getAvailableToCredit(
+        shipped,
+        invoiced,
+        refundedQty,
+        previouslyCredited,
+      );
+
+      if (creditableQty <= 0) continue;
+
+      let taxRate = 0;
+      if (orderLine.taxCategoryId) {
+        try {
+          const cat = await this.taxService.getById(
+            orderLine.taxCategoryId,
+            innerTx,
+          );
+          taxRate = parseFloat(cat.rate ?? '0');
+        } catch {
+          // Category not found — fall back to 0%
+        }
+      }
+
+      creditLineInputs.push({
+        quantity: creditableQty,
+        pricePerUnit: unitPrice,
+        discountPercentage: disc,
+        taxRate,
+        returnFee: fee,
+      });
+    }
+
+    const creditSummary = computeReturnCreditSummary(creditLineInputs);
+    return creditSummary.subtotal;
+  }
+
   private async createAdhocCreditNote(
     dto: CreateSalesCreditNoteDto,
     actor: string,

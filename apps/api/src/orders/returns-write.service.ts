@@ -71,7 +71,7 @@ export class ReturnsWriteService {
     private readonly inventoryService: InventoryService,
     private readonly glService: GlService,
     private readonly appConfig: AppConfigService,
-    private readonly creditNoteService: SalesCreditNoteService,
+    public readonly creditNoteService: SalesCreditNoteService,
     private readonly ordersWriteService: OrdersWriteService,
   ) {}
 

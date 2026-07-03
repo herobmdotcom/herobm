@@ -7,8 +7,8 @@ import * as api from '@herobm/sdk';
 import { getErrorMessage, COUNTRIES } from '@herobm/shared';
 import toast from 'react-hot-toast';
 
-import DetailsLayout from '@/components/shared/DetailsLayout';
-import EntityHeader from '@/components/shared/EntityHeader';
+
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import InlineAlert from '@/components/shared/InlineAlert';
 import { DynamicForm } from '@/components/DynamicForm';
 import { Button } from '@/components/shared/Button';
@@ -258,15 +258,11 @@ export default function IntegrationsSettingsPage() {
   };
 
   return (
-    <DetailsLayout
-      header={
-        <EntityHeader
-          title="Integrations & Enrichment"
-          subtitle="Manage external integrations, data providers, and API keys"
-          showPrint={false}
-        />
-      }
-    >
+    <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
+      <ContentPageHeader
+        title="Integrations & Enrichment"
+        subtitle="Manage external integrations, data providers, and API keys"
+      />
       <div className="flex flex-col gap-6">
         {/* Routing Rules Section */}
         <div className="card">
@@ -534,6 +530,6 @@ export default function IntegrationsSettingsPage() {
           )}
         </div>
       </div>
-    </DetailsLayout>
+    </div>
   );
 }

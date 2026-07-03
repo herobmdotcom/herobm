@@ -5,8 +5,7 @@ import { useState, useEffect } from 'react';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import EntityHeader from '@/components/shared/EntityHeader';
-import DetailsLayout from '@/components/shared/DetailsLayout';
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import { getErrorMessage } from '@herobm/shared';
 import { Button } from '@/components/shared/Button';
 import { useTranslations } from 'next-intl';
@@ -271,15 +270,11 @@ export default function RolesPage() {
   };
 
   return (
-    <DetailsLayout
-      header={
-        <EntityHeader
-          title="Roles & Permissions"
-          subtitle="Manage access control policies and inheritance"
-          showPrint={false}
-        />
-      }
-    >
+    <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
+      <ContentPageHeader
+        title="Roles & Permissions"
+        subtitle="Manage access control policies and inheritance"
+      />
       <div className="flex flex-col gap-6">
         <div className="card">
           <div className="flex items-center justify-between mb-4">
@@ -403,6 +398,6 @@ export default function RolesPage() {
           )}
         </div>
       </div>
-    </DetailsLayout>
+    </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import React, { useState, useEffect } from 'react';
 import { reportError } from '@/lib/api';
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import { DataTable } from '@/components/shared/DataTable';
 import { Button } from '@/components/shared/Button';
 import * as api from '@herobm/sdk';
@@ -79,30 +80,39 @@ export default function EmailOutboxDashboard() {
 
   return (
     <>
-    <style>{`main { background-color: #ffffff !important; }`}</style>
     <div className="w-full p-6 lg:p-8">
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{t('title')}</h1>
-        </div>
-        <div className="flex gap-2 items-center">
-          <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-            <input
-              type="checkbox"
-              checked={autoRefresh}
-              onChange={() => setAutoRefresh(!autoRefresh)}
-            />
-            {t('autoRefresh')}
-          </label>
-          <Button variant="secondary" size="sm" onClick={loadData}>
-            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions */}
-            <span className="material-symbols-outlined text-[16px]">refresh</span>
-            {t('refresh')}
-          </Button>
-        </div>
-      </div>
+        <ContentPageHeader
+          title={t('title')}
+          actions={[
+            {
+              label: (
+                <div className="flex items-center gap-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={autoRefresh}
+                    onChange={() => setAutoRefresh(!autoRefresh)}
+                  />
+                  {t('autoRefresh')}
+                </div>
+              ),
+              onClick: () => setAutoRefresh(!autoRefresh),
+              variant: 'ghost'
+            },
+            {
+              label: (
+                <>
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Material UI icon */}
+                  <span className="material-symbols-outlined text-[18px]">refresh</span>
+                  {t('refresh')}
+                </>
+              ),
+              onClick: loadData,
+              variant: 'secondary'
+            }
+          ]}
+        />
 
       {error && (
         <div

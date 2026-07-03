@@ -25,7 +25,12 @@ describe('OrderReturnsController', () => {
     returnFee: '10.00',
   };
 
-  const mockUser = { userId: 'user-uuid-1', username: 'admin', role: 'admin' };
+  const mockUser = {
+    userId: 'user-uuid-1',
+    username: 'admin',
+    role: 'admin',
+    email: 'admin@example.com',
+  };
 
   beforeEach(async () => {
     const mockReturnsService = {

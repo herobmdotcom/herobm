@@ -7296,6 +7296,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "requireCredit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {

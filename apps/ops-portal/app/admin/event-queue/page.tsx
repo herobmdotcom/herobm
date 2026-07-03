@@ -7,6 +7,7 @@ import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import { DataTable } from '@/components/shared/DataTable';
 import EventPayloadSlideOver from './EventPayloadSlideOver';
 import { Button } from '@/components/shared/Button';
@@ -114,33 +115,38 @@ export default function EventQueueDashboard() {
 
   return (
     <>
-      <style>{`main { background-color: #ffffff !important; }`}</style>
       <div className="w-full p-6 lg:p-8">
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">{t('title')}</h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              {t('subtitle')}
-            </p>
-          </div>
-          <div className="flex gap-2 items-center">
-            <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-              <input
-                type="checkbox"
-                checked={autoRefresh}
-                onChange={() => setAutoRefresh(!autoRefresh)}
-              />
-              {t('autoRefresh')}
-            </label>
-            <Button variant="secondary" size="sm" onClick={loadData}>
-              <span>🔄</span>
-              {' '}
-              {t('refresh')}
-            </Button>
-          </div>
-        </div>
+        <ContentPageHeader
+          title={t('title')}
+          subtitle={t('subtitle')}
+          actions={[
+            {
+              label: (
+                <div className="flex items-center gap-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={autoRefresh}
+                    onChange={() => setAutoRefresh(!autoRefresh)}
+                  />
+                  {t('autoRefresh')}
+                </div>
+              ),
+              onClick: () => setAutoRefresh(!autoRefresh),
+              variant: 'ghost'
+            },
+            {
+              label: (
+                <>
+                  <span>🔄</span> {t('refresh')}
+                </>
+              ),
+              onClick: loadData,
+              variant: 'secondary'
+            }
+          ]}
+        />
 
         {error && (
           <div

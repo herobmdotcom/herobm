@@ -5,8 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import EntityHeader from '@/components/shared/EntityHeader';
-import DetailsLayout from '@/components/shared/DetailsLayout';
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import PageNav from '@/components/shared/PageNav';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage, COUNTRIES } from '@herobm/shared';
@@ -271,20 +270,13 @@ export default function SystemSettingsPage() {
   };
 
   return (
-    <DetailsLayout
-      header={
-        <EntityHeader
-          title={tSettings('title') + ' - ' + tCommon('system')}
-          subtitle={tSettings('subtitle')}
-          actions={
-            <div className="flex items-center gap-2">
-              <PageNav sections={navSections} />
-            </div>
-          }
-          showPrint={false}
-        />
-      }
-    >
+    <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
+      <ContentPageHeader
+        title={tSettings('title') + ' - ' + tCommon('system')}
+        subtitle={tSettings('subtitle')}
+      >
+        <PageNav sections={navSections} />
+      </ContentPageHeader>
       <div className="flex flex-col gap-6">
         {/* ── Company Information ────────────────────────────────────────── */}
         <div id="org-section" className="card">
@@ -633,6 +625,6 @@ export default function SystemSettingsPage() {
           </Button>
         </div>
       </div>
-    </DetailsLayout>
+    </div>
   );
 }

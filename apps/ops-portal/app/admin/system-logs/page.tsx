@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/shared/Button';
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import * as api from '@herobm/sdk';
 
 interface LogsResponse {
@@ -82,63 +83,83 @@ export default function SystemLogsPage() {
   };
 
   return (
-    <>
-      <style>{`main { background-color: #ffffff !important; }`}</style>
+
       <div className="w-full p-6 lg:p-8 flex flex-col">
-        <div style={{ maxWidth: 1200, width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 'calc(100vh - 150px)' }}>
+        <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto min-h-[calc(100vh-150px)] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4 shrink-0">
-          <div>
-            <h1 className="text-2xl font-bold">{t('title')}</h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              {t('subtitle')}
-            </p>
-          </div>
-          <div className="flex gap-4 items-center">
-            <div className="flex items-center gap-2 text-xs">
-              <label style={{ color: 'var(--text-muted)' }}>{t('filters.service')}</label>
-              <select 
-                className="input-field py-1 px-2 text-xs h-auto"
-                value={service} 
-                onChange={(e) => handleServiceChange(e.target.value)}
-              >
-                <option value="api">{t('filters.services.api')}</option>
-                <option value="worker">{t('filters.services.worker')}</option>
-                <option value="postgres">{t('filters.services.postgres')}</option>
-                <option value="integration">{t('filters.services.integration')}</option>
-              </select>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <label style={{ color: 'var(--text-muted)' }}>{t('filters.limit')}</label>
-              <select 
-                className="input-field py-1 px-2 text-xs h-auto"
-                value={lineLimit} 
-                onChange={(e) => setLineLimit(Number(e.target.value))}
-              >
-                <option value={100}>{t('filters.limits.100')}</option>
-                <option value={500}>{t('filters.limits.500')}</option>
-                <option value={1000}>{t('filters.limits.1000')}</option>
-                <option value={5000}>{t('filters.limits.5000')}</option>
-              </select>
-            </div>
-            <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-              <input
-                type="checkbox"
-                checked={autoRefresh}
-                onChange={() => setAutoRefresh(!autoRefresh)}
-              />
-              {t('filters.autoRefresh')}
-            </label>
-            <Button variant="secondary" size="sm" onClick={handleCopyLogs} disabled={lines.length === 0}>
-              {t('actions.copy')}
-            </Button>
-            <Button variant="secondary" size="sm" onClick={loadLogs}>
-              <span>🔄</span>
-              {' '}
-              {t('actions.refresh')}
-            </Button>
-          </div>
-        </div>
+        <ContentPageHeader
+          title={t('title')}
+          subtitle={t('subtitle')}
+          actions={[
+            {
+              label: (
+                <div className="flex items-center gap-2 text-xs">
+                  <label style={{ color: 'var(--text-muted)' }}>{t('filters.service')}</label>
+                  <select 
+                    className="input-field py-1 px-2 text-xs h-auto"
+                    value={service} 
+                    onChange={(e) => handleServiceChange(e.target.value)}
+                  >
+                    <option value="api">{t('filters.services.api')}</option>
+                    <option value="worker">{t('filters.services.worker')}</option>
+                    <option value="postgres">{t('filters.services.postgres')}</option>
+                    <option value="integration">{t('filters.services.integration')}</option>
+                  </select>
+                </div>
+              ),
+              onClick: () => {},
+              variant: 'ghost'
+            },
+            {
+              label: (
+                <div className="flex items-center gap-2 text-xs">
+                  <label style={{ color: 'var(--text-muted)' }}>{t('filters.limit')}</label>
+                  <select 
+                    className="input-field py-1 px-2 text-xs h-auto"
+                    value={lineLimit} 
+                    onChange={(e) => setLineLimit(Number(e.target.value))}
+                  >
+                    <option value={100}>{t('filters.limits.100')}</option>
+                    <option value={500}>{t('filters.limits.500')}</option>
+                    <option value={1000}>{t('filters.limits.1000')}</option>
+                    <option value={5000}>{t('filters.limits.5000')}</option>
+                  </select>
+                </div>
+              ),
+              onClick: () => {},
+              variant: 'ghost'
+            },
+            {
+              label: (
+                <div className="flex items-center gap-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={autoRefresh}
+                    onChange={() => setAutoRefresh(!autoRefresh)}
+                  />
+                  {t('filters.autoRefresh')}
+                </div>
+              ),
+              onClick: () => setAutoRefresh(!autoRefresh),
+              variant: 'ghost'
+            },
+            {
+              label: t('actions.copy'),
+              onClick: handleCopyLogs,
+              variant: 'secondary',
+              disabled: lines.length === 0
+            },
+            {
+              label: (
+                <>
+                  <span>🔄</span> {t('actions.refresh')}
+                </>
+              ),
+              onClick: loadLogs,
+              variant: 'secondary'
+            }
+          ]}
+        />
 
         {error && (
           <div
@@ -196,6 +217,5 @@ export default function SystemLogsPage() {
         </div>
       </div>
     </div>
-    </>
   );
 }

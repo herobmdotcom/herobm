@@ -6,8 +6,7 @@ import { Button } from '@/components/shared/Button';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import EntityHeader from '@/components/shared/EntityHeader';
-import DetailsLayout from '@/components/shared/DetailsLayout';
+import { ContentPageHeader } from '@/components/shared/ContentPageHeader';
 import PageNav from '@/components/shared/PageNav';
 import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
 import { useTranslations } from 'next-intl';
@@ -143,16 +142,13 @@ export default function DevelopersPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <DetailsLayout
-      header={
-        <EntityHeader
-          title="Developers"
-          subtitle="Manage API access, webhooks, and rate limits"
-          actions={<PageNav sections={navSections} />}
-          showPrint={false}
-        />
-      }
-    >
+    <div className="flex-1 w-full h-full bg-white px-4 lg:px-8 py-6 overflow-y-auto">
+      <ContentPageHeader
+        title="Developers"
+        subtitle="Manage API access, webhooks, and rate limits"
+      >
+        <PageNav sections={navSections} />
+      </ContentPageHeader>
       <div className="flex flex-col gap-6">
         {/* ── Rate Limits ────────────────────────────────────────────────── */}
         <div id="rate-limits" className="card">
@@ -397,6 +393,6 @@ export default function DevelopersPage() {
           />
         </div>
       </div>
-    </DetailsLayout>
+    </div>
   );
 }
