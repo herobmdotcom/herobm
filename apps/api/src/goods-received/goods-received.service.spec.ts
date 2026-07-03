@@ -116,38 +116,35 @@ describe('GoodsReceivedService', () => {
   });
 
   async function seedBasics() {
-    await pg.db.insert(suppliers).values({
-      vendorId: VENDOR_ID,
-      vendorNumber: 'V1',
-      name: 'Supplier 1',
-      currencyCode: 'EUR',
-      address1Country: 'AU',
-    });
-    await pg.db.insert(locations).values({
-      locationId: LOCATION_ID,
-      code: 'MAIN',
-      name: 'Main',
-    });
-    await pg.db.insert(products).values({
-      productId: PROD_ID,
-      productNumber: 'P1',
-      name: 'Product 1',
-      baseUom: 'EA',
-      standardCost: '10',
-      productType: 'inventory',
-    });
-    await pg.db.insert(zones).values({
-      zoneId: ZONE_ID,
-      locationId: LOCATION_ID,
-      code: 'HANDLING',
-      name: 'Receiving Zone',
-    });
-    await pg.db.insert(bins).values({
-      binId: BIN_ID,
-      zoneId: ZONE_ID,
-      binNumber: 'RECEIVING',
-      binType: 'staging',
-    });
+    await pg.db
+      .insert(suppliers)
+      .values({
+        vendorId: VENDOR_ID,
+        vendorNumber: 'V1',
+        name: 'Supplier 1',
+        currencyCode: 'EUR',
+        address1Country: 'AU',
+      })
+      .onConflictDoNothing();
+    await pg.db
+      .insert(locations)
+      .values({
+        locationId: LOCATION_ID,
+        code: 'MAIN',
+        name: 'Main',
+      })
+      .onConflictDoNothing();
+    await pg.db
+      .insert(products)
+      .values({
+        productId: PROD_ID,
+        productNumber: 'P1',
+        name: 'Product 1',
+        baseUom: 'EA',
+        standardCost: '10',
+        productType: 'inventory',
+      })
+      .onConflictDoNothing();
   }
 
   describe('create', () => {

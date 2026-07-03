@@ -21051,6 +21051,18 @@
           "stateCode": {
             "type": "string"
           },
+          "orderNumber": {
+            "type": "string"
+          },
+          "customerId": {
+            "type": "string"
+          },
+          "customerNumber": {
+            "type": "string"
+          },
+          "customerName": {
+            "type": "string"
+          },
           "locationId": {
             "type": "string"
           },
