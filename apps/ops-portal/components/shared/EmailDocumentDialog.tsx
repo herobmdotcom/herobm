@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 import { getErrorMessage } from '@herobm/shared';
 import { reportError } from '@/lib/api';
+import { toast } from 'react-hot-toast';
 import SlideOver from '@/components/shared/SlideOver';
 
 interface Macro {
@@ -46,15 +47,14 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
   const [macros, setMacros] = useState<Macro[]>([]);
   const [pdfMacros, setPdfMacros] = useState<Macro[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [supportsCustomText, setSupportsCustomText] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
   // Form state
   const [selectedMacroId, setSelectedMacroId] = useState<string>('');
   const [selectedPdfMacroId, setSelectedPdfMacroId] = useState<string>('');
   const [customPdfText, setCustomPdfText] = useState('');
-  const [supportsCustomText, setSupportsCustomText] = useState(false);
   const [toAddress, setToAddress] = useState('');
   const [isOtherSelected, setIsOtherSelected] = useState(false);
   const [subject, setSubject] = useState('');
@@ -63,7 +63,6 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
 
   useEffect(() => {
     if (isOpen) {
-      setError(null);
       setSelectedMacroId('');
       setSelectedPdfMacroId('');
       setBodyText('');
@@ -80,7 +79,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
         loadMacros(),
         loadCustomer(),
       ]).catch(err => {
-        setError(getErrorMessage(err) || 'Failed to load dialog data');
+        toast.error(getErrorMessage(err) || 'Failed to load dialog data');
       });
     }
   }, [isOpen, customerId]);
@@ -168,17 +167,8 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
 
   const handleSend = async () => {
     const trimmedAddress = toAddress.trim();
-    if (!trimmedAddress) {
-      setError('Please provide a recipient email address.');
-      return;
-    }
-    if (!subject) {
-      setError('Please provide a subject.');
-      return;
-    }
 
     setSending(true);
-    setError(null);
     try {
       await api.ordersControllerEmailDocument(orderId, {
         emailAddress: trimmedAddress,
@@ -191,7 +181,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
       });
       onSuccess();
     } catch (err: unknown) {
-      setError(getErrorMessage(err) || 'Failed to queue email');
+      toast.error(getErrorMessage(err) || 'Failed to queue email');
     } finally {
       setSending(false);
     }
@@ -214,8 +204,9 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
             {tCommon('cancel')}
           </button>
           <button
+            type="submit"
+            form="email-form"
             className="btn btn-primary flex items-center gap-2"
-            onClick={handleSend}
             disabled={sending}
           >
             {sending && (
@@ -228,12 +219,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
         </div>
       }
     >
-      <div className="flex flex-col gap-6 py-2">
-          {error && (
-            <div className="p-3 rounded bg-red-50 text-red-700 text-sm border border-red-200">
-              {error}
-            </div>
-          )}
+      <form id="email-form" onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex flex-col gap-6 py-2">
 
           {/* To Address */}
           <div>
@@ -272,10 +258,10 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
                   <input
                     type="email"
                     className="input w-full mt-2"
+                    placeholder="Enter email address"
                     value={toAddress}
                     onChange={(e) => setToAddress(e.target.value)}
-                    placeholder="Enter email address"
-                    autoFocus
+                    required
                   />
                 )}
               </>
@@ -289,10 +275,10 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
             </label>
             <input 
               type="text" 
-              className="input w-full" 
-              value={subject} 
-              onChange={(e) => setSubject(e.target.value)} 
-              placeholder="Quote for Order"
+              className="input w-full"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              required
             />
           </div>
 
@@ -361,7 +347,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
               </button>
             </div>
           </div>
-        </div>
+      </form>
     </SlideOver>
   );
 }

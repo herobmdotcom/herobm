@@ -17,7 +17,7 @@ interface UnquarantineModalProps {
 export default function UnquarantineModal({ isOpen, onClose, onSubmit, locationId }: UnquarantineModalProps) {
   const [reason, setReason] = useState('');
   const [binId, setBinId] = useState('');
-  const [bins, setBins] = useState<{ binId: string; binNumber: string; binType: string }[]>([]);
+  const [bins, setBins] = useState<api.InventoryBinResponseDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const t = useTranslations('goodsReceived');
@@ -27,33 +27,25 @@ export default function UnquarantineModal({ isOpen, onClose, onSubmit, locationI
     if (isOpen && locationId) {
       setReason('');
       setLoading(true);
-      api.inventoryControllerFindAllLocations()
+      api.inventoryControllerFindBinsByLocation(locationId)
         .then((res) => {
-          const locs = res.data || [];
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-          const loc = locs.find(l => l.locationId === locationId) as any;
-          if (loc && loc.zones) {
-            const availableBins: { binId: string; binNumber: string; binType: string }[] = [];
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-            loc.zones.forEach((z: any) => {
-              if (z.bins) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-                z.bins.forEach((b: any) => {
-                  if (b.binType !== BIN_TYPE.QUARANTINE) {
-                    availableBins.push(b);
-                  }
-                });
-              }
-            });
-            setBins(availableBins);
-            
-            // Default to a RECEIVING bin if one exists, otherwise just the first available
-            const defaultBin = availableBins.find(b => b.binType === BIN_TYPE.RECEIVING) || availableBins[0];
-            if (defaultBin) {
-              setBinId(defaultBin.binId);
-            } else {
-              setBinId('');
+          const allBins = res.data || [];
+          const availableBins: api.InventoryBinResponseDto[] = [];
+          
+          allBins.forEach((b) => {
+            if (b.binType !== BIN_TYPE.QUARANTINE) {
+              availableBins.push(b);
             }
+          });
+          
+          setBins(availableBins);
+          
+          // Default to the RECEIVING bin if one exists, otherwise just the first available
+          const defaultBin = availableBins.find(b => b.binNumber === 'RECEIVING' && b.zoneCode === 'HANDLING') || availableBins[0];
+          if (defaultBin) {
+            setBinId(defaultBin.binId);
+          } else {
+            setBinId('');
           }
         })
         .catch((err) => reportError(err, 'UnquarantineModal.fetchBins'))
@@ -107,7 +99,7 @@ export default function UnquarantineModal({ isOpen, onClose, onSubmit, locationI
         ) : (
           <form id="unquarantine-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+              <label className="text-sm font-medium text-[var(--text-muted)]">
                 {t('quarantine.destinationBin')}
               </label>
               {bins.length > 0 ? (
@@ -120,7 +112,7 @@ export default function UnquarantineModal({ isOpen, onClose, onSubmit, locationI
                   <option value="" disabled>{t('quarantine.selectBin')}</option>
                   {bins.map(b => (
                     <option key={b.binId} value={b.binId}>
-                      {b.binNumber} ({b.binType})
+                      {b.zoneCode ? `${b.zoneCode}.${b.binNumber}` : b.binNumber} ({b.binType})
                     </option>
                   ))}
                 </select>
@@ -132,7 +124,7 @@ export default function UnquarantineModal({ isOpen, onClose, onSubmit, locationI
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+              <label className="text-sm font-medium text-[var(--text-muted)]">
                 {t('quarantine.reasonOptional')}
               </label>
               <input

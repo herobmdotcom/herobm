@@ -773,7 +773,7 @@ describe('API E2E — Ledger Symmetry Register', () => {
     const rows = await db.execute(sql`
       SELECT b.bin_id FROM herobm_core.bins b
       JOIN herobm_core.zones z ON b.zone_id = z.zone_id
-      WHERE z.location_id = ${validLocationId} AND b.bin_type NOT IN ('receiving', 'staging', 'quarantine') AND b.is_unavailable = false
+      WHERE z.location_id = ${validLocationId} AND b.bin_type NOT IN ('staging', 'quarantine') AND b.is_unavailable = false
       LIMIT 1
     `);
     const validBinId = rows[0]?.bin_id;

@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
 import PageNav from '@/components/shared/PageNav';
+import EntityBanner from '@/components/shared/EntityBanner';
 import { useRouter } from 'next/navigation';
 
 export default function LicensePage() {
@@ -132,9 +133,11 @@ export default function LicensePage() {
               )}
 
               {status?.warningMessage && (
-                <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded border border-red-100 dark:border-red-900/50">
-                  {status.warningMessage}
-                </div>
+                <EntityBanner
+                  type="error"
+                  title="License Warning"
+                  description={status.warningMessage}
+                />
               )}
             </div>
           </div>

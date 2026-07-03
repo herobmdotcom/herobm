@@ -1,11 +1,16 @@
 import { ProductType } from './index';
 export enum BIN_TYPE {
+  /** Standard racking or shelving intended for general long-term or short-term storage */
   STORAGE = 'storage',
+  /** Forward active picking locations designed for high-velocity fulfillment */
   PICK = 'pick',
+  /** Bulk floor locations or overstock storage for pallets and large items */
   BULK = 'bulk',
-  RECEIVING = 'receiving',
+  /** Temporary holding areas (e.g. shipping docks, receiving floors, temporary transit) */
   STAGING = 'staging',
+  /** Restricted bins for quality inspection, damaged goods, or blocked inventory */
   QUARANTINE = 'quarantine',
+  /** Virtual bins representing inventory currently moving between physical locations */
   IN_TRANSIT = 'in_transit',
 }
 export interface InventoryLevelData {

@@ -2223,6 +2223,22 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "binType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "zoneCode",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -13960,6 +13976,36 @@
       }
     },
     "/inventory/locations/{id}": {
+      "get": {
+        "description": "Retrieve a specific warehouse location by ID, including its address details.",
+        "operationId": "LocationsController_getLocation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LocationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Location",
+        "tags": [
+          "Warehouse"
+        ]
+      },
       "patch": {
         "description": "Modify the details of an existing warehouse location.",
         "operationId": "LocationsController_updateLocation",
@@ -17757,6 +17803,12 @@
           "binId": {
             "type": "string"
           },
+          "zoneId": {
+            "type": "string"
+          },
+          "zoneCode": {
+            "type": "string"
+          },
           "binNumber": {
             "type": "string"
           },
@@ -17786,6 +17838,9 @@
             "type": "string"
           },
           "binType": {
+            "type": "string"
+          },
+          "zoneCode": {
             "type": "string"
           }
         },
@@ -17967,6 +18022,9 @@
       "PutawayLineDto": {
         "type": "object",
         "properties": {
+          "reason": {
+            "type": "string"
+          },
           "lineId": {
             "type": "string"
           },
@@ -24564,39 +24622,6 @@
           "lines"
         ]
       },
-      "CreateLocationDto": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "addressLine1": {
-            "type": "string"
-          },
-          "addressLine2": {
-            "type": "string"
-          },
-          "city": {
-            "type": "string"
-          },
-          "stateOrProvince": {
-            "type": "string"
-          },
-          "country": {
-            "type": "string"
-          },
-          "postalCode": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "code",
-          "name"
-        ]
-      },
       "LocationResponseDto": {
         "type": "object",
         "properties": {
@@ -24642,6 +24667,39 @@
           "name",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "CreateLocationDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "addressLine1": {
+            "type": "string"
+          },
+          "addressLine2": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "stateOrProvince": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name"
         ]
       },
       "UpdateLocationDto": {
@@ -24757,7 +24815,6 @@
               "storage",
               "pick",
               "bulk",
-              "receiving",
               "staging",
               "quarantine",
               "in_transit"
@@ -24836,7 +24893,6 @@
               "storage",
               "pick",
               "bulk",
-              "receiving",
               "staging",
               "quarantine",
               "in_transit"

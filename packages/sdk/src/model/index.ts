@@ -321,6 +321,7 @@ export * from './inventoryControllerFindAllLocationsParams';
 export * from './inventoryControllerFindAllParams';
 export * from './inventoryControllerFindBins200';
 export * from './inventoryControllerFindBins200AllOf';
+export * from './inventoryControllerFindBinsByLocationParams';
 export * from './inventoryControllerFindBinsParams';
 export * from './inventoryControllerFindByProductIdsParams';
 export * from './inventoryControllerGetLedgerParams';

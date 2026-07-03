@@ -91,7 +91,7 @@ export default function QuarantineListPage() {
     const [refreshKey, setRefreshKey] = useState(0);
 
     const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
-    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('receiving_selected_location', '');
+    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('receiving_selected_location', 'UNSET');
     const [selectedLocationNo, setSelectedLocationNo] = useState<string>('');
 
     useEffect(() => {
@@ -105,9 +105,11 @@ export default function QuarantineListPage() {
 
     useEffect(() => {
         if (locReady && locations.length > 0) {
-            const isValidSaved = selectedLocationId && locations.some(l => l.locationId === selectedLocationId);
-            const defaultLocId = isValidSaved ? selectedLocationId : (app?.defaultFulfillmentLocationId || locations[0].locationId);
-            if (defaultLocId !== selectedLocationId) {
+            if (selectedLocationId === 'UNSET') {
+                const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
+                setSelectedLocationId(defaultLocId as string);
+            } else if (selectedLocationId !== '' && !locations.some(l => l.locationId === selectedLocationId)) {
+                const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
                 setSelectedLocationId(defaultLocId as string);
             }
         }
@@ -207,7 +209,7 @@ export default function QuarantineListPage() {
                 headerFilters={
                     <FilterDropdown 
                         locations={locations}
-                        selectedLocationId={selectedLocationId}
+                        selectedLocationId={selectedLocationId === 'UNSET' ? '' : selectedLocationId}
                         setSelectedLocationId={setSelectedLocationId}
                         t={t}
                         tCommon={tCommon}
@@ -244,7 +246,7 @@ export default function QuarantineListPage() {
                 isOpen={unquarantineModalOpen}
                 onClose={() => setUnquarantineModalOpen(false)}
                 onSubmit={handleUnquarantineSubmit}
-                locationId={selectedLocationId || (selectedRows.length > 0 ? locations.find(l => l.code === selectedRows[0].locationNo)?.locationId || '' : '')}
+                locationId={(selectedLocationId === 'UNSET' ? '' : selectedLocationId) || (selectedRows.length > 0 ? locations.find(l => l.code === selectedRows[0].locationNo)?.locationId || '' : '')}
             />
         </>
     );

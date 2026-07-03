@@ -21,7 +21,6 @@ export default function AddSupplierModal({
   const [suppliers, setSuppliers] = useState<api.SupplierResponseDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [lastSearchQuery, setLastSearchQuery] = useState('');
   const t = useTranslations('products.supplierModal');
@@ -45,7 +44,6 @@ export default function AddSupplierModal({
       setSuppliers([]);
       setSupplierPartNumber('');
       setCostPrice('0.00');
-      setError(null);
     }
   }, [isOpen]);
 
@@ -97,12 +95,11 @@ export default function AddSupplierModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vendorId) {
-      setError(t('messages.selectDropdown'));
+      toast.error(t('messages.selectDropdown'));
       return;
     }
 
     setSubmitting(true);
-    setError(null);
     try {
       await api.productsControllerAddSupplier(productId, {
         vendorId,
@@ -113,7 +110,7 @@ export default function AddSupplierModal({
       onSuccess();
       onClose();
     } catch (err: unknown) {
-      setError(getErrorMessage(err));
+      toast.error(getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -240,14 +237,6 @@ export default function AddSupplierModal({
               />
             </div>
           </div>
-
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-md text-[14px] flex items-start gap-2 font-medium">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-              <span className="material-symbols-outlined text-[18px] text-red-500 mt-[1px]">error</span>
-              <span className="flex-1 leading-snug">{error}</span>
-            </div>
-          )}
 
           <div className="mt-8 pt-6 flex justify-end gap-3 border-t border-gray-100">
              <button type="button" className="btn btn-ghost hover:bg-gray-100 text-gray-700 h-11 min-h-[44px] px-6 font-semibold" onClick={onClose} disabled={submitting}>

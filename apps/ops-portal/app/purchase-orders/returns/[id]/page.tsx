@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import InlineAlert from '@/components/shared/InlineAlert';
 import * as api from '@herobm/sdk';
 import { PURCHASE_RETURN_STATE } from '@herobm/shared';
 import { getErrorMessage } from '@herobm/shared';
@@ -107,20 +108,14 @@ export default function PurchaseReturnDetailPage({ params }: { params: Promise<{
     >
       <div className="flex flex-col gap-4">
         {error && (
-          <div className="px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-            {error}
-          </div>
+          <InlineAlert type="error" message={error} />
         )}
 
         <div className="card">
           <h3 className="section-heading mb-4">{t('debitNoteEntry')}</h3>
           
           {!isShipped ? (
-            <div className="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded">
-              <p className="text-sm">
-                {t('debitNoteWarning')}
-              </p>
-            </div>
+            <InlineAlert type="warning" message={t('debitNoteWarning')} />
           ) : (
             <>
               <div className="grid grid-cols-2 gap-4 mb-6">

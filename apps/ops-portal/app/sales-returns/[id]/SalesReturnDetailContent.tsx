@@ -20,7 +20,7 @@ import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
 import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
 
 import * as api from '@herobm/sdk';
-import { getErrorMessage, RETURN_STATE, RETURN_TRANSITIONS, DATA_SOURCE_CONTEXT, computeReturnCreditSummary, computeLinePrice, isBackTransition, RETURN_LIFECYCLE } from '@herobm/shared';
+import { getErrorMessage, RETURN_STATE, RETURN_TRANSITIONS, DATA_SOURCE_CONTEXT, computeReturnCreditSummary, computeLinePrice, isBackTransition, RETURN_LIFECYCLE, PUTAWAY_STATUS } from '@herobm/shared';
 import { useSettings } from '@/components/SettingsProvider';
 
 function PurchaseReturnStateBadge({ state }: { state: ValidState }) {
@@ -133,6 +133,23 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
       render: (line) => line.resolution || '—',
     },
     {
+      id: 'status',
+      header: 'Putaway Status',
+      width: 120,
+      render: (line) => {
+          if (line.putawayStatus === PUTAWAY_STATUS.QUARANTINED) {
+              return <span className="badge badge-warning text-[10px]">Quarantined</span>;
+          }
+          if (line.putawayStatus === PUTAWAY_STATUS.PENDING_PUTAWAY) {
+              return <span className="badge badge-neutral text-[10px]">Pending</span>;
+          }
+          if (line.putawayStatus === PUTAWAY_STATUS.COMPLETED) {
+              return <span className="badge badge-success text-[10px]">Putaway</span>;
+          }
+          return <span className="badge badge-ghost text-[10px]">{line.putawayStatus || '—'}</span>;
+      }
+    },
+    {
       id: 'fee',
       header: t('columns.fee'),
       width: 110,
@@ -182,7 +199,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
   const linesFooter = (
     <>
       <tr className="hidden lg:table-row" style={{ borderTop: '2px solid var(--border)' }}>
-        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+        <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
           {t('returns.totalCredit')}
         </td>
         <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
@@ -190,7 +207,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
         </td>
       </tr>
       <tr className="hidden lg:table-row">
-        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+        <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
           Total Tax
         </td>
         <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
@@ -199,7 +216,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
       </tr>
       {creditSummary.totalFees > 0 && (
         <tr className="hidden lg:table-row">
-          <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+          <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
             Total Fees
           </td>
           <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: 'var(--text-danger)' }}>
@@ -208,7 +225,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
         </tr>
       )}
       <tr className="hidden lg:table-row">
-        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
+        <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
           {t('returns.netCredit')}
         </td>
         <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 14 }}>
@@ -219,6 +236,14 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
   );
 
   const isEditable = ret && ret.stateCode !== RETURN_STATE.RECEIVED && ret.stateCode !== RETURN_STATE.PROCESSED && ret.stateCode !== RETURN_STATE.CANCELLED;
+
+  const hasPendingPutaway = ret.lines.some(l => l.putawayStatus === PUTAWAY_STATUS.PENDING_PUTAWAY || l.putawayStatus === PUTAWAY_STATUS.AWAITING_MATCHING);
+  const hasQuarantined = ret.lines.some(l => l.putawayStatus === PUTAWAY_STATUS.QUARANTINED);
+
+  const quarantineTitle = hasQuarantined ? 'Items Quarantined' : 'Pending Inspection';
+  const quarantineDesc = hasQuarantined 
+      ? 'Some returned items have been quarantined during putaway. Please review before issuing a credit note.'
+      : 'Returned items have not been fully put away and inspected yet. Proceed with caution when issuing a credit note.';
 
   return (
     <DetailsLayout
@@ -274,6 +299,14 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
       }
     >
       <div className="flex flex-col gap-3">
+        {(hasPendingPutaway || hasQuarantined) && ret.stateCode !== RETURN_STATE.PROCESSED && ret.stateCode !== RETURN_STATE.CANCELLED && (
+          <EntityBanner 
+            type="warning" 
+            title={quarantineTitle} 
+            description={quarantineDesc} 
+          />
+        )}
+
         {/* Details Card */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">

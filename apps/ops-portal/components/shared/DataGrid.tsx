@@ -419,6 +419,17 @@ export default function DataGrid<T>({
   });
   const [previousLimit, setPreviousLimit] = useState<number | null>(null);
 
+  const isGridFilteredRef = useRef(false);
+
+  // If there's an initial search param, we want to ensure custom view is active on load
+  useEffect(() => {
+    if (search && search.trim() !== '') {
+      setIsCustomView(true);
+    } else if (!isGridFilteredRef.current) {
+      setIsCustomView(false);
+    }
+  }, [search]);
+
   useEffect(() => {
     if (gridKey && typeof window !== 'undefined') {
       try {
@@ -1284,6 +1295,9 @@ export default function DataGrid<T>({
             onGridReady={onGridReady}
             onFirstDataRendered={onFirstDataRendered}
             onStateUpdated={onStateUpdated}
+            onFilterChanged={(e) => {
+              // We don't strictly need this, but it forces an update if grid filters change internally.
+            }}
             onModelUpdated={(e) => {
               setDisplayedRowCount(e.api.getDisplayedRowCount());
               const nodes: T[] = [];
@@ -1305,17 +1319,20 @@ export default function DataGrid<T>({
                 }
               }
               
+              isGridFilteredRef.current = isSortedOrFiltered;
+              const hasSearch = typeof search === 'string' && search.trim() !== '';
+              
               if (isSortedOrFiltered) {
                 if (limit !== 99999) {
                   setPreviousLimit(limit);
                   setLimit(99999);
-                  setIsCustomView(true);
                 }
-              } else if (isCustomView) {
+                setIsCustomView(true);
+              } else {
                 if (limit === 99999 && !fetchAll) {
                   setLimit(previousLimit ?? (isMobile ? 25 : 200));
                 }
-                setIsCustomView(false);
+                setIsCustomView(hasSearch);
               }
             }}
             onRowClicked={onRowClicked ? handleRowClicked : undefined}
@@ -1417,13 +1434,17 @@ export default function DataGrid<T>({
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between gap-3 w-full lg:w-auto relative overflow-x-auto hide-scrollbar sm:overflow-visible pb-1 -mb-1">
-                  <div className={`transition-all duration-300 lg:bg-transparent rounded-lg shrink-0 lg:shrink lg:min-w-[140px] ${search ? 'w-[calc(100vw-80px)] lg:w-auto lg:flex-1 lg:max-w-[280px] lg:ml-6' : 'w-[44px] focus-within:w-[calc(100vw-80px)] lg:focus-within:w-auto lg:w-auto lg:flex-1 lg:max-w-[280px] lg:ml-6'}`}>
+                <div className="flex flex-wrap lg:flex-nowrap items-center justify-between gap-3 w-full lg:w-auto relative pb-1 -mb-1">
+                  <div className={`transition-all duration-300 lg:bg-transparent rounded-lg shrink-0 lg:shrink lg:min-w-[140px] ${search ? 'w-full lg:w-auto lg:flex-1 lg:max-w-[280px] lg:ml-6' : 'w-[44px] focus-within:w-full lg:focus-within:w-auto lg:w-auto lg:flex-1 lg:max-w-[280px] lg:ml-6'}`}>
                     {searchInputNode}
                   </div>
                   {(headerFilters || headerActions) && (
-                    <div className={`flex-1 min-w-0 lg:flex-none ml-auto flex items-center justify-end gap-3 ${headerFilters ? '' : 'hidden lg:flex'}`}>
-                      {headerFilters}
+                    <div className={`w-full lg:w-auto flex-1 lg:flex-none ml-auto flex items-center justify-end gap-3 ${headerFilters ? '' : 'hidden lg:flex'}`}>
+                      {headerFilters && (
+                        <div className={`transition-all duration-500 rounded-lg ${isCustomView ? 'ring-2 ring-amber-500/40 bg-amber-500/10 shadow-[0_0_15px_rgba(245,158,11,0.15)]' : ''}`}>
+                          {headerFilters}
+                        </div>
+                      )}
                       {headerActions && (
                         <div className="hidden lg:block shrink-0">
                           {headerActions}

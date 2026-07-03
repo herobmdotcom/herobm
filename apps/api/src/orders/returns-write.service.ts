@@ -972,6 +972,7 @@ export class ReturnsWriteService {
         pricePerUnit: salesOrderLineItems.pricePerUnit,
         discountPercentage: salesOrderLineItems.discountPercentage,
         taxRate: taxCategories.rate,
+        putawayStatus: salesOrderReturnLines.putawayStatus,
       })
       .from(salesOrderReturnLines)
       .innerJoin(
@@ -1103,14 +1104,19 @@ export class ReturnsWriteService {
         .select({
           orderNumber: salesOrders.orderNumber,
           locationId: salesOrders.fulfillmentLocationId,
+          customerNumber: coreAccounts.accountNumber,
+          customerName: coreAccounts.name,
         })
         .from(salesOrders)
+        .leftJoin(coreAccounts, eq(salesOrders.customerId, coreAccounts.accountId))
         .where(eq(salesOrders.salesOrderId, ret.salesOrderId))
         .limit(1);
 
       result.push({
         ...ret,
         orderNumber: orderInfo?.orderNumber,
+        customerNumber: orderInfo?.customerNumber,
+        customerName: orderInfo?.customerName,
         locationId: orderInfo?.locationId,
         lines,
       });

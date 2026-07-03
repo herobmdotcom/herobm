@@ -8,6 +8,7 @@ import {
 } from '@nestjs/swagger';
 import {
   Controller,
+  Get,
   Post,
   Patch,
   Delete,
@@ -44,6 +45,18 @@ export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
   // ── Locations ─────────────────────────────────────────────────────────────
+
+  @Get('locations/:id')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Location',
+    description:
+      'Retrieve a specific warehouse location by ID, including its address details.',
+  })
+  @ApiOkResponse({ type: LocationResponseDto })
+  getLocation(@Param('id') id: string) {
+    return this.locationsService.getLocation(id);
+  }
 
   @Post('locations')
   @ApiBody({ type: CreateLocationDto })

@@ -1058,13 +1058,12 @@ export const zones = herobmCore.table(
 // bins  (Physical storage locations within a location)
 // ---------------------------------------------------------------------------
 export const binTypeEnum = herobmCore.enum('bin_type_enum', [
-  'storage',
-  'pick',
-  'bulk',
-  'receiving',
-  'staging',
-  'quarantine',
-  'in_transit',
+  'storage', // Standard racking or shelving intended for general long-term or short-term storage
+  'pick', // Forward active picking locations designed for high-velocity fulfillment
+  'bulk', // Bulk floor locations or overstock storage for pallets and large items
+  'staging', // Temporary holding areas (e.g. shipping docks, temporary transit)
+  'quarantine', // Restricted bins for quality inspection, damaged goods, or blocked inventory
+  'in_transit', // Virtual bins representing inventory currently moving between physical locations
 ]);
 
 export const bins = herobmCore.table(

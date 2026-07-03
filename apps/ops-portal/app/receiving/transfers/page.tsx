@@ -40,7 +40,7 @@ export default function ReceivingTransfersPage() {
     const [refreshKey, setRefreshKey] = useState(0);
 
     const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
-    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('receiving_selected_location', '');
+    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('receiving_selected_location', 'UNSET');
 
     useEffect(() => {
         api.inventoryControllerFindAllLocations({})
@@ -53,9 +53,11 @@ export default function ReceivingTransfersPage() {
 
     useEffect(() => {
         if (locReady && locations.length > 0) {
-            const isValidSaved = selectedLocationId && locations.some(l => l.locationId === selectedLocationId);
-            const defaultLocId = isValidSaved ? selectedLocationId : (app?.defaultFulfillmentLocationId || locations[0].locationId);
-            if (defaultLocId !== selectedLocationId) {
+            if (selectedLocationId === 'UNSET') {
+                const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
+                setSelectedLocationId(defaultLocId as string);
+            } else if (selectedLocationId !== '' && !locations.some(l => l.locationId === selectedLocationId)) {
+                const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
                 setSelectedLocationId(defaultLocId as string);
             }
         }
@@ -76,7 +78,7 @@ export default function ReceivingTransfersPage() {
 
     const triggerRefresh = useCallback(() => setRefreshKey(k => k + 1), []);
 
-    const gridEndpoint = locReady ? `/api/transfers?state=${TRANSFER_ORDER_STATE.SHIPPED}${selectedLocationId ? `&destinationLocationId=${selectedLocationId}` : ''}` : undefined;
+    const gridEndpoint = locReady ? `/api/transfers?state=${TRANSFER_ORDER_STATE.SHIPPED}${selectedLocationId && selectedLocationId !== 'UNSET' ? `&destinationLocationId=${selectedLocationId}` : ''}` : undefined;
 
     const gridColumns: Record<string, unknown>[] = useMemo(() => [
         { field: 'orderNumber', headerName: 'Order No', width: 140 },
@@ -100,7 +102,7 @@ export default function ReceivingTransfersPage() {
                 headerActions={
                     <LocationFilter 
                         locations={locations} 
-                        selectedLocationId={selectedLocationId as string} 
+                        selectedLocationId={selectedLocationId === 'UNSET' ? '' : (selectedLocationId as string)} 
                         setSelectedLocationId={setSelectedLocationId} 
                         t={t} 
                         tCommon={tCommon} 

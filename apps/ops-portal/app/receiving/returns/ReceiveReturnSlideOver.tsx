@@ -13,6 +13,8 @@ interface ReturnLine {
     productDescription?: string;
     quantityReturned: string;
     quantityReceived?: string;
+    reason?: string;
+    resolution?: string;
 }
 
 interface ReturnRecord {
@@ -142,7 +144,15 @@ export default function ReceiveReturnSlideOver({
                                     line.productNumber || '—'
                                 )}
                             </td>
-                            <td className="text-sm">{line.productDescription || '—'}</td>
+                            <td className="text-sm">
+                                <div>{line.productDescription || '—'}</div>
+                                {(line.reason || line.resolution) && (
+                                    <div className="text-xs text-[var(--text-muted)] mt-1.5 flex flex-col gap-0.5">
+                                        {line.reason && <div><span className="font-medium mr-1">Reason:</span> {line.reason}</div>}
+                                        {line.resolution && <div><span className="font-medium mr-1">Resolution:</span> {line.resolution}</div>}
+                                    </div>
+                                )}
+                            </td>
                             <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>
                                 {line.quantityReturned}
                             </td>

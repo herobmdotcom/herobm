@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'react-hot-toast';
 import SlideOver from '@/components/shared/SlideOver';
+import InlineAlert from '@/components/shared/InlineAlert';
 import * as api from '@herobm/sdk';
 import { PURCHASE_RETURN_STATE } from '@herobm/shared';
 import { getErrorMessage } from '@herobm/shared';
@@ -51,12 +53,11 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
   const handleStage = async () => {
     try {
       setActionLoading(true);
-      setError(null);
       await api.purchaseReturnsControllerStageReturn(returnRecord.purchaseOrderId, returnRecord.returnId, {} );
       onRefresh();
       onClose();
     } catch (err: unknown) {
-      setError(getErrorMessage(err) || 'Failed to stage return');
+      toast.error(getErrorMessage(err) || 'Failed to stage return');
     } finally {
       setActionLoading(false);
     }
@@ -65,12 +66,11 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
   const handleShip = async () => {
     try {
       setActionLoading(true);
-      setError(null);
       await api.purchaseReturnsControllerShipReturn(returnRecord.purchaseOrderId, returnRecord.returnId, {});
       onRefresh();
       onClose();
     } catch (err: unknown) {
-      setError(getErrorMessage(err) || 'Failed to ship return');
+      toast.error(getErrorMessage(err) || 'Failed to ship return');
     } finally {
       setActionLoading(false);
     }
@@ -85,11 +85,6 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
     <SlideOver isOpen={isOpen} onClose={onClose} title={tShipments('returns.slideOverTitle', { returnNumber: returnRecord.returnNumber })}>
       <div className="flex flex-col h-full bg-[var(--bg-card)]">
         <div className="flex-1 overflow-y-auto p-6">
-          {error && (
-            <div className="mb-4 px-3 py-2 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
-              {error}
-            </div>
-          )}
           
           <div className="mb-6">
             <h4 className="text-sm font-semibold mb-2">{tShipments('returns.returnDetails')}</h4>
@@ -142,16 +137,30 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
           </div>
 
           {isDraft && (
-            <div className="mb-6 p-4 rounded bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-              <p className="font-semibold mb-1">{tShipments('returns.stagingRequired')}</p>
-              <p>{tShipments('returns.stagingRequiredDesc', { bin: 'SUPPLIER_RETURNS' })}</p>
+            <div className="mb-6">
+              <InlineAlert
+                type="warning"
+                message={
+                  <div className="flex flex-col gap-1">
+                    <p className="font-semibold">{tShipments('returns.stagingRequired')}</p>
+                    <p>{tShipments('returns.stagingRequiredDesc', { bin: 'SUPPLIER_RETURNS' })}</p>
+                  </div>
+                }
+              />
             </div>
           )}
 
           {isStaged && (
-            <div className="mb-6 p-4 rounded bg-blue-50 border border-blue-200 text-blue-800 text-sm">
-              <p className="font-semibold mb-1">{tShipments('returns.readyToShip')}</p>
-              <p>{tShipments('returns.readyToShipDesc', { bin: 'SUPPLIER_RETURNS' })}</p>
+            <div className="mb-6">
+              <InlineAlert
+                type="info"
+                message={
+                  <div className="flex flex-col gap-1">
+                    <p className="font-semibold">{tShipments('returns.readyToShip')}</p>
+                    <p>{tShipments('returns.readyToShipDesc', { bin: 'SUPPLIER_RETURNS' })}</p>
+                  </div>
+                }
+              />
             </div>
           )}
         </div>

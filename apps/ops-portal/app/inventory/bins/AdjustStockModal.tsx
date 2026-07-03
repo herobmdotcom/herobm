@@ -95,7 +95,7 @@ export default function AdjustStockModal({ isOpen, onClose, onSubmit, selectedLi
             
             <div className="flex flex-col gap-2">
               { }
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+              <label className="text-sm font-medium text-[var(--text-muted)]">
                 Selected Items
               </label>
               
@@ -161,7 +161,7 @@ export default function AdjustStockModal({ isOpen, onClose, onSubmit, selectedLi
 
             <div className="flex flex-col gap-1.5">
               { }
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+              <label className="text-sm font-medium text-[var(--text-muted)]">
                 Reason (Optional)
               </label>
               <input

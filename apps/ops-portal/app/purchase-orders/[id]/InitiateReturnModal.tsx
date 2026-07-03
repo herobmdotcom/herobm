@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'react-hot-toast';
 import SlideOver from '@/components/shared/SlideOver';
 import * as api from '@herobm/sdk';
 import { getErrorMessage } from '@herobm/shared';
@@ -27,7 +28,6 @@ export default function InitiateReturnModal({
   const [returnReasons, setReturnReasons] = useState<{ [key: string]: string }>({});
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -36,7 +36,6 @@ export default function InitiateReturnModal({
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
-      setError(null);
 
       const linesPayload = validLines
         .filter(l => parseFloat(returnLines[l.purchaseOrderLineId] || '0') > 0)
@@ -58,7 +57,7 @@ export default function InitiateReturnModal({
       onSuccess();
       onClose();
     } catch (err: unknown) {
-      setError(getErrorMessage(err) || 'Failed to initiate return');
+      toast.error(getErrorMessage(err) || 'Failed to initiate return');
     } finally {
       setSubmitting(false);
     }
@@ -68,12 +67,6 @@ export default function InitiateReturnModal({
     <SlideOver isOpen={isOpen} onClose={onClose} title="Initiate Return">
       <div className="flex flex-col h-full bg-[var(--bg-card)]">
         <div className="flex-1 overflow-y-auto p-6">
-        {error && (
-          <div className="mb-4 px-3 py-2 bg-red-50 border border-red-200 text-red-700 rounded text-sm">
-            {error}
-          </div>
-        )}
-
         <div className="mb-4">
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
             {tPurchase('returns.selectLinesMsg')}

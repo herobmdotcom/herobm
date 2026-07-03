@@ -40,7 +40,7 @@ export default function ReceivingReturnsPage() {
 
     const { app } = useSettings();
     const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
-    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('receivingReturnsLocationId', '');
+    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('receivingReturnsLocationId', 'UNSET');
     
     useEffect(() => {
         api.inventoryControllerFindAllLocations()
@@ -50,9 +50,11 @@ export default function ReceivingReturnsPage() {
 
     useEffect(() => {
         if (locReady && locations.length > 0) {
-            const isValidSaved = selectedLocationId && locations.some(l => l.locationId === selectedLocationId);
-            const defaultLocId = isValidSaved ? selectedLocationId : (app?.defaultFulfillmentLocationId || locations[0].locationId);
-            if (defaultLocId !== selectedLocationId) {
+            if (selectedLocationId === 'UNSET') {
+                const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
+                setSelectedLocationId(defaultLocId as string);
+            } else if (selectedLocationId !== '' && !locations.some(l => l.locationId === selectedLocationId)) {
+                const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
                 setSelectedLocationId(defaultLocId as string);
             }
         }
@@ -74,7 +76,7 @@ export default function ReceivingReturnsPage() {
     const triggerRefresh = useCallback(() => setRefreshKey(k => k + 1), []);
 
     // Fetch confirmed and partially received returns globally, filtered by location
-    const gridEndpoint = `/api/sales-returns?stateCode=${RETURN_STATE.CONFIRMED},${RETURN_STATE.PARTIALLY_RECEIVED}${selectedLocationId ? `&locationId=${selectedLocationId}` : ''}`;
+    const gridEndpoint = `/api/sales-returns?stateCode=${RETURN_STATE.CONFIRMED},${RETURN_STATE.PARTIALLY_RECEIVED}${selectedLocationId && selectedLocationId !== 'UNSET' ? `&locationId=${selectedLocationId}` : ''}`;
 
     const gridColumns: Record<string, unknown>[] = useMemo(() => [
         { field: 'returnNumber', headerName: 'Return No', width: 140 },
@@ -99,7 +101,7 @@ export default function ReceivingReturnsPage() {
     const headerActions = (
         <LocationFilter 
             locations={locations} 
-            selectedLocationId={selectedLocationId} 
+            selectedLocationId={selectedLocationId === 'UNSET' ? '' : selectedLocationId} 
             setSelectedLocationId={setSelectedLocationId} 
             tCommon={tCommon} 
         />

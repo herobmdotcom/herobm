@@ -32,6 +32,7 @@ export interface SalesReturnDetails {
     discountPercentage?: string;
     taxRate?: string;
     feeMode?: string;
+    putawayStatus?: string;
   }>;
 }
 

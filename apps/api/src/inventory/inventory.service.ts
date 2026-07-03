@@ -423,7 +423,6 @@ export class InventoryService {
             | 'storage'
             | 'pick'
             | 'bulk'
-            | 'receiving'
             | 'staging'
             | 'quarantine'
             | 'in_transit',
@@ -515,13 +514,14 @@ export class InventoryService {
         binId: bins.binId,
         binNumber: bins.binNumber,
         binType: bins.binType,
+        zoneCode: zones.code,
       })
       .from(bins)
       .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
       .where(
         and(
           eq(zones.locationId, locationId),
-          inArray(bins.binType, [...PICKABLE_BIN_TYPES]),
+          inArray(bins.binType, [...PICKABLE_BIN_TYPES, 'quarantine']),
         ),
       );
 
@@ -621,11 +621,25 @@ export class InventoryService {
   /**
    * Return all bins for a specific location.
    */
-  async findBinsByLocation(locationId: string) {
+  async findBinsByLocation(
+    locationId: string,
+    binType?: string,
+    zoneCode?: string,
+  ) {
+    const conditions = [eq(zones.locationId, locationId)];
+    if (binType) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle enum type mismatch workaround
+      conditions.push(eq(bins.binType, binType as any));
+    }
+    if (zoneCode) {
+      conditions.push(eq(zones.code, zoneCode));
+    }
+
     return this.db
       .select({
         binId: bins.binId,
         zoneId: bins.zoneId,
+        zoneCode: zones.code,
         binNumber: bins.binNumber,
         binType: bins.binType,
         isConsignment: bins.isConsignment,
@@ -635,7 +649,7 @@ export class InventoryService {
       })
       .from(bins)
       .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-      .where(eq(zones.locationId, locationId))
+      .where(and(...conditions))
       .orderBy(bins.binNumber);
   }
 
@@ -1484,34 +1498,42 @@ export class InventoryService {
           lines: movements,
         });
 
-        // Mark line as completed
-        if (lineDto.sourceType === 'goods_receipt') {
-          await tx
-            .update(goodsReceivedLines)
-            .set({ putawayStatus: PUTAWAY_STATUS.COMPLETED })
-            .where(eq(goodsReceivedLines.goodsReceivedLineId, lineDto.lineId));
-        } else if (lineDto.sourceType === 'transfer_receipt') {
-          await tx
-            .update(transferOrderReceiptLines)
-            .set({ putawayStatus: PUTAWAY_STATUS.COMPLETED })
-            .where(eq(transferOrderReceiptLines.receiptLineId, lineDto.lineId));
-        } else {
-          await tx
-            .update(salesOrderReturnLines)
-            .set({ putawayStatus: PUTAWAY_STATUS.COMPLETED })
-            .where(eq(salesOrderReturnLines.returnLineId, lineDto.lineId));
-        }
-
         const [[product], [destBin]] = await Promise.all([
           tx
             .select({ name: products.name })
             .from(products)
             .where(eq(products.productId, productId)),
           tx
-            .select({ binNumber: bins.binNumber })
+            .select({ binNumber: bins.binNumber, binType: bins.binType })
             .from(bins)
             .where(eq(bins.binId, lineDto.destinationBinId)),
         ]);
+
+        const newStatus =
+          destBin?.binType === 'quarantine'
+            ? PUTAWAY_STATUS.QUARANTINED
+            : PUTAWAY_STATUS.COMPLETED;
+
+        // Mark line as completed or quarantined
+        if (lineDto.sourceType === 'goods_receipt') {
+          await tx
+            .update(goodsReceivedLines)
+            .set({ putawayStatus: newStatus })
+            .where(eq(goodsReceivedLines.goodsReceivedLineId, lineDto.lineId));
+        } else if (lineDto.sourceType === 'transfer_receipt') {
+          await tx
+            .update(transferOrderReceiptLines)
+            .set({ putawayStatus: newStatus })
+            .where(eq(transferOrderReceiptLines.receiptLineId, lineDto.lineId));
+        } else {
+          await tx
+            .update(salesOrderReturnLines)
+            .set({
+              putawayStatus: newStatus,
+              ...(lineDto.reason ? { reason: lineDto.reason } : {}),
+            })
+            .where(eq(salesOrderReturnLines.returnLineId, lineDto.lineId));
+        }
 
         await emitEvent(tx as unknown as DrizzleDB, {
           entityType: EntityType.WAREHOUSE,

@@ -120,7 +120,7 @@ export default function ReallocateModal({
           </p>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+            <label className="text-sm font-medium text-[var(--text-muted)]">
               {t('reallocateModal.newLocation')}
             </label>
             <select

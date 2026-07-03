@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -63,7 +64,6 @@ import {
   BackorderState,
   PUTAWAY_STATUS,
   MATCH_STATUS,
-  BIN_TYPE,
 } from '@herobm/shared';
 
 const VALID_GRN_STATES = getValidStates(GOODS_RECEIVED_TRANSITIONS);
@@ -208,7 +208,7 @@ export class GoodsReceivedService {
           } else if (openPoLines.length > 1) {
             matchStatus = MATCH_STATUS.AMBIGUOUS;
           } else {
-            throw new BadRequestException('Receipt must be matched to a PO.');
+            matchStatus = MATCH_STATUS.UNMATCHED;
           }
 
           const unitCost = matchedPoLineId
@@ -242,8 +242,8 @@ export class GoodsReceivedService {
           .values(lineValues.map(({ uomCode, ...rest }) => rest));
 
         // --- 5. Inventory Impact: Place items into RECEIVING bin ---
-        // Find or create RECEIVING zone/bin
-        let receivingZone = await tx
+        // Find RECEIVING zone/bin
+        const receivingZone = await tx
           .select({ zoneId: zones.zoneId })
           .from(zones)
           .where(
@@ -256,20 +256,12 @@ export class GoodsReceivedService {
           .then((res) => res[0]);
 
         if (!receivingZone) {
-          const [newZone] = await tx
-            .insert(zones)
-            .values({
-              locationId: createDto.locationId,
-              code: 'HANDLING',
-              name: 'Handling Zone',
-              source: 'system',
-              createdBy: userId,
-            })
-            .returning();
-          receivingZone = newZone;
+          throw new ConflictException(
+            `Location topography is corrupted: missing HANDLING zone for location ${createDto.locationId}.`,
+          );
         }
 
-        let receivingBin = await tx
+        const receivingBin = await tx
           .select({ binId: bins.binId })
           .from(bins)
           .where(
@@ -282,16 +274,9 @@ export class GoodsReceivedService {
           .then((res) => res[0]);
 
         if (!receivingBin) {
-          const [newBin] = await tx
-            .insert(bins)
-            .values({
-              zoneId: receivingZone.zoneId,
-              binNumber: 'RECEIVING',
-              binType: BIN_TYPE.RECEIVING,
-              createdBy: userId,
-            })
-            .returning();
-          receivingBin = newBin;
+          throw new ConflictException(
+            `Location topography is corrupted: missing RECEIVING bin for location ${createDto.locationId}.`,
+          );
         }
 
         // --- 5.1 Financial Integration & Valuation Updates ---

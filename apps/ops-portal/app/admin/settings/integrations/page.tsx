@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
+import InlineAlert from '@/components/shared/InlineAlert';
 import { DynamicForm } from '@/components/DynamicForm';
 import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
 
@@ -500,17 +501,24 @@ export default function IntegrationsSettingsPage() {
 
                             {/* Test Result */}
                             {testResult && (
-                              <div className={`mt-2 p-4 rounded-lg border ${testResult.success ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
-                                <h5 className={`text-xs font-bold uppercase tracking-wider mb-2 ${testResult.success ? 'text-emerald-700' : 'text-red-700'}`}>
-                                  {testResult.success ? tInt('testSuccessful') : tInt('testFailed')}
-                                </h5>
-                                {testResult.success ? (
-                                  <pre className="text-xs bg-white/60 p-3 rounded border border-emerald-100 overflow-x-auto whitespace-pre-wrap font-mono text-emerald-900">
-                                    {JSON.stringify(testResult.data, null, 2)}
-                                  </pre>
-                                ) : (
-                                  <p className="text-sm text-red-600">{testResult.error}</p>
-                                )}
+                              <div className="mt-2">
+                                <InlineAlert
+                                  type={testResult.success ? 'success' : 'error'}
+                                  message={
+                                    <div className="flex flex-col gap-2">
+                                      <span className="font-bold">
+                                        {testResult.success ? tInt('testSuccessful') : tInt('testFailed')}
+                                      </span>
+                                      {testResult.success ? (
+                                        <pre className="text-xs bg-white/60 p-2 rounded overflow-x-auto whitespace-pre-wrap font-mono text-emerald-900 border border-emerald-100">
+                                          {JSON.stringify(testResult.data, null, 2)}
+                                        </pre>
+                                      ) : (
+                                        <span>{testResult.error}</span>
+                                      )}
+                                    </div>
+                                  }
+                                />
                               </div>
                             )}
                           </div>

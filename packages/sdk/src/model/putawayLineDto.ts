@@ -8,6 +8,7 @@
 import type { PutawayLineDtoSourceType } from './putawayLineDtoSourceType';
 
 export interface PutawayLineDto {
+  reason?: string;
   lineId: string;
   sourceType: PutawayLineDtoSourceType;
   destinationBinId: string;

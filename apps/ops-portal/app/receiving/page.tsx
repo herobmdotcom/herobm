@@ -130,7 +130,7 @@ export default function GoodsReceivedListPage() {
     const [refreshKey, setRefreshKey] = useState(0);
 
     const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
-    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('receiving_selected_location', '');
+    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('receiving_selected_location', 'UNSET');
 
     useEffect(() => {
         api.inventoryControllerFindAllLocations({} )
@@ -143,9 +143,11 @@ export default function GoodsReceivedListPage() {
 
     useEffect(() => {
         if (locReady && locations.length > 0) {
-            const isValidSaved = selectedLocationId && locations.some(l => l.locationId === selectedLocationId);
-            const defaultLocId = isValidSaved ? selectedLocationId : (app?.defaultFulfillmentLocationId || locations[0].locationId);
-            if (defaultLocId !== selectedLocationId) {
+            if (selectedLocationId === 'UNSET') {
+                const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
+                setSelectedLocationId(defaultLocId as string);
+            } else if (selectedLocationId !== '' && !locations.some(l => l.locationId === selectedLocationId)) {
+                const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
                 setSelectedLocationId(defaultLocId as string);
             }
         }
@@ -217,7 +219,7 @@ export default function GoodsReceivedListPage() {
         }
     }, [selectedRows, triggerRefresh]);
 
-    const gridEndpoint = isReadyDays ? `/api/goods-received/lines?days=${days}&limit=0${selectedLocationId ? `&locationId=${selectedLocationId}` : ''}` : undefined;
+    const gridEndpoint = isReadyDays && selectedLocationId !== 'UNSET' ? `/api/goods-received/lines?days=${days}&limit=0${selectedLocationId ? `&locationId=${selectedLocationId}` : ''}` : undefined;
 
     const gridColumns: ColDef<ReceivingGridRow>[] = useMemo(() => [
         {
@@ -301,7 +303,7 @@ export default function GoodsReceivedListPage() {
                 headerFilters={
                     <FilterDropdown 
                         locations={locations}
-                        selectedLocationId={selectedLocationId}
+                        selectedLocationId={selectedLocationId === 'UNSET' ? '' : selectedLocationId}
                         setSelectedLocationId={setSelectedLocationId}
                         days={days}
                         setDays={setDays}
@@ -357,7 +359,7 @@ export default function GoodsReceivedListPage() {
                 isOpen={quarantineModalOpen}
                 onClose={() => setQuarantineModalOpen(false)}
                 onSubmit={handleQuarantineSubmit}
-                locationId={selectedLocationId || (selectedRows.length > 0 ? selectedRows[0].locationId as string : '')}
+                locationId={(selectedLocationId === 'UNSET' ? '' : selectedLocationId) || (selectedRows.length > 0 ? selectedRows[0].locationId as string : '')}
             />
         </>
     );

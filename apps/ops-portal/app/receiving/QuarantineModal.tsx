@@ -17,7 +17,7 @@ interface QuarantineModalProps {
 export default function QuarantineModal({ isOpen, onClose, onSubmit, locationId }: QuarantineModalProps) {
   const [reason, setReason] = useState('');
   const [binId, setBinId] = useState('');
-  const [bins, setBins] = useState<{ binId: string; binNumber: string }[]>([]);
+  const [bins, setBins] = useState<{ binId: string; binNumber: string; zoneCode?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const t = useTranslations('goodsReceived');
@@ -27,30 +27,22 @@ export default function QuarantineModal({ isOpen, onClose, onSubmit, locationId 
     if (isOpen && locationId) {
       setReason('');
       setLoading(true);
-      api.inventoryControllerFindAllLocations()
+      api.inventoryControllerFindBinsByLocation(locationId)
         .then((res) => {
-          const locs = res.data || [];
-          interface BinData { binId: string; binNumber: string; binType: string; }
-          interface ZoneData { bins?: BinData[]; }
-          interface LocationData { locationId: string; zones?: ZoneData[]; }
-          const loc = locs.find((l: LocationData) => l.locationId === locationId) as LocationData | undefined;
-          if (loc && loc.zones) {
-            const quarantineBins: { binId: string; binNumber: string }[] = [];
-            loc.zones.forEach((z: ZoneData) => {
-              if (z.bins) {
-                z.bins.forEach((b: BinData) => {
-                  if (b.binType === BIN_TYPE.QUARANTINE) {
-                    quarantineBins.push(b);
-                  }
-                });
-              }
-            });
-            setBins(quarantineBins);
-            if (quarantineBins.length > 0) {
-              setBinId(quarantineBins[0].binId);
-            } else {
-              setBinId('');
+          const allBins = res.data || [];
+          const quarantineBins: { binId: string; binNumber: string; zoneCode?: string }[] = [];
+          
+          allBins.forEach((b) => {
+            if (b.binType === BIN_TYPE.QUARANTINE) {
+              quarantineBins.push({ binId: b.binId, binNumber: b.binNumber, zoneCode: b.zoneCode });
             }
+          });
+          
+          setBins(quarantineBins);
+          if (quarantineBins.length > 0) {
+            setBinId(quarantineBins[0].binId);
+          } else {
+            setBinId('');
           }
         })
         .catch((err) => reportError(err, 'QuarantineModal.fetchBins'))
@@ -104,7 +96,7 @@ export default function QuarantineModal({ isOpen, onClose, onSubmit, locationId 
         ) : (
           <form id="quarantine-form" onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+              <label className="text-sm font-medium text-[var(--text-muted)]">
                 {t('quarantine.destinationBin')}
               </label>
               {bins.length > 0 ? (
@@ -116,7 +108,7 @@ export default function QuarantineModal({ isOpen, onClose, onSubmit, locationId 
                 >
                   {bins.map(b => (
                     <option key={b.binId} value={b.binId}>
-                      {b.binNumber}
+                      {b.zoneCode ? `${b.zoneCode}.${b.binNumber}` : b.binNumber}
                     </option>
                   ))}
                 </select>
@@ -128,7 +120,7 @@ export default function QuarantineModal({ isOpen, onClose, onSubmit, locationId 
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+              <label className="text-sm font-medium text-[var(--text-muted)]">
                 {t('quarantine.reasonOptional')}
               </label>
               <input

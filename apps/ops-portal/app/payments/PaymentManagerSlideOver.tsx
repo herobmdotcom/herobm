@@ -838,24 +838,24 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     <div className="card space-y-3 p-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
                         <div>
-                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('manager.labels.party')}</span>
+                          <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('manager.labels.party')}</span>
                           <span className="text-[#041627] font-medium">{data?.partyName || '—'}</span>
                         </div>
                         <div>
-                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('manager.labels.status')}</span>
+                          <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('manager.labels.status')}</span>
                           <StateBadge state={data?.stateCode as ValidState} />
                         </div>
                         <div>
-                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('manager.labels.mode')}</span>
+                          <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('manager.labels.mode')}</span>
                           <span className="text-[#041627] font-medium">{data?.modeOfPayment}</span>
                         </div>
                         <div>
-                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('manager.labels.reference')}</span>
+                          <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('manager.labels.reference')}</span>
                           <span className="text-[#041627]">{data?.referenceNumber || '—'}</span>
                         </div>
                         {!data?.paymentType?.startsWith('direct_') && (
                           <div>
-                            <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('manager.labels.unallocatedAmount')}</span>
+                            <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('manager.labels.unallocatedAmount')}</span>
                             <span className="text-[var(--accent)] font-bold">{formatAmount(parseFloat(data?.unallocatedAmount || '0'), data?.currencyCode || baseCurrency)}</span>
                           </div>
                         )}

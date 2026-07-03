@@ -48,6 +48,7 @@ describe('InventoryController', () => {
     findBins: jest.fn().mockResolvedValue(mockBinsResult),
     findAllLocations: jest.fn().mockResolvedValue(mockLocationsResult),
     getTopography: jest.fn().mockResolvedValue(mockTopographyResult),
+    findBinsByLocation: jest.fn().mockResolvedValue([{ binId: '123' }]),
   };
 
   beforeEach(async () => {

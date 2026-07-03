@@ -8,6 +8,8 @@
 
 export interface InventoryBinResponseDto {
   binId: string;
+  zoneId?: string;
+  zoneCode?: string;
   binNumber: string;
   binType?: string;
   isUnavailable?: boolean;

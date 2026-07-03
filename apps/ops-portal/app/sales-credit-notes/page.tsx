@@ -37,17 +37,39 @@ export default function ReturnsQueuePage() {
         { field: 'returnNumber', headerName: 'Return No', width: 140 },
         { field: 'orderNumber', headerName: 'Order No', width: 140 },
         { field: 'createdOn', headerName: tCommon('columns.date'), width: 120, valueFormatter: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => p.value ? new Date(p.value as string | number).toLocaleDateString() : '' },
+        {
+            field: 'stateCode',
+            headerName: tCommon('columns.status'),
+            width: 120,
+            valueGetter: (p: import("ag-grid-community").ValueGetterParams<Record<string, unknown>>) => p.data?.stateCode,
+            valueFormatter: (p: import("ag-grid-community").ValueFormatterParams<Record<string, unknown>>) => {
+                const val = p.value as string;
+                if (!val) return '';
+                return val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
+            }
+        },
+        {
+            field: 'putawayStatus',
+            headerName: 'Putaway',
+            width: 130,
+            valueGetter: (p: import("ag-grid-community").ValueGetterParams<Record<string, unknown>>) => {
+                const lines = p.data?.lines as Array<{ putawayStatus?: string }> | undefined;
+                if (!lines || lines.length === 0) return 'No items';
+                const allCompleted = lines.every(l => l.putawayStatus === 'completed');
+                return allCompleted ? 'Completed' : 'Pending';
+            }
+        },
         { 
             field: 'lines', 
             headerName: 'Lines', 
             width: 100,
-            cellRenderer: (p: import("ag-grid-community").ICellRendererParams<Record<string, unknown>>) => {
-                if (!p.value) return null;
-                return (
-                    <span className="badge badge-sm badge-info">
-                        {tCommon('itemsCount', { count: p.value.length })}
-                    </span>
-                );
+            valueGetter: (p: import("ag-grid-community").ValueGetterParams<Record<string, unknown>>) => {
+                const lines = p.data?.lines as any[];
+                return lines ? lines.length : 0;
+            },
+            valueFormatter: (p: import("ag-grid-community").ValueFormatterParams<Record<string, unknown>>) => {
+                if (!p.value) return '';
+                return tCommon('itemsCount', { count: p.value });
             }
         },
         { field: 'notes', headerName: tCommon('columns.notes'), flex: 1, minWidth: 200 }
@@ -65,12 +87,10 @@ export default function ReturnsQueuePage() {
                 pageTitle="Credit Notes Queue"
                 headerActions={
                     <button 
-                        className="btn btn-primary hover: transition-all duration-200 hover:-translate-y-0.5" 
+                        className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 whitespace-nowrap" 
                         onClick={() => setAdHocOpen(true)}
                     >
-                        {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                        <span className="material-symbols-outlined text-[1.1rem]">add</span>
-                        {tOrders('returns.creditNote')}
+                        + {tOrders('returns.creditNote')}
                     </button>
                 }
             />

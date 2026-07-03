@@ -2074,7 +2074,6 @@
       "currentStock": "Current stock: {count}",
       "destinationBin": "Destination Bin",
       "loadingBinContext": "Loading bin context...",
-      "newTotalQuantity": "New Total Quantity in Bin",
       "noItemsPending": "No items pending putaway in this location.",
       "pendingPutaway": "Pending Putaway",
       "primaryLabel": "(Primary)",
@@ -2085,7 +2084,6 @@
       "searchBins": "Search bins...",
       "selectItemToPutaway": "Select an item from the list to putaway.",
       "title": "Putaway",
-      "verifyCountDescription": "Verify the physical count. An inventory adjustment will be generated if this differs from system expectations.",
       "warningNotPrimary": "Warning: You are not placing this in the primary bin ({bin})."
     },
     "tabs": {

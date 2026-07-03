@@ -11,6 +11,7 @@ import { useSettings } from '@/components/SettingsProvider';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import MasterDetailLayout from '@/components/shared/MasterDetailLayout';
+import InlineAlert from '@/components/shared/InlineAlert';
 import { getErrorMessage } from '@herobm/shared';
 import AddressDisplay from '@/components/shared/AddressDisplay';
 import { usePersistedSetting } from '@/hooks/usePersistedSetting';
@@ -74,7 +75,7 @@ export default function ShippingPage() {
 
     // Location
     const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
-    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('shipping-location', '');
+    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('shipping-location', 'UNSET');
 
     // Queue
     const [orders, setOrders] = useState<ShippingOrder[]>([]);
@@ -107,8 +108,10 @@ export default function ShippingPage() {
 
     useEffect(() => {
         if (locReady && locations.length > 0) {
-            const isValid = selectedLocationId && locations.some(l => l.locationId === selectedLocationId);
-            if (!isValid) {
+            if (selectedLocationId === 'UNSET') {
+                const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
+                setSelectedLocationId(defaultLocId);
+            } else if (selectedLocationId !== '' && !locations.some(l => l.locationId === selectedLocationId)) {
                 const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
                 setSelectedLocationId(defaultLocId);
             }
@@ -121,7 +124,7 @@ export default function ShippingPage() {
         if (!locReady) return;
         setLoadingOrders(true);
         const params: { locationId?: string } = {};
-        if (selectedLocationId) params.locationId = selectedLocationId;
+        if (selectedLocationId && selectedLocationId !== 'UNSET') params.locationId = selectedLocationId;
 
         api.orderPickingControllerGetShippingQueue(params)
             .then(response => {
@@ -276,10 +279,8 @@ export default function ShippingPage() {
                     <div className="flex-1 overflow-y-auto p-6">
                         <div className="flex flex-col h-full w-full">
                             {error && (
-                                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md flex items-center gap-2">
-                                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                                    <span className="material-symbols-outlined text-sm">error</span>
-                                    {error}
+                                <div className="mb-4">
+                                    <InlineAlert type="error" message={error} />
                                 </div>
                             )}
 
@@ -576,7 +577,7 @@ export default function ShippingPage() {
                 <>
                     <span className="text-sm font-semibold text-[var(--text-muted)] hidden sm:inline">{tCommon('location')}:</span>
                     <select
-                        value={selectedLocationId}
+                        value={selectedLocationId === 'UNSET' ? '' : selectedLocationId}
                         onChange={(e) => setSelectedLocationId(e.target.value)}
                         className="input text-sm w-full sm:w-48"
                     >

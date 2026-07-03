@@ -38,7 +38,7 @@ interface MoveStockModalProps {
 export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLines }: MoveStockModalProps) {
   const [reason, setReason] = useState('');
   const [targetBinId, setTargetBinId] = useState('');
-  const [bins, setBins] = useState<{ binId: string; binNumber: string; zoneCode: string }[]>([]);
+  const [bins, setBins] = useState<api.InventoryBinResponseDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const tCommon = useTranslations('common');
@@ -54,19 +54,17 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
       setLoading(true);
       const locNo = selectedLines[0].locationNo;
       api.inventoryControllerFindAllLocations()
-        .then((res) => {
-          const locs = (res.data || []) as unknown as LocationData[];
+        .then(async (res) => {
+          const locs = (res.data || []);
           const loc = locs.find((l) => l.code === locNo);
-          if (loc && loc.zones) {
-            const availableBins: typeof bins = [];
-            loc.zones.forEach((z) => {
+          if (loc) {
+            const binsRes = await api.inventoryControllerFindBinsByLocation(loc.locationId);
+            const allBins = binsRes.data || [];
+            const availableBins: api.InventoryBinResponseDto[] = [];
+            allBins.forEach((b) => {
               // Block moving into system handling bins
-              if (z.code === 'HANDLING') return;
-              if (z.bins) {
-                z.bins.forEach((b) => {
-                  availableBins.push({ ...b, zoneCode: z.code });
-                });
-              }
+              if (b.zoneCode === 'HANDLING') return;
+              availableBins.push({ ...b });
             });
             // Sort by bin number
             availableBins.sort((a, b) => a.binNumber.localeCompare(b.binNumber));
@@ -144,7 +142,7 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
             
             <div className="flex flex-col gap-2">
               { }
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+              <label className="text-sm font-medium text-[var(--text-muted)]">
                 Selected Items
               </label>
               
@@ -211,7 +209,7 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
 
             <div className="flex flex-col gap-1.5">
               { }
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+              <label className="text-sm font-medium text-[var(--text-muted)]">
                 Destination Bin
               </label>
               {bins.length > 0 ? (
@@ -223,8 +221,7 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
                 >
                   {bins.map(b => (
                     <option key={b.binId} value={b.binId}>
-                      { }
-                      {b.binNumber} (Zone: {b.zoneCode})
+                      {b.zoneCode ? `${b.zoneCode}.${b.binNumber}` : b.binNumber}
                     </option>
                   ))}
                 </select>
@@ -237,7 +234,7 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
 
             <div className="flex flex-col gap-1.5">
               { }
-              <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+              <label className="text-sm font-medium text-[var(--text-muted)]">
                 Reason (Optional)
               </label>
               <input

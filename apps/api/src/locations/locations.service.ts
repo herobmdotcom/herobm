@@ -28,6 +28,20 @@ export class LocationsService {
 
   // ── Locations ─────────────────────────────────────────────────────────────
 
+  async getLocation(id: string) {
+    const [row] = await this.db
+      .select()
+      .from(locations)
+      .where(eq(locations.locationId, id))
+      .limit(1);
+
+    if (!row) {
+      throw new NotFoundException(`Location ${id} not found`);
+    }
+
+    return row;
+  }
+
   async createLocation(dto: CreateLocationDto, userId?: string) {
     return await this.db.transaction(async (tx) => {
       const [row] = await tx

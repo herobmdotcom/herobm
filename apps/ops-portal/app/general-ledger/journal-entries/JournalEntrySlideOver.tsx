@@ -91,11 +91,11 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
           <div className="card space-y-5">
             <div className="flex flex-col gap-5 text-sm">
               <div>
-                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('columns.memo')}</span>
+                <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('columns.memo')}</span>
                 <span className="text-[#041627]">{entry.memo || tCommon('na')}</span>
               </div>
               <div>
-                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('sourceDocument')}</span>
+                <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('sourceDocument')}</span>
                 {entry.sourceId && (['sales_invoice', 'sales_credit_note', 'payment_entry', 'purchase_invoice', 'inventory_receipt'].includes(entry.sourceType)) ? (
                   <Link 
                     href={

@@ -6,9 +6,7 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface AvailableBinDto {
-  binId: string;
-  binNumber: string;
-  binType: string;
-  zoneCode?: string;
-}
+export type InventoryControllerFindBinsByLocationParams = {
+binType?: string;
+zoneCode?: string;
+};

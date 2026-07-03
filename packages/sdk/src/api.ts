@@ -207,6 +207,7 @@ import type {
   InventoryControllerFindAllLocationsParams,
   InventoryControllerFindAllParams,
   InventoryControllerFindBins200,
+  InventoryControllerFindBinsByLocationParams,
   InventoryControllerFindBinsParams,
   InventoryControllerFindByProductIdsParams,
   InventoryControllerGetLedgerParams,
@@ -2373,17 +2374,26 @@ export type inventoryControllerFindBinsByLocationResponseSuccess = (inventoryCon
 
 export type inventoryControllerFindBinsByLocationResponse = (inventoryControllerFindBinsByLocationResponseSuccess)
 
-export const getInventoryControllerFindBinsByLocationUrl = (id: string,) => {
+export const getInventoryControllerFindBinsByLocationUrl = (id: string,
+    params?: InventoryControllerFindBinsByLocationParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/inventory/locations/${id}/bins`
+  return stringifiedParams.length > 0 ? `/inventory/locations/${id}/bins?${stringifiedParams}` : `/inventory/locations/${id}/bins`
 }
 
-export const inventoryControllerFindBinsByLocation = async (id: string, options?: RequestInit): Promise<inventoryControllerFindBinsByLocationResponse> => {
+export const inventoryControllerFindBinsByLocation = async (id: string,
+    params?: InventoryControllerFindBinsByLocationParams, options?: RequestInit): Promise<inventoryControllerFindBinsByLocationResponse> => {
   
-  return customFetch<inventoryControllerFindBinsByLocationResponse>(getInventoryControllerFindBinsByLocationUrl(id),
+  return customFetch<inventoryControllerFindBinsByLocationResponse>(getInventoryControllerFindBinsByLocationUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -13646,6 +13656,43 @@ export const getSystemControllerGetSystemLogsUrl = (params?: SystemControllerGet
 export const systemControllerGetSystemLogs = async (params?: SystemControllerGetSystemLogsParams, options?: RequestInit): Promise<systemControllerGetSystemLogsResponse> => {
   
   return customFetch<systemControllerGetSystemLogsResponse>(getSystemControllerGetSystemLogsUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Retrieve a specific warehouse location by ID, including its address details.
+ * @summary Get Location
+ */
+export type locationsControllerGetLocationResponse200 = {
+  data: LocationResponseDto
+  status: 200
+}
+    
+export type locationsControllerGetLocationResponseSuccess = (locationsControllerGetLocationResponse200) & {
+  headers: Headers;
+};
+;
+
+export type locationsControllerGetLocationResponse = (locationsControllerGetLocationResponseSuccess)
+
+export const getLocationsControllerGetLocationUrl = (id: string,) => {
+
+
+  
+
+  return `/inventory/locations/${id}`
+}
+
+export const locationsControllerGetLocation = async (id: string, options?: RequestInit): Promise<locationsControllerGetLocationResponse> => {
+  
+  return customFetch<locationsControllerGetLocationResponse>(getLocationsControllerGetLocationUrl(id),
   {      
     ...options,
     method: 'GET'

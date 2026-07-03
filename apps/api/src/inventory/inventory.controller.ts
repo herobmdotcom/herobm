@@ -161,9 +161,15 @@ export class InventoryController {
     summary: 'Get Location Bins',
     description: 'Retrieve all bins for a specific location.',
   })
+  @ApiQuery({ name: 'binType', required: false, type: String })
+  @ApiQuery({ name: 'zoneCode', required: false, type: String })
   @ApiOkResponse({ type: [InventoryBinResponseDto] })
-  async findBinsByLocation(@Param('id') id: string) {
-    return this.inventoryService.findBinsByLocation(id);
+  async findBinsByLocation(
+    @Param('id') id: string,
+    @Query('binType') binType?: string,
+    @Query('zoneCode') zoneCode?: string,
+  ) {
+    return this.inventoryService.findBinsByLocation(id, binType, zoneCode);
   }
 
   @Get('topography')

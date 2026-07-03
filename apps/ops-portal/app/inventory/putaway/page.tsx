@@ -11,7 +11,9 @@ import { useSettings } from '@/components/SettingsProvider';
 import { PUTAWAY_STATUS } from '@herobm/shared';
 import SlideOver from '@/components/shared/SlideOver';
 import MasterDetailLayout from '@/components/shared/MasterDetailLayout';
-import { getErrorMessage } from '@herobm/shared';
+import InlineAlert from '@/components/shared/InlineAlert';
+import { getErrorMessage, BIN_TYPE } from '@herobm/shared';
+import { usePersistedSetting } from '@/hooks/usePersistedSetting';
 
 interface PutawayLine {
     id: string;
@@ -28,6 +30,7 @@ interface BinInfo {
     binId: string;
     binNumber: string;
     binType: string;
+    zoneCode?: string;
 }
 
 interface PutawayContext {
@@ -48,6 +51,7 @@ export default function PutawayPage() {
     const [pendingLines, setPendingLines] = useState<PutawayLine[]>([]);
     const [selectedLine, setSelectedLine] = useState<PutawayLine | null>(null);
     const [loadingLines, setLoadingLines] = useState(false);
+    const [selectedZone, setSelectedZone] = usePersistedSetting('putaway_selected_zone', '');
     
     // Putaway Form State
     const [context, setContext] = useState<PutawayContext | null>(null);
@@ -55,8 +59,11 @@ export default function PutawayPage() {
     const [selectedBinId, setSelectedBinId] = useState<string>('');
     const [binSearch, setBinSearch] = useState<string>('');
     const [newTotalQuantity, setNewTotalQuantity] = useState<string>('');
+    const [quarantineReason, setQuarantineReason] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const isQuarantineBin = context?.availableBins.find(b => b.binId === selectedBinId)?.binType === BIN_TYPE.QUARANTINE;
 
     // Fetch Locations
     useEffect(() => {
@@ -106,9 +113,20 @@ export default function PutawayPage() {
                 if (contextData.primaryBinId) {
                     setSelectedBinId(contextData.primaryBinId);
                     setBinSearch(contextData.primaryBinNumber || '');
+                    const primaryBin = (contextData.availableBins as BinInfo[]).find(b => b.binId === contextData.primaryBinId);
+                    if (primaryBin?.zoneCode) {
+                        setSelectedZone(primaryBin.zoneCode);
+                    }
                 } else {
                     setSelectedBinId('');
                     setBinSearch('');
+                    const uniqueZones = Array.from(new Set((contextData.availableBins as BinInfo[]).map(b => b.zoneCode).filter(Boolean))) as string[];
+                    if (uniqueZones.length > 0) {
+                        // We check if current selectedZone is valid. Since selectedZone might be stale in this closure, 
+                        // we can just let React handle it via another effect, or just set it if it's currently empty.
+                        // However, we can just do it here. If the persisted zone isn't in uniqueZones, it's safer to just set to first.
+                        setSelectedZone(prev => (!prev || !uniqueZones.includes(prev)) ? uniqueZones.sort()[0] : prev);
+                    }
                 }
                 const expectedTotal = contextData.currentQuantity + parseFloat(selectedLine.quantity);
                 setNewTotalQuantity(expectedTotal.toString());
@@ -129,10 +147,11 @@ export default function PutawayPage() {
                 putaways: [
                     {
                         lineId: selectedLine.id,
-                        sourceType: selectedLine.sourceType,
+                        sourceType: selectedLine.sourceType as "goods_receipt" | "sales_return",
                         destinationBinId: selectedBinId,
                         quantity: selectedLine.quantity,
-                        newTotalQuantity
+                        newTotalQuantity,
+                        ...(isQuarantineBin && quarantineReason ? { reason: quarantineReason } : {})
                     }
                 ]
             });
@@ -141,6 +160,7 @@ export default function PutawayPage() {
             setPendingLines(prev => prev.filter(l => l.id !== selectedLine.id));
             setSelectedLine(null);
             setContext(null);
+            setQuarantineReason('');
         } catch (err: unknown) {
             setError(getErrorMessage(err));
         } finally {
@@ -149,7 +169,7 @@ export default function PutawayPage() {
     };
 
     const actionFormContent = (
-        <div className="flex-1 overflow-y-auto p-4 lg:p-6 pb-24 lg:pb-6">
+        <div className="flex-1 overflow-y-auto p-3 lg:p-4 pb-20 lg:pb-4">
             {!selectedLine ? (
                 <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
                     {t('putaway.selectItemToPutaway')}
@@ -160,31 +180,39 @@ export default function PutawayPage() {
                 </div>
             ) : context ? (
                 <form onSubmit={handleSubmit} className="flex flex-col h-full max-w-md mx-auto">
-                    <div className="mb-6 pb-4 border-b border-[var(--border)] flex justify-between items-start">
-                        <div>
-                            <h3 className="text-lg font-bold text-[var(--accent)]">{selectedLine.productName}</h3>
-                            <div className="flex flex-wrap items-center gap-1.5 mt-1 text-sm text-[var(--text-secondary)]">
-                                <span className="uppercase tracking-wider">{selectedLine.productNumber}</span>
-                                <span className="text-[var(--text-muted)]">•</span>
-                                <span>{t('putaway.ref', { ref: selectedLine.referenceNumber })}</span>
-                            </div>
-                        </div>
-                        <div className="text-2xl font-bold text-[var(--text-primary)] mt-1">
-                            {parseFloat(selectedLine.quantity).toLocaleString()}
-                        </div>
-                    </div>
-
                     {error && (
-                        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md flex items-center gap-2">
-                            {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                            <span className="material-symbols-outlined text-sm">error</span>
-                            {error}
+                        <div className="mb-4">
+                            <InlineAlert type="error" message={error} />
                         </div>
                     )}
 
-                    <div className="space-y-5 flex-1">
+                    <div className="space-y-4 flex-1">
+                        {(() => {
+                            const uniqueZones = Array.from(new Set(context.availableBins.map(b => b.zoneCode).filter(Boolean))) as string[];
+                            if (uniqueZones.length === 0) return null;
+                            return (
+                                <div>
+                                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                                        {uniqueZones.sort().map(zone => (
+                                            <button
+                                                key={zone}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedZone(zone);
+                                                    setBinSearch('');
+                                                    setSelectedBinId('');
+                                                }}
+                                                className={`h-10 px-2 rounded-md font-bold text-sm transition-all flex items-center justify-center truncate ${selectedZone === zone ? 'bg-[var(--accent)] text-white shadow-md' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border)] hover:bg-[var(--bg-secondary-hover)]'}`}
+                                            >
+                                                {zone}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
                         <div>
-                            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1.5">{t('putaway.destinationBin')}</label>
                             <input
                                 type="text"
                                 list="available-bins"
@@ -200,7 +228,7 @@ export default function PutawayPage() {
                                 required
                             />
                             <datalist id="available-bins">
-                                {context.availableBins.map(bin => (
+                                {context.availableBins.filter(b => !selectedZone || b.zoneCode === selectedZone).map(bin => (
                                     <option key={bin.binId} value={bin.binNumber}>
                                         {bin.binId === context.primaryBinId ? t('putaway.primaryLabel') : ''}
                                     </option>
@@ -209,55 +237,73 @@ export default function PutawayPage() {
                             
                             {/* Tiles UI */}
                             {(() => {
-                                const matchingBins = context.availableBins.filter(b => b.binNumber.toUpperCase().startsWith(binSearch.toUpperCase()));
-                                const showTiles = !selectedBinId;
+                                const matchingBins = context.availableBins.filter(b => {
+                                    if (selectedZone && b.zoneCode !== selectedZone) return false;
+                                    return b.binNumber.toUpperCase().startsWith(binSearch.toUpperCase());
+                                });
                                 
                                 let tiles: { label: string; value: string; isFullBin: boolean; binId?: string }[] = [];
-                                if (showTiles) {
-                                    if (matchingBins.length < 20) {
-                                        tiles = matchingBins.map(b => ({
-                                            label: b.binNumber,
-                                            value: b.binNumber,
-                                            isFullBin: true,
-                                            binId: b.binId
-                                        }));
-                                    } else {
-                                        const nextCharIndex = binSearch.length;
-                                        const prefixSet = new Set<string>();
-                                        matchingBins.forEach(b => {
-                                            if (b.binNumber.length > nextCharIndex) {
-                                                prefixSet.add(b.binNumber.substring(0, nextCharIndex + 1).toUpperCase());
-                                            } else {
-                                                prefixSet.add(b.binNumber.toUpperCase());
-                                            }
-                                        });
-                                        tiles = Array.from(prefixSet).sort().map(prefix => {
-                                            return { label: prefix, value: prefix, isFullBin: false };
-                                        });
-                                    }
+                                if (matchingBins.length < 20) {
+                                    tiles = matchingBins.map(b => ({
+                                        label: b.binNumber,
+                                        value: b.binNumber,
+                                        isFullBin: true,
+                                        binId: b.binId
+                                    }));
+                                } else {
+                                    const nextCharIndex = binSearch.length;
+                                    const prefixSet = new Set<string>();
+                                    matchingBins.forEach(b => {
+                                        if (b.binNumber.length > nextCharIndex) {
+                                            prefixSet.add(b.binNumber.substring(0, nextCharIndex + 1).toUpperCase());
+                                        } else {
+                                            prefixSet.add(b.binNumber.toUpperCase());
+                                        }
+                                    });
+                                    tiles = Array.from(prefixSet).sort().map(prefix => {
+                                        return { label: prefix, value: prefix, isFullBin: false };
+                                    });
                                 }
 
-                                if (!showTiles || tiles.length === 0) return null;
+                                if (tiles.length === 0) return null;
+
+                                const showClearBtn = binSearch.length > 0 || selectedBinId;
 
                                 return (
                                     <div className="mt-3">
                                         <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
-                                            {tiles.map(tile => (
+                                            {tiles.map(tile => {
+                                                const isSelected = tile.isFullBin && tile.binId === selectedBinId;
+                                                return (
+                                                    <button
+                                                        key={tile.value}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setBinSearch(tile.value);
+                                                            if (tile.isFullBin && tile.binId) {
+                                                                setSelectedBinId(tile.binId);
+                                                            }
+                                                        }}
+                                                        className={`h-14 px-1 rounded-lg flex items-center justify-center text-sm font-bold transition-all truncate border ${isSelected ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-[var(--bg-secondary)] border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] hover:border-[var(--accent)]'}`}
+                                                        title={tile.label}
+                                                    >
+                                                        {tile.label}
+                                                    </button>
+                                                );
+                                            })}
+                                            {showClearBtn && (
                                                 <button
-                                                    key={tile.value}
                                                     type="button"
                                                     onClick={() => {
-                                                        setBinSearch(tile.value);
-                                                        if (tile.isFullBin && tile.binId) {
-                                                            setSelectedBinId(tile.binId);
-                                                        }
+                                                        setBinSearch('');
+                                                        setSelectedBinId('');
                                                     }}
-                                                    className="h-14 px-1 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg flex items-center justify-center text-sm font-bold text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)] hover:border-[var(--accent)] transition-all truncate"
-                                                    title={tile.label}
+                                                    className="h-14 px-1 border border-gray-300 rounded-lg flex items-center justify-center text-sm font-bold transition-all bg-white text-black hover:bg-gray-100"
+                                                    title="Clear filter"
                                                 >
-                                                    {tile.label}
+                                                    <span className="material-symbols-outlined text-[20px]">close</span>
                                                 </button>
-                                            ))}
+                                            )}
                                         </div>
                                     </div>
                                 );
@@ -270,11 +316,28 @@ export default function PutawayPage() {
                                     {t('putaway.warningNotPrimary', { bin: context.primaryBinNumber || '' })}
                                 </p>
                             )}
+                            
+                            {isQuarantineBin && (
+                                <div className="mt-3 p-3 border border-[var(--warning)] bg-[#fffbea] dark:bg-[#2b2200] rounded-md">
+                                    <p className="text-xs font-bold text-[var(--warning)] flex items-center gap-1 mb-2">
+                                        <span className="material-symbols-outlined text-[16px]">health_and_safety</span>
+                                        Quarantine Hold
+                                    </p>
+                                    <label className="block text-xs text-[var(--text-secondary)] mb-1">Reason for quarantine (optional)</label>
+                                    <textarea
+                                        value={quarantineReason}
+                                        onChange={e => setQuarantineReason(e.target.value)}
+                                        className="w-full px-3 py-2 border border-[var(--border)] rounded-md bg-[var(--bg-card)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--warning)] text-sm resize-none"
+                                        rows={2}
+                                        placeholder="e.g. Scratched during transit, missing components..."
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1.5 flex justify-between">
-                                <span>{t('putaway.newTotalQuantity')}</span>
+                            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1.5 flex justify-between">
+                                <span>New Total Quantity in Bin (To Verify)</span>
                                 <span className="text-[10px] font-normal normal-case">{t('putaway.currentStock', { count: context.currentQuantity })}</span>
                             </label>
                             <input
@@ -285,9 +348,6 @@ export default function PutawayPage() {
                                 className="w-full px-3 py-2 border border-[var(--border)] rounded-md bg-[var(--bg-card)] text-[var(--text-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] text-sm"
                                 required
                             />
-                            <p className="mt-1 text-[11px] text-[var(--text-muted)]">
-                                {t('putaway.verifyCountDescription')}
-                            </p>
                         </div>
                     </div>
 
@@ -339,7 +399,7 @@ export default function PutawayPage() {
             masterWidthClass="lg:w-1/2"
             isDetailOpen={!!selectedLine}
             onCloseDetail={() => { setSelectedLine(null); setContext(null); }}
-            detailTitle={t('putaway.action')}
+            detailTitle={selectedLine ? `${selectedLine.productName} (${selectedLine.productNumber})` : t('putaway.action')}
             masterPane={
                 <>
                     <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex justify-between items-center">

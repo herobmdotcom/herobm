@@ -79,7 +79,7 @@ export default function PartialAllocationModal({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
               {t('amountToAllocate')}
             </label>
             <div className="relative">
@@ -103,7 +103,7 @@ export default function PartialAllocationModal({
           
           <div>
             { }
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
               Discount Amount
             </label>
             <div className="relative">

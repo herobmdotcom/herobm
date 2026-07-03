@@ -23,7 +23,7 @@ SELECT
         JOIN herobm_core.zones z ON z.zone_id = b.zone_id
         WHERE bc.product_id = p.product_id
           AND z.location_id = l.location_id
-          AND b.bin_type NOT IN ('receiving', 'staging', 'quarantine')
+          AND b.bin_type NOT IN ('staging', 'quarantine')
           AND b.is_unavailable = false
           AND b.is_bonded = false
     ), 0) AS quantity_on_hand,

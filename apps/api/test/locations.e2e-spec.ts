@@ -90,6 +90,32 @@ describe('Locations & Topography (e2e)', () => {
     expect(updateBinRes.body.binType).toBe('bulk');
     expect(updateBinRes.body.isBonded).toBe(true);
 
+    // 5. Test findBinsByLocation endpoint and filters
+    const findBinsRes = await request(baseUrl)
+      .get(`/api/inventory/locations/${locationId}/bins`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(findBinsRes.status).toBe(200);
+    // Should return the bulk bin plus auto-created system bins
+    expect(findBinsRes.body.length).toBeGreaterThanOrEqual(1);
+
+    const filterByTypeRes = await request(baseUrl)
+      .get(`/api/inventory/locations/${locationId}/bins?binType=bulk`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(filterByTypeRes.status).toBe(200);
+    expect(filterByTypeRes.body.every((b: any) => b.binType === 'bulk')).toBe(
+      true,
+    );
+    expect(filterByTypeRes.body.length).toBeGreaterThanOrEqual(1);
+
+    const filterByZoneRes = await request(baseUrl)
+      .get(`/api/inventory/locations/${locationId}/bins?zoneCode=PICK`)
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(filterByZoneRes.status).toBe(200);
+    expect(filterByZoneRes.body.every((b: any) => b.zoneCode === 'PICK')).toBe(
+      true,
+    );
+    expect(filterByZoneRes.body.length).toBeGreaterThanOrEqual(1);
+
     // 6. Test Delete Guard: Cannot delete Location while Zones exist
     const failDeleteLocRes = await request(baseUrl)
       .delete(`/api/inventory/locations/${locationId}`)
@@ -119,7 +145,7 @@ describe('Locations & Topography (e2e)', () => {
     // 10. CLEANUP: The system auto-scaffolds a 'HANDLING' zone with 'SHIPPING'/'RECEIVING' bins via trigger.
     // We must find and remove them to cleanly delete the location per the guards.
     const inventoryRes = await request(baseUrl)
-      .get('/api/inventory/locations')
+      .get('/api/inventory/topography')
       .set('Authorization', `Bearer ${adminToken}`);
 
     const myLoc = inventoryRes.body.find(

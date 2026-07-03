@@ -14,7 +14,6 @@ export const CreateBinDtoBinType = {
   storage: 'storage',
   pick: 'pick',
   bulk: 'bulk',
-  receiving: 'receiving',
   staging: 'staging',
   quarantine: 'quarantine',
   in_transit: 'in_transit',

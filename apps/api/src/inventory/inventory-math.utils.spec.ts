@@ -31,9 +31,6 @@ describe('Inventory Math Utilities', () => {
     });
 
     it('should return false for un-whitelisted bin types', () => {
-      expect(
-        isPickableBin({ binType: 'receiving', isUnavailable: false }),
-      ).toBe(false);
       expect(isPickableBin({ binType: 'staging', isUnavailable: false })).toBe(
         false,
       );
@@ -50,7 +47,7 @@ describe('Inventory Math Utilities', () => {
     it('should filter out non-pickable bins', () => {
       const bins = [
         { binId: '1', binType: 'storage', isUnavailable: false },
-        { binId: '2', binType: 'receiving', isUnavailable: false },
+        { binId: '2', binType: 'staging', isUnavailable: false },
         { binId: '3', binType: 'pick', isUnavailable: true },
         { binId: '4', binType: 'bulk', isUnavailable: false },
       ];
@@ -65,7 +62,7 @@ describe('Inventory Math Utilities', () => {
     it('should calculate sum correctly using onHand', () => {
       const bins = [
         { binType: 'storage', isUnavailable: false, onHand: 10 },
-        { binType: 'receiving', isUnavailable: false, onHand: 20 },
+        { binType: 'staging', isUnavailable: false, onHand: 20 },
         { binType: 'pick', isUnavailable: false, onHand: '15' },
       ];
 

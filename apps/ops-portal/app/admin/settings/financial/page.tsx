@@ -11,6 +11,7 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import CsvImportButton from '@/components/shared/CsvImportButton';
 import SlideOver from '@/components/shared/SlideOver';
+import EntityBanner from '@/components/shared/EntityBanner';
 import { SchemaBuilder } from '@/components/SchemaBuilder';
 import { DynamicForm } from '@/components/DynamicForm';
 import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';

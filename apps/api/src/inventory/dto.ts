@@ -31,6 +31,11 @@ export class PutawayLineDto {
   @IsOptional()
   @IsNumberString()
   newTotalQuantity?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  reason?: string;
 }
 
 export class EmptyBodyDto {}
@@ -130,10 +135,19 @@ export class InventoryResponseDto {
 }
 
 export class InventoryBinResponseDto {
+  @ApiProperty()
   binId!: string;
+  @ApiProperty({ required: false })
+  zoneId?: string;
+  @ApiProperty({ required: false })
+  zoneCode?: string;
+  @ApiProperty()
   binNumber!: string;
+  @ApiProperty({ required: false })
   binType?: string;
+  @ApiProperty({ required: false })
   isUnavailable?: boolean;
+  @ApiProperty()
   onHand!: string;
 }
 
@@ -144,6 +158,8 @@ export class AvailableBinDto {
   binNumber!: string;
   @ApiProperty()
   binType!: string;
+  @ApiProperty({ required: false })
+  zoneCode?: string;
 }
 
 export class PutawayContextResponseDto {

@@ -68,12 +68,12 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
           <div className="card space-y-5">
             <div className="flex flex-col gap-5 text-sm">
               <div>
-                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('sourceType')}</span>
+                <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('sourceType')}</span>
                 <span className="text-[#041627]">{details.sourceType}</span>
               </div>
               {details.relatedDocument && (
                 <div>
-                  <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('sourceDocument')}</span>
+                  <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('sourceDocument')}</span>
                   {details.relatedDocument.link ? (
                     <Link href={details.relatedDocument.link} className="text-[var(--accent)] hover:underline" onClick={onClose}>
                       {details.relatedDocument.number}
@@ -85,7 +85,7 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
               )}
               {details.relatedParty && (
                 <div>
-                  <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('relatedParty')}</span>
+                  <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('relatedParty')}</span>
                   <div className="text-[#041627]">
                     {details.relatedParty.link ? (
                       <Link href={details.relatedParty.link} className="text-[var(--accent)] hover:underline" onClick={onClose}>
@@ -98,7 +98,7 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
                 </div>
               )}
               <div>
-                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('operationMemo')}</span>
+                <span className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('operationMemo')}</span>
                 <span className="text-[#041627]">{details.memo || '—'}</span>
               </div>
             </div>

@@ -6,6 +6,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import MasterDetailLayout from '@/components/shared/MasterDetailLayout';
+import InlineAlert from '@/components/shared/InlineAlert';
 import { usePersistedSetting } from '@/hooks/usePersistedSetting';
 
 import { reportError } from '@/lib/api';
@@ -76,7 +77,7 @@ export default function PickingPage() {
     const { app } = useSettings();
     // Location
     const [locations, setLocations] = useState<api.InventoryLocationResponseDto[]>([]);
-    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('picking-location', '');
+    const [selectedLocationId, setSelectedLocationId, locReady] = usePersistedSetting('picking-location', 'UNSET');
     const [pendingOrders, setPendingOrders] = useState<UnifiedOrder[]>([]);
     const [selectedOrder, setSelectedOrder] = useState<UnifiedOrder | null>(null);
     const [loadingOrders, setLoadingOrders] = useState(false);
@@ -105,9 +106,11 @@ export default function PickingPage() {
 
     useEffect(() => {
         if (locReady && locations.length > 0) {
-            const isValidSaved = selectedLocationId && locations.some(l => l.locationId === selectedLocationId);
-            const defaultLocId = isValidSaved ? selectedLocationId : (app?.defaultFulfillmentLocationId || locations[0].locationId);
-            if (defaultLocId !== selectedLocationId) {
+            if (selectedLocationId === 'UNSET') {
+                const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
+                setSelectedLocationId(defaultLocId as string);
+            } else if (selectedLocationId !== '' && !locations.some(l => l.locationId === selectedLocationId)) {
+                const defaultLocId = app?.defaultFulfillmentLocationId || locations[0].locationId;
                 setSelectedLocationId(defaultLocId as string);
             }
         }
@@ -119,7 +122,7 @@ export default function PickingPage() {
         setLoadingOrders(true);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
         const params: any = {};
-        if (selectedLocationId) params.locationId = selectedLocationId;
+        if (selectedLocationId && selectedLocationId !== 'UNSET') params.locationId = selectedLocationId;
 
         api.orderPickingControllerGetPickingQueue(params)
             .then(data => {
@@ -275,7 +278,7 @@ export default function PickingPage() {
                 <>
                     <span className="text-sm font-semibold text-[var(--text-muted)] hidden sm:inline">{t('locationLabel')}</span>
                     <select
-                        value={selectedLocationId}
+                        value={selectedLocationId === 'UNSET' ? '' : selectedLocationId}
                         onChange={(e) => setSelectedLocationId(e.target.value)}
                         className="input text-sm w-full sm:w-48"
                     >
@@ -403,10 +406,8 @@ export default function PickingPage() {
                             <div className="flex-1 overflow-y-auto p-6">
                                 <div className="flex flex-col h-full w-full">
                                     {error && (
-                                        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md flex items-center gap-2">
-                                            {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
-                                            <span className="material-symbols-outlined text-sm">error</span>
-                                            {error}
+                                        <div className="mb-4">
+                                            <InlineAlert type="error" message={error} />
                                         </div>
                                     )}
 

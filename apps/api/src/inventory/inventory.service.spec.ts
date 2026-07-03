@@ -471,4 +471,57 @@ describe('InventoryService', () => {
       expect(mainLoc!.availableQty).toBe(15);
     });
   });
+
+  describe('findBinsByLocation', () => {
+    it('should return all bins for a given location', async () => {
+      const bins = await service.findBinsByLocation(LOCATION_ID);
+      expect(bins).toHaveLength(6); // 1 manual bin + 5 auto-generated handling bins
+      const manualBin = bins.find((b) => b.binId === BIN_ID);
+      expect(manualBin).toBeDefined();
+      expect(manualBin!.zoneCode).toEqual('Z1');
+    });
+
+    it('should filter by binType', async () => {
+      // Test matching binType
+      const matchingBins = await service.findBinsByLocation(
+        LOCATION_ID,
+        'storage',
+      );
+      expect(matchingBins).toHaveLength(1);
+
+      // Test non-matching binType
+      const emptyBins = await service.findBinsByLocation(
+        LOCATION_ID,
+        'quarantine',
+      );
+      expect(emptyBins).toHaveLength(0);
+    });
+
+    it('should filter by zoneCode', async () => {
+      // Test matching zoneCode
+      const matchingBins = await service.findBinsByLocation(
+        LOCATION_ID,
+        undefined,
+        'Z1',
+      );
+      expect(matchingBins).toHaveLength(1);
+
+      // Test non-matching zoneCode
+      const emptyBins = await service.findBinsByLocation(
+        LOCATION_ID,
+        undefined,
+        'Z2',
+      );
+      expect(emptyBins).toHaveLength(0);
+    });
+
+    it('should filter by both binType and zoneCode', async () => {
+      const bins = await service.findBinsByLocation(
+        LOCATION_ID,
+        'storage',
+        'Z1',
+      );
+      expect(bins).toHaveLength(1);
+    });
+  });
 });

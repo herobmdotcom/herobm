@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
+import InlineAlert from '@/components/shared/InlineAlert';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -203,25 +204,26 @@ export default function AutoMatchPreviewModal({
       footer={footerActions}
     >
       <div className="flex flex-col gap-6 p-6">
-        <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex gap-4 items-start">
-          { }
-          <span className="material-symbols-outlined text-blue-500 mt-0.5">info</span>
-          <div>
-            { }
-            <h3 className="font-semibold text-blue-900 mb-1">Preview Results</h3>
-            { }
-            <p className="text-blue-800 text-sm">
-              The following actions will be taken when you confirm:
-            </p>
-            <ul className="list-disc list-inside text-sm text-blue-800 mt-2 space-y-1">
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
-              <li><strong>{effectiveAutoMatchedCount}</strong> lines will be matched using rules.</li>
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
-              <li><strong>{effectiveSmartMatchedCount}</strong> lines will be matched using smart matches.</li>
-              {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
-              <li><strong>{effectiveUnmatchedCount}</strong> lines will remain unmatched.</li>
-            </ul>
-          </div>
+        <div className="mb-2">
+          <InlineAlert
+            type="info"
+            message={
+              <div>
+                <h3 className="font-semibold text-blue-900 mb-1">Preview Results</h3>
+                <p className="text-blue-800 text-sm">
+                  The following actions will be taken when you confirm:
+                </p>
+                <ul className="list-disc list-inside text-sm text-blue-800 mt-2 space-y-1">
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+                  <li><strong>{effectiveAutoMatchedCount}</strong> lines will be matched using rules.</li>
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+                  <li><strong>{effectiveSmartMatchedCount}</strong> lines will be matched using smart matches.</li>
+                  {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
+                  <li><strong>{effectiveUnmatchedCount}</strong> lines will remain unmatched.</li>
+                </ul>
+              </div>
+            }
+          />
         </div>
 
         {loadingExtras ? (

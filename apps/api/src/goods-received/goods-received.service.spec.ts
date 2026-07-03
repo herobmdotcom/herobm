@@ -139,14 +139,14 @@ describe('GoodsReceivedService', () => {
     await pg.db.insert(zones).values({
       zoneId: ZONE_ID,
       locationId: LOCATION_ID,
-      code: 'RECV',
+      code: 'HANDLING',
       name: 'Receiving Zone',
     });
     await pg.db.insert(bins).values({
       binId: BIN_ID,
       zoneId: ZONE_ID,
       binNumber: 'RECEIVING',
-      binType: 'receiving',
+      binType: 'staging',
     });
   }
 
@@ -268,16 +268,19 @@ describe('GoodsReceivedService', () => {
     it('should set match_status to "unmatched" when no open PO lines exist', async () => {
       await seedBasics();
 
-      await expect(
-        service.create(
-          {
-            vendorId: VENDOR_ID,
-            locationId: LOCATION_ID,
-            lines: [{ productId: PROD_ID, quantityReceived: '5' }],
-          },
-          'admin',
-        ),
-      ).rejects.toThrow(BadRequestException);
+      const receipt = await service.create(
+        {
+          vendorId: VENDOR_ID,
+          locationId: LOCATION_ID,
+          lines: [{ productId: PROD_ID, quantityReceived: '5' }],
+        },
+        'admin',
+      );
+      const lines = await pg.db
+        .select()
+        .from(goodsReceivedLines)
+        .where(eq(goodsReceivedLines.goodsReceivedId, receipt.goodsReceivedId));
+      expect(lines[0].matchStatus).toBe(MATCH_STATUS.UNMATCHED);
     });
   });
 
