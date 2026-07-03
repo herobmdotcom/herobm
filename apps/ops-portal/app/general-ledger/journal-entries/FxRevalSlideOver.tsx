@@ -5,6 +5,7 @@ import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
+import { Button } from '@/components/shared/Button';
 import toast from 'react-hot-toast';
 
 interface FxRevalSlideOverProps {
@@ -157,13 +158,13 @@ export default function FxRevalSlideOver({ isOpen, onClose, onSuccess }: FxReval
                 className="input w-48"
               />
             </div>
-            <button 
+            <Button 
+              variant="primary"
               onClick={handleGenerate} 
               disabled={loading || !revaluationDate}
-              className="btn btn-primary"
             >
               {generateBtnText}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -260,13 +261,13 @@ export default function FxRevalSlideOver({ isOpen, onClose, onSuccess }: FxReval
             </div>
 
             <div className="pt-6 flex justify-end items-center">
-              <button 
+              <Button 
+                variant="primary"
                 onClick={handleCommit} 
                 disabled={loading || !isBalanced || candidates.length === 0}
-                className="btn btn-primary"
               >
                 {postBtnText}
-              </button>
+              </Button>
             </div>
           </div>
         )}

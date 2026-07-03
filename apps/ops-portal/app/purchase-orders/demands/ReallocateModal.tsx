@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/components/shared/Button';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { reportError } from '@/lib/api';
@@ -104,12 +105,12 @@ export default function ReallocateModal({
           <h2 className="text-lg font-bold text-[var(--text-primary)] font-['Manrope']">
             {t('reallocateModal.title')}
           </h2>
-          <button
+          <Button variant="ghost"
             onClick={onClose}
             className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           >
             &times;
-          </button>
+          </Button>
         </div>
 
         <div className="p-4 flex flex-col gap-4">
@@ -139,20 +140,20 @@ export default function ReallocateModal({
         </div>
 
         <div className="p-4 border-t border-[var(--border)] flex justify-end gap-3 bg-[#f8fafc] rounded-b-md">
-          <button
+          <Button variant="secondary"
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded bg-white hover:bg-gray-50 transition-colors"
             disabled={isSubmitting}
           >
             {t('reallocateModal.cancel')}
-          </button>
-          <button
+          </Button>
+          <Button variant="primary"
             onClick={handleSubmit}
             disabled={isSubmitting || !selectedLocationId}
             className="px-4 py-2 text-sm font-bold bg-[var(--accent)] text-white rounded hover:brightness-110 transition-all disabled:opacity-50 flex items-center gap-2"
           >
             {isSubmitting ? t('demands.reallocating') : t('demands.confirmReallocation')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -7,6 +7,7 @@ import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 interface LinkToPOSlideOverProps {
   isOpen: boolean;
@@ -300,7 +301,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                     return (
                       <div key={group.purchaseOrderId} style={{ borderRadius: 8, border: '1px solid var(--border)', overflow: 'hidden', background: 'var(--bg-card)' }}>
                         {/* Card Header */}
-                        <button
+                        <Button variant="ghost"
                           onClick={() => toggleExpand(demand.id, group.purchaseOrderId)}
                           style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                         >
@@ -324,7 +325,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                               {t('demands.destination')} <span className="font-medium text-[var(--text-primary)]">{group.locationName || t('demands.unknown')}</span>
                             </div>
                           </div>
-                        </button>
+                        </Button>
 
                         {/* Expanded Lines */}
                         {isExpanded && (
@@ -391,18 +392,18 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: any; original
             value={qty}
             onChange={(e) => setQty(e.target.value)}
           />
-          <button
+          <Button
             onClick={async () => {
               setIsAllocating(true);
               await onAllocate(qty);
               setIsAllocating(false);
             }}
             disabled={isAllocating || !qty || parseFloat(qty) > available}
-            className="btn btn-primary btn-sm"
+            variant="primary" size="sm"
             style={{ padding: '2px 8px', height: '26px', fontSize: '11px' }}
           >
             {isAllocating ? t('demands.allocating') : t('demands.allocate')}
-          </button>
+          </Button>
         </div>
       </td>
     </tr>

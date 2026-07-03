@@ -10,6 +10,7 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage, COUNTRIES } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -625,11 +626,11 @@ export default function SystemSettingsPage() {
         </div>
 
         <div className="flex justify-end mt-8">
-          <button className="btn btn-secondary" onClick={flushCache}>
+          <Button variant="secondary" onClick={flushCache}>
             {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span className="material-symbols-outlined mr-2">sync</span>
             Flush settings cache
-          </button>
+          </Button>
         </div>
       </div>
     </DetailsLayout>

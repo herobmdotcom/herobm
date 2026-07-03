@@ -4,6 +4,7 @@ import { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
+import { Button } from '@/components/shared/Button';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 
@@ -86,9 +87,11 @@ export default function CustomersContent() {
       onRowClicked={handleRowClicked}
       pageTitle={tAccounts('title')}
       headerActions={
-        <Link href="/customers/new" className="px-3 lg:px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
-          {tAccounts('buttons.createCustomer')}
-        </Link>
+        <Button asChild variant="primary">
+          <Link href="/customers/new">
+            {tAccounts('buttons.createCustomer')}
+          </Link>
+        </Button>
       }
     />
   );

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import SlideOver from '@/components/shared/SlideOver';
+import { Button } from '@/components/shared/Button';
 
 interface AdjustStockModalProps {
   isOpen: boolean;
@@ -57,22 +58,24 @@ export default function AdjustStockModal({ isOpen, onClose, onSubmit, selectedLi
 
   const footerActions = (
     <div className="flex justify-end gap-3 w-full">
-      <button
+      <Button
         type="button"
         onClick={onClose}
         disabled={submitting}
-        className="btn btn-secondary font-semibold"
+        variant="secondary"
+        className="font-semibold"
       >
         {tCommon('cancel')}
-      </button>
-      <button
+      </Button>
+      <Button
         type="submit"
         form="adjust-stock-form"
         disabled={submitting}
-        className="btn btn-primary font-bold"
+        variant="primary"
+        className="font-bold"
       >
         {submitting ? tCommon('saving') : tCommon('adjustStock')}
-      </button>
+      </Button>
     </div>
   );
 

@@ -2,6 +2,7 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useMemo } from 'react';
+import { Button } from '@/components/shared/Button';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -265,21 +266,22 @@ export default function DevelopersPage() {
                   <code className="p-4 rounded bg-black/5 text-[var(--text-primary)] font-mono flex-1 text-center border border-[var(--border)] text-lg tracking-wider select-all break-all">{newSecret}</code>
                 </div>
                 <div className="flex justify-end gap-3 border-t border-[var(--border)] pt-4">
-                  <button
-                    className="btn btn-secondary"
+                  <Button
+                    variant="secondary"
                     onClick={() => setNewSecret(null)}
                   >
                     {tCommon('close')}
-                  </button>
-                  <button
-                    className="btn btn-primary bg-[var(--warning)] hover:brightness-110 border-none text-black"
+                  </Button>
+                  <Button
+                    variant="primary"
+                    className="bg-[var(--warning)] hover:brightness-110 border-none text-black"
                     onClick={() => {
                       navigator.clipboard.writeText(newSecret);
                       toast.success(tCommon('copiedToClipboard'));
                     }}
                   >
                     {tCommon('copy')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

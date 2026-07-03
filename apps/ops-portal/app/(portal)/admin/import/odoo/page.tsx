@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { Button } from '@/components/shared/Button';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -306,7 +307,7 @@ export default function OdooImportPage() {
           </div>
 
           <div className="mt-auto pt-6 flex items-center justify-end border-t border-slate-100">
-            <button
+            <Button variant="secondary"
               onClick={handleTestConnection}
               disabled={!isFormValid || loading}
               className={`px-8 py-3 rounded-lg font-bold transition-colors ${
@@ -316,7 +317,7 @@ export default function OdooImportPage() {
  }`}
             >
               {loading ? tExt('testing') : tExt('testConnection')}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -430,18 +431,18 @@ export default function OdooImportPage() {
           </div>
 
           <div className="flex justify-between border-t border-slate-100 pt-6">
-            <button
+            <Button variant="ghost"
               onClick={() => setStep('config')}
               className="text-slate-500 hover:text-slate-800 font-medium"
             >
               {t('back')}
-            </button>
-            <button
+            </Button>
+            <Button variant="secondary"
               onClick={handleStartElt}
               className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors"
             >
               {t('buttons.startExecution')}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -454,14 +455,14 @@ export default function OdooImportPage() {
           <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
           <div className="ml-4 text-slate-400 text-xs font-medium flex-1">{t('sections.terminal')}</div>
           {status === 'running' && (
-            <button 
+            <Button variant="ghost" 
               onClick={handleStopJob}
               disabled={stopping}
               className="px-3 py-1 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded font-bold text-xs transition-colors border border-red-500/20 disabled:opacity-50"
             >
               {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
               {stopping ? 'Stopping...' : 'Stop Job'}
-            </button>
+            </Button>
           )}
         </div>
         <div 
@@ -517,18 +518,18 @@ export default function OdooImportPage() {
             </div>
           )}
 
-          <button
+          <Button variant="secondary"
             onClick={() => router.push('/')}
             className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors w-full"
           >
             {t('buttons.goToDashboard')}
-          </button>
+          </Button>
         </div>
       )}
       
       {step === 'executing' && status === 'completed' && (
         <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
-           <button
+           <Button variant="secondary"
             onClick={() => {
               api.setupControllerGetImportSummary().then((summaryRes) => {
                  setImportSummary(summaryRes.data);
@@ -541,18 +542,18 @@ export default function OdooImportPage() {
             className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors"
            >
              {t('buttons.continueToSummary')}
-           </button>
+           </Button>
         </div>
       )}
 
       {step === 'executing' && status === 'failed' && (
         <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
-           <button
+           <Button variant="secondary"
             onClick={() => { setStep('config'); setStatus('pending'); }}
             className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-lg font-bold transition-colors"
            >
              {t('buttons.retryImport')}
-           </button>
+           </Button>
         </div>
       )}
     </div>

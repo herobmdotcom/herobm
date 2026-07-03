@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
+import { Button } from '@/components/shared/Button';
 import SlideOver from '@/components/shared/SlideOver';
 import InlineAlert from '@/components/shared/InlineAlert';
 import * as api from '@herobm/sdk';
@@ -166,20 +167,20 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
         </div>
 
         <div className="p-4 border-t border-[var(--border)] bg-[var(--bg-card)] flex justify-end gap-3">
-          <button className="btn btn-secondary" onClick={onClose} disabled={actionLoading}>
+          <Button variant="secondary" onClick={onClose} disabled={actionLoading}>
             {tCommon('cancel')}
-          </button>
+          </Button>
           
           {isDraft && (
-            <button className="btn btn-primary" onClick={handleStage} disabled={actionLoading || loading}>
+            <Button variant="primary" onClick={handleStage} disabled={actionLoading || loading}>
               {actionLoading ? tShipments('returns.staging') : tShipments('returns.stageItems')}
-            </button>
+            </Button>
           )}
 
           {isStaged && (
-            <button className="btn btn-primary" onClick={handleShip} disabled={actionLoading || loading}>
+            <Button variant="primary" onClick={handleShip} disabled={actionLoading || loading}>
               {actionLoading ? tShipments('returns.dispatching') : tShipments('returns.dispatch')}
-            </button>
+            </Button>
           )}
         </div>
       </div>

@@ -7,6 +7,7 @@ import { useSettings } from '@/components/SettingsProvider';
 import { getCurrency } from '@/lib/currency';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/shared/Button';
 import { getErrorMessage } from '@herobm/shared';
 
 interface BankLine {
@@ -156,13 +157,13 @@ export default function QuickAdjustmentForm({
         />
       </div>
 
-      <button
+      <Button variant="primary"
         type="submit"
         disabled={loading}
         className="mt-2 w-full btn btn-primary flex justify-center py-2.5 disabled:opacity-50"
       >
         {loading ? tCommon('saving') : tCommon('save')}
-      </button>
+      </Button>
     </form>
   );
 }

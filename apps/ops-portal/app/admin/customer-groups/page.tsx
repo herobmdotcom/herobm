@@ -10,6 +10,8 @@ import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver
 import { getErrorMessage, CUSTOMER_STATE } from '@herobm/shared';
 import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
 import FinancialDefaultsSlideOver from '@/components/shared/FinancialDefaultsSlideOver';
+import { Button } from '@/components/shared/Button';
+import { DataPageHeader } from '@/components/shared/DataPageHeader';
 
 export default function AccountGroupsAdmin() {
   useDocumentTitle('Customer Groups');
@@ -125,15 +127,17 @@ export default function AccountGroupsAdmin() {
           return <span className="text-xs text-muted italic">{t('saveToManage')}</span>;
         }
         return (
-          <button 
-            className="btn btn-secondary btn-xs relative"
+          <Button 
+            variant="secondary" 
+            size="xs" 
+            className="relative"
             onClick={() => setDiscountGroup(row)}
           >
             {t('manage')}
             {matrixRules.some((r: api.DiscountMatrixResponseDto) => r.customerGroupId === row.customerGroupId) && (
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 ml-2"></span>
             )}
-          </button>
+          </Button>
         );
       }
     },
@@ -146,12 +150,14 @@ export default function AccountGroupsAdmin() {
           return <span className="text-xs text-muted italic">{t('saveToManage')}</span>;
         }
         return (
-          <button 
-            className="btn btn-secondary btn-xs relative"
+          <Button 
+            variant="secondary" 
+            size="xs" 
+            className="relative"
             onClick={() => setFinancialGroup(row)}
           >
             {t('manage')}
-          </button>
+          </Button>
         );
       }
     }
@@ -204,14 +210,10 @@ export default function AccountGroupsAdmin() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 0' }}>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{t('title')}</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            {t('subtitle')}
-          </p>
-        </div>
-      </div>
+      <DataPageHeader 
+        title={t('title')} 
+        subtitle={t('subtitle')} 
+      />
 
       <div className="card mb-6">
         <InlineSettingsTable

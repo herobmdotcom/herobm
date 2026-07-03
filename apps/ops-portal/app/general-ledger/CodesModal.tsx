@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/shared/Button';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 
@@ -201,33 +202,33 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
             <span className="font-mono text-xl font-bold text-[var(--accent)] tracking-[0.2em] leading-none select-all">
               {fullCode}
             </span>
-            <button 
+            <Button variant="ghost" 
               onClick={copyToClipboard}
               className="flex items-center justify-center p-1.5 hover:bg-[var(--bg-primary)] rounded-lg transition-all text-[var(--text-muted)] hover:text-[var(--accent)] active:scale-90"
               title="Copy to clipboard"
             >
               { }
               <span className="material-symbols-outlined text-xl !leading-none">content_copy</span>
-            </button>
+            </Button>
           </div>
 
           {/* Right: Close Button */}
           <div className="flex justify-end items-center gap-3">
-            <button 
+            <Button variant="ghost" 
               onClick={exportToCsv}
               className="flex items-center justify-center p-2 hover:bg-[var(--bg-primary)] rounded-lg transition-all text-[var(--text-muted)] hover:text-[var(--accent)] active:scale-90"
               title={t('exportCsv')}
             >
               {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exception for Material Symbol icon name */}
               <span className="material-symbols-outlined text-xl !leading-none">download</span>
-            </button>
-            <button 
+            </Button>
+            <Button variant="ghost" 
               onClick={onClose}
               className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[var(--bg-primary)] transition-all text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             >
               {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exception for Material Symbol icon name */}
               <span className="material-symbols-outlined">close</span>
-            </button>
+            </Button>
           </div>
         </div>
 

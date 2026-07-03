@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
+import { Button } from '@/components/shared/Button';
 import { formatAmount } from '@/lib/currency';
 import * as api from '@herobm/sdk';
 import type { ColDef } from 'ag-grid-community';
@@ -272,120 +273,122 @@ export default function PaymentsContent() {
       }
       headerActions={
         <div className="flex lg:hidden flex-nowrap items-center justify-end gap-2">
-          <button  
+          <Button
+            variant="primary"
             onClick={() => {
               setSelectedPaymentId(null);
               setSlideOverOpen(true);
             }}
-            className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all whitespace-nowrap flex-1 text-sm text-center justify-center flex"
+            className="flex-1"
           >
             {t('newPayment')}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
             onClick={() => setGeneratorSlideOverOpen(true)}
-            className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all whitespace-nowrap flex-1 text-sm text-center justify-center flex"
+            className="flex-1"
           >
             {t('generateRun')}
-          </button>
+          </Button>
 
           {hasDraftSelected && showAba && (
-            <button 
+            <Button
+              variant="primary"
               onClick={handleExportAba} 
               disabled={isProcessingBatch}
-              className="px-4 py-2 bg-[var(--brand-blue)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
             >
               {isProcessingBatch ? t('processing') : t('exportAba', { count: draftSelected.length })}
-            </button>
+            </Button>
           )}
 
           {hasDraftSelected && showNacha && (
-            <button 
+            <Button
+              variant="primary"
               onClick={handleExportNacha} 
               disabled={isProcessingBatch}
-              className="px-4 py-2 bg-[var(--brand-blue)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
             >
               {isProcessingBatch ? t('processing') : `Export NACHA (${draftSelected.length})`}
-            </button>
+            </Button>
           )}
           
           {hasExportedSelected && (
             <>
-              <button 
+              <Button
+                variant="primary"
                 onClick={() => handleBatchAction('confirm-exported')} 
                 disabled={isProcessingBatch}
-                className="px-4 py-2 bg-[var(--success)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
               >
                 {t('confirmCount', { count: exportedSelected.length })}
-              </button>
-              <button 
+              </Button>
+              <Button
+                variant="danger"
                 onClick={() => handleBatchAction('reject-exported')} 
                 disabled={isProcessingBatch}
-                className="px-4 py-2 bg-[var(--danger)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
               >
                 {t('reject')}
-              </button>
+              </Button>
             </>
           )}
         </div>
       }
       secondaryHeader={
         <div className="hidden lg:flex flex-wrap items-center justify-start gap-3">
-          <button  
+          <Button
+            variant="primary"
             onClick={() => {
               setSelectedPaymentId(null);
               setSlideOverOpen(true);
             }}
-            className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
           >
             {t('newPayment')}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
             onClick={() => setGeneratorSlideOverOpen(true)}
-            className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
           >
             {t('generateRun')}
-          </button>
+          </Button>
           
           {(hasDraftSelected || hasExportedSelected) && (
             <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-1"></div>
           )}
 
           {hasDraftSelected && showAba && (
-            <button 
+            <Button
+              variant="primary"
               onClick={handleExportAba} 
               disabled={isProcessingBatch}
-              className="px-4 py-2 bg-[var(--brand-blue)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
             >
               {isProcessingBatch ? t('processing') : t('exportAba', { count: draftSelected.length })}
-            </button>
+            </Button>
           )}
 
           {hasDraftSelected && showNacha && (
-            <button 
+            <Button
+              variant="primary"
               onClick={handleExportNacha} 
               disabled={isProcessingBatch}
-              className="px-4 py-2 bg-[var(--brand-blue)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
             >
               {isProcessingBatch ? t('processing') : `Export NACHA (${draftSelected.length})`}
-            </button>
+            </Button>
           )}
           
           {hasExportedSelected && (
             <>
-              <button 
+              <Button
+                variant="primary"
                 onClick={() => handleBatchAction('confirm-exported')} 
                 disabled={isProcessingBatch}
-                className="px-4 py-2 bg-[var(--success)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
               >
                 {t('confirmCount', { count: exportedSelected.length })}
-              </button>
-              <button 
+              </Button>
+              <Button
+                variant="danger"
                 onClick={() => handleBatchAction('reject-exported')} 
                 disabled={isProcessingBatch}
-                className="px-4 py-2 bg-[var(--danger)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
               >
                 {t('reject')}
-              </button>
+              </Button>
             </>
           )}
         </div>

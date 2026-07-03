@@ -11,6 +11,7 @@ import InlineAlert from '@/components/shared/InlineAlert';
 import * as api from '@herobm/sdk';
 import { PURCHASE_RETURN_STATE } from '@herobm/shared';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 export default function PurchaseReturnDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -199,13 +200,13 @@ export default function PurchaseReturnDetailPage({ params }: { params: Promise<{
               </table>
 
               <div className="flex justify-end mt-4">
-                <button
-                  className="btn btn-primary"
+                <Button
+                  variant="primary"
                   onClick={handleSubmit}
                   disabled={submitting}
                 >
                   {submitting ? t('recording') : t('confirmDebitNote')}
-                </button>
+                </Button>
               </div>
             </>
           )}

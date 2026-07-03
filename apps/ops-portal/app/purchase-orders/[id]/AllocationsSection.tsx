@@ -9,6 +9,7 @@ import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import type { Allocation } from './types';
 import { DataTable } from '@/components/shared/DataTable';
+import { Button } from '@/components/shared/Button';
 
 interface AllocationsSectionProps {
   orderId: string;
@@ -83,13 +84,13 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
               align: 'right',
               width: 80,
               render: (alloc) => (
-                <button 
+                <Button 
                   onClick={() => handleUnlink(alloc.id)}
-                  className="btn btn-secondary btn-sm"
+                  variant="secondary" size="sm"
                   title={t('allocationsSection.unallocateTitle')}
                 >
                   {t('allocationsSection.unallocate')}
-                </button>
+                </Button>
               )
             }
           ]}
@@ -116,13 +117,13 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
                     </div>
                   </div>
                   <div className="flex justify-end mt-2 pt-2 border-t border-slate-100">
-                    <button 
+                    <Button 
                       onClick={() => handleUnlink(alloc.id)}
-                      className="btn btn-secondary btn-sm"
+                      variant="secondary" size="sm"
                       title={t('allocationsSection.unallocateTitle')}
                     >
                       {t('allocationsSection.unallocate')}
-                    </button>
+                    </Button>
                   </div>
                </div>
              );

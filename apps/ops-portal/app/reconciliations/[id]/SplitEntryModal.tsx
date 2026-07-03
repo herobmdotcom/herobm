@@ -3,6 +3,7 @@ import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/shared/Button';
 import { getErrorMessage } from '@herobm/shared';
 
 interface ReconciliationLine {
@@ -81,13 +82,13 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
       <div className="bg-[var(--bg-card)] rounded-xl max-w-md w-full border border-[var(--border)] overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-secondary)]">
           <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">{t('splitEntryForm.title')}</h2>
-          <button 
+          <Button variant="ghost" 
             onClick={onClose}
             className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1"
           >
             {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             <span>✕</span>
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
@@ -145,20 +146,20 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
           </div>
 
           <div className="flex items-center gap-3 mt-4">
-            <button
+            <Button variant="secondary"
               type="button"
               onClick={onClose}
               className="btn btn-secondary flex-1 flex items-center justify-center"
             >
               {tCommon('cancel')}
-            </button>
-            <button
+            </Button>
+            <Button variant="primary"
               type="submit"
               disabled={submitting}
               className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 flex-1 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? t('splitEntryForm.splitting') : t('splitEntryForm.confirmSplit')}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

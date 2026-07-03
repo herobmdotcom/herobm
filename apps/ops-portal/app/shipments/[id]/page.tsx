@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/shared/Button';
 import { useRouter } from 'next/navigation';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
@@ -112,9 +113,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
     return (
       <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)]">
         <p className="mb-4">{t('notFound')}</p>
-        <button className="btn btn-primary" onClick={() => router.push('/shipments')}>
+        <Button variant="primary" onClick={() => router.push('/shipments')}>
           {t('backToShipments')}
-        </button>
+        </Button>
       </div>
     );
   }
@@ -128,8 +129,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
           badges={<StateBadge state={shipment.stateCode as ValidState} />}
           actions={
             shipment.stateCode === SHIPMENT_STATE.DISPATCHED && (
-              <button
-                className="btn btn-danger btn-sm"
+              <Button
+                variant="danger"
+                size="sm"
                 onClick={handleCancel}
                 disabled={isCancelling}
               >
@@ -142,7 +144,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
                     {tCommon('cancel')}
                   </>
                 )}
-              </button>
+              </Button>
             )
           }
         />
@@ -157,8 +159,10 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
               <span className="material-symbols-outlined shrink-0">local_shipping</span>
               <span className="truncate">{t('shipmentDetails')}</span>
             </h3>
-            <button
-              className="btn btn-secondary btn-sm flex items-center shrink-0"
+            <Button
+              variant="secondary"
+              size="sm"
+              className="flex items-center shrink-0"
               onClick={async () => {
                 try {
                   const api = await import('@herobm/sdk');
@@ -173,7 +177,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
               }}
             >
               {t('docketPdf')}
-            </button>
+            </Button>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">

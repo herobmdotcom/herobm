@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 // eslint-disable-next-line no-restricted-imports -- External API integration boundaries where exact types are unknown.
 import { reportError, apiFetch } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/shared/Button';
 
 export default function NewReconciliationPage() {
   const t = useTranslations('gl.reconciliations');
@@ -140,9 +142,9 @@ export default function NewReconciliationPage() {
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">{t('importStatementFromCsvOptional')}</h3>
             <div>
               <div className="flex items-center gap-4">
-                <button type="button" className="btn btn-secondary" onClick={() => document.getElementById('csv-upload')?.click()}>
+                <Button type="button" variant="secondary" onClick={() => document.getElementById('csv-upload')?.click()}>
                   {t('chooseFile')}
-                </button>
+                </Button>
                 <span className="text-sm text-[var(--text-muted)]">{file ? file.name : t('noFileSelected')}</span>
                 <input id="csv-upload" type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
               </div>
@@ -160,20 +162,20 @@ export default function NewReconciliationPage() {
           </div>
 
           <div className="pt-4 flex justify-end gap-3">
-            <button
+            <Button variant="secondary"
               type="button"
               onClick={() => router.back()}
               className="px-4 py-2 border border-[var(--border)] text-[var(--text-secondary)] rounded-md hover:bg-gray-50 transition-colors text-sm font-medium"
             >
               {tCommon('cancel')}
-            </button>
-            <button
+            </Button>
+            <Button variant="primary"
               type="submit"
               disabled={loading}
               className="px-4 py-2 bg-[var(--accent)] text-white rounded-md hover:brightness-110 font-medium transition-all text-sm disabled:opacity-50"
             >
               {loading ? tCommon('loading') : t('create')}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

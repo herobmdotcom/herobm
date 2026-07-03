@@ -18,6 +18,7 @@ import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichm
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { CURRENCIES, formatAmount } from '@/lib/currency';
 import PageNav from '@/components/shared/PageNav';
+import { Button } from '@/components/shared/Button';
 import DataGrid from '@/components/DataGrid';
 import GroupSelect from '@/components/shared/GroupSelect';
 import { resolveSupplierRiskProfile } from '@/lib/supplier-risk';
@@ -342,9 +343,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
             {error || tCommon('noMatchingResults')}
           </p>
-          <button className="btn btn-secondary" onClick={() => router.push('/suppliers')}>
+          <Button variant="secondary" onClick={() => router.push('/suppliers')}>
             ← {tSidebar('items.suppliers')}
-          </button>
+          </Button>
         </div>
       </>
     );
@@ -593,7 +594,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           }}
         >
           {error}
-          <button className="ml-3 text-xs underline" onClick={() => setError('')}>{tCommon('dismiss')}</button>
+          <Button variant="ghost" className="ml-3 text-xs underline" onClick={() => setError('')}>{tCommon('dismiss')}</Button>
         </div>
       )}
 
@@ -846,7 +847,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             {/* ── Row 2 ── */}
             {/* 4. Business Number */}
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="flex items-center text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)', minHeight: 16 }}>
                 {t('fields.businessNumber')}
                 <FrontendEnrichmentDecorator
                   field="supplier.business_number"
@@ -1094,18 +1095,18 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
         <div className="flex justify-end pt-2">
           {supplier.stateCode === SUPPLIER_STATE.ARCHIVED ? (
-            <button className="btn btn-secondary" onClick={unarchiveSupplier} disabled={saving}>
+            <Button variant="secondary" onClick={unarchiveSupplier} disabled={saving}>
               {tSales('buttons.unarchive')}
-            </button>
+            </Button>
           ) : (
-            <button
-              className="btn btn-secondary"
+            <Button
+              variant="secondary"
               style={{ color: '#ef4444', borderColor: '#ef4444' }}
               onClick={archiveSupplier}
               disabled={saving}
             >
               {tSales('buttons.archive')}
-            </button>
+            </Button>
           )}
         </div>
       </div>

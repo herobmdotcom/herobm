@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
+import { Button } from '@/components/shared/Button';
 import type { ColDef, ValueFormatterParams } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 
@@ -78,9 +79,11 @@ export default function ProductsContent() {
       onRowClicked={(row: Record<string, unknown>) => router.push(`/products/${row.productId as string}`)}
       pageTitle={tProducts('title')}
       headerActions={
-        <Link href="/products/new" className="px-3 lg:px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
-          {tProducts('buttons.addProduct')}
-        </Link>
+        <Button asChild variant="primary">
+          <Link href="/products/new">
+            {tProducts('buttons.addProduct')}
+          </Link>
+        </Button>
       }
     />
   );

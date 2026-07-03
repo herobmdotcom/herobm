@@ -6,6 +6,7 @@ import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import { Button } from '@/components/shared/Button';
 import { getErrorMessage } from '@herobm/shared';
 
 export default function SmtpSettingsPage() {
@@ -66,9 +67,9 @@ export default function SmtpSettingsPage() {
           subtitle="Configure outbound email server"
           showPrint={false}
           actions={
-            <button className="btn btn-secondary" onClick={testConnection}>
+            <Button variant="secondary" onClick={testConnection}>
               Test Connection
-            </button>
+            </Button>
           }
         />
       }

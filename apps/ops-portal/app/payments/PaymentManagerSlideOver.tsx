@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
+import { Button } from '@/components/shared/Button';
 import { useTranslations } from 'next-intl';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
@@ -525,33 +526,33 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       {isDraft && (
         <div className="flex items-center gap-2">
 
-          <button 
+          <Button variant="secondary" 
             onClick={handleCancelPayment}
             disabled={submitting}
             className="btn btn-sm bg-white text-gray-700 hover:bg-gray-50 ring-1 ring-inset ring-gray-300 disabled:opacity-50"
           >
             {tCommon('cancel')}
-          </button>
-          <button 
+          </Button>
+          <Button variant="primary" 
             onClick={handleSubmitPayment}
             disabled={submitting}
             className="btn btn-primary btn-sm"
           >
             {tCommon('submit')}
-          </button>
+          </Button>
         </div>
       )}
 
       {isSubmitted && (
         <div className="flex items-center gap-2">
           {(!data?.allocations || data.allocations.length === 0) && (
-            <button 
+            <Button variant="secondary"
               onClick={handleCancelPayment}
               disabled={submitting}
               className="btn btn-sm bg-white text-gray-700 hover:bg-gray-50 ring-1 ring-inset ring-gray-300 disabled:opacity-50"
             >
               {t('manager.buttons.reverse')}
-            </button>
+            </Button>
           )}
 
         </div>
@@ -564,7 +565,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
           
           {/* Navigation */}
           <div className="flex items-center gap-1">
-            <button 
+            <Button variant="secondary"
               onClick={onPrev} 
               disabled={!onPrev}
               className="btn btn-secondary btn-sm p-1 min-w-0"
@@ -572,8 +573,8 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
             >
               { }
               <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-            </button>
-            <button 
+            </Button>
+            <Button variant="secondary"
               onClick={onNext} 
               disabled={!onNext}
               className="btn btn-secondary btn-sm p-1 min-w-0"
@@ -581,7 +582,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
             >
               { }
               <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-            </button>
+            </Button>
           </div>
         </>
       )}
@@ -603,16 +604,16 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       width="w-[90vw] max-w-5xl xl:w-2/3"
       footer={!paymentId ? (
         <div className="flex items-center justify-end gap-3 w-full">
-          <button type="button" className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50" onClick={onClose} disabled={submitting}>
+          <Button variant="secondary" type="button" className="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50" onClick={onClose} disabled={submitting}>
             {tCommon('cancel')}
-          </button>
-          <button type="submit" form="create-payment-form" className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white" disabled={submitting}>
+          </Button>
+          <Button type="submit" form="create-payment-form" variant="primary" className="bg-[#006b5c] hover:bg-[#005246] border-none text-white" disabled={submitting}>
             {submitting ? (
               <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving')}</>
             ) : (
               t('createEntry')
             )}
-          </button>
+          </Button>
         </div>
       ) : undefined}
     >
@@ -771,7 +772,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                   />
                                 </td>
                                 <td className="py-2 text-right">
-                                  <button
+                                  <Button variant="ghost"
                                     type="button"
                                     className="btn btn-xs btn-circle btn-ghost text-[var(--text-muted)] hover:text-[var(--danger)]"
                                     onClick={() => handleRemoveLine(line.id)}
@@ -780,20 +781,20 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                   >
                                     { }
                             <span className="material-symbols-outlined text-[16px]">delete</span>
-                                  </button>
+                                  </Button>
                                 </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                         <div className="mt-2 text-left">
-                          <button
+                          <Button variant="ghost"
                             type="button"
                             className="btn btn-xs btn-ghost text-[var(--accent)]"
                             onClick={handleAddLine}
                           >
                             {t('manager.buttons.addLine')}
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     </>

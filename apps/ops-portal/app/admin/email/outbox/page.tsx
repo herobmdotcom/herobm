@@ -4,6 +4,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import React, { useState, useEffect } from 'react';
 import { reportError } from '@/lib/api';
 import { DataTable } from '@/components/shared/DataTable';
+import { Button } from '@/components/shared/Button';
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
@@ -95,11 +96,11 @@ export default function EmailOutboxDashboard() {
             />
             {t('autoRefresh')}
           </label>
-          <button className="btn btn-secondary btn-sm" onClick={loadData}>
+          <Button variant="secondary" size="sm" onClick={loadData}>
             {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions */}
             <span className="material-symbols-outlined text-[16px]">refresh</span>
             {t('refresh')}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -181,18 +182,19 @@ export default function EmailOutboxDashboard() {
                     render: (email) => (
                       <div className="flex gap-2 justify-end">
                         {['failed', 'pending'].includes(email.status) && (
-                          <button
-                            className="btn btn-secondary btn-sm"
+                          <Button
+                            variant="secondary"
+                            size="sm"
                             style={{ fontSize: 10, padding: '2px 6px' }}
                             disabled={actionInProgress === email.id}
                             onClick={() => handleRetry(email.id)}
                           >
                             {actionInProgress === email.id ? t('actions.inProgress') : t('actions.retry')}
-                          </button>
+                          </Button>
                         )}
                         {['failed', 'pending'].includes(email.status) && (
-                          <button
-                            className="btn btn-sm"
+                          <Button
+                            size="sm"
                             style={{
                               fontSize: 10,
                               padding: '2px 6px',
@@ -204,7 +206,7 @@ export default function EmailOutboxDashboard() {
                             onClick={() => handleDismiss(email.id)}
                           >
                             {t('actions.dismiss')}
-                          </button>
+                          </Button>
                         )}
                       </div>
                     )

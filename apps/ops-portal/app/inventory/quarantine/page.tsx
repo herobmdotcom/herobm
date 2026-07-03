@@ -11,6 +11,7 @@ import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';
 import UnquarantineModal from './UnquarantineModal';
 import { usePersistedSetting } from '@/hooks/usePersistedSetting';
+import { Button } from '@/components/shared/Button';
 
 function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, t, tCommon, defaultLocId }: { locations: api.InventoryLocationResponseDto[], selectedLocationId: string, setSelectedLocationId: (v: string) => void, t: ReturnType<typeof useTranslations>, tCommon: ReturnType<typeof useTranslations>, defaultLocId: string }) {
     const [open, setOpen] = useState(false);
@@ -49,14 +50,14 @@ function FilterDropdown({ locations, selectedLocationId, setSelectedLocationId, 
                 </div>
             </div>
             <div className="lg:hidden sm:relative" ref={ref}>
-                <button 
+                <Button variant="ghost" 
                     onClick={() => setOpen(!open)}
                     className={`flex items-center justify-center h-10 w-10 rounded-lg transition-all ${isActive ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'bg-white border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)]'}`}
                     title="Filters"
                 >
                     { }
                     <span className="material-symbols-outlined text-[20px]">filter_list</span>
-                </button>
+                </Button>
                 {open && (
                     <div className="absolute left-0 right-0 sm:left-auto sm:right-0 top-full mt-2 w-full sm:w-64 bg-white -[0_4px_24px_rgba(0,0,0,0.12)] rounded-xl border border-[var(--border)] p-4 z-50 flex flex-col gap-4">
                         <div className="flex flex-col gap-1.5">
@@ -218,26 +219,26 @@ export default function QuarantineListPage() {
                 }
                 headerActions={
                     <div className="flex lg:hidden flex-wrap items-center justify-start gap-3 w-full">
-                        <button
+                        <Button variant="primary"
                             onClick={handleToggleUnquarantine}
                             disabled={selectedRows.length === 0 || hasMultipleLocations}
                             title={hasMultipleLocations ? 'Cannot unquarantine items from multiple locations at once' : ''}
                             className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                         >
                             {t('buttons.unquarantine')}
-                        </button>
+                        </Button>
                     </div>
                 }
                 secondaryHeader={
                     <div className="flex flex-wrap items-center justify-start gap-3">
-                        <button
+                        <Button variant="primary"
                             onClick={handleToggleUnquarantine}
                             disabled={selectedRows.length === 0 || hasMultipleLocations}
                             title={hasMultipleLocations ? 'Cannot unquarantine items from multiple locations at once' : ''}
                             className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                         >
                             {t('buttons.unquarantine')}
-                        </button>
+                        </Button>
                     </div>
                 }
             />

@@ -31,6 +31,7 @@ export class ReturnResponseDto {
   @ApiProperty() returnNumber!: string;
   @ApiProperty() stateCode!: string;
   @ApiPropertyOptional() orderNumber?: string;
+  @ApiPropertyOptional() customerId?: string;
   @ApiPropertyOptional() customerNumber?: string;
   @ApiPropertyOptional() customerName?: string;
   @ApiPropertyOptional() locationId?: string;

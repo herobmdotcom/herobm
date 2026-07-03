@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
+import { Button } from '@/components/shared/Button';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
 
@@ -282,34 +283,34 @@ export default function UsersPage() {
       <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
         {isEdit ? (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={cancel}>
+            <Button variant="secondary" size="xs" onClick={cancel}>
               {tCommon('cancel')}
-            </button>
-            <button className="btn btn-primary btn-xs" onClick={save}>
+            </Button>
+            <Button variant="primary" size="xs" onClick={save}>
               {tCommon('save')}
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="flex justify-end gap-2">
             {/* Toggle active */}
-            <button
-              className="btn btn-secondary btn-xs"
+            <Button
+              variant="secondary" size="xs"
               onClick={() => toggleActive(data)}
               disabled={isSelf(data.userId)}
               title={isSelf(data.userId) ? t('cannotDisableSelfError') : undefined}
               style={isSelf(data.userId) ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
             >
               {data.isActive ? t('disable') : t('enable')}
-            </button>
+            </Button>
 
             {/* Edit */}
-            <button className="btn btn-secondary btn-xs" onClick={() => startEdit(data)}>
+            <Button variant="secondary" size="xs" onClick={() => startEdit(data)}>
               {tCommon('edit')}
-            </button>
+            </Button>
 
             {/* Delete */}
-            <button
-              className="btn btn-secondary btn-xs"
+            <Button
+              variant="secondary" size="xs"
               style={{
                 color: isSelf(data.userId) ? undefined : 'var(--danger)',
                 borderColor: isSelf(data.userId) ? undefined : 'var(--danger)',
@@ -321,7 +322,7 @@ export default function UsersPage() {
               title={isSelf(data.userId) ? t('cannotDeleteSelfError') : undefined}
             >
               {tCommon('delete')}
-            </button>
+            </Button>
           </div>
         )}
       </td>
@@ -351,9 +352,9 @@ export default function UsersPage() {
                 ({users.length})
               </span>
             </h3>
-            <button className="btn btn-primary btn-sm" onClick={startCreate}>
+            <Button variant="primary" size="sm" onClick={startCreate}>
               {t('buttons.createUser')}
-            </button>
+            </Button>
           </div>
 
           {loading ? (

@@ -1,6 +1,7 @@
 'use client';
 
-import { use, useEffect, useState, useCallback, Fragment } from 'react';
+import { use, useEffect, useState, useCallback, Fragment, useMemo } from 'react';
+import { Button } from '@/components/shared/Button';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -208,9 +209,9 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
                         {o.error || tSales('orderNotFound')}
                     </p>
-                    <button className="btn btn-secondary" onClick={() => router.push('/sales-orders')}>
+                    <Button variant="secondary" onClick={() => router.push('/sales-orders')}>
                         {tSales('backToOrders')}
-                    </button>
+                    </Button>
                 </div>
             </>
         );
@@ -346,10 +347,10 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     .map((state) => {
                                         const back = isBackTransition(order.stateCode, state);
                                         return (
-                                            <button
+                                            <Button
                                                 key={state}
-                                                className={`btn btn-sm ${state === SALES_ORDER_STATE.CANCELLED ? 'btn-danger' : back ? 'btn-secondary' : 'btn-primary'
- }`}
+                                                variant={state === SALES_ORDER_STATE.CANCELLED ? 'danger' : back ? 'secondary' : 'primary'}
+                                                size="sm"
                                                 onClick={() => handleStateClick(state)}
                                             >
                                                 {state === SALES_ORDER_STATE.CANCELLED ? (
@@ -363,7 +364,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 ) : (
                                                     <>→ <StateName state={state as ValidState} /></>
                                                 )}
-                                            </button>
+                                            </Button>
                                         );
                                     })}
                             </>
@@ -397,12 +398,14 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     description={tSales('creditHold.activeDesc')}
                     action={
                         canManageCredit ? (
-                            <button
-                                className="btn btn-sm btn-secondary bg-white text-red-700 hover:bg-red-50 border-red-200"
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                className="bg-white text-red-700 hover:bg-red-50 border-red-200"
                                 onClick={() => setShowCreditOverrideModal(true)}
                             >
                                 {tSales('creditHold.overrideBtn')}
-                            </button>
+                            </Button>
                         ) : undefined
                     }
                 />
@@ -516,18 +519,22 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                             fulfillmentLocationId={editFulfillmentLocationId || order?.fulfillmentLocationId || undefined}
                                         />
                                     </div>
-                                    <button
-                                        className="btn btn-secondary btn-sm whitespace-nowrap"
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        className="whitespace-nowrap"
                                         onClick={addBlankLine}
                                         disabled={saving}
                                     >
                                         {tSales('buttons.customLine')}
-                                    </button>
+                                    </Button>
                                 </>
                             )}
                             {!isOrderLinesEditable && isOrderDetailsEditable && activeTab === 'lines' && !isPostConfirmationAddingEnabled && (ORDER_LIFECYCLE[order?.stateCode ?? ''] >= ORDER_LIFECYCLE[SALES_ORDER_STATE.CONFIRMED]) && (
-                                <button
-                                    className="btn btn-secondary btn-sm whitespace-nowrap"
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="whitespace-nowrap"
                                     onClick={() => {
                                         if (window.confirm(tSales('postConfirmationLineWarningBody'))) {
                                             setIsPostConfirmationAddingEnabled(true);
@@ -537,7 +544,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     title={tSales('postConfirmationLineWarningTitle')}
                                 >
                                     {tSales('buttons.addPostConfirmationLine')}
-                                </button>
+                                </Button>
                             )}
                         </div>
                     </div>
@@ -859,13 +866,14 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                                     if (!isEditable) return null;
                                     return (
-                                        <button
-                                            className="btn btn-danger btn-sm"
+                                        <Button
+                                            variant="danger"
+                                            size="sm"
                                             onClick={() => removeLine(line.salesOrderLineId)}
                                             title={tSales('buttons.removeLine')}
                                         >
                                             <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-                                        </button>
+                                        </Button>
                                     );
                                 }
                             });
@@ -1590,14 +1598,14 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                             </div>
 
                             <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
-                                <button
-                                    className="btn btn-secondary"
+                                <Button
+                                    variant="secondary"
                                     onClick={() => setShowDiscrepancyModal(false)}
                                 >
                                     {tCommon('cancel')}
-                                </button>
-                                <button 
-                                    className="btn btn-primary" 
+                                </Button>
+                                <Button 
+                                    variant="primary" 
                                     onClick={async () => {
                                         setDiscrepanciesAcknowledged(true);
                                         setShowDiscrepancyModal(false);
@@ -1605,7 +1613,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     }}
                                 >
                                     {tCommon('confirm')}
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>

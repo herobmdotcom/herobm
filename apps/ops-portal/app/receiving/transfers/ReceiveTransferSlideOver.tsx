@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import SlideOver from '@/components/shared/SlideOver';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 export default function ReceiveTransferSlideOver({
     isOpen,
@@ -89,12 +90,12 @@ export default function ReceiveTransferSlideOver({
             width="max-w-xl"
             footer={
                 <div className="flex items-center justify-end gap-3 w-full">
-                    <button type="button" className="btn btn-ghost" onClick={onClose} disabled={saving}>
+                    <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
                         {tCommon('cancel')}
-                    </button>
-                    <button 
+                    </Button>
+                    <Button 
                         onClick={handleConfirm} 
-                        className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white" 
+                        variant="primary" className="bg-[#006b5c] hover:bg-[#005246] border-none text-white" 
                         disabled={saving || hasInvalidQuantities || hasZeroQuantities || loading}
                     >
                         {saving ? (
@@ -102,7 +103,7 @@ export default function ReceiveTransferSlideOver({
                         ) : (
                             t('returns.confirmReceipt')
                         )}
-                    </button>
+                    </Button>
                 </div>
             }
         >

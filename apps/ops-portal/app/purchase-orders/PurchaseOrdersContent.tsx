@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
+import { Button } from '@/components/shared/Button';
 import { formatAmount } from '@/lib/currency';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
@@ -107,9 +108,11 @@ export default function PurchaseOrdersContent() {
         </select>
       }
       headerActions={
-        <Link href="/purchase-orders/new" className="px-3 lg:px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
-          {tPurchase('buttons.createPO')}
-        </Link>
+        <Button asChild variant="primary">
+          <Link href="/purchase-orders/new">
+            {tPurchase('buttons.createPO')}
+          </Link>
+        </Button>
       }
     />
   );

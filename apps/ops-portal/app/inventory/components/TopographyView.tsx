@@ -7,6 +7,7 @@ import { useAuth } from '@/components/AuthGate';
 import SlideOver from '@/components/shared/SlideOver';
 import toast from 'react-hot-toast';
 import { getErrorMessage, BIN_TYPE } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 interface Bin {
   binId: string;
@@ -173,15 +174,15 @@ export default function TopographyView() {
         </div>
           
         {canEdit && (
-          <button
+          <Button
             onClick={() => {
               setEditingLocation(null);
               setIsLocationModalOpen(true);
             }}
-            className="btn btn-primary"
+            variant="primary"
           >
             {tLoc('addLocation')}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -246,7 +247,7 @@ export default function TopographyView() {
                     <div className="flex items-center gap-3 shrink-0">
                       {canEdit && (
                         <div className="flex items-center gap-1.5 mr-2 pr-2 border-r border-[rgba(196,198,205,0.3)]">
-                          <button
+                          <Button variant="ghost"
                             onClick={(e) => {
                               e.stopPropagation();
                               setEditingZone({ locationId: loc.locationId });
@@ -257,8 +258,8 @@ export default function TopographyView() {
                           >
                             { }
                             <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                          </button>
-                          <button
+                          </Button>
+                          <Button variant="ghost"
                             onClick={(e) => {
                               e.stopPropagation();
                               setEditingLocation(loc);
@@ -270,8 +271,8 @@ export default function TopographyView() {
                             
                             { }
                             <span className="material-symbols-outlined text-[18px]">edit</span>
-                          </button>
-                          <button
+                          </Button>
+                          <Button variant="ghost"
                             onClick={(e) => {
                               e.stopPropagation();
                               if (confirm(tCommon('confirmDelete'))) {
@@ -289,7 +290,7 @@ export default function TopographyView() {
                             
                             { }
                             <span className="material-symbols-outlined text-[18px]">delete</span>
-                          </button>
+                          </Button>
                         </div>
                       )}
                       <span
@@ -349,7 +350,7 @@ export default function TopographyView() {
                               <div className="flex items-center gap-3 shrink-0">
                                 {canEdit && (
                                   <div className="flex items-center gap-1 pr-2 mr-2 border-r border-[rgba(196,198,205,0.3)]">
-                                    <button
+                                    <Button variant="ghost"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setEditingBin({ zoneId: zone.zoneId });
@@ -360,8 +361,8 @@ export default function TopographyView() {
                                     >
                                       { }
                                       <span className="material-symbols-outlined text-[16px]">add_circle</span>
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button variant="ghost"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setEditingZone({ zone, locationId: loc.locationId });
@@ -372,8 +373,8 @@ export default function TopographyView() {
                                       
                                       { }
                                       <span className="material-symbols-outlined text-[16px]">edit</span>
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button variant="ghost"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         if (zone.code === 'HANDLING') return;
@@ -393,7 +394,7 @@ export default function TopographyView() {
                                       
                                       { }
                                       <span className="material-symbols-outlined text-[16px]">delete</span>
-                                    </button>
+                                    </Button>
                                   </div>
                                 )}
                                 <span
@@ -490,7 +491,7 @@ export default function TopographyView() {
                                           {canEdit && (
                                             <td className="px-2 py-2">
                                               <div className="flex items-center gap-1">
-                                                <button
+                                                <Button variant="ghost"
                                                   onClick={() => {
                                                     setEditingBin({ bin, zoneId: zone.zoneId });
                                                     setIsBinModalOpen(true);
@@ -500,8 +501,8 @@ export default function TopographyView() {
                                                   
                                                   { }
                                                   <span className="material-symbols-outlined text-[16px]">edit</span>
-                                                </button>
-                                                <button
+                                                </Button>
+                                                <Button variant="ghost"
                                                   onClick={() => {
                                                     if (bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') return;
                                                     if (confirm(tCommon('confirmDelete'))) {
@@ -520,7 +521,7 @@ export default function TopographyView() {
                                                   
                                                   { }
                                                   <span className="material-symbols-outlined text-[16px]">delete</span>
-                                                </button>
+                                                </Button>
                                               </div>
                                             </td>
                                           )}
@@ -692,12 +693,12 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
           />
         </div>
         <div className="flex justify-end gap-3 mt-4">
-          <button type="button" onClick={onClose} className="btn btn-secondary">
+          <Button type="button" onClick={onClose} variant="secondary">
             {t('cancel')}
-          </button>
-          <button type="submit" disabled={loading} className="btn btn-primary">
+          </Button>
+          <Button type="submit" disabled={loading} variant="primary">
             {loading ? t('loading') : editingLocation ? t('save') : t('create')}
-          </button>
+          </Button>
         </div>
       </form>
     </SlideOver>
@@ -766,12 +767,12 @@ function ZoneModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolea
           />
         </div>
         <div className="flex justify-end gap-3 mt-4">
-          <button type="button" onClick={onClose} className="btn btn-secondary">
+          <Button type="button" onClick={onClose} variant="secondary">
             {t('cancel')}
-          </button>
-          <button type="submit" disabled={loading} className="btn btn-primary">
+          </Button>
+          <Button type="submit" disabled={loading} variant="primary">
             {loading ? t('loadingEllipsis') : initialData?.zone ? t('save') : t('create')}
-          </button>
+          </Button>
         </div>
       </form>
     </SlideOver>
@@ -888,12 +889,12 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
           </label>
         </div>
         <div className="flex justify-end gap-3 mt-4">
-          <button type="button" onClick={onClose} className="btn btn-secondary">
+          <Button type="button" onClick={onClose} variant="secondary">
             {tCommon('cancel')}
-          </button>
-          <button type="submit" disabled={loading} className="btn btn-primary">
+          </Button>
+          <Button type="submit" disabled={loading} variant="primary">
             {loading ? tCommon('loading') : initialData?.bin ? tCommon('save') : tCommon('create')}
-          </button>
+          </Button>
         </div>
       </form>
     </SlideOver>

@@ -11,6 +11,7 @@ import type { Product } from '@/components/shared/ProductSearchInput';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 interface ReturnableLine {
   purchaseOrderId: string;
@@ -218,9 +219,9 @@ function ReturnsFlow() {
           subtitle={t('subtitle')}
           isSaving={saving}
           actions={
-            <button className="btn btn-primary" onClick={commitReturns} disabled={draftLines.length === 0 || saving}>
+            <Button variant="primary" onClick={commitReturns} disabled={draftLines.length === 0 || saving}>
               {t('confirmReturns')}
-            </button>
+            </Button>
           }
           showPrint={false}
         />
@@ -247,12 +248,12 @@ function ReturnsFlow() {
                 {t('noActivePOs')}
               </div>
               <div className="flex gap-2">
-                <button className="btn btn-secondary flex-1" onClick={() => setSelectedProduct(null)}>
+                <Button variant="secondary" className="flex-1" onClick={() => setSelectedProduct(null)}>
                   {t('clear')}
-                </button>
-                <button className="btn btn-secondary flex-1" onClick={() => setQuarantineMode(true)}>
+                </Button>
+                <Button variant="secondary" className="flex-1" onClick={() => setQuarantineMode(true)}>
                   {t('markQuarantine')}
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -272,9 +273,9 @@ function ReturnsFlow() {
                               </a>
                               <div className="text-xs font-medium text-[rgba(4,22,39,0.7)] mt-0.5">{line.purchaseOrderName || tCommon('orderReadView.untitledOrder')}</div>
                            </div>
-                           <button onClick={() => selectLine(line)} className="btn btn-primary btn-sm px-4">
+                           <Button onClick={() => selectLine(line)} variant="primary" size="sm" className="px-4">
                               {tCommon('select')}
-                           </button>
+                           </Button>
                         </div>
                         <div className="text-xs text-[rgba(4,22,39,0.5)] flex flex-col gap-1">
                            <div className="flex items-center gap-1.5">
@@ -286,10 +287,10 @@ function ReturnsFlow() {
                       </div>
                   );
                })}
-               <button onClick={() => setQuarantineMode(true)} className="btn btn-secondary mt-2" style={{ textAlign: 'left', display: 'block', padding: '10px 14px', borderStyle: 'dashed', borderColor: 'var(--border)' }}>
+               <Button onClick={() => setQuarantineMode(true)} variant="secondary" className="mt-2" style={{ textAlign: 'left', display: 'block', padding: '10px 14px', borderStyle: 'dashed', borderColor: 'var(--border)' }}>
                   <div style={{ fontWeight: 600, color: 'var(--text)' }}>{t('quarantineBtnTitle')}</div>
                   <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{t('quarantineBtnSub')}</div>
-               </button>
+               </Button>
              </div>
           )}
 
@@ -347,8 +348,8 @@ function ReturnsFlow() {
               </div>
 
               <div className="flex gap-2 self-end pb-1">
-                <button className="btn btn-secondary" onClick={() => { setSelectedLine(null); setReturnableLines([]); setSelectedProduct(null); }}>{t('cancel')}</button>
-                <button className="btn btn-primary" onClick={addToDraft}>{t('confirm')}</button>
+                <Button variant="secondary" onClick={() => { setSelectedLine(null); setReturnableLines([]); setSelectedProduct(null); }}>{t('cancel')}</Button>
+                <Button variant="primary" onClick={addToDraft}>{t('confirm')}</Button>
               </div>
             </div>
           )}
@@ -375,8 +376,8 @@ function ReturnsFlow() {
               <div style={{ width: 220 }} />
 
               <div className="flex gap-2 self-end pb-1">
-                <button className="btn btn-secondary" onClick={() => { setQuarantineMode(false); setSelectedLine(null); setSelectedProduct(null); }}>{t('cancel')}</button>
-                <button className="btn" style={{ background: 'var(--text)', color: 'var(--bg)' }} onClick={addQuarantineToDraft}>{t('confirm')}</button>
+                <Button variant="secondary" onClick={() => { setQuarantineMode(false); setSelectedLine(null); setSelectedProduct(null); }}>{t('cancel')}</Button>
+                <Button style={{ background: 'var(--text)', color: 'var(--bg)' }} onClick={addQuarantineToDraft}>{t('confirm')}</Button>
               </div>
             </div>
           )}
@@ -436,7 +437,7 @@ function ReturnsFlow() {
                     </div>
 
                     <div className="flex gap-2">
-                       <button className="btn btn-secondary" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => removeDraftLine(line.id)}>{t('remove')}</button>
+                       <Button variant="secondary" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => removeDraftLine(line.id)}>{t('remove')}</Button>
                     </div>
                    </div>
                  )

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/shared/Button';
 
 /** Best-effort telemetry — doesn't depend on any shared lib import */
 function sendTelemetry(error: Error & { digest?: string }) {
@@ -77,9 +78,9 @@ export default function Error({
             {t('page', { path: window.location.pathname })}
           </p>
         )}
-        <button onClick={reset} className="btn btn-primary mb-6">
+        <Button variant="secondary" onClick={reset} className="btn btn-primary mb-6">
           {t('tryAgain')}
-        </button>
+        </Button>
       </div>
     </div>
   );

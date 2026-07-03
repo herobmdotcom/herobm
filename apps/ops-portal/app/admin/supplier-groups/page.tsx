@@ -7,6 +7,7 @@ import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
 import FinancialDefaultsSlideOver from '@/components/shared/FinancialDefaultsSlideOver';
 
@@ -77,12 +78,12 @@ export default function SupplierGroupsAdmin() {
           return <span className="text-xs text-muted italic">{tc('saveToManage')}</span>;
         }
         return (
-          <button 
-            className="btn btn-secondary btn-xs relative"
+          <Button 
+            variant="secondary" size="xs" className="relative"
             onClick={() => setFinancialGroup(row)}
           >
             {tc('manage')}
-          </button>
+          </Button>
         );
       }
     }

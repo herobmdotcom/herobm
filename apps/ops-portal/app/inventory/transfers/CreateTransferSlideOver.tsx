@@ -8,6 +8,7 @@ import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 interface LineItem {
   productId: string;
@@ -111,20 +112,21 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
       width="max-w-3xl"
       footer={
         <div className="flex items-center justify-end gap-3 w-full">
-          <button type="button" className="btn btn-ghost" onClick={onClose} disabled={isSubmitting}>
+          <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             {tCommon('cancel')}
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSubmit}
             disabled={isSubmitting || !sourceLocationId || !destinationLocationId}
-            className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white"
+            variant="primary"
+            className="bg-[#006b5c] hover:bg-[#005246] border-none text-white"
           >
             {isSubmitting ? (
               <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving')}</>
             ) : (
               t('buttons.createTransfer')
             )}
-          </button>
+          </Button>
         </div>
       }
     >
@@ -196,13 +198,13 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
                     onChange={e => updateLine(index, 'quantity', parseFloat(e.target.value))}
                   />
                 </div>
-                <button
+                <Button variant="ghost"
                   className="text-gray-400 hover:text-red-500"
                   onClick={() => handleRemoveLine(index)}
                 >
                   { }
                   <span className="material-symbols-outlined">delete</span>
-                </button>
+                </Button>
               </div>
             ))}
             {lines.length === 0 && (

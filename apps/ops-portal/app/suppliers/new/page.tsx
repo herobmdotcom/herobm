@@ -137,9 +137,6 @@ export default function NewSupplierPage() {
             title={t('buttons.createSupplier')}
             subtitle={t('management')}
             isSaving={submitting}
-            isDirty={isValid}
-            onSave={handleSubmit}
-            saveLabel={t('buttons.createSupplier')}
             showPrint={false}
           />
         }
@@ -316,7 +313,7 @@ export default function NewSupplierPage() {
             {/* ── Row 2 ── */}
             {/* 4. Business Number */}
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              <label className="flex items-center text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)', minHeight: 16 }}>
                 {t('fields.businessNumber')}
                 <FrontendEnrichmentDecorator
                   field="supplier.business_number"

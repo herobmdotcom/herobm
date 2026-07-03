@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
+import { Button } from '@/components/shared/Button';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import { formatAmount } from '@/lib/currency';
@@ -149,12 +150,12 @@ export default function ReturnsSection({
                     SALES_ORDER_STATE.INVOICED
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type workaround
                 ].includes(order.stateCode as any) && (
-                    <button
-                        className="btn btn-secondary btn-sm"
+                    <Button
+                        variant="secondary" size="sm"
                         onClick={() => setShowCreateReturn(true)}
                     >
                         {tSales('buttons.createReturn')}
-                    </button>
+                    </Button>
                 )}
             </div>
 
@@ -526,16 +527,16 @@ export default function ReturnsSection({
                     />
 
                     <div className="flex items-center gap-2 mt-4">
-                        <button
-                            className="btn btn-primary btn-sm"
+                        <Button
+                            variant="primary" size="sm"
                             disabled={saving || newReturnLines.every((l) => !l.quantityReturned || parseFloat(l.quantityReturned) <= 0)}
                             onClick={handleSave}
                         >
                             {tSales('buttons.saveReturn')}
-                        </button>
-                        <button className="btn btn-secondary btn-sm" onClick={handleCancel}>
+                        </Button>
+                        <Button variant="secondary" size="sm" onClick={handleCancel}>
                             {tCommon('cancel')}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}

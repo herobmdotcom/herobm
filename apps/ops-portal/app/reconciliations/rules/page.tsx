@@ -6,6 +6,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
 import { useRouter } from 'next/navigation';
@@ -13,7 +14,6 @@ import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
 import SlideOver from '@/components/shared/SlideOver';
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
-
 
 interface RuleFormData {
   ruleId?: string;
@@ -295,14 +295,14 @@ export default function RulesEnginePage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       render: (row: any) => (
         <div className="flex justify-end gap-1">
-          <button className="btn btn-sm btn-ghost btn-circle" onClick={() => handleOpenEdit(row)}>
+          <Button variant="ghost" size="sm" className="btn-circle" onClick={() => handleOpenEdit(row)}>
             { }
             <span className="material-symbols-outlined text-[18px]">edit</span>
-          </button>
-          <button className="btn btn-sm btn-ghost btn-circle text-red-500 hover:text-red-700" onClick={() => handleDeleteRule(row)}>
+          </Button>
+          <Button variant="ghost" size="sm" className="btn-circle text-red-500 hover:text-red-700" onClick={() => handleDeleteRule(row)}>
             { }
             <span className="material-symbols-outlined text-[18px]">delete</span>
-          </button>
+          </Button>
         </div>
       )
     }
@@ -318,9 +318,9 @@ export default function RulesEnginePage() {
           <div className="card">
             <div className="flex items-center justify-between mb-4">
               <h3 className="section-heading !mb-0 flex items-center gap-2">{tCommon('reconciliationRules')}</h3>
-              <button className="btn btn-primary btn-sm" onClick={handleOpenAdd}>
+              <Button variant="primary" size="sm" onClick={handleOpenAdd}>
                 {t('addRule')}
-              </button>
+              </Button>
             </div>
             
             <DataTable
@@ -368,9 +368,9 @@ export default function RulesEnginePage() {
         footer={
           <div className="flex justify-end gap-2">
             { }
-            <button type="button" className="btn btn-ghost" onClick={handleCloseModal}>Cancel</button>
+            <Button type="button" variant="ghost" onClick={handleCloseModal}>Cancel</Button>
             { }
-            <button type="submit" form="ruleForm" className="btn btn-primary">Save</button>
+            <Button type="submit" form="ruleForm" variant="primary">Save</Button>
           </div>
         }
       >
@@ -590,7 +590,7 @@ export default function RulesEnginePage() {
             
             {/* Hidden submit button to allow Enter key submission, but SlideOver footer "Save" button triggers handleSaveModal */}
             { }
-            <button type="submit" className="hidden">Submit</button>
+            <Button variant="primary" type="submit" className="hidden">Submit</Button>
           </form>
         )}
       </SlideOver>

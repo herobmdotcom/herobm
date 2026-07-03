@@ -4,6 +4,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Button } from '@/components/shared/Button';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef, ValueFormatterParams, ICellRendererParams } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
@@ -195,18 +196,18 @@ export default function JournalEntriesPage() {
         }
         headerActions={
           <div className="flex items-center gap-2">
-            <button
+            <Button variant="secondary"
               onClick={() => setIsFxRevalOpen(true)}
               className="px-4 py-2 text-sm rounded-lg transition-all bg-white border border-gray-200 text-[#041627] hover:bg-gray-50 whitespace-nowrap"
             >
               FX Revaluation
-            </button>
-            <button
+            </Button>
+            <Button variant="primary"
               onClick={() => router.push('/general-ledger/journal-entries/new')}
               className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap shadow-sm"
             >
               {t('newEntry')}
-            </button>
+            </Button>
           </div>
         }
       />

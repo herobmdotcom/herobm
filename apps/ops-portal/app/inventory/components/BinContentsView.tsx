@@ -10,6 +10,7 @@ import * as api from '@herobm/sdk';
 import MoveStockModal from '../bins/MoveStockModal';
 import AdjustStockModal from '../bins/AdjustStockModal';
 import { toast } from 'react-hot-toast';
+import { Button } from '@/components/shared/Button';
 
 interface Location {
   locationId: string;
@@ -173,20 +174,21 @@ export default function BinContentsView() {
                 {tCommon('cannotMoveCrossLocation')}
               </span>
             )}
-            <button
-              className="btn btn-secondary mr-2"
+            <Button
+              variant="secondary"
+              className="mr-2"
               disabled={selectedRows.length === 0}
               onClick={() => setIsAdjustModalOpen(true)}
             >
               {tCommon('adjustStock')}
-            </button>
-            <button
-              className="btn btn-primary"
+            </Button>
+            <Button
+              variant="primary"
               disabled={!canMove}
               onClick={() => setIsMoveModalOpen(true)}
             >
               {tCommon('moveStock')}
-            </button>
+            </Button>
           </div>
         }
         headerFilters={

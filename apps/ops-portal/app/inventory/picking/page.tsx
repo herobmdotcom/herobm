@@ -14,6 +14,7 @@ import * as api from '@herobm/sdk';
 import { useSettings } from '@/components/SettingsProvider';
 import { SALES_ORDER_PICK_STATE } from '@herobm/shared';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 interface UnifiedOrder {
     id: string;
@@ -297,24 +298,24 @@ export default function PickingPage() {
             masterPane={
                 <>
                     <div className="flex lg:border-b lg:border-[var(--border)] lg:bg-[var(--bg-secondary)] text-xs font-bold pt-1 lg:px-1 gap-1 border-b border-[var(--border)]">
-                        <button 
+                        <Button variant="ghost" 
                             className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'ready' ? 'border-[var(--success)] text-[var(--success)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
                             onClick={() => setActiveTab('ready')}
                         >
                             {t('tabs.ready')} <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'ready').length})</span>
-                        </button>
-                        <button 
+                        </Button>
+                        <Button variant="ghost" 
                             className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'partial' ? 'border-[var(--warning)] text-[var(--warning)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
                             onClick={() => setActiveTab('partial')}
                         >
                             {t('tabs.partial')} <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'partial').length})</span>
-                        </button>
-                        <button 
+                        </Button>
+                        <Button variant="ghost" 
                             className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'blocked' ? 'border-[var(--danger)] text-[var(--danger)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
                             onClick={() => setActiveTab('blocked')}
                         >
                             {t('tabs.blocked')} <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'blocked').length})</span>
-                        </button>
+                        </Button>
                     </div>
                     
                     <div className="flex-1 overflow-y-auto p-2 bg-[var(--bg-card)] lg:bg-transparent rounded-b-md lg:rounded-none">
@@ -384,10 +385,12 @@ export default function PickingPage() {
                                     <span className="truncate hidden sm:inline">{selectedOrder.customerName}</span>
                                 </h2>
                                 <div className="flex items-center gap-3 shrink-0">
-                                    <button 
+                                    <Button 
                                         onClick={handlePrintDocket} 
                                         disabled={isGeneratingPdf}
-                                        className="btn btn-secondary btn-sm flex items-center gap-1.5"
+                                        variant="secondary"
+                                        size="sm"
+                                        className="flex items-center gap-1.5"
                                     >
                                         {isGeneratingPdf && (
                                             /* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */
@@ -396,7 +399,7 @@ export default function PickingPage() {
                                         <span className="hidden sm:inline">{t('pickingSlipPdf')}</span>
                                         { }
                                         <span className="sm:hidden material-symbols-outlined text-[16px]">print</span>
-                                    </button>
+                                    </Button>
                                     <span className="bg-[var(--accent)] text-white text-xs font-bold px-2 py-0.5 rounded-full">
                                         {pickingSummary.fullyPickedLines} / {pickingSummary.totalLines}
                                     </span>
@@ -494,14 +497,15 @@ export default function PickingPage() {
                                                             </div>
                                                         </td>
                                                         <td>
-                                                            <button
+                                                            <Button
                                                                 type="button"
                                                                 onClick={() => handlePickLine(line.salesOrderLineId)}
                                                                 disabled={isSubmitting || !pickInputs[line.salesOrderLineId]?.quantity || !pickInputs[line.salesOrderLineId]?.binId}
-                                                                className="btn btn-primary btn-sm"
+                                                                variant="primary"
+                                                                size="sm"
                                                             >
                                                                 {t('buttons.pick')}
-                                                            </button>
+                                                            </Button>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -570,14 +574,15 @@ export default function PickingPage() {
                                                                     className="input flex-1 py-1 px-2 text-right"
                                                                 />
                                                             </div>
-                                                            <button
+                                                            <Button
                                                                 type="button"
                                                                 onClick={() => handlePickLine(line.salesOrderLineId)}
                                                                 disabled={isSubmitting || !pickInputs[line.salesOrderLineId]?.quantity || !pickInputs[line.salesOrderLineId]?.binId}
-                                                                className="btn btn-primary w-full justify-center mt-2"
+                                                                variant="primary"
+                                                                className="w-full justify-center mt-2"
                                                             >
                                                                 {t('buttons.pick')}
-                                                            </button>
+                                                            </Button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -711,16 +716,18 @@ export default function PickingPage() {
                                                             </td>
                                                             <td>
                                                                 <div className="flex justify-end">
-                                                                    <button
+                                                                    <Button
                                                                         type="button"
                                                                         onClick={() => handleCancelPick(pick.pickId)}
                                                                         disabled={isSubmitting}
-                                                                        className="btn btn-secondary btn-sm !p-1 !text-[var(--text-muted)] hover:!text-[var(--danger)]"
+                                                                        variant="secondary"
+                                                                        size="sm"
+                                                                        className="!p-1 !text-[var(--text-muted)] hover:!text-[var(--danger)]"
                                                                         title={t('tooltips.cancelPick')}
                                                                     >
                                                                         {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                                                         <span className="material-symbols-outlined text-[18px]">close</span>
-                                                                    </button>
+                                                                    </Button>
                                                                 </div>
                                                             </td>
                                                         </tr>
@@ -736,16 +743,18 @@ export default function PickingPage() {
                                                                 <div className="text-xs text-[var(--text-muted)] truncate">{pick.line?.productDescription || ''}</div>
                                                             </div>
                                                             <div className="flex flex-col items-end shrink-0">
-                                                                <button
+                                                                <Button
                                                                     type="button"
                                                                     onClick={() => handleCancelPick(pick.pickId)}
                                                                     disabled={isSubmitting}
-                                                                    className="btn btn-secondary btn-sm !p-1 !text-[var(--text-muted)] hover:!text-[var(--danger)]"
+                                                                    variant="secondary"
+                                                                    size="sm"
+                                                                    className="!p-1 !text-[var(--text-muted)] hover:!text-[var(--danger)]"
                                                                     title={t('tooltips.cancelPick')}
                                                                 >
                                                                     {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                                                     <span className="material-symbols-outlined text-[18px]">close</span>
-                                                                </button>
+                                                                </Button>
                                                             </div>
                                                         </div>
                                                         <div className="grid grid-cols-2 gap-2 bg-[var(--bg-card)] p-2 rounded border border-[var(--border)]">

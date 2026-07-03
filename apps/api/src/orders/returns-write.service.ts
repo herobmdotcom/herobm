@@ -1104,17 +1104,22 @@ export class ReturnsWriteService {
         .select({
           orderNumber: salesOrders.orderNumber,
           locationId: salesOrders.fulfillmentLocationId,
-          customerNumber: coreAccounts.accountNumber,
+          customerId: coreAccounts.customerId,
+          customerNumber: coreAccounts.customerNumber,
           customerName: coreAccounts.name,
         })
         .from(salesOrders)
-        .leftJoin(coreAccounts, eq(salesOrders.customerId, coreAccounts.accountId))
+        .leftJoin(
+          coreAccounts,
+          eq(salesOrders.customerId, coreAccounts.customerId),
+        )
         .where(eq(salesOrders.salesOrderId, ret.salesOrderId))
         .limit(1);
 
       result.push({
         ...ret,
         orderNumber: orderInfo?.orderNumber,
+        customerId: orderInfo?.customerId,
         customerNumber: orderInfo?.customerNumber,
         customerName: orderInfo?.customerName,
         locationId: orderInfo?.locationId,

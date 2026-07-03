@@ -18,6 +18,7 @@ import { useSettings } from '@/components/SettingsProvider';
 import InheritedSelect from '@/components/shared/InheritedSelect';
 import InheritedNumberInput from '@/components/shared/InheritedNumberInput';
 import { useGroup, useInheritance } from '@/hooks/useInheritance';
+import { Button } from '@/components/shared/Button';
 
 export default function NewAccountPage() {
   useDocumentTitle('New Customer');
@@ -135,20 +136,22 @@ export default function NewAccountPage() {
             title={t('customers.buttons.createCustomer')}
             actions={
               <>
-                <button
-                  className="btn btn-secondary btn-sm"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => router.push('/customers')}
                   disabled={submitting}
                 >
                   {t('common.cancel')}
-                </button>
-                <button
-                  className="btn btn-primary btn-sm"
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={handleSubmit}
                   disabled={!isValid || submitting}
                 >
                   {submitting ? t('common.saving') : t('customers.buttons.createCustomer')}
-                </button>
+                </Button>
               </>
             }
             showPrint={false}
@@ -429,7 +432,7 @@ export default function NewAccountPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <label className="flex items-center text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)', minHeight: 16 }}>
                     {t('customers.fields.businessNumber')}
                     <FrontendEnrichmentDecorator
                       field="customer.business_number"

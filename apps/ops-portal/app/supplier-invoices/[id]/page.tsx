@@ -20,6 +20,7 @@ import * as api from '@herobm/sdk';
 import { useAuth } from '@/components/AuthGate';
 import { useSupplierInvoice, PurchaseInvoiceDetails } from './useSupplierInvoice';
 import PaymentManagerSlideOver from '@/app/payments/PaymentManagerSlideOver';
+import { Button } from '@/components/shared/Button';
 
 export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -168,14 +169,14 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
             </Link>
           </div>
           {isEditable && (
-            <button
+            <Button
+              variant="secondary" size="sm"
               onClick={() => handleUnresolve(line.lineId)}
-              className="btn btn-secondary btn-sm"
               style={{ padding: '0 6px', height: 22, fontSize: 11 }}
               title="Change Allocation"
             >
               {t('buttons.change')}
-            </button>
+            </Button>
           )}
         </div>
       );
@@ -223,8 +224,8 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
             <>
 
               {!headerDirty && allowedTransitions.includes(PURCHASE_INVOICE_STATE.CANCELLED) && (
-                <button
-                  className="btn btn-danger btn-sm"
+                <Button
+                  variant="danger" size="sm"
                   onClick={() => {
                     if (confirm('Are you sure you want to cancel this invoice?')) {
                       changeState(PURCHASE_INVOICE_STATE.CANCELLED);
@@ -233,16 +234,16 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                   disabled={saving}
                 >
                   {tCommon('cancel')}
-                </button>
+                </Button>
               )}
               {!headerDirty && invoice.stateCode === PURCHASE_INVOICE_STATE.DRAFT && allowedTransitions.includes(PURCHASE_INVOICE_STATE.INVOICED) && (
-                <button
-                  className="btn btn-primary btn-sm"
+                <Button
+                  variant="primary" size="sm"
                   onClick={() => changeState(PURCHASE_INVOICE_STATE.INVOICED)}
                   disabled={saving}
                 >
                   {t('buttons.approveInvoice')}
-                </button>
+                </Button>
               )}
             </>
           }
@@ -408,8 +409,8 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
               </h3>
               {isEditable && (
                 <div className="flex gap-2">
-                  <button
-                    className={`btn btn-sm ${isMatchingMode ? 'btn-primary' : 'btn-secondary'}`}
+                  <Button
+                    size="sm" variant={isMatchingMode ? 'primary' : 'secondary'}
                     onClick={() => setIsMatchingMode(!isMatchingMode)}
                     disabled={saving}
                   >
@@ -417,23 +418,23 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                       {matchIcon}
                     </span>
                     {isMatchingMode ? t('matching.panelTitle') : t('matching.panelTitle')}
-                  </button>
+                  </Button>
                   {!isMatchingMode && (
                     <>
-                      <button
-                        className="btn btn-secondary btn-sm"
+                      <Button
+                        variant="secondary" size="sm"
                         onClick={addBlankLine}
                         disabled={saving}
                       >
                         {t('addLine')}
-                      </button>
-                      <button
-                        className="btn btn-secondary btn-sm"
+                      </Button>
+                      <Button
+                        variant="secondary" size="sm"
                         onClick={addRoundingLine}
                         disabled={saving}
                       >
                         {t('addRoundingAdj')}
-                      </button>
+                      </Button>
                     </>
                   )}
                 </div>
@@ -554,14 +555,15 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                       </td>
                       {canEditLines && (
                         <td style={{ textAlign: 'center' }}>
-                          <button
+                          <Button
+                            variant="ghost"
                             className="text-gray-400 hover:text-red-500"
                             onClick={() => removeLine(line.lineId)}
                             title="Remove Line"
                           >
                             { }
                             {'✕'}
-                          </button>
+                          </Button>
                         </td>
                       )}
                       {isMatchingMode && (
@@ -673,9 +675,9 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                             <span className="font-medium text-slate-500">{t('customItem')}</span>
                           )}
                           {canEditLines && (
-                            <button className="text-gray-400 hover:text-red-500 ml-auto" onClick={(e) => { e.stopPropagation(); removeLine(line.lineId); }}>
+                            <Button variant="ghost" className="text-gray-400 hover:text-red-500 ml-auto" onClick={(e) => { e.stopPropagation(); removeLine(line.lineId); }}>
                               <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-                            </button>
+                            </Button>
                           )}
                         </div>
                       }
@@ -842,10 +844,9 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
               <div className="bg-white rounded-xl w-full max-w-2xl flex flex-col overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                   <h2 className="text-xl font-bold text-gray-900">{t('invoiceDiscrepancies')}</h2>
-                  <button onClick={() => setShowDiscrepancyModal(false)} className="text-gray-400 hover:text-gray-600">
-                    {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
-                    <span className="material-symbols-outlined">close</span>
-                  </button>
+                  <Button variant="ghost" onClick={() => setShowDiscrepancyModal(false)} className="text-gray-400 hover:text-gray-600">
+                    <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
+                  </Button>
                 </div>
 
                 <div className="p-6 flex flex-col gap-4">
@@ -876,14 +877,16 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                   </div>
 
                   <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
-                    <button
-                      className="btn btn-secondary"
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => setShowDiscrepancyModal(false)}
                     >
                       {tCommon('cancel')}
-                    </button>
-                    <button
-                      className="btn btn-primary"
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
                       onClick={async () => {
                         setDiscrepanciesAcknowledged(true);
                         setShowDiscrepancyModal(false);
@@ -893,7 +896,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                       }}
                     >
                       {tCommon('confirm')}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -906,13 +909,14 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-0">{t('paymentAllocations')}</h2>
             {invoice.stateCode !== PURCHASE_INVOICE_STATE.PAID && invoice.stateCode !== PURCHASE_INVOICE_STATE.CANCELLED && canManageGL && (
-              <button
-                className="btn btn-secondary btn-sm"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={handleAdminMarkPaid}
                 disabled={markingPaid}
               >
                 {markingPaid ? tCommon('loadingEllipsis') : tCommon('markPaid')}
-              </button>
+              </Button>
             )}
           </div>
           {displayAllocations && displayAllocations.length > 0 ? (

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import toast from 'react-hot-toast';
+import { Button } from '@/components/shared/Button';
 import {
   buildInternalTransferSourceOptions,
   type InternalTransferSourceOption,
@@ -120,10 +121,10 @@ export default function InternalTransferModal({
           <h2 className="text-xl font-bold text-[var(--text-primary)]">
             {t('demands.createTransferTitle')}
           </h2>
-          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+          <Button variant="ghost" onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
             {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
             <span className="material-symbols-outlined">close</span>
-          </button>
+          </Button>
         </div>
 
         <div className="p-6 space-y-4">
@@ -154,14 +155,14 @@ export default function InternalTransferModal({
         </div>
 
         <div className="px-6 py-4 border-t border-[var(--border)] flex justify-end gap-3 bg-[var(--bg-secondary)] rounded-b-xl">
-          <button
+          <Button variant="secondary"
             onClick={onClose}
             disabled={isSubmitting}
             className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded-md hover:bg-[var(--bg-card-hover)] transition-colors text-[var(--text-primary)]"
           >
             {tCommon('cancel')}
-          </button>
-          <button
+          </Button>
+          <Button variant="primary"
             onClick={handleSubmit}
             disabled={isSubmitting || options.length === 0}
             className="px-4 py-2 text-sm font-medium bg-[var(--accent)] text-white rounded-md hover:brightness-110 disabled:opacity-50 transition-all flex items-center gap-2"
@@ -175,7 +176,7 @@ export default function InternalTransferModal({
             ) : (
               t('demands.createTransfer')
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

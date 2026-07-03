@@ -11,6 +11,7 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
 import InlineAlert from '@/components/shared/InlineAlert';
 import { DynamicForm } from '@/components/DynamicForm';
+import { Button } from '@/components/shared/Button';
 import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
 
 interface ProviderConfig {
@@ -422,9 +423,9 @@ export default function IntegrationsSettingsPage() {
                         </div>
                       </div>
                       <div className="flex gap-2" onClick={e => e.stopPropagation()}>
-                        <button className="btn btn-secondary btn-sm" onClick={() => toggleProvider(p)}>
+                        <Button variant="secondary" size="sm" onClick={() => toggleProvider(p)}>
                           {isExpanded ? tCommon('close') : tCommon('configure')}
-                        </button>
+                        </Button>
                       </div>
                     </div>
 
@@ -457,13 +458,13 @@ export default function IntegrationsSettingsPage() {
                                 })()}
                               </div>
                               <div className="flex justify-end">
-                                <button 
-                                  className="btn btn-primary" 
+                                <Button 
+                                  variant="primary" 
                                   onClick={() => handleSaveConfig(p)}
                                   disabled={saving}
                                 >
                                   {saving ? tCommon('saving') : tInt('saveConfiguration')}
-                                </button>
+                                </Button>
                               </div>
                             </div>
                           )}
@@ -490,13 +491,13 @@ export default function IntegrationsSettingsPage() {
                               />
                             </div>
                             <div className="flex justify-end">
-                              <button 
-                                className="btn btn-secondary"
+                              <Button 
+                                variant="secondary"
                                 onClick={() => handleTestConnection(p.name)}
                                 disabled={testing || !testPayload.trim()}
                               >
                                 {testing ? tInt('testing') : tInt('runTest')}
-                              </button>
+                              </Button>
                             </div>
 
                             {/* Test Result */}

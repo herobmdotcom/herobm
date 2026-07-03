@@ -5,6 +5,7 @@ import { KitComponentSlideOver } from './KitComponentSlideOver';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 interface ProductKitComponentsTabProps {
   productId: string;
@@ -41,14 +42,14 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
       cellRenderer: (params: any) => params.data ? (
         <div className="flex gap-1 items-center h-full">
-          <button className="btn btn-sm btn-ghost min-h-0 h-8 px-2 text-[#006b5c] hover:bg-[#006b5c]/10" onClick={() => handleEdit(params.data)} title={tCommon('edit')}>
+          <Button size="sm" variant="ghost" className="min-h-0 h-8 px-2 text-[#006b5c] hover:bg-[#006b5c]/10" onClick={() => handleEdit(params.data)} title={tCommon('edit')}>
             { }
             <span className="material-symbols-outlined text-[18px]">edit</span>
-          </button>
-          <button className="btn btn-sm btn-ghost text-red-500 hover:bg-red-50 min-h-0 h-8 px-2" onClick={() => handleDelete(params.data)} title={tCommon('delete')}>
+          </Button>
+          <Button size="sm" variant="ghost" className="text-red-500 hover:bg-red-50 min-h-0 h-8 px-2" onClick={() => handleDelete(params.data)} title={tCommon('delete')}>
             { }
             <span className="material-symbols-outlined text-[18px]">delete</span>
-          </button>
+          </Button>
         </div>
       ) : null
     }] : [])
@@ -104,15 +105,17 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
                 </div>
               </div>
               <div className="flex items-center gap-3 shrink-0 ml-4">
-                <button
-                  className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
+                <Button
+                  size="sm"
+                  variant="primary"
+                  className="bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
                   onClick={() => setSlideOverState({ isOpen: true })}
                   disabled={!isEditable}
                 >
                   {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
           <span className="material-symbols-outlined text-[16px]">add</span>
                   {t('addComponent')}
-                </button>
+                </Button>
               </div>
             </div>
           )}

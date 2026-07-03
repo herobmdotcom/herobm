@@ -18,6 +18,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
+import { Button } from '@/components/shared/Button';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
@@ -376,20 +377,22 @@ export default function NewOrderPage() {
             title={tSales('salesOrders.createTitle')}
             actions={
               <>
-                <button
-                  className="btn btn-secondary btn-sm"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => router.push('/sales-orders')}
                   disabled={submitting}
                 >
                   {tSales('common.cancel')}
-                </button>
-                <button
-                  className="btn btn-primary btn-sm"
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={handleSubmit}
                   disabled={submitting}
                 >
                   {submitting ? tSales('common.saving') : tSales('salesOrders.buttons.createOrder')}
-                </button>
+                </Button>
               </>
             }
             showPrint={false}
@@ -550,9 +553,9 @@ export default function NewOrderPage() {
                   fulfillmentLocationId={fulfillmentLocationId}
                 />
               </div>
-              <button className="btn btn-secondary btn-sm whitespace-nowrap" onClick={addLine}>
+              <Button variant="secondary" size="sm" className="whitespace-nowrap" onClick={addLine}>
                 {tSales('salesOrders.buttons.customLine')}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -680,12 +683,13 @@ export default function NewOrderPage() {
                       <span className="font-bold text-[var(--accent)] text-base">{formatAmount(computeAmount(line), currencyCode)}</span>
                     } />
                     <div className="flex justify-end mt-2">
-                      <button
-                        className="btn btn-danger btn-sm"
+                      <Button
+                        variant="danger"
+                        size="sm"
                         onClick={() => removeLine(idx)}
                       >
                         <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} /> {tSales('common.buttons.remove')}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -865,12 +869,13 @@ export default function NewOrderPage() {
                     {formatAmount(computeAmount(line), currencyCode)}
                   </td>
                   <td>
-                    <button
-                      className="btn btn-danger btn-sm"
+                    <Button
+                      variant="danger"
+                      size="sm"
                       onClick={() => removeLine(idx)}
                     >
                       <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}

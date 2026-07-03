@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/shared/Button';
 
 export default function ReconciliationsPage() {
   const t = useTranslations('gl.reconciliations');
@@ -48,12 +49,12 @@ export default function ReconciliationsPage() {
           pageTitle={t('title')}
           headerActions={
             <div className="flex gap-2">
-              <button
+              <Button variant="primary"
                 onClick={() => router.push('/reconciliations/new')}
                 className="px-3 lg:px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap"
               >
                 + {t('newReconciliation')}
-              </button>
+              </Button>
             </div>
           }
         />

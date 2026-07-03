@@ -10,6 +10,7 @@ import SlideOver from '@/components/shared/SlideOver';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import MatchDetailsModal from './MatchDetailsModal';
+import { Button } from '@/components/shared/Button';
 
 interface UnreconciledLine {
   journalLineId: string;
@@ -328,7 +329,8 @@ export default function BankMatchingView({
                         {optionsButton}
                       </div>
                       {selectedBankLines.size > 0 && (
-                        <button 
+                        <Button 
+                          variant="secondary" size="sm" className="font-semibold h-8 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                           onClick={async () => {
                             if (!confirm(tCommon('confirmDelete'))) return;
                             try {
@@ -342,23 +344,22 @@ export default function BankMatchingView({
                               reportError(e, 'DeleteLines');
                             }
                           }}
-                          className="btn btn-secondary btn-sm font-semibold h-8 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                         >
                           {tCommon('delete')}
-                        </button>
+                        </Button>
                       )}
-                      <button 
+                      <Button 
+                        variant="secondary" size="sm" className="font-semibold h-8"
                         onClick={onImportClick}
-                        className="btn btn-secondary btn-sm font-semibold h-8"
                       >
                         {t('import')}
-                      </button>
-                      <button 
+                      </Button>
+                      <Button 
+                        variant="secondary" size="sm" className="font-semibold h-8"
                         onClick={() => setShowManualEntry(true)}
-                        className="btn btn-secondary btn-sm font-semibold h-8"
                       >
                         {t('addLine')}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -441,24 +442,24 @@ export default function BankMatchingView({
                       <div className="flex items-center options-btn-wrapper relative z-50">
                         {optionsButton}
                       </div>
-                      <button
+                      <Button
+                        variant="secondary" size="sm" className="font-semibold h-8"
                         onClick={onQuickAdjustment}
-                        className="btn btn-secondary btn-sm font-semibold h-8"
                       >
                         {t('addAdjustment')}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="secondary" size="sm" className="font-semibold h-8 disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={() => {
                           const id = Array.from(selectedJournalLines)[0];
                           const line = unreconciledLines.find(l => l.journalLineId === id);
                           if (line) onSplitEntry(line);
                         }}
                         disabled={selectedJournalLines.size !== 1}
-                        className="btn btn-secondary btn-sm font-semibold h-8 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={selectedJournalLines.size !== 1 ? t('selectSingleRowToSplit') : ''}
                       >
                         {t('split')}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -495,7 +496,7 @@ export default function BankMatchingView({
             </div>
           </div>
           
-          <button 
+          <Button variant="primary"
             disabled={!canMatch || matching}
             onClick={handleMatch}
             className="px-8 py-3 bg-[var(--accent)] text-white font-medium rounded-lg hover:brightness-110 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -503,7 +504,7 @@ export default function BankMatchingView({
             {matching ? tCommon('saving') : t('match')}
             { }
             <span className="material-symbols-outlined text-[20px]">done_all</span>
-          </button>
+          </Button>
         </div>
       </div>
       <SlideOver

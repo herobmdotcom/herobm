@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { calculateAvailableQuantity, PURCHASE_ORDER_STATE } from '@herobm/shared';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
+import { Button } from '@/components/shared/Button';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { formatAmount } from '@/lib/currency';
 import { calculateUomPriceAdjustment } from '@herobm/shared';
@@ -273,22 +274,22 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     ...(isLinesEditable ? [{
         header: '', width: 50,
         render: (line: OrderLine) => (
-            <button
-                className="btn btn-danger btn-sm"
+            <Button
+                variant="danger" size="sm"
                 onClick={() => removeLine(line.purchaseOrderLineId)}
                 title="Remove line"
             >
                 <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-            </button>
+            </Button>
         ),
         mobileCard: (line: OrderLine) => (
             <div className="flex justify-end mt-2">
-                <button
-                    className="btn btn-danger btn-sm"
+                <Button
+                    variant="danger" size="sm"
                     onClick={() => removeLine(line.purchaseOrderLineId)}
                 >
                     <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} /> {tCommon('buttons.remove')}
-                </button>
+                </Button>
             </div>
         )
     }] : [])
@@ -311,9 +312,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
             {error || tPurchase('orderNotFound')}
           </p>
-          <button className="btn btn-secondary" onClick={() => router.push('/purchase-orders')}>
+          <Button variant="secondary" onClick={() => router.push('/purchase-orders')}>
             {tPurchase('backToOrders')}
-          </button>
+          </Button>
         </div>
       </>
     );
@@ -333,9 +334,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               <>
 
                 {visibleTransitions.map((t) => (
-                  <button
+                  <Button
                     key={t.state}
-                    className={`btn btn-sm ${t.isDanger ? 'btn-danger' : t.isBack ? 'btn-secondary' : 'btn-primary'}`}
+                    variant={t.isDanger ? 'danger' : t.isBack ? 'secondary' : 'primary'}
+                    size="sm"
                     onClick={() => changeState(t.state)}
                   >
                     {t.icon === 'close' ? (
@@ -347,7 +349,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       t.icon
                     )}
                     {t.label}
-                  </button>
+                  </Button>
                 ))}
               </>
             }
@@ -366,7 +368,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           }}
         >
           {error}
-          <button className="ml-3 text-xs underline" onClick={clearError}>{tCommon('dismiss')}</button>
+          <Button variant="ghost" className="ml-3 text-xs underline" onClick={clearError}>{tCommon('dismiss')}</Button>
         </div>
       )}
 
@@ -378,13 +380,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 <span className="material-symbols-outlined">receipt_long</span>
                 {tPurchase('orderDetails')}
               </h3>
-              <button
-                className="btn btn-secondary btn-sm"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={copyOrder}
                 disabled={copying}
               >
                 {copying ? tCommon('copying') : tPurchase('buttons.copyOrder')}
-              </button>
+              </Button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
@@ -510,7 +513,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4">
             <div className="flex overflow-x-auto w-full lg:w-auto pb-1 lg:pb-0">
               <div className="flex gap-0 min-w-max">
-                <button
+                <Button variant="ghost"
                 className="text-xs font-medium px-3 py-1.5 rounded-l-lg"
                 style={{
                   color: activeTab === 'lines' ? 'var(--accent)' : 'var(--text-muted)',
@@ -522,8 +525,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 onClick={() => setActiveTab('lines')}
               >
                 {tPurchase('lineItems')}
-              </button>
-              <button
+              </Button>
+              <Button variant="ghost"
                 className={`text-xs font-medium px-3 py-1.5 ${order.stateCode !== PURCHASE_ORDER_STATE.DRAFT ? '' : 'rounded-r-lg'}`}
                 style={{
                   color: activeTab === 'availability' ? 'var(--accent)' : 'var(--text-muted)',
@@ -536,9 +539,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 onClick={() => setActiveTab('availability')}
               >
                 {tPurchase('availability')}
-              </button>
+              </Button>
               {order.stateCode !== PURCHASE_ORDER_STATE.DRAFT && (
-                <button
+                <Button variant="ghost"
                   className="text-xs font-medium px-3 py-1.5 rounded-r-lg"
                   style={{
                     color: activeTab === 'status' ? 'var(--accent)' : 'var(--text-muted)',
@@ -551,7 +554,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   onClick={() => setActiveTab('status')}
                 >
                   {tPurchase('statusTab')}
-                </button>
+                </Button>
               )}
               </div>
             </div>
@@ -564,13 +567,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     style={{ width: '100%' }}
                   />
                 </div>
-                <button
-                  className="btn btn-secondary btn-sm whitespace-nowrap"
+                <Button
+                  variant="secondary" size="sm" className="whitespace-nowrap"
                   onClick={addBlankLine}
                   disabled={saving}
                 >
                   {tPurchase('buttons.customLine')}
-                </button>
+                </Button>
               </div>
             )}
           </div>

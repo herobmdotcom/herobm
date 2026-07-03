@@ -11,6 +11,7 @@ import { AgGridReact } from 'ag-grid-react';
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community';
 import { ReportChartViewer } from '@/components/reporting/ReportChartViewer';
 import { DateRangeFilter } from '@/components/reporting/DateRangeFilter';
+import { Button } from '@/components/shared/Button';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -275,19 +276,19 @@ export default function ReportViewer() {
                 })}
               </select>
               {loadedConfig ? (
-                <button 
+                <Button 
+                  variant="secondary" size="sm" className="whitespace-nowrap h-8"
                   onClick={() => handleUnsaveView(loadedConfig.id)}
-                  className="btn btn-secondary btn-sm whitespace-nowrap h-8"
                 >
                   Unsave View
-                </button>
+                </Button>
               ) : (
-                <button 
+                <Button 
+                  variant="secondary" size="sm" className="whitespace-nowrap h-8"
                   onClick={() => setIsSavingView(true)}
-                  className="btn btn-secondary btn-sm whitespace-nowrap h-8"
                 >
                   Save View
-                </button>
+                </Button>
               )}
             </div>
           }
@@ -319,8 +320,8 @@ export default function ReportViewer() {
                 Pin this view to my Dashboard
               </label>
               <div className="flex justify-end gap-2 mt-4">
-                <button className="btn btn-secondary" onClick={() => setIsSavingView(false)}>Cancel</button>
-                <button className="btn btn-primary" onClick={handleSaveView} disabled={!newViewName}>Save</button>
+                <Button variant="secondary" onClick={() => setIsSavingView(false)}>Cancel</Button>
+                <Button variant="primary" onClick={handleSaveView} disabled={!newViewName}>Save</Button>
               </div>
             </div>
           </div>
@@ -396,18 +397,18 @@ export default function ReportViewer() {
           )}
           
           <div className="flex items-end gap-3 ml-auto">
-            <button 
+            <Button 
+              variant="primary" className="h-[34px] !py-0 px-4"
               onClick={() => fetchReportData()}
-              className="btn btn-primary h-[34px] !py-0 px-4"
             >
               Run Report
-            </button>
-            <button 
+            </Button>
+            <Button 
+              variant="secondary" className="h-[34px] !py-0 px-4"
               onClick={() => gridRef.current?.api.exportDataAsCsv()}
-              className="btn btn-secondary h-[34px] !py-0 px-4"
             >
               Export CSV
-            </button>
+            </Button>
           </div>
         </div>
 

@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { MATCH_STATUS, PUTAWAY_STATUS } from '@herobm/shared';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 export interface GoodsReceivedLine {
   goodsReceivedLineId: string;
@@ -426,7 +427,7 @@ function POCandidatesList({
         return (
           <div key={group.purchaseOrderId} style={{ borderRadius: 8, border: '1px solid var(--border)', overflow: 'hidden', background: 'var(--bg-card)' }}>
             {/* Card Header */}
-            <button
+            <Button variant="ghost"
               onClick={() => toggleExpand(grLine.goodsReceivedLineId, group.purchaseOrderId)}
               style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
               className="flex justify-between"
@@ -448,7 +449,7 @@ function POCandidatesList({
                   {t('allocation.destination')} <span className="font-medium text-[var(--text-primary)]">{group.locationName || t('allocation.unknown')}</span>
                 </div>
               </div>
-            </button>
+            </Button>
 
             {/* Expanded Lines */}
             {isExpanded && (
@@ -521,18 +522,18 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: PendingPOLine
             value={qty}
             onChange={(e) => setQty(e.target.value)}
           />
-          <button
+          <Button
             onClick={async () => {
               setIsAllocating(true);
               await onAllocate(qty);
               setIsAllocating(false);
             }}
             disabled={isAllocating || !qty}
-            className="btn btn-primary btn-sm"
+            variant="primary" size="sm"
             style={{ padding: '2px 8px', height: '26px', fontSize: '11px' }}
           >
             {isAllocating ? t('allocation.allocating') : t('allocation.match')}
-          </button>
+          </Button>
         </div>
       </td>
     </tr>
@@ -571,18 +572,18 @@ function POLineMobileCard({ line, originalQuantity, onAllocate }: { line: Pendin
             value={qty}
             onChange={(e) => setQty(e.target.value)}
           />
-          <button
+          <Button
             onClick={async () => {
               setIsAllocating(true);
               await onAllocate(qty);
               setIsAllocating(false);
             }}
             disabled={isAllocating || !qty}
-            className="btn btn-primary"
+            variant="primary"
             style={{ padding: '6px 16px', height: '32px', fontSize: '13px' }}
           >
             {isAllocating ? t('allocation.allocating') : t('allocation.match')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

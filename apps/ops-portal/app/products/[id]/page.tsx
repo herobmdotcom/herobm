@@ -18,6 +18,7 @@ import { InlineSettingsTable } from '@/components/shared/InlineSettingsTable';
 import AddSupplierModal from '@/components/products/AddSupplierModal';
 import GroupSelect from '@/components/shared/GroupSelect';
 import InheritedSelect from '@/components/shared/InheritedSelect';
+import { Button } from '@/components/shared/Button';
 import { useSettings } from '@/components/SettingsProvider';
 import { formatLocationDisplay } from '@/lib/formatters';
 import { PRODUCT_STATE } from '@herobm/shared';
@@ -308,14 +309,16 @@ export default function ProductDetailPage() {
       onCellClicked: (p: any) => p.event?.stopPropagation(), // prevent triggering row click
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
       cellRenderer: (p: { value: string, data: any }) => (
-        <button 
+        <Button 
           onClick={(e) => { e.stopPropagation(); removeSupplier(p.value, p.data.vendorName); }}
-          className="btn btn-xs btn-ghost text-red-500 hover:bg-red-50 px-2 h-7 min-h-7"
+          size="xs"
+          variant="ghost"
+          className="text-red-500 hover:bg-red-50 px-2 h-7 min-h-7"
           title={t('suppliers.buttons.unlinkSupplier')}
         >
           { }
           <span className="material-symbols-outlined text-[16px]">link_off</span>
-        </button>
+        </Button>
       )
     }
   ], [tCommon, t]);
@@ -513,15 +516,17 @@ export default function ProductDetailPage() {
                     </div>
                     <div className="flex items-center gap-3 shrink-0 ml-4">
                       {optionsButton}
-                      <button 
-                        className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
+                      <Button 
+                        size="sm"
+                        variant="primary"
+                        className="bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
                         onClick={() => setIsAddSupplierOpen(true)}
                         disabled={!isEditable}
                       >
                         { }
                         <span className="material-symbols-outlined text-[16px]">add_link</span>
                         {t('products.supplierModal.title')}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -545,14 +550,16 @@ export default function ProductDetailPage() {
                 </h2>
               </div>
               {!addingBinLink && isEditable && product?.productType !== 'non-stock' && (
-                <button
-                  className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
+                <Button
+                  size="sm"
+                  variant="primary"
+                  className="bg-[#006b5c] hover:bg-[#005246] border-none text-white flex items-center gap-1.5"
                   style={{ fontSize: 13 }}
                   onClick={() => setAddingBinLink(true)}
                   disabled={saving}
                 >
                   {t('products.storage.addBinLink')}
-                </button>
+                </Button>
               )}
             </div>
 
@@ -626,24 +633,29 @@ export default function ProductDetailPage() {
                 </div>
                 
                 <div className="flex gap-2.5">
-                  <button
-                    className="btn btn-ghost hover:bg-gray-100 text-gray-700 font-semibold px-5"
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-[#64748b] hover:bg-[#f1f5f9]"
                     onClick={() => {
                       setAddingBinLink(false);
-                      setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
+                      setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: false, minQty: '', maxQty: '' });
                     }}
+                    disabled={saving}
                   >
                     {tCommon('buttons.cancel')}
-                  </button>
-                  <button
-                    className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white font-semibold px-5"
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    className="bg-[#006b5c] hover:bg-[#005246] border-none px-6"
                     disabled={!newBinLink.locationId || !newBinLink.binId || saving}
                     onClick={async () => {
                       try {
                         await api.productsControllerLinkDefaultBin(id as string, newBinLink);
                         toast.success(t('products.storage.toastLinkAdded'));
                         setAddingBinLink(false);
-                        setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
+                        setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: false, minQty: '', maxQty: '' });
                         await fetchProduct(false);
                       } catch (err: unknown) {
                         toast.error(getErrorMessage(err));
@@ -651,7 +663,7 @@ export default function ProductDetailPage() {
                     }}
                   >
                     {tCommon('buttons.save')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -735,12 +747,14 @@ export default function ProductDetailPage() {
                               </td>
                               <td className="py-2 px-4 text-right">
                                 <div className="flex justify-end gap-1">
-                                  <button onClick={() => setEditingBinId(null)} className="btn btn-xs btn-ghost px-1.5" title={tCommon('buttons.cancel')}>
+                                  <Button onClick={() => setEditingBinId(null)} size="xs" variant="ghost" className="px-1.5" title={tCommon('buttons.cancel')}>
                                     {/* eslint-disable-next-line i18next/no-literal-string -- Complex UI state, DTO typing, or Material Icon */}
                                     <span className="material-symbols-outlined text-[16px] text-gray-500">close</span>
-                                  </button>
-                                  <button 
-                                    className="btn btn-xs btn-primary bg-[#006b5c] border-none px-1.5"
+                                  </Button>
+                                  <Button 
+                                    size="xs"
+                                    variant="primary"
+                                    className="bg-[#006b5c] border-none px-1.5"
                                     onClick={async () => {
                                       try {
                                         await api.productsControllerLinkDefaultBin(id as string, editingBinData);
@@ -756,7 +770,7 @@ export default function ProductDetailPage() {
                                   >
                                     { }
                                     <span className="material-symbols-outlined text-[16px]">check</span>
-                                  </button>
+                                  </Button>
                                 </div>
                               </td>
                             </tr>
@@ -780,7 +794,7 @@ export default function ProductDetailPage() {
                               <td className="py-2 px-4 text-center">
                                 {isEditable && (
                                   <div className="flex items-center justify-end gap-1">
-                                    <button
+                                    <Button variant="ghost"
                                       onClick={() => {
                                         setEditingBinId(bin.binId);
                                         setEditingBinData({
@@ -795,9 +809,9 @@ export default function ProductDetailPage() {
                                     >
                                       { }
                                       <span className="material-symbols-outlined text-[16px]">edit</span>
-                                    </button>
+                                    </Button>
                                     {bin.isDefault && (
-                                      <button
+                                      <Button variant="ghost"
                                         onClick={async () => {
                                           if (!window.confirm(t('products.storage.confirmRemoveLink', { bin: bin.binNumber, location: lvl.locationName }))) return;
                                           try {
@@ -812,7 +826,7 @@ export default function ProductDetailPage() {
                                       >
                                         { }
                                         <span className="material-symbols-outlined text-[16px]">delete</span>
-                                      </button>
+                                      </Button>
                                     )}
                                   </div>
                                 )}
@@ -1318,22 +1332,24 @@ export default function ProductDetailPage() {
         {/* Bottom Actions */}
         <div className="flex justify-end mt-4">
             {product.stateCode === PRODUCT_STATE.ARCHIVED ? (
-              <button
-                className="btn btn-secondary btn-sm"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={unarchiveProduct}
                 disabled={saving}
               >
                 {t('salesOrders.buttons.unarchive')}
-              </button>
+              </Button>
             ) : (
-              <button
-                className="btn btn-secondary btn-sm"
+              <Button
+                variant="secondary"
+                size="sm"
                 style={{ color: '#ef4444', borderColor: '#ef4444' }}
                 onClick={archiveProduct}
                 disabled={saving}
               >
                 {t('salesOrders.buttons.archive')}
-              </button>
+              </Button>
             )}
           </div>
       </div>

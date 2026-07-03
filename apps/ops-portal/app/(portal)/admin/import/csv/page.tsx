@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/shared/Button';
 import { useRouter } from 'next/navigation';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
@@ -175,20 +176,20 @@ export default function CsvImportPage() {
           </div>
           
           <div className="mb-8 flex justify-start">
-             <button
+             <Button variant="ghost"
                onClick={handleDownloadTemplate}
                className="text-[#006b5c] hover:text-[#005246] hover:underline font-medium transition-colors"
              >
                {t('downloadTemplate')}
-             </button>
+             </Button>
           </div>
           
-          <button
+          <Button variant="secondary"
             onClick={() => setStep('preview')}
             className="w-full bg-[#006b5c] hover:bg-[#005246] text-white px-4 py-3 rounded-lg font-bold transition-colors"
           >
             {t('continue')}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -260,20 +261,20 @@ export default function CsvImportPage() {
           </div>
 
           <div className="flex justify-between items-center pt-6 border-t border-slate-100">
-            <button
+            <Button variant="ghost"
               onClick={() => setStep('config')}
               className="text-slate-500 hover:text-slate-800 font-bold px-4 py-2"
             >
               {t('back')}
-            </button>
-            <button
+            </Button>
+            <Button variant="secondary"
               onClick={handleStartImport}
               disabled={!file}
               className="bg-[#006b5c] hover:bg-[#005246] disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg font-bold transition-colors flex items-center gap-2"
             >
               {t('startImport')}
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -339,29 +340,29 @@ export default function CsvImportPage() {
             </div>
           )}
 
-          <button
+          <Button variant="secondary"
             onClick={() => router.push('/')}
             className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors w-full"
           >
             {t('goToDashboard')}
-          </button>
+          </Button>
         </div>
       )}
       
       {step === 'executing' && status === 'failed' && (
         <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
-           <button
+           <Button variant="secondary"
             onClick={() => { setStep('config'); setStatus('pending'); }}
             className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-lg font-bold transition-colors"
            >
              {t('retryImport')}
-           </button>
-           <button
+           </Button>
+           <Button variant="ghost"
             onClick={() => router.push('/')}
             className="text-slate-500 hover:text-slate-800 underline"
           >
             {t('returnToDashboard')}
-          </button>
+          </Button>
         </div>
       )}
     </div>

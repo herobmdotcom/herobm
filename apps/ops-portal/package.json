@@ -21,8 +21,11 @@
   "dependencies": {
     "@herobm/sdk": "^0.1.0",
     "@herobm/shared": "*",
+    "@radix-ui/react-slot": "^1.3.0",
     "ag-grid-community": "^33.2.5",
     "ag-grid-react": "^33.2.5",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "markdown-it": "^14.2.0",
     "next": "^15.3.3",
     "next-intl": "^4.8.3",
@@ -31,7 +34,8 @@
     "react-hot-toast": "^2.6.0",
     "react-phone-number-input": "^3.4.17",
     "recharts": "^3.8.1",
-    "swr": "^2.4.1"
+    "swr": "^2.4.1",
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",

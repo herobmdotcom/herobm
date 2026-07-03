@@ -14,6 +14,7 @@ import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/shared/Button';
 import BankMatchingView from './BankMatchingView';
 import { getErrorMessage } from '@herobm/shared';
 
@@ -52,7 +53,7 @@ const ToggleCell = (p: ToggleCellParams) => {
 
   return (
     <div className="flex items-center gap-3 mt-1">
-      <button
+      <Button variant="ghost"
         type="button"
         disabled={isPosted}
         onClick={handleToggleClick}
@@ -69,7 +70,7 @@ const ToggleCell = (p: ToggleCellParams) => {
  data.isCleared ? 'translate-x-4' : 'translate-x-0'
  }`}
         />
-      </button>
+      </Button>
     </div>
   );
 };
@@ -237,14 +238,14 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
       <div className="flex flex-col bg-white border-b border-gray-200 px-6 py-4 gap-4 shrink-0 z-10 relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button 
+            <Button variant="secondary" 
               onClick={() => router.back()} 
               className="btn btn-secondary btn-sm"
               aria-label="Go back"
               title={t('tooltips.back')}
             >
               ←
-            </button>
+            </Button>
             <h1 className="text-xl font-bold text-gray-900 tracking-tight">
               {t('reconciliationLabel', { glAccount: reconciliation.accountName })}
             </h1>
@@ -259,7 +260,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
           <div className="flex items-center gap-3 shrink-0">
             {!isPosted && (
               <>
-                <button
+                <Button variant="secondary"
                   onClick={async () => {
                     try {
                       setPosting(true);
@@ -285,22 +286,22 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
                   className="btn btn-secondary font-semibold text-sm h-8 flex items-center gap-2"
                 >
                   {t('autoMatch')}
-                </button>
-                <button
+                </Button>
+                <Button variant="secondary"
                   onClick={handleDiscard}
                   disabled={posting}
                   className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
                 >
                   {t('discard')}
-                </button>
-                <button
+                </Button>
+                <Button variant="primary"
                   onClick={handlePost}
                   disabled={posting || Math.abs(reconciliation.variance) > 0.001}
                   className="px-5 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                   title={Math.abs(reconciliation.variance) > 0.001 ? t('varianceMustBeZero') : ''}
                 >
                   {posting ? t('posting') : t('postReconciliation')}
-                </button>
+                </Button>
               </>
             )}
           </div>

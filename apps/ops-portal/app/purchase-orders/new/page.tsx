@@ -18,6 +18,7 @@ import SupplierSelect from '@/components/shared/SupplierSelect';
 import { MobileCardField } from '@/components/shared/DataTable';
 import { getTaxLabel } from '../[id]/types';
 import { useSettings } from '@/components/SettingsProvider';
+import { Button } from '@/components/shared/Button';
 
 interface TaxCategory {
   taxCategoryId: string;
@@ -257,20 +258,20 @@ export default function NewPurchaseOrderPage() {
             title={t('purchaseOrders.createTitle')}
             actions={
               <>
-                <button
-                  className="btn btn-secondary btn-sm"
+                <Button
+                  variant="secondary" size="sm"
                   onClick={() => router.push('/purchase-orders')}
                   disabled={submitting}
                 >
                   {t('common.cancel')}
-                </button>
-                <button
-                  className="btn btn-primary btn-sm"
+                </Button>
+                <Button
+                  variant="primary" size="sm"
                   onClick={handleSubmit}
                   disabled={submitting}
                 >
                   {submitting ? t('common.saving') : t('purchaseOrders.buttons.createPO')}
-                </button>
+                </Button>
               </>
             }
             showPrint={false}
@@ -430,9 +431,9 @@ export default function NewPurchaseOrderPage() {
                   style={{ width: '100%' }}
                 />
               </div>
-              <button className="btn btn-secondary btn-sm whitespace-nowrap" onClick={addLine}>
+              <Button variant="secondary" size="sm" className="whitespace-nowrap" onClick={addLine}>
                 {t('purchaseOrders.buttons.customLine')}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -527,12 +528,12 @@ export default function NewPurchaseOrderPage() {
                     } />
                     {lines.length > 1 && (
                       <div className="flex justify-end mt-2">
-                        <button
-                          className="btn btn-danger btn-sm"
+                        <Button
+                          variant="danger" size="sm"
                           onClick={() => removeLine(idx)}
                         >
                           <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} /> {t('common.buttons.remove')}
-                        </button>
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -587,8 +588,8 @@ export default function NewPurchaseOrderPage() {
                     {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
                       <div className="flex items-center gap-2">
                         <span>{line.productNumber}</span>
-                        <button
-                          className="text-xs cursor-pointer"
+                        <Button variant="ghost"
+                          className="text-xs cursor-pointer px-1 py-1 h-auto min-h-0"
                           style={{ color: 'var(--text-muted)' }}
                           onClick={() => {
                             updateLine(idx, 'productId', '00000000-0000-0000-0000-000000000000');
@@ -597,7 +598,7 @@ export default function NewPurchaseOrderPage() {
                           }}
                         >
                           <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-                        </button>
+                        </Button>
                       </div>
                     ) : (
                       <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>—</span>
@@ -687,12 +688,12 @@ export default function NewPurchaseOrderPage() {
                   </td>
                   <td>
                     {lines.length > 1 && (
-                      <button
-                        className="btn btn-danger btn-sm"
+                      <Button
+                        variant="danger" size="sm"
                         onClick={() => removeLine(idx)}
                       >
                         <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-                      </button>
+                      </Button>
                     )}
                   </td>
                 </tr>

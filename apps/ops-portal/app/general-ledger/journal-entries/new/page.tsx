@@ -11,6 +11,7 @@ import CustomerSelect from '@/components/shared/CustomerSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import { Button } from '@/components/shared/Button';
 import { useSettings } from '@/components/SettingsProvider';
 import { formatAmount } from '@/lib/currency';
 
@@ -155,20 +156,20 @@ export default function NewJournalEntryPage() {
           title={t('newManualEntry')}
           actions={
             <>
-              <button
-                className="btn btn-secondary btn-sm"
+              <Button
+                variant="secondary" size="sm"
                 onClick={() => router.push('/general-ledger/journal-entries')}
                 disabled={submitting}
               >
                 {tCommon('cancel')}
-              </button>
-              <button
-                className="btn btn-primary btn-sm"
+              </Button>
+              <Button
+                variant="primary" size="sm"
                 onClick={handleSubmit}
                 disabled={!canSubmit || submitting}
               >
                 {submitting ? tCommon('saving') : t('postEntry')}
-              </button>
+              </Button>
             </>
           }
           showPrint={false}
@@ -212,9 +213,9 @@ export default function NewJournalEntryPage() {
               {t('lines')}
             </h3>
             <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end">
-              <button className="btn btn-secondary btn-sm whitespace-nowrap" onClick={addLine}>
+              <Button variant="secondary" size="sm" className="whitespace-nowrap" onClick={addLine}>
                 {t('addLine')}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -343,14 +344,14 @@ export default function NewJournalEntryPage() {
                       />
                     </td>
                     <td style={{ textAlign: 'center' }}>
-                      <button
+                      <Button variant="ghost"
                         onClick={() => removeLine(line.id)}
                         disabled={lines.length <= 2}
                         className="p-1.5 text-red-500 hover:bg-red-50 rounded disabled:opacity-30 disabled:hover:bg-transparent"
                       >
                         { }
                         <span className="material-symbols-outlined text-[16px]">delete</span>
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))}

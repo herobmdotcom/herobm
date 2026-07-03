@@ -9,6 +9,7 @@ import { PURCHASE_RETURN_STATE } from '@herobm/shared';
 import InitiateReturnModal from './InitiateReturnModal';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
+import { Button } from '@/components/shared/Button';
 
 interface PriceWarningPayload {
   poPrice: string;
@@ -99,8 +100,8 @@ function ReturnCard({
           </a>
         )}
         {(r.stateCode === PURCHASE_RETURN_STATE.DRAFT || r.stateCode === PURCHASE_RETURN_STATE.STAGED) && (
-          <button
-            className="btn btn-danger btn-sm"
+          <Button
+            variant="danger" size="sm"
             onClick={async () => {
               if (!confirm('Are you sure you want to cancel this return?')) return;
               try {
@@ -114,7 +115,7 @@ function ReturnCard({
           >
             {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
             {'Cancel Return'}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -371,9 +372,9 @@ export default function ReturnsSection({
           <span style={{ fontSize: 11, fontWeight: 400 }}>({returns.length})</span>
         </h3>
         {canInitiateReturn && (
-          <button className="btn btn-secondary btn-sm" onClick={() => setIsInitiateModalOpen(true)}>
+          <Button variant="secondary" size="sm" onClick={() => setIsInitiateModalOpen(true)}>
             {tPurchase('returns.initiateReturn')}
-          </button>
+          </Button>
         )}
       </div>
       

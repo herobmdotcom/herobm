@@ -7,6 +7,7 @@ import Link from 'next/link';
 import type { OrderDetail } from './types';
 import { SALES_ORDER_STATE, DATA_SOURCE_CONTEXT } from '@herobm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
+import { Button } from '@/components/shared/Button';
 interface OrderDetailsCardProps {
     order: OrderDetail;
     isOrderDetailsEditable: boolean;
@@ -100,29 +101,29 @@ export default function OrderDetailsCard({
                 </h2>
                 <div className="flex items-center gap-2">
                     {(order.stateCode === SALES_ORDER_STATE.DRAFT || order.stateCode === SALES_ORDER_STATE.QUOTED) && (
-                        <button
-                            className="btn btn-secondary btn-sm"
+                        <Button
+                            variant="secondary" size="sm"
                             onClick={() => onEmailDocumentClick('sales-order-quote', 'Email Quote', 'Quote', 'Quote', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
                         >
                             <span className="material-symbols-outlined text-base">mail</span>
                             Email Quote
-                        </button>
+                        </Button>
                     )}
                     {order.stateCode !== SALES_ORDER_STATE.DRAFT && (
-                        <button
-                            className="btn btn-secondary btn-sm"
+                        <Button
+                            variant="secondary" size="sm"
                             onClick={() => onEmailDocumentClick('sales-order-confirmation', 'Email Confirmation', 'Order Confirmation', 'Confirmation', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
                         >
                             Email Confirmation
-                        </button>
+                        </Button>
                     )}
                     {order.stateCode !== SALES_ORDER_STATE.DRAFT && order.stateCode !== SALES_ORDER_STATE.QUOTED && (
-                        <button
-                            className="btn btn-secondary btn-sm flex items-center gap-1"
+                        <Button
+                            variant="secondary" size="sm" className="flex items-center gap-1"
                             onClick={() => onEmailDocumentClick('pro-forma-invoice', 'Email Pro-Forma Invoice', 'Pro-Forma Invoice', 'Pro-Forma', order.salesOrderId!, DATA_SOURCE_CONTEXT.SALES_ORDER)}
                         >
                             Email Pro-Forma
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>

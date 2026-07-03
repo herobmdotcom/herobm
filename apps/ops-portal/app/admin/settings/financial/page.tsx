@@ -3,6 +3,7 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useMemo, Fragment } from 'react';
+import { Button } from '@/components/shared/Button';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -741,17 +742,17 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
         <td style={{ textAlign: 'right' }}>
           {isEdit ? (
             <div className="flex justify-end gap-2 flex-nowrap whitespace-nowrap">
-              <button className="btn btn-secondary btn-xs" onClick={coaCancel}>{tSettings('actions.cancel')}</button>
-              <button className="btn btn-primary btn-xs" onClick={coaSave}>{tSettings('actions.save')}</button>
+              <Button variant="secondary" size="xs" onClick={coaCancel}>{tSettings('actions.cancel')}</Button>
+              <Button variant="primary" size="xs" onClick={coaSave}>{tSettings('actions.save')}</Button>
             </div>
           ) : (
             <div className="flex justify-end gap-2 flex-nowrap whitespace-nowrap">
-              {data.isGroup && <button className="btn btn-secondary btn-xs" onClick={() => coaCreate(data.glAccountId, data.accountType)}>{tSettings('actions.addChild')}</button>}
-              <button className="btn btn-secondary btn-xs" onClick={() => coaEdit(data)}>{tSettings('actions.edit')}</button>
+              {data.isGroup && <Button variant="secondary" size="xs" onClick={() => coaCreate(data.glAccountId, data.accountType)}>{tSettings('actions.addChild')}</Button>}
+              <Button variant="secondary" size="xs" onClick={() => coaEdit(data)}>{tSettings('actions.edit')}</Button>
               {Object.keys(data.metadata || {}).length > 0 && (
-                <button className="btn btn-secondary btn-xs" onClick={() => setViewMetadataObj(data)}>
+                <Button variant="secondary" size="xs" onClick={() => setViewMetadataObj(data)}>
                   {tSettings('actions.viewMetadata')}
-                </button>
+                </Button>
               )}
               {data.isSystem && <span className="text-xs text-muted italic px-2">{tCommon('system')}</span>}
             </div>
@@ -804,13 +805,13 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
       <td style={{ textAlign: 'right' }}>
         {isEdit ? (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={taxCancel}>{tSettings('actions.cancel')}</button>
-            <button className="btn btn-primary btn-xs" onClick={taxSave}>{tSettings('actions.save')}</button>
+            <Button variant="secondary" size="xs" onClick={taxCancel}>{tSettings('actions.cancel')}</Button>
+            <Button variant="primary" size="xs" onClick={taxSave}>{tSettings('actions.save')}</Button>
           </div>
         ) : (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={() => taxEdit(data)}>{tSettings('actions.edit')}</button>
-            <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => taxDelete(data.taxCategoryId)}>{tSettings('actions.delete')}</button>
+            <Button variant="secondary" size="xs" onClick={() => taxEdit(data)}>{tSettings('actions.edit')}</Button>
+            <Button variant="secondary" size="xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => taxDelete(data.taxCategoryId)}>{tSettings('actions.delete')}</Button>
           </div>
         )}
       </td>
@@ -847,13 +848,13 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
       <td style={{ textAlign: 'right' }}>
         {isEdit ? (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={rateCancel}>{tSettings('actions.cancel')}</button>
-            <button className="btn btn-primary btn-xs" onClick={rateSave}>{tSettings('actions.save')}</button>
+            <Button variant="secondary" size="xs" onClick={rateCancel}>{tSettings('actions.cancel')}</Button>
+            <Button variant="primary" size="xs" onClick={rateSave}>{tSettings('actions.save')}</Button>
           </div>
         ) : (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={() => rateEdit(data)}>{tSettings('actions.edit')}</button>
-            <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => rateDelete(data.exchangeRateId)}>{tSettings('actions.delete')}</button>
+            <Button variant="secondary" size="xs" onClick={() => rateEdit(data)}>{tSettings('actions.edit')}</Button>
+            <Button variant="secondary" size="xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => rateDelete(data.exchangeRateId)}>{tSettings('actions.delete')}</Button>
           </div>
         )}
       </td>
@@ -887,16 +888,16 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
       <td style={{ textAlign: 'right' }}>
         {isEdit ? (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={ccCancel}>{tSettings('actions.cancel')}</button>
-            <button className="btn btn-primary btn-xs" onClick={ccSave}>{tSettings('actions.save')}</button>
+            <Button variant="secondary" size="xs" onClick={ccCancel}>{tSettings('actions.cancel')}</Button>
+            <Button variant="primary" size="xs" onClick={ccSave}>{tSettings('actions.save')}</Button>
           </div>
 
         ) : (
           <div className="flex justify-end gap-2">
             {!data.isSystem && (
               <>
-                <button className="btn btn-secondary btn-xs" onClick={() => ccEdit(data)}>{tSettings('actions.edit')}</button>
-                <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => ccDelete(data.costCenterId)}>{tSettings('actions.delete')}</button>
+                <Button variant="secondary" size="xs" onClick={() => ccEdit(data)}>{tSettings('actions.edit')}</Button>
+                <Button variant="secondary" size="xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => ccDelete(data.costCenterId)}>{tSettings('actions.delete')}</Button>
               </>
             )}
             {data.isSystem && <span className="text-xs text-muted italic px-2">{tCommon('system')}</span>}
@@ -933,16 +934,16 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
       <td style={{ textAlign: 'right' }}>
         {isEdit ? (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={activityCancel}>{tSettings('actions.cancel')}</button>
-            <button className="btn btn-primary btn-xs" onClick={activitySave}>{tSettings('actions.save')}</button>
+            <Button variant="secondary" size="xs" onClick={activityCancel}>{tSettings('actions.cancel')}</Button>
+            <Button variant="primary" size="xs" onClick={activitySave}>{tSettings('actions.save')}</Button>
           </div>
 
         ) : (
           <div className="flex justify-end gap-2">
             {!data.isSystem && (
               <>
-                <button className="btn btn-secondary btn-xs" onClick={() => activityEdit(data)}>{tSettings('actions.edit')}</button>
-                <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => activityDelete(data.activityId)}>{tSettings('actions.delete')}</button>
+                <Button variant="secondary" size="xs" onClick={() => activityEdit(data)}>{tSettings('actions.edit')}</Button>
+                <Button variant="secondary" size="xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => activityDelete(data.activityId)}>{tSettings('actions.delete')}</Button>
               </>
             )}
             {data.isSystem && <span className="text-xs text-muted italic px-2">{tCommon('system')}</span>}
@@ -1231,9 +1232,9 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
               <span>{tSettings('financialSettings.accounts')}</span>
             </h3>
             <div className="flex gap-2">
-              <button className="btn btn-secondary btn-xs" onClick={() => setImportCoaModalOpen(true)}>{tSettings('importCoaModal.importAction')}</button>
-              <button className="btn btn-secondary btn-xs" onClick={openSchemaEditor}>{tSettings('actions.configureMetadata')}</button>
-              <button className="btn btn-primary btn-sm" onClick={() => coaCreate(undefined, undefined, true)}>{tSettings('actions.addRootGroup')}</button>
+              <Button variant="secondary" size="xs" onClick={() => setImportCoaModalOpen(true)}>{tSettings('importCoaModal.importAction')}</Button>
+              <Button variant="secondary" size="xs" onClick={openSchemaEditor}>{tSettings('actions.configureMetadata')}</Button>
+              <Button variant="primary" size="sm" onClick={() => coaCreate(undefined, undefined, true)}>{tSettings('actions.addRootGroup')}</Button>
             </div>
           </div>
 
@@ -1277,7 +1278,7 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
             </h3>
             <div className="flex items-center gap-2">
               <CsvImportButton onImport={handleImportCc} disabled={isImporting} />
-              <button className="btn btn-primary btn-sm" onClick={ccCreate}>{tSettings('actions.create')}</button>
+              <Button variant="primary" size="sm" onClick={ccCreate}>{tSettings('actions.create')}</Button>
             </div>
           </div>
 
@@ -1335,7 +1336,7 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
             </h3>
             <div className="flex items-center gap-2">
               <CsvImportButton onImport={handleImportActivity} disabled={isImporting} />
-              <button className="btn btn-primary btn-sm" onClick={activityCreate}>{tSettings('actions.create')}</button>
+              <Button variant="primary" size="sm" onClick={activityCreate}>{tSettings('actions.create')}</Button>
             </div>
           </div>
 
@@ -1529,12 +1530,12 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
             extraActions={(row: ExchangeRate & { isSystemBase?: boolean }) => {
               if (row.isSystemBase) return null;
               return (
-                <button 
-                  className="btn btn-secondary btn-xs ml-2" 
+                <Button 
+                  variant="secondary" size="xs" className="ml-2" 
                   onClick={() => setHistoryCurrencyCode(row.currencyCode)}
                 >
                   History
-                </button>
+                </Button>
               );
             }}
             onAdd={() => ({ currencyCode: '', currencyName: '', effectiveDate: new Date().toISOString().split('T')[0], buyRate: 1.0, sellRate: 1.0 } as unknown as ExchangeRate)}
@@ -1610,9 +1611,9 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
               <span className="material-symbols-outlined">{'payments'}</span>
               {tSettings('sections.tax')}
             </h3>
-            <button className="btn btn-secondary btn-sm" onClick={() => setImportTaxModalOpen(true)}>
+            <Button variant="secondary" size="sm" onClick={() => setImportTaxModalOpen(true)}>
               {tSettings('actions.importSettings')}
-            </button>
+            </Button>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-6 mb-6">
@@ -1830,15 +1831,15 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
                    
                   if (isEditing) return <span className="text-xs text-muted">{tSettings('financialSettings.saveToMap')}</span>;
                   return (
-                    <button
-                      className="btn btn-secondary btn-xs"
+                    <Button
+                      variant="secondary" size="xs"
                       onClick={() => setSelectedTaxPosition(row)}
                     >
                       {tCommon('map')}
                       {taxPositionMappings.some((m) => m.taxPositionId === row.taxPositionId) && (
                         <span className="inline-flex h-2 w-2 rounded-full bg-green-500 ml-2"></span>
                       )}
-                    </button>
+                    </Button>
                   );
                 }
               }
@@ -1862,8 +1863,8 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
           />
 
           <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[var(--border)]">
-            <button className="btn btn-secondary" onClick={() => setSchemaEditorOpen(false)}>{tSettings('actions.cancel')}</button>
-            <button className="btn btn-primary" onClick={saveSchema}>{tSettings('actions.saveSchema')}</button>
+            <Button variant="secondary" onClick={() => setSchemaEditorOpen(false)}>{tSettings('actions.cancel')}</Button>
+            <Button variant="primary" onClick={saveSchema}>{tSettings('actions.saveSchema')}</Button>
           </div>
         </div>
       </SlideOver>

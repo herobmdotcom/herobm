@@ -4,6 +4,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useTranslations } from 'next-intl';
 
 import { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/shared/Button';
 import * as api from '@herobm/sdk';
 
 interface LogsResponse {
@@ -128,14 +129,14 @@ export default function SystemLogsPage() {
               />
               {t('filters.autoRefresh')}
             </label>
-            <button className="btn btn-secondary btn-sm" onClick={handleCopyLogs} disabled={lines.length === 0}>
+            <Button variant="secondary" size="sm" onClick={handleCopyLogs} disabled={lines.length === 0}>
               {t('actions.copy')}
-            </button>
-            <button className="btn btn-secondary btn-sm" onClick={loadLogs}>
+            </Button>
+            <Button variant="secondary" size="sm" onClick={loadLogs}>
               <span>🔄</span>
               {' '}
               {t('actions.refresh')}
-            </button>
+            </Button>
           </div>
         </div>
 

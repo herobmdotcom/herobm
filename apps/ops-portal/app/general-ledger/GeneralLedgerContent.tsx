@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import JournalEntrySlideOver, { JournalEntry } from './journal-entries/JournalEntrySlideOver';
 import CodesModal from './CodesModal';
 import DataGrid from '@/components/DataGrid';
+import { Button } from '@/components/shared/Button';
 import type { ColDef, ValueFormatterParams, ICellRendererParams, ValueGetterParams } from 'ag-grid-community';
 
 interface AccountOption {
@@ -178,14 +179,16 @@ export default function GeneralLedgerContent() {
       }}
       pageTitle={t('title')}
       headerActions={
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => setIsCodesOpen(true)}
-          className="btn btn-secondary btn-sm whitespace-nowrap"
+          className="whitespace-nowrap"
         >
           {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exception for Material Symbol icon name */}
           <span className="material-symbols-outlined text-sm">visibility</span>
           {tCodes('button')}
-        </button>
+        </Button>
       }
       secondaryHeader={
         <div className="flex flex-wrap items-center justify-start gap-4">

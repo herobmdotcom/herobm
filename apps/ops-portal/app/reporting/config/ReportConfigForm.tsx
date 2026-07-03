@@ -8,6 +8,7 @@ import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '@herobm/shared';
 import JsonBrowserModal from '@/components/shared/JsonBrowserModal';
+import { Button } from '@/components/shared/Button';
 
 interface ReportConfigFormProps {
   initialData?: {
@@ -190,15 +191,15 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
                     <option key={`${hook}-${idx}`} value={hook}>{hook}</option>
                   ))}
                 </select>
-                <button
-                  className="btn btn-secondary whitespace-nowrap text-[#006b5c] border-[#006b5c]/20 hover:bg-[#006b5c]/5"
+                <Button
+                  variant="secondary" className="whitespace-nowrap text-[#006b5c] border-[#006b5c]/20 hover:bg-[#006b5c]/5"
                   onClick={() => setBrowserOpen(true)}
                   disabled={!formData.dataSourceHook}
                 >
                   { }
                   <span className="material-symbols-outlined text-[18px]">data_object</span>
                   View Data
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -225,21 +226,21 @@ export default function ReportConfigForm({ initialData }: ReportConfigFormProps)
           </div>
 
           <div className="flex items-center gap-3 mt-4">
-            <button 
-              className="btn btn-primary px-8 py-3 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110" 
+            <Button 
+              variant="primary" className="px-8 py-3 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110" 
               onClick={handleSave} 
               disabled={isSubmitting}
             >
               {isSubmitting ? t('buttons.saving') : t('buttons.save')}
-            </button>
+            </Button>
             {initialData && !isSystem && (
-              <button 
-                className="btn btn-secondary px-8 py-3 text-sm font-bold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-all" 
+              <Button 
+                variant="secondary" className="px-8 py-3 text-sm font-bold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-all" 
                 onClick={handleDelete} 
                 disabled={isSubmitting}
               >
                 {t('buttons.delete')}
-              </button>
+              </Button>
             )}
           </div>
         </div>

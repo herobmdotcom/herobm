@@ -222,10 +222,35 @@ export class SalesCreditNoteService {
           ),
         );
 
+      const transitionReturnToProcessed = async () => {
+        await innerTx
+          .update(salesOrderReturns)
+          // eslint-disable-next-line no-restricted-syntax -- Dynamic state transition from state machine logic
+          .set({ stateCode: RETURN_STATE.PROCESSED, modifiedOn: new Date() })
+          .where(eq(salesOrderReturns.returnId, returnId));
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Drizzle transaction type mismatch with Outbox emitter
+        await emitEvent(innerTx as any, {
+          entityType: EntityType.SALES_ORDER,
+          entityId: ret.salesOrderId,
+          eventType: EventType.STATUS_CHANGED,
+          entityDisplayName: order.orderNumber,
+          payload: {
+            entity: 'return',
+            entityId: returnId,
+            from: ret.stateCode,
+            to: RETURN_STATE.PROCESSED,
+            returnNumber: ret.returnNumber,
+          },
+          actor,
+        });
+      };
+
       if (returnLines.length === 0) {
         this.logger.log(
-          'No refund lines found on return — skipping credit note generation',
+          'No refund lines found on return — skipping credit note generation, marking return as PROCESSED',
         );
+        await transitionReturnToProcessed();
         return null;
       }
 
@@ -379,7 +404,10 @@ export class SalesCreditNoteService {
       totalFees = creditSummary.totalFees;
 
       if (totalCreditAmount <= 0) {
-        this.logger.warn('No credit amount to post — skipping credit note');
+        this.logger.warn(
+          'No credit amount to post — skipping credit note, marking return as PROCESSED',
+        );
+        await transitionReturnToProcessed();
         return null;
       }
 

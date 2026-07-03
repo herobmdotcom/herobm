@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 interface OverrideCreditHoldModalProps {
   orderId: string;
@@ -63,21 +64,22 @@ export default function OverrideCreditHoldModal({ orderId, onClose, onSuccess }:
           </div>
           
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-            <button
+            <Button
+              variant="secondary"
               type="button"
-              className="btn btn-secondary"
               onClick={onClose}
               disabled={submitting}
             >
               {t('common.cancel')}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
               type="submit"
-              className="btn btn-primary bg-amber-600 hover:bg-amber-700 border-amber-600"
+              className="bg-amber-600 hover:bg-amber-700 border-amber-600"
               disabled={submitting || !reason.trim()}
             >
               {submitting ? tSales('creditHold.overriding') : tSales('creditHold.overrideBtn')}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

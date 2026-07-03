@@ -14,13 +14,14 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useSalesReturn, SalesReturnDetails } from './useSalesReturn';
 import { useAuth } from '@/components/AuthGate';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
+import { Button } from '@/components/shared/Button';
 import EntityBanner from '@/components/shared/EntityBanner';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
 import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
 
 import * as api from '@herobm/sdk';
-import { getErrorMessage, RETURN_STATE, RETURN_TRANSITIONS, DATA_SOURCE_CONTEXT, computeReturnCreditSummary, computeLinePrice, isBackTransition, RETURN_LIFECYCLE, PUTAWAY_STATUS } from '@herobm/shared';
+import { getErrorMessage, RETURN_STATE, RETURN_TRANSITIONS, DATA_SOURCE_CONTEXT, computeReturnCreditSummary, computeLinePrice, isBackTransition, RETURN_LIFECYCLE, PUTAWAY_STATUS, RETURN_RESOLUTION } from '@herobm/shared';
 import { useSettings } from '@/components/SettingsProvider';
 
 function PurchaseReturnStateBadge({ state }: { state: ValidState }) {
@@ -176,7 +177,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
           taxRate: parseFloat(line.taxRate || '0')
         }).amount;
         const fee = parseFloat(line.returnFee || '0');
-        const netCredit = Math.max(0, grossLine - fee);
+        const netCredit = line.resolution === RETURN_RESOLUTION.REFUND ? Math.max(0, grossLine - fee) : 0;
         return (
           <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
             {formatAmount(netCredit, ret.currencyCode)}
@@ -193,6 +194,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
       discountPercentage: parseFloat(l.discountPercentage || '0'),
       taxRate: parseFloat(l.taxRate || '0'),
       returnFee: parseFloat(l.returnFee || '0'),
+      resolution: l.resolution,
     })),
   );
 
@@ -263,10 +265,11 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
                     .map((s: string) => {
                         const back = isBackTransition(RETURN_LIFECYCLE, ret.stateCode, s);
                         return (
-                            <button
+                            <Button
                                 key={s}
                                 disabled={saving}
-                                className={`btn btn-sm ${s === RETURN_STATE.CANCELLED ? 'btn-danger' : back ? 'btn-secondary' : 'btn-primary'}`}
+                                variant={s === RETURN_STATE.CANCELLED ? 'danger' : back ? 'secondary' : 'primary'}
+                                size="sm"
                                 onClick={() => handleStateChange(s)}
                             >
                                 {s === RETURN_STATE.CANCELLED ? (
@@ -280,17 +283,18 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
                                 ) : (
                                     <>→ <StateName state={s as ValidState} /></>
                                 )}
-                            </button>
+                            </Button>
                         );
                     })}
                 {ret.stateCode === RETURN_STATE.RECEIVED && (
-                    <button
-                        className="btn btn-primary btn-sm"
+                    <Button
+                        variant="primary"
+                        size="sm"
                         disabled={saving}
                         onClick={handleProcessReturn}
                     >
                         Process Return
-                    </button>
+                    </Button>
                 )}
             </div>
           }
@@ -315,8 +319,9 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
               <span>{t('returns.returnDetails')}</span>
             </h3>
             {ret.stateCode !== RETURN_STATE.CANCELLED && (
-              <button
-                className="btn btn-secondary btn-sm"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setEmailDialogConfig({
                   isOpen: true,
                   hookSlug: 'return-slip',
@@ -328,7 +333,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
                 })}
               >
                 Email Return Slip
-              </button>
+              </Button>
             )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -433,8 +438,9 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
           )}
           {ret.creditNoteNumber && (
             <div className="mt-4 flex gap-2">
-              <button
-                className="btn btn-secondary btn-sm"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setEmailDialogConfig({
                   isOpen: true,
                   hookSlug: 'sales-return-credit',
@@ -446,7 +452,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
                 })}
               >
                 Email Credit Note
-              </button>
+              </Button>
             </div>
           )}
         </div>

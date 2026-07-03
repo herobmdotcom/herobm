@@ -6,6 +6,7 @@ import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import SlideOver from '@/components/shared/SlideOver';
 import { BIN_TYPE } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 interface UnquarantineModalProps {
   isOpen: boolean;
@@ -67,22 +68,24 @@ export default function UnquarantineModal({ isOpen, onClose, onSubmit, locationI
 
   const footerActions = (
     <div className="flex justify-end gap-3 w-full">
-      <button
+      <Button
         type="button"
         onClick={onClose}
         disabled={submitting}
-        className="btn btn-secondary font-semibold"
+        variant="secondary"
+        className="font-semibold"
       >
         {t('quarantine.cancel')}
-      </button>
-      <button
+      </Button>
+      <Button
         type="submit"
         form="unquarantine-form"
         disabled={submitting || loading || !binId}
-        className="btn btn-primary font-bold"
+        variant="primary"
+        className="font-bold"
       >
         {submitting ? tCommon('saving') : t('buttons.unquarantine')}
-      </button>
+      </Button>
     </div>
   );
 

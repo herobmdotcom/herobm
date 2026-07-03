@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/shared/Button';
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
 import toast from 'react-hot-toast';
@@ -146,14 +147,14 @@ export default function ManualBankLineEntry({
                   />
                 </td>
                 <td className="py-2 text-center">
-                  <button 
+                  <Button variant="ghost"
                     onClick={() => removeLine(line.id)}
                     className="text-[var(--text-muted)] hover:text-red-500"
                     title={tCommon('delete')}
                   >
                     { }
                   <span className="material-symbols-outlined text-[18px]">delete</span>
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -162,19 +163,19 @@ export default function ManualBankLineEntry({
       </div>
       
       <div className="p-4 border-t bg-gray-50 flex justify-end gap-3 shrink-0">
-        <button 
+        <Button variant="secondary"
           onClick={onCancel}
           className="px-4 py-2 border rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-gray-100"
         >
           {tCommon('cancel')}
-        </button>
-        <button 
+        </Button>
+        <Button variant="primary"
           onClick={handleSave}
           disabled={saving}
           className="px-4 py-2 bg-[var(--brand-blue)] text-white rounded-lg text-sm font-medium hover:brightness-110 disabled:opacity-50"
         >
           {saving ? tCommon('saving') : tCommon('save')}
-        </button>
+        </Button>
       </div>
     </div>
   );

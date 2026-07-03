@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DataGrid from '@/components/DataGrid';
+import { Button } from '@/components/shared/Button';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import CreateTransferSlideOver from './CreateTransferSlideOver';
@@ -83,12 +84,13 @@ export default function TransfersContent() {
               onRowClicked={handleRowClicked}
               pageTitle={tTransfers('title')}
               headerActions={
-                <button 
+                <Button 
+                  variant="primary"
                   onClick={() => setIsSlideOverOpen(true)}
-                  className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap ml-2 lg:ml-0"
+                  className="ml-2 lg:ml-0"
                 >
                   {tTransfers('buttons.createTransfer')}
-                </button>
+                </Button>
               }
             />
       </>

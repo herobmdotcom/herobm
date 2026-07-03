@@ -3,6 +3,7 @@
 import { reportError } from '@/lib/api';
 
 import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/shared/Button';
 import UniversalSearch from '@/components/shared/UniversalSearch';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -87,14 +88,14 @@ export default function DashboardContent() {
                     <span className="material-symbols-outlined text-[16px]">push_pin</span>
                     {t('pinnedReports')}
                   </div>
-                  <button 
+                  <Button variant="ghost" 
                     onClick={() => setIsReportSettingsOpen(true)}
                     className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
                     title={t('managePinnedReports')}
                   >
                     { }
                     <span className="material-symbols-outlined text-[18px] text-[var(--accent)] group-hover:rotate-90 transition-transform duration-300">settings</span>
-                  </button>
+                  </Button>
                 </div>
                 
                 {(!dashboardConfig?.pinnedReports || dashboardConfig.pinnedReports.length === 0) ? (
@@ -179,14 +180,14 @@ export default function DashboardContent() {
                   {tTimeline('title')}
                 </div>
                 
-                <button 
+                <Button variant="ghost" 
                   onClick={() => setIsTimelineSettingsOpen(true)}
                   className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
                   title={tTimeline('settings')}
                 >
                   { }
                   <span className="material-symbols-outlined text-[18px] text-[var(--accent)] group-hover:rotate-90 transition-transform duration-300">settings</span>
-                </button>
+                </Button>
               </div>
 
               <div className="flex-1 min-h-[400px]">

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
+import { Button } from '@/components/shared/Button';
 import { toast } from 'react-hot-toast';
 
 export default function TaxBalancesContent() {
@@ -63,12 +64,12 @@ export default function TaxBalancesContent() {
           className="input text-sm h-9 px-3"
         />
       </div>
-      <button 
-        onClick={fetchTaxSummary}
-        className="btn btn-primary btn-sm h-9"
+      <Button 
+        variant="primary" size="sm" onClick={fetchTaxSummary}
+        className="h-9"
       >
         Refresh
-      </button>
+      </Button>
     </div>
   );
 
@@ -98,14 +99,14 @@ export default function TaxBalancesContent() {
               <div className="flex-1 text-[var(--text-secondary)]">
                 {row.description}
               </div>
-              <button
+              <Button variant="ghost"
                 type="button"
                 onClick={() => handleCopy(row.id, row.amount)}
                 className="w-32 text-right text-lg font-mono tracking-tight text-[var(--text-primary)] bg-white px-3 py-1 rounded border border-[var(--border)] hover:border-[var(--primary)] focus:border-[var(--primary)] focus:outline-none transition-colors cursor-pointer"
                 title="Click to copy"
               >
                 {row.amount !== undefined && row.amount !== null ? row.amount.toString() : '0'}
-              </button>
+              </Button>
             </div>
           ))}
           {balances.length === 0 && (

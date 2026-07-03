@@ -64,7 +64,7 @@ export default function ReturnsQueuePage() {
             headerName: 'Lines', 
             width: 100,
             valueGetter: (p: import("ag-grid-community").ValueGetterParams<Record<string, unknown>>) => {
-                const lines = p.data?.lines as any[];
+                const lines = p.data?.lines as Record<string, unknown>[];
                 return lines ? lines.length : 0;
             },
             valueFormatter: (p: import("ag-grid-community").ValueFormatterParams<Record<string, unknown>>) => {

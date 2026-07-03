@@ -17,6 +17,7 @@ import EntityBanner from '@/components/shared/EntityBanner';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
 import EmailDocumentDialog from '@/components/shared/EmailDocumentDialog';
+import { Button } from '@/components/shared/Button';
 
 import * as api from '@herobm/sdk';
 import { getErrorMessage, SALES_INVOICE_STATE, calculateEarlyPaymentDiscount } from '@herobm/shared';
@@ -201,13 +202,14 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
             <div className="flex items-center gap-2">
 
               {invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && (
-                <button
-                  className="btn btn-danger btn-sm"
+                <Button
+                  variant="danger"
+                  size="sm"
                   onClick={handleCancel}
                   disabled={cancelling}
                 >
                   {cancelling ? tCommon('saving') : tCommon('cancel')}
-                </button>
+                </Button>
               )}
             </div>
           }
@@ -232,8 +234,9 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               <span>{t('invoiceDetails')}</span>
             </h3>
             {invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && (
-              <button
-                className="btn btn-secondary btn-sm"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setEmailDialogConfig({
                   isOpen: true,
                   hookSlug: 'sales-invoice',
@@ -245,7 +248,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                 })}
               >
                 Email Invoice
-              </button>
+              </Button>
             )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -465,13 +468,14 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               <span>{t('paymentAllocations')}</span>
             </h3>
             {invoice.stateCode !== SALES_INVOICE_STATE.PAID && invoice.stateCode !== SALES_INVOICE_STATE.CANCELLED && canManageGL && (
-              <button
-                className="btn btn-secondary btn-sm"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={handleAdminMarkPaid}
                 disabled={markingPaid}
               >
                 {markingPaid ? tCommon('loadingEllipsis') : tCommon('markPaid')}
-              </button>
+              </Button>
             )}
           </div>
           <DataTable

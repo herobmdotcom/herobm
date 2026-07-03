@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
 import { InlineSettingsTable, InlineTableColumn } from '@/components/shared/InlineSettingsTable';
 import FinancialDefaultsSlideOver from '@/components/shared/FinancialDefaultsSlideOver';
+import { Button } from '@/components/shared/Button';
 
 export default function ProductGroupsAdmin() {
   const t = useTranslations('admin.productGroups');
@@ -72,12 +73,14 @@ export default function ProductGroupsAdmin() {
           return <span className="text-xs text-muted italic">{tc('saveToManage')}</span>;
         }
         return (
-          <button 
-            className="btn btn-secondary btn-xs relative"
+          <Button 
+            variant="secondary"
+            size="xs"
+            className="relative"
             onClick={() => setFinancialGroup(row)}
           >
             {tc('manage')}
-          </button>
+          </Button>
         );
       }
     }

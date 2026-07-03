@@ -5,6 +5,7 @@ import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/shared/Button';
 
 export default function MatchDetailsModal({ 
   matchGroupId, 
@@ -92,16 +93,16 @@ export default function MatchDetailsModal({
 
   const footerActions = (
     <div className="flex justify-end gap-3 w-full">
-      <button
+      <Button
         type="button"
+        variant="danger" className="font-semibold px-4 py-2 flex items-center gap-2"
         onClick={handleUndo}
         disabled={loading || unmatching || !matchGroupId}
-        className="btn btn-danger font-semibold px-4 py-2 flex items-center gap-2"
       >
         {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
         <span className="material-symbols-outlined text-[18px]">undo</span>
         {unmatching ? tCommon('saving') : t('undoMatch')}
-      </button>
+      </Button>
     </div>
   );
 

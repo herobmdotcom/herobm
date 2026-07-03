@@ -14,6 +14,7 @@ import { TransferLineResponseDto } from '@herobm/sdk';
 import ProductSearchInput, { Product } from '@/components/shared/ProductSearchInput';
 import { MobileCardField } from '@/components/shared/DataTable';
 import ShipmentsSection from './ShipmentsSection';
+import { Button } from '@/components/shared/Button';
 
 export default function TransferDetailsClient({ id }: { id: string }) {
   const router = useRouter();
@@ -54,9 +55,9 @@ export default function TransferDetailsClient({ id }: { id: string }) {
         <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
           {error || tTransfers('notFound')}
         </p>
-        <button className="btn btn-secondary" onClick={() => router.push('/inventory/transfers')}>
+        <Button variant="secondary" onClick={() => router.push('/inventory/transfers')}>
           {tTransfers('backToTransfers')}
-        </button>
+        </Button>
       </div>
     );
   }
@@ -88,15 +89,16 @@ export default function TransferDetailsClient({ id }: { id: string }) {
           actions={
             <div className="flex gap-2">
               {canCancelOrder && (
-                <button
-                  className="btn btn-danger btn-sm"
+                <Button
+                  variant="danger"
+                  size="sm"
                   onClick={handleCancelOrder}
                   disabled={saving}
                 >
                   {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                   <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
                   {tCommon('cancel')}
-                </button>
+                </Button>
               )}
             </div>
           }
@@ -114,7 +116,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
             }}
           >
             {error}
-            <button className="ml-3 text-xs underline" onClick={clearError}>{tCommon('dismiss')}</button>
+            <Button variant="ghost" className="ml-3 text-xs underline" onClick={clearError}>{tCommon('dismiss')}</Button>
           </div>
         )}
 
@@ -236,13 +238,14 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                   </td>
                   {isEditable && (
                     <td>
-                      <button
-                        className="btn btn-danger btn-sm"
+                      <Button
+                        variant="danger"
+                        size="sm"
                         onClick={() => removeLine(line.transferOrderLineId)}
                         title={tTransfers('removeLine')}
                       >
                         <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-                      </button>
+                      </Button>
                     </td>
                   )}
                 </tr>
@@ -295,13 +298,14 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                   <MobileCardField label={tTransfers('columns.received')} value={line.quantityReceived || 0} />
                   {isEditable && (
                     <div className="flex justify-end pt-2 mt-1 border-t border-slate-50">
-                      <button
-                        className="btn btn-danger btn-sm"
+                      <Button
+                        variant="danger"
+                        size="sm"
                         onClick={() => removeLine(line.transferOrderLineId)}
                         title={tTransfers('removeLine')}
                       >
                         <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} /> {tCommon('delete')}
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>

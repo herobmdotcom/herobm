@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import Link from 'next/link';
+import { Button } from '@/components/shared/Button';
 
 import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
@@ -194,7 +195,7 @@ export default function PutawayPage() {
                                 <div>
                                     <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                                         {uniqueZones.sort().map(zone => (
-                                            <button
+                                            <Button variant="ghost"
                                                 key={zone}
                                                 type="button"
                                                 onClick={() => {
@@ -205,7 +206,7 @@ export default function PutawayPage() {
                                                 className={`h-10 px-2 rounded-md font-bold text-sm transition-all flex items-center justify-center truncate ${selectedZone === zone ? 'bg-[var(--accent)] text-white shadow-md' : 'bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--border)] hover:bg-[var(--bg-secondary-hover)]'}`}
                                             >
                                                 {zone}
-                                            </button>
+                                            </Button>
                                         ))}
                                     </div>
                                 </div>
@@ -275,7 +276,7 @@ export default function PutawayPage() {
                                             {tiles.map(tile => {
                                                 const isSelected = tile.isFullBin && tile.binId === selectedBinId;
                                                 return (
-                                                    <button
+                                                    <Button variant="ghost"
                                                         key={tile.value}
                                                         type="button"
                                                         onClick={() => {
@@ -288,11 +289,11 @@ export default function PutawayPage() {
                                                         title={tile.label}
                                                     >
                                                         {tile.label}
-                                                    </button>
+                                                    </Button>
                                                 );
                                             })}
                                             {showClearBtn && (
-                                                <button
+                                                <Button variant="ghost"
                                                     type="button"
                                                     onClick={() => {
                                                         setBinSearch('');
@@ -301,8 +302,9 @@ export default function PutawayPage() {
                                                     className="h-14 px-1 border border-gray-300 rounded-lg flex items-center justify-center text-sm font-bold transition-all bg-white text-black hover:bg-gray-100"
                                                     title="Clear filter"
                                                 >
+                                                    {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
                                                     <span className="material-symbols-outlined text-[20px]">close</span>
-                                                </button>
+                                                </Button>
                                             )}
                                         </div>
                                     </div>
@@ -352,7 +354,7 @@ export default function PutawayPage() {
                     </div>
 
                     <div className="pt-4 mt-auto">
-                        <button
+                        <Button variant="primary"
                             type="submit"
                             disabled={isSubmitting || !selectedBinId || !newTotalQuantity}
                             className="w-full py-2.5 px-4 bg-[var(--accent)] text-white text-sm font-bold rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
@@ -370,7 +372,7 @@ export default function PutawayPage() {
                                     {t('putaway.confirmPutaway')}
                                 </>
                             )}
-                        </button>
+                        </Button>
                     </div>
                 </form>
             ) : null}

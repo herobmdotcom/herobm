@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import DataGrid from '@/components/DataGrid';
+import { Button } from '@/components/shared/Button';
 import DraftPOsModal from './DraftPOsModal';
 import LinkToPOSlideOver from './LinkToPOSlideOver';
 import ReallocateModal from './ReallocateModal';
@@ -187,40 +188,44 @@ export default function DemandsContent() {
               <div className="flex flex-wrap items-center justify-start lg:justify-end gap-3 w-full lg:w-auto">
                   {/* Group 1: PO Allocation */}
                   <div className="flex items-center gap-3">
-                    <button
+                    <Button
+                      variant="primary"
                       onClick={() => setIsLinkSlideOverOpen(true)}
                       disabled={selectedRows.length === 0}
-                      className="px-4 py-2 text-sm rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="whitespace-nowrap"
                     >
                       {tPurchase('demandsContent.allocateToPo')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="primary"
                       onClick={handleDraftPOs}
                       disabled={selectedRows.length === 0}
-                      className="px-4 py-2 text-sm rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="whitespace-nowrap"
                     >
                       {tPurchase('demandsContent.draftPos')}
-                    </button>
+                    </Button>
                   </div>
 
                   <div className="hidden lg:block h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
 
                   {/* Group 2: Location Management */}
                   <div className="flex items-center gap-3">
-                    <button
+                    <Button
+                      variant="primary"
                       onClick={() => setIsReallocateModalOpen(true)}
                       disabled={selectedRows.length === 0}
-                      className="px-4 py-2 text-sm rounded-lg transition-all bg-[#1A467F] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="whitespace-nowrap"
                     >
                       {tPurchase('demandsContent.changeLocation')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="primary"
                       onClick={() => setIsInternalTransferModalOpen(true)}
                       disabled={selectedRows.length === 0}
-                      className="px-4 py-2 text-sm rounded-lg transition-all bg-[#1A467F] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      className="whitespace-nowrap"
                     >
                       {tPurchase('demandsContent.internalTransfer')}
-                    </button>
+                    </Button>
                   </div>
               </div>
             }

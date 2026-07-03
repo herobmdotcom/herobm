@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
 import { DataTable } from '@/components/shared/DataTable';
 import EventPayloadSlideOver from './EventPayloadSlideOver';
+import { Button } from '@/components/shared/Button';
 
 interface OutboxEvent {
   outboxId: string;
@@ -133,11 +134,11 @@ export default function EventQueueDashboard() {
               />
               {t('autoRefresh')}
             </label>
-            <button className="btn btn-secondary btn-sm" onClick={loadData}>
+            <Button variant="secondary" size="sm" onClick={loadData}>
               <span>🔄</span>
               {' '}
               {t('refresh')}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -249,18 +250,18 @@ export default function EventQueueDashboard() {
                       header: t('columns.actions'), align: 'right', width: 160,
                       render: (row) => (
                         <div className="flex gap-1 justify-end">
-                          <button className="btn btn-secondary btn-sm" style={{ fontSize: 10 }} onClick={() => handleViewEvents(row.eventType)}>
+                          <Button variant="secondary" size="sm" style={{ fontSize: 10 }} onClick={() => handleViewEvents(row.eventType)}>
                             {drawerType === row.eventType ? t('actions.hide') : t('actions.view')}
-                          </button>
+                          </Button>
                           {row.pending > 0 && (
-                            <button
-                              className="btn btn-sm"
+                            <Button
+                              size="sm"
                               style={{ fontSize: 10, background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)' }}
                               disabled={clearing === row.eventType}
                               onClick={() => handleClearEvents(row.eventType)}
                             >
                               {clearing === row.eventType ? '…' : `✕ ${t('actions.clear')}`}
-                            </button>
+                            </Button>
                           )}
                         </div>
                       )
@@ -289,13 +290,14 @@ export default function EventQueueDashboard() {
                             {
                               header: t('columns.payload'), width: 60,
                               render: (evt) => (
-                                <button
-                                  className="btn btn-secondary btn-sm"
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
                                   style={{ fontSize: 9, padding: '1px 4px' }}
                                   onClick={() => setSlideOverEvent(evt)}
                                 >
                                   📄
-                                </button>
+                                </Button>
                               )
                             }
                           ]}
@@ -341,9 +343,9 @@ export default function EventQueueDashboard() {
                     {
                       header: t('columns.payload'), width: 70,
                       render: (evt) => (
-                        <button className="btn btn-secondary btn-sm" style={{ fontSize: 10 }} onClick={() => setSlideOverEvent(evt as OutboxEvent)}>
+                        <Button variant="secondary" size="sm" style={{ fontSize: 10 }} onClick={() => setSlideOverEvent(evt as OutboxEvent)}>
                           📄
-                        </button>
+                        </Button>
                       )
                     }
                   ]}

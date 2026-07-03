@@ -18,6 +18,7 @@ import SupplierSelect from '@/components/shared/SupplierSelect';
 import { useTranslations } from 'next-intl';
 import { formatAmount } from '@/lib/currency';
 import { getErrorMessage, MATCH_STATUS } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 interface DraftLine {
   id: string;
@@ -186,11 +187,11 @@ function ReceivingFlow() {
             title={t('completed.title')}
             actions={
               <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-                <button className="btn btn-secondary" onClick={() => router.push('/receiving')}>
+                <Button variant="secondary" onClick={() => router.push('/receiving')}>
                   {t('completed.backToList')}
-                </button>
-                <button
-                  className="btn btn-primary w-full lg:w-auto"
+                </Button>
+                <Button
+                  variant="primary" className="w-full lg:w-auto"
                   onClick={() => {
                     setCompleted(false);
                     setDraftLines([]);
@@ -202,7 +203,7 @@ function ReceivingFlow() {
                   }}
                 >
                   {t('completed.newReception')}
-                </button>
+                </Button>
               </div>
             }
             showPrint={false}
@@ -314,13 +315,13 @@ function ReceivingFlow() {
           subtitle={t('flow.subtitle')}
           isSaving={saving}
           actions={
-            <button
-              className="btn btn-primary w-full lg:w-auto"
+            <Button
+              variant="primary" className="w-full lg:w-auto"
               onClick={commitReception}
               disabled={draftLines.length === 0 || saving || !vendorId || !locationId}
             >
               {t('flow.confirmReception')}
-            </button>
+            </Button>
           }
           showPrint={false}
         />
@@ -430,18 +431,18 @@ function ReceivingFlow() {
                   />
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  <button className="btn btn-primary flex-1 lg:flex-none" onClick={addToDraft}>
+                  <Button variant="primary" className="flex-1 lg:flex-none" onClick={addToDraft}>
                     {tCommon('add')}
-                  </button>
-                  <button
-                    className="btn btn-secondary flex-1 lg:flex-none"
+                  </Button>
+                  <Button
+                    variant="secondary" className="flex-1 lg:flex-none"
                     onClick={() => {
                       setSelectedProduct(null);
                       setQtyToReceive('');
                     }}
                   >
                     {tCommon('cancel')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -483,14 +484,14 @@ function ReceivingFlow() {
                           {line.quantityReceived}
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                          <button
-                            className="btn btn-secondary btn-sm"
+                          <Button
+                            variant="secondary" size="sm"
                             style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
                             onClick={() => removeDraftLine(line.id)}
                           >
                             {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                             <span>✕</span>
-                          </button>
+                          </Button>
                         </td>
                       </tr>
                     ))}
@@ -513,14 +514,14 @@ function ReceivingFlow() {
                     <div className="flex flex-col gap-1 border-t border-slate-100 pt-2">
                       <MobileCardField label={tCommon('columns.qty')} value={line.quantityReceived} />
                       <div className="flex justify-end pt-2 mt-1 border-t border-slate-50">
-                        <button
-                          className="btn btn-secondary btn-sm"
+                        <Button
+                          variant="secondary" size="sm"
                           style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
                           onClick={() => removeDraftLine(line.id)}
                         >
                           {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
                           <span>✕</span>
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>

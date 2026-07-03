@@ -7,6 +7,7 @@ import { getErrorMessage } from '@herobm/shared';
 import PhoneInput from 'react-phone-number-input';
 import type { Country } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
+import { Button } from '@/components/shared/Button';
 
 // PhoneInput will throw if value is truthy but doesn't start with +
 // This helper tries to salvage digits, or returns empty string to prevent crashes.
@@ -132,13 +133,14 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
       width="max-w-md"
       footer={
         <div className="flex items-center justify-end gap-3 w-full">
-          <button type="button" className="btn btn-ghost" onClick={onClose} disabled={saving}>
+          <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
             {tCommon('cancel')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             form="contact-form"
-            className="btn btn-primary bg-[var(--accent)] hover:opacity-90 border-none text-white"
+            variant="primary"
+            className="bg-[var(--accent)] hover:opacity-90 border-none text-white"
             disabled={saving}
           >
             {saving ? (
@@ -146,7 +148,7 @@ export const ContactSlideOver: React.FC<ContactSlideOverProps> = ({
             ) : (
               tCommon('save')
             )}
-          </button>
+          </Button>
         </div>
       }
     >

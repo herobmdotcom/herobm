@@ -9,10 +9,6 @@ export interface EntityHeaderProps {
   subtitle?: string | React.ReactNode;
   badges?: React.ReactNode;
   isSaving?: boolean;
-  isDirty?: boolean;
-  onSave?: () => void;
-  saveLabel?: string;
-
   actions?: React.ReactNode;
   /** Optional section quick-nav rendered below the subtitle */
   nav?: React.ReactNode;
@@ -25,9 +21,6 @@ export default function EntityHeader({
   subtitle,
   badges,
   isSaving,
-  isDirty,
-  onSave,
-  saveLabel,
   actions,
   nav,
   showPrint = true,
@@ -46,15 +39,6 @@ export default function EntityHeader({
             <div className="flex flex-wrap items-center gap-2 justify-end">
               {showPrint && <PrintButton />}
               {actions}
-              {isDirty && onSave && (
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={onSave}
-                  disabled={isSaving}
-                >
-                  {saveLabel || `💾 ${t('save')}`}
-                </button>
-              )}
             </div>
           </div>
         </div>

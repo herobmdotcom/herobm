@@ -15,6 +15,7 @@ import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import { useSettings } from '@/components/SettingsProvider';
 import { calculatePurchaseInvoiceableQuantities, PurchaseInvoice } from '@/lib/purchase-order-utils';
 import type { OrderDetail } from '@/app/purchase-orders/[id]/types';
+import { Button } from '@/components/shared/Button';
 
 interface LineItem {
   key: number;
@@ -185,20 +186,20 @@ export default function NewPurchaseInvoicePage() {
             title="Enter Supplier Invoice"
             actions={
               <>
-                <button
-                  className="btn btn-secondary btn-sm"
+                <Button
+                  variant="secondary" size="sm"
                   onClick={() => router.push(initialPurchaseOrderId ? `/purchase-orders/${initialPurchaseOrderId}` : '/supplier-invoices')}
                   disabled={submitting}
                 >
                   {tCommon('cancel')}
-                </button>
-                <button
-                  className="btn btn-primary btn-sm"
+                </Button>
+                <Button
+                  variant="primary" size="sm"
                   onClick={handleSubmit}
                   disabled={submitting}
                 >
                   {submitting ? tCommon('saving') : t('buttons.submitBill')}
-                </button>
+                </Button>
               </>
             }
             showPrint={false}
@@ -301,9 +302,9 @@ export default function NewPurchaseInvoicePage() {
                 {t('lineItems')}
               </h3>
               <div className="flex items-center gap-3">
-                <button className="btn btn-secondary btn-sm" onClick={addLine}>
+                <Button variant="secondary" size="sm" onClick={addLine}>
                   {t('supplierInvoice.addLine')}
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -385,9 +386,9 @@ export default function NewPurchaseInvoicePage() {
                     </td>
                     <td>
                       {lines.length > 1 && (
-                        <button className="btn btn-danger btn-sm" onClick={() => removeLine(idx)}>
+                        <Button variant="danger" size="sm" onClick={() => removeLine(idx)}>
                           <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-                        </button>
+                        </Button>
                       )}
                     </td>
                   </tr>

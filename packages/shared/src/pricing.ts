@@ -101,6 +101,8 @@ export function computeOrderTotals(
 // Return Credit Summary
 // ---------------------------------------------------------------------------
 
+import { RETURN_RESOLUTION } from './state-machines';
+
 export interface ReturnCreditLineInput {
   /** Quantity being returned */
   quantity: number;
@@ -112,6 +114,8 @@ export interface ReturnCreditLineInput {
   taxRate?: number;
   /** Restocking / return fee for this line. Defaults to 0. */
   returnFee?: number;
+  /** Resolution for this line (e.g. 'refund' or 'replacement') */
+  resolution?: string;
 }
 
 export interface ReturnCreditSummary {
@@ -145,6 +149,11 @@ export function computeReturnCreditSummary(
   let totalFeesRaw = 0;
 
   for (const line of lines) {
+    const resolution = line.resolution ?? RETURN_RESOLUTION.REFUND;
+    if (resolution !== RETURN_RESOLUTION.REFUND) {
+      continue;
+    }
+
     const pricing = computeLinePrice({
       quantity: line.quantity,
       pricePerUnit: line.pricePerUnit,

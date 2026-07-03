@@ -6,6 +6,7 @@ import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/shared/Button';
 
 export default function AutoMatchPreviewModal({
   isOpen,
@@ -109,25 +110,25 @@ export default function AutoMatchPreviewModal({
 
   const footerActions = (
     <div className="flex justify-end gap-3 w-full">
-      <button
+      <Button
         type="button"
+        variant="secondary" className="font-semibold px-4 py-2"
         onClick={onClose}
         disabled={confirming}
-        className="btn btn-secondary font-semibold px-4 py-2"
       >
         {tCommon('cancel')}
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
+        variant="primary" className="font-semibold px-4 py-2 flex items-center gap-2"
         onClick={handleConfirm}
         disabled={confirming || !previewData || (effectiveAutoMatchedCount === 0 && effectiveSmartMatchedCount === 0)}
-        className="btn btn-primary font-semibold px-4 py-2 flex items-center gap-2"
       >
         { }
         <span className="material-symbols-outlined text-[18px]">check_circle</span>
         {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
         {confirming ? tCommon('saving') : 'Confirm Auto Match'}
-      </button>
+      </Button>
     </div>
   );
 

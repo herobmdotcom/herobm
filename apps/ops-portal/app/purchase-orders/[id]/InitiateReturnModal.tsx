@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast';
 import SlideOver from '@/components/shared/SlideOver';
 import * as api from '@herobm/sdk';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 export default function InitiateReturnModal({
   isOpen,
@@ -144,12 +145,12 @@ export default function InitiateReturnModal({
         </div>
 
         <div className="flex justify-end gap-2">
-          <button className="btn btn-secondary" onClick={onClose} disabled={submitting}>
+          <Button variant="secondary" onClick={onClose} disabled={submitting}>
             {tCommon('cancel')}
-          </button>
-          <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting}>
+          </Button>
+          <Button variant="primary" onClick={handleSubmit} disabled={submitting}>
             {submitting ? tPurchase('returns.creating') : tPurchase('returns.createReturn')}
-          </button>
+          </Button>
         </div>
         </div>
       </div>

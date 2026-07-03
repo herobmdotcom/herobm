@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/shared/Button';
 import * as api from '@herobm/sdk';
 import { getErrorMessage } from '@herobm/shared';
 import { toast } from 'react-hot-toast';
@@ -90,16 +91,16 @@ export default function ImportCoaModal({ isOpen, onClose, onImportComplete }: Pr
         )}
 
         <div className="flex justify-end gap-2 mt-4">
-          <button className="btn btn-secondary" onClick={onClose} disabled={isImporting}>
+          <Button variant="secondary" onClick={onClose} disabled={isImporting}>
             {tCommon('cancel')}
-          </button>
-          <button
-            className="btn btn-primary"
+          </Button>
+          <Button
+            variant="primary"
             onClick={handleImport}
             disabled={!selectedFile || isImporting || isLoading}
           >
             {isImporting ? tSettings('importCoaModal.importing') : tSettings('importCoaModal.importAction')}
-          </button>
+          </Button>
         </div>
       </div>
     </SlideOver>

@@ -8,6 +8,7 @@ import { toast } from 'react-hot-toast';
 import * as api from '@herobm/sdk';
 import Link from 'next/link';
 import { DataTable, DataTableColumn } from '@/components/shared/DataTable';
+import { Button } from '@/components/shared/Button';
 import MobileLineItemCard from '@/components/shared/MobileLineItemCard';
 
 import type { OrderDetail, TaxCategory } from './types';
@@ -61,13 +62,13 @@ export default function InvoicesSection({
                     Supplier Invoices
                 </h3>
                 {!([PURCHASE_ORDER_STATE.DRAFT, PURCHASE_ORDER_STATE.CANCELLED, PURCHASE_ORDER_STATE.ARCHIVED, PURCHASE_ORDER_STATE.CLOSED_SHORT, PURCHASE_ORDER_STATE.INVOICED] as string[]).includes(order.stateCode ) && (
-                    <button
-                        className="btn btn-secondary btn-sm"
+                    <Button
+                        variant="secondary" size="sm"
                         disabled={totalReceived === 0 && order.stateCode !== PURCHASE_ORDER_STATE.ORDERED}
                         onClick={() => router.push(`/supplier-invoices/new?purchaseOrderId=${orderId}`)}
                     >
                         {tPurchase('buttons.enterSupplierBill')}
-                    </button>
+                    </Button>
                 )}
             </div>
 

@@ -8,6 +8,7 @@ import { usePersistedFilter } from '@/hooks/usePersistedFilter';
 import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
 import { useSettings } from '@/components/SettingsProvider';
+import { Button } from '@/components/shared/Button';
 
 export default function GlobalPurchaseInvoicesPage() {
     const { baseCurrency } = useSettings();
@@ -86,12 +87,12 @@ export default function GlobalPurchaseInvoicesPage() {
                 </select>
             }
             headerActions={
-                <button
-                    className="btn btn-primary whitespace-nowrap ml-2 lg:ml-0"
+                <Button
+                    variant="primary" className="whitespace-nowrap ml-2 lg:ml-0"
                     onClick={() => router.push('/supplier-invoices/new')}
                 >
                     {t('buttons.enterSupplierBill')}
-                </button>
+                </Button>
             }
         />
     );

@@ -15,6 +15,7 @@ import InlineAlert from '@/components/shared/InlineAlert';
 import { getErrorMessage } from '@herobm/shared';
 import AddressDisplay from '@/components/shared/AddressDisplay';
 import { usePersistedSetting } from '@/hooks/usePersistedSetting';
+import { Button } from '@/components/shared/Button';
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -498,14 +499,14 @@ export default function ShippingPage() {
 
                                 {/* Create Button */}
                                 <div className="flex justify-end">
-                                    <button
+                                    <Button
                                         type="button"
                                         onClick={handleCreateShipment}
                                         disabled={isSubmitting || shippableLines.length === 0}
-                                        className="btn btn-primary"
+                                        variant="primary"
                                     >
                                         {t('buttons.createShipment')}
-                                    </button>
+                                    </Button>
                                 </div>
 
                                 {/* Existing Shipments */}
@@ -535,9 +536,11 @@ export default function ShippingPage() {
                                                     </div>
                                                     <div className="flex items-center justify-between sm:justify-end gap-3 pl-8 sm:pl-0 w-full sm:w-auto">
                                                         <StateBadge state={shipment.stateCode as ValidState} />
-                                                        <button
+                                                        <Button
                                                             type="button"
-                                                            className="btn btn-secondary btn-sm flex items-center"
+                                                            variant="secondary"
+                                                            size="sm"
+                                                            className="flex items-center"
                                                             onClick={async () => {
                                                                 try {
                                                                     const { reportError } = await import('@/lib/api');
@@ -553,7 +556,7 @@ export default function ShippingPage() {
                                                             }}
                                                         >
                                                             <span className="font-medium">{t('docketPdf')}</span>
-                                                        </button>
+                                                        </Button>
                                                     </div>
                                                 </div>
                                             ))}
@@ -596,18 +599,18 @@ export default function ShippingPage() {
             masterPane={
                 <>
                     <div className="flex lg:border-b lg:border-[var(--border)] lg:bg-[var(--bg-secondary)] text-xs font-bold pt-1 lg:px-1 gap-1 border-b border-[var(--border)]">
-                        <button 
+                        <Button variant="ghost" 
                             className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'ready' ? 'border-[var(--success)] text-[var(--success)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
                             onClick={() => setActiveTab('ready')}
                         >
                             {t('tabs.ready')} <span className="ml-1 opacity-75 font-normal">({orders.filter(o => o.shippabilityStatus === 'ready').length})</span>
-                        </button>
-                        <button 
+                        </Button>
+                        <Button variant="ghost" 
                             className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'partial' ? 'border-[var(--warning)] text-[var(--warning)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
                             onClick={() => setActiveTab('partial')}
                         >
                             {t('tabs.partial')} <span className="ml-1 opacity-75 font-normal">({orders.filter(o => o.shippabilityStatus === 'partial').length})</span>
-                        </button>
+                        </Button>
                     </div>
                     
                     <div className="flex-1 overflow-y-auto p-2 pb-24 lg:pb-2 bg-[var(--bg-card)] lg:bg-transparent rounded-b-md lg:rounded-none">

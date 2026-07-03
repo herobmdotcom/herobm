@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 import { useTranslations } from 'next-intl';
 
 import { RESOURCES, ACTIONS, VALID_ACTIONS } from './constants';
@@ -287,7 +288,7 @@ export default function RolesPage() {
               <span className="material-symbols-outlined">security</span>
               {t('roles')}
             </h3>
-            <button className="btn btn-primary btn-sm" onClick={startCreate}>{t('createRole')}</button>
+            <Button variant="primary" size="sm" onClick={startCreate}>{t('createRole')}</Button>
           </div>
 
           {loading ? (
@@ -310,8 +311,8 @@ export default function RolesPage() {
                       />
                     </div>
                     <div className="flex gap-2">
-                      <button className="btn btn-secondary btn-sm" onClick={cancel}>{tCommon('cancel')}</button>
-                      <button className="btn btn-primary btn-sm" onClick={save}>{t('saveRole')}</button>
+                      <Button variant="secondary" size="sm" onClick={cancel}>{tCommon('cancel')}</Button>
+                      <Button variant="primary" size="sm" onClick={save}>{t('saveRole')}</Button>
                     </div>
                   </div>
                   
@@ -356,14 +357,14 @@ export default function RolesPage() {
                     <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                       {editingRole === roleItem.role ? (
                         <>
-                          <button className="btn btn-secondary btn-sm" onClick={cancel}>{tCommon('cancel')}</button>
-                          <button className="btn btn-primary btn-sm" onClick={save}>{tCommon('saveChanges')}</button>
+                          <Button variant="secondary" size="sm" onClick={cancel}>{tCommon('cancel')}</Button>
+                          <Button variant="primary" size="sm" onClick={save}>{tCommon('saveChanges')}</Button>
                         </>
                       ) : (
                         <>
-                          <button className="btn btn-secondary btn-sm" onClick={() => startEdit(roleItem)}>{tCommon('edit')}</button>
+                          <Button variant="secondary" size="sm" onClick={() => startEdit(roleItem)}>{tCommon('edit')}</Button>
                           {roleItem.role !== 'admin' && roleItem.role !== 'viewer' && roleItem.role !== 'webhook' && roleItem.role !== 'agent' && (
-                            <button className="btn btn-secondary btn-sm text-danger" onClick={() => deleteRole(roleItem.role)}>{tCommon('delete')}</button>
+                            <Button variant="secondary" size="sm" className="text-danger" onClick={() => deleteRole(roleItem.role)}>{tCommon('delete')}</Button>
                           )}
                         </>
                       )}

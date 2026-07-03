@@ -15,6 +15,7 @@ import { useSettings } from '@/components/SettingsProvider';
 import { PRODUCT_STATE } from '@herobm/shared';
 import { getErrorMessage } from '@herobm/shared';
 import { useGroup, useInheritance } from '@/hooks/useInheritance';
+import { Button } from '@/components/shared/Button';
 
 const formatMoney = (val: string | number | undefined | null) => {
   if (!val) return '0.00';
@@ -110,20 +111,22 @@ export default function NewProductPage() {
             title={t('products.buttons.addProduct')}
             actions={
               <>
-                <button
-                  className="btn btn-secondary btn-sm"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => router.push('/products')}
                   disabled={submitting}
                 >
                   {t('common.cancel')}
-                </button>
-                <button
-                  className="btn btn-primary btn-sm"
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
                   onClick={handleSubmit}
                   disabled={!isValid || submitting}
                 >
                   {submitting ? t('common.saving') : t('products.buttons.addProduct')}
-                </button>
+                </Button>
               </>
             }
             showPrint={false}

@@ -18,6 +18,7 @@ import DataGrid from "@/components/DataGrid";
 import { ValidState } from "@/types/states";
 import PageNav from "@/components/shared/PageNav";
 import GroupSelect from "@/components/shared/GroupSelect";
+import { Button } from '@/components/shared/Button';
 import CustomerSelect from "@/components/shared/CustomerSelect";
 import DiscountMatrixSlideOver from "@/components/shared/DiscountMatrixSlideOver";
 import { ContactSlideOver } from "./ContactSlideOver";
@@ -465,9 +466,6 @@ export default function AccountDetailPage({
             title={customer.name}
             subtitle={customer.customerNumber}
             isSaving={saving}
-            isDirty={isDirty}
-            onSave={handleSave}
-
             nav={<PageNav sections={visibleSections} />}
           />
         }
@@ -544,9 +542,11 @@ export default function AccountDetailPage({
               action={
                 <div className="flex items-center gap-3 w-full md:w-auto">
                   {dto.overrideCreditHoldUntil && new Date(dto.overrideCreditHoldUntil) > new Date() && (
-                    <button
+                    <Button
                       type="button"
-                      className="btn btn-secondary btn-sm shrink-0 text-red-600 hover:bg-red-50 hover:border-red-200 bg-white"
+                      variant="secondary"
+                      size="sm"
+                      className="shrink-0 text-red-600 hover:bg-red-50 hover:border-red-200 bg-white"
                       onClick={() => {
                         updateField("overrideCreditHoldUntil", null);
                         saveField("overrideCreditHoldUntil", null);
@@ -554,7 +554,7 @@ export default function AccountDetailPage({
                       disabled={!isEditable || saving}
                     >
                       {t("common.buttons.clear")}
-                    </button>
+                    </Button>
                   )}
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium whitespace-nowrap">
@@ -741,9 +741,9 @@ export default function AccountDetailPage({
                   <span className="material-symbols-outlined">group</span>
                   {t("customers.contacts")}
                 </h3>
-                <button className="btn btn-primary btn-sm" onClick={handleAddContactClick}>
+                <Button variant="primary" size="sm" onClick={handleAddContactClick}>
                   {t("customers.contactManagement.addContact")}
-                </button>
+                </Button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {(customer.contacts as unknown as api.ContactResponseDto[]) && (customer.contacts as unknown as api.ContactResponseDto[]).length > 0 ? [...(customer.contacts as unknown as api.ContactResponseDto[])].sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0) || (a.firstName || '').localeCompare(b.firstName || '')).map((contact) => (
@@ -755,7 +755,7 @@ export default function AccountDetailPage({
                     badges={
                       <>
                         <div className="flex items-center ml-auto">
-                          <button
+                          <Button variant="ghost"
                             type="button"
                             className="text-gray-400 hover:text-[var(--accent)] transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
                             onClick={() => handleEditContactClick(contact)}
@@ -764,8 +764,8 @@ export default function AccountDetailPage({
                             { }
                             { }
                             <span className="material-symbols-outlined text-[18px]">edit</span>
-                          </button>
-                          <button
+                          </Button>
+                          <Button variant="ghost"
                             type="button"
                             className="text-gray-400 hover:text-red-500 transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
                             onClick={() => handleDeleteContactClick(contact.id)}
@@ -774,7 +774,7 @@ export default function AccountDetailPage({
                             { }
                             { }
                             <span className="material-symbols-outlined text-[18px]">delete</span>
-                          </button>
+                          </Button>
                         </div>
                       </>
                     }
@@ -834,7 +834,7 @@ export default function AccountDetailPage({
                   {t("customers.deliveryAddresses")}
                 </h3>
                 { }
-                <button className="btn btn-primary btn-sm" onClick={handleAddAddressClick}>{t("portal.addAddress")}</button>
+                <Button variant="primary" size="sm" onClick={handleAddAddressClick}>{t("portal.addAddress")}</Button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {customer.deliveryAddresses && customer.deliveryAddresses.length > 0 ? customer.deliveryAddresses.map((addr: any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Unresolved nested DTO type */) => (
@@ -845,7 +845,7 @@ export default function AccountDetailPage({
                     headerRight={
                       <>
                         <div className="flex gap-1 ml-auto">
-                          <button
+                          <Button variant="ghost"
                             type="button"
                             className="text-gray-400 hover:text-blue-600 transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
                             onClick={() => handleEditAddressClick(addr)}
@@ -854,8 +854,8 @@ export default function AccountDetailPage({
                             { }
                             { }
                             <span className="material-symbols-outlined text-[18px]">edit</span>
-                          </button>
-                          <button
+                          </Button>
+                          <Button variant="ghost"
                             type="button"
                             className="text-gray-400 hover:text-red-500 transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
                             onClick={() => handleDeleteAddressClick(addr.id)}
@@ -864,7 +864,7 @@ export default function AccountDetailPage({
                             { }
                             { }
                             <span className="material-symbols-outlined text-[18px]">delete</span>
-                          </button>
+                          </Button>
                         </div>
                       </>
                     }
@@ -1190,8 +1190,8 @@ export default function AccountDetailPage({
                 {/* 4. Business Number */}
                 <div>
                   <label
-                    className="block text-xs font-medium mb-1.5"
-                    style={{ color: "var(--text-muted)" }}
+                    className="flex items-center text-xs font-medium mb-1.5"
+                    style={{ color: "var(--text-muted)", minHeight: 16 }}
                   >
                     {t("customers.fields.businessNumber")}
                     <FrontendEnrichmentDecorator
@@ -1466,8 +1466,9 @@ export default function AccountDetailPage({
                   >
                     {t("customers.fields.discountRules")}
                   </label>
-                  <button
-                    className="btn btn-secondary relative"
+                  <Button
+                    variant="secondary"
+                    className="relative"
                     onClick={() => setShowDiscounts(true)}
                     disabled={!isEditable || saving}
                   >
@@ -1477,7 +1478,7 @@ export default function AccountDetailPage({
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                       </span>
                     )}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -1752,22 +1753,24 @@ export default function AccountDetailPage({
             {/* Bottom Actions */}
             <div className="flex justify-end mt-4">
               {customer.stateCode === CUSTOMER_STATE.ARCHIVED ? (
-                <button
-                  className="btn btn-secondary btn-sm"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={unarchiveAccount}
                   disabled={saving}
                 >
                   {t("salesOrders.buttons.unarchive")}
-                </button>
+                </Button>
               ) : (
-                <button
-                  className="btn btn-secondary btn-sm"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   style={{ color: "#ef4444", borderColor: "#ef4444" }}
                   onClick={archiveAccount}
                   disabled={saving}
                 >
                   {t("salesOrders.buttons.archive")}
-                </button>
+                </Button>
               )}
             </div>
           </div>

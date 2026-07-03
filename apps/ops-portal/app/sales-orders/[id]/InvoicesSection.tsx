@@ -7,6 +7,7 @@ import * as api from '@herobm/sdk';
 import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
 import { DataTable, MobileCardField } from '@/components/shared/DataTable';
+import { Button } from '@/components/shared/Button';
 import { useAuth } from '@/components/AuthGate';
 
 import { SalesInvoice, TaxCategory, OrderDetail, OrderReturn } from './types';
@@ -101,8 +102,8 @@ export default function InvoicesSection({
                     Invoices
                 </h3>
                 {['shipped', 'picking'].includes(order.stateCode) && !showCreateInvoice && (
-                    <button
-                        className="btn btn-secondary btn-sm"
+                    <Button
+                        variant="secondary" size="sm"
                         disabled={(() => {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
                             const totalShipped = pickingSummary?.lines?.reduce((sum: number, pl: any) => sum + parseFloat(pl.quantityShipped || '0'), 0) || 0;
@@ -111,7 +112,7 @@ export default function InvoicesSection({
                         onClick={handleCreateClick}
                     >
                         {tSales('buttons.createInvoice')}
-                    </button>
+                    </Button>
                 )}
             </div>
 
@@ -247,12 +248,12 @@ export default function InvoicesSection({
                     />
                     
                     <div className="flex items-center gap-2 mt-4">
-                        <button className="btn btn-primary btn-sm" disabled={invoicing || newInvoiceLines.every(l => !l.quantityToInvoice || parseFloat(l.quantityToInvoice) <= 0)} onClick={handleGenerate}>
+                        <Button variant="primary" size="sm" disabled={invoicing || newInvoiceLines.every(l => !l.quantityToInvoice || parseFloat(l.quantityToInvoice) <= 0)} onClick={handleGenerate}>
                             {tSales('buttons.createInvoice')}
-                        </button>
-                        <button className="btn btn-secondary btn-sm" onClick={handleCancel}>
+                        </Button>
+                        <Button variant="secondary" size="sm" onClick={handleCancel}>
                             {tCommon('cancel')}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}
@@ -285,8 +286,9 @@ export default function InvoicesSection({
                                 }
                                 return <StateBadge state={inv.stateCode as ValidState} />;
                             })()}
-                            <button
-                                className="btn btn-secondary flex items-center justify-center p-2 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors"
+                            <Button
+                                variant="secondary"
+                                className="flex items-center justify-center p-2 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors"
                                 title={tSales('buttons.emailInvoice')}
                                 onClick={(e) => {
                                     e.preventDefault();
@@ -297,7 +299,7 @@ export default function InvoicesSection({
                             >
                                 <span className="material-symbols-outlined text-[20px]">mail</span>
                                 <span className="sr-only">Email Invoice</span>
-                            </button>
+                            </Button>
                         </div>
                     </Link>
                 ))}

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 // eslint-disable-next-line no-restricted-imports -- External API integration boundaries where exact types are unknown.
 import { getToken, apiFetch, reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
+import { Button } from '@/components/shared/Button';
 
 function getExcelColumnName(colIndex: string): string {
   const num = parseInt(colIndex, 10);
@@ -142,10 +143,10 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
       <div className="bg-[var(--bg-card)] rounded-lg w-full max-w-2xl border border-[var(--border)] overflow-hidden flex flex-col max-h-[90vh]">
         <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex justify-between items-center shrink-0">
           <h2 className="text-xl font-bold text-[var(--text-primary)]">{t('importBankStatement')}</h2>
-          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+          <Button variant="ghost" onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
             {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols. */}
             <span>✕</span>
-          </button>
+          </Button>
         </div>
         
         <div className="p-6 overflow-y-auto flex-1 text-[var(--text-primary)]">
@@ -163,9 +164,9 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
               <div>
                 <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">{t('csvFile')}</label>
                 <div className="flex items-center gap-4">
-                  <button type="button" className="btn btn-secondary" onClick={() => document.getElementById('csv-upload')?.click()}>
+                  <Button type="button" variant="secondary" onClick={() => document.getElementById('csv-upload')?.click()}>
                     {t('chooseFile')}
-                  </button>
+                  </Button>
                   <span className="text-sm text-[var(--text-muted)]">{file ? file.name : t('noFileSelected')}</span>
                   <input id="csv-upload" type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
                 </div>
@@ -241,27 +242,27 @@ export default function BankImportModal({ isOpen, onClose, onSuccess, fixedGlAcc
 
         <div className="px-6 py-4 border-t border-[var(--border)] bg-[var(--bg-secondary)] flex justify-end gap-3 shrink-0">
           {step < 3 && (
-            <button onClick={onClose} className="btn btn-secondary">
+            <Button variant="secondary" onClick={onClose}>
               {tCommon('cancel')}
-            </button>
+            </Button>
           )}
           
           {step === 1 && (
-            <button onClick={handleParse} disabled={!file || !glAccountId || loading} className="btn btn-primary">
+            <Button variant="primary" onClick={handleParse} disabled={!file || !glAccountId || loading}>
               {loading ? t('parsing') : t('next')}
-            </button>
+            </Button>
           )}
 
           {step === 2 && (
-            <button onClick={handleImport} disabled={loading} className="btn btn-primary">
+            <Button variant="primary" onClick={handleImport} disabled={loading}>
               {loading ? t('importing') : t('import')}
-            </button>
+            </Button>
           )}
 
           {step === 3 && (
-            <button onClick={() => { onClose(); onSuccess(); }} className="btn btn-primary">
+            <Button variant="primary" onClick={() => { onClose(); onSuccess(); }}>
               {t('done')}
-            </button>
+            </Button>
           )}
         </div>
       </div>

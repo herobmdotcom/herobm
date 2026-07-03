@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 import * as api from '@herobm/sdk';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 interface PaymentRunGeneratorSlideOverProps {
   open: boolean;
@@ -202,8 +203,8 @@ export function PaymentRunGeneratorSlideOver({
     
     return (
       <div className="mb-6">
-        <button 
-          className="flex items-center gap-2 w-full text-left font-bold text-gray-800 mb-2 hover:bg-gray-50 p-1 rounded"
+        <Button variant="ghost"
+          className="flex items-center gap-2 w-full justify-start font-bold text-gray-800 mb-2 hover:bg-gray-50 p-1 rounded"
           onClick={() => toggleSection(key)}
         >
           {isExpanded ? (
@@ -212,7 +213,7 @@ export function PaymentRunGeneratorSlideOver({
             <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           )}
           {title} <span className="text-gray-500 font-normal text-sm ml-2">({items.length})</span>
-        </button>
+        </Button>
         
         {isExpanded && (
           <div className="overflow-x-auto mt-2 mb-4">
@@ -331,12 +332,12 @@ export function PaymentRunGeneratorSlideOver({
                 onKeyDown={(e) => e.key === 'Enter' && handleApplyBudget()}
               />
             </div>
-            <button 
+            <Button variant="secondary"
               onClick={handleApplyBudget}
               className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded font-medium hover:bg-gray-50 transition-colors text-sm h-10"
             >
               {t('apply')}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -367,20 +368,20 @@ export function PaymentRunGeneratorSlideOver({
             {t('totalSelected')}: ${totalSelectedCash.toFixed(2)} ({selectedInvoiceIds.size} {t('invoices')})
           </div>
           <div className="flex gap-3">
-            <button
+            <Button variant="secondary"
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded"
               disabled={generating}
             >
               {t('cancel')}
-            </button>
-            <button
+            </Button>
+            <Button variant="primary"
               onClick={handleGenerate}
               disabled={generating || selectedInvoiceIds.size === 0}
               className="px-6 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {generating ? t('generating') : t('generateRun')}
-            </button>
+            </Button>
           </div>
         </div>
 

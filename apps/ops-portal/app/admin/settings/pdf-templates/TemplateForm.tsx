@@ -7,6 +7,7 @@ import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 import JsonBrowserModal from '@/components/shared/JsonBrowserModal';
 
 function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unknown>, isNew?: boolean }) {
@@ -218,17 +219,17 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
           </div>
 
           <div className="flex items-center gap-3 mt-4">
-            <button className="btn btn-primary px-8 py-3 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110" onClick={handleSave} disabled={saving || deleting}>
+            <Button variant="primary" className="px-8 py-3 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110" onClick={handleSave} disabled={saving || deleting}>
               {saving ? t('buttons.saving') : t('buttons.save')}
-            </button>
+            </Button>
             {!isNew && (
-              <button 
-                className="btn btn-secondary px-8 py-3 text-sm font-bold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-all" 
+              <Button 
+                variant="secondary" className="px-8 py-3 text-sm font-bold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-all" 
                 onClick={handleDelete} 
                 disabled={saving || deleting}
               >
                 {deleting ? t('buttons.deleting') : t('buttons.delete')}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -249,29 +250,29 @@ function TemplateForm({ initialData, isNew }: { initialData?: Record<string, unk
                   <option value="">{t('none')}</option>
                   {availableHooks.map((h, i) => <option key={`preview-${h.slug}-${i}`} value={h.slug}>{h.slug}</option>)}
                 </select>
-                <button
-                  className="btn btn-secondary whitespace-nowrap text-[#006b5c] border-[#006b5c]/20 hover:bg-[#006b5c]/5"
+                <Button
+                  variant="secondary" className="whitespace-nowrap text-[#006b5c] border-[#006b5c]/20 hover:bg-[#006b5c]/5"
                   onClick={() => setBrowserOpen(true)}
                   disabled={!previewVars.hookSlug}
                 >
                   { }
                   <span className="material-symbols-outlined text-[18px]">data_object</span>
                   View Data
-                </button>
+                </Button>
               </div>
             </div>
             <div className="flex-1 relative">
               <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">{t('labels.targetRecordId')}</label>
               <div className="flex gap-2">
                  <input className="input w-full bg-white font-mono text-sm" value={previewVars.entityId} onChange={e => setPreviewVars(p => ({ ...p, entityId: e.target.value }))} placeholder={t('placeholders.uuid')} />
-                 <button className="btn btn-secondary px-3 bg-white" title={t('buttons.getRandomId')} onClick={handleRandomizeId} disabled={!previewVars.hookSlug}>
+                 <Button variant="secondary" className="px-3 bg-white" title={t('buttons.getRandomId')} onClick={handleRandomizeId} disabled={!previewVars.hookSlug}>
                    🎲
-                 </button>
+                 </Button>
               </div>
             </div>
-            <button className="btn btn-secondary w-36 px-4 py-2 text-sm font-bold rounded-lg transition-all bg-white border border-[#041627] text-[#041627] hover:bg-gray-50" disabled={previewing || !previewVars.entityId} onClick={handlePreview}>
+            <Button variant="secondary" className="w-36 px-4 py-2 text-sm font-bold rounded-lg transition-all bg-white border border-[#041627] text-[#041627] hover:bg-gray-50" disabled={previewing || !previewVars.entityId} onClick={handlePreview}>
                {previewing ? t('buttons.compiling') : t('buttons.generatePdf')}
-            </button>
+            </Button>
           </div>
           
           <div className="flex-1 border border-[rgba(196,198,205,0.4)] rounded-lg bg-gray-200/50 overflow-hidden relative">

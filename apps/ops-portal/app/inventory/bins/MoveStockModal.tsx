@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import SlideOver from '@/components/shared/SlideOver';
+import { Button } from '@/components/shared/Button';
 
 interface LocationZoneBin {
   binId: string;
@@ -103,23 +104,25 @@ export default function MoveStockModal({ isOpen, onClose, onSubmit, selectedLine
 
   const footerActions = (
     <div className="flex justify-end gap-3 w-full">
-      <button
+      <Button
         type="button"
         onClick={onClose}
         disabled={submitting}
-        className="btn btn-secondary font-semibold"
+        variant="secondary"
+        className="font-semibold"
       >
         {tCommon('cancel')}
-      </button>
-      <button
+      </Button>
+      <Button
         type="submit"
         form="move-stock-form"
         disabled={submitting || loading || (bins.length > 0 && !targetBinId)}
-        className="btn btn-primary font-bold"
+        variant="primary"
+        className="font-bold"
       >
         {/* eslint-disable-next-line no-restricted-syntax -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., -- Material UI Icon). */}
         {submitting ? tCommon('saving') : 'Move'}
-      </button>
+      </Button>
     </div>
   );
 

@@ -8,6 +8,7 @@ import { licenseControllerApplyLicense, LicenseStatusDtoState, LicenseStatusDtoT
 import toast from 'react-hot-toast';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import EntityHeader from '@/components/shared/EntityHeader';
+import { Button } from '@/components/shared/Button';
 import PageNav from '@/components/shared/PageNav';
 import EntityBanner from '@/components/shared/EntityBanner';
 import { useRouter } from 'next/navigation';
@@ -72,8 +73,9 @@ export default function LicensePage() {
                     value={status?.systemId || 'N/A'}
                     disabled
                   />
-                  <button 
-                    className="btn btn-secondary h-10 px-3"
+                  <Button 
+                    variant="secondary"
+                    className="h-10 px-3"
                     onClick={() => {
                       if (status?.systemId) {
                         navigator.clipboard.writeText(status.systemId);
@@ -85,7 +87,7 @@ export default function LicensePage() {
         
                     { }
                     <span className="material-symbols-outlined text-sm">content_copy</span>
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -159,13 +161,14 @@ export default function LicensePage() {
           />
           
           <div className="flex justify-end">
-            <button
+            <Button
+              variant="primary"
               onClick={handleApply}
               disabled={!licenseKey.trim() || isSubmitting}
-              className="btn btn-primary disabled:opacity-50"
+              className="disabled:opacity-50"
             >
               {isSubmitting ? tPortal('applying') : tPortal('applyNewLicense')}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

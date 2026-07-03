@@ -6,6 +6,7 @@ import type { Product } from '@/components/shared/ProductSearchInput';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
 import { getErrorMessage } from '@herobm/shared';
+import { Button } from '@/components/shared/Button';
 
 interface KitComponentSlideOverProps {
   isOpen: boolean;
@@ -121,16 +122,16 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
       width="max-w-md"
       footer={
         <div className="flex items-center justify-end gap-3 w-full">
-          <button type="button" className="btn btn-ghost" onClick={onClose} disabled={saving}>
+          <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
             {tCommon('cancel')}
-          </button>
-          <button type="submit" form="kit-component-form" className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white" disabled={saving}>
+          </Button>
+          <Button type="submit" form="kit-component-form" variant="primary" className="bg-[#006b5c] hover:bg-[#005246] border-none text-white" disabled={saving}>
             {saving ? (
               <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving')}</>
             ) : (
               tCommon('save')
             )}
-          </button>
+          </Button>
         </div>
       }
     >
@@ -143,13 +144,15 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
               <div className="flex items-center justify-between p-3 border border-[var(--border)] rounded-md bg-[var(--bg-card)]">
                 <span className="text-sm font-medium">{dto.childProductName}</span>
                 {!componentId && !saving && (
-                  <button 
+                  <Button 
                     type="button"
-                    className="btn btn-sm btn-ghost text-red-500" 
+                    size="sm"
+                    variant="ghost"
+                    className="text-red-500" 
                     onClick={() => setDto({ ...dto, childProductId: '', childProductName: '' })}
                   >
                     {tCommon('delete')}
-                  </button>
+                  </Button>
                 )}
               </div>
             ) : (

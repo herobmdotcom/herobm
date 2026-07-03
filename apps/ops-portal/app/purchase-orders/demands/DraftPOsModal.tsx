@@ -6,6 +6,7 @@ import { reportError } from '@/lib/api';
 import * as api from '@herobm/sdk';
 import toast from 'react-hot-toast';
 import SupplierSelect from '@/components/shared/SupplierSelect';
+import { Button } from '@/components/shared/Button';
 
 interface DemandRow {
   id: string;
@@ -143,10 +144,10 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
             <h2 className="text-xl font-bold text-gray-900">{t('demands.reviewDraftPos')}</h2>
             <p className="text-sm text-gray-500 mt-1">{t('demands.reviewDraftPosDesc')}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <Button variant="ghost" onClick={onClose} className="text-gray-400 hover:text-gray-600">
             {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
             <span className="material-symbols-outlined">close</span>
-          </button>
+          </Button>
         </div>
 
         <div className="flex-1 overflow-auto p-6 space-y-6">
@@ -221,23 +222,23 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
         </div>
 
         <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
-          <button 
+          <Button 
             onClick={onClose}
-            className="btn btn-secondary"
+            variant="secondary"
           >
             {t('demands.cancel')}
-          </button>
-          <button 
+          </Button>
+          <Button 
             onClick={handleGenerate}
             disabled={loading}
-            className="btn btn-primary flex items-center gap-2"
+            variant="primary" className="flex items-center gap-2"
           >
             {loading && (
                
               <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
             )}
             {t('demands.createDraftPos')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
