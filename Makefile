@@ -72,7 +72,7 @@ else
   DEV_LOCAL_CMD = bash scripts/dev-local.sh
   PROD_LOCAL_CMD = bash scripts/prod-local.sh
   CLEAN_BUILD_CMD = bash scripts/clean-build.sh
-  COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
+  COMPOSE_CMD = $(shell if command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; elif [ -x ~/.local/bin/podman-compose ]; then echo "~/.local/bin/podman-compose"; else echo "podman compose"; fi) -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 0.0.0.0
 endif
 export BIND_IP
