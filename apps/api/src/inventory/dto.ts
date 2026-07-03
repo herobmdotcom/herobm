@@ -169,7 +169,9 @@ export class InventoryLocationResponseDto {
 
   @ApiProperty()
   name!: string;
+}
 
+export class TopographyLocationResponseDto extends InventoryLocationResponseDto {
   @ApiProperty({ required: false })
   zones?: Record<string, unknown>[];
 }

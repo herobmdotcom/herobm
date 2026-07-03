@@ -2211,6 +2211,67 @@
         ]
       }
     },
+    "/inventory/locations/{id}/bins": {
+      "get": {
+        "description": "Retrieve all bins for a specific location.",
+        "operationId": "InventoryController_findBinsByLocation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InventoryBinResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Location Bins",
+        "tags": [
+          "Warehouse"
+        ]
+      }
+    },
+    "/inventory/topography": {
+      "get": {
+        "description": "Retrieve full warehouse topography hierarchy.",
+        "operationId": "InventoryController_getTopography",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TopographyLocationResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Warehouse Topography",
+        "tags": [
+          "Warehouse"
+        ]
+      }
+    },
     "/inventory/ledger": {
       "get": {
         "description": "Retrieve inventory ledger entries.",
@@ -17761,6 +17822,25 @@
         ]
       },
       "InventoryLocationResponseDto": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId",
+          "code",
+          "name"
+        ]
+      },
+      "TopographyLocationResponseDto": {
         "type": "object",
         "properties": {
           "locationId": {

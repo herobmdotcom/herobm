@@ -628,6 +628,8 @@ export * from './toggleLineDto';
 export * from './toggleLineResponseDto';
 export * from './toggleQuarantineDto';
 export * from './toggleQuarantineDtoSourceType';
+export * from './topographyLocationResponseDto';
+export * from './topographyLocationResponseDtoZonesItem';
 export * from './tradingTermResponseDto';
 export * from './tradingTermsControllerFindAllParams';
 export * from './transferEventResponseDto';

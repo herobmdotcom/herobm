@@ -66,7 +66,7 @@ export default function TopographyView() {
 
   const fetchLocations = () => {
     setLoading(true);
-    api.inventoryControllerFindAllLocations({} )
+    api.inventoryControllerGetTopography()
       .then((response) => {
         const data = response.data || [];
         setLocations(data as unknown as Location[]);
@@ -75,7 +75,7 @@ export default function TopographyView() {
   };
 
   useEffect(() => {
-    api.inventoryControllerFindAllLocations({})
+    api.inventoryControllerGetTopography()
       .then((response) => {
         const resData = response.data || [];
         const data = resData as unknown as Location[];

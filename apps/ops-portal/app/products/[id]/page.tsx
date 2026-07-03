@@ -67,7 +67,7 @@ export default function ProductDetailPage() {
   const [newBinLink, setNewBinLink] = useState({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
   const [editingBinId, setEditingBinId] = useState<string | null>(null);
   const [editingBinData, setEditingBinData] = useState({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
-  const [availableBins, setAvailableBins] = useState<Record<string, unknown>[]>([]);
+  const [availableBins, setAvailableBins] = useState<api.InventoryBinResponseDto[]>([]);
   const [inventoryLevels, setInventoryLevels] = useState<api.InventoryResponseDto[]>([]);
   const [kitComponents, setKitComponents] = useState<KitComponent[]>([]);
 
@@ -106,7 +106,11 @@ export default function ProductDetailPage() {
 
   useDocumentTitle(product ? (product.name ? `${product.productNumber} - ${product.name}` : product.productNumber) : null);
 
+  console.log('[DEBUG] RENDER ProductDetailPage', { id, activeTab, refreshGrid });
+
   const fetchProduct = useCallback(async (showLoading = true) => {
+    console.log('[DEBUG] fetchProduct called', { showLoading, id });
+    if (!id) return;
     if (showLoading) setLoading(true);
     try {
       const dataRes = await api.productsControllerFindOne(id as string);
@@ -159,6 +163,7 @@ export default function ProductDetailPage() {
   }, [id]);
 
   useEffect(() => {
+    console.log('[DEBUG] INITIAL useEffect RUNNING', { id });
     fetchProduct();
     api.taxCategoriesControllerFindAll().then((res) => setTaxCategories(res.data)).catch((err) => reportError(err, 'ProductDetailPage'));
     api.productGroupsControllerFindAll().then((res: unknown) => setProductGroups((res as { data: unknown[] }).data as unknown as api.ProductGroupResponseDto[])).catch((err) => reportError(err, 'ProductDetailPage'));
@@ -179,19 +184,19 @@ export default function ProductDetailPage() {
   ]);
 
   useEffect(() => {
+    console.log('[DEBUG] SECOND useEffect RUNNING', { newBinLocationId: newBinLink.locationId });
     if (!newBinLink.locationId) {
       setAvailableBins([]);
       return;
     }
-    const loc = locations.find(l => l.locationId === newBinLink.locationId);
-    if (!loc) return;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
-    const bins = ((loc as any).zones || []).flatMap((z: any) => z.bins || []);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
-    bins.sort((a: any, b: any) => (a.binNumber || '').localeCompare(b.binNumber || ''));
-    
-    setAvailableBins(bins);
+    api.inventoryControllerFindBinsByLocation(newBinLink.locationId)
+      .then(res => {
+        const bins = res.data || [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon
+        bins.sort((a: any, b: any) => (a.binNumber || '').localeCompare(b.binNumber || ''));
+        setAvailableBins(bins);
+      })
+      .catch(err => reportError(err, 'ProductDetailPage'));
   }, [newBinLink.locationId, locations]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex UI state, DTO typing, or Material Icon

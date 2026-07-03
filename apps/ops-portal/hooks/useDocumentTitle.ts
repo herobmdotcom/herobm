@@ -11,32 +11,24 @@ export function useDocumentTitle(title?: string | null) {
     if (typeof window === 'undefined') return;
     
     const desiredTitle = title ? `${title} | herobm` : 'herobm';
-    document.title = desiredTitle;
     
-    // Hardened Client-Override: Next.js applies routing metadata asynchronously.
-    // We enforce our manual client-side hook title over the default layout metadata.
-    const observer = new MutationObserver(() => {
+    if (document.title !== desiredTitle) {
+      document.title = desiredTitle;
+    }
+    
+    // Instead of MutationObserver which can cause infinite layout loops with Next.js's Head manager,
+    // we use a simple interval to enforce the title for a few seconds during hydration.
+    let ticks = 0;
+    const interval = setInterval(() => {
       if (document.title !== desiredTitle) {
         document.title = desiredTitle;
       }
-    });
+      ticks++;
+      if (ticks > 10) {
+        clearInterval(interval);
+      }
+    }, 500);
 
-    const titleElement = document.querySelector('title');
-    if (titleElement) {
-      observer.observe(titleElement, { childList: true, characterData: true });
-    } else {
-      observer.observe(document.head, { childList: true, subtree: true });
-    }
-
-    // Fallback syncs
-    const timeoutIds = [
-      setTimeout(() => { document.title = desiredTitle; }, 50),
-      setTimeout(() => { document.title = desiredTitle; }, 500)
-    ];
-
-    return () => {
-      timeoutIds.forEach(clearTimeout);
-      observer.disconnect();
-    };
+    return () => clearInterval(interval);
   }, [title]);
 }

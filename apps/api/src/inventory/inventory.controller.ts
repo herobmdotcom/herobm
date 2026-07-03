@@ -41,6 +41,7 @@ import {
   InventoryEntryDetailsResponseDto,
   FindByProductIdsBulkDto,
   InventoryLocationResponseDto,
+  TopographyLocationResponseDto,
   PendingPutawayResponseDto,
   InventorySuccessResponseDto,
 } from './dto';
@@ -152,6 +153,28 @@ export class InventoryController {
   @ApiOkResponse({ type: [InventoryLocationResponseDto] })
   async findAllLocations(@Query('productId') productId?: string) {
     return this.inventoryService.findAllLocations(productId);
+  }
+
+  @Get('locations/:id/bins')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Location Bins',
+    description: 'Retrieve all bins for a specific location.',
+  })
+  @ApiOkResponse({ type: [InventoryBinResponseDto] })
+  async findBinsByLocation(@Param('id') id: string) {
+    return this.inventoryService.findBinsByLocation(id);
+  }
+
+  @Get('topography')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Warehouse Topography',
+    description: 'Retrieve full warehouse topography hierarchy.',
+  })
+  @ApiOkResponse({ type: [TopographyLocationResponseDto] })
+  async getTopography() {
+    return this.inventoryService.getTopography();
   }
 
   @Get('ledger')

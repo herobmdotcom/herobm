@@ -24,6 +24,14 @@ describe('InventoryController', () => {
       locationId: 'LOC001',
       code: 'SIN',
       name: 'Singapore',
+    },
+  ];
+
+  const mockTopographyResult = [
+    {
+      locationId: 'LOC001',
+      code: 'SIN',
+      name: 'Singapore',
       zones: [
         {
           zoneId: 'Z001',
@@ -39,6 +47,7 @@ describe('InventoryController', () => {
     findAll: jest.fn().mockResolvedValue(mockResult),
     findBins: jest.fn().mockResolvedValue(mockBinsResult),
     findAllLocations: jest.fn().mockResolvedValue(mockLocationsResult),
+    getTopography: jest.fn().mockResolvedValue(mockTopographyResult),
   };
 
   beforeEach(async () => {
@@ -117,8 +126,8 @@ describe('InventoryController', () => {
       expect(result).toEqual(mockLocationsResult);
     });
 
-    it('should return nested zones and bins', async () => {
-      const result = await controller.findAllLocations();
+    it('should return nested zones and bins for getTopography', async () => {
+      const result = await controller.getTopography();
       expect(result[0].zones).toHaveLength(1);
       expect(result[0].zones[0].bins).toHaveLength(1);
       expect(result[0].zones[0].bins[0].binNumber).toBe('SHIPPING');

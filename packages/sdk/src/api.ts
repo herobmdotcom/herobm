@@ -202,6 +202,7 @@ import type {
   ImportCsvDto,
   ImportCsvResponseDto,
   ImportSummaryDto,
+  InventoryBinResponseDto,
   InventoryControllerFindAll200,
   InventoryControllerFindAllLocationsParams,
   InventoryControllerFindAllParams,
@@ -358,6 +359,7 @@ import type {
   TestOdooConnectionDto,
   ToggleLineDto,
   ToggleLineResponseDto,
+  TopographyLocationResponseDto,
   TradingTermResponseDto,
   TradingTermsControllerFindAllParams,
   TransferEventResponseDto,
@@ -2350,6 +2352,80 @@ export const locationsControllerCreateLocation = async (createLocationDto: Creat
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createLocationDto,)
+  }
+);}
+
+
+
+/**
+ * Retrieve all bins for a specific location.
+ * @summary Get Location Bins
+ */
+export type inventoryControllerFindBinsByLocationResponse200 = {
+  data: InventoryBinResponseDto[]
+  status: 200
+}
+    
+export type inventoryControllerFindBinsByLocationResponseSuccess = (inventoryControllerFindBinsByLocationResponse200) & {
+  headers: Headers;
+};
+;
+
+export type inventoryControllerFindBinsByLocationResponse = (inventoryControllerFindBinsByLocationResponseSuccess)
+
+export const getInventoryControllerFindBinsByLocationUrl = (id: string,) => {
+
+
+  
+
+  return `/inventory/locations/${id}/bins`
+}
+
+export const inventoryControllerFindBinsByLocation = async (id: string, options?: RequestInit): Promise<inventoryControllerFindBinsByLocationResponse> => {
+  
+  return customFetch<inventoryControllerFindBinsByLocationResponse>(getInventoryControllerFindBinsByLocationUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Retrieve full warehouse topography hierarchy.
+ * @summary Get Warehouse Topography
+ */
+export type inventoryControllerGetTopographyResponse200 = {
+  data: TopographyLocationResponseDto[]
+  status: 200
+}
+    
+export type inventoryControllerGetTopographyResponseSuccess = (inventoryControllerGetTopographyResponse200) & {
+  headers: Headers;
+};
+;
+
+export type inventoryControllerGetTopographyResponse = (inventoryControllerGetTopographyResponseSuccess)
+
+export const getInventoryControllerGetTopographyUrl = () => {
+
+
+  
+
+  return `/inventory/topography`
+}
+
+export const inventoryControllerGetTopography = async ( options?: RequestInit): Promise<inventoryControllerGetTopographyResponse> => {
+  
+  return customFetch<inventoryControllerGetTopographyResponse>(getInventoryControllerGetTopographyUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 

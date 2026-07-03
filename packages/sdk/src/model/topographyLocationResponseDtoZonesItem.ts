@@ -6,8 +6,4 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface InventoryLocationResponseDto {
-  locationId: string;
-  code: string;
-  name: string;
-}
+export type TopographyLocationResponseDtoZonesItem = { [key: string]: unknown };

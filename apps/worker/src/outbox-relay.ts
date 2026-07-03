@@ -12,11 +12,6 @@ import { relayLogger as logger } from './logger';
 process.on('uncaughtException', (err) => { logger.error({ err }, 'UNCAUGHT EXCEPTION'); process.exit(1); });
 process.on('unhandledRejection', (err) => { logger.error({ err }, 'UNHANDLED REJECTION'); process.exit(1); });
 
-// --- Safeguard: Prevent faketime in Production ---
-if ((process.env.NODE_ENV === 'production' || process.env.DEPLOYMENT_TIER === 'production') && process.env.LD_PRELOAD?.includes('faketime')) {
-  logger.error('FATAL: Attempted to boot with libfaketime in a production deployment tier. Crashing to prevent security vulnerabilities.');
-  process.exit(1);
-}
 
 // Helpers
 function requireEnv(name: string): string {

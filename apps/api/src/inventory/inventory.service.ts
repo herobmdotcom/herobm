@@ -572,9 +572,8 @@ export class InventoryService {
   }
 
   /**
-   * Return the full warehouse topography hierarchy:
-   * Location → Zone[] → Bin[]
-   * Used by the Ops-Portal Topography read-only view.
+   * Return a flat list of locations.
+   * Optionally enriched with per-product availability if productId is provided.
    */
   async findAllLocations(productId?: string) {
     const locRows = await this.db
@@ -589,14 +588,6 @@ export class InventoryService {
       .from(locations)
       .orderBy(locations.code);
 
-    // -------------------------------------------------------------------
-    // Optionally enrich each location with per-product available quantity.
-    //
-    // When a productId is supplied, we pull rows from the inventory_levels
-    // view (indexed on product_id) and compute availability via the shared
-    // `calculateAvailableQuantity` helper to keep the formula in exactly
-    // one place per conventions §27.
-    // -------------------------------------------------------------------
     const availabilityByLocation = new Map<string, number>();
     if (productId) {
       const invRows = await this.db
@@ -618,6 +609,53 @@ export class InventoryService {
         availabilityByLocation.set(r.locationId, available);
       }
     }
+
+    return locRows.map((loc) => ({
+      ...loc,
+      ...(productId
+        ? { availableQty: availabilityByLocation.get(loc.locationId) ?? 0 }
+        : {}),
+    }));
+  }
+
+  /**
+   * Return all bins for a specific location.
+   */
+  async findBinsByLocation(locationId: string) {
+    return this.db
+      .select({
+        binId: bins.binId,
+        zoneId: bins.zoneId,
+        binNumber: bins.binNumber,
+        binType: bins.binType,
+        isConsignment: bins.isConsignment,
+        isBonded: bins.isBonded,
+        isUnavailable: bins.isUnavailable,
+        source: bins.source,
+      })
+      .from(bins)
+      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+      .where(eq(zones.locationId, locationId))
+      .orderBy(bins.binNumber);
+  }
+
+  /**
+   * Return the full warehouse topography hierarchy:
+   * Location → Zone[] → Bin[]
+   * Used by the Ops-Portal Topography read-only view.
+   */
+  async getTopography() {
+    const locRows = await this.db
+      .select({
+        locationId: locations.locationId,
+        code: locations.code,
+        name: locations.name,
+        city: locations.city,
+        country: locations.country,
+        source: locations.source,
+      })
+      .from(locations)
+      .orderBy(locations.code);
 
     const zoneRows = await this.db
       .select({
@@ -668,19 +706,10 @@ export class InventoryService {
       }
     }
 
-    const data = locRows.map((loc) => ({
+    return locRows.map((loc) => ({
       ...loc,
       zones: zonesByLocation.get(loc.locationId) ?? [],
-      // When productId is supplied, surface per-location availability so
-      // the UI can render "Warehouse X - N available". Property is absent
-      // (undefined) when productId is not supplied — callers that need
-      // availability should always pass productId.
-      ...(productId
-        ? { availableQty: availabilityByLocation.get(loc.locationId) ?? 0 }
-        : {}),
     }));
-
-    return data;
   }
 
   async getLedger(days: number) {
