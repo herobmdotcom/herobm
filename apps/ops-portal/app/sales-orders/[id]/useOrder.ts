@@ -146,7 +146,7 @@ export function useOrder(id: string) {
             setHeaderDirty(false);
 
             if (orderData?.customerId) {
-                api.accountsControllerFindOne(orderData.customerId)
+                api.customersControllerFindOne(orderData.customerId)
                     .then((res) => {
                         const customer = res.data;
                         setCustomerDeliveryAddresses((customer.deliveryAddresses as unknown as api.DeliveryAddressResponseDto[]) || []);

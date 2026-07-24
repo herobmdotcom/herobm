@@ -10,8 +10,12 @@ export interface UpdateContactDto {
   firstName?: string;
   lastName?: string;
   email?: string;
+  /** @pattern /^\+?[0-9\s\-()]+$/ */
   phone?: string;
+  /** @pattern /^\+?[0-9\s\-()]+$/ */
   mobile?: string;
   jobTitle?: string;
   isPrimary?: boolean;
+  primaryFor?: string[];
+  projectRole?: string;
 }

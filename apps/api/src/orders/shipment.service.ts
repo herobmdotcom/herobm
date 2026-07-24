@@ -29,6 +29,7 @@ import {
   transferOrderShipmentLines,
   transferOrderLines,
   locations,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { AppConfigService } from '../settings/app-config.service';
 import { getValuationStrategy } from '../inventory/valuation';
@@ -632,6 +633,7 @@ export class ShipmentService {
                 coreAccounts,
                 eq(salesOrders.customerId, coreAccounts.customerId),
               )
+              .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
               .leftJoin(
                 customerGroups,
                 eq(
@@ -891,7 +893,7 @@ export class ShipmentService {
         salesOrderId: salesOrderShipments.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         customerId: salesOrders.customerId,
-        customerName: coreAccounts.name,
+        customerName: actors.name,
         stateCode: salesOrderShipments.stateCode,
         notes: salesOrderShipments.notes,
         trackingNumber: salesOrderShipments.trackingNumber,
@@ -900,7 +902,7 @@ export class ShipmentService {
         modifiedOn: salesOrderShipments.modifiedOn,
         deliveryCompanyName: sql<
           string | null
-        >`COALESCE(${salesOrders.deliveryCompanyName}, ${coreAccounts.name})`,
+        >`COALESCE(${salesOrders.deliveryCompanyName}, ${actors.name})`,
         deliveryName: salesOrders.deliveryName,
         deliveryPhone: salesOrders.deliveryPhone,
         deliveryAddressLine1: salesOrders.deliveryAddressLine1,
@@ -920,6 +922,7 @@ export class ShipmentService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
+      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
       .where(eq(salesOrderShipments.shipmentId, shipmentId))
       .limit(1);
 
@@ -1142,7 +1145,7 @@ export class ShipmentService {
         salesOrderId: salesOrderShipments.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         customerId: salesOrders.customerId,
-        customerName: coreAccounts.name,
+        customerName: actors.name,
         stateCode: salesOrderShipments.stateCode,
         createdOn: salesOrderShipments.createdOn,
         notes: salesOrderShipments.notes,
@@ -1157,6 +1160,7 @@ export class ShipmentService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
+      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
       .where(and(...conditions))
       .orderBy(desc(salesOrderShipments.createdOn))
       .limit(limit > 0 ? limit : 100);
@@ -1397,6 +1401,7 @@ export class ShipmentService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
+      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
       .leftJoin(
         customerGroups,
         eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),

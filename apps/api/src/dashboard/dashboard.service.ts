@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { sql, ilike, or } from 'drizzle-orm';
+import { sql, ilike, or, eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -10,6 +10,7 @@ import {
   purchaseOrders as corePurchaseOrders,
   binContents as coreBinContents,
   salesOrderLineItems as coreSalesOrderLines,
+  actors as coreActors,
 } from '../drizzle/herobm-core-schema';
 import { SALES_ORDER_STATE, PURCHASE_ORDER_STATE } from '@herobm/shared';
 import { EventType } from '../common/event-types';
@@ -82,15 +83,15 @@ export class DashboardService {
         this.db
           .select({
             id: coreAccounts.customerId,
-            label: coreAccounts.name,
+            label: sql<string>`COALESCE(${coreActors.name}, '')`,
             subtitle: coreAccounts.customerNumber,
           })
           .from(coreAccounts)
+          .leftJoin(coreActors, eq(coreAccounts.actorId, coreActors.actorId))
           .where(
             or(
-              ilike(coreAccounts.name, term),
+              ilike(coreActors.name, term),
               ilike(coreAccounts.customerNumber, term),
-              ilike(coreAccounts.emailAddress1, term),
             ),
           )
           .limit(5),
@@ -116,13 +117,14 @@ export class DashboardService {
         this.db
           .select({
             id: coreSuppliers.vendorId,
-            label: coreSuppliers.name,
+            label: sql<string>`COALESCE(${coreActors.name}, '')`,
             subtitle: coreSuppliers.vendorNumber,
           })
           .from(coreSuppliers)
+          .leftJoin(coreActors, eq(coreSuppliers.actorId, coreActors.actorId))
           .where(
             or(
-              ilike(coreSuppliers.name, term),
+              ilike(coreActors.name, term),
               ilike(coreSuppliers.vendorNumber, term),
             ),
           )

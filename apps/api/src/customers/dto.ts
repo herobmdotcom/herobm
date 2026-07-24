@@ -12,7 +12,11 @@ import {
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 
-export class BaseAccountDto {
+export class BaseCustomerDto {
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  actorId?: string;
   @IsString()
   @IsNotEmpty()
   customerNumber!: string;
@@ -57,10 +61,6 @@ export class BaseAccountDto {
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
   customerGroupId?: string;
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
-  @IsUUID()
-  parentCustomerId?: string;
   @IsOptional()
   @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID()
@@ -116,11 +116,11 @@ export class BaseAccountDto {
   earlyPaymentDiscountDays?: number;
 }
 
-export class CreateAccountDto extends BaseAccountDto {}
+export class CreateCustomerDto extends BaseCustomerDto {}
 
-export class UpdateAccountDto extends PartialType(BaseAccountDto) {}
+export class UpdateCustomerDto extends PartialType(BaseCustomerDto) {}
 
-export class BaseAccountGroupDto {
+export class BaseCustomerGroupDto {
   @IsString()
   @IsNotEmpty()
   groupCode!: string;
@@ -171,12 +171,13 @@ export class BaseAccountGroupDto {
   earlyPaymentDiscountDays?: number;
 }
 
-export class CreateAccountGroupDto extends BaseAccountGroupDto {}
+export class CreateCustomerGroupDto extends BaseCustomerGroupDto {}
 
-export class UpdateAccountGroupDto extends PartialType(BaseAccountGroupDto) {}
+export class UpdateCustomerGroupDto extends PartialType(BaseCustomerGroupDto) {}
 
-export class AccountResponseDto {
+export class CustomerResponseDto {
   customerId!: string;
+  actorId!: string;
   customerNumber!: string;
   name!: string;
   billingAddressLine1?: string;
@@ -189,7 +190,6 @@ export class AccountResponseDto {
   fax?: string;
   emailAddress1?: string;
   customerGroupId?: string;
-  parentCustomerId?: string;
   taxPositionId?: string;
   currencyCode!: string;
   customerDiscount?: string;
@@ -213,6 +213,9 @@ export class AccountResponseDto {
   createdBy?: string;
   createdOn?: Date;
   modifiedOn?: Date;
+  parentCustomerId?: string | null;
+  parentCustomerName?: string | null;
+  childCustomers?: CustomerResponseDto[];
 
   events?: unknown[];
   contacts?: unknown[];
@@ -228,7 +231,7 @@ export class AccountResponseDto {
   effectiveCreditLimit?: string;
 }
 
-export class AccountGroupResponseDto {
+export class CustomerGroupResponseDto {
   customerGroupId!: string;
   groupCode!: string;
   name!: string;
@@ -256,7 +259,7 @@ export class EmptyBodyDto {}
 export class AgedBalanceResponseDto {
   customerId!: string;
   customerName!: string;
-  accountNumber!: string;
+  customerNumber!: string;
   current!: number;
   days1To30!: number;
   days31To60!: number;

@@ -11,7 +11,7 @@ export interface SupplierGroupResponseDto {
   earlyPaymentDiscount?: string | null;
   /** @nullable */
   earlyPaymentDiscountDays?: number | null;
-  id: string;
+  supplierGroupId: string;
   groupCode: string;
   name: string;
   /** @nullable */

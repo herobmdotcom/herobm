@@ -7,6 +7,7 @@ import { getErrorMessage } from '@herobm/shared';
 import { reportError } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import SlideOver from '@/components/shared/SlideOver';
+import { Button } from './Button';
 
 interface Macro {
   macroId: string;
@@ -20,7 +21,7 @@ interface Contact {
   firstName?: string;
   lastName?: string;
   email?: string;
-  isPrimary?: boolean;
+  primaryFor?: string[];
 }
 
 interface EmailDocumentDialogProps {
@@ -116,7 +117,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
     if (!customerId) return;
     setLoading(true);
     try {
-      const res = await api.accountsControllerFindOne(customerId);
+      const res = await api.customersControllerFindOne(customerId);
       const customer = res.data as { emailAddress1?: string; contacts?: Contact[] };
       
       const trimmedCustomerEmail = (customer.emailAddress1 || '').trim();
@@ -129,7 +130,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
       setContacts(custContacts);
       
       // Determine default TO address
-      const primaryContact = custContacts.find(c => c.isPrimary);
+      const primaryContact = custContacts.find(c => c.primaryFor?.includes('purchasing'));
       const firstContact = custContacts[0];
       
       if (primaryContact && primaryContact.email) {
@@ -196,17 +197,18 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
       title={title}
       footer={
         <div className="flex justify-end gap-2">
-          <button
-            className="btn btn-secondary"
+          <Button
+            variant="secondary"
             onClick={onClose}
             disabled={sending}
           >
             {tCommon('cancel')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             form="email-form"
-            className="btn btn-primary flex items-center gap-2"
+            className="flex items-center gap-2"
+            variant="primary"
             disabled={sending}
           >
             {sending && (
@@ -215,7 +217,7 @@ export default function EmailDocumentDialog({ isOpen, orderId, orderNumber, cust
               </>
             )}
             Send Email
-          </button>
+          </Button>
         </div>
       }
     >

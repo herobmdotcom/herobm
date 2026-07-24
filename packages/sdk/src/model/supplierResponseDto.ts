@@ -11,7 +11,8 @@ export interface SupplierResponseDto {
   earlyPaymentDiscount?: string | null;
   /** @nullable */
   earlyPaymentDiscountDays?: number | null;
-  id: string;
+  supplierId: string;
+  actorId: string;
   vendorNumber: string;
   name: string;
   /** @nullable */

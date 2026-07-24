@@ -12,6 +12,7 @@ import type { AccountResponseDtoCreditAssessment } from './accountResponseDtoCre
 
 export interface AccountResponseDto {
   customerId: string;
+  actorId: string;
   customerNumber: string;
   name: string;
   billingAddressLine1?: string;
@@ -24,7 +25,6 @@ export interface AccountResponseDto {
   fax?: string;
   emailAddress1?: string;
   customerGroupId?: string;
-  parentCustomerId?: string;
   taxPositionId?: string;
   currencyCode: string;
   customerDiscount?: string;
@@ -48,6 +48,11 @@ export interface AccountResponseDto {
   createdBy?: string;
   createdOn?: string;
   modifiedOn?: string;
+  /** @nullable */
+  parentCustomerId?: string | null;
+  /** @nullable */
+  parentCustomerName?: string | null;
+  childAccounts?: AccountResponseDto[];
   events?: AccountResponseDtoEventsItem[];
   contacts?: AccountResponseDtoContactsItem[];
   deliveryAddresses?: AccountResponseDtoDeliveryAddressesItem[];

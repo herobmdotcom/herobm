@@ -7,7 +7,7 @@
  */
 
 export interface UserResponseDto {
-  id: string;
+  userId: string;
   username: string;
   role: string;
   isActive: boolean;

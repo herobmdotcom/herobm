@@ -86,7 +86,7 @@ export default function PageNav({ sections }: PageNavProps) {
 
             return (
                 <div 
-                    className="flex items-center gap-1 lg:gap-0.5 px-2 lg:px-1.5 rounded-md overflow-x-auto transition-all min-h-[32px] lg:min-h-[24px] w-full lg:w-max lg:max-w-none lg:absolute lg:top-[100%] lg:right-0 lg:mt-1 lg:z-50"
+                    className="flex items-center gap-1 lg:gap-0.5 px-2 lg:px-1.5 rounded-md overflow-x-auto transition-all min-h-[32px] lg:min-h-[24px] w-full lg:w-max lg:max-w-none lg:absolute lg:top-[100%] lg:left-0 lg:mt-1 lg:z-50"
                     style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
                 >
                     {visibleSubtargets.map((sub) => (

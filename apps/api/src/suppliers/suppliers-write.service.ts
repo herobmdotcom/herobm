@@ -12,6 +12,7 @@ import {
   suppliers as coreSuppliers,
   masterDataEvents,
   supplierExpiries,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -44,10 +45,64 @@ export class SuppliersWriteService {
    */
   async create(dto: CreateSupplierDto, actor: string) {
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      const {
+        name,
+        businessNumber,
+        isTaxRegistered,
+        address1Line1,
+        address1Line2,
+        address1City,
+        address1StateOrProvince,
+        address1PostalCode,
+        address1Country,
+        telephone1,
+        fax,
+        emailAddress1,
+        vendorNumber,
+        actorId,
+        ...supplierFields
+      } = dto as unknown as Record<string, unknown>;
+
+      let actorRecord;
+      if (actorId) {
+        const existingActors = await tx
+          .select()
+          .from(actors)
+          .where(eq(actors.actorId, actorId as string))
+          .limit(1);
+
+        if (existingActors.length === 0) {
+          throw new BadRequestException(
+            `Actor with id '${actorId as string}' does not exist`,
+          );
+        }
+        actorRecord = existingActors[0];
+      } else {
+        [actorRecord] = await tx
+          .insert(actors)
+          .values({
+            name: name as string,
+            businessNumber: businessNumber as string,
+            isTaxRegistered: isTaxRegistered as boolean,
+            headquartersAddressLine1: address1Line1 as string,
+            headquartersAddressLine2: address1Line2 as string,
+            headquartersCity: address1City as string,
+            headquartersStateOrProvince: address1StateOrProvince as string,
+            headquartersPostalCode: address1PostalCode as string,
+            headquartersCountry: address1Country as string,
+            telephone: telephone1 as string,
+            fax: fax as string,
+            email: emailAddress1 as string,
+          })
+          .returning();
+      }
+
       const [supplier] = await tx
         .insert(coreSuppliers)
         .values({
-          ...dto,
+          ...supplierFields,
+          vendorNumber: vendorNumber as string,
+          actorId: actorRecord.actorId,
           currencyCode: dto.currencyCode || this.appConfig.homeCurrency(),
           createdBy: actor,
         })
@@ -57,12 +112,26 @@ export class SuppliersWriteService {
         entityType: EntityType.SUPPLIER,
         entityId: supplier.vendorId,
         eventType: EventType.CREATED,
-        entityDisplayName: supplier.name,
+        entityDisplayName: dto.name,
         payload: dto,
         actor,
       });
 
-      return supplier;
+      return {
+        ...supplier,
+        name: actorRecord.name,
+        businessNumber: actorRecord.businessNumber,
+        isTaxRegistered: actorRecord.isTaxRegistered,
+        address1Line1: dto.address1Line1,
+        address1Line2: dto.address1Line2,
+        address1City: dto.address1City,
+        address1StateOrProvince: dto.address1StateOrProvince,
+        address1PostalCode: dto.address1PostalCode,
+        address1Country: dto.address1Country,
+        telephone1: actorRecord.telephone,
+        fax: actorRecord.fax,
+        emailAddress1: actorRecord.email,
+      };
     });
 
     this.logger.log(
@@ -75,40 +144,115 @@ export class SuppliersWriteService {
    * Update a supplier.
    */
   async update(id: string, dto: UpdateSupplierDto, actor: string) {
-    const existing = await this.db
-      .select()
+    const existingRows = await this.db
+      .select({
+        supplier: coreSuppliers,
+        actorName: actors.name,
+      })
       .from(coreSuppliers)
+      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
       .where(eq(coreSuppliers.vendorId, id))
       .limit(1);
 
-    if (existing.length === 0) {
+    if (existingRows.length === 0) {
       throw new NotFoundException(`Supplier '${id}' not found`);
     }
+    const existing = existingRows[0].supplier;
+    const existingActorName = existingRows[0].actorName;
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      const audit = calculateAuditTrail(dto, existing[0], AuditMode.DIFF);
+      const coreChanges = { ...dto } as Record<string, unknown>;
+      const actorKeys = [
+        'name',
+        'businessNumber',
+        'isTaxRegistered',
+        'address1Line1',
+        'address1Line2',
+        'address1City',
+        'address1StateOrProvince',
+        'address1PostalCode',
+        'address1Country',
+      ];
+      const actorUpdate: Record<string, unknown> = {};
 
-      const [updated] = await tx
-        .update(coreSuppliers)
-        .set({
-          ...audit.changes,
-          modifiedOn: new Date(),
-        })
-        .where(eq(coreSuppliers.vendorId, id))
-        .returning();
+      for (const k of actorKeys) {
+        if (k in coreChanges) {
+          if (k === 'name') actorUpdate.name = coreChanges.name;
+          if (k === 'businessNumber')
+            actorUpdate.businessNumber = coreChanges.businessNumber;
+          if (k === 'isTaxRegistered')
+            actorUpdate.isTaxRegistered = coreChanges.isTaxRegistered;
+          delete coreChanges[k];
+        }
+      }
 
+      const addressParts = [
+        'address1Line1',
+        'address1Line2',
+        'address1City',
+        'address1StateOrProvince',
+        'address1PostalCode',
+        'address1Country',
+      ];
+
+      const hasAddressChange = addressParts.some((k) => k in coreChanges);
+      if (hasAddressChange) {
+        actorUpdate.headquartersAddressLine1 =
+          coreChanges.address1Line1 as string;
+        actorUpdate.headquartersAddressLine2 =
+          coreChanges.address1Line2 as string;
+        actorUpdate.headquartersCity = coreChanges.address1City as string;
+        actorUpdate.headquartersStateOrProvince =
+          coreChanges.address1StateOrProvince as string;
+        actorUpdate.headquartersPostalCode =
+          coreChanges.address1PostalCode as string;
+        actorUpdate.headquartersCountry = coreChanges.address1Country as string;
+
+        for (const k of addressParts) {
+          delete coreChanges[k];
+        }
+      }
+
+      const audit = calculateAuditTrail(coreChanges, existing, AuditMode.DIFF);
+
+      if (Object.keys(actorUpdate).length > 0 && existing.actorId) {
+        await tx
+          .update(actors)
+          .set({ ...actorUpdate, modifiedOn: new Date() })
+          .where(eq(actors.actorId, existing.actorId));
+      }
+
+      let updated = existing;
       if (audit.hasChanges) {
-        if (
-          audit.changes.stateCode !== undefined &&
-          Object.keys(audit.changes).length === 1
-        ) {
+        const [res] = await tx
+          .update(coreSuppliers)
+          .set({
+            ...audit.changes,
+            modifiedOn: new Date(),
+          })
+          .where(eq(coreSuppliers.vendorId, id))
+          .returning();
+        updated = res;
+      }
+
+      if (audit.hasChanges || Object.keys(actorUpdate).length > 0) {
+        const changedKeys = Object.keys(audit.changes);
+        const isStatusOnly =
+          changedKeys.length === 1 &&
+          changedKeys[0] === 'stateCode' &&
+          Object.keys(actorUpdate).length === 0;
+
+        const displayName =
+          (actorUpdate.name as string) || existingActorName || 'Unknown';
+
+        if (isStatusOnly) {
           await emitEvent(tx, {
             entityType: EntityType.SUPPLIER,
             entityId: id,
             eventType: EventType.STATUS_CHANGED,
-            entityDisplayName: updated.name,
+            entityDisplayName: displayName,
             payload: {
-              from: existing[0].stateCode,
+              from: existing.stateCode,
               to: audit.changes.stateCode,
             },
             actor,
@@ -118,9 +262,9 @@ export class SuppliersWriteService {
             entityType: EntityType.SUPPLIER,
             entityId: id,
             eventType: EventType.UPDATED,
-            entityDisplayName: updated.name,
+            entityDisplayName: displayName,
             payload: {
-              changes: audit.changes,
+              changes: { ...audit.changes, ...actorUpdate },
               previousValues: audit.previousValues,
             },
             actor,
@@ -128,7 +272,10 @@ export class SuppliersWriteService {
         }
       }
 
-      return updated;
+      return {
+        ...updated,
+        name: actorUpdate.name ?? existingActorName,
+      };
     });
 
     this.logger.log(`Supplier updated: ${id} by ${actor}`);
@@ -191,15 +338,22 @@ export class SuppliersWriteService {
   ) {
     const db = tx || this.db;
 
-    const [existing] = await db
-      .select()
+    const existingRows = await db
+      .select({
+        supplier: coreSuppliers,
+        actorName: actors.name,
+      })
       .from(coreSuppliers)
+      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
       .where(eq(coreSuppliers.vendorId, vendorId))
       .limit(1);
 
-    if (!existing) {
+    if (existingRows.length === 0) {
       throw new NotFoundException(`Supplier '${vendorId}' not found`);
     }
+
+    const existing = existingRows[0].supplier;
+    const actorName = existingRows[0].actorName;
 
     const currentState = existing.stateCode;
 
@@ -232,7 +386,7 @@ export class SuppliersWriteService {
         entityType: EntityType.SUPPLIER,
         entityId: vendorId,
         eventType: EventType.ARCHIVED,
-        entityDisplayName: updated.name,
+        entityDisplayName: actorName || 'Unknown',
         payload: eventPayload,
         actor,
       });
@@ -241,7 +395,7 @@ export class SuppliersWriteService {
         entityType: EntityType.SUPPLIER,
         entityId: vendorId,
         eventType: EventType.UNARCHIVED,
-        entityDisplayName: updated.name,
+        entityDisplayName: actorName || 'Unknown',
         payload: eventPayload,
         actor,
       });
@@ -250,7 +404,7 @@ export class SuppliersWriteService {
         entityType: EntityType.SUPPLIER,
         entityId: vendorId,
         eventType: EventType.STATUS_CHANGED,
-        entityDisplayName: updated.name,
+        entityDisplayName: actorName || 'Unknown',
         payload: eventPayload,
         actor,
       });
@@ -267,8 +421,9 @@ export class SuppliersWriteService {
     actor: string,
   ) {
     const existing = await this.db
-      .select({ id: coreSuppliers.vendorId, name: coreSuppliers.name })
+      .select({ id: coreSuppliers.vendorId, name: actors.name })
       .from(coreSuppliers)
+      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
       .where(eq(coreSuppliers.vendorId, vendorId));
     if (existing.length === 0)
       throw new NotFoundException('Supplier not found');
@@ -288,7 +443,7 @@ export class SuppliersWriteService {
       entityType: EntityType.SUPPLIER,
       entityId: vendorId,
       eventType: EventType.ADDED_EXPIRY,
-      entityDisplayName: existing[0].name,
+      entityDisplayName: existing[0].name || 'Unknown',
       payload: { expiryType: dto.expiryType },
       actor,
     });
@@ -305,13 +460,14 @@ export class SuppliersWriteService {
       .select({
         expiryId: supplierExpiries.expiryId,
         vendorId: supplierExpiries.vendorId,
-        supplierName: coreSuppliers.name,
+        supplierName: actors.name,
       })
       .from(supplierExpiries)
       .innerJoin(
         coreSuppliers,
         eq(coreSuppliers.vendorId, supplierExpiries.vendorId),
       )
+      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
       .where(
         sql`${supplierExpiries.expiryId} = ${expiryId} AND ${supplierExpiries.vendorId} = ${vendorId}`,
       );
@@ -339,7 +495,7 @@ export class SuppliersWriteService {
       entityType: EntityType.SUPPLIER,
       entityId: vendorId,
       eventType: EventType.UPDATED_EXPIRY,
-      entityDisplayName: existing[0].supplierName,
+      entityDisplayName: existing[0].supplierName || 'Unknown',
       payload: { expiryId },
       actor,
     });
@@ -350,13 +506,14 @@ export class SuppliersWriteService {
     const existing = await this.db
       .select({
         expiryType: supplierExpiries.expiryType,
-        supplierName: coreSuppliers.name,
+        supplierName: actors.name,
       })
       .from(supplierExpiries)
       .innerJoin(
         coreSuppliers,
         eq(coreSuppliers.vendorId, supplierExpiries.vendorId),
       )
+      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
       .where(
         sql`${supplierExpiries.expiryId} = ${expiryId} AND ${supplierExpiries.vendorId} = ${vendorId}`,
       );
@@ -373,7 +530,7 @@ export class SuppliersWriteService {
       entityType: EntityType.SUPPLIER,
       entityId: vendorId,
       eventType: EventType.DELETED_EXPIRY,
-      entityDisplayName: existing[0].supplierName,
+      entityDisplayName: existing[0].supplierName || 'Unknown',
       payload: { type },
       actor,
     });

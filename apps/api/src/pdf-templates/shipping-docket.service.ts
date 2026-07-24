@@ -9,6 +9,7 @@ import {
   salesOrderLineItems,
   products as coreProducts,
   customers as coreAccounts,
+  actors,
 } from '../drizzle/herobm-core-schema';
 
 export interface ShippingDocketData {
@@ -43,13 +44,8 @@ export class ShippingDocketService {
         notes: salesOrderShipments.notes,
         createdOn: salesOrderShipments.createdOn,
         orderNumber: salesOrders.orderNumber,
-        customerName: coreAccounts.name,
-        address1: coreAccounts.billingAddressLine1,
-        address2: coreAccounts.billingAddressLine2,
-        city: coreAccounts.billingAddressCity,
-        state: coreAccounts.billingAddressStateOrProvince,
-        postcode: coreAccounts.billingAddressPostalCode,
-        country: coreAccounts.billingAddressCountry,
+        customerName: actors.name,
+        customerAddress: actors.headquartersAddressLine1,
       })
       .from(salesOrderShipments)
       .innerJoin(
@@ -60,6 +56,7 @@ export class ShippingDocketService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
+      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
       .where(eq(salesOrderShipments.shipmentId, shipmentId))
       .limit(1);
 
@@ -88,16 +85,7 @@ export class ShippingDocketService {
       )
       .where(eq(salesOrderShipmentLines.shipmentId, shipmentId));
 
-    const customerAddress = [
-      shipment.address1,
-      shipment.address2,
-      shipment.city,
-      shipment.state,
-      shipment.postcode,
-      shipment.country,
-    ]
-      .filter((line) => !!line)
-      .join(', ');
+    const customerAddress = shipment.customerAddress || '—';
 
     return {
       header: {

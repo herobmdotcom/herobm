@@ -12,8 +12,10 @@ const config: Config = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
+    '^@herobm/extension-ma/(.*)$': '<rootDir>/../../extensions/ma/src/$1',
     '^@/(.*)$': '<rootDir>/$1',
   },
+  roots: ['<rootDir>', '<rootDir>/../../extensions'],
   testPathIgnorePatterns: ['<rootDir>/e2e/'],
 };
 

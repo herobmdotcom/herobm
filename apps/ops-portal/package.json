@@ -7,7 +7,7 @@
     "dev": "npx dotenv-cli -e ../../.env -- cross-env-shell \"next dev\"",
     "dev:local": "npx dotenv-cli -e ../../.env -- cross-env-shell \"next dev\"",
     "typecheck": "tsc --noEmit",
-    "prebuild": "node scripts/generate-webhooks-content.js && tsc --noEmit",
+    "prebuild": "node scripts/generate-extensions.mjs && node scripts/generate-webhooks-content.js && tsc --noEmit",
     "build": "next build",
     "start": "next start",
     "start:prod": "node .next/standalone/apps/ops-portal/server.js",
@@ -38,6 +38,7 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@csstools/css-parser-algorithms": "^3.0.5",
     "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",
     "@eslint/js": "^9.0.0",
     "@playwright/test": "^1.58.2",

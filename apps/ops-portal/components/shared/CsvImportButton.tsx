@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { Button } from './Button';
 
 interface CsvImportButtonProps {
   onImport: (data: Record<string, string>[]) => void;
@@ -53,14 +54,16 @@ export default function CsvImportButton({ onImport, className, disabled }: CsvIm
 
   return (
     <>
-      <button 
-        className={className || "btn btn-secondary btn-sm"} 
+      <Button 
+        className={className}
+        variant="secondary"
+        size="sm"
         onClick={handleButtonClick}
         disabled={disabled}
         type="button"
       >
         {t('actions.importCsv')}
-      </button>
+      </Button>
       <input
         type="file"
         ref={fileInputRef}

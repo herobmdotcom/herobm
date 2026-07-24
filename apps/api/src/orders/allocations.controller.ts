@@ -54,6 +54,7 @@ import {
   salesOrderLineItems,
   productSuppliers,
   suppliers,
+  actors,
   locations,
   inventoryLevels,
   purchaseOrders,
@@ -91,7 +92,7 @@ export class AllocationsController {
         quantity: sql<number>`CAST(${backorders.quantity} AS float)`,
         createdOn: backorders.createdOn,
         vendorId: productSuppliers.vendorId,
-        vendorName: suppliers.name,
+        vendorName: actors.name,
         costPrice: sql<number>`CAST(${productSuppliers.costPrice} AS float)`,
         currencyCode: suppliers.currencyCode,
         locationId: salesOrderLineItems.fulfillmentLocationId,
@@ -125,6 +126,7 @@ export class AllocationsController {
         ),
       )
       .leftJoin(suppliers, eq(suppliers.vendorId, productSuppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
       .leftJoin(
         purchaseOrders,
         eq(backorders.purchaseOrderId, purchaseOrders.purchaseOrderId),

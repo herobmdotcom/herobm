@@ -1,0 +1,1 @@
+ALTER TABLE "herobm_core"."project_contacts" ADD COLUMN "roles" text[];

@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface InfoCardProps {
-  title: string;
+  title: string | React.ReactNode;
   isPrimary?: boolean;
   primaryLabel?: string;
   badges?: React.ReactNode;

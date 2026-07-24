@@ -74,6 +74,14 @@ export default function Sidebar() {
         { href: '/supplier-invoices', label: t('items.supplierInvoices'), icon: 'request_quote' },
       ],
     },
+    {
+      label: 'CRM',
+      items: [
+        { href: '/crm/actors', label: 'Actors', icon: 'business' },
+        { href: '/crm/projects', label: 'Projects', icon: 'folder' },
+        { href: '/crm/contacts', label: 'Contacts', icon: 'contacts' },
+      ],
+    },
   ];
 
   // Finance section — visible only to admin and finance roles
@@ -164,12 +172,13 @@ export default function Sidebar() {
           label: t('items.settings'), 
           icon: 'settings',
           subItems: [
-            { href: '/admin/settings/system', label: t('items.system') },
+            { href: '/admin/settings/crm', label: 'CRM' },
             { href: '/admin/settings/financial', label: t('items.financial') },
             { href: '/admin/settings/integrations', label: 'Integrations' },
             { href: '/admin/settings/license', label: 'License' },
-            { href: '/admin/settings/pdf-templates', label: 'PDF Templates' },
             { href: '/admin/settings/pdf-hooks', label: 'PDF Hooks' },
+            { href: '/admin/settings/pdf-templates', label: 'PDF Templates' },
+            { href: '/admin/settings/system', label: t('items.system') },
           ]
         },
         { 

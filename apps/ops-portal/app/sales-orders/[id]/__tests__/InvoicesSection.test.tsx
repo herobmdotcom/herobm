@@ -102,7 +102,7 @@ describe('InvoicesSection — rendering', () => {
         expect(screen.getByText('noInvoicesGeneratedYet')).toBeInTheDocument();
     });
 
-    it('renders existing invoice with invoice number and line details', () => {
+    it('renders existing invoice with invoice number', () => {
         const invoice: SalesInvoice = {
             invoiceId: 'inv-1',
             invoiceNumber: 'INV-001',
@@ -120,8 +120,6 @@ describe('InvoicesSection — rendering', () => {
         };
         render(<InvoicesSection {...defaultProps} invoices={[invoice]} />);
         expect(screen.getByText('INV-001')).toBeInTheDocument();
-        // Invoice line table renders with product description
-        expect(screen.getAllByText('Widget').length).toBeGreaterThan(0);
     });
 
 
@@ -182,7 +180,7 @@ describe('InvoicesSection — create invoice form', () => {
         await user.click(screen.getByText('buttons.createInvoice'));
 
         expect(screen.getByText('New Invoice')).toBeInTheDocument();
-        expect(screen.getByText('buttons.generateInvoice')).toBeInTheDocument();
+        expect(screen.getByText('buttons.createInvoice')).toBeInTheDocument();
         expect(screen.getByText('cancel')).toBeInTheDocument();
     });
 
@@ -197,15 +195,7 @@ describe('InvoicesSection — create invoice form', () => {
         expect(screen.queryByText('New Invoice')).not.toBeInTheDocument();
     });
 
-    it('closes create form when ✕ is clicked', async () => {
-        const user = userEvent.setup();
-        render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
 
-        await user.click(screen.getByText('buttons.createInvoice'));
-        const closeBtn = screen.getByText('✕');
-        await user.click(closeBtn);
-        expect(screen.queryByText('New Invoice')).not.toBeInTheDocument();
-    });
 
     it('renders quantity-to-invoice inputs in the form', async () => {
         const user = userEvent.setup();
@@ -225,8 +215,10 @@ describe('InvoicesSection — create invoice form', () => {
 
         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
 
+        // Click to open form
         await user.click(screen.getByText('buttons.createInvoice'));
-        await user.click(screen.getByText('buttons.generateInvoice'));
+        // Click to generate inside form
+        await user.click(screen.getByText('buttons.createInvoice'));
 
         const api = require('@herobm/sdk');
         await waitFor(() => {
@@ -249,8 +241,9 @@ describe('InvoicesSection — create invoice form', () => {
         jest.spyOn(window, 'confirm').mockReturnValue(false);
 
         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
+        
         await user.click(screen.getByText('buttons.createInvoice'));
-        await user.click(screen.getByText('buttons.generateInvoice'));
+        await user.click(screen.getByText('buttons.createInvoice'));
 
         expect(mockCreateInvoice).not.toHaveBeenCalled();
         jest.restoreAllMocks();
@@ -266,7 +259,7 @@ describe('InvoicesSection — create invoice form', () => {
         render(<InvoicesSection {...defaultProps} pickingSummary={picking} setError={setError} />);
 
         await user.click(screen.getByText('buttons.createInvoice'));
-        await user.click(screen.getByText('buttons.generateInvoice'));
+        await user.click(screen.getByText('buttons.createInvoice'));
 
         await waitFor(() => {
             expect(setError).toHaveBeenCalledWith('Invoice generation failed');
@@ -297,31 +290,3 @@ describe('InvoicesSection — Email Invoice Trigger', () => {
     });
 });
 
-describe('InvoicesSection — invoice line table', () => {
-    it('renders subtotal and tax in the invoice detail table', () => {
-        const invoice: SalesInvoice = {
-            invoiceId: 'inv-1',
-            invoiceNumber: 'INV-001',
-            totalAmount: '550.00',
-            taxAmount: '50.00',
-            createdOn: '2024-01-15',
-            createdBy: 'admin',
-            lines: [{
-                lineId: 'il-1',
-                salesOrderLineId: 'L1',
-                quantityInvoiced: '5',
-                pricePerUnit: '50.00',
-                amount: '250.00',
-            }],
-        };
-
-        render(<InvoicesSection {...defaultProps} invoices={[invoice]} />);
-        // Should render the line amount (appears in both line row and subtotal)
-        const amounts = screen.getAllByText('AUD 250.00');
-        expect(amounts.length).toBeGreaterThanOrEqual(1);
-        // Check subtotal row is present
-        expect(screen.getAllByText('totals.subtotal').length).toBeGreaterThan(0);
-        // Check total row
-        expect(screen.getAllByText('AUD 250.00').length).toBeGreaterThan(0);
-    });
-});

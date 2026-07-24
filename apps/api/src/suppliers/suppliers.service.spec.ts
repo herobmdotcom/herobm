@@ -3,7 +3,7 @@ import { SuppliersService } from './suppliers.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { suppliers } from '../drizzle/herobm-core-schema';
+import { suppliers, actors } from '../drizzle/herobm-core-schema';
 import { SUPPLIER_STATE } from '@herobm/shared';
 import { eq } from 'drizzle-orm';
 
@@ -23,18 +23,24 @@ describe('SuppliersService', () => {
 
   describe('findAll', () => {
     it('should return paginated suppliers', async () => {
+      const acts = await pg.db
+        .insert(actors)
+        .values([
+          { name: 'Vendor 1', headquartersAddressLine1: 'AU' },
+          { name: 'Vendor 2', headquartersAddressLine1: 'AU' },
+        ])
+        .returning();
+
       await pg.db.insert(suppliers).values([
         {
+          actorId: acts[0].actorId,
           vendorNumber: 'V1',
-          name: 'Vendor 1',
           currencyCode: 'EUR',
-          address1Country: 'AU',
         },
         {
+          actorId: acts[1].actorId,
           vendorNumber: 'V2',
-          name: 'Vendor 2',
           currencyCode: 'USD',
-          address1Country: 'AU',
         },
       ]);
 
@@ -44,18 +50,24 @@ describe('SuppliersService', () => {
     });
 
     it('should apply search filter', async () => {
+      const acts = await pg.db
+        .insert(actors)
+        .values([
+          { name: 'Alpha', headquartersAddressLine1: 'AU' },
+          { name: 'Beta', headquartersAddressLine1: 'AU' },
+        ])
+        .returning();
+
       await pg.db.insert(suppliers).values([
         {
+          actorId: acts[0].actorId,
           vendorNumber: 'V1',
-          name: 'Alpha',
           currencyCode: 'EUR',
-          address1Country: 'AU',
         },
         {
+          actorId: acts[1].actorId,
           vendorNumber: 'V2',
-          name: 'Beta',
           currencyCode: 'USD',
-          address1Country: 'AU',
         },
       ]);
 
@@ -67,13 +79,20 @@ describe('SuppliersService', () => {
 
   describe('findOne', () => {
     it('should return a single supplier', async () => {
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'Existing Vendor',
+          headquartersAddressLine1: 'AU',
+        })
+        .returning();
+
       const [s] = await pg.db
         .insert(suppliers)
         .values({
+          actorId: act.actorId,
           vendorNumber: 'V-EX',
-          name: 'Existing Vendor',
           currencyCode: 'EUR',
-          address1Country: 'AU',
         })
         .returning();
 
@@ -90,13 +109,20 @@ describe('SuppliersService', () => {
 
   describe('assessRisk', () => {
     it('should retrieve supplier and assess risk correctly', async () => {
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'Risk Vendor',
+          headquartersAddressLine1: 'AU',
+        })
+        .returning();
+
       const [s] = await pg.db
         .insert(suppliers)
         .values({
+          actorId: act.actorId,
           vendorNumber: 'V-RISK',
-          name: 'Risk Vendor',
           currencyCode: 'EUR',
-          address1Country: 'AU',
           stateCode: SUPPLIER_STATE.INACTIVE,
         })
         .returning();

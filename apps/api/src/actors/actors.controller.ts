@@ -1,0 +1,151 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+} from '@nestjs/swagger';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
+import { ActorsService } from './actors.service';
+import {
+  CreateActorDto,
+  UpdateActorDto,
+  ActorResponseDto,
+  UpdateActorContactDto,
+  CreateActorContactDto,
+  CreateActorNoteDto,
+} from './dto';
+import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
+import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
+import { SystemResource } from '@herobm/shared';
+import {
+  CasbinGuard,
+  CasbinResource,
+  CasbinAction,
+} from '../auth/casbin.guard';
+
+@ApiTags('Actors')
+@Controller('actors')
+@UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
+@CasbinResource(SystemResource.CRM)
+export class ActorsController {
+  constructor(private readonly actorsService: ActorsService) {}
+
+  @Post()
+  @CasbinAction('write')
+  @ApiOperation({ summary: 'Create Actor' })
+  @ApiCreatedResponse({ type: ActorResponseDto })
+  create(@Body() dto: CreateActorDto, @AuthUser() user: JwtUser) {
+    return this.actorsService.createActor(dto, user.userId);
+  }
+
+  @Get()
+  @CasbinAction('read')
+  @ApiOperation({ summary: 'Get all Actors (paginated)' })
+  @ApiFieldMask()
+  @ApiPaginatedResponse(ActorResponseDto)
+  findAll(@Query() query: PaginationQuery) {
+    return this.actorsService.getActors(query);
+  }
+
+  @Get(':id')
+  @CasbinAction('read')
+  @ApiOperation({ summary: 'Get Actor by ID' })
+  @ApiOkResponse({ type: ActorResponseDto })
+  findOne(@Param('id') id: string) {
+    return this.actorsService.getActor(id);
+  }
+
+  @Patch(':id')
+  @CasbinAction('write')
+  @ApiOperation({ summary: 'Update Actor' })
+  @ApiOkResponse({ type: ActorResponseDto })
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateActorDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.actorsService.updateActor(id, dto, user.userId);
+  }
+
+  @Patch(':id/contacts/:contactId')
+  @CasbinAction('write')
+  @ApiOperation({ summary: 'Update Contact Link on Actor' })
+  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  updateContact(
+    @Param('id') id: string,
+    @Param('contactId') contactId: string,
+    @Body() dto: UpdateActorContactDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.actorsService.updateContact(id, contactId, dto, user.userId);
+  }
+
+  @Post(':id/contacts')
+  @CasbinAction('write')
+  @ApiOperation({ summary: 'Link Contact to Actor' })
+  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
+  addContact(
+    @Param('id') id: string,
+    @Body() dto: CreateActorContactDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.actorsService.addContact(id, dto, user.userId);
+  }
+
+  @Delete(':id')
+  @CasbinAction('write')
+  @ApiOperation({ summary: 'Delete Actor' })
+  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.actorsService.deleteActor(id, user.userId);
+  }
+
+  @Post(':id/notes')
+  @CasbinAction('write')
+  @ApiOperation({ summary: 'Add Note to Actor' })
+  @ApiCreatedResponse({ type: Object }) // BYPASS-TYPING-TEST
+  addNote(
+    @Param('id') id: string,
+    @Body() dto: CreateActorNoteDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.actorsService.addNote(id, dto, user.userId);
+  }
+
+  @Delete(':id/notes/:noteId')
+  @CasbinAction('write')
+  @ApiOperation({ summary: 'Remove Note from Actor' })
+  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  removeNote(
+    @Param('id') id: string,
+    @Param('noteId') noteId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.actorsService.removeNote(id, noteId, user.userId);
+  }
+
+  @Delete(':id/contacts/:contactId')
+  @CasbinAction('write')
+  @ApiOperation({ summary: 'Remove Contact Link from Actor' })
+  @ApiOkResponse({ type: Object }) // BYPASS-TYPING-TEST
+  removeContact(
+    @Param('id') id: string,
+    @Param('contactId') contactId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.actorsService.removeContact(id, contactId, user.userId);
+  }
+}

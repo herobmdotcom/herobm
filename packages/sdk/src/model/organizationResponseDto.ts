@@ -7,6 +7,6 @@
  */
 
 export interface OrganizationResponseDto {
-  id: string;
+  organizationId: string;
   name: string;
 }

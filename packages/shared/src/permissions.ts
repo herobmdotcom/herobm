@@ -28,4 +28,5 @@ export enum SystemResource {
   RECEPTIONS = 'receptions',
   TAX_CATEGORIES = 'tax-categories',
   EXTERNAL_API = 'external-api',
+  CRM = 'crm',
 }

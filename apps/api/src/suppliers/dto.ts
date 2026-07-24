@@ -14,6 +14,10 @@ import { ApiPropertyOptional, PartialType, ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
 export class BaseSupplierDto {
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
+  @IsUUID()
+  actorId?: string;
   @IsString()
   @IsNotEmpty()
   vendorNumber!: string;
@@ -253,7 +257,8 @@ export class UpdateSupplierExpiryDto {
 }
 
 export class SupplierResponseDto {
-  id: string;
+  supplierId: string;
+  actorId: string;
   vendorNumber: string;
   name: string;
   address1Line1: string | null;
@@ -292,7 +297,7 @@ export class SupplierResponseDto {
 }
 
 export class SupplierGroupResponseDto {
-  id: string;
+  supplierGroupId: string;
   groupCode: string;
   name: string;
   defaultApAccountId: string | null;

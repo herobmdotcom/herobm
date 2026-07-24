@@ -303,24 +303,27 @@ export default function UsersPage() {
             </Button>
 
             {/* Edit */}
-            <Button variant="secondary" size="xs" onClick={() => startEdit(data)}>
-              {tCommon('edit')}
+            <Button variant="secondary" size="xs" className="flex items-center justify-center !p-1.5" title={tCommon('edit')} onClick={() => startEdit(data)}>
+              { }
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
             </Button>
 
             {/* Delete */}
             <Button
               variant="secondary" size="xs"
+              className={`flex items-center justify-center !p-1.5 ${isSelf(data.userId) ? '' : 'hover:!bg-red-50'}`}
               style={{
-                color: isSelf(data.userId) ? undefined : 'var(--danger)',
-                borderColor: isSelf(data.userId) ? undefined : 'var(--danger)',
+                color: isSelf(data.userId) ? undefined : '#ef4444',
+                borderColor: isSelf(data.userId) ? undefined : '#ef4444',
                 opacity: isSelf(data.userId) ? 0.4 : 1,
                 cursor: isSelf(data.userId) ? 'not-allowed' : undefined,
               }}
               onClick={() => deleteUser(data)}
               disabled={isSelf(data.userId)}
-              title={isSelf(data.userId) ? t('cannotDeleteSelfError') : undefined}
+              title={isSelf(data.userId) ? t('cannotDeleteSelfError') : tCommon('delete')}
             >
-              {tCommon('delete')}
+              { }
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
             </Button>
           </div>
         )}

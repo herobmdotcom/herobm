@@ -1,3 +1,8 @@
+param(
+    [switch]$SkipUI,
+    [string]$TestName
+)
+
 Write-Host "Tearing down any existing test containers to ensure a clean run..." -ForegroundColor Yellow
 podman compose -f docker-compose.test.yml -f docker-compose.ui.yml down -v
 
@@ -5,7 +10,7 @@ Write-Host "Building isolated test images..." -ForegroundColor Cyan
 podman build -t localhost/herobm_api-test:latest -f Dockerfile.api .
 podman build -t localhost/herobm_pipeline-test:latest -f Dockerfile.pipeline .
 podman build -t localhost/herobm_worker-test:latest -f apps/worker/Dockerfile .
-podman build --build-arg API_URL=http://custom-api-test:3000 -t localhost/herobm_portal-test:latest -f Dockerfile.portal .
+podman build --no-cache --build-arg API_URL=http://custom-api-test:3000 -t localhost/herobm_portal-test:latest -f Dockerfile.portal .
 
 Write-Host "Ensuring network exists..." -ForegroundColor Cyan
 $netName = "herobm_app-net"
@@ -60,20 +65,26 @@ $failed = $false
 
 Write-Host "Running heavy tests..." -ForegroundColor Green
 try {
-    npx tsx infra/test-utils/run-heavy.ts
+    if ([string]::IsNullOrWhiteSpace($TestName)) {
+        npx tsx infra/test-utils/run-heavy.ts
+    } else {
+        npx tsx infra/test-utils/run-single.ts $TestName
+    }
     if ($LASTEXITCODE -ne 0) { $failed = $true }
 } catch {
     $failed = $true
 }
 
-Write-Host "Running UI Playwright tests..." -ForegroundColor Green
-try {
-    # We pass PORTAL_URL so Playwright config uses the isolated UI container on port 4305
-    $env:PORTAL_URL = "http://localhost:4305"
-    npm run test:e2e -w apps/ops-portal
-    if ($LASTEXITCODE -ne 0) { $failed = $true }
-} catch {
-    $failed = $true
+if (-not $SkipUI) {
+    Write-Host "Running UI Playwright tests..." -ForegroundColor Green
+    try {
+        # We pass PORTAL_URL so Playwright config uses the isolated UI container on port 4305
+        $env:PORTAL_URL = "http://localhost:4305"
+        npm run test:e2e -w apps/ops-portal
+        if ($LASTEXITCODE -ne 0) { $failed = $true }
+    } catch {
+        $failed = $true
+    }
 }
 
 if ($failed) {

@@ -31,6 +31,7 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
       await client.exec(sql);
     } catch (e) {
       console.warn(`Migration failed on file ${file}: ${e.message}`);
+      throw e;
     }
   }
 

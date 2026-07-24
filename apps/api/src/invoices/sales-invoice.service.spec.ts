@@ -17,6 +17,7 @@ import {
   locations,
   uomDictionary,
   salesInvoices,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
@@ -61,12 +62,18 @@ describe('SalesInvoiceService', () => {
       name: 'Main Warehouse',
     });
 
+    const actorId = '00000000-0000-4000-8000-000000000002';
+    await pg.db.insert(actors).values({
+      actorId,
+      name: 'Acme Corp',
+      headquartersAddressLine1: 'AU',
+    });
+
     await pg.db.insert(customers).values({
       customerId: CUSTOMER_ID,
+      actorId,
       customerNumber: 'CUST001',
-      name: 'Acme Corp',
       currencyCode: 'AUD',
-      billingAddressCountry: 'AU',
     });
 
     await pg.db.insert(products).values({

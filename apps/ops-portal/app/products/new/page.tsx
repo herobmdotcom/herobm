@@ -83,7 +83,7 @@ export default function NewProductPage() {
       const res = await api.productsControllerCreate(payload as unknown as api.CreateProductDto);
       const product = res.data;
       toast.success(t('toast.productCreated'));
-      router.push(`/products/${product.id}`);
+      router.push(`/products/${product.productId}`);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {

@@ -2,8 +2,9 @@ import { Module, Global, OnApplicationShutdown, Inject } from '@nestjs/common';
 import { drizzle, PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as coreSchema from './herobm-core-schema';
+import { extensionSchemas } from '../generated/extension-schemas';
 
-const schema = { ...coreSchema };
+const schema = { ...coreSchema, ...extensionSchemas };
 
 function requireEnv(name: string): string {
   const value = process.env[name];

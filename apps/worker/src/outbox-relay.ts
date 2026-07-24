@@ -142,9 +142,26 @@ app.get('/metrics', async (req, res) => {
   res.set('Content-Type', register.contentType);
   res.end(await register.metrics());
 });
-const server = app.listen(PORT, () => {
-  logger.info({ port: PORT }, 'Worker running, metrics exposed');
-});
+let server: any;
+const startServer = (retryCount = 0) => {
+  server = app.listen(PORT, () => {
+    logger.info({ port: PORT }, 'Worker running, metrics exposed');
+  }).on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      if (retryCount < 10) {
+        logger.warn({ port: PORT, retryCount }, 'Port in use, retrying in 1s...');
+        setTimeout(() => startServer(retryCount + 1), 1000);
+      } else {
+        logger.error({ port: PORT }, 'Port in use, max retries reached. Exiting.');
+        process.exit(1);
+      }
+    } else {
+      logger.error({ err }, 'Express server error');
+      process.exit(1);
+    }
+  });
+};
+startServer();
 
 // Start Polling
 const pollInterval = setInterval(() => {
@@ -166,7 +183,7 @@ async function shutdown(signal: string) {
   clearInterval(pollInterval);
   
   try {
-    server.close();
+    server?.close();
     await worker.close();
     await maintenanceWorker.close();
     await syncQueue.close();

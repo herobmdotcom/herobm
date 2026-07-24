@@ -36,7 +36,7 @@ export default function GroupSelect({
     
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
   const fetchMap: Record<string, any> = {
-      customer: api.accountGroupsControllerFindAll,
+      customer: api.customerGroupsControllerFindAll,
       product: api.productGroupsControllerFindAll,
       supplier: api.supplierGroupsControllerFindAll,
     };

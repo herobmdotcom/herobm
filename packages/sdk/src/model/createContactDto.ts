@@ -8,13 +8,17 @@
 import type { CreateContactDtoEntityType } from './createContactDtoEntityType';
 
 export interface CreateContactDto {
-  entityType: CreateContactDtoEntityType;
-  entityId: string;
+  entityType?: CreateContactDtoEntityType;
+  entityId?: string;
   firstName: string;
   lastName: string;
   email?: string;
+  /** @pattern /^\+?[0-9\s\-()]+$/ */
   phone?: string;
+  /** @pattern /^\+?[0-9\s\-()]+$/ */
   mobile?: string;
   jobTitle?: string;
   isPrimary?: boolean;
+  primaryFor?: string[];
+  projectRoles?: string[];
 }

@@ -6,6 +6,7 @@ import {
   masterDataEvents,
   supplierGroups,
   supplierExpiries,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { EntityType } from '../common/event-types';
 import {
@@ -69,8 +70,8 @@ export class SuppliersService {
     const scoreSql = searchTerm
       ? sql<number>`
           CASE 
-            WHEN ${coreSuppliers.name} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${coreSuppliers.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${actors.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${actors.name} ILIKE ${rawSearchTerm + '%'} THEN 2
             WHEN ${coreSuppliers.vendorNumber} ILIKE ${rawSearchTerm} THEN 3
             WHEN ${coreSuppliers.vendorNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
             ELSE 1
@@ -81,6 +82,7 @@ export class SuppliersService {
     let qb = this.db
       .select({
         ...getTableColumns(coreSuppliers),
+        name: actors.name,
         supplierGroupName: supplierGroups.name,
         supplierGroupCode: supplierGroups.groupCode,
         groupIsPurchasingBlocked: supplierGroups.isPurchasingBlocked,
@@ -90,12 +92,19 @@ export class SuppliersService {
         supplierGroupTaxPositionId: supplierGroups.taxPositionId,
         supplierGroupTradingTermsId: supplierGroups.tradingTermsId,
         score: scoreSql,
+        address1Line1: actors.headquartersAddressLine1,
+        address1Line2: actors.headquartersAddressLine2,
+        address1City: actors.headquartersCity,
+        address1StateOrProvince: actors.headquartersStateOrProvince,
+        address1PostalCode: actors.headquartersPostalCode,
+        address1Country: actors.headquartersCountry,
       })
       .from(coreSuppliers)
       .leftJoin(
         supplierGroups,
         eq(coreSuppliers.supplierGroupId, supplierGroups.supplierGroupId),
       )
+      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
       .$dynamic();
 
     const conditions = [];
@@ -103,7 +112,7 @@ export class SuppliersService {
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(coreSuppliers.name, `%${rawSearchTerm}%`),
+          ilike(actors.name, `%${rawSearchTerm}%`),
           ilike(coreSuppliers.vendorNumber, `%${rawSearchTerm}%`),
         ),
       );
@@ -123,21 +132,22 @@ export class SuppliersService {
     const { data, nextCursor, prevCursor } = await withCursorPagination({
       qb,
       limit,
-      cursorObj: cursor as { score: number; name: string; id: string } | null,
+      cursorObj: cursor as {
+        score: number;
+        name: string;
+        supplierId: string;
+      } | null,
       direction: direction,
       applyWhere: (q, c, dir) => {
         const scoreOp = dir === 'next' ? sql`<` : sql`>`;
         const strOp = dir === 'next' ? sql`>` : sql`<`;
         const cursorCond = or(
           sql`${scoreSql} ${scoreOp} ${c.score}`,
+          and(eq(scoreSql, c.score), sql`${actors.name} ${strOp} ${c.name}`),
           and(
             eq(scoreSql, c.score),
-            sql`${coreSuppliers.name} ${strOp} ${c.name}`,
-          ),
-          and(
-            eq(scoreSql, c.score),
-            eq(coreSuppliers.name, c.name),
-            sql`${coreSuppliers.vendorId} ${strOp} ${c.id}`,
+            eq(actors.name, c.name),
+            sql`${coreSuppliers.vendorId} ${strOp} ${c.supplierId}`,
           ),
         );
         return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
@@ -147,14 +157,14 @@ export class SuppliersService {
         const orderFn = dir === 'next' ? asc : desc;
         return q.orderBy(
           scoreOp(scoreSql),
-          orderFn(coreSuppliers.name),
+          orderFn(actors.name),
           orderFn(coreSuppliers.vendorId),
         );
       },
       encodeRow: (row) => ({
         score: Number(row.score) || 0,
         name: row.name,
-        id: row.vendorId,
+        supplierId: row.vendorId,
       }),
     });
 
@@ -162,6 +172,7 @@ export class SuppliersService {
     let countQb = this.db
       .select({ count: sql<number>`count(*)` })
       .from(coreSuppliers)
+      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
       .$dynamic();
 
     if (conditions.length > 0) {
@@ -178,8 +189,21 @@ export class SuppliersService {
     const rows = await db
       .select({
         ...getTableColumns(coreSuppliers),
+        name: actors.name,
+        address1Line1: actors.headquartersAddressLine1,
+        address1Line2: actors.headquartersAddressLine2,
+        address1City: actors.headquartersCity,
+        address1StateOrProvince: actors.headquartersStateOrProvince,
+        address1PostalCode: actors.headquartersPostalCode,
+        address1Country: actors.headquartersCountry,
+        businessNumber: actors.businessNumber,
+        isTaxRegistered: actors.isTaxRegistered,
+        telephone1: sql<string>`''`, // legacy mock
+        fax: sql<string>`''`, // legacy mock
+        emailAddress1: sql<string>`''`, // legacy mock
       })
       .from(coreSuppliers)
+      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
       .where(eq(coreSuppliers.vendorId, id))
       .limit(1);
 
@@ -361,7 +385,7 @@ export class SuppliersService {
   async findProductSuppliers(productId: string, params: PaginationQuery) {
     const { page, limit, cursor, direction } = parsePagination(params);
 
-    const { productSuppliers, suppliers } =
+    const { productSuppliers, suppliers, actors } =
       await import('../drizzle/herobm-core-schema.js');
 
     const whereClause = eq(productSuppliers.productId, productId);
@@ -376,11 +400,12 @@ export class SuppliersService {
         priceBreakQuantity: productSuppliers.priceBreakQuantity,
         isPreferred: productSuppliers.isPreferred,
         stateCode: productSuppliers.stateCode,
-        vendorName: suppliers.name,
+        vendorName: actors.name,
         vendorNumber: suppliers.vendorNumber,
       })
       .from(productSuppliers)
       .innerJoin(suppliers, eq(productSuppliers.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
       .where(whereClause)
       .$dynamic();
 
@@ -393,16 +418,16 @@ export class SuppliersService {
         const cursorCond =
           dir === 'next'
             ? or(
-                sql`${suppliers.name} > ${c.name}`,
+                sql`${actors.name} > ${c.name}`,
                 and(
-                  eq(suppliers.name, c.name),
+                  eq(actors.name, c.name),
                   sql`${productSuppliers.productSupplierId} > ${c.id}`,
                 ),
               )
             : or(
-                sql`${suppliers.name} < ${c.name}`,
+                sql`${actors.name} < ${c.name}`,
                 and(
-                  eq(suppliers.name, c.name),
+                  eq(actors.name, c.name),
                   sql`${productSuppliers.productSupplierId} < ${c.id}`,
                 ),
               );
@@ -411,7 +436,7 @@ export class SuppliersService {
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? asc : desc;
         return q.orderBy(
-          orderFn(suppliers.name),
+          orderFn(actors.name),
           orderFn(productSuppliers.productSupplierId),
         );
       },
@@ -434,7 +459,7 @@ export class SuppliersService {
     const invoicesQuery = sql`
       SELECT 
         s.vendor_id as "supplierId",
-        s.name as "supplierName",
+        a.name as "supplierName",
         s.vendor_number as "supplierNumber",
         s.currency_code as "currencyCode",
         s.is_payment_blocked as "isPaymentBlocked",
@@ -446,9 +471,10 @@ export class SuppliersService {
         COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '90 days' OR i.${sql.raw(basisCol)} IS NULL THEN i.outstanding_amount ELSE 0 END), 0) as "days90Plus",
         COALESCE(SUM(i.outstanding_amount), 0) as "totalOutstanding"
       FROM herobm_core.suppliers s
+      LEFT JOIN herobm_core.actors a ON s.actor_id = a.actor_id
       JOIN herobm_core.purchase_invoices i ON i.vendor_id = s.vendor_id
       WHERE i.outstanding_amount > 0 AND i.state_code NOT IN (${PURCHASE_INVOICE_STATE.DRAFT}, ${PURCHASE_INVOICE_STATE.CANCELLED}, ${PURCHASE_INVOICE_STATE.PAID})
-      GROUP BY s.vendor_id, s.name, s.vendor_number, s.currency_code, s.is_payment_blocked, s.credit_limit
+      GROUP BY s.vendor_id, a.name, s.vendor_number, s.currency_code, s.is_payment_blocked, s.credit_limit
     `;
 
     const glQuery = sql`

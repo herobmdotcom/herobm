@@ -17,6 +17,7 @@ import {
   uomDictionary,
   taxCategories,
   suppliers,
+  actors,
   procurementEvents,
   exchangeRates,
 } from '../drizzle/herobm-core-schema';
@@ -59,13 +60,18 @@ describe('PurchaseOrdersService', () => {
       code: 'MAIN',
       name: 'Main Warehouse',
     });
+    const actorId = '0e3c4e85-d865-4f40-8abf-c4e89e47261d';
+    await pg.db.insert(actors).values({
+      actorId,
+      name: 'Test Vendor',
+      headquartersAddressLine1: 'AU',
+    });
     await pg.db.insert(suppliers).values({
       vendorId: VENDOR_ID,
+      actorId,
       vendorNumber: 'V001',
-      name: 'Test Vendor',
       currencyCode: 'EUR',
       stateCode: SUPPLIER_STATE.ACTIVE,
-      address1Country: 'AU',
     });
     await pg.db.insert(products).values({
       productId: PROD_ID,

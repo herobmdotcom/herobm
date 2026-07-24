@@ -6,19 +6,20 @@ import {
   IsUUID,
   IsBoolean,
   IsIn,
-  IsPhoneNumber,
+  IsArray,
+  Matches,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateContactDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @IsIn(['customer'])
-  entityType!: 'customer';
+  @IsIn(['customer', 'actor', 'project'])
+  entityType?: 'customer' | 'actor' | 'project';
 
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  entityId!: string;
+  entityId?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -47,8 +48,8 @@ export class CreateContactDto {
         ? value.trim()
         : value,
   )
-  @IsPhoneNumber(undefined, {
-    message: 'Phone number must be a valid international number',
+  @Matches(/^\+?[0-9\s\-()]+$/, {
+    message: 'Phone number contains invalid characters',
   })
   phone?: string;
 
@@ -60,8 +61,8 @@ export class CreateContactDto {
         ? value.trim()
         : value,
   )
-  @IsPhoneNumber(undefined, {
-    message: 'Mobile number must be a valid international number',
+  @Matches(/^\+?[0-9\s\-()]+$/, {
+    message: 'Mobile number contains invalid characters',
   })
   mobile?: string;
 
@@ -69,9 +70,20 @@ export class CreateContactDto {
   @IsString()
   jobTitle?: string;
 
+  /** @deprecated use primaryFor or projectRole instead */
   @IsOptional()
   @IsBoolean()
   isPrimary?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  primaryFor?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  projectRoles?: string[];
 }
 
 export class UpdateContactDto {
@@ -102,8 +114,8 @@ export class UpdateContactDto {
         ? value.trim()
         : value,
   )
-  @IsPhoneNumber(undefined, {
-    message: 'Phone number must be a valid international number',
+  @Matches(/^\+?[0-9\s\-()]+$/, {
+    message: 'Phone number contains invalid characters',
   })
   phone?: string;
 
@@ -115,8 +127,8 @@ export class UpdateContactDto {
         ? value.trim()
         : value,
   )
-  @IsPhoneNumber(undefined, {
-    message: 'Mobile number must be a valid international number',
+  @Matches(/^\+?[0-9\s\-()]+$/, {
+    message: 'Mobile number contains invalid characters',
   })
   mobile?: string;
 
@@ -124,20 +136,38 @@ export class UpdateContactDto {
   @IsString()
   jobTitle?: string;
 
+  /** @deprecated use primaryFor or projectRole instead */
   @IsOptional()
   @IsBoolean()
   isPrimary?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  primaryFor?: string[];
+
+  @IsOptional()
+  @IsString()
+  projectRole?: string;
+}
+
+export enum ActorRole {
+  PURCHASING = 'purchasing',
+  BILLING = 'billing',
+  SALES = 'sales',
+  TECHNICAL = 'technical',
 }
 
 export class ContactResponseDto {
-  id!: string;
+  contactId!: string;
   firstName!: string;
   lastName!: string;
+  fullName?: string | null;
   email?: string | null;
   phone?: string | null;
   mobile?: string | null;
   jobTitle?: string | null;
-  isPrimary!: boolean;
+  primaryFor?: string[];
   createdOn!: Date | null;
   modifiedOn!: Date | null;
 }

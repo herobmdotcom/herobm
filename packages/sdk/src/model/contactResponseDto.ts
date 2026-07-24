@@ -7,9 +7,11 @@
  */
 
 export interface ContactResponseDto {
-  id: string;
+  contactId: string;
   firstName: string;
   lastName: string;
+  /** @nullable */
+  fullName?: string | null;
   /** @nullable */
   email?: string | null;
   /** @nullable */
@@ -18,7 +20,7 @@ export interface ContactResponseDto {
   mobile?: string | null;
   /** @nullable */
   jobTitle?: string | null;
-  isPrimary: boolean;
+  primaryFor?: string[];
   /** @nullable */
   createdOn: string | null;
   /** @nullable */

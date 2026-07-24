@@ -18,7 +18,7 @@ export default function AccountGroupsAdmin() {
   const t = useTranslations('admin.customerGroups');
   const tCommon = useTranslations('admin.common');
   const tGlobalCommon = useTranslations('common');
-  const [groups, setGroups] = useState<api.AccountGroupResponseDto[]>([]);
+  const [groups, setGroups] = useState<api.CustomerGroupResponseDto[]>([]);
   const [glAccounts, setGlAccounts] = useState<api.GlAccountResponseDto[]>([]);
   const [costCenters, setCostCenters] = useState<api.CostCenterResponseDto[]>([]);
   const [activities, setActivities] = useState<api.ActivityResponseDto[]>([]);
@@ -27,14 +27,14 @@ export default function AccountGroupsAdmin() {
   const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [discountGroup, setDiscountGroup] = useState<Partial<api.AccountGroupResponseDto> | null>(null);
-  const [financialGroup, setFinancialGroup] = useState<Partial<api.AccountGroupResponseDto> | null>(null);
+  const [discountGroup, setDiscountGroup] = useState<Partial<api.CustomerGroupResponseDto> | null>(null);
+  const [financialGroup, setFinancialGroup] = useState<Partial<api.CustomerGroupResponseDto> | null>(null);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [data, customers, cc, act, rules, taxPositionsData, tradingTermsData] = await Promise.all([
-        api.accountGroupsControllerFindAll().then(r => r.data || []),
+        api.customerGroupsControllerFindAll().then(r => r.data || []),
         api.glControllerGetAccounts({ format: 'flat' }).then(r => r.data || []),
         api.costCentersControllerFindAll().then(r => r.data || []),
         api.activitiesControllerFindAll().then(r => r.data || []),
@@ -42,7 +42,7 @@ export default function AccountGroupsAdmin() {
         api.taxPositionsControllerFindAll().then(r => r.data || []),
         api.tradingTermsControllerFindAll().then(r => r.data || [])
       ]);
-      const sorted = [...data].sort((a: api.AccountGroupResponseDto, b: api.AccountGroupResponseDto) => 
+      const sorted = [...data].sort((a: api.CustomerGroupResponseDto, b: api.CustomerGroupResponseDto) => 
         a.name.localeCompare(b.name, undefined, { numeric: true })
       );
       setGroups(sorted);
@@ -65,9 +65,9 @@ export default function AccountGroupsAdmin() {
   const costCenterOptions = useMemo(() => costCenters.map((c) => ({ value: (c as unknown as { costCenterId: string }).costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
   const activityOptions = useMemo(() => activities.map((a) => ({ value: (a as unknown as { activityId: string }).activityId, label: `${a.code} - ${a.name}` })), [activities]);
   const taxPositionOptions = useMemo(() => taxPositions.map((p: api.TaxPositionResponseDto) => ({ value: p.taxPositionId, label: p.title })), [taxPositions]);
-  const tradingTermsOptions = useMemo(() => tradingTerms.map((t: api.TradingTermResponseDto) => ({ value: t.id, label: `${t.code} - ${t.description}` })), [tradingTerms]);
+  const tradingTermsOptions = useMemo(() => tradingTerms.map((t: api.TradingTermResponseDto) => ({ value: t.tradingTermsId, label: `${t.code} - ${t.description}` })), [tradingTerms]);
 
-  const columns: InlineTableColumn<api.AccountGroupResponseDto>[] = useMemo(() => [
+  const columns: InlineTableColumn<api.CustomerGroupResponseDto>[] = useMemo(() => [
     { key: 'groupCode', title: tCommon('code'), type: 'text', placeholder: t('placeholders.code'), width: 100 },
     { key: 'name', title: tCommon('name'), type: 'text', placeholder: t('placeholders.name') },
     {
@@ -184,10 +184,10 @@ export default function AccountGroupsAdmin() {
       };
 
       if (!isNew) {
-        await api.accountGroupsControllerUpdate(payload.customerGroupId, formattedPayload);
+        await api.customerGroupsControllerUpdate(payload.customerGroupId, formattedPayload);
         toast.success('Group updated');
       } else {
-        await api.accountGroupsControllerCreate(formattedPayload);
+        await api.customerGroupsControllerCreate(formattedPayload);
         toast.success('Group created');
       }
       loadData();
@@ -197,10 +197,10 @@ export default function AccountGroupsAdmin() {
     }
   };
 
-  const handleDelete = async (row: api.AccountGroupResponseDto) => {
+  const handleDelete = async (row: api.CustomerGroupResponseDto) => {
     if(!confirm(tGlobalCommon('confirmDelete'))) return;
     try {
-      await api.accountGroupsControllerRemove(row.customerGroupId);
+      await api.customerGroupsControllerRemove(row.customerGroupId);
       toast.success(t('toasts.deleted'));
       loadData();
     } catch (err: unknown) {
@@ -253,7 +253,7 @@ export default function AccountGroupsAdmin() {
         ownerLabel={financialGroup ? `${financialGroup.groupCode} — ${financialGroup.name}` : ''}
         data={financialGroup}
         onSave={async (d) => {
-          await api.accountGroupsControllerUpdate(d.customerGroupId as string, d);
+          await api.customerGroupsControllerUpdate(d.customerGroupId as string, d);
           setGroups((prev) => prev.map((g) => (g.customerGroupId === d.customerGroupId ? { ...g, ...d } : g)));
         }}
         glAccountOptions={glAccountOptions}

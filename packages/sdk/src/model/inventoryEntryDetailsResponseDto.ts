@@ -7,7 +7,7 @@
  */
 
 export interface InventoryEntryDetailsResponseDto {
-  id: string;
+  entryId: string;
   productId: string;
   quantity: string;
   date: string;

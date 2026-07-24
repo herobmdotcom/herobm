@@ -189,7 +189,7 @@ export default function AddSupplierModal({
               <div className="absolute z-50 left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg overflow-hidden max-h-60 overflow-y-auto w-[calc(100%+20px)] -ml-[10px] p-1">
                 <ul className="py-1">
                   {(Array.isArray(suppliers) ? suppliers : []).map(s => (
-                    <li key={s.id}>
+                    <li key={s.supplierId}>
                       <button
                         type="button"
                         className="w-full text-left px-4 py-2.5 hover:bg-[#e2f9f5] flex flex-col focus:bg-[#e2f9f5] focus:outline-none transition-colors rounded-md"

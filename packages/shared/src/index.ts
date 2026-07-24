@@ -46,6 +46,7 @@ export {
   TRANSFER_ORDER_PICK_STATE,
   SUPPLIER_STATE,
   PRODUCT_STATE,
+  PROJECT_STATE,
 
   PAYMENT_TYPE,
   // Lifecycle ordinals (for UI forward/backward styling)

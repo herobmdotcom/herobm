@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "extensions/*"
   ],
   "scripts": {
     "seed": "npm run seed -w apps/api",
@@ -22,5 +23,11 @@
   "overrides": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "@asyncapi/specs": "^6.11.1",
+    "@nestjs/cli": "^11.0.24",
+    "es-abstract": "^1.24.2",
+    "es-aggregate-error": "^1.0.14"
   }
 }

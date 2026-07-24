@@ -114,7 +114,7 @@ export class UpdateDeliveryAddressDto {
 }
 
 export class DeliveryAddressResponseDto {
-  id!: string;
+  deliveryAddressId!: string;
   customerId!: string;
   addressName?: string | null;
   companyName?: string | null;

@@ -334,11 +334,11 @@ func main() {
 This operation does not require authentication
 </aside>
 
-<h1 id="herobm-api-accounts">Accounts</h1>
+<h1 id="herobm-api-customers">Customers</h1>
 
-## AccountsController_findAll
+## CustomersController_findAll
 
-<a id="opIdAccountsController_findAll"></a>
+<a id="opIdCustomersController_findAll"></a>
 
 > Code samples
 
@@ -456,7 +456,7 @@ func main() {
 
 `GET /api/customers`
 
-<h3 id="accountscontroller_findall-responses">Responses</h3>
+<h3 id="customerscontroller_findall-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -466,9 +466,9 @@ func main() {
 This operation does not require authentication
 </aside>
 
-## AccountsController_create
+## CustomersController_create
 
-<a id="opIdAccountsController_create"></a>
+<a id="opIdCustomersController_create"></a>
 
 > Code samples
 
@@ -663,13 +663,13 @@ func main() {
 }
 ```
 
-<h3 id="accountscontroller_create-parameters">Parameters</h3>
+<h3 id="customerscontroller_create-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |body|body|[CreateAccountDto](#schemacreateaccountdto)|true|none|
 
-<h3 id="accountscontroller_create-responses">Responses</h3>
+<h3 id="customerscontroller_create-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -679,9 +679,9 @@ func main() {
 This operation does not require authentication
 </aside>
 
-## AccountsController_findOne
+## CustomersController_findOne
 
-<a id="opIdAccountsController_findOne"></a>
+<a id="opIdCustomersController_findOne"></a>
 
 > Code samples
 
@@ -799,13 +799,13 @@ func main() {
 
 `GET /api/customers/{id}`
 
-<h3 id="accountscontroller_findone-parameters">Parameters</h3>
+<h3 id="customerscontroller_findone-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |id|path|string|true|none|
 
-<h3 id="accountscontroller_findone-responses">Responses</h3>
+<h3 id="customerscontroller_findone-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -815,9 +815,9 @@ func main() {
 This operation does not require authentication
 </aside>
 
-## AccountsController_update
+## CustomersController_update
 
-<a id="opIdAccountsController_update"></a>
+<a id="opIdCustomersController_update"></a>
 
 > Code samples
 
@@ -1012,14 +1012,14 @@ func main() {
 }
 ```
 
-<h3 id="accountscontroller_update-parameters">Parameters</h3>
+<h3 id="customerscontroller_update-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |id|path|string|true|none|
-|body|body|[UpdateAccountDto](#schemaupdateaccountdto)|true|none|
+|body|body|[UpdateCustomerDto](#schemaupdateaccountdto)|true|none|
 
-<h3 id="accountscontroller_update-responses">Responses</h3>
+<h3 id="customerscontroller_update-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -1029,9 +1029,9 @@ func main() {
 This operation does not require authentication
 </aside>
 
-## AccountsController_archive
+## CustomersController_archive
 
-<a id="opIdAccountsController_archive"></a>
+<a id="opIdCustomersController_archive"></a>
 
 > Code samples
 
@@ -1149,13 +1149,13 @@ func main() {
 
 `POST /api/customers/{id}/archive`
 
-<h3 id="accountscontroller_archive-parameters">Parameters</h3>
+<h3 id="customerscontroller_archive-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |id|path|string|true|none|
 
-<h3 id="accountscontroller_archive-responses">Responses</h3>
+<h3 id="customerscontroller_archive-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -1165,9 +1165,9 @@ func main() {
 This operation does not require authentication
 </aside>
 
-## AccountsController_unarchive
+## CustomersController_unarchive
 
-<a id="opIdAccountsController_unarchive"></a>
+<a id="opIdCustomersController_unarchive"></a>
 
 > Code samples
 
@@ -1285,13 +1285,13 @@ func main() {
 
 `POST /api/customers/{id}/unarchive`
 
-<h3 id="accountscontroller_unarchive-parameters">Parameters</h3>
+<h3 id="customerscontroller_unarchive-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |id|path|string|true|none|
 
-<h3 id="accountscontroller_unarchive-responses">Responses</h3>
+<h3 id="customerscontroller_unarchive-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -44510,10 +44510,10 @@ This operation does not require authentication
 |bankBsb|string|false|none|none|
 |bankAccountNumber|string|false|none|none|
 
-<h2 id="tocS_UpdateAccountDto">UpdateAccountDto</h2>
+<h2 id="tocS_UpdateCustomerDto">UpdateCustomerDto</h2>
 <!-- backwards compatibility -->
 <a id="schemaupdateaccountdto"></a>
-<a id="schema_UpdateAccountDto"></a>
+<a id="schema_UpdateCustomerDto"></a>
 <a id="tocSupdateaccountdto"></a>
 <a id="tocsupdateaccountdto"></a>
 

@@ -10,6 +10,7 @@ import {
   glJournalEntries,
   glAccounts,
   locations,
+  actors,
 } from '../drizzle/herobm-core-schema';
 
 describe('CreditAssessmentService', () => {
@@ -54,13 +55,20 @@ describe('CreditAssessmentService', () => {
     });
 
     it('should calculate correct balances from invoices and GL', async () => {
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'Test Customer',
+          headquartersAddressLine1: 'AU',
+        })
+        .returning();
+
       const [acc] = await pg.db
         .insert(customers)
         .values({
-          name: 'Test Customer',
+          actorId: act.actorId,
           customerNumber: 'CUST-1',
           currencyCode: 'USD',
-          billingAddressCountry: 'AU',
         })
         .returning();
 

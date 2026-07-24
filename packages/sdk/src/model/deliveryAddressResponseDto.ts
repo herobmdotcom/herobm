@@ -7,7 +7,7 @@
  */
 
 export interface DeliveryAddressResponseDto {
-  id: string;
+  deliveryAddressId: string;
   customerId: string;
   /** @nullable */
   addressName?: string | null;

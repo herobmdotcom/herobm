@@ -7,7 +7,7 @@
  */
 
 export interface ExchangeRateResponseDto {
-  id: string;
+  exchangeRateId: string;
   currencyCode: string;
   currencyName: string;
   buyRate: string;

@@ -116,11 +116,11 @@ export default function TopographyView() {
     });
   };
 
-  const totalBins = locations.reduce(
-    (acc, loc) => acc + loc.zones.reduce((za, z) => za + z.bins.length, 0),
+  const totalBins = (locations || []).reduce(
+    (acc, loc) => acc + (loc?.zones || []).reduce((za, z) => za + (z?.bins || []).length, 0),
     0,
   );
-  const totalZones = locations.reduce((acc, loc) => acc + loc.zones.length, 0);
+  const totalZones = (locations || []).reduce((acc, loc) => acc + (loc?.zones || []).length, 0);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
@@ -202,9 +202,9 @@ export default function TopographyView() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {locations.map((loc) => {
+            {(locations || []).map((loc) => {
               const isLocExpanded = expandedLocations.has(loc.locationId);
-              const binCount = loc.zones.reduce((a, z) => a + z.bins.length, 0);
+              const binCount = (loc?.zones || []).reduce((a, z) => a + (z?.bins || []).length, 0);
 
               return (
                 <div
@@ -301,7 +301,7 @@ export default function TopographyView() {
                           fontFamily: 'Manrope, sans-serif',
                         }}
                       >
-                        {tLoc('zonesCount', { count: loc.zones.length })}
+                        {tLoc('zonesCount', { count: (loc?.zones || []).length })}
                       </span>
                       <span
                         className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
@@ -319,7 +319,7 @@ export default function TopographyView() {
                   {/* Zones */}
                   {isLocExpanded && (
                     <div className="border-t" style={{ borderColor: 'rgba(196,198,205,0.3)' }}>
-                      {loc.zones.map((zone) => {
+                      {(loc?.zones || []).map((zone) => {
                         const isZoneExpanded = expandedZones.has(zone.zoneId);
 
                         return (
@@ -404,13 +404,13 @@ export default function TopographyView() {
                                     color: '#041627',
                                   }}
                                 >
-                                    {tLoc('binsCount', { count: zone.bins.length })}
+                                    {tLoc('binsCount', { count: (zone?.bins || []).length })}
                                   </span>
                               </div>
                             </div>
 
                             {/* Bins Table */}
-                            {isZoneExpanded && zone.bins.length > 0 && (
+                            {isZoneExpanded && (zone?.bins || []).length > 0 && (
                               <div style={{ paddingLeft: 80 }} className="pb-3 pr-5">
                                 <div
                                   className="rounded-lg border overflow-hidden"
@@ -441,7 +441,7 @@ export default function TopographyView() {
                                         </tr>
                                       </thead>
                                     <tbody>
-                                      {zone.bins.map((bin, idx) => (
+                                      {(zone?.bins || []).map((bin, idx) => (
                                         <tr
                                           key={bin.binId}
                                           style={{
@@ -533,7 +533,7 @@ export default function TopographyView() {
                                 </div>
                               )}
 
-                            {isZoneExpanded && zone.bins.length === 0 && (
+                            {isZoneExpanded && (zone?.bins || []).length === 0 && (
                               <div style={{ paddingLeft: 80 }} className="pb-3 pr-5">
                                 <p className="text-sm italic mb-2" style={{ color: 'var(--text-muted)' }}>
                                   {tLoc('noBinsInZone')}

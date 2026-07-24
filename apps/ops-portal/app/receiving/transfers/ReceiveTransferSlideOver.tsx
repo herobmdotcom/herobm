@@ -131,7 +131,7 @@ export default function ReceiveTransferSlideOver({
                             if (max <= 0) return null; // Only show pending
 
                             return (
-                                <tr key={line.id}>
+                                <tr key={line.transferOrderLineId}>
                                     <td className="text-sm font-semibold">
                                         {line.productNumber || '—'}
                                         {line.productDescription && <div className="text-xs text-[var(--text-muted)] font-normal">{line.productDescription}</div>}

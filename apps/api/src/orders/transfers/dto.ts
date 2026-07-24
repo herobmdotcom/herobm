@@ -112,7 +112,6 @@ export class EmptyBodyDto {}
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class TransferLineResponseDto {
-  @ApiProperty() id!: string;
   @ApiProperty() transferOrderLineId!: string;
   @ApiProperty() productId!: string;
   @ApiPropertyOptional() productNumber?: string;
@@ -131,7 +130,6 @@ export class TransferEventResponseDto {
 }
 
 export class TransferResponseDto {
-  @ApiProperty() id!: string;
   @ApiProperty() transferOrderId!: string;
   @ApiProperty() orderNumber!: string;
   @ApiProperty() stateCode!: string;

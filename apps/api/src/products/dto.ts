@@ -157,7 +157,7 @@ export class LinkBinDto {
 }
 
 export class ProductResponseDto {
-  id: string;
+  productId: string;
   productNumber: string;
   name: string;
   productType: string;
@@ -185,7 +185,7 @@ export class ProductResponseDto {
 }
 
 export class ProductGroupResponseDto {
-  id: string;
+  productGroupId: string;
   groupCode: string;
   name: string;
   defaultRevenueAccountId: string | null;

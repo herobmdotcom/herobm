@@ -7,6 +7,7 @@ import type { SeedDB } from '../run';
 import {
   users,
   uomDictionary,
+  actors,
   products,
   costCenters,
   activities,
@@ -25,7 +26,7 @@ import {
   customers,
   suppliers,
 } from '../../drizzle/herobm-core-schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 
@@ -102,6 +103,13 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       ptype: 'p',
       v0: 'viewer',
       v1: SystemResource.CUSTOMERS,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'viewer',
+      v1: SystemResource.CRM,
       v2: 'read',
       v3: 'allow',
     },
@@ -274,6 +282,28 @@ async function seedCasbinPolicies(db: SeedDB, dryRun: boolean) {
       ptype: 'p',
       v0: 'admin',
       v1: SystemResource.CUSTOMERS,
+      v2: 'archive',
+      v3: 'allow',
+    },
+
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.CRM,
+      v2: 'read',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.CRM,
+      v2: 'write',
+      v3: 'allow',
+    },
+    {
+      ptype: 'p',
+      v0: 'admin',
+      v1: SystemResource.CRM,
       v2: 'archive',
       v3: 'allow',
     },
@@ -1408,7 +1438,21 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
 
   const existing = await db.select().from(appSettings).limit(1);
   if (existing.length > 0) {
-    console.log('  SKIP: app_settings record already exists.');
+    const row = existing[0];
+    if (!row.actorContactRoles || row.actorContactRoles.length === 0) {
+      await db.update(appSettings).set({
+        actorContactRoles: [
+          { value: 'Sales', order: 1 },
+          { value: 'Purchasing', order: 2 },
+          { value: 'Billing', order: 3 },
+        ],
+      });
+      console.log(
+        '  Updated existing app_settings with default actorContactRoles.',
+      );
+    } else {
+      console.log('  SKIP: app_settings record already exists.');
+    }
     return;
   }
 
@@ -1424,6 +1468,11 @@ async function seedAppSettings(db: SeedDB, dryRun: boolean) {
       creditLimitBehavior: 'soft',
       setupCompletedAt: now,
       systemIdentifier: sid,
+      actorContactRoles: [
+        { value: 'Sales', order: 1 },
+        { value: 'Purchasing', order: 2 },
+        { value: 'Billing', order: 3 },
+      ],
     })
     .onConflictDoNothing();
 
@@ -1810,38 +1859,65 @@ export async function seedAccounts(db: SeedDB, dryRun: boolean) {
   }
 
   // Seed customer
+  const custActorId = '20000000-0000-4000-8000-000000000000';
+  await db
+    .insert(actors)
+    .values({
+      actorId: custActorId,
+      name: 'E2E Default Customer',
+      headquartersAddressLine1: 'AU',
+    })
+    .onConflictDoUpdate({
+      target: actors.actorId,
+      set: {
+        name: 'E2E Default Customer',
+        headquartersAddressLine1: 'AU',
+      },
+    });
+
   await db
     .insert(customers)
     .values({
       customerId: '20000000-0000-4000-8000-000000000001',
+      actorId: custActorId,
       customerNumber: 'CUST-E2E-001',
-      name: 'E2E Default Customer',
-      currencyCode: 'AUD', // testData
-      billingAddressCountry: 'AU',
+      currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
       creditLimit: '1000000000',
     })
     .onConflictDoUpdate({
       target: customers.customerId,
       set: {
-        name: 'E2E Default Customer',
-        billingAddressCountry: 'AU',
         creditLimit: '1000000000',
       },
     });
 
   // Seed vendor
+  const vendActorId = '20000000-0000-4000-8000-000000000003';
+  await db
+    .insert(actors)
+    .values({
+      actorId: vendActorId,
+      name: 'E2E Default Vendor',
+      headquartersAddressLine1: 'AU',
+    })
+    .onConflictDoUpdate({
+      target: actors.actorId,
+      set: { name: 'Seed Vendor', headquartersAddressLine1: 'AU' },
+    });
+
   await db
     .insert(suppliers)
     .values({
       vendorId: '20000000-0000-4000-8000-000000000002',
+      actorId: vendActorId,
       vendorNumber: 'VEND-E2E-001',
-      name: 'E2E Default Vendor',
-      currencyCode: 'AUD', // testData
-      address1Country: 'AU',
+      currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
     })
     .onConflictDoUpdate({
       target: suppliers.vendorId,
-      set: { name: 'Seed Vendor', address1Country: 'AU' },
+      set: {
+        currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
+      },
     });
 
   console.log('  Seeded default customer and vendor');

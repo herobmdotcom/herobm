@@ -7,7 +7,7 @@
  */
 
 export interface ZoneResponseDto {
-  id: string;
+  zoneId: string;
   locationId: string;
   code: string;
   name: string;

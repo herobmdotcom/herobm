@@ -7,6 +7,7 @@ import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { GlService } from '../gl/gl.service';
 import { AppConfigService } from '../settings/app-config.service';
 import {
+  actors,
   suppliers,
   locations,
   products,
@@ -110,12 +111,17 @@ describe('PurchaseReturnsService', () => {
   });
 
   async function seedBasics() {
+    const actorId = '0e3c4e85-d865-4f40-8abf-c4e89e47261d';
+    await pg.db.insert(actors).values({
+      actorId,
+      name: 'Supplier 1',
+      headquartersAddressLine1: 'AU',
+    });
     await pg.db.insert(suppliers).values({
       vendorId: VENDOR_ID,
+      actorId,
       vendorNumber: 'V1',
-      name: 'Supplier 1',
       currencyCode: 'EUR',
-      address1Country: 'AU',
     });
     await pg.db.insert(locations).values({
       locationId: LOCATION_ID,

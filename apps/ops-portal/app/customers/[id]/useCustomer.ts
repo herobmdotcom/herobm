@@ -5,164 +5,98 @@ import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import { useAutoSaveEntity } from '@/hooks/useAutoSaveEntity';
 import { CUSTOMER_STATE } from '@herobm/shared';
 import type { ValidState } from '@/types/states';
 import { getErrorMessage } from '@herobm/shared';
 
-export type Customer = api.AccountResponseDto & { parentCustomerName?: string | null; childAccounts?: unknown[] };
+export type Customer = api.AccountResponseDto & { parentCustomerName?: string | null; childAccounts?: { customerId: string; name: string }[] };
 
 /* ── Hook ────────────────────────────────────────────────────────── */
 
 export function useAccount(id: string) {
   const t = useTranslations();
 
-  /* ── Core state ──────────────────────────────────────────────── */
-  const [customer, setAccount] = useState<Customer | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  /* ── Editable DTO (mirrors customer, mutated locally) ─────────── */
-  const [dto, setDto] = useState<Partial<Customer>>({});
-  const [isDirty, setIsDirty] = useState(false);
-
-  /* ── Tax positions & Trading terms ───────────────────────────── */
+  /* ── Extra state ─────────────────────────────────────────────── */
   const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
   const [tradingTerms, setTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
-  const [accountGroups, setAccountGroups] = useState<api.AccountGroupResponseDto[]>([]);
-
+  const [accountGroups, setAccountGroups] = useState<api.CustomerGroupResponseDto[]>([]);
   const [hasDiscountRules, setHasDiscountRules] = useState(false);
-
-  /* ── Derived ─────────────────────────────────────────────────── */
-  const isEditable = customer?.stateCode !== CUSTOMER_STATE.ARCHIVED;
   const [creditAssessment, setCreditAssessment] = useState<api.CreditAssessmentResponseDto | null>(null);
 
-  /* ── Data loader ─────────────────────────────────────────────── */
-
-  const loadAccount = async () => {
-    setLoading(true);
-    try {
-      const [dataRes, rulesRes, creditRes] = await Promise.all([
-        api.accountsControllerFindOne(id),
-        api.discountMatrixControllerList({ ownerType: 'customer', customerId: id }).catch(() => ({ data: [] })),
-        api.accountsControllerGetCreditAssessment(id).catch(() => ({ data: null }))
-      ]);
-      const data = dataRes.data;
-      const rules = rulesRes.data || [];
-      setAccount(data);
-      setDto(data);
-      setCreditAssessment(creditRes.data);
-      setHasDiscountRules(rules && rules.length > 0);
-      setIsDirty(false);
-    } catch (err) {
-      reportError(err, 'AccountDetailPage');
-    } finally {
-      setLoading(false);
-    }
+  /* ── Auto Save Hook ──────────────────────────────────────────── */
+  const fetchFn = async (customerId: string) => {
+    const [dataRes, rulesRes, creditRes] = await Promise.all([
+      api.customersControllerFindOne(customerId),
+      api.discountMatrixControllerList({ ownerType: 'customer', customerId }).catch(() => ({ data: [] })),
+      api.customersControllerGetCreditAssessment(customerId).catch(() => ({ data: null }))
+    ]);
+    setHasDiscountRules(rulesRes.data && rulesRes.data.length > 0);
+    setCreditAssessment(creditRes.data);
+    return dataRes as unknown as { data: Customer };
   };
+
+  const {
+    entity: customer,
+    setEntity: setAccount,
+    dto,
+    setDto,
+    loading,
+    saving,
+    isDirty,
+    loadEntity: loadAccount,
+    updateField,
+    saveField,
+    handleSave,
+  } = useAutoSaveEntity<Customer, Partial<Customer>>({
+    id,
+    fetchFn,
+    updateFn: (id, dto) => api.customersControllerUpdate(id, dto as api.UpdateCustomerDto),
+  });
+
+  const isEditable = customer?.stateCode !== CUSTOMER_STATE.ARCHIVED;
+  const [isArchiving, setIsArchiving] = useState(false);
 
   useEffect(() => {
-    loadAccount();
     api.taxPositionsControllerFindAll().then((res: unknown) => setTaxPositions((res as { data: unknown[] }).data as unknown as api.TaxPositionResponseDto[])).catch(console.error);
     api.tradingTermsControllerFindAll().then((res: unknown) => setTradingTerms((res as { data: unknown[] }).data as unknown as api.TradingTermResponseDto[])).catch(console.error);
-    api.accountGroupsControllerFindAll().then((res: unknown) => setAccountGroups((res as { data: unknown[] }).data as unknown as api.AccountGroupResponseDto[])).catch(console.error);
+    api.customerGroupsControllerFindAll().then((res: unknown) => setAccountGroups((res as { data: unknown[] }).data as unknown as api.CustomerGroupResponseDto[])).catch(console.error);
   }, [id]);
-
-  /* ── Field helpers ──────────────────────────────────────────── */
-
-  /** Update a field in the local DTO (no network call). */
-  const updateField = (field: keyof Customer, value: unknown) => {
-    setDto((prev) => ({ ...prev, [field]: value }));
-    setIsDirty(true);
-  };
-
-  /** Persist the current DTO to the server (replaces the old timer-based auto-save). */
-  const handleSave = async () => {
-    if (!isDirty || saving) return;
-    setSaving(true);
-    try {
-      const res = await api.accountsControllerUpdate(id, dto as api.UpdateAccountDto);
-      const updated = res.data;
-      setAccount({ ...updated, events: customer?.events });
-      setDto({ ...updated, events: customer?.events });
-      setIsDirty(false);
-      toast.success(t('toast.accountUpdated'));
-      // Refresh to get updated events
-      const refreshedRes = await api.accountsControllerFindOne(id);
-      const refreshed = refreshedRes.data;
-      setAccount(refreshed);
-      setDto(refreshed);
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  /**
-   * Save a single field on blur. This is the standard onBlur pattern:
-   * update the local DTO then persist if the value actually changed.
-   */
-  const saveField = async (field: keyof Customer, value: unknown) => {
-    // Only persist if the value actually changed vs the server state
-    const serverValue = customer ? customer[field] : undefined;
-    if (value === serverValue || (value === '' && serverValue === null)) return;
-
-    // Optimistically update DTO
-    const nextDto = { ...dto, [field]: value };
-    setDto(nextDto);
-
-    setSaving(true);
-    try {
-      const res = await api.accountsControllerUpdate(id, nextDto as api.UpdateAccountDto);
-      const updated = res.data;
-      setAccount({ ...updated, events: customer?.events });
-      setDto({ ...updated, events: customer?.events });
-      setIsDirty(false);
-      toast.success(t('toast.accountUpdated'));
-      // Refresh events
-      const refreshedRes = await api.accountsControllerFindOne(id);
-      const refreshed = refreshedRes.data;
-      setAccount(refreshed);
-      setDto(refreshed);
-    } catch (err: unknown) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setSaving(false);
-    }
-  };
 
   /* ── Archive / Unarchive ────────────────────────────────────── */
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const archiveAccount = async () => {
     if (!confirm(t('confirm.archiveOrder'))) return;
-    setSaving(true);
+    setIsArchiving(true);
     try {
-      await api.accountsControllerArchive(id, {});
+      await api.customersControllerArchive(id, {});
       toast.success(t('toast.orderArchived'));
-      const refreshedRes = await api.accountsControllerFindOne(id);
+      const refreshedRes = await api.customersControllerFindOne(id);
       const refreshed = refreshedRes.data;
       setAccount(refreshed);
       setDto(refreshed);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {
-      setSaving(false);
+      setIsArchiving(false);
     }
   };
 
   const unarchiveAccount = async () => {
-    setSaving(true);
+    setIsArchiving(true);
     try {
-      await api.accountsControllerUnarchive(id, {});
+      await api.customersControllerUnarchive(id, {});
       toast.success(t('toast.orderUnarchived'));
-      const refreshedRes = await api.accountsControllerFindOne(id);
+      const refreshedRes = await api.customersControllerFindOne(id);
       const refreshed = refreshedRes.data;
       setAccount(refreshed);
       setDto(refreshed);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err));
     } finally {
-      setSaving(false);
+      setIsSaving(false);
     }
   };
 
@@ -171,8 +105,8 @@ export function useAccount(id: string) {
   return {
     customer,
     loading,
-    saving,
-    dto,
+    saving: saving || isSaving,
+    dto: dto as Partial<Customer>,
     isDirty,
     isEditable,
     taxPositions,

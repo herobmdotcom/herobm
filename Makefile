@@ -24,6 +24,7 @@ Database & Migrations:
 Code Generation:
   make dev-generate-sdk - Regenerate OpenAPI spec and TypeScript SDK client
   make dev-db-generate NAME=name - Generate Drizzle SQL migration from schema
+  make generate-extensions - Generate extension registry bindings
 
 Cleanup & Rebuild:
   make clean-dev      - Wipe node_modules, caches, reinstall, and build shared
@@ -231,7 +232,7 @@ test-transform:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make test-transform SOURCE=abm|odoo))
 	"$(DBT)" test --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
-# Rebuild a single model: make transform-select SOURCE=abm MODEL=import_accounts
+# Rebuild a single model: make transform-select SOURCE=abm MODEL=import_customers
 transform-select:
 	$(if $(SOURCE),,$(error Error: SOURCE is required. Usage: make transform-select SOURCE=abm|odoo MODEL=name))
 	"$(DBT)" run --select $(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
@@ -273,6 +274,10 @@ dev-generate-sdk: dev-docs-api
 dev-db-generate:
 	$(if $(NAME),,$(error Error: NAME is required. Usage: make dev-db-generate NAME=migration_name))
 	npx tsx tools/generate_migration.ts $(NAME)
+
+generate-extensions:
+	node apps/api/scripts/generate-extensions.mjs
+	node apps/ops-portal/scripts/generate-extensions.mjs
 # --- ELT Pipeline (Container) ---
 
 extract-docker:
@@ -343,6 +348,9 @@ TEST_E2E_TARGET = test:e2e
 
 test-api-unit:
 	npm run $(TEST_API_TARGET) -w apps/api
+
+test-portal-unit:
+	npm run test -w apps/ops-portal
 
 test-api-cov:
 	npm run test:cov -w apps/api
@@ -495,7 +503,7 @@ verify-db: migrate-status
 verify-all: build-all check-all verify-db test-all
 
 # Supports skipping phases using environment variables, e.g. make verify-fast SKIP_CHECK=1 SKIP_UNIT=1
-verify-fast: $(if $(SKIP_CHECK),,check-all) $(if $(SKIP_UNIT),,test-api-unit) $(if $(SKIP_DEPS),,test-deps) $(if $(SKIP_STRUCTURAL),,test-structural) $(if $(SKIP_E2E),,test-api-e2e)
+verify-fast: $(if $(SKIP_CHECK),,check-all) $(if $(SKIP_UNIT),,test-api-unit test-portal-unit) $(if $(SKIP_DEPS),,test-deps) $(if $(SKIP_STRUCTURAL),,test-structural) $(if $(SKIP_E2E),,test-api-e2e)
 
 test-pipeline:
 	@powershell -ExecutionPolicy Bypass -File scripts/test-pipeline.ps1
@@ -514,12 +522,12 @@ test-structural:
 	@npx knip
 
 test-heavy:
-	@powershell -ExecutionPolicy Bypass -File scripts/run-heavy.ps1
+	@powershell -ExecutionPolicy Bypass -File scripts/run-heavy.ps1 $(if $(SKIP_UI),-SkipUI) $(if $(TEST),-TestName "$(TEST)")
 
 test-data:
 	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
 
-test-all: test-api-unit test-api-e2e test-deps test-structural test-heavy test-data
+test-all: test-api-unit test-portal-unit test-api-e2e test-deps test-structural test-heavy test-data
 
 build-all:
 	npm run build --workspaces --if-present

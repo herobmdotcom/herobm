@@ -21,6 +21,7 @@ import {
   locations,
   products,
   uomDictionary,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { eq, and, asc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -166,22 +167,32 @@ describe('FxRevaluationService', () => {
     });
 
     // Seed Vendor and Customer
+    const vendorActorId = randomUUID();
+    await pg.db.insert(actors).values({
+      actorId: vendorActorId,
+      name: 'Test Vendor',
+      headquartersAddressLine1: 'USA',
+    });
     vendorId = randomUUID();
     await pg.db.insert(suppliers).values({
       vendorId,
+      actorId: vendorActorId,
       vendorNumber: 'V-001',
-      name: 'Test Vendor',
-      address1Country: 'USA',
       isPurchasingBlocked: false,
       currencyCode: 'USD',
     });
 
+    const customerActorId = randomUUID();
+    await pg.db.insert(actors).values({
+      actorId: customerActorId,
+      name: 'Test Customer',
+      headquartersAddressLine1: 'USA',
+    });
     customerId = randomUUID();
     await pg.db.insert(customers).values({
       customerId,
+      actorId: customerActorId,
       customerNumber: 'C-001',
-      name: 'Test Customer',
-      billingAddressCountry: 'USA',
       currencyCode: 'USD',
     });
 

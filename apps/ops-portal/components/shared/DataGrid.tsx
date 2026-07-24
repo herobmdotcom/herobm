@@ -1260,7 +1260,11 @@ export default function DataGrid<T>({
                     if (defaultSortModel) {
                       api.applyColumnState({ state: defaultSortModel });
                     }
-                    setLimit(previousLimit ?? (isMobile ? 25 : 200));
+                    if (previousLimit !== null) {
+                      setLimit(previousLimit);
+                    } else {
+                      setLimit(fetchAll && !isMobile ? 99999 : (isMobile ? 25 : 200));
+                    }
                     setIsCustomView(false);
                   }}
                   className="hover:text-slate-800 focus:outline-none flex items-center justify-center rounded hover:bg-slate-100 px-1 py-0.5 transition-colors"
@@ -1319,19 +1323,28 @@ export default function DataGrid<T>({
                 }
               }
               
+              const wasSortedOrFiltered = isGridFilteredRef.current;
               isGridFilteredRef.current = isSortedOrFiltered;
               const hasSearch = typeof search === 'string' && search.trim() !== '';
               
-              if (isSortedOrFiltered) {
+              if (isSortedOrFiltered && !wasSortedOrFiltered) {
                 if (limit !== 99999) {
                   setPreviousLimit(limit);
                   setLimit(99999);
                 }
+              } else if (!isSortedOrFiltered && wasSortedOrFiltered) {
+                if (limit === 99999) {
+                  if (previousLimit !== null) {
+                    setLimit(previousLimit);
+                  } else if (!fetchAll || isMobile) {
+                    setLimit(isMobile ? 25 : 200);
+                  }
+                }
+              }
+              
+              if (isSortedOrFiltered) {
                 setIsCustomView(true);
               } else {
-                if (limit === 99999 && !fetchAll) {
-                  setLimit(previousLimit ?? (isMobile ? 25 : 200));
-                }
                 setIsCustomView(hasSearch);
               }
             }}
@@ -1349,7 +1362,7 @@ export default function DataGrid<T>({
             } : undefined}
             tooltipShowDelay={300}
             {...(domLayout ? { domLayout } : {})}
-            {...(effectiveFetchAll ? { quickFilterText: search } : {})}
+            quickFilterText={effectiveFetchAll ? search : ""}
             {...(overlayNoRowsTemplate ? { overlayNoRowsTemplate: overlayNoRowsTemplate } : {})}
           />
         </div>

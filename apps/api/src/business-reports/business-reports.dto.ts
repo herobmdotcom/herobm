@@ -52,7 +52,7 @@ export class UpdateBusinessReportDto {
 
 export class BusinessReportResponseDto {
   @ApiProperty()
-  id!: string;
+  reportId!: string;
 
   @ApiProperty()
   slug!: string;

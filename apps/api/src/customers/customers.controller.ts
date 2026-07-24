@@ -10,8 +10,8 @@ import {
   Body,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { AccountsService } from './customers.service';
-import { AccountsWriteService } from './customers-write.service';
+import { CustomersService } from './customers.service';
+import { CustomersWriteService } from './customers-write.service';
 import { CreditAssessmentService } from './credit-assessment.service';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
@@ -22,10 +22,10 @@ import {
 } from '../auth/casbin.guard';
 import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import {
-  CreateAccountDto,
-  UpdateAccountDto,
+  CreateCustomerDto,
+  UpdateCustomerDto,
   EmptyBodyDto,
-  AccountResponseDto,
+  CustomerResponseDto,
   CreditAssessmentResponseDto,
   AgedBalanceResponseDto,
 } from './dto';
@@ -43,10 +43,10 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @Controller('customers')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.CUSTOMERS)
-export class AccountsController {
+export class CustomersController {
   constructor(
-    private readonly accountsService: AccountsService,
-    private readonly accountsWriteService: AccountsWriteService,
+    private readonly customersService: CustomersService,
+    private readonly customersWriteService: CustomersWriteService,
     private readonly creditAssessmentService: CreditAssessmentService,
   ) {}
 
@@ -57,9 +57,9 @@ export class AccountsController {
     description: 'Retrieve a paginated list of customers.',
   })
   @ApiFieldMask()
-  @ApiPaginatedResponse(AccountResponseDto)
+  @ApiPaginatedResponse(CustomerResponseDto)
   findAll(@Query() query: PaginationQuery) {
-    return this.accountsService.findAll(query);
+    return this.customersService.findAll(query);
   }
 
   @Get('aged-balances')
@@ -76,7 +76,7 @@ export class AccountsController {
   })
   @ApiOkResponse({ type: [AgedBalanceResponseDto] })
   getAgedBalances(@Query('agingBasis') agingBasis?: 'invoiceDate' | 'dueDate') {
-    return this.accountsService.getAgedBalances(agingBasis);
+    return this.customersService.getAgedBalances(agingBasis);
   }
 
   @Get(':id')
@@ -86,9 +86,9 @@ export class AccountsController {
     description: 'Retrieve a single customer by ID.',
   })
   @ApiFieldMask()
-  @ApiOkResponse({ type: AccountResponseDto })
+  @ApiOkResponse({ type: CustomerResponseDto })
   findOne(@Param('id') id: string) {
-    return this.accountsService.findOne(id);
+    return this.customersService.findOne(id);
   }
 
   @Get(':id/credit-assessment')
@@ -109,9 +109,9 @@ export class AccountsController {
     summary: 'Create Customer',
     description: 'Create a new customer.',
   })
-  @ApiCreatedResponse({ type: AccountResponseDto })
-  create(@Body() dto: CreateAccountDto, @AuthUser() user: JwtUser) {
-    return this.accountsWriteService.create(dto, user.username);
+  @ApiCreatedResponse({ type: CustomerResponseDto })
+  create(@Body() dto: CreateCustomerDto, @AuthUser() user: JwtUser) {
+    return this.customersWriteService.create(dto, user.username);
   }
 
   @Patch(':id')
@@ -120,13 +120,13 @@ export class AccountsController {
     summary: 'Update Customer',
     description: 'Update an existing customer.',
   })
-  @ApiOkResponse({ type: AccountResponseDto })
+  @ApiOkResponse({ type: CustomerResponseDto })
   update(
     @Param('id') id: string,
-    @Body() dto: UpdateAccountDto,
+    @Body() dto: UpdateCustomerDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.accountsWriteService.update(id, dto, user.username, user.role);
+    return this.customersWriteService.update(id, dto, user.username, user.role);
   }
 
   @Post(':id/archive')
@@ -135,13 +135,13 @@ export class AccountsController {
     summary: 'Archive Customer',
     description: 'Archive a customer.',
   })
-  @ApiCreatedResponse({ type: AccountResponseDto })
+  @ApiCreatedResponse({ type: CustomerResponseDto })
   archive(
     @Param('id') id: string,
     @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.accountsWriteService.archive(id, user.username);
+    return this.customersWriteService.archive(id, user.username);
   }
 
   @Post(':id/unarchive')
@@ -150,12 +150,12 @@ export class AccountsController {
     summary: 'Unarchive Customer',
     description: 'Unarchive a customer.',
   })
-  @ApiCreatedResponse({ type: AccountResponseDto })
+  @ApiCreatedResponse({ type: CustomerResponseDto })
   unarchive(
     @Param('id') id: string,
     @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.accountsWriteService.unarchive(id, user.username);
+    return this.customersWriteService.unarchive(id, user.username);
   }
 }

@@ -8,6 +8,7 @@
 import type { UpdateAppConfigDtoCreditLimitBehavior } from './updateAppConfigDtoCreditLimitBehavior';
 import type { UpdateAppConfigDtoTaxProviderMappings } from './updateAppConfigDtoTaxProviderMappings';
 import type { UpdateAppConfigDtoEnrichmentProviderMappings } from './updateAppConfigDtoEnrichmentProviderMappings';
+import type { OrderedSettingDto } from './orderedSettingDto';
 
 export interface UpdateAppConfigDto {
   defaultFulfillmentLocationId?: string;
@@ -26,4 +27,10 @@ export interface UpdateAppConfigDto {
   smtpUser?: string;
   smtpPass?: string;
   smtpFromAddress?: string;
+  actorTags?: OrderedSettingDto[];
+  actorContactRoles?: OrderedSettingDto[];
+  projectContactRoles?: OrderedSettingDto[];
+  projectActorRoles?: OrderedSettingDto[];
+  projectStatuses?: OrderedSettingDto[];
+  projectTypes?: OrderedSettingDto[];
 }

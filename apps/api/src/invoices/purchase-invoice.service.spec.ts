@@ -20,6 +20,7 @@ import {
   goodsReceivedLines,
   purchaseInvoiceReceipts,
   glAccounts,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
@@ -65,12 +66,18 @@ describe('PurchaseInvoiceService', () => {
       name: 'Main Warehouse',
     });
 
+    const actorId = '00000000-0000-4000-8000-000000000003';
+    await pg.db.insert(actors).values({
+      actorId,
+      name: 'Steel Co',
+      headquartersAddressLine1: 'AU',
+    });
+
     await pg.db.insert(suppliers).values({
       vendorId: VENDOR_ID,
+      actorId,
       vendorNumber: 'V001',
-      name: 'Steel Co',
       currencyCode: 'AUD',
-      address1Country: 'AU',
     });
 
     await pg.db.insert(products).values({

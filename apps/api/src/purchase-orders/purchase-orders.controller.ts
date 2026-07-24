@@ -116,38 +116,6 @@ export class PurchaseOrdersController {
     return this.purchaseOrdersService.findReturnableLines(productId);
   }
 
-  @Get(':id')
-  @CasbinAction('read')
-  @ApiOperation({
-    summary: 'Get Purchase Order',
-    description:
-      'Retrieve detailed information about a specific purchase order.',
-  })
-  @ApiOkResponse({ type: PurchaseOrderResponseDto })
-  async findOne(@Param('id') id: string): Promise<PurchaseOrderResponseDto> {
-    return this.purchaseOrdersService.findOne(id);
-  }
-
-  @Patch(':id')
-  @ApiBody({ type: UpdatePurchaseOrderDto })
-  @CasbinAction('write')
-  @ApiOperation({
-    summary: 'Update Purchase Order',
-    description: 'Update an existing purchase order.',
-  })
-  @ApiOkResponse({ type: PurchaseOrderResponseDto })
-  async update(
-    @Param('id') id: string,
-    @Body() updatePurchaseOrderDto: UpdatePurchaseOrderDto,
-    @AuthUser() user: JwtUser,
-  ) {
-    return this.purchaseOrdersService.update(
-      id,
-      updatePurchaseOrderDto,
-      user.username,
-    );
-  }
-
   @Patch(':id/state')
   @ApiBody({ type: ChangeStateDto })
   @CasbinAction('write')
@@ -254,5 +222,37 @@ export class PurchaseOrdersController {
     @AuthUser() user: JwtUser,
   ) {
     return this.purchaseOrdersService.removeLine(id, lineId, user.username);
+  }
+
+  @Get(':id')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Purchase Order',
+    description:
+      'Retrieve detailed information about a specific purchase order.',
+  })
+  @ApiOkResponse({ type: PurchaseOrderResponseDto })
+  async findOne(@Param('id') id: string): Promise<PurchaseOrderResponseDto> {
+    return this.purchaseOrdersService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ApiBody({ type: UpdatePurchaseOrderDto })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Purchase Order',
+    description: 'Update an existing purchase order.',
+  })
+  @ApiOkResponse({ type: PurchaseOrderResponseDto })
+  async update(
+    @Param('id') id: string,
+    @Body() updatePurchaseOrderDto: UpdatePurchaseOrderDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.purchaseOrdersService.update(
+      id,
+      updatePurchaseOrderDto,
+      user.username,
+    );
   }
 }

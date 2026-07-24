@@ -2,9 +2,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import SlideOver from './SlideOver';
 import { useTranslations } from 'next-intl';
-import { CUSTOMER_STATE } from '@herobm/shared';
+import SlideOver from './SlideOver';
+import { Button } from './Button';
 import { useSettings } from '@/components/SettingsProvider';
 import InheritedSelect from './InheritedSelect';
 
@@ -64,7 +64,7 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
   tradingTermsOptions = []
 }: FinancialDefaultsSlideOverProps<T>) {
   const tc = useTranslations('admin.common');
-  const tGlobal = useTranslations('common');
+  const tCommon = useTranslations('common');
   const tSuppliers = useTranslations('suppliers');
   const tCustomers = useTranslations('customers');
 
@@ -105,12 +105,12 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
       subtitle={ownerLabel}
       footer={
         <div className="flex justify-end gap-2">
-          <button className="btn btn-secondary" onClick={onClose} disabled={saving}>
-            {tc('cancel')}
-          </button>
-          <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-            {saving ? '...' : tc('save')}
-          </button>
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
+            {tCommon('cancel')}
+          </Button>
+          <Button variant="primary" onClick={handleSave} disabled={saving}>
+            {saving ? tCommon('saving') : tCommon('save')}
+          </Button>
         </div>
       }
     >
@@ -287,7 +287,7 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
           {(groupType === 'customer' || groupType === 'supplier') && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">
-                {tGlobal('columns.taxPosition')}
+                {tCommon('columns.taxPosition')}
               </label>
               <InheritedSelect
                 className="input w-full"
@@ -305,7 +305,7 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
           {(groupType === 'customer' || groupType === 'supplier') && tradingTermsOptions && tradingTermsOptions.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">
-                {tGlobal('tradingTerms')}
+                {tCommon('tradingTerms')}
               </label>
               <InheritedSelect
                 className="input w-full"
@@ -370,7 +370,7 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
                   onChange={(e) => handleChange('salesTaxCategoryId', e.target.value)}
                   disabled={saving}
                 >
-                  <option value="">-- {tGlobal('selectNone')} --</option>
+                  <option value="">-- {tCommon('selectNone')} --</option>
                   {taxCategoryOptions?.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
@@ -388,7 +388,7 @@ export default function FinancialDefaultsSlideOver<T extends FinancialDefaultsGr
                   onChange={(e) => handleChange('purchaseTaxCategoryId', e.target.value)}
                   disabled={saving}
                 >
-                  <option value="">-- {tGlobal('selectNone')} --</option>
+                  <option value="">-- {tCommon('selectNone')} --</option>
                   {taxCategoryOptions?.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}

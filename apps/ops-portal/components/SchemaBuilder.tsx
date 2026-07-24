@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { FormField } from './shared/FormField';
+import { Button } from './shared/Button';
 
 export interface SchemaBuilderProps {
   value: Record<string, unknown>;
@@ -164,9 +165,9 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end mb-2">
-        <button className="btn btn-secondary btn-sm" onClick={handleAddField}>
+        <Button variant="secondary" size="sm" onClick={handleAddField}>
           {t('addField')}
-        </button>
+        </Button>
       </div>
       
       {fields.length === 0 ? (
@@ -243,8 +244,8 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                     )}
                   </div>
                   <div className="flex justify-end gap-2 mt-2">
-                    <button className="btn btn-secondary btn-sm" onClick={handleCancel}>{t('cancel')}</button>
-                    <button className="btn btn-primary btn-sm" onClick={() => { setEditingFieldId(null); setEditingSnapshot(null); }}>{t('save')}</button>
+                    <Button variant="secondary" size="sm" onClick={handleCancel}>{t('cancel')}</Button>
+                    <Button variant="primary" size="sm" onClick={() => { setEditingFieldId(null); setEditingSnapshot(null); }}>{t('save')}</Button>
                   </div>
                 </div>
               );

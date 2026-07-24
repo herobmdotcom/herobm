@@ -19,6 +19,7 @@ import {
   uomDictionary,
   salesEvents,
   outbox,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { eq, and } from 'drizzle-orm';
 import {
@@ -97,13 +98,18 @@ describe('PickingService', () => {
         binType: 'storage',
       },
     ]);
+    const custActorId = '00000000-0000-4000-8000-000000000002';
+    await pg.db.insert(actors).values({
+      actorId: custActorId,
+      name: 'Acme Corp',
+      headquartersAddressLine1: 'AU',
+    });
     await pg.db.insert(customers).values({
       customerId: CUSTOMER_ID,
+      actorId: custActorId,
       customerNumber: 'CUST01',
-      name: 'Acme Corp',
       currencyCode: 'AUD',
       stateCode: CUSTOMER_STATE.ACTIVE,
-      billingAddressCountry: 'AU',
       source: 'app',
     });
     await pg.db.insert(products).values({

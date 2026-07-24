@@ -6,18 +6,18 @@
  * OpenAPI spec version: 1.0
  */
 import type {
-  AccountGroupResponseDto,
-  AccountGroupsControllerFindAllParams,
-  AccountGroupsControllerFindOneParams,
-  AccountGroupsControllerRemove200,
-  AccountResponseDto,
-  AccountsControllerFindAll200,
-  AccountsControllerFindAllParams,
-  AccountsControllerFindOneParams,
-  AccountsControllerGetAgedBalancesParams,
   ActiveJobDto,
   ActivitiesControllerFindAllParams,
   ActivityResponseDto,
+  ActorResponseDto,
+  ActorsControllerAddContact201,
+  ActorsControllerAddNote201,
+  ActorsControllerFindAll200,
+  ActorsControllerFindAllParams,
+  ActorsControllerRemove200,
+  ActorsControllerRemoveContact200,
+  ActorsControllerRemoveNote200,
+  ActorsControllerUpdateContact200,
   AddProductComponentDto,
   AddProductUomDto,
   AddReturnLineDto,
@@ -53,6 +53,7 @@ import type {
   BusinessReportsControllerGetReportById200,
   BusinessReportsControllerGetReports200Item,
   BusinessReportsControllerRunReport200Item,
+  BuyerQualificationResponseDto,
   CancelReceptionResponseDto,
   ChangeInvoiceStateDto,
   ChangeOrderStateDto,
@@ -64,21 +65,27 @@ import type {
   CommitFxRevaluationDto,
   ConfirmRejectResponseDto,
   ContactResponseDto,
+  ContactsControllerFindAll200,
+  ContactsControllerFindAllParams,
   ContactsControllerRemove200,
   CostCenterResponseDto,
   CostCentersControllerFindAllParams,
-  CreateAccountDto,
-  CreateAccountGroupDto,
   CreateAccountRequestDto,
   CreateActivityDto,
+  CreateActorContactDto,
+  CreateActorDto,
+  CreateActorNoteDto,
   CreateAdjustmentDto,
   CreateAdjustmentResponseDto,
   CreateApiKeyDto,
   CreateBankStatementLineDto,
   CreateBinDto,
   CreateBusinessReportDto,
+  CreateBuyerQualificationDto,
   CreateContactDto,
   CreateCostCenterDto,
+  CreateCustomerDto,
+  CreateCustomerGroupDto,
   CreateDebitNoteDto,
   CreateDeliveryAddressDto,
   CreateDiscountMatrixDto,
@@ -93,6 +100,11 @@ import type {
   CreatePaymentDto,
   CreateProductDto,
   CreateProductGroupDto,
+  CreateProjectActorDto,
+  CreateProjectContactDto,
+  CreateProjectDto,
+  CreateProjectFeedbackDto,
+  CreateProjectNoteDto,
   CreatePurchaseOrderDto,
   CreatePurchaseOrderLineDto,
   CreatePurchaseReturnDto,
@@ -103,8 +115,10 @@ import type {
   CreateReturnDto,
   CreateSalesCreditNoteDto,
   CreateSalesInvoiceDto,
+  CreateSellerQualificationDto,
   CreateShipmentDto,
   CreateStandaloneInvoiceDto,
+  CreateStrategicIntelligenceDto,
   CreateSupplierDto,
   CreateSupplierExpiryDto,
   CreateSupplierGroupDto,
@@ -121,6 +135,15 @@ import type {
   CreateZoneDto,
   CreditAssessmentResponseDto,
   CsvMetadataDto,
+  CustomerGroupResponseDto,
+  CustomerGroupsControllerFindAllParams,
+  CustomerGroupsControllerFindOneParams,
+  CustomerGroupsControllerRemove200,
+  CustomerResponseDto,
+  CustomersControllerFindAll200,
+  CustomersControllerFindAllParams,
+  CustomersControllerFindOneParams,
+  CustomersControllerGetAgedBalancesParams,
   DashboardControllerGetSummary200,
   DashboardControllerGetTimeline200Item,
   DashboardControllerGetTimelineParams,
@@ -279,6 +302,17 @@ import type {
   ProductsControllerFindAllParams,
   ProductsControllerFindOneParams,
   ProductsControllerGetComponents200,
+  ProjectFeedbackResponseDto,
+  ProjectNoteResponseDto,
+  ProjectResponseDto,
+  ProjectsControllerAddActor201,
+  ProjectsControllerAddContact201,
+  ProjectsControllerRemove200,
+  ProjectsControllerRemoveActor200,
+  ProjectsControllerRemoveContact200,
+  ProjectsControllerRemoveNote200,
+  ProjectsControllerUpdateActor200,
+  ProjectsControllerUpdateContact200,
   PublishEventDto,
   PurchaseDebitNoteResponseDto,
   PurchaseDebitNotesControllerFindAllParams,
@@ -318,6 +352,7 @@ import type {
   SampleReportDto,
   SeedRequestDto,
   SeedTaxRequestDto,
+  SellerQualificationResponseDto,
   SetRolePermissionsDto,
   SettingsFileDto,
   SettingsResponseDto,
@@ -329,6 +364,7 @@ import type {
   ShipmentResponseDto,
   ShippingContextDto,
   ShippingQueueOrderDto,
+  StrategicIntelligenceResponseDto,
   SuccessMessageResponseDto,
   SupplierAgedBalanceResponseDto,
   SupplierGroupResponseDto,
@@ -374,15 +410,18 @@ import type {
   UomDictionaryControllerFindAllParams,
   UomDictionaryControllerFindOneParams,
   UomResponseDto,
-  UpdateAccountDto,
-  UpdateAccountGroupDto,
   UpdateAccountRequestDto,
   UpdateActivityDto,
+  UpdateActorContactDto,
+  UpdateActorDto,
   UpdateAppConfigDto,
   UpdateBinDto,
   UpdateBusinessReportDto,
+  UpdateBuyerQualificationDto,
   UpdateContactDto,
   UpdateCostCenterDto,
+  UpdateCustomerDto,
+  UpdateCustomerGroupDto,
   UpdateDeliveryAddressDto,
   UpdateDiscountMatrixDto,
   UpdateExchangeRateDto,
@@ -397,6 +436,10 @@ import type {
   UpdateProductComponentDto,
   UpdateProductDto,
   UpdateProductGroupDto,
+  UpdateProjectActorDto,
+  UpdateProjectContactDto,
+  UpdateProjectDto,
+  UpdateProjectFeedbackDto,
   UpdatePurchaseInvoiceDto,
   UpdatePurchaseOrderDto,
   UpdatePurchaseOrderLineDto,
@@ -404,8 +447,10 @@ import type {
   UpdateReportDto,
   UpdateReturnDto,
   UpdateReturnLineDto,
+  UpdateSellerQualificationDto,
   UpdateShipmentDto,
   UpdateShipmentLineDto,
+  UpdateStrategicIntelligenceDto,
   UpdateSupplierDto,
   UpdateSupplierExpiryDto,
   UpdateSupplierGroupDto,
@@ -659,19 +704,19 @@ export const rolesControllerRemove = async (role: string, options?: RequestInit)
  * Retrieve a paginated list of customers.
  * @summary List Customers
  */
-export type accountsControllerFindAllResponse200 = {
-  data: AccountsControllerFindAll200
+export type customersControllerFindAllResponse200 = {
+  data: CustomersControllerFindAll200
   status: 200
 }
     
-export type accountsControllerFindAllResponseSuccess = (accountsControllerFindAllResponse200) & {
+export type customersControllerFindAllResponseSuccess = (customersControllerFindAllResponse200) & {
   headers: Headers;
 };
 ;
 
-export type accountsControllerFindAllResponse = (accountsControllerFindAllResponseSuccess)
+export type customersControllerFindAllResponse = (customersControllerFindAllResponseSuccess)
 
-export const getAccountsControllerFindAllUrl = (params?: AccountsControllerFindAllParams,) => {
+export const getCustomersControllerFindAllUrl = (params?: CustomersControllerFindAllParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -686,9 +731,9 @@ export const getAccountsControllerFindAllUrl = (params?: AccountsControllerFindA
   return stringifiedParams.length > 0 ? `/customers?${stringifiedParams}` : `/customers`
 }
 
-export const accountsControllerFindAll = async (params?: AccountsControllerFindAllParams, options?: RequestInit): Promise<accountsControllerFindAllResponse> => {
+export const customersControllerFindAll = async (params?: CustomersControllerFindAllParams, options?: RequestInit): Promise<customersControllerFindAllResponse> => {
   
-  return customFetch<accountsControllerFindAllResponse>(getAccountsControllerFindAllUrl(params),
+  return customFetch<customersControllerFindAllResponse>(getCustomersControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -703,19 +748,19 @@ export const accountsControllerFindAll = async (params?: AccountsControllerFindA
  * Create a new customer.
  * @summary Create Customer
  */
-export type accountsControllerCreateResponse201 = {
-  data: AccountResponseDto
+export type customersControllerCreateResponse201 = {
+  data: CustomerResponseDto
   status: 201
 }
     
-export type accountsControllerCreateResponseSuccess = (accountsControllerCreateResponse201) & {
+export type customersControllerCreateResponseSuccess = (customersControllerCreateResponse201) & {
   headers: Headers;
 };
 ;
 
-export type accountsControllerCreateResponse = (accountsControllerCreateResponseSuccess)
+export type customersControllerCreateResponse = (customersControllerCreateResponseSuccess)
 
-export const getAccountsControllerCreateUrl = () => {
+export const getCustomersControllerCreateUrl = () => {
 
 
   
@@ -723,15 +768,15 @@ export const getAccountsControllerCreateUrl = () => {
   return `/customers`
 }
 
-export const accountsControllerCreate = async (createAccountDto: CreateAccountDto, options?: RequestInit): Promise<accountsControllerCreateResponse> => {
+export const customersControllerCreate = async (createCustomerDto: CreateCustomerDto, options?: RequestInit): Promise<customersControllerCreateResponse> => {
   
-  return customFetch<accountsControllerCreateResponse>(getAccountsControllerCreateUrl(),
+  return customFetch<customersControllerCreateResponse>(getCustomersControllerCreateUrl(),
   {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      createAccountDto,)
+      createCustomerDto,)
   }
 );}
 
@@ -741,19 +786,19 @@ export const accountsControllerCreate = async (createAccountDto: CreateAccountDt
  * Retrieve aged balances for all customers with outstanding invoices.
  * @summary Get Aged Balances
  */
-export type accountsControllerGetAgedBalancesResponse200 = {
+export type customersControllerGetAgedBalancesResponse200 = {
   data: AgedBalanceResponseDto[]
   status: 200
 }
     
-export type accountsControllerGetAgedBalancesResponseSuccess = (accountsControllerGetAgedBalancesResponse200) & {
+export type customersControllerGetAgedBalancesResponseSuccess = (customersControllerGetAgedBalancesResponse200) & {
   headers: Headers;
 };
 ;
 
-export type accountsControllerGetAgedBalancesResponse = (accountsControllerGetAgedBalancesResponseSuccess)
+export type customersControllerGetAgedBalancesResponse = (customersControllerGetAgedBalancesResponseSuccess)
 
-export const getAccountsControllerGetAgedBalancesUrl = (params?: AccountsControllerGetAgedBalancesParams,) => {
+export const getCustomersControllerGetAgedBalancesUrl = (params?: CustomersControllerGetAgedBalancesParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -768,9 +813,9 @@ export const getAccountsControllerGetAgedBalancesUrl = (params?: AccountsControl
   return stringifiedParams.length > 0 ? `/customers/aged-balances?${stringifiedParams}` : `/customers/aged-balances`
 }
 
-export const accountsControllerGetAgedBalances = async (params?: AccountsControllerGetAgedBalancesParams, options?: RequestInit): Promise<accountsControllerGetAgedBalancesResponse> => {
+export const customersControllerGetAgedBalances = async (params?: CustomersControllerGetAgedBalancesParams, options?: RequestInit): Promise<customersControllerGetAgedBalancesResponse> => {
   
-  return customFetch<accountsControllerGetAgedBalancesResponse>(getAccountsControllerGetAgedBalancesUrl(params),
+  return customFetch<customersControllerGetAgedBalancesResponse>(getCustomersControllerGetAgedBalancesUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -785,20 +830,20 @@ export const accountsControllerGetAgedBalances = async (params?: AccountsControl
  * Retrieve a single customer by ID.
  * @summary Get Customer
  */
-export type accountsControllerFindOneResponse200 = {
-  data: AccountResponseDto
+export type customersControllerFindOneResponse200 = {
+  data: CustomerResponseDto
   status: 200
 }
     
-export type accountsControllerFindOneResponseSuccess = (accountsControllerFindOneResponse200) & {
+export type customersControllerFindOneResponseSuccess = (customersControllerFindOneResponse200) & {
   headers: Headers;
 };
 ;
 
-export type accountsControllerFindOneResponse = (accountsControllerFindOneResponseSuccess)
+export type customersControllerFindOneResponse = (customersControllerFindOneResponseSuccess)
 
-export const getAccountsControllerFindOneUrl = (id: string,
-    params?: AccountsControllerFindOneParams,) => {
+export const getCustomersControllerFindOneUrl = (id: string,
+    params?: CustomersControllerFindOneParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -813,10 +858,10 @@ export const getAccountsControllerFindOneUrl = (id: string,
   return stringifiedParams.length > 0 ? `/customers/${id}?${stringifiedParams}` : `/customers/${id}`
 }
 
-export const accountsControllerFindOne = async (id: string,
-    params?: AccountsControllerFindOneParams, options?: RequestInit): Promise<accountsControllerFindOneResponse> => {
+export const customersControllerFindOne = async (id: string,
+    params?: CustomersControllerFindOneParams, options?: RequestInit): Promise<customersControllerFindOneResponse> => {
   
-  return customFetch<accountsControllerFindOneResponse>(getAccountsControllerFindOneUrl(id,params),
+  return customFetch<customersControllerFindOneResponse>(getCustomersControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -831,19 +876,19 @@ export const accountsControllerFindOne = async (id: string,
  * Update an existing customer.
  * @summary Update Customer
  */
-export type accountsControllerUpdateResponse200 = {
-  data: AccountResponseDto
+export type customersControllerUpdateResponse200 = {
+  data: CustomerResponseDto
   status: 200
 }
     
-export type accountsControllerUpdateResponseSuccess = (accountsControllerUpdateResponse200) & {
+export type customersControllerUpdateResponseSuccess = (customersControllerUpdateResponse200) & {
   headers: Headers;
 };
 ;
 
-export type accountsControllerUpdateResponse = (accountsControllerUpdateResponseSuccess)
+export type customersControllerUpdateResponse = (customersControllerUpdateResponseSuccess)
 
-export const getAccountsControllerUpdateUrl = (id: string,) => {
+export const getCustomersControllerUpdateUrl = (id: string,) => {
 
 
   
@@ -851,16 +896,16 @@ export const getAccountsControllerUpdateUrl = (id: string,) => {
   return `/customers/${id}`
 }
 
-export const accountsControllerUpdate = async (id: string,
-    updateAccountDto: UpdateAccountDto, options?: RequestInit): Promise<accountsControllerUpdateResponse> => {
+export const customersControllerUpdate = async (id: string,
+    updateCustomerDto: UpdateCustomerDto, options?: RequestInit): Promise<customersControllerUpdateResponse> => {
   
-  return customFetch<accountsControllerUpdateResponse>(getAccountsControllerUpdateUrl(id),
+  return customFetch<customersControllerUpdateResponse>(getCustomersControllerUpdateUrl(id),
   {      
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      updateAccountDto,)
+      updateCustomerDto,)
   }
 );}
 
@@ -870,19 +915,19 @@ export const accountsControllerUpdate = async (id: string,
  * Retrieve the credit assessment for a customer.
  * @summary Get Credit Assessment
  */
-export type accountsControllerGetCreditAssessmentResponse200 = {
+export type customersControllerGetCreditAssessmentResponse200 = {
   data: CreditAssessmentResponseDto
   status: 200
 }
     
-export type accountsControllerGetCreditAssessmentResponseSuccess = (accountsControllerGetCreditAssessmentResponse200) & {
+export type customersControllerGetCreditAssessmentResponseSuccess = (customersControllerGetCreditAssessmentResponse200) & {
   headers: Headers;
 };
 ;
 
-export type accountsControllerGetCreditAssessmentResponse = (accountsControllerGetCreditAssessmentResponseSuccess)
+export type customersControllerGetCreditAssessmentResponse = (customersControllerGetCreditAssessmentResponseSuccess)
 
-export const getAccountsControllerGetCreditAssessmentUrl = (id: string,) => {
+export const getCustomersControllerGetCreditAssessmentUrl = (id: string,) => {
 
 
   
@@ -890,9 +935,9 @@ export const getAccountsControllerGetCreditAssessmentUrl = (id: string,) => {
   return `/customers/${id}/credit-assessment`
 }
 
-export const accountsControllerGetCreditAssessment = async (id: string, options?: RequestInit): Promise<accountsControllerGetCreditAssessmentResponse> => {
+export const customersControllerGetCreditAssessment = async (id: string, options?: RequestInit): Promise<customersControllerGetCreditAssessmentResponse> => {
   
-  return customFetch<accountsControllerGetCreditAssessmentResponse>(getAccountsControllerGetCreditAssessmentUrl(id),
+  return customFetch<customersControllerGetCreditAssessmentResponse>(getCustomersControllerGetCreditAssessmentUrl(id),
   {      
     ...options,
     method: 'GET'
@@ -907,19 +952,19 @@ export const accountsControllerGetCreditAssessment = async (id: string, options?
  * Archive a customer.
  * @summary Archive Customer
  */
-export type accountsControllerArchiveResponse201 = {
-  data: AccountResponseDto
+export type customersControllerArchiveResponse201 = {
+  data: CustomerResponseDto
   status: 201
 }
     
-export type accountsControllerArchiveResponseSuccess = (accountsControllerArchiveResponse201) & {
+export type customersControllerArchiveResponseSuccess = (customersControllerArchiveResponse201) & {
   headers: Headers;
 };
 ;
 
-export type accountsControllerArchiveResponse = (accountsControllerArchiveResponseSuccess)
+export type customersControllerArchiveResponse = (customersControllerArchiveResponseSuccess)
 
-export const getAccountsControllerArchiveUrl = (id: string,) => {
+export const getCustomersControllerArchiveUrl = (id: string,) => {
 
 
   
@@ -927,10 +972,10 @@ export const getAccountsControllerArchiveUrl = (id: string,) => {
   return `/customers/${id}/archive`
 }
 
-export const accountsControllerArchive = async (id: string,
-    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<accountsControllerArchiveResponse> => {
+export const customersControllerArchive = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<customersControllerArchiveResponse> => {
   
-  return customFetch<accountsControllerArchiveResponse>(getAccountsControllerArchiveUrl(id),
+  return customFetch<customersControllerArchiveResponse>(getCustomersControllerArchiveUrl(id),
   {      
     ...options,
     method: 'POST',
@@ -946,19 +991,19 @@ export const accountsControllerArchive = async (id: string,
  * Unarchive a customer.
  * @summary Unarchive Customer
  */
-export type accountsControllerUnarchiveResponse201 = {
-  data: AccountResponseDto
+export type customersControllerUnarchiveResponse201 = {
+  data: CustomerResponseDto
   status: 201
 }
     
-export type accountsControllerUnarchiveResponseSuccess = (accountsControllerUnarchiveResponse201) & {
+export type customersControllerUnarchiveResponseSuccess = (customersControllerUnarchiveResponse201) & {
   headers: Headers;
 };
 ;
 
-export type accountsControllerUnarchiveResponse = (accountsControllerUnarchiveResponseSuccess)
+export type customersControllerUnarchiveResponse = (customersControllerUnarchiveResponseSuccess)
 
-export const getAccountsControllerUnarchiveUrl = (id: string,) => {
+export const getCustomersControllerUnarchiveUrl = (id: string,) => {
 
 
   
@@ -966,10 +1011,10 @@ export const getAccountsControllerUnarchiveUrl = (id: string,) => {
   return `/customers/${id}/unarchive`
 }
 
-export const accountsControllerUnarchive = async (id: string,
-    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<accountsControllerUnarchiveResponse> => {
+export const customersControllerUnarchive = async (id: string,
+    emptyBodyDto: EmptyBodyDto, options?: RequestInit): Promise<customersControllerUnarchiveResponse> => {
   
-  return customFetch<accountsControllerUnarchiveResponse>(getAccountsControllerUnarchiveUrl(id),
+  return customFetch<customersControllerUnarchiveResponse>(getCustomersControllerUnarchiveUrl(id),
   {      
     ...options,
     method: 'POST',
@@ -985,19 +1030,19 @@ export const accountsControllerUnarchive = async (id: string,
  * Retrieve a list of all customer groups.
  * @summary List Customer Groups
  */
-export type accountGroupsControllerFindAllResponse200 = {
-  data: AccountGroupResponseDto[]
+export type customerGroupsControllerFindAllResponse200 = {
+  data: CustomerGroupResponseDto[]
   status: 200
 }
     
-export type accountGroupsControllerFindAllResponseSuccess = (accountGroupsControllerFindAllResponse200) & {
+export type customerGroupsControllerFindAllResponseSuccess = (customerGroupsControllerFindAllResponse200) & {
   headers: Headers;
 };
 ;
 
-export type accountGroupsControllerFindAllResponse = (accountGroupsControllerFindAllResponseSuccess)
+export type customerGroupsControllerFindAllResponse = (customerGroupsControllerFindAllResponseSuccess)
 
-export const getAccountGroupsControllerFindAllUrl = (params?: AccountGroupsControllerFindAllParams,) => {
+export const getCustomerGroupsControllerFindAllUrl = (params?: CustomerGroupsControllerFindAllParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -1012,9 +1057,9 @@ export const getAccountGroupsControllerFindAllUrl = (params?: AccountGroupsContr
   return stringifiedParams.length > 0 ? `/customer-groups?${stringifiedParams}` : `/customer-groups`
 }
 
-export const accountGroupsControllerFindAll = async (params?: AccountGroupsControllerFindAllParams, options?: RequestInit): Promise<accountGroupsControllerFindAllResponse> => {
+export const customerGroupsControllerFindAll = async (params?: CustomerGroupsControllerFindAllParams, options?: RequestInit): Promise<customerGroupsControllerFindAllResponse> => {
   
-  return customFetch<accountGroupsControllerFindAllResponse>(getAccountGroupsControllerFindAllUrl(params),
+  return customFetch<customerGroupsControllerFindAllResponse>(getCustomerGroupsControllerFindAllUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -1029,19 +1074,19 @@ export const accountGroupsControllerFindAll = async (params?: AccountGroupsContr
  * Add a new customer group to the system.
  * @summary Create Customer Group
  */
-export type accountGroupsControllerCreateResponse201 = {
-  data: AccountGroupResponseDto
+export type customerGroupsControllerCreateResponse201 = {
+  data: CustomerGroupResponseDto
   status: 201
 }
     
-export type accountGroupsControllerCreateResponseSuccess = (accountGroupsControllerCreateResponse201) & {
+export type customerGroupsControllerCreateResponseSuccess = (customerGroupsControllerCreateResponse201) & {
   headers: Headers;
 };
 ;
 
-export type accountGroupsControllerCreateResponse = (accountGroupsControllerCreateResponseSuccess)
+export type customerGroupsControllerCreateResponse = (customerGroupsControllerCreateResponseSuccess)
 
-export const getAccountGroupsControllerCreateUrl = () => {
+export const getCustomerGroupsControllerCreateUrl = () => {
 
 
   
@@ -1049,15 +1094,15 @@ export const getAccountGroupsControllerCreateUrl = () => {
   return `/customer-groups`
 }
 
-export const accountGroupsControllerCreate = async (createAccountGroupDto: CreateAccountGroupDto, options?: RequestInit): Promise<accountGroupsControllerCreateResponse> => {
+export const customerGroupsControllerCreate = async (createCustomerGroupDto: CreateCustomerGroupDto, options?: RequestInit): Promise<customerGroupsControllerCreateResponse> => {
   
-  return customFetch<accountGroupsControllerCreateResponse>(getAccountGroupsControllerCreateUrl(),
+  return customFetch<customerGroupsControllerCreateResponse>(getCustomerGroupsControllerCreateUrl(),
   {      
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      createAccountGroupDto,)
+      createCustomerGroupDto,)
   }
 );}
 
@@ -1067,20 +1112,20 @@ export const accountGroupsControllerCreate = async (createAccountGroupDto: Creat
  * Retrieve detailed information about a specific customer group.
  * @summary Get Customer Group
  */
-export type accountGroupsControllerFindOneResponse200 = {
-  data: AccountGroupResponseDto
+export type customerGroupsControllerFindOneResponse200 = {
+  data: CustomerGroupResponseDto
   status: 200
 }
     
-export type accountGroupsControllerFindOneResponseSuccess = (accountGroupsControllerFindOneResponse200) & {
+export type customerGroupsControllerFindOneResponseSuccess = (customerGroupsControllerFindOneResponse200) & {
   headers: Headers;
 };
 ;
 
-export type accountGroupsControllerFindOneResponse = (accountGroupsControllerFindOneResponseSuccess)
+export type customerGroupsControllerFindOneResponse = (customerGroupsControllerFindOneResponseSuccess)
 
-export const getAccountGroupsControllerFindOneUrl = (id: string,
-    params?: AccountGroupsControllerFindOneParams,) => {
+export const getCustomerGroupsControllerFindOneUrl = (id: string,
+    params?: CustomerGroupsControllerFindOneParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -1095,10 +1140,10 @@ export const getAccountGroupsControllerFindOneUrl = (id: string,
   return stringifiedParams.length > 0 ? `/customer-groups/${id}?${stringifiedParams}` : `/customer-groups/${id}`
 }
 
-export const accountGroupsControllerFindOne = async (id: string,
-    params?: AccountGroupsControllerFindOneParams, options?: RequestInit): Promise<accountGroupsControllerFindOneResponse> => {
+export const customerGroupsControllerFindOne = async (id: string,
+    params?: CustomerGroupsControllerFindOneParams, options?: RequestInit): Promise<customerGroupsControllerFindOneResponse> => {
   
-  return customFetch<accountGroupsControllerFindOneResponse>(getAccountGroupsControllerFindOneUrl(id,params),
+  return customFetch<customerGroupsControllerFindOneResponse>(getCustomerGroupsControllerFindOneUrl(id,params),
   {      
     ...options,
     method: 'GET'
@@ -1113,19 +1158,19 @@ export const accountGroupsControllerFindOne = async (id: string,
  * Modify the details of an existing customer group.
  * @summary Update Customer Group
  */
-export type accountGroupsControllerUpdateResponse200 = {
-  data: AccountGroupResponseDto
+export type customerGroupsControllerUpdateResponse200 = {
+  data: CustomerGroupResponseDto
   status: 200
 }
     
-export type accountGroupsControllerUpdateResponseSuccess = (accountGroupsControllerUpdateResponse200) & {
+export type customerGroupsControllerUpdateResponseSuccess = (customerGroupsControllerUpdateResponse200) & {
   headers: Headers;
 };
 ;
 
-export type accountGroupsControllerUpdateResponse = (accountGroupsControllerUpdateResponseSuccess)
+export type customerGroupsControllerUpdateResponse = (customerGroupsControllerUpdateResponseSuccess)
 
-export const getAccountGroupsControllerUpdateUrl = (id: string,) => {
+export const getCustomerGroupsControllerUpdateUrl = (id: string,) => {
 
 
   
@@ -1133,16 +1178,16 @@ export const getAccountGroupsControllerUpdateUrl = (id: string,) => {
   return `/customer-groups/${id}`
 }
 
-export const accountGroupsControllerUpdate = async (id: string,
-    updateAccountGroupDto: UpdateAccountGroupDto, options?: RequestInit): Promise<accountGroupsControllerUpdateResponse> => {
+export const customerGroupsControllerUpdate = async (id: string,
+    updateCustomerGroupDto: UpdateCustomerGroupDto, options?: RequestInit): Promise<customerGroupsControllerUpdateResponse> => {
   
-  return customFetch<accountGroupsControllerUpdateResponse>(getAccountGroupsControllerUpdateUrl(id),
+  return customFetch<customerGroupsControllerUpdateResponse>(getCustomerGroupsControllerUpdateUrl(id),
   {      
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      updateAccountGroupDto,)
+      updateCustomerGroupDto,)
   }
 );}
 
@@ -1152,19 +1197,19 @@ export const accountGroupsControllerUpdate = async (id: string,
  * Remove a customer group from the system.
  * @summary Delete Customer Group
  */
-export type accountGroupsControllerRemoveResponse200 = {
-  data: AccountGroupsControllerRemove200
+export type customerGroupsControllerRemoveResponse200 = {
+  data: CustomerGroupsControllerRemove200
   status: 200
 }
     
-export type accountGroupsControllerRemoveResponseSuccess = (accountGroupsControllerRemoveResponse200) & {
+export type customerGroupsControllerRemoveResponseSuccess = (customerGroupsControllerRemoveResponse200) & {
   headers: Headers;
 };
 ;
 
-export type accountGroupsControllerRemoveResponse = (accountGroupsControllerRemoveResponseSuccess)
+export type customerGroupsControllerRemoveResponse = (customerGroupsControllerRemoveResponseSuccess)
 
-export const getAccountGroupsControllerRemoveUrl = (id: string,) => {
+export const getCustomerGroupsControllerRemoveUrl = (id: string,) => {
 
 
   
@@ -1172,9 +1217,9 @@ export const getAccountGroupsControllerRemoveUrl = (id: string,) => {
   return `/customer-groups/${id}`
 }
 
-export const accountGroupsControllerRemove = async (id: string, options?: RequestInit): Promise<accountGroupsControllerRemoveResponse> => {
+export const customerGroupsControllerRemove = async (id: string, options?: RequestInit): Promise<customerGroupsControllerRemoveResponse> => {
   
-  return customFetch<accountGroupsControllerRemoveResponse>(getAccountGroupsControllerRemoveUrl(id),
+  return customFetch<customerGroupsControllerRemoveResponse>(getCustomerGroupsControllerRemoveUrl(id),
   {      
     ...options,
     method: 'DELETE'
@@ -15788,6 +15833,50 @@ export const userSettingsControllerUpdateSettings = async (updateUserSettingsDto
 
 
 /**
+ * Retrieve a paginated list of contacts.
+ * @summary List Contacts
+ */
+export type contactsControllerFindAllResponse200 = {
+  data: ContactsControllerFindAll200
+  status: 200
+}
+    
+export type contactsControllerFindAllResponseSuccess = (contactsControllerFindAllResponse200) & {
+  headers: Headers;
+};
+;
+
+export type contactsControllerFindAllResponse = (contactsControllerFindAllResponseSuccess)
+
+export const getContactsControllerFindAllUrl = (params?: ContactsControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/contacts?${stringifiedParams}` : `/contacts`
+}
+
+export const contactsControllerFindAll = async (params?: ContactsControllerFindAllParams, options?: RequestInit): Promise<contactsControllerFindAllResponse> => {
+  
+  return customFetch<contactsControllerFindAllResponse>(getContactsControllerFindAllUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
  * Create a new contact for a given entity.
  * @summary Create Contact
  */
@@ -15820,6 +15909,43 @@ export const contactsControllerCreate = async (createContactDto: CreateContactDt
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       createContactDto,)
+  }
+);}
+
+
+
+/**
+ * Retrieve a single contact by ID.
+ * @summary Get Contact
+ */
+export type contactsControllerFindOneResponse200 = {
+  data: ContactResponseDto
+  status: 200
+}
+    
+export type contactsControllerFindOneResponseSuccess = (contactsControllerFindOneResponse200) & {
+  headers: Headers;
+};
+;
+
+export type contactsControllerFindOneResponse = (contactsControllerFindOneResponseSuccess)
+
+export const getContactsControllerFindOneUrl = (id: string,) => {
+
+
+  
+
+  return `/contacts/${id}`
+}
+
+export const contactsControllerFindOne = async (id: string, options?: RequestInit): Promise<contactsControllerFindOneResponse> => {
+  
+  return customFetch<contactsControllerFindOneResponse>(getContactsControllerFindOneUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 
@@ -16010,6 +16136,1335 @@ export const deliveryAddressesControllerRemove = async (id: string, options?: Re
     method: 'DELETE'
     
     
+  }
+);}
+
+
+
+/**
+ * @summary Create Actor
+ */
+export type actorsControllerCreateResponse201 = {
+  data: ActorResponseDto
+  status: 201
+}
+    
+export type actorsControllerCreateResponseSuccess = (actorsControllerCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerCreateResponse = (actorsControllerCreateResponseSuccess)
+
+export const getActorsControllerCreateUrl = () => {
+
+
+  
+
+  return `/actors`
+}
+
+export const actorsControllerCreate = async (createActorDto: CreateActorDto, options?: RequestInit): Promise<actorsControllerCreateResponse> => {
+  
+  return customFetch<actorsControllerCreateResponse>(getActorsControllerCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createActorDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Get all Actors (paginated)
+ */
+export type actorsControllerFindAllResponse200 = {
+  data: ActorsControllerFindAll200
+  status: 200
+}
+    
+export type actorsControllerFindAllResponseSuccess = (actorsControllerFindAllResponse200) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerFindAllResponse = (actorsControllerFindAllResponseSuccess)
+
+export const getActorsControllerFindAllUrl = (params?: ActorsControllerFindAllParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/actors?${stringifiedParams}` : `/actors`
+}
+
+export const actorsControllerFindAll = async (params?: ActorsControllerFindAllParams, options?: RequestInit): Promise<actorsControllerFindAllResponse> => {
+  
+  return customFetch<actorsControllerFindAllResponse>(getActorsControllerFindAllUrl(params),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Get Actor by ID
+ */
+export type actorsControllerFindOneResponse200 = {
+  data: ActorResponseDto
+  status: 200
+}
+    
+export type actorsControllerFindOneResponseSuccess = (actorsControllerFindOneResponse200) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerFindOneResponse = (actorsControllerFindOneResponseSuccess)
+
+export const getActorsControllerFindOneUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}`
+}
+
+export const actorsControllerFindOne = async (id: string, options?: RequestInit): Promise<actorsControllerFindOneResponse> => {
+  
+  return customFetch<actorsControllerFindOneResponse>(getActorsControllerFindOneUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Update Actor
+ */
+export type actorsControllerUpdateResponse200 = {
+  data: ActorResponseDto
+  status: 200
+}
+    
+export type actorsControllerUpdateResponseSuccess = (actorsControllerUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerUpdateResponse = (actorsControllerUpdateResponseSuccess)
+
+export const getActorsControllerUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}`
+}
+
+export const actorsControllerUpdate = async (id: string,
+    updateActorDto: UpdateActorDto, options?: RequestInit): Promise<actorsControllerUpdateResponse> => {
+  
+  return customFetch<actorsControllerUpdateResponse>(getActorsControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateActorDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Delete Actor
+ */
+export type actorsControllerRemoveResponse200 = {
+  data: ActorsControllerRemove200
+  status: 200
+}
+    
+export type actorsControllerRemoveResponseSuccess = (actorsControllerRemoveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerRemoveResponse = (actorsControllerRemoveResponseSuccess)
+
+export const getActorsControllerRemoveUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}`
+}
+
+export const actorsControllerRemove = async (id: string, options?: RequestInit): Promise<actorsControllerRemoveResponse> => {
+  
+  return customFetch<actorsControllerRemoveResponse>(getActorsControllerRemoveUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Update Contact Link on Actor
+ */
+export type actorsControllerUpdateContactResponse200 = {
+  data: ActorsControllerUpdateContact200
+  status: 200
+}
+    
+export type actorsControllerUpdateContactResponseSuccess = (actorsControllerUpdateContactResponse200) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerUpdateContactResponse = (actorsControllerUpdateContactResponseSuccess)
+
+export const getActorsControllerUpdateContactUrl = (id: string,
+    contactId: string,) => {
+
+
+  
+
+  return `/actors/${id}/contacts/${contactId}`
+}
+
+export const actorsControllerUpdateContact = async (id: string,
+    contactId: string,
+    updateActorContactDto: UpdateActorContactDto, options?: RequestInit): Promise<actorsControllerUpdateContactResponse> => {
+  
+  return customFetch<actorsControllerUpdateContactResponse>(getActorsControllerUpdateContactUrl(id,contactId),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateActorContactDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Remove Contact Link from Actor
+ */
+export type actorsControllerRemoveContactResponse200 = {
+  data: ActorsControllerRemoveContact200
+  status: 200
+}
+    
+export type actorsControllerRemoveContactResponseSuccess = (actorsControllerRemoveContactResponse200) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerRemoveContactResponse = (actorsControllerRemoveContactResponseSuccess)
+
+export const getActorsControllerRemoveContactUrl = (id: string,
+    contactId: string,) => {
+
+
+  
+
+  return `/actors/${id}/contacts/${contactId}`
+}
+
+export const actorsControllerRemoveContact = async (id: string,
+    contactId: string, options?: RequestInit): Promise<actorsControllerRemoveContactResponse> => {
+  
+  return customFetch<actorsControllerRemoveContactResponse>(getActorsControllerRemoveContactUrl(id,contactId),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Link Contact to Actor
+ */
+export type actorsControllerAddContactResponse201 = {
+  data: ActorsControllerAddContact201
+  status: 201
+}
+    
+export type actorsControllerAddContactResponseSuccess = (actorsControllerAddContactResponse201) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerAddContactResponse = (actorsControllerAddContactResponseSuccess)
+
+export const getActorsControllerAddContactUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}/contacts`
+}
+
+export const actorsControllerAddContact = async (id: string,
+    createActorContactDto: CreateActorContactDto, options?: RequestInit): Promise<actorsControllerAddContactResponse> => {
+  
+  return customFetch<actorsControllerAddContactResponse>(getActorsControllerAddContactUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createActorContactDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Add Note to Actor
+ */
+export type actorsControllerAddNoteResponse201 = {
+  data: ActorsControllerAddNote201
+  status: 201
+}
+    
+export type actorsControllerAddNoteResponseSuccess = (actorsControllerAddNoteResponse201) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerAddNoteResponse = (actorsControllerAddNoteResponseSuccess)
+
+export const getActorsControllerAddNoteUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}/notes`
+}
+
+export const actorsControllerAddNote = async (id: string,
+    createActorNoteDto: CreateActorNoteDto, options?: RequestInit): Promise<actorsControllerAddNoteResponse> => {
+  
+  return customFetch<actorsControllerAddNoteResponse>(getActorsControllerAddNoteUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createActorNoteDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Remove Note from Actor
+ */
+export type actorsControllerRemoveNoteResponse200 = {
+  data: ActorsControllerRemoveNote200
+  status: 200
+}
+    
+export type actorsControllerRemoveNoteResponseSuccess = (actorsControllerRemoveNoteResponse200) & {
+  headers: Headers;
+};
+;
+
+export type actorsControllerRemoveNoteResponse = (actorsControllerRemoveNoteResponseSuccess)
+
+export const getActorsControllerRemoveNoteUrl = (id: string,
+    noteId: string,) => {
+
+
+  
+
+  return `/actors/${id}/notes/${noteId}`
+}
+
+export const actorsControllerRemoveNote = async (id: string,
+    noteId: string, options?: RequestInit): Promise<actorsControllerRemoveNoteResponse> => {
+  
+  return customFetch<actorsControllerRemoveNoteResponse>(getActorsControllerRemoveNoteUrl(id,noteId),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Create Project
+ */
+export type projectsControllerCreateResponse201 = {
+  data: ProjectResponseDto
+  status: 201
+}
+    
+export type projectsControllerCreateResponseSuccess = (projectsControllerCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerCreateResponse = (projectsControllerCreateResponseSuccess)
+
+export const getProjectsControllerCreateUrl = () => {
+
+
+  
+
+  return `/projects`
+}
+
+export const projectsControllerCreate = async (createProjectDto: CreateProjectDto, options?: RequestInit): Promise<projectsControllerCreateResponse> => {
+  
+  return customFetch<projectsControllerCreateResponse>(getProjectsControllerCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createProjectDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Get all Projects
+ */
+export type projectsControllerFindAllResponse200 = {
+  data: ProjectResponseDto[]
+  status: 200
+}
+    
+export type projectsControllerFindAllResponseSuccess = (projectsControllerFindAllResponse200) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerFindAllResponse = (projectsControllerFindAllResponseSuccess)
+
+export const getProjectsControllerFindAllUrl = () => {
+
+
+  
+
+  return `/projects`
+}
+
+export const projectsControllerFindAll = async ( options?: RequestInit): Promise<projectsControllerFindAllResponse> => {
+  
+  return customFetch<projectsControllerFindAllResponse>(getProjectsControllerFindAllUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Get Project by ID
+ */
+export type projectsControllerFindOneResponse200 = {
+  data: ProjectResponseDto
+  status: 200
+}
+    
+export type projectsControllerFindOneResponseSuccess = (projectsControllerFindOneResponse200) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerFindOneResponse = (projectsControllerFindOneResponseSuccess)
+
+export const getProjectsControllerFindOneUrl = (id: string,) => {
+
+
+  
+
+  return `/projects/${id}`
+}
+
+export const projectsControllerFindOne = async (id: string, options?: RequestInit): Promise<projectsControllerFindOneResponse> => {
+  
+  return customFetch<projectsControllerFindOneResponse>(getProjectsControllerFindOneUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Update Project
+ */
+export type projectsControllerUpdateResponse200 = {
+  data: ProjectResponseDto
+  status: 200
+}
+    
+export type projectsControllerUpdateResponseSuccess = (projectsControllerUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerUpdateResponse = (projectsControllerUpdateResponseSuccess)
+
+export const getProjectsControllerUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/projects/${id}`
+}
+
+export const projectsControllerUpdate = async (id: string,
+    updateProjectDto: UpdateProjectDto, options?: RequestInit): Promise<projectsControllerUpdateResponse> => {
+  
+  return customFetch<projectsControllerUpdateResponse>(getProjectsControllerUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateProjectDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Delete Project
+ */
+export type projectsControllerRemoveResponse200 = {
+  data: ProjectsControllerRemove200
+  status: 200
+}
+    
+export type projectsControllerRemoveResponseSuccess = (projectsControllerRemoveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerRemoveResponse = (projectsControllerRemoveResponseSuccess)
+
+export const getProjectsControllerRemoveUrl = (id: string,) => {
+
+
+  
+
+  return `/projects/${id}`
+}
+
+export const projectsControllerRemove = async (id: string, options?: RequestInit): Promise<projectsControllerRemoveResponse> => {
+  
+  return customFetch<projectsControllerRemoveResponse>(getProjectsControllerRemoveUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Add Note to Project
+ */
+export type projectsControllerAddNoteResponse201 = {
+  data: ProjectNoteResponseDto
+  status: 201
+}
+    
+export type projectsControllerAddNoteResponseSuccess = (projectsControllerAddNoteResponse201) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerAddNoteResponse = (projectsControllerAddNoteResponseSuccess)
+
+export const getProjectsControllerAddNoteUrl = (id: string,) => {
+
+
+  
+
+  return `/projects/${id}/notes`
+}
+
+export const projectsControllerAddNote = async (id: string,
+    createProjectNoteDto: CreateProjectNoteDto, options?: RequestInit): Promise<projectsControllerAddNoteResponse> => {
+  
+  return customFetch<projectsControllerAddNoteResponse>(getProjectsControllerAddNoteUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createProjectNoteDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Delete Note from Project
+ */
+export type projectsControllerRemoveNoteResponse200 = {
+  data: ProjectsControllerRemoveNote200
+  status: 200
+}
+    
+export type projectsControllerRemoveNoteResponseSuccess = (projectsControllerRemoveNoteResponse200) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerRemoveNoteResponse = (projectsControllerRemoveNoteResponseSuccess)
+
+export const getProjectsControllerRemoveNoteUrl = (id: string,
+    noteId: string,) => {
+
+
+  
+
+  return `/projects/${id}/notes/${noteId}`
+}
+
+export const projectsControllerRemoveNote = async (id: string,
+    noteId: string, options?: RequestInit): Promise<projectsControllerRemoveNoteResponse> => {
+  
+  return customFetch<projectsControllerRemoveNoteResponse>(getProjectsControllerRemoveNoteUrl(id,noteId),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Add Contact to Project
+ */
+export type projectsControllerAddContactResponse201 = {
+  data: ProjectsControllerAddContact201
+  status: 201
+}
+    
+export type projectsControllerAddContactResponseSuccess = (projectsControllerAddContactResponse201) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerAddContactResponse = (projectsControllerAddContactResponseSuccess)
+
+export const getProjectsControllerAddContactUrl = (id: string,) => {
+
+
+  
+
+  return `/projects/${id}/contacts`
+}
+
+export const projectsControllerAddContact = async (id: string,
+    createProjectContactDto: CreateProjectContactDto, options?: RequestInit): Promise<projectsControllerAddContactResponse> => {
+  
+  return customFetch<projectsControllerAddContactResponse>(getProjectsControllerAddContactUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createProjectContactDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Remove Contact from Project
+ */
+export type projectsControllerRemoveContactResponse200 = {
+  data: ProjectsControllerRemoveContact200
+  status: 200
+}
+    
+export type projectsControllerRemoveContactResponseSuccess = (projectsControllerRemoveContactResponse200) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerRemoveContactResponse = (projectsControllerRemoveContactResponseSuccess)
+
+export const getProjectsControllerRemoveContactUrl = (id: string,
+    contactId: string,) => {
+
+
+  
+
+  return `/projects/${id}/contacts/${contactId}`
+}
+
+export const projectsControllerRemoveContact = async (id: string,
+    contactId: string, options?: RequestInit): Promise<projectsControllerRemoveContactResponse> => {
+  
+  return customFetch<projectsControllerRemoveContactResponse>(getProjectsControllerRemoveContactUrl(id,contactId),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Update Contact Role on Project
+ */
+export type projectsControllerUpdateContactResponse200 = {
+  data: ProjectsControllerUpdateContact200
+  status: 200
+}
+    
+export type projectsControllerUpdateContactResponseSuccess = (projectsControllerUpdateContactResponse200) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerUpdateContactResponse = (projectsControllerUpdateContactResponseSuccess)
+
+export const getProjectsControllerUpdateContactUrl = (id: string,
+    contactId: string,) => {
+
+
+  
+
+  return `/projects/${id}/contacts/${contactId}`
+}
+
+export const projectsControllerUpdateContact = async (id: string,
+    contactId: string,
+    updateProjectContactDto: UpdateProjectContactDto, options?: RequestInit): Promise<projectsControllerUpdateContactResponse> => {
+  
+  return customFetch<projectsControllerUpdateContactResponse>(getProjectsControllerUpdateContactUrl(id,contactId),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateProjectContactDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Add Actor to Project
+ */
+export type projectsControllerAddActorResponse201 = {
+  data: ProjectsControllerAddActor201
+  status: 201
+}
+    
+export type projectsControllerAddActorResponseSuccess = (projectsControllerAddActorResponse201) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerAddActorResponse = (projectsControllerAddActorResponseSuccess)
+
+export const getProjectsControllerAddActorUrl = (id: string,) => {
+
+
+  
+
+  return `/projects/${id}/actors`
+}
+
+export const projectsControllerAddActor = async (id: string,
+    createProjectActorDto: CreateProjectActorDto, options?: RequestInit): Promise<projectsControllerAddActorResponse> => {
+  
+  return customFetch<projectsControllerAddActorResponse>(getProjectsControllerAddActorUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createProjectActorDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Update Actor Role on Project
+ */
+export type projectsControllerUpdateActorResponse200 = {
+  data: ProjectsControllerUpdateActor200
+  status: 200
+}
+    
+export type projectsControllerUpdateActorResponseSuccess = (projectsControllerUpdateActorResponse200) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerUpdateActorResponse = (projectsControllerUpdateActorResponseSuccess)
+
+export const getProjectsControllerUpdateActorUrl = (id: string,
+    actorId: string,) => {
+
+
+  
+
+  return `/projects/${id}/actors/${actorId}`
+}
+
+export const projectsControllerUpdateActor = async (id: string,
+    actorId: string,
+    updateProjectActorDto: UpdateProjectActorDto, options?: RequestInit): Promise<projectsControllerUpdateActorResponse> => {
+  
+  return customFetch<projectsControllerUpdateActorResponse>(getProjectsControllerUpdateActorUrl(id,actorId),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateProjectActorDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Remove Actor from Project
+ */
+export type projectsControllerRemoveActorResponse200 = {
+  data: ProjectsControllerRemoveActor200
+  status: 200
+}
+    
+export type projectsControllerRemoveActorResponseSuccess = (projectsControllerRemoveActorResponse200) & {
+  headers: Headers;
+};
+;
+
+export type projectsControllerRemoveActorResponse = (projectsControllerRemoveActorResponseSuccess)
+
+export const getProjectsControllerRemoveActorUrl = (id: string,
+    actorId: string,) => {
+
+
+  
+
+  return `/projects/${id}/actors/${actorId}`
+}
+
+export const projectsControllerRemoveActor = async (id: string,
+    actorId: string, options?: RequestInit): Promise<projectsControllerRemoveActorResponse> => {
+  
+  return customFetch<projectsControllerRemoveActorResponse>(getProjectsControllerRemoveActorUrl(id,actorId),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Get Project Feedback
+ */
+export type maControllerGetFeedbackResponse200 = {
+  data: ProjectFeedbackResponseDto[]
+  status: 200
+}
+    
+export type maControllerGetFeedbackResponseSuccess = (maControllerGetFeedbackResponse200) & {
+  headers: Headers;
+};
+;
+
+export type maControllerGetFeedbackResponse = (maControllerGetFeedbackResponseSuccess)
+
+export const getMaControllerGetFeedbackUrl = (id: string,) => {
+
+
+  
+
+  return `/projects/${id}/feedback`
+}
+
+export const maControllerGetFeedback = async (id: string, options?: RequestInit): Promise<maControllerGetFeedbackResponse> => {
+  
+  return customFetch<maControllerGetFeedbackResponse>(getMaControllerGetFeedbackUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Add Project Feedback
+ */
+export type maControllerAddFeedbackResponse201 = {
+  data: ProjectFeedbackResponseDto
+  status: 201
+}
+    
+export type maControllerAddFeedbackResponseSuccess = (maControllerAddFeedbackResponse201) & {
+  headers: Headers;
+};
+;
+
+export type maControllerAddFeedbackResponse = (maControllerAddFeedbackResponseSuccess)
+
+export const getMaControllerAddFeedbackUrl = (id: string,) => {
+
+
+  
+
+  return `/projects/${id}/feedback`
+}
+
+export const maControllerAddFeedback = async (id: string,
+    createProjectFeedbackDto: CreateProjectFeedbackDto, options?: RequestInit): Promise<maControllerAddFeedbackResponse> => {
+  
+  return customFetch<maControllerAddFeedbackResponse>(getMaControllerAddFeedbackUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createProjectFeedbackDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Update Project Feedback
+ */
+export type maControllerUpdateFeedbackResponse200 = {
+  data: ProjectFeedbackResponseDto
+  status: 200
+}
+    
+export type maControllerUpdateFeedbackResponseSuccess = (maControllerUpdateFeedbackResponse200) & {
+  headers: Headers;
+};
+;
+
+export type maControllerUpdateFeedbackResponse = (maControllerUpdateFeedbackResponseSuccess)
+
+export const getMaControllerUpdateFeedbackUrl = (id: string,
+    feedbackId: string,) => {
+
+
+  
+
+  return `/projects/${id}/feedback/${feedbackId}`
+}
+
+export const maControllerUpdateFeedback = async (id: string,
+    feedbackId: string,
+    updateProjectFeedbackDto: UpdateProjectFeedbackDto, options?: RequestInit): Promise<maControllerUpdateFeedbackResponse> => {
+  
+  return customFetch<maControllerUpdateFeedbackResponse>(getMaControllerUpdateFeedbackUrl(id,feedbackId),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateProjectFeedbackDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Get Seller Qualifications
+ */
+export type maGetSellerQualificationsResponse200 = {
+  data: SellerQualificationResponseDto[]
+  status: 200
+}
+    
+export type maGetSellerQualificationsResponseSuccess = (maGetSellerQualificationsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type maGetSellerQualificationsResponse = (maGetSellerQualificationsResponseSuccess)
+
+export const getMaGetSellerQualificationsUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}/seller-qualifications`
+}
+
+export const maGetSellerQualifications = async (id: string, options?: RequestInit): Promise<maGetSellerQualificationsResponse> => {
+  
+  return customFetch<maGetSellerQualificationsResponse>(getMaGetSellerQualificationsUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Add Seller Qualification
+ */
+export type maAddSellerQualificationResponse201 = {
+  data: SellerQualificationResponseDto
+  status: 201
+}
+    
+export type maAddSellerQualificationResponseSuccess = (maAddSellerQualificationResponse201) & {
+  headers: Headers;
+};
+;
+
+export type maAddSellerQualificationResponse = (maAddSellerQualificationResponseSuccess)
+
+export const getMaAddSellerQualificationUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}/seller-qualifications`
+}
+
+export const maAddSellerQualification = async (id: string,
+    createSellerQualificationDto: CreateSellerQualificationDto, options?: RequestInit): Promise<maAddSellerQualificationResponse> => {
+  
+  return customFetch<maAddSellerQualificationResponse>(getMaAddSellerQualificationUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createSellerQualificationDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Update Seller Qualification
+ */
+export type maUpdateSellerQualificationResponse200 = {
+  data: SellerQualificationResponseDto
+  status: 200
+}
+    
+export type maUpdateSellerQualificationResponseSuccess = (maUpdateSellerQualificationResponse200) & {
+  headers: Headers;
+};
+;
+
+export type maUpdateSellerQualificationResponse = (maUpdateSellerQualificationResponseSuccess)
+
+export const getMaUpdateSellerQualificationUrl = (id: string,
+    qualificationId: string,) => {
+
+
+  
+
+  return `/actors/${id}/seller-qualifications/${qualificationId}`
+}
+
+export const maUpdateSellerQualification = async (id: string,
+    qualificationId: string,
+    updateSellerQualificationDto: UpdateSellerQualificationDto, options?: RequestInit): Promise<maUpdateSellerQualificationResponse> => {
+  
+  return customFetch<maUpdateSellerQualificationResponse>(getMaUpdateSellerQualificationUrl(id,qualificationId),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateSellerQualificationDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Get Buyer Qualifications
+ */
+export type maGetBuyerQualificationsResponse200 = {
+  data: BuyerQualificationResponseDto[]
+  status: 200
+}
+    
+export type maGetBuyerQualificationsResponseSuccess = (maGetBuyerQualificationsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type maGetBuyerQualificationsResponse = (maGetBuyerQualificationsResponseSuccess)
+
+export const getMaGetBuyerQualificationsUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}/buyer-qualifications`
+}
+
+export const maGetBuyerQualifications = async (id: string, options?: RequestInit): Promise<maGetBuyerQualificationsResponse> => {
+  
+  return customFetch<maGetBuyerQualificationsResponse>(getMaGetBuyerQualificationsUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Add Buyer Qualification
+ */
+export type maAddBuyerQualificationResponse201 = {
+  data: BuyerQualificationResponseDto
+  status: 201
+}
+    
+export type maAddBuyerQualificationResponseSuccess = (maAddBuyerQualificationResponse201) & {
+  headers: Headers;
+};
+;
+
+export type maAddBuyerQualificationResponse = (maAddBuyerQualificationResponseSuccess)
+
+export const getMaAddBuyerQualificationUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}/buyer-qualifications`
+}
+
+export const maAddBuyerQualification = async (id: string,
+    createBuyerQualificationDto: CreateBuyerQualificationDto, options?: RequestInit): Promise<maAddBuyerQualificationResponse> => {
+  
+  return customFetch<maAddBuyerQualificationResponse>(getMaAddBuyerQualificationUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createBuyerQualificationDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Update Buyer Qualification
+ */
+export type maUpdateBuyerQualificationResponse200 = {
+  data: BuyerQualificationResponseDto
+  status: 200
+}
+    
+export type maUpdateBuyerQualificationResponseSuccess = (maUpdateBuyerQualificationResponse200) & {
+  headers: Headers;
+};
+;
+
+export type maUpdateBuyerQualificationResponse = (maUpdateBuyerQualificationResponseSuccess)
+
+export const getMaUpdateBuyerQualificationUrl = (id: string,
+    qualificationId: string,) => {
+
+
+  
+
+  return `/actors/${id}/buyer-qualifications/${qualificationId}`
+}
+
+export const maUpdateBuyerQualification = async (id: string,
+    qualificationId: string,
+    updateBuyerQualificationDto: UpdateBuyerQualificationDto, options?: RequestInit): Promise<maUpdateBuyerQualificationResponse> => {
+  
+  return customFetch<maUpdateBuyerQualificationResponse>(getMaUpdateBuyerQualificationUrl(id,qualificationId),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateBuyerQualificationDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Get Strategic Intelligence
+ */
+export type maGetStrategicIntelligenceResponse200 = {
+  data: StrategicIntelligenceResponseDto[]
+  status: 200
+}
+    
+export type maGetStrategicIntelligenceResponseSuccess = (maGetStrategicIntelligenceResponse200) & {
+  headers: Headers;
+};
+;
+
+export type maGetStrategicIntelligenceResponse = (maGetStrategicIntelligenceResponseSuccess)
+
+export const getMaGetStrategicIntelligenceUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}/strategic-intelligence`
+}
+
+export const maGetStrategicIntelligence = async (id: string, options?: RequestInit): Promise<maGetStrategicIntelligenceResponse> => {
+  
+  return customFetch<maGetStrategicIntelligenceResponse>(getMaGetStrategicIntelligenceUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * @summary Add Strategic Intelligence
+ */
+export type maAddStrategicIntelligenceResponse201 = {
+  data: StrategicIntelligenceResponseDto
+  status: 201
+}
+    
+export type maAddStrategicIntelligenceResponseSuccess = (maAddStrategicIntelligenceResponse201) & {
+  headers: Headers;
+};
+;
+
+export type maAddStrategicIntelligenceResponse = (maAddStrategicIntelligenceResponseSuccess)
+
+export const getMaAddStrategicIntelligenceUrl = (id: string,) => {
+
+
+  
+
+  return `/actors/${id}/strategic-intelligence`
+}
+
+export const maAddStrategicIntelligence = async (id: string,
+    createStrategicIntelligenceDto: CreateStrategicIntelligenceDto, options?: RequestInit): Promise<maAddStrategicIntelligenceResponse> => {
+  
+  return customFetch<maAddStrategicIntelligenceResponse>(getMaAddStrategicIntelligenceUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createStrategicIntelligenceDto,)
+  }
+);}
+
+
+
+/**
+ * @summary Update Strategic Intelligence
+ */
+export type maUpdateStrategicIntelligenceResponse200 = {
+  data: StrategicIntelligenceResponseDto
+  status: 200
+}
+    
+export type maUpdateStrategicIntelligenceResponseSuccess = (maUpdateStrategicIntelligenceResponse200) & {
+  headers: Headers;
+};
+;
+
+export type maUpdateStrategicIntelligenceResponse = (maUpdateStrategicIntelligenceResponseSuccess)
+
+export const getMaUpdateStrategicIntelligenceUrl = (id: string,
+    intelligenceId: string,) => {
+
+
+  
+
+  return `/actors/${id}/strategic-intelligence/${intelligenceId}`
+}
+
+export const maUpdateStrategicIntelligence = async (id: string,
+    intelligenceId: string,
+    updateStrategicIntelligenceDto: UpdateStrategicIntelligenceDto, options?: RequestInit): Promise<maUpdateStrategicIntelligenceResponse> => {
+  
+  return customFetch<maUpdateStrategicIntelligenceResponse>(getMaUpdateStrategicIntelligenceUrl(id,intelligenceId),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      updateStrategicIntelligenceDto,)
   }
 );}
 

@@ -7,6 +7,7 @@ import {
   purchaseOrders,
   purchaseOrderLineItems,
   suppliers,
+  actors,
   products,
   productGroups,
 } from '../drizzle/herobm-core-schema';
@@ -68,12 +69,12 @@ export class PurchasingReportsService implements OnModuleInit {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const selectCols: any = {
-      supplierName: suppliers.name,
+      supplierName: actors.name,
       orderCount: sql<number>`count(distinct ${purchaseOrders.purchaseOrderId})::int`,
       totalSpend: sql<number>`sum(${purchaseOrderLineItems.totalAmount})::numeric`,
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-    const groupCols: any[] = [suppliers.name];
+    const groupCols: any[] = [actors.name];
 
     if (drillDown === 'product') {
       selectCols.productName = sql<string>`coalesce(${products.name}, 'Unknown')`;
@@ -95,6 +96,7 @@ export class PurchasingReportsService implements OnModuleInit {
         ),
       )
       .innerJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
       .$dynamic();
 
     if (drillDown === 'product') {
@@ -134,8 +136,8 @@ export class PurchasingReportsService implements OnModuleInit {
       selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
       groupCols.push(productGroups.name);
     } else if (drillDown === 'supplier') {
-      selectCols.supplierName = sql<string>`coalesce(${suppliers.name}, 'Unknown')`;
-      groupCols.push(suppliers.name);
+      selectCols.supplierName = sql<string>`coalesce(${actors.name}, 'Unknown')`;
+      groupCols.push(actors.name);
     }
 
     let qb = this.db
@@ -161,10 +163,9 @@ export class PurchasingReportsService implements OnModuleInit {
       );
     }
     if (drillDown === 'supplier') {
-      qb = qb.innerJoin(
-        suppliers,
-        eq(purchaseOrders.vendorId, suppliers.vendorId),
-      );
+      qb = qb
+        .innerJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
+        .leftJoin(actors, eq(suppliers.actorId, actors.actorId));
     }
 
     if (whereClause) qb = qb.where(whereClause);
@@ -198,8 +199,8 @@ export class PurchasingReportsService implements OnModuleInit {
       selectCols.productGroupName = sql<string>`coalesce(${productGroups.name}, 'Unknown')`;
       groupCols.push(productGroups.name);
     } else if (drillDown === 'supplier') {
-      selectCols.supplierName = sql<string>`coalesce(${suppliers.name}, 'Unknown')`;
-      groupCols.push(suppliers.name);
+      selectCols.supplierName = sql<string>`coalesce(${actors.name}, 'Unknown')`;
+      groupCols.push(actors.name);
     }
 
     let qb = this.db
@@ -224,10 +225,9 @@ export class PurchasingReportsService implements OnModuleInit {
         eq(products.productGroupId, productGroups.productGroupId),
       );
     } else if (drillDown === 'supplier') {
-      qb = qb.innerJoin(
-        suppliers,
-        eq(purchaseOrders.vendorId, suppliers.vendorId),
-      );
+      qb = qb
+        .innerJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
+        .leftJoin(actors, eq(suppliers.actorId, actors.actorId));
     }
 
     if (whereClause) qb = qb.where(whereClause);
@@ -254,14 +254,14 @@ export class PurchasingReportsService implements OnModuleInit {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const selectCols: any = {
       poNumber: purchaseOrders.orderNumber,
-      supplierName: suppliers.name,
+      supplierName: actors.name,
       expectedDate: sql<string>`to_char(${expectedDateField}, 'YYYY-MM-DD')`,
       pendingValue: sql<number>`sum((${purchaseOrderLineItems.quantity} - COALESCE(${purchaseOrderLineItems.quantityReceived}, 0)) * ${purchaseOrderLineItems.pricePerUnit})::numeric`,
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
     const groupCols: any[] = [
       purchaseOrders.orderNumber,
-      suppliers.name,
+      actors.name,
       expectedDateField,
     ];
 
@@ -281,6 +281,7 @@ export class PurchasingReportsService implements OnModuleInit {
         ),
       )
       .innerJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
       .$dynamic();
 
     if (drillDown === 'product') {

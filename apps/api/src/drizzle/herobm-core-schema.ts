@@ -66,6 +66,7 @@ import {
   PAYMENT_STATE,
   TRANSFER_ORDER_STATE,
   RECONCILIATION_STATE,
+  PROJECT_STATE,
 } from '@herobm/shared';
 
 const validCurrencyCheck = (
@@ -1577,6 +1578,133 @@ export const productUoms = herobmCore.table(
 );
 
 // ---------------------------------------------------------------------------
+// actors (CRM Core: Central Business Entity)
+// ---------------------------------------------------------------------------
+export const actors = herobmCore.table('actors', {
+  actorId: uuid('actor_id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  legalStatus: text('legal_status'),
+  headquartersAddressLine1: text('headquarters_address_line1'),
+  headquartersAddressLine2: text('headquarters_address_line2'),
+  headquartersCity: text('headquarters_city'),
+  headquartersStateOrProvince: text('headquarters_state_or_province'),
+  headquartersPostalCode: text('headquarters_postal_code'),
+  headquartersCountry: text('headquarters_country'),
+  website: text('website'),
+  industry: text('industry'),
+  telephone: text('telephone'),
+  fax: text('fax'),
+  email: text('email'),
+  businessNumber: text('business_number'),
+  isTaxRegistered: boolean('is_tax_registered').notNull().default(false),
+  referredByActorId: uuid('referred_by_actor_id'), // Self-reference
+  referredByContactId: uuid('referred_by_contact_id'), // Reference to contacts
+  tags: text('tags').array().default([]),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+export const contacts = herobmCore.table('contacts', {
+  contactId: uuid('contact_id').primaryKey().defaultRandom(),
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  fullName: text('full_name'),
+  jobTitle: text('job_title'),
+  email: text('email'),
+  phone: text('phone'),
+  linkedinProfile: text('linkedin_profile'),
+  referredByActorId: uuid('referred_by_actor_id').references(
+    () => actors.actorId,
+  ),
+  referredByContactId: uuid('referred_by_contact_id'), // Self-reference
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+export const actorContactLinks = herobmCore.table('actor_contact_links', {
+  linkId: uuid('link_id').primaryKey().defaultRandom(),
+  actorId: uuid('actor_id')
+    .notNull()
+    .references(() => actors.actorId),
+  contactId: uuid('contact_id')
+    .notNull()
+    .references(() => contacts.contactId),
+  linkType: text('link_type', { enum: ['employee', 'advisor', 'board_member'] })
+    .notNull()
+    .default('employee'),
+  primaryFor: text('primary_for').array(),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+export const actorActorLinks = herobmCore.table('actor_actor_links', {
+  linkId: uuid('link_id').primaryKey().defaultRandom(),
+  sourceActorId: uuid('source_actor_id')
+    .notNull()
+    .references(() => actors.actorId),
+  targetActorId: uuid('target_actor_id')
+    .notNull()
+    .references(() => actors.actorId),
+  linkType: text('link_type', {
+    enum: ['parent_company', 'subsidiary', 'partner', 'referrer'],
+  }).notNull(),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+export const projects = herobmCore.table('projects', {
+  projectId: uuid('project_id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  status: text('status').notNull().default(PROJECT_STATE.ACTIVE),
+  type: text('type').notNull(),
+  ownerId: uuid('owner_id').references(() => users.userId),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+export const projectNotes = herobmCore.table('project_notes', {
+  noteId: uuid('note_id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.projectId),
+  content: text('content').notNull(),
+  createdById: uuid('created_by_id').references(() => users.userId),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+export const projectActors = herobmCore.table('project_actors', {
+  projectActorId: uuid('project_actor_id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.projectId),
+  actorId: uuid('actor_id')
+    .notNull()
+    .references(() => actors.actorId),
+  roles: text('roles').array(),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+export const projectContacts = herobmCore.table('project_contacts', {
+  projectContactId: uuid('project_contact_id').primaryKey().defaultRandom(),
+  projectId: uuid('project_id')
+    .notNull()
+    .references(() => projects.projectId),
+  contactId: uuid('contact_id')
+    .notNull()
+    .references(() => contacts.contactId),
+  roles: text('roles').array(),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+export const actorNotes = herobmCore.table('actor_notes', {
+  noteId: uuid('note_id').primaryKey().defaultRandom(),
+  actorId: uuid('actor_id')
+    .notNull()
+    .references(() => actors.actorId),
+  content: text('content').notNull(),
+  createdById: uuid('created_by_id').references(() => users.userId),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // customers  (CDM: Account)
 // ---------------------------------------------------------------------------
 export const customers = herobmCore.table(
@@ -1584,20 +1712,10 @@ export const customers = herobmCore.table(
   {
     customerId: uuid('customer_id').primaryKey().defaultRandom(),
     customerNumber: text('customer_number').unique().notNull(),
-    name: text('name').notNull(),
-    billingAddressLine1: text('billing_address_line1'),
-    billingAddressLine2: text('billing_address_line2'),
-    billingAddressCity: text('billing_address_city'),
-    billingAddressStateOrProvince: text('billing_address_state_or_province'),
-    billingAddressPostalCode: text('billing_address_postal_code'),
-    billingAddressCountry: text('billing_address_country').notNull(),
-    telephone1: text('telephone1'),
-    fax: text('fax'),
-    emailAddress1: text('email_address1'),
     customerGroupId: uuid('customer_group_id').references(
       () => customerGroups.customerGroupId,
     ),
-    parentCustomerId: uuid('parent_customer_id'), // Self-reference added in relations
+    actorId: uuid('actor_id').references(() => actors.actorId),
     stateCode: text('state_code')
       .$type<CustomerState>()
       .notNull()
@@ -1619,8 +1737,6 @@ export const customers = herobmCore.table(
     bankAccountName: text('bank_account_name'),
     bankBsb: text('bank_bsb'),
     bankAccountNumber: text('bank_account_number'),
-    businessNumber: text('business_number'),
-    isTaxRegistered: boolean('is_tax_registered').notNull().default(false),
 
     externalId: text('external_id'),
     sourceId: text('source_id').unique(),
@@ -1635,26 +1751,6 @@ export const customers = herobmCore.table(
     currencyCheck: validCurrencyCheck('customers'),
   }),
 );
-
-export const customerContacts = herobmCore.table('customer_contacts', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  customerId: uuid('customer_id')
-    .notNull()
-    .references(() => customers.customerId),
-  firstName: text('first_name'),
-  lastName: text('last_name'),
-  fullName: text('full_name'),
-  email: text('email'),
-  emailSecondary: text('email_secondary'),
-  phone: text('phone'),
-  mobile: text('mobile'),
-  jobTitle: text('job_title'),
-  isPrimary: boolean('is_primary').notNull().default(false),
-  sourceId: text('source_id'),
-  source: text('source').notNull().default('app'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
-});
 
 export const customerDeliveryAddresses = herobmCore.table(
   'customer_delivery_addresses',
@@ -1689,19 +1785,10 @@ export const suppliers = herobmCore.table(
   {
     vendorId: uuid('vendor_id').primaryKey().defaultRandom(),
     vendorNumber: text('vendor_number').unique().notNull(),
-    name: text('name').notNull(),
     supplierGroupId: uuid('supplier_group_id').references(
       () => supplierGroups.supplierGroupId,
     ),
-    address1Line1: text('address1_line1'),
-    address1Line2: text('address1_line2'),
-    address1City: text('address1_city'),
-    address1StateOrProvince: text('address1_state_or_province'),
-    address1PostalCode: text('address1_postal_code'),
-    address1Country: text('address1_country').notNull(),
-    telephone1: text('telephone1'),
-    fax: text('fax'),
-    emailAddress1: text('email_address1'),
+    actorId: uuid('actor_id').references(() => actors.actorId),
     tradingTermsId: uuid('trading_terms_id').references(
       () => tradingTerms.tradingTermsId,
     ),
@@ -1735,8 +1822,6 @@ export const suppliers = herobmCore.table(
     bankAccountName: text('bank_account_name'),
     bankBsb: text('bank_bsb'),
     bankAccountNumber: text('bank_account_number'),
-    businessNumber: text('business_number'),
-    isTaxRegistered: boolean('is_tax_registered').notNull().default(false),
     taxPositionId: uuid('tax_position_id').references(
       () => taxPositions.taxPositionId,
     ),
@@ -2335,6 +2420,24 @@ export const appSettings = herobmCore.table('app_settings', {
   smtpUser: text('smtp_user'),
   smtpPassEncrypted: text('smtp_pass_encrypted'),
   smtpFromAddress: text('smtp_from_address'),
+  actorTags: jsonb('actor_tags')
+    .$type<{ value: string; order: number }[]>()
+    .default([]),
+  actorContactRoles: jsonb('actor_contact_roles')
+    .$type<{ value: string; order: number }[]>()
+    .default([]),
+  projectContactRoles: jsonb('project_contact_roles')
+    .$type<{ value: string; order: number }[]>()
+    .default([]),
+  projectActorRoles: jsonb('project_actor_roles')
+    .$type<{ value: string; order: number }[]>()
+    .default([]),
+  projectStatuses: jsonb('project_statuses')
+    .$type<{ value: string; order: number }[]>()
+    .default([]),
+  projectTypes: jsonb('project_types')
+    .$type<{ value: string; order: number }[]>()
+    .default([]),
   apiRateLimit: numeric('api_rate_limit').notNull().default('1000'),
   setupCompletedAt: timestamp('setup_completed_at', { withTimezone: true }),
   systemIdentifier: text('system_identifier'), // UUID generated on first boot for hardware locking
@@ -2795,20 +2898,13 @@ export const pdfTemplateHooksRelations = relations(
   }),
 );
 
-export const customersRelations = relations(customers, ({ many }) => ({
-  contacts: many(customerContacts),
+export const customersRelations = relations(customers, ({ many, one }) => ({
   deliveryAddresses: many(customerDeliveryAddresses),
-}));
-
-export const customerContactsRelations = relations(
-  customerContacts,
-  ({ one }) => ({
-    customer: one(customers, {
-      fields: [customerContacts.customerId],
-      references: [customers.customerId],
-    }),
+  actor: one(actors, {
+    fields: [customers.actorId],
+    references: [actors.actorId],
   }),
-);
+}));
 
 export const customerDeliveryAddressesRelations = relations(
   customerDeliveryAddresses,
@@ -2816,6 +2912,107 @@ export const customerDeliveryAddressesRelations = relations(
     customer: one(customers, {
       fields: [customerDeliveryAddresses.customerId],
       references: [customers.customerId],
+    }),
+  }),
+);
+
+export const actorsRelations = relations(actors, ({ many }) => ({
+  actorContactLinks: many(actorContactLinks),
+  sourceLinks: many(actorActorLinks, { relationName: 'sourceActor' }),
+  targetLinks: many(actorActorLinks, { relationName: 'targetActor' }),
+  projectActors: many(projectActors),
+  notes: many(actorNotes),
+  customers: many(customers),
+}));
+
+export const actorNotesRelations = relations(actorNotes, ({ one }) => ({
+  actor: one(actors, {
+    fields: [actorNotes.actorId],
+    references: [actors.actorId],
+  }),
+  createdBy: one(users, {
+    fields: [actorNotes.createdById],
+    references: [users.userId],
+  }),
+}));
+
+export const contactsRelations = relations(contacts, ({ many }) => ({
+  actorContactLinks: many(actorContactLinks),
+  projectContacts: many(projectContacts),
+}));
+
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [projects.ownerId],
+    references: [users.userId],
+  }),
+  notes: many(projectNotes),
+  projectActors: many(projectActors),
+  projectContacts: many(projectContacts),
+}));
+
+export const projectNotesRelations = relations(projectNotes, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectNotes.projectId],
+    references: [projects.projectId],
+  }),
+  createdBy: one(users, {
+    fields: [projectNotes.createdById],
+    references: [users.userId],
+  }),
+}));
+
+export const actorContactLinksRelations = relations(
+  actorContactLinks,
+  ({ one }) => ({
+    actor: one(actors, {
+      fields: [actorContactLinks.actorId],
+      references: [actors.actorId],
+    }),
+    contact: one(contacts, {
+      fields: [actorContactLinks.contactId],
+      references: [contacts.contactId],
+    }),
+  }),
+);
+
+export const actorActorLinksRelations = relations(
+  actorActorLinks,
+  ({ one }) => ({
+    sourceActor: one(actors, {
+      fields: [actorActorLinks.sourceActorId],
+      references: [actors.actorId],
+      relationName: 'sourceActor',
+    }),
+    targetActor: one(actors, {
+      fields: [actorActorLinks.targetActorId],
+      references: [actors.actorId],
+      relationName: 'targetActor',
+    }),
+  }),
+);
+
+export const projectActorsRelations = relations(projectActors, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectActors.projectId],
+    references: [projects.projectId],
+  }),
+  actor: one(actors, {
+    fields: [projectActors.actorId],
+    references: [actors.actorId],
+  }),
+}));
+
+export const projectContactsRelations = relations(
+  projectContacts,
+  ({ one }) => ({
+    project: one(projects, {
+      fields: [projectContacts.projectId],
+      references: [projects.projectId],
+    }),
+    contact: one(contacts, {
+      fields: [projectContacts.contactId],
+      references: [contacts.contactId],
     }),
   }),
 );

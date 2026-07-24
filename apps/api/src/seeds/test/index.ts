@@ -6,6 +6,7 @@ import {
   bins,
   suppliers,
   customers,
+  actors,
   products,
   taxCategories,
   tradingTerms,
@@ -14,6 +15,7 @@ import {
   glJournalLines,
 } from '../../drizzle/herobm-core-schema';
 import { eq, sql } from 'drizzle-orm';
+import { seedCoaAccounts, seedCoaSettings } from '../prod/core';
 
 import type { SeedDB } from '../run';
 
@@ -24,6 +26,9 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
   }
 
   console.log('Seeding baseline test data...');
+
+  await seedCoaAccounts(db, dryRun, 'au_standard');
+  await seedCoaSettings(db, dryRun, 'au_standard');
 
   const defaultTerm = await db
     .select()
@@ -71,32 +76,48 @@ export async function runTestSeeds(db: SeedDB, dryRun = false) {
     })
     .onConflictDoNothing();
 
-  // 2. Suppliers
-  const supId = 'b0b3e7ea-b7bd-425d-bb85-df0a28f804aa';
+  const supActorId = 'b0b3e7ea-b7bd-425d-bb85-df0a28f804aa';
+  await db
+    .insert(actors)
+    .values({
+      actorId: supActorId,
+      name: 'Test Supplier LLC',
+      headquartersAddressLine1: 'USA',
+    })
+    .onConflictDoNothing();
+
+  const supId = 'c1c3e7ea-b7bd-425d-bb85-df0a28f804aa';
   await db
     .insert(suppliers)
     .values({
       vendorId: supId,
+      actorId: supActorId,
       vendorNumber: 'TEST-SUP-01',
-      name: 'Test Supplier LLC',
       currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
       tradingTermsId: termId ?? null,
-      address1Country: 'USA',
     })
     .onConflictDoNothing();
 
-  // 3. Customers
-  const custId = 'd32c4e85-d865-4f40-8abf-c4e89e47261d';
+  const custActorId = 'd32c4e85-d865-4f40-8abf-c4e89e47261d';
+  await db
+    .insert(actors)
+    .values({
+      actorId: custActorId,
+      name: 'Test Customer Inc',
+      headquartersAddressLine1: 'USA',
+    })
+    .onConflictDoNothing();
+
+  const custId = 'e42c4e85-d865-4f40-8abf-c4e89e47261d';
   await db
     .insert(customers)
     .values({
       customerId: custId,
+      actorId: custActorId,
       customerNumber: 'TEST-CUST-01',
-      name: 'Test Customer Inc',
       currencyCode: sql<string>`COALESCE((SELECT base_currency FROM herobm_core.gl_settings LIMIT 1), 'EUR')`,
       tradingTermsId: termId ?? null,
       creditLimit: '10000.00',
-      billingAddressCountry: 'USA',
     })
     .onConflictDoNothing();
 

@@ -20,6 +20,7 @@ import {
   customers as coreAccounts,
   products as coreProducts,
   customerGroups,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -179,12 +180,6 @@ export class SalesCreditNoteService {
           .select({
             costCenterId: customerGroups.defaultCostCenterId,
             activityId: customerGroups.defaultActivityId,
-            billingAddressCountry: coreAccounts.billingAddressCountry,
-            billingAddressPostalCode: coreAccounts.billingAddressPostalCode,
-            billingAddressStateOrProvince:
-              coreAccounts.billingAddressStateOrProvince,
-            billingAddressCity: coreAccounts.billingAddressCity,
-            billingAddressLine1: coreAccounts.billingAddressLine1,
           })
           .from(coreAccounts)
           .leftJoin(
@@ -202,12 +197,11 @@ export class SalesCreditNoteService {
         if (custInfo) {
           customerCostCenterId = custInfo.costCenterId || undefined;
           customerActivityId = custInfo.activityId || undefined;
-          billingAddressCountry = custInfo.billingAddressCountry;
-          billingAddressPostalCode = custInfo.billingAddressPostalCode;
-          billingAddressStateOrProvince =
-            custInfo.billingAddressStateOrProvince;
-          billingAddressCity = custInfo.billingAddressCity;
-          billingAddressLine1 = custInfo.billingAddressLine1;
+          billingAddressCountry = null;
+          billingAddressPostalCode = null;
+          billingAddressStateOrProvince = null;
+          billingAddressCity = null;
+          billingAddressLine1 = null;
         }
       }
 
@@ -634,8 +628,9 @@ export class SalesCreditNoteService {
 
       const [customer] = order.customerId
         ? await innerTx
-            .select({ name: coreAccounts.name })
+            .select({ name: actors.name })
             .from(coreAccounts)
+            .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
             .where(eq(coreAccounts.customerId, order.customerId))
         : [null];
 

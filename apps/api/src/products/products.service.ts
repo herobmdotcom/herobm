@@ -97,7 +97,11 @@ export class ProductsService {
     const { data, nextCursor, prevCursor } = await withCursorPagination({
       qb,
       limit,
-      cursorObj: cursor as { score: number; name: string; id: string } | null,
+      cursorObj: cursor as {
+        score: number;
+        name: string;
+        productId: string;
+      } | null,
       direction: direction,
       applyWhere: (q, c, dir) => {
         const scoreOp = dir === 'next' ? sql`<` : sql`>`;
@@ -111,7 +115,7 @@ export class ProductsService {
           and(
             eq(scoreSql, c.score),
             eq(coreProducts.name, c.name),
-            sql`${coreProducts.productId} ${strOp} ${c.id}`,
+            sql`${coreProducts.productId} ${strOp} ${c.productId}`,
           ),
         );
         return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
@@ -128,7 +132,7 @@ export class ProductsService {
       encodeRow: (row) => ({
         score: Number(row.score) || 0,
         name: row.name,
-        id: row.productId,
+        productId: row.productId,
       }),
     });
 

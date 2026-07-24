@@ -31,4 +31,5 @@ export const VALID_ACTIONS: Record<string, string[]> = {
   'gl': ['read', 'write'],
   'data-export': ['read'],
   'credit-control': ['read', 'write'],
+  'crm': ['read', 'write'],
 };

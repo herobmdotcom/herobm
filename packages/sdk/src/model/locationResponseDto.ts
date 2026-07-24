@@ -7,7 +7,7 @@
  */
 
 export interface LocationResponseDto {
-  id: string;
+  locationId: string;
   code: string;
   name: string;
   addressLine1?: string;

@@ -8,7 +8,7 @@
 import type { BusinessReportResponseDtoUiConfig } from './businessReportResponseDtoUiConfig';
 
 export interface BusinessReportResponseDto {
-  id: string;
+  reportId: string;
   slug: string;
   name: string;
   description?: string;

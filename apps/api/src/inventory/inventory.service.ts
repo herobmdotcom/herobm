@@ -46,6 +46,7 @@ import {
   transferOrders,
   transferOrderReceipts,
   transferOrderReceiptLines,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { randomUUID } from 'crypto';
 import { emitEvent } from '../common/emit-event';
@@ -788,11 +789,12 @@ export class InventoryService {
             salesOrderId: salesOrders.salesOrderId,
             orderNumber: salesOrders.orderNumber,
             customerId: customers.customerId,
-            customerName: customers.name,
+            customerName: actors.name,
             customerNumber: customers.customerNumber,
           })
           .from(salesOrders)
           .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
+          .leftJoin(actors, eq(customers.actorId, actors.actorId))
           .where(eq(salesOrders.salesOrderId, entry.sourceId))
           .limit(1);
 
@@ -816,7 +818,7 @@ export class InventoryService {
             salesOrderId: salesOrders.salesOrderId,
             orderNumber: salesOrders.orderNumber,
             customerId: customers.customerId,
-            customerName: customers.name,
+            customerName: actors.name,
             customerNumber: customers.customerNumber,
           })
           .from(salesOrderShipments)
@@ -825,6 +827,7 @@ export class InventoryService {
             eq(salesOrders.salesOrderId, salesOrderShipments.salesOrderId),
           )
           .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
+          .leftJoin(actors, eq(customers.actorId, actors.actorId))
           .where(eq(salesOrderShipments.shipmentId, entry.sourceId))
           .limit(1);
 
@@ -848,7 +851,7 @@ export class InventoryService {
             salesOrderId: salesOrders.salesOrderId,
             orderNumber: salesOrders.orderNumber,
             customerId: customers.customerId,
-            customerName: customers.name,
+            customerName: actors.name,
             customerNumber: customers.customerNumber,
           })
           .from(salesOrderReturns)
@@ -857,6 +860,7 @@ export class InventoryService {
             eq(salesOrders.salesOrderId, salesOrderReturns.salesOrderId),
           )
           .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
+          .leftJoin(actors, eq(customers.actorId, actors.actorId))
           .where(eq(salesOrderReturns.returnId, entry.sourceId))
           .limit(1);
 

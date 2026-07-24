@@ -1,6 +1,6 @@
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { customers, suppliers } from '../drizzle/herobm-core-schema';
+import { customers, suppliers, actors } from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -48,37 +48,76 @@ async function run() {
   const db = drizzle(client);
 
   console.log('--- Fixing Customer Countries & Currencies ---');
-  const allCustomers = await db.select().from(customers);
+  const allCustomers = await db
+    .select({
+      customerId: customers.customerId,
+      actorId: customers.actorId,
+      currencyCode: customers.currencyCode,
+      headquartersCountry: actors.headquartersCountry,
+    })
+    .from(customers)
+    .leftJoin(actors, eq(customers.actorId, actors.actorId));
+
   let updatedCustomers = 0;
   for (const c of allCustomers) {
-    const newCountry = mapCountryCode(c.billingAddressCountry);
+    const newCountry = mapCountryCode(c.headquartersCountry);
     const newCurrency = mapCurrencyCode(c.currencyCode);
-    if (
-      newCountry !== c.billingAddressCountry ||
-      newCurrency !== c.currencyCode
-    ) {
+
+    let hasUpdate = false;
+    if (newCurrency && newCurrency !== c.currencyCode) {
       await db
         .update(customers)
-        .set({ billingAddressCountry: newCountry, currencyCode: newCurrency })
+        .set({ currencyCode: newCurrency })
         .where(eq(customers.customerId, c.customerId));
-      updatedCustomers++;
+      hasUpdate = true;
     }
+
+    if (newCountry && newCountry !== c.headquartersCountry && c.actorId) {
+      await db
+        .update(actors)
+        .set({ headquartersCountry: newCountry })
+        .where(eq(actors.actorId, c.actorId));
+      hasUpdate = true;
+    }
+
+    if (hasUpdate) updatedCustomers++;
   }
   console.log(`Updated ${updatedCustomers} customers.`);
 
   console.log('--- Fixing Supplier Countries & Currencies ---');
-  const allSuppliers = await db.select().from(suppliers);
+  const allSuppliers = await db
+    .select({
+      vendorId: suppliers.vendorId,
+      actorId: suppliers.actorId,
+      currencyCode: suppliers.currencyCode,
+      headquartersCountry: actors.headquartersCountry,
+    })
+    .from(suppliers)
+    .leftJoin(actors, eq(suppliers.actorId, actors.actorId));
+
   let updatedSuppliers = 0;
   for (const s of allSuppliers) {
-    const newCountry = mapCountryCode(s.address1Country);
+    const newCountry = mapCountryCode(s.headquartersCountry);
     const newCurrency = mapCurrencyCode(s.currencyCode);
-    if (newCountry !== s.address1Country || newCurrency !== s.currencyCode) {
+
+    let hasUpdate = false;
+    if (newCurrency && newCurrency !== s.currencyCode) {
       await db
         .update(suppliers)
-        .set({ address1Country: newCountry, currencyCode: newCurrency })
+        .set({ currencyCode: newCurrency })
         .where(eq(suppliers.vendorId, s.vendorId));
-      updatedSuppliers++;
+      hasUpdate = true;
     }
+
+    if (newCountry && newCountry !== s.headquartersCountry && s.actorId) {
+      await db
+        .update(actors)
+        .set({ headquartersCountry: newCountry })
+        .where(eq(actors.actorId, s.actorId));
+      hasUpdate = true;
+    }
+
+    if (hasUpdate) updatedSuppliers++;
   }
   console.log(`Updated ${updatedSuppliers} suppliers.`);
 

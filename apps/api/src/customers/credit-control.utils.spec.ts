@@ -3,13 +3,13 @@ import {
   resolveEffectiveCreditLimit,
   resolveEffectiveTradingTermsId,
   resolveEffectiveEarlyPaymentDiscount,
-  AccountCreditProfile,
+  CustomerCreditProfile,
 } from './credit-control.utils';
 
 describe('credit-control.utils', () => {
   describe('resolveEffectiveCreditHold', () => {
     it('returns true if customer is on hold', () => {
-      const p: AccountCreditProfile = {
+      const p: CustomerCreditProfile = {
         creditLimit: null,
         isOnCreditHold: true,
         tradingTermsId: null,
@@ -18,11 +18,11 @@ describe('credit-control.utils', () => {
     });
 
     it('returns true if group is on hold, even if customer is false', () => {
-      const p: AccountCreditProfile = {
+      const p: CustomerCreditProfile = {
         creditLimit: null,
         isOnCreditHold: false,
         tradingTermsId: null,
-        accountGroup: {
+        customerGroup: {
           creditLimit: null,
           isOnCreditHold: true,
           tradingTermsId: null,
@@ -32,11 +32,11 @@ describe('credit-control.utils', () => {
     });
 
     it('returns false if neither are on hold', () => {
-      const p: AccountCreditProfile = {
+      const p: CustomerCreditProfile = {
         creditLimit: null,
         isOnCreditHold: false,
         tradingTermsId: null,
-        accountGroup: {
+        customerGroup: {
           creditLimit: null,
           isOnCreditHold: false,
           tradingTermsId: null,
@@ -48,11 +48,11 @@ describe('credit-control.utils', () => {
 
   describe('resolveEffectiveCreditLimit', () => {
     it('resolves customer limit when present', () => {
-      const p: AccountCreditProfile = {
+      const p: CustomerCreditProfile = {
         creditLimit: '1000',
         isOnCreditHold: false,
         tradingTermsId: null,
-        accountGroup: {
+        customerGroup: {
           creditLimit: '500',
           isOnCreditHold: false,
           tradingTermsId: null,
@@ -62,11 +62,11 @@ describe('credit-control.utils', () => {
     });
 
     it('cascades to group limit when customer limit is null', () => {
-      const p: AccountCreditProfile = {
+      const p: CustomerCreditProfile = {
         creditLimit: null,
         isOnCreditHold: false,
         tradingTermsId: null,
-        accountGroup: {
+        customerGroup: {
           creditLimit: '500',
           isOnCreditHold: false,
           tradingTermsId: null,
@@ -76,11 +76,11 @@ describe('credit-control.utils', () => {
     });
 
     it('falls back to 0 if both are null', () => {
-      const p: AccountCreditProfile = {
+      const p: CustomerCreditProfile = {
         creditLimit: null,
         isOnCreditHold: false,
         tradingTermsId: null,
-        accountGroup: {
+        customerGroup: {
           creditLimit: null,
           isOnCreditHold: false,
           tradingTermsId: null,
@@ -90,7 +90,7 @@ describe('credit-control.utils', () => {
     });
 
     it('handles missing group gracefully', () => {
-      const p: AccountCreditProfile = {
+      const p: CustomerCreditProfile = {
         creditLimit: null,
         isOnCreditHold: false,
         tradingTermsId: null,
@@ -101,11 +101,11 @@ describe('credit-control.utils', () => {
 
   describe('resolveEffectiveTradingTermsId', () => {
     it('resolves customer terms when present', () => {
-      const p: AccountCreditProfile = {
+      const p: CustomerCreditProfile = {
         creditLimit: null,
         isOnCreditHold: false,
         tradingTermsId: 'term_1',
-        accountGroup: {
+        customerGroup: {
           creditLimit: null,
           isOnCreditHold: false,
           tradingTermsId: 'term_2',
@@ -115,11 +115,11 @@ describe('credit-control.utils', () => {
     });
 
     it('falls back to group term', () => {
-      const p: AccountCreditProfile = {
+      const p: CustomerCreditProfile = {
         creditLimit: null,
         isOnCreditHold: false,
         tradingTermsId: null,
-        accountGroup: {
+        customerGroup: {
           creditLimit: null,
           isOnCreditHold: false,
           tradingTermsId: 'term_2',
@@ -129,11 +129,11 @@ describe('credit-control.utils', () => {
     });
 
     it('falls back to system default if customer and group terms are missing', () => {
-      const p: AccountCreditProfile = {
+      const p: CustomerCreditProfile = {
         creditLimit: null,
         isOnCreditHold: false,
         tradingTermsId: null,
-        accountGroup: {
+        customerGroup: {
           creditLimit: null,
           isOnCreditHold: false,
           tradingTermsId: null,
@@ -144,11 +144,11 @@ describe('credit-control.utils', () => {
     });
 
     it('prioritizes group term over system default', () => {
-      const p: AccountCreditProfile = {
+      const p: CustomerCreditProfile = {
         creditLimit: null,
         isOnCreditHold: false,
         tradingTermsId: null,
-        accountGroup: {
+        customerGroup: {
           creditLimit: null,
           isOnCreditHold: false,
           tradingTermsId: 'term_group',
@@ -159,18 +159,18 @@ describe('credit-control.utils', () => {
     });
 
     it('prioritizes customer term over system default', () => {
-      const p: AccountCreditProfile = {
+      const p: CustomerCreditProfile = {
         creditLimit: null,
         isOnCreditHold: false,
         tradingTermsId: 'term_customer',
-        accountGroup: null,
+        customerGroup: null,
         systemDefaultCustomerTermsId: 'term_system',
       };
       expect(resolveEffectiveTradingTermsId(p)).toBe('term_customer');
     });
 
     it('returns null if all are missing', () => {
-      const p: AccountCreditProfile = {
+      const p: CustomerCreditProfile = {
         creditLimit: null,
         isOnCreditHold: false,
         tradingTermsId: null,
@@ -185,7 +185,7 @@ describe('credit-control.utils', () => {
       const p = {
         earlyPaymentDiscount: '2.50',
         earlyPaymentDiscountDays: 10,
-        accountGroup: {
+        customerGroup: {
           earlyPaymentDiscount: '1.00',
           earlyPaymentDiscountDays: 5,
         },
@@ -199,7 +199,7 @@ describe('credit-control.utils', () => {
       const p = {
         earlyPaymentDiscount: null,
         earlyPaymentDiscountDays: null,
-        accountGroup: {
+        customerGroup: {
           earlyPaymentDiscount: '1.00',
           earlyPaymentDiscountDays: 5,
         },
@@ -213,7 +213,7 @@ describe('credit-control.utils', () => {
       const p = {
         earlyPaymentDiscount: null,
         earlyPaymentDiscountDays: null,
-        accountGroup: {
+        customerGroup: {
           earlyPaymentDiscount: null,
           earlyPaymentDiscountDays: null,
         },

@@ -7,7 +7,7 @@
  */
 
 export interface ActivityResponseDto {
-  id: string;
+  activityId: string;
   code: string;
   name: string;
   isActive: boolean;

@@ -43,7 +43,7 @@ jest.mock('@/lib/currency', () => ({
 }));
 
 jest.mock('@herobm/sdk', () => ({
-  accountsControllerGetAgedBalances: jest.fn(),
+  customersControllerGetAgedBalances: jest.fn(),
 }));
 
 // ── Fixtures ─────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ const mockAgedBalances = [
 // ── Tests ────────────────────────────────────────────────────────────
 
 describe('BalancesContent — client-side filtering and loading', () => {
-  const mockGetBalances = api.accountsControllerGetAgedBalances as jest.Mock;
+  const mockGetBalances = api.customersControllerGetAgedBalances as jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();

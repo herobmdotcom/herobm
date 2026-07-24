@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, and, gte, SQL } from 'drizzle-orm';
+import { eq, sql, and, gte, SQL, or } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -22,6 +22,7 @@ import {
   salesCreditNotes,
   purchaseDebitNotes,
   supplierExpiries,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -124,11 +125,18 @@ export class PaymentsService {
         currencyCode: paymentEntries.currencyCode,
         createdOn: paymentEntries.createdOn,
         createdBy: paymentEntries.createdBy,
-        partyName: sql<string>`COALESCE(${customers.name}, ${suppliers.name})`,
+        partyName: actors.name,
       })
       .from(paymentEntries)
       .leftJoin(customers, eq(paymentEntries.partyId, customers.customerId))
       .leftJoin(suppliers, eq(paymentEntries.partyId, suppliers.vendorId))
+      .leftJoin(
+        actors,
+        or(
+          eq(customers.actorId, actors.actorId),
+          eq(suppliers.actorId, actors.actorId),
+        ),
+      )
       .where(whereClause)
       .orderBy(sql`${paymentEntries.createdOn} DESC`);
     return { data };
@@ -151,11 +159,18 @@ export class PaymentsService {
         referenceNumber: paymentEntries.referenceNumber,
         createdOn: paymentEntries.createdOn,
         createdBy: paymentEntries.createdBy,
-        partyName: sql<string>`COALESCE(${customers.name}, ${suppliers.name})`,
+        partyName: actors.name,
       })
       .from(paymentEntries)
       .leftJoin(customers, eq(paymentEntries.partyId, customers.customerId))
       .leftJoin(suppliers, eq(paymentEntries.partyId, suppliers.vendorId))
+      .leftJoin(
+        actors,
+        or(
+          eq(customers.actorId, actors.actorId),
+          eq(suppliers.actorId, actors.actorId),
+        ),
+      )
       .where(eq(paymentEntries.paymentId, paymentId));
 
     if (!payment) {

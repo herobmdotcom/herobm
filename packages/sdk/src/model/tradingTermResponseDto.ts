@@ -7,7 +7,7 @@
  */
 
 export interface TradingTermResponseDto {
-  id: string;
+  tradingTermsId: string;
   code: string;
   description: string;
   days: number;

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Button } from './Button';
 
 export interface InlineTableColumn<T> {
   key: keyof T | string;
@@ -144,13 +145,11 @@ export function InlineSettingsTable<T extends Record<string, any>>({
           <div className="flex items-center gap-2">
             {headerActions}
             {onAdd && (
-              <button 
-                className="btn btn-primary btn-sm" 
-                onClick={handleAdd}
-                disabled={editingId !== null}
-              >
+              <Button onClick={handleAdd} variant="primary" size="sm" className="flex items-center gap-1.5" disabled={editingId !== null}>
+                {/* eslint-disable-next-line i18next/no-literal-string -- icon */}
+<span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
                 {actualAddLabel}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -278,33 +277,41 @@ export function InlineSettingsTable<T extends Record<string, any>>({
                   <td className="text-right whitespace-nowrap align-top pt-3">
                     {isEditing ? (
                       <div className="flex justify-end gap-2">
-                        <button className="btn btn-secondary btn-xs" onClick={handleCancel} disabled={saving}>
+                        <Button variant="secondary" size="xs" onClick={handleCancel} disabled={saving}>
                           {tSettings('actions.cancel')}
-                        </button>
-                        <button className="btn btn-primary btn-xs" onClick={() => handleSave(id)} disabled={saving}>
+                        </Button>
+                        <Button variant="primary" size="xs" onClick={() => handleSave(id)} disabled={saving}>
                           {saving ? '...' : tSettings('actions.save')}
-                        </button>
+                        </Button>
                       </div>
                     ) : (
                       <div className="flex justify-end gap-2">
                         {(!canEdit || canEdit(row)) && (
-                          <button 
-                            className="btn btn-secondary btn-xs" 
+                          <Button 
+                            variant="secondary"
+                            size="xs"
+                            className="flex items-center justify-center" 
+                            title={tSettings('actions.edit')}
                             onClick={() => handleEdit(row)}
                             disabled={isProcessing || editingId !== null}
                           >
-                            {tSettings('actions.edit')}
-                          </button>
+                            { }
+                            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
+                          </Button>
                         )}
                         {onDelete && (!canDelete || canDelete(row)) && (
-                          <button 
-                            className="btn btn-secondary btn-xs" 
-                            style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                          <Button 
+                            variant="secondary"
+                            size="xs"
+                            className="flex items-center justify-center hover:!bg-red-50" 
+                            title={tSettings('actions.delete')}
+                            style={{ color: '#ef4444', borderColor: '#ef4444' }}
                             onClick={() => handleDelete(row)}
                             disabled={isProcessing || editingId !== null}
                           >
-                            {tSettings('actions.delete')}
-                          </button>
+                            { }
+                            <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+                          </Button>
                         )}
                         {extraActions && extraActions(row)}
                       </div>

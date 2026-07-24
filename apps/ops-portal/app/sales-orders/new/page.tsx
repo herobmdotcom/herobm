@@ -207,7 +207,7 @@ export default function NewOrderPage() {
     setCurrencyCode(resolvedCurrency);
     setCustomerTaxPosition(a.taxPosition ?? null);
 
-    api.accountsControllerFindOne(a.customerId)
+    api.customersControllerFindOne(a.customerId)
       .then((res) => {
         const customer = res.data;
         setCustomerDeliveryAddresses((customer.deliveryAddresses as unknown as api.DeliveryAddressResponseDto[]) || []);
@@ -952,7 +952,7 @@ export default function NewOrderPage() {
                     if (val === 'other') {
                       setIsAddressSlideOverOpen(true);
                     } else {
-                      const addr = customerDeliveryAddresses.find(a => a.id === val);
+                      const addr = customerDeliveryAddresses.find(a => a.deliveryAddressId === val);
                       if (addr) {
                         setDeliveryCompanyName(addr.companyName || '');
                         setDeliveryName(addr.recipientName || '');
@@ -969,7 +969,7 @@ export default function NewOrderPage() {
                 >
                   <option value="" disabled>Select an address...</option>
                   {customerDeliveryAddresses.map(addr => (
-                    <option key={addr.id} value={addr.id}>
+                    <option key={addr.deliveryAddressId} value={addr.deliveryAddressId}>
                       {addr.addressName ? `${addr.addressName} - ` : ''}{addr.addressLine1}, {addr.city}
                     </option>
                   ))}
@@ -1063,9 +1063,9 @@ export default function NewOrderPage() {
             setDeliveryState(addr.stateOrProvince || '');
             setDeliveryPostalCode(addr.postalCode || '');
             setDeliveryCountry(addr.country || '');
-            if (saved && addr.id) {
+            if (saved && addr.deliveryAddressId) {
               setCustomerDeliveryAddresses([...customerDeliveryAddresses, addr as api.DeliveryAddressResponseDto]);
-              setSelectedAddressId(addr.id);
+              setSelectedAddressId(addr.deliveryAddressId);
             } else {
               setSelectedAddressId('other');
             }

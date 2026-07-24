@@ -22,7 +22,7 @@ export default function BalancesContent() {
   const fetchBalances = async (basis: 'invoiceDate' | 'dueDate') => {
     setIsLoading(true);
     try {
-      const response = await api.accountsControllerGetAgedBalances({ agingBasis: basis });
+      const response = await api.customersControllerGetAgedBalances({ agingBasis: basis });
       setBalances(response.data);
     } catch (error) {
       reportError(error, 'BalancesContent_fetchBalances');
@@ -36,7 +36,7 @@ export default function BalancesContent() {
   }, [agingBasis]);
 
   const columns = useMemo<ColDef<api.AgedBalanceResponseDto>[]>(() => [
-    { field: 'accountNumber', headerName: 'Account No.', width: 120 },
+    { field: 'customerNumber', headerName: 'Account No.', width: 120 },
     { field: 'customerName', headerName: 'Customer Name', flex: 1, minWidth: 200 },
     {
       colId: 'status',

@@ -13,6 +13,7 @@ import {
   locations,
   uomDictionary,
   taxCategories,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { sql } from 'drizzle-orm';
 
@@ -90,13 +91,18 @@ describe('DashboardService', () => {
 
   describe('getSummary', () => {
     it('should return counts for all entities', async () => {
+      const actorId = '00000000-0000-4000-8000-000000000005';
+      await pg.db.insert(actors).values({
+        actorId,
+        name: 'Test Customer',
+        headquartersAddressLine1: 'AU',
+      });
       const [acc] = await pg.db
         .insert(customers)
         .values({
-          name: 'Test Customer',
+          actorId,
           customerNumber: 'ACC1',
           currencyCode: 'USD',
-          billingAddressCountry: 'AU',
         })
         .returning();
 
@@ -150,13 +156,18 @@ describe('DashboardService', () => {
           baseUom: 'EA',
         })
         .returning();
+      const actorId2 = '00000000-0000-4000-8000-000000000006';
+      await pg.db.insert(actors).values({
+        actorId: actorId2,
+        name: 'Alpha Corp',
+        headquartersAddressLine1: 'AU',
+      });
       const [a] = await pg.db
         .insert(customers)
         .values({
-          name: 'Alpha Corp',
+          actorId: actorId2,
           customerNumber: 'AC-01',
           currencyCode: 'USD',
-          billingAddressCountry: 'AU',
         })
         .returning();
 
@@ -180,13 +191,18 @@ describe('DashboardService', () => {
     });
 
     it('should return correct href for each entity type', async () => {
+      const actorId3 = '00000000-0000-4000-8000-000000000007';
+      await pg.db.insert(actors).values({
+        actorId: actorId3,
+        name: 'Search Acc',
+        headquartersAddressLine1: 'AU',
+      });
       const [acc] = await pg.db
         .insert(customers)
         .values({
-          name: 'Search Acc',
+          actorId: actorId3,
           customerNumber: 'SA1',
           currencyCode: 'USD',
-          billingAddressCountry: 'AU',
         })
         .returning();
 
@@ -212,12 +228,17 @@ describe('DashboardService', () => {
   describe('getTimeline', () => {
     it('should return chronological events from system_events', async () => {
       const customerId = '00000000-0000-4000-8000-00000000000a';
+      const actorId4 = '00000000-0000-4000-8000-000000000008';
+      await pg.db.insert(actors).values({
+        actorId: actorId4,
+        name: 'Timeline Customer',
+        headquartersAddressLine1: 'AU',
+      });
       await pg.db.insert(customers).values({
         customerId,
-        name: 'Timeline Customer',
+        actorId: actorId4,
         customerNumber: 'TACC',
         currencyCode: 'USD',
-        billingAddressCountry: 'AU',
       });
 
       await pg.db.insert(systemEvents).values({

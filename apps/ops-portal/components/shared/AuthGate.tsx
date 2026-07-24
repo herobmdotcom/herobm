@@ -3,6 +3,7 @@
 import { useState, useEffect, createContext, useContext, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { login, getToken, getRole, validateSession, reportError } from '../../lib/api';
+import { Button } from './Button';
 
 const AuthContext = createContext<{ authenticated: boolean; role: string | null; permissions: { resource: string; action: string; effect: string }[] }>({
   authenticated: false,
@@ -103,13 +104,14 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
             onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
           />
           {error && <p className="text-sm mb-3" style={{ color: 'var(--danger)' }}>{error}</p>}
-          <button
+          <Button
             id={`${idPrefix}-login-submit`}
             onClick={handleLogin}
-            className="btn btn-primary w-full justify-center"
+            className="w-full justify-center"
+            variant="primary"
           >
             {t('signIn')}
-          </button>
+          </Button>
         </div>
       </div>
     );

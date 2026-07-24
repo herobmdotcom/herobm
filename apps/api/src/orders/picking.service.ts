@@ -28,6 +28,7 @@ import {
   transferOrderPicks,
   transferOrderShipments,
   transferOrderShipmentLines,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { InventoryService } from '../inventory/inventory.service';
 import {
@@ -460,7 +461,7 @@ export class PickingService {
         id: salesOrders.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         name: salesOrders.name,
-        customerName: coreAccounts.name,
+        customerName: actors.name,
         customerOrderNumber: salesOrders.customerOrderNumber,
         stateCode: salesOrders.stateCode,
         createdOn: salesOrders.createdOn,
@@ -500,6 +501,7 @@ export class PickingService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
+      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
       .leftJoin(
         customerGroups,
         eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),
@@ -902,7 +904,7 @@ export class PickingService {
         id: salesOrders.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         name: salesOrders.name,
-        customerName: coreAccounts.name,
+        customerName: actors.name,
         customerOrderNumber: salesOrders.customerOrderNumber,
         stateCode: salesOrders.stateCode,
         createdOn: salesOrders.createdOn,
@@ -935,6 +937,7 @@ export class PickingService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
+      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
       .leftJoin(
         customerGroups,
         eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),

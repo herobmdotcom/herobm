@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AccountsController } from './customers.controller';
-import { AccountsService } from './customers.service';
-import { AccountsWriteService } from './customers-write.service';
+import { CustomersController } from './customers.controller';
+import { CustomersService } from './customers.service';
+import { CustomersWriteService } from './customers-write.service';
 import { CreditAssessmentService } from './credit-assessment.service';
 
-describe('AccountsController', () => {
-  let controller: AccountsController;
+describe('CustomersController', () => {
+  let controller: CustomersController;
 
   const mockResult = {
     data: [{ customerId: 'C001', name: 'Acme Corp' }],
@@ -33,10 +33,10 @@ describe('AccountsController', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [AccountsController],
+      controllers: [CustomersController],
       providers: [
-        { provide: AccountsService, useValue: mockService },
-        { provide: AccountsWriteService, useValue: mockWriteService },
+        { provide: CustomersService, useValue: mockService },
+        { provide: CustomersWriteService, useValue: mockWriteService },
         {
           provide: CreditAssessmentService,
           useValue: mockCreditAssessmentService,
@@ -44,7 +44,7 @@ describe('AccountsController', () => {
       ],
     }).compile();
 
-    controller = module.get<AccountsController>(AccountsController);
+    controller = module.get<CustomersController>(CustomersController);
   });
 
   describe('findAll', () => {

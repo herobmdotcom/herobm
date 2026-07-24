@@ -16,6 +16,7 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./*"],
+      "@herobm/extension-ma/*": ["../../extensions/ma/src/*"],
       "@herobm/shared": ["../../packages/shared/src/index"],
       "@herobm/shared/*": ["../../packages/shared/src/*"]
     }

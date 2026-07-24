@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/shared/Button';
 import { businessReportsControllerGetReports } from '@herobm/sdk';
 import { reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
@@ -48,12 +49,13 @@ export default function ReportingDashboard() {
             ? t('errorLoading')
             : t('noReports')}
         </p>
-        <button 
+        <Button 
+          variant="primary"
           onClick={() => router.push('/reporting/config')}
           className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110"
         >
           {t('goToConfig')}
-        </button>
+        </Button>
       </div>
     );
   }

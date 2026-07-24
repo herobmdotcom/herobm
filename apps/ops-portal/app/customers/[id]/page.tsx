@@ -21,9 +21,10 @@ import GroupSelect from "@/components/shared/GroupSelect";
 import { Button } from '@/components/shared/Button';
 import CustomerSelect from "@/components/shared/CustomerSelect";
 import DiscountMatrixSlideOver from "@/components/shared/DiscountMatrixSlideOver";
-import { ContactSlideOver } from "./ContactSlideOver";
+import { ContactSlideOver } from "@/components/shared/ContactSlideOver";
 import DeliveryAddressSlideOver from "@/components/shared/DeliveryAddressSlideOver";
 import InfoCard from "@/components/shared/InfoCard";
+import { ContactCard } from "@/components/shared/ContactCard";
 import InheritedSelect from "@/components/shared/InheritedSelect";
 import InheritedNumberInput from "@/components/shared/InheritedNumberInput";
 import { useInheritance, useGroup } from "@/hooks/useInheritance";
@@ -84,7 +85,7 @@ export default function AccountDetailPage({
       : null,
   );
 
-  const selectedGroup = useGroup(accountGroups, dto.customerGroupId);
+  const selectedGroup = useGroup(accountGroups, dto?.customerGroupId);
 
   const creditHoldInheritance = useInheritance([
     { 
@@ -458,6 +459,8 @@ export default function AccountDetailPage({
     },
   ];
 
+  if (!customer || !dto) return null;
+
   return (
     <>
       <DetailsLayout
@@ -746,72 +749,15 @@ export default function AccountDetailPage({
                 </Button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(customer.contacts as unknown as api.ContactResponseDto[]) && (customer.contacts as unknown as api.ContactResponseDto[]).length > 0 ? [...(customer.contacts as unknown as api.ContactResponseDto[])].sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0) || (a.firstName || '').localeCompare(b.firstName || '')).map((contact) => (
-                  <InfoCard
-                    key={contact.id}
-                    title={`${contact.firstName} ${contact.lastName}`}
-                    isPrimary={contact.isPrimary}
-                    primaryLabel={t("customers.contactManagement.primaryBadge")}
-                    badges={
-                      <>
-                        <div className="flex items-center ml-auto">
-                          <Button variant="ghost"
-                            type="button"
-                            className="text-gray-400 hover:text-[var(--accent)] transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
-                            onClick={() => handleEditContactClick(contact)}
-                            title={t("customers.contactManagement.editContact")}
-                          >
-                            { }
-                            { }
-                            <span className="material-symbols-outlined text-[18px]">edit</span>
-                          </Button>
-                          <Button variant="ghost"
-                            type="button"
-                            className="text-gray-400 hover:text-red-500 transition-colors p-1 flex items-center justify-center rounded-md cursor-pointer"
-                            onClick={() => handleDeleteContactClick(contact.id)}
-                            title={t("customers.contactManagement.deleteContact")}
-                          >
-                            { }
-                            { }
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
-                          </Button>
-                        </div>
-                      </>
-                    }
-                  >
-                    { }
-                    <div className="text-sm text-gray-600">{contact.jobTitle || t("portal.noTitle")}</div>
-                    {(contact.phone || contact.mobile) && (
-                      <div className="flex flex-col gap-1.5 mt-2">
-                        {contact.phone && (
-                          <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                            { }
-                            { }
-                            <span className="material-symbols-outlined text-[14px] text-gray-400">phone</span>
-                            <a href={`tel:${contact.phone}`} className="hover:text-[var(--accent)] transition-colors">{contact.phone}</a>
-                          </div>
-                        )}
-                        {contact.mobile && (
-                          <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                            { }
-                            { }
-                            <span className="material-symbols-outlined text-[14px] text-gray-400">smartphone</span>
-                            <a href={`tel:${contact.mobile}`} className="hover:text-[var(--accent)] transition-colors">{contact.mobile}</a>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {contact.email && (
-                      <div className="flex items-center gap-1.5 text-sm text-gray-600 mt-1.5">
-                        { }
-                        { }
-                        <span className="material-symbols-outlined text-[14px] text-gray-400">mail</span>
-                        <a href={`mailto:${contact.email}`} className="text-[var(--accent)] hover:underline truncate">
-                          {contact.email}
-                        </a>
-                      </div>
-                    )}
-                  </InfoCard>
+                {(customer.contacts as unknown as api.ContactResponseDto[]) && (customer.contacts as unknown as api.ContactResponseDto[]).length > 0 ? [...(customer.contacts as unknown as api.ContactResponseDto[])].sort((a, b) => ((b.primaryFor?.includes('purchasing') ? 1 : 0) - (a.primaryFor?.includes('purchasing') ? 1 : 0)) || (a.firstName || '').localeCompare(b.firstName || '')).map((contact) => (
+                  <ContactCard
+                    key={contact.contactId}
+                    contact={contact as unknown as api.ContactResponseDto}
+                    primaryRoles={contact.primaryFor || []}
+                    onEdit={() => handleEditContactClick(contact)}
+                    onDelete={() => handleDeleteContactClick(contact.contactId)}
+                    deleteTitle={t("customers.contactManagement.deleteContact")}
+                  />
                 )) : (
                   <>
                     { }
@@ -959,14 +905,14 @@ export default function AccountDetailPage({
                     {t("customers.fields.parentCustomer")}
                   </label>
                   <CustomerSelect
-                    value={dto.parentCustomerId || null}
+                    value={(dto as unknown as { parentCustomerId: string | null }).parentCustomerId || null}
                     onChange={(val) => {
-                      updateField("parentCustomerId", val?.customerId || null);
-                      saveField("parentCustomerId", val?.customerId || null);
+                      updateField("parentCustomerId", (val as unknown as { customerId: string }).customerId || null);
+                      saveField("parentCustomerId", (val as unknown as { customerId: string }).customerId || null);
                     }}
                     disabled={!isEditable || saving}
                     excludeId={params.id}
-                    initialSearchTerm={dto.parentCustomerName || ""}
+                    initialSearchTerm={(dto as unknown as { parentCustomerName: string }).parentCustomerName || ""}
                   />
                 </div>
               </div>
@@ -1329,7 +1275,7 @@ export default function AccountDetailPage({
                       saveField("tradingTermsId", val);
                     }}
                     options={tradingTerms.map((term) => ({
-                      value: term.id,
+                      value: term.tradingTermsId,
                       label: `${term.code} - ${term.description}`,
                     }))}
                     inheritedValue={tradingTermsInheritance.inheritedValue}
@@ -1716,7 +1662,7 @@ export default function AccountDetailPage({
                       })}
                     </label>
                     <div className="flex flex-col gap-2">
-                      {customer.childAccounts.map((child: any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Unresolved nested DTO type */) => (
+                      {customer.childAccounts.map((child) => (
                         <Link
                           key={child.customerId}
                           href={`/customers/${child.customerId}`}
@@ -1792,7 +1738,7 @@ export default function AccountDetailPage({
               onClose={() => setIsContactSlideOverOpen(false)}
               entityId={customer.customerId}
               entityType="customer"
-              contactId={editingContact?.id}
+              contactId={editingContact?.contactId}
               existingData={editingContact || undefined}
               defaultCountry={customer.billingAddressCountry || undefined}
               onSaved={() => {
@@ -1805,7 +1751,7 @@ export default function AccountDetailPage({
               onClose={() => setIsAddressSlideOverOpen(false)}
               customerId={customer.customerId}
               customerName={customer.name || ''}
-              addressId={editingAddress?.id}
+              addressId={editingAddress?.deliveryAddressId}
               existingData={editingAddress as any /* eslint-disable-line @typescript-eslint/no-explicit-any -- Form component expects partial interface mismatches */}
               defaultCountry={customer.billingAddressCountry || undefined}
               onSaved={() => {

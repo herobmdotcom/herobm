@@ -28,6 +28,8 @@ import {
   systemEvents,
   salesOrderReturns,
   salesOrderReturnLines,
+  inventoryLedger,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -159,17 +161,11 @@ export class SalesInvoiceService {
       const custRows = await this.db
         .select({
           externalId: customers.externalId,
-          name: customers.name,
+          name: actors.name,
           defaultArAccountId: customerGroups.defaultArAccountId,
           defaultRevenueAccountId: customerGroups.defaultRevenueAccountId,
           defaultCostCenterId: customerGroups.defaultCostCenterId,
           defaultActivityId: customerGroups.defaultActivityId,
-          billingAddressCountry: customers.billingAddressCountry,
-          billingAddressPostalCode: customers.billingAddressPostalCode,
-          billingAddressStateOrProvince:
-            customers.billingAddressStateOrProvince,
-          billingAddressCity: customers.billingAddressCity,
-          billingAddressLine1: customers.billingAddressLine1,
           creditLimit: customers.creditLimit,
           isOnCreditHold: customers.isOnCreditHold,
           tradingTermsId: customers.tradingTermsId,
@@ -187,6 +183,7 @@ export class SalesInvoiceService {
           customerGroups,
           eq(customers.customerGroupId, customerGroups.customerGroupId),
         )
+        .leftJoin(actors, eq(customers.actorId, actors.actorId))
         .where(
           isUuid
             ? eq(customers.customerId, order.customerId)
@@ -195,24 +192,23 @@ export class SalesInvoiceService {
         .limit(1);
 
       if (custRows.length > 0) {
-        externalId = custRows[0].externalId;
-        customerName = custRows[0].name;
+        externalId = custRows[0].externalId || '';
+        customerName = custRows[0].name || 'Unknown Customer';
         customerArAccountId = custRows[0].defaultArAccountId;
         customerRevenueAccountId = custRows[0].defaultRevenueAccountId;
         customerCostCenterId = custRows[0].defaultCostCenterId;
         customerActivityId = custRows[0].defaultActivityId;
-        billingAddressCountry = custRows[0].billingAddressCountry;
-        billingAddressPostalCode = custRows[0].billingAddressPostalCode;
-        billingAddressStateOrProvince =
-          custRows[0].billingAddressStateOrProvince;
-        billingAddressCity = custRows[0].billingAddressCity;
-        billingAddressLine1 = custRows[0].billingAddressLine1;
+        billingAddressCountry = null;
+        billingAddressPostalCode = null;
+        billingAddressStateOrProvince = null;
+        billingAddressCity = null;
+        billingAddressLine1 = null;
 
         const effectiveEarlyPaymentDiscount =
           resolveEffectiveEarlyPaymentDiscount({
             earlyPaymentDiscount: custRows[0].earlyPaymentDiscount,
             earlyPaymentDiscountDays: custRows[0].earlyPaymentDiscountDays,
-            accountGroup: {
+            customerGroup: {
               earlyPaymentDiscount: custRows[0].groupEarlyPaymentDiscount,
               earlyPaymentDiscountDays:
                 custRows[0].groupEarlyPaymentDiscountDays,
@@ -227,7 +223,7 @@ export class SalesInvoiceService {
           creditLimit: custRows[0].creditLimit,
           isOnCreditHold: custRows[0].isOnCreditHold ?? false,
           tradingTermsId: custRows[0].tradingTermsId,
-          accountGroup: {
+          customerGroup: {
             creditLimit: custRows[0].groupCreditLimit,
             isOnCreditHold: custRows[0].groupIsOnCreditHold ?? false,
             tradingTermsId: custRows[0].groupTradingTermsId,
@@ -882,7 +878,7 @@ export class SalesInvoiceService {
         salesOrderId: salesInvoices.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         customerId: salesOrders.customerId,
-        customerName: customers.name,
+        customerName: actors.name,
         totalAmount: salesInvoices.totalAmount,
         taxAmount: salesInvoices.taxAmount,
         outstandingAmount: salesInvoices.outstandingAmount,
@@ -902,6 +898,7 @@ export class SalesInvoiceService {
         eq(salesInvoices.salesOrderId, salesOrders.salesOrderId),
       )
       .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
+      .leftJoin(actors, eq(customers.actorId, actors.actorId))
       .where(eq(salesInvoices.invoiceId, invoiceId))
       .limit(1);
 
@@ -1076,8 +1073,8 @@ export class SalesInvoiceService {
             WHEN ${salesInvoices.invoiceNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
             WHEN ${salesOrders.orderNumber} ILIKE ${rawSearchTerm} THEN 3
             WHEN ${salesOrders.orderNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
-            WHEN ${customers.name} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${customers.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${actors.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${actors.name} ILIKE ${rawSearchTerm + '%'} THEN 2
             ELSE 1
           END
         `
@@ -1088,7 +1085,7 @@ export class SalesInvoiceService {
         or(
           ilike(salesInvoices.invoiceNumber, `%${rawSearchTerm}%`),
           ilike(salesOrders.orderNumber, `%${rawSearchTerm}%`),
-          ilike(customers.name, `%${rawSearchTerm}%`),
+          ilike(actors.name, `%${rawSearchTerm}%`),
         ) as import('drizzle-orm').SQL,
       );
     }
@@ -1102,7 +1099,7 @@ export class SalesInvoiceService {
         salesOrderId: salesInvoices.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         customerId: salesOrders.customerId,
-        customerName: customers.name,
+        customerName: actors.name,
         totalAmount: salesInvoices.totalAmount,
         taxAmount: salesInvoices.taxAmount,
         outstandingAmount: salesInvoices.outstandingAmount,
@@ -1119,6 +1116,7 @@ export class SalesInvoiceService {
         eq(salesInvoices.salesOrderId, salesOrders.salesOrderId),
       )
       .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
+      .leftJoin(actors, eq(customers.actorId, actors.actorId))
       .$dynamic();
 
     if (whereClause) {

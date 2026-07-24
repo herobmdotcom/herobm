@@ -11,6 +11,10 @@ export interface ReturnResponseDto {
   returnId: string;
   returnNumber: string;
   stateCode: string;
+  orderNumber?: string;
+  customerId?: string;
+  customerNumber?: string;
+  customerName?: string;
   locationId?: string;
   locationName?: string;
   notes?: string;

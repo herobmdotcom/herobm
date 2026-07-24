@@ -357,9 +357,15 @@ export default function RolesPage() {
                         </>
                       ) : (
                         <>
-                          <Button variant="secondary" size="sm" onClick={() => startEdit(roleItem)}>{tCommon('edit')}</Button>
+                          <Button variant="secondary" size="sm" className="flex items-center justify-center !p-1.5" title={tCommon('edit')} onClick={() => startEdit(roleItem)}>
+                            { }
+                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
+                          </Button>
                           {roleItem.role !== 'admin' && roleItem.role !== 'viewer' && roleItem.role !== 'webhook' && roleItem.role !== 'agent' && (
-                            <Button variant="secondary" size="sm" className="text-danger" onClick={() => deleteRole(roleItem.role)}>{tCommon('delete')}</Button>
+                            <Button variant="secondary" size="sm" className="flex items-center justify-center !p-1.5 hover:bg-red-50 text-danger border-danger" style={{ color: '#ef4444', borderColor: '#ef4444' }} title={tCommon('delete')} onClick={() => deleteRole(roleItem.role)}>
+                              { }
+                              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
+                            </Button>
                           )}
                         </>
                       )}

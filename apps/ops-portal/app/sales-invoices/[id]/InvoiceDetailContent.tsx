@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import PageNav from '@/components/shared/PageNav';
 import StateBadge from '@/components/StateBadge';
 import { formatAmount } from '@/lib/currency';
 import { ValidState } from '@/types/states';
@@ -217,6 +218,14 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
       }
     >
       <div className="flex flex-col gap-3">
+        <PageNav
+          sections={[
+            { id: 'details-section', label: 'Details' },
+            { id: 'lines-section', label: 'Line Items' },
+            { id: 'payments-section', label: 'Payments' },
+            { id: 'activity-section', label: 'Activity' },
+          ]}
+        />
         {isOverdue && (
           <div className="px-4 lg:px-6 pt-4">
             <EntityBanner
@@ -226,7 +235,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
             />
           </div>
         )}
-        <div className="card">
+        <div id="details-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading flex items-center gap-2">
               { }
@@ -387,7 +396,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           </div>
         </div>
 
-        <div className="card">
+        <div id="lines-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading flex items-center gap-2">
               {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
@@ -460,7 +469,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
         </div>
 
         {/* Payment Allocations Card */}
-        <div className="card">
+        <div id="payments-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading flex items-center gap-2">
               { }
@@ -503,7 +512,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           />
         </div>
 
-        <div className="card">
+        <div id="activity-section" className="card">
           <ActivityTimeline 
             events={invoice.events && invoice.events.length > 0 ? invoice.events : [{
               eventId: `import-${invoice.invoiceId}`,

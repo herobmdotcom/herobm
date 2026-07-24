@@ -16,8 +16,11 @@ import {
   masterDataEvents,
   customerGroups,
   taxPositions,
-  customerContacts,
+  contacts,
+  actorContactLinks,
+  actors,
   customerDeliveryAddresses,
+  actorActorLinks,
 } from '../drizzle/herobm-core-schema';
 import {
   PaginationQuery,
@@ -37,7 +40,7 @@ import {
 } from './customer-risk.domain';
 
 @Injectable()
-export class AccountsService {
+export class CustomersService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly creditAssessmentService: CreditAssessmentService,
@@ -95,8 +98,8 @@ export class AccountsService {
     const scoreSql = searchTerm
       ? sql<number>`
           CASE 
-            WHEN ${customers.name} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${customers.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${actors.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${actors.name} ILIKE ${rawSearchTerm + '%'} THEN 2
             WHEN ${customers.customerNumber} ILIKE ${rawSearchTerm} THEN 3
             WHEN ${customers.customerNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
             ELSE 1
@@ -109,7 +112,7 @@ export class AccountsService {
     if (searchTerm) {
       conditions.push(
         or(
-          ilike(customers.name, `%${rawSearchTerm}%`),
+          ilike(actors.name, `%${rawSearchTerm}%`),
           ilike(customers.customerNumber, `%${rawSearchTerm}%`),
         ),
       );
@@ -123,9 +126,14 @@ export class AccountsService {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
+    const parentLink = alias(actorActorLinks, 'parent_link');
+    const parentActor = alias(actors, 'parent_actor');
+    const parentCustomer = alias(customers, 'parent_customer');
+
     let qb = this.db
       .select({
         ...getTableColumns(customers),
+        name: actors.name,
         customerGroupName: customerGroups.name,
         customerGroupCode: customerGroups.groupCode,
         customerGroupTradingTermsId: customerGroups.tradingTermsId,
@@ -134,6 +142,14 @@ export class AccountsService {
         customerGroupTaxPositionId: customerGroups.taxPositionId,
         gstCategoryName: taxPositions.code,
         score: scoreSql,
+        billingAddressLine1: actors.headquartersAddressLine1,
+        billingAddressLine2: actors.headquartersAddressLine2,
+        billingAddressCity: actors.headquartersCity,
+        billingAddressStateOrProvince: actors.headquartersStateOrProvince,
+        billingAddressPostalCode: actors.headquartersPostalCode,
+        billingAddressCountry: actors.headquartersCountry,
+        parentCustomerId: parentCustomer.customerId,
+        parentCustomerName: parentActor.name,
       })
       .from(customers)
       .leftJoin(
@@ -144,6 +160,16 @@ export class AccountsService {
         taxPositions,
         eq(customers.taxPositionId, taxPositions.taxPositionId),
       )
+      .leftJoin(actors, eq(customers.actorId, actors.actorId))
+      .leftJoin(
+        parentLink,
+        and(
+          eq(parentLink.sourceActorId, customers.actorId),
+          eq(parentLink.linkType, 'parent_company'),
+        ),
+      )
+      .leftJoin(parentActor, eq(parentLink.targetActorId, parentActor.actorId))
+      .leftJoin(parentCustomer, eq(parentActor.actorId, parentCustomer.actorId))
       .$dynamic();
 
     if (whereClause) {
@@ -164,11 +190,11 @@ export class AccountsService {
           sql`${scoreSql} ${scoreOp} ${c.score}`,
           and(
             sql`${scoreSql} = ${c.score}`,
-            sql`lower(${customers.name}) ${nameOp} lower(${c.name})`,
+            sql`lower(${actors.name}) ${nameOp} lower(${c.name})`,
           ),
           and(
             sql`${scoreSql} = ${c.score}`,
-            sql`lower(${customers.name}) = lower(${c.name})`,
+            sql`lower(${actors.name}) = lower(${c.name})`,
             sql`${customers.customerId} ${idOp} ${c.id}`,
           ),
         );
@@ -179,7 +205,7 @@ export class AccountsService {
         const scoreOp = dir === 'next' ? desc : asc;
         return q.orderBy(
           scoreOp(scoreSql),
-          orderFn(sql`lower(${customers.name})`),
+          orderFn(sql`lower(${actors.name})`),
           orderFn(customers.customerId),
         );
       },
@@ -194,6 +220,7 @@ export class AccountsService {
     const [{ count }] = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(customers)
+      .leftJoin(actors, eq(customers.actorId, actors.actorId))
       .where(whereClause);
 
     const customerIds = data.map((c) => c.customerId);
@@ -262,13 +289,26 @@ export class AccountsService {
     const rows = await db
       .select({
         ...getTableColumns(customers),
+        name: actors.name,
         gstCategoryName: taxPositions.code,
+        businessNumber: actors.businessNumber,
+        isTaxRegistered: actors.isTaxRegistered,
+        billingAddressLine1: actors.headquartersAddressLine1,
+        billingAddressLine2: actors.headquartersAddressLine2,
+        billingAddressCity: actors.headquartersCity,
+        billingAddressStateOrProvince: actors.headquartersStateOrProvince,
+        billingAddressPostalCode: actors.headquartersPostalCode,
+        billingAddressCountry: actors.headquartersCountry,
+        telephone1: sql<string>`''`, // legacy mock
+        fax: sql<string>`''`, // legacy mock
+        emailAddress1: sql<string>`''`, // legacy mock
       })
       .from(customers)
       .leftJoin(
         taxPositions,
         eq(customers.taxPositionId, taxPositions.taxPositionId),
       )
+      .leftJoin(actors, eq(customers.actorId, actors.actorId))
 
       .where(isUuid ? eq(customers.customerId, id) : eq(customers.sourceId, id))
       .limit(1);
@@ -285,24 +325,87 @@ export class AccountsService {
       .where(eq(masterDataEvents.entityId, customer.customerId))
       .orderBy(sql`${masterDataEvents.createdOn} DESC`);
 
-    const [events, contactsResult, deliveryAddressesResult, creditAssessment] =
-      await Promise.all([
-        eventsQuery,
-        db.query.customerContacts
-          .findMany({
-            where: eq(customerContacts.customerId, customer.customerId),
-          })
-          .catch(() => []), // fallback if not available
-        db.query.customerDeliveryAddresses
-          .findMany({
-            where: eq(
-              customerDeliveryAddresses.customerId,
-              customer.customerId,
-            ),
-          })
-          .catch(() => []),
-        this.creditAssessmentService.assessCredit(customer.customerId, db),
-      ]);
+    const [
+      events,
+      contactsResult,
+      deliveryAddressesResult,
+      creditAssessment,
+      parentResult,
+      childrenResult,
+    ] = await Promise.all([
+      eventsQuery,
+      customer.actorId
+        ? db
+            .select({
+              id: contacts.contactId,
+              customerId: sql<string>`${customer.customerId}`, // map to old DTO
+              firstName: contacts.firstName,
+              lastName: contacts.lastName,
+              fullName: sql<string>`${contacts.firstName} || ' ' || ${contacts.lastName}`,
+              email: contacts.email,
+              phone: contacts.phone,
+              mobile: sql<string>`''`, // legacy mock
+              jobTitle: contacts.jobTitle,
+              primaryFor: actorContactLinks.primaryFor,
+              createdOn: contacts.createdOn,
+              modifiedOn: contacts.modifiedOn,
+            })
+            .from(contacts)
+            .innerJoin(
+              actorContactLinks,
+              eq(contacts.contactId, actorContactLinks.contactId),
+            )
+            .where(eq(actorContactLinks.actorId, customer.actorId))
+            .catch(() => [])
+        : Promise.resolve([]),
+      db.query.customerDeliveryAddresses
+        .findMany({
+          where: eq(customerDeliveryAddresses.customerId, customer.customerId),
+        })
+        .catch(() => []),
+      this.creditAssessmentService.assessCredit(customer.customerId, db),
+      customer.actorId
+        ? db
+            .select({
+              customerId: customers.customerId,
+              name: actors.name,
+            })
+            .from(actorActorLinks)
+            .innerJoin(
+              actors,
+              eq(actorActorLinks.targetActorId, actors.actorId),
+            )
+            .innerJoin(customers, eq(actors.actorId, customers.actorId))
+            .where(
+              and(
+                eq(actorActorLinks.sourceActorId, customer.actorId),
+                eq(actorActorLinks.linkType, 'parent_company'),
+              ),
+            )
+            .limit(1)
+            .catch(() => [])
+        : Promise.resolve([]),
+      customer.actorId
+        ? db
+            .select({
+              customerId: customers.customerId,
+              name: actors.name,
+            })
+            .from(actorActorLinks)
+            .innerJoin(
+              actors,
+              eq(actorActorLinks.sourceActorId, actors.actorId),
+            )
+            .innerJoin(customers, eq(actors.actorId, customers.actorId))
+            .where(
+              and(
+                eq(actorActorLinks.targetActorId, customer.actorId),
+                eq(actorActorLinks.linkType, 'parent_company'),
+              ),
+            )
+            .catch(() => [])
+        : Promise.resolve([]),
+    ]);
 
     // Fetch group if applicable
     let groupProfile: CustomerGroupProfile | null = null;
@@ -344,12 +447,22 @@ export class AccountsService {
     return {
       ...customer,
       events,
-      contacts: contactsResult,
-      deliveryAddresses: deliveryAddressesResult,
+      contacts: contactsResult.map((c) => ({ ...c, contactId: c.id })),
+      deliveryAddresses: deliveryAddressesResult.map((d) => ({
+        ...d,
+        deliveryAddressId: d.id,
+      })),
       isSalesBlocked: risk.isSalesBlocked,
       salesBlockReasons: risk.salesBlockReasons,
       creditAssessment,
       effectiveCreditLimit: risk.effectiveCreditLimit,
+      parentCustomerId:
+        parentResult.length > 0 ? parentResult[0].customerId : null,
+      parentCustomerName: parentResult.length > 0 ? parentResult[0].name : null,
+      childAccounts: childrenResult.map((c) => ({
+        customerId: c.customerId,
+        name: c.name,
+      })),
     };
   }
 
@@ -359,8 +472,8 @@ export class AccountsService {
     const invoicesQuery = sql`
       SELECT 
         c.customer_id as "customerId",
-        c.name as "customerName",
-        c.customer_number as "accountNumber",
+        a.name as "customerName",
+        c.customer_number as "customerNumber",
         c.currency_code as "currencyCode",
         c.state_code as "stateCode",
         c.is_on_credit_hold as "cIsOnCreditHold",
@@ -376,11 +489,12 @@ export class AccountsService {
         COALESCE(SUM(CASE WHEN i.${sql.raw(basisCol)} < CURRENT_DATE - INTERVAL '90 days' OR i.${sql.raw(basisCol)} IS NULL THEN i.outstanding_amount ELSE 0 END), 0) as "days90Plus",
         COALESCE(SUM(i.outstanding_amount), 0) as "totalOutstanding"
       FROM herobm_core.customers c
+      LEFT JOIN herobm_core.actors a ON c.actor_id = a.actor_id
       LEFT JOIN herobm_core.customer_groups g ON c.customer_group_id = g.customer_group_id
       JOIN herobm_core.sales_orders so ON so.customer_id = c.customer_id
       JOIN herobm_core.sales_invoices i ON i.sales_order_id = so.sales_order_id
       WHERE i.outstanding_amount > 0 AND i.state_code NOT IN (${SALES_INVOICE_STATE.DRAFT}, ${SALES_INVOICE_STATE.CANCELLED}, ${SALES_INVOICE_STATE.PAID})
-      GROUP BY c.customer_id, c.name, c.customer_number, c.currency_code, c.state_code, c.is_on_credit_hold, c.credit_limit, c.override_credit_hold_until, c.customer_group_id, g.is_on_credit_hold, g.credit_limit
+      GROUP BY c.customer_id, a.name, c.customer_number, c.currency_code, c.state_code, c.is_on_credit_hold, c.credit_limit, c.override_credit_hold_until, c.customer_group_id, g.is_on_credit_hold, g.credit_limit
     `;
 
     const glQuery = sql`
@@ -458,7 +572,7 @@ export class AccountsService {
       return {
         customerId: row.customerId as string,
         customerName: row.customerName as string,
-        accountNumber: row.accountNumber as string,
+        customerNumber: row.customerNumber as string,
         currencyCode: row.currencyCode,
         current,
         days1To30: Number(row.days1To30),

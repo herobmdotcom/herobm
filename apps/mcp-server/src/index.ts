@@ -62,7 +62,9 @@ export const DOMAIN_MAP: Record<string, string> = {
   'Payments': 'payment',
   'Contacts': 'contact',
   'Delivery Addresses': 'delivery_address',
-  'Tax': 'tax'
+  'Tax': 'tax',
+  'Actors': 'actor',
+  'Projects': 'project'
 };
 
 async function main() {
@@ -137,6 +139,8 @@ async function main() {
       if (domain.endsWith('order') && snakeController.startsWith('order_')) {
         snakeController = snakeController.substring('order_'.length);
       }
+
+
 
       // Also trim redundant prefixes (e.g., gl_create_account -> create_account)
       // Or sales_return_sales_credit_note -> sales_return_credit_note

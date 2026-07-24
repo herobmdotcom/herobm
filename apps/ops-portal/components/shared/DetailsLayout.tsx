@@ -11,8 +11,10 @@ export default function DetailsLayout({ header, children }: { header: React.Reac
         </div>
       </div>
       <div className="flex-1 overflow-y-auto bg-white detail-content flex flex-col min-h-0">
-        <div className="w-full px-4 lg:px-6 pt-4 pb-12 flex flex-col flex-1 h-full min-h-[500px] relative">
+        <div className="w-full px-4 lg:px-6 pt-4 flex flex-col flex-1 h-full min-h-[500px] relative">
           {children}
+          {/* Spacer to ensure scroll clearance at the bottom of the details page */}
+          <div className="shrink-0 h-32 w-full" aria-hidden="true" />
         </div>
       </div>
     </div>

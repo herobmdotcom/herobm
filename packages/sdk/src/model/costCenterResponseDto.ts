@@ -7,7 +7,7 @@
  */
 
 export interface CostCenterResponseDto {
-  id: string;
+  costCenterId: string;
   code: string;
   name: string;
   isActive: boolean;

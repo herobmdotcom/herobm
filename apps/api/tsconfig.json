@@ -14,9 +14,12 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
+    "rootDirs": ["./src", "../../extensions"],
     "paths": {
+      "@api/*": ["./src/*"],
       "@herobm/shared": ["../../packages/shared/dist/index"],
-      "@herobm/shared/*": ["../../packages/shared/dist/*"]
+      "@herobm/shared/*": ["../../packages/shared/dist/*"],
+      "@herobm/extension-ma/*": ["../../extensions/ma/src/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
@@ -35,7 +38,9 @@
     "drizzle.config.ts",
     "./tools",
     "run-migrations.ts",
-    "**/*.js"
+    "**/*.js",
+    "src/extensions/**/ui/**/*",
+    "**/*.tsx"
   ],
   "ts-node": {
     "esm": true,

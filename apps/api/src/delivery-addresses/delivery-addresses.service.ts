@@ -60,7 +60,10 @@ export class DeliveryAddressesService {
       actor: 'system',
     });
 
-    return inserted as DeliveryAddressResponseDto;
+    return {
+      ...inserted,
+      deliveryAddressId: inserted.id,
+    } as unknown as DeliveryAddressResponseDto;
   }
 
   async updateDeliveryAddress(
@@ -103,7 +106,10 @@ export class DeliveryAddressesService {
       actor: 'system',
     });
 
-    return updated as DeliveryAddressResponseDto;
+    return {
+      ...updated,
+      deliveryAddressId: updated.id,
+    } as unknown as DeliveryAddressResponseDto;
   }
 
   async deleteDeliveryAddress(id: string): Promise<{ success: boolean }> {

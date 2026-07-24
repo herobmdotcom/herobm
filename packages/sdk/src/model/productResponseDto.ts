@@ -7,7 +7,7 @@
  */
 
 export interface ProductResponseDto {
-  id: string;
+  productId: string;
   productNumber: string;
   name: string;
   productType: string;

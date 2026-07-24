@@ -81,18 +81,6 @@ export class OrdersController {
     return this.ordersService.findAll(query);
   }
 
-  @Get(':id')
-  @CasbinAction('read')
-  @ApiOperation({
-    summary: 'Find Order',
-    description: 'Retrieve detailed information for a specific sales order.',
-  })
-  @ApiFieldMask()
-  @ApiOkResponse({ type: OrderResponseDto })
-  findOne(@Param('id') id: string) {
-    return this.ordersWriteService.findOne(id);
-  }
-
   // -------------------------------------------------------------------------
   // Write endpoints (herobm_core app data)
   // -------------------------------------------------------------------------
@@ -113,22 +101,6 @@ export class OrdersController {
   })
   create(@Body() body: CreateOrderDto, @AuthUser() user: JwtUser) {
     return this.ordersWriteService.create(body, user.username);
-  }
-
-  @Patch(':id')
-  @ApiBody({ type: UpdateOrderDto })
-  @CasbinAction('write')
-  @ApiOperation({
-    summary: 'Update Order',
-    description: 'Modify the details or metadata of an existing sales order.',
-  })
-  @ApiOkResponse({ type: OrderResponseDto })
-  update(
-    @Param('id') id: string,
-    @Body() body: UpdateOrderDto,
-    @AuthUser() user: JwtUser,
-  ) {
-    return this.ordersWriteService.update(id, body, user.username);
   }
 
   @Post(':id/tax')
@@ -300,5 +272,33 @@ export class OrdersController {
       body,
       user.username,
     );
+  }
+
+  @Get(':id')
+  @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find Order',
+    description: 'Retrieve detailed information for a specific sales order.',
+  })
+  @ApiFieldMask()
+  @ApiOkResponse({ type: OrderResponseDto })
+  findOne(@Param('id') id: string) {
+    return this.ordersWriteService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ApiBody({ type: UpdateOrderDto })
+  @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Order',
+    description: 'Modify the details or metadata of an existing sales order.',
+  })
+  @ApiOkResponse({ type: OrderResponseDto })
+  update(
+    @Param('id') id: string,
+    @Body() body: UpdateOrderDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.ordersWriteService.update(id, body, user.username);
   }
 }

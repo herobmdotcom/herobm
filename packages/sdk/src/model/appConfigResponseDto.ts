@@ -8,6 +8,7 @@
 import type { AppConfigResponseDtoCreditLimitBehavior } from './appConfigResponseDtoCreditLimitBehavior';
 import type { AppConfigResponseDtoTaxProviderMappings } from './appConfigResponseDtoTaxProviderMappings';
 import type { AppConfigResponseDtoEnrichmentProviderMappings } from './appConfigResponseDtoEnrichmentProviderMappings';
+import type { OrderedSettingDto } from './orderedSettingDto';
 
 export interface AppConfigResponseDto {
   defaultFulfillmentLocationId: string;
@@ -26,4 +27,10 @@ export interface AppConfigResponseDto {
   defaultSupplierTermsId?: string;
   defaultCustomerTaxPositionId?: string;
   defaultSupplierTaxPositionId?: string;
+  actorTags?: OrderedSettingDto[];
+  actorContactRoles?: OrderedSettingDto[];
+  projectContactRoles?: OrderedSettingDto[];
+  projectActorRoles?: OrderedSettingDto[];
+  projectStatuses?: OrderedSettingDto[];
+  projectTypes?: OrderedSettingDto[];
 }

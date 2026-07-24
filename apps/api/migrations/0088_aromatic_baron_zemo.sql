@@ -1,0 +1,2 @@
+ALTER TABLE "herobm_core"."app_settings" ADD COLUMN "project_statuses" text[] DEFAULT ARRAY[]::text[];--> statement-breakpoint
+ALTER TABLE "herobm_core"."app_settings" ADD COLUMN "project_types" text[] DEFAULT ARRAY[]::text[];

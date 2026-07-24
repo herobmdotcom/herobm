@@ -13,6 +13,7 @@ import {
   glJournalEntries,
   salesInvoices,
   uomDictionary,
+  actors,
 } from '../../src/drizzle/herobm-core-schema';
 import {
   SalesOrderState,
@@ -32,12 +33,21 @@ let _sequence = 0;
 
 export async function createTestCustomer(db: any, opts?: { name?: string }) {
   const customerId = uuidv4();
+  const name = opts?.name || 'Test Customer';
+
+  const [act] = await db
+    .insert(actors)
+    .values({
+      name,
+      country: 'AU',
+    })
+    .returning();
+
   await db.insert(customers).values({
+    actorId: act.actorId,
     customerId,
     customerNumber: `CUST-TEST-${++_sequence}`,
-    name: opts?.name || 'Test Customer',
     currencyCode: 'AUD', // fixture
-    billingAddressCountry: 'AU',
   });
   return { customerId };
 }
@@ -176,10 +186,19 @@ export async function createTestReturnLine(
 export async function createTestSupplier(db: any, opts?: { name?: string }) {
   // Uses the same `customers` table as customers, but conceptually a supplier.
   const customerId = uuidv4();
+  const name = opts?.name || 'Test Supplier';
+
+  const [act] = await db
+    .insert(actors)
+    .values({
+      name,
+    })
+    .returning();
+
   await db.insert(customers).values({
+    actorId: act.actorId,
     customerId,
     customerNumber: `SUPP-TEST-${++_sequence}`,
-    name: opts?.name || 'Test Supplier',
     currencyCode: 'AUD', // fixture
   });
   return { customerId };

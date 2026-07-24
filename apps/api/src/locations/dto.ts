@@ -86,7 +86,7 @@ export class UpdateZoneDto extends PartialType(CreateZoneDto) {}
 export class UpdateBinDto extends PartialType(CreateBinDto) {}
 
 export class LocationResponseDto {
-  id!: string;
+  locationId!: string;
   code!: string;
   name!: string;
   addressLine1?: string;
@@ -100,7 +100,7 @@ export class LocationResponseDto {
 }
 
 export class ZoneResponseDto {
-  id!: string;
+  zoneId!: string;
   locationId!: string;
   code!: string;
   name!: string;
@@ -109,7 +109,7 @@ export class ZoneResponseDto {
 }
 
 export class BinResponseDto {
-  id!: string;
+  binId!: string;
   zoneId!: string;
   binNumber!: string;
   binType?: string;

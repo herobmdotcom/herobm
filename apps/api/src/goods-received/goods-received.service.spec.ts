@@ -20,6 +20,7 @@ import {
   bins,
   uomDictionary,
   taxCategories,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq, sql } from 'drizzle-orm';
@@ -116,14 +117,23 @@ describe('GoodsReceivedService', () => {
   });
 
   async function seedBasics() {
+    const actorId = '00000000-0000-4000-8000-000000000005';
+    await pg.db
+      .insert(actors)
+      .values({
+        actorId,
+        name: 'Supplier 1',
+        headquartersAddressLine1: 'AU',
+      })
+      .onConflictDoNothing();
+
     await pg.db
       .insert(suppliers)
       .values({
         vendorId: VENDOR_ID,
+        actorId,
         vendorNumber: 'V1',
-        name: 'Supplier 1',
         currencyCode: 'EUR',
-        address1Country: 'AU',
       })
       .onConflictDoNothing();
     await pg.db

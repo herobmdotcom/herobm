@@ -32,6 +32,7 @@ import {
   purchaseOrders,
   purchaseOrderReturnLines,
   suppliers,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { eq, desc, inArray } from 'drizzle-orm';
 import {
@@ -80,7 +81,7 @@ export class GlobalPurchaseReturnsController {
         notes: purchaseOrderReturns.notes,
         orderNumber: purchaseOrders.orderNumber,
         purchaseOrderId: purchaseOrders.purchaseOrderId,
-        vendorName: suppliers.name,
+        vendorName: actors.name,
       })
       .from(purchaseOrderReturns)
       .leftJoin(
@@ -91,6 +92,7 @@ export class GlobalPurchaseReturnsController {
         ),
       )
       .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
       .$dynamic();
 
     if (stateCodeStr) {
@@ -128,7 +130,7 @@ export class GlobalPurchaseReturnsController {
         notes: purchaseOrderReturns.notes,
         orderNumber: purchaseOrders.orderNumber,
         purchaseOrderId: purchaseOrders.purchaseOrderId,
-        vendorName: suppliers.name,
+        vendorName: actors.name,
         vendorId: purchaseOrders.vendorId,
         currencyCode: purchaseOrders.currencyCode,
       })
@@ -141,6 +143,7 @@ export class GlobalPurchaseReturnsController {
         ),
       )
       .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
       .where(eq(purchaseOrderReturns.returnId, id))
       .limit(1);
 

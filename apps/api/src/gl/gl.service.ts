@@ -18,6 +18,7 @@ import {
   costCenters,
   activities,
   outbox,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -746,14 +747,16 @@ export class GlService implements OnModuleInit {
       )
       SELECT 
         je.*,
-        COALESCE(acc.name, supp.name) as "partyName",
+        COALESCE(acc_actor.name, supp_actor.name) as "partyName",
         flp.party_id as "partyIdRef",
         flp.party_type as "partyTypeRef",
         COALESCE(si.invoice_number, pi.invoice_number, sor.return_number, pe.payment_number, gr.receipt_number) as "sourceNumber"
       FROM herobm_core.gl_journal_entries je
       LEFT JOIN first_line_parties flp ON flp.journal_entry_id = je.journal_entry_id
       LEFT JOIN herobm_core.customers acc ON acc.customer_id = flp.party_id::uuid AND flp.party_type = 'customer'
+      LEFT JOIN herobm_core.actors acc_actor ON acc.actor_id = acc_actor.actor_id
       LEFT JOIN herobm_core.suppliers supp ON supp.vendor_id = flp.party_id::uuid AND flp.party_type = 'supplier'
+      LEFT JOIN herobm_core.actors supp_actor ON supp.actor_id = supp_actor.actor_id
       LEFT JOIN herobm_core.sales_invoices si ON si.invoice_id = je.source_id AND je.source_type = 'sales_invoice'
       LEFT JOIN herobm_core.purchase_invoices pi ON pi.invoice_id = je.source_id AND je.source_type = 'purchase_invoice'
       LEFT JOIN herobm_core.sales_order_returns sor ON sor.return_id = je.source_id AND je.source_type = 'sales_credit_note'
@@ -844,8 +847,8 @@ export class GlService implements OnModuleInit {
         memo: glJournalLines.memo,
         partyType: glJournalLines.partyType,
         partyId: glJournalLines.partyId,
-        customerName: customers.name,
-        supplierName: suppliers.name,
+        customerName: sql<string>`case when ${glJournalLines.partyType} = 'customer' then ${actors.name} else null end`,
+        supplierName: sql<string>`case when ${glJournalLines.partyType} = 'supplier' then ${actors.name} else null end`,
         accountId: glJournalLines.glAccountId,
         accountCode: glAccounts.accountCode,
         accountName: glAccounts.name,
@@ -871,6 +874,19 @@ export class GlService implements OnModuleInit {
         and(
           sql`${glJournalLines.partyId}::uuid = ${suppliers.vendorId}`,
           eq(glJournalLines.partyType, 'supplier'),
+        ),
+      )
+      .leftJoin(
+        actors,
+        or(
+          and(
+            eq(glJournalLines.partyType, 'customer'),
+            eq(customers.actorId, actors.actorId),
+          ),
+          and(
+            eq(glJournalLines.partyType, 'supplier'),
+            eq(suppliers.actorId, actors.actorId),
+          ),
         ),
       )
       .leftJoin(

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AccountsWriteService } from './customers-write.service';
+import { CustomersWriteService } from './customers-write.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
   BadRequestException,
@@ -8,18 +8,22 @@ import {
 } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { customers, masterDataEvents } from '../drizzle/herobm-core-schema';
+import {
+  customers,
+  masterDataEvents,
+  actors,
+} from '../drizzle/herobm-core-schema';
 import { eq, sql } from 'drizzle-orm';
 import { getErrorMessage } from '@herobm/shared';
 
-describe('AccountsWriteService', () => {
+describe('CustomersWriteService', () => {
   const pg = setupPgliteSuite();
-  let service: AccountsWriteService;
+  let service: CustomersWriteService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AccountsWriteService,
+        CustomersWriteService,
         { provide: DRIZZLE, useValue: pg.db },
         {
           provide: AppConfigService,
@@ -35,7 +39,7 @@ describe('AccountsWriteService', () => {
       ],
     }).compile();
 
-    service = module.get<AccountsWriteService>(AccountsWriteService);
+    service = module.get<CustomersWriteService>(CustomersWriteService);
   });
 
   afterEach(() => {
@@ -64,11 +68,18 @@ describe('AccountsWriteService', () => {
     });
 
     it('should throw BadRequestException if customerNumber exists (manual check)', async () => {
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'Existing',
+          headquartersAddressLine1: 'AU',
+        })
+        .returning();
+
       await pg.db.insert(customers).values({
+        actorId: act.actorId,
         customerNumber: 'TEST001',
-        name: 'Existing',
         currencyCode: 'EUR',
-        billingAddressCountry: 'AU',
       });
 
       await expect(
@@ -85,20 +96,34 @@ describe('AccountsWriteService', () => {
     });
 
     it('should throw native PG unique violation error (23505) if manual check is bypassed', async () => {
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'First',
+          headquartersAddressLine1: 'AU',
+        })
+        .returning();
+
       await pg.db.insert(customers).values({
+        actorId: act.actorId,
         customerNumber: 'UNQ-001',
-        name: 'First',
         currencyCode: 'EUR',
-        billingAddressCountry: 'AU',
       });
 
       // Directly call DB to bypass service's manual existence check
       try {
+        const [act2] = await pg.db
+          .insert(actors)
+          .values({
+            name: 'Duplicate',
+            headquartersAddressLine1: 'AU',
+          })
+          .returning();
+
         await pg.db.insert(customers).values({
+          actorId: act2.actorId,
           customerNumber: 'UNQ-001',
-          name: 'Duplicate',
           currencyCode: 'EUR',
-          billingAddressCountry: 'AU',
         });
         fail('Should have thrown unique violation');
       } catch (e: unknown) {
@@ -110,11 +135,18 @@ describe('AccountsWriteService', () => {
     });
 
     it('should map native unique violation to ConflictException in service', async () => {
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'First',
+          headquartersAddressLine1: 'AU',
+        })
+        .returning();
+
       await pg.db.insert(customers).values({
+        actorId: act.actorId,
         customerNumber: 'CONFLICT-001',
-        name: 'First',
         currencyCode: 'EUR',
-        billingAddressCountry: 'AU',
       });
 
       // Bypass manual check by mocking the select? No, just rely on race condition potential.
@@ -148,13 +180,20 @@ describe('AccountsWriteService', () => {
 
   describe('update', () => {
     it('should update an existing customer', async () => {
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'Old',
+          headquartersAddressLine1: 'AU',
+        })
+        .returning();
+
       const [acc] = await pg.db
         .insert(customers)
         .values({
+          actorId: act.actorId,
           customerNumber: 'TEST001',
-          name: 'Old',
           currencyCode: 'EUR',
-          billingAddressCountry: 'AU',
         })
         .returning();
 
@@ -164,7 +203,12 @@ describe('AccountsWriteService', () => {
         'actor',
         'admin',
       );
-      expect(result.name).toBe('New');
+
+      const updatedActor = await pg.db
+        .select()
+        .from(actors)
+        .where(eq(actors.actorId, act.actorId));
+      expect(updatedActor[0].name).toBe('New');
     });
 
     it('should throw NotFoundException if customer does not exist', async () => {

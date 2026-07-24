@@ -11,6 +11,7 @@ import type { CreateSupplierDtoPaymentBlockReason } from './createSupplierDtoPay
 export interface CreateSupplierDto {
   earlyPaymentDiscount?: string;
   earlyPaymentDiscountDays?: number;
+  actorId?: string;
   vendorNumber: string;
   name: string;
   address1Line1?: string;

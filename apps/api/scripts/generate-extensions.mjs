@@ -1,0 +1,67 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const extensionsDir = path.resolve(__dirname, '../../../extensions');
+const generatedDir = path.resolve(__dirname, '../src/generated');
+
+if (!fs.existsSync(generatedDir)) {
+  fs.mkdirSync(generatedDir, { recursive: true });
+}
+
+const junctionPath = path.resolve(__dirname, '../src/extensions');
+if (!fs.existsSync(junctionPath)) {
+  fs.symlinkSync('../../../extensions', junctionPath, 'junction');
+}
+
+// 1. Generate extension-schemas.ts
+let schemasContent = `// AUTO-GENERATED FILE - DO NOT EDIT\n`;
+let schemaExports = [];
+
+// 2. Generate extension-modules.ts
+let modulesContent = `// AUTO-GENERATED FILE - DO NOT EDIT\n`;
+let moduleExports = [];
+
+if (fs.existsSync(extensionsDir)) {
+  const extensions = fs.readdirSync(extensionsDir);
+  for (const ext of extensions) {
+    const extDir = path.join(extensionsDir, ext);
+    if (!fs.statSync(extDir).isDirectory()) continue;
+
+    // Check for schema
+    const schemaPath = path.join(extDir, 'src/db/schema.ts');
+    if (fs.existsSync(schemaPath)) {
+      const importName = `${ext.replace(/[^a-zA-Z0-9]/g, '')}Schema`;
+      schemasContent += `import * as ${importName} from '../extensions/${ext}/src/db/schema';\n`;
+      schemaExports.push(`...${importName}`);
+    }
+
+    // Check for api module
+    const apiPath = path.join(extDir, 'src/api');
+    if (fs.existsSync(apiPath)) {
+      const files = fs.readdirSync(apiPath);
+      const moduleFile = files.find(f => f.endsWith('.module.ts'));
+      if (moduleFile) {
+        const moduleName = moduleFile.replace('.ts', '');
+        // Read the file to find the class name
+        const content = fs.readFileSync(path.join(apiPath, moduleFile), 'utf-8');
+        const match = content.match(/export class (\w+Module)/);
+        if (match) {
+          modulesContent += `import { ${match[1]} } from '../extensions/${ext}/src/api/${moduleName}';\n`;
+          moduleExports.push(match[1]);
+        }
+      }
+    }
+  }
+}
+
+schemasContent += `\nexport const extensionSchemas = {\n  ${schemaExports.join(',\n  ')}\n};\n`;
+modulesContent += `\nexport const extensionModules = [\n  ${moduleExports.join(',\n  ')}\n];\n`;
+
+fs.writeFileSync(path.join(generatedDir, 'extension-schemas.ts'), schemasContent);
+fs.writeFileSync(path.join(generatedDir, 'extension-modules.ts'), modulesContent);
+
+console.log('Successfully generated API extension files.');

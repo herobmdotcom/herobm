@@ -21,6 +21,7 @@ import {
   taxCategories,
   locations,
   appSettings,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -565,7 +566,7 @@ export class BackordersService {
         stateCode: purchaseOrders.stateCode,
         quantity: purchaseOrderLineItems.quantity,
         vendorId: purchaseOrders.vendorId,
-        vendorName: coreSuppliers.name,
+        vendorName: actors.name,
         deliveryLocationId: purchaseOrders.deliveryLocationId,
         locationName: locations.name,
       })
@@ -581,6 +582,7 @@ export class BackordersService {
         coreSuppliers,
         eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
       )
+      .leftJoin(actors, eq(coreSuppliers.actorId, actors.actorId))
       .leftJoin(
         locations,
         eq(purchaseOrders.deliveryLocationId, locations.locationId),

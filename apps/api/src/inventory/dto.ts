@@ -193,21 +193,21 @@ export class TopographyLocationResponseDto extends InventoryLocationResponseDto 
 }
 
 export class InventoryMovementResponseDto {
-  id!: string;
+  movementId!: string;
   productId!: string;
   quantity!: string;
   date!: Date;
 }
 
 export class InventoryLedgerResponseDto {
-  id!: string;
+  ledgerId!: string;
   productId!: string;
   quantity!: string;
   date!: Date;
 }
 
 export class InventoryEntryDetailsResponseDto {
-  id!: string;
+  entryId!: string;
   productId!: string;
   quantity!: string;
   date!: Date;
@@ -225,7 +225,7 @@ export class FindByProductIdsBulkDto {
 
 export class PendingPutawayResponseDto {
   @ApiProperty()
-  id!: string;
+  putawayId!: string;
   @ApiProperty()
   sourceType!: string;
   @ApiProperty()

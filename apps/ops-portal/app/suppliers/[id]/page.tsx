@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, use, useMemo } from 'react';
+
+import { useState, useEffect, useMemo, use, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
@@ -28,50 +29,7 @@ import InheritedSelect from '@/components/shared/InheritedSelect';
 import InheritedNumberInput from '@/components/shared/InheritedNumberInput';
 import { useSettings } from '@/components/SettingsProvider';
 import { SUPPLIER_STATE, getErrorMessage, CURRENCIES as _CURRENCIES, COUNTRIES, getCurrencyForCountry } from '@herobm/shared';
-
-interface Supplier {
-  vendorId: string;
-  vendorNumber: string;
-  name: string;
-  emailAddress1: string | null;
-  telephone1: string | null;
-  address1Line1: string | null;
-  address1Line2: string | null;
-  address1City: string | null;
-  address1StateOrProvince: string | null;
-  address1PostalCode: string | null;
-  address1Country: string | null;
-  // Overrides
-  tradingTermsId?: string | null;
-  earlyPaymentDiscount?: string | null;
-  earlyPaymentDiscountDays?: number | null;
-  creditLimit?: string | null;
-  isPurchasingBlocked?: boolean;
-  purchasingBlockReason?: string | null;
-  isPaymentBlocked?: boolean;
-  paymentBlockReason?: string | null;
-  
-
-
-  currencyCode: string;
-  supplierGroupId: string | null;
-  stateCode: string;
-  notes: string | null;
-  blockNotes?: string | null;
-
-  businessNumber: string | null;
-  isTaxRegistered: boolean;
-  taxPositionId?: string | null;
-
-  bankAccountName?: string | null;
-  bankBsb?: string | null;
-  bankAccountNumber?: string | null;
-
-  createdBy?: string | null;
-  createdOn?: string | null;
-  modifiedOn?: string | null;
-  events?: unknown[];
-}
+import { useSupplier, Supplier } from './useSupplier';
 
 export default function SupplierDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const { baseCurrency, app } = useSettings();
@@ -87,49 +45,25 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const searchParams = useSearchParams();
   const initialTab = (searchParams.get('tab') as 'details' | 'products' | 'compliance' | 'purchaseOrders' | 'invoices' | 'payments') || 'details';
   const [activeTab, setActiveTab] = useState<'details' | 'products' | 'compliance' | 'purchaseOrders' | 'invoices' | 'payments'>(initialTab);
-  const [supplier, setSupplier] = useState<Supplier | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const {
+    supplier,
+    dto,
+    loading,
+    saving,
+    setSaving,
+    updateField,
+    saveField,
+    taxPositions,
+    availableTradingTerms,
+    supplierGroups,
+    loadSupplier,
+  } = useSupplier(params.id);
+
+  const error = ''; // Kept for compatibility with existing JSX if needed
 
   useDocumentTitle(supplier ? (supplier.name ? `${supplier.vendorNumber} - ${supplier.name}` : supplier.vendorNumber) : null);
 
-
-
-  // Editable field state
-  const [editName, setEditName] = useState('');
-  const [editEmail, setEditEmail] = useState('');
-  const [editPhone, setEditPhone] = useState('');
-  const [editStreet, setEditStreet] = useState('');
-  const [editCity, setEditCity] = useState('');
-  const [editCountry, setEditCountry] = useState('');
-  const [editTradingTermsId, setEditTradingTermsId] = useState<string | null>(null);
-  const [editEarlyPaymentDiscount, setEditEarlyPaymentDiscount] = useState<string | null>(null);
-  const [editEarlyPaymentDiscountDays, setEditEarlyPaymentDiscountDays] = useState<string | null>(null);
-  const [editCreditLimit, setEditCreditLimit] = useState<string | null>(null);
-  const [editNotes, setEditNotes] = useState('');
-  const [editCurrency, setEditCurrency] = useState(baseCurrency);
-  const [editSupplierGroupId, setEditSupplierGroupId] = useState<string | null>(null);
-  
-  const [editIsPurchasingBlocked, setEditIsPurchasingBlocked] = useState<boolean | null>(null);
-  const [editPurchasingBlockReason, setEditPurchasingBlockReason] = useState('');
-  const [editIsPaymentBlocked, setEditIsPaymentBlocked] = useState<boolean | null>(null);
-  const [editPaymentBlockReason, setEditPaymentBlockReason] = useState('');
-  const [editBlockNotes, setEditBlockNotes] = useState('');
-
-  const [editBusinessNumber, setEditBusinessNumber] = useState('');
-  const [editIsTaxRegistered, setEditIsTaxRegistered] = useState(false);
-  const [editTaxPositionId, setEditTaxPositionId] = useState('');
-
-  const [editBankAccountName, setEditBankAccountName] = useState('');
-  const [editBankBsb, setEditBankBsb] = useState('');
-  const [editBankAccountNumber, setEditBankAccountNumber] = useState('');
-
-  const [availableTradingTerms, setAvailableTradingTerms] = useState<api.TradingTermResponseDto[]>([]);
-  const [taxPositions, setTaxPositions] = useState<api.TaxPositionResponseDto[]>([]);
-  const [supplierGroups, setSupplierGroups] = useState<api.SupplierGroupResponseDto[]>([]);
-
-  const selectedGroup = useGroup(supplierGroups, editSupplierGroupId);
+  const selectedGroup = useGroup(supplierGroups, dto?.supplierGroupId || null);
 
   const earlyPaymentDiscountInheritance = useInheritance([
     { value: selectedGroup?.earlyPaymentDiscount, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
@@ -161,96 +95,15 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     { value: selectedGroup?.isPaymentBlocked === true ? 'true' : selectedGroup?.isPaymentBlocked === false ? 'false' : null, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
   ]);
 
-  const loadSupplier = async (showSpinner = true) => {
-    if (showSpinner) setLoading(true);
-    try {
-      const [supplierRes, termsRes, taxPositionsRes, groupsRes] = await Promise.all([
-        api.suppliersControllerFindOne(params.id),
-        api.tradingTermsControllerFindAll().catch(() => ({ data: [] as api.TradingTermResponseDto[] } as unknown as api.tradingTermsControllerFindAllResponse)),
-        api.taxPositionsControllerFindAll().catch(() => ({ data: [] as api.TaxPositionResponseDto[] } as unknown as api.taxPositionsControllerFindAllResponse)),
-        api.supplierGroupsControllerFindAll().catch(() => ({ data: [] as api.SupplierGroupResponseDto[] } as unknown as api.supplierGroupsControllerFindAllResponse)),
-      ]) as unknown as [
-        { data: Supplier },
-        { data: api.TradingTermResponseDto[] },
-        { data: api.TaxPositionResponseDto[] },
-        { data: api.SupplierGroupResponseDto[] }
-      ];
-      const data = supplierRes?.data;
-      const termsData = termsRes?.data || [];
-      setTaxPositions(taxPositionsRes?.data || []);
-      setSupplierGroups(groupsRes?.data || []);
-      setSupplier(data);
-      setAvailableTradingTerms(termsData);
-      
-      setEditName(data.name || '');
-      setEditEmail(data.emailAddress1 || '');
-      setEditPhone(data.telephone1 || '');
-      setEditStreet(data.address1Line1 || '');
-      setEditCity(data.address1City || '');
-      setEditCountry(data.address1Country || '');
-      setEditTradingTermsId(data.tradingTermsId || null);
-      setEditEarlyPaymentDiscount(data.earlyPaymentDiscount || '');
-      setEditEarlyPaymentDiscountDays(data.earlyPaymentDiscountDays?.toString() || '');
-      setEditCreditLimit(data.creditLimit || '');
-      setEditNotes(data.notes || '');
-      
-      setEditIsPurchasingBlocked(data.isPurchasingBlocked ?? null);
-      setEditPurchasingBlockReason(data.purchasingBlockReason || '');
-      setEditIsPaymentBlocked(data.isPaymentBlocked ?? null);
-      setEditPaymentBlockReason(data.paymentBlockReason || '');
-      setEditBlockNotes(data.blockNotes || '');
-      
-      setEditBusinessNumber(data.businessNumber || '');
-      setEditIsTaxRegistered(data.isTaxRegistered || false);
-      setEditTaxPositionId(data.taxPositionId || '');
-
-      setEditBankAccountName(data.bankAccountName || '');
-      setEditBankBsb(data.bankBsb || '');
-      setEditBankAccountNumber(data.bankAccountNumber || '');
-      
-      setEditCurrency(data.currencyCode || baseCurrency);
-      setEditSupplierGroupId(data.supplierGroupId || null);
-    } catch (err) {
-      setError(err instanceof Error ? getErrorMessage(err) : tCommon('errors.failedToLoadOrder'));
-    } finally {
-      if (showSpinner) setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadSupplier();
-  }, [params.id]);
-
-  /** Save a single field on blur if it changed */
-  const saveField = async (field: string, value: unknown, original: unknown) => {
-    if (value === original) return;
-    if (value === '' && original === null) return;
-    setSaving(true);
-    setError('');
-    try {
-      const payloadValue = value === '' ? null : value;
-      await api.suppliersControllerUpdate(params.id, { [field]: payloadValue } as api.UpdateSupplierDto);
-      await loadSupplier(false);
-    } catch (err) {
-      setError(err instanceof Error ? getErrorMessage(err) : tCommon('errors.failedToUpdateOrder'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
   /** Toggle state code (active/inactive) */
   const toggleState = async () => {
     if (!supplier || saving) return;
     const newState = supplier.stateCode === SUPPLIER_STATE.ACTIVE ? SUPPLIER_STATE.INACTIVE : SUPPLIER_STATE.ACTIVE;
-    setSaving(true);
-    setError('');
     try {
       await api.suppliersControllerUpdate(params.id, { stateCode: newState } as api.UpdateSupplierDto);
-      await loadSupplier(false);
+      await loadSupplier();
     } catch (err) {
-      setError(err instanceof Error ? getErrorMessage(err) : tCommon('errors.failedToChangeState'));
-    } finally {
-      setSaving(false);
+      toast.error(err instanceof Error ? getErrorMessage(err) : tCommon('errors.failedToChangeState'));
     }
   };
 
@@ -260,9 +113,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     try {
       await api.suppliersControllerArchive(params.id, {});
       toast.success(tToast('orderArchived'));
-      await loadSupplier(false);
+      await loadSupplier();
     } catch (err: unknown) {
-      setError(getErrorMessage(err));
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -273,9 +126,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     try {
       await api.suppliersControllerUnarchive(params.id, {});
       toast.success(tToast('orderUnarchived'));
-      await loadSupplier(false);
+      await loadSupplier();
     } catch (err: unknown) {
-      setError(getErrorMessage(err));
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -341,7 +194,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       <>
         <div className="flex flex-col items-center justify-center flex-1">
           <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
-            {error || tCommon('noMatchingResults')}
+            {tCommon('noMatchingResults')}
           </p>
           <Button variant="secondary" onClick={() => router.push('/suppliers')}>
             ← {tSidebar('items.suppliers')}
@@ -414,7 +267,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             title={supplier.name}
             subtitle={supplier.vendorNumber}
             isSaving={saving}
-            badges={<SupplierStatusBadges mode="header" profile={resolveSupplierRiskProfile(supplier)} stateCode={supplier.stateCode} />}
+            badges={<SupplierStatusBadges mode="header" profile={resolveSupplierRiskProfile(supplier)} stateCode={supplier.stateCode || ''} />}
             nav={<PageNav sections={visibleSections} />}
           />
         }
@@ -584,19 +437,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       {activeTab === 'details' && (
         <div className="flex flex-col gap-3">
 
-      {error && (
-        <div
-          className="px-4 py-3 rounded-lg text-sm"
-          style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#f87171',
-          }}
-        >
-          {error}
-          <Button variant="ghost" className="ml-3 text-xs underline" onClick={() => setError('')}>{tCommon('dismiss')}</Button>
-        </div>
-      )}
+
 
         {/* General Info Card */}
         <div id="info-section" className="card">
@@ -613,9 +454,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <input
                 type="text"
                 className="input"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                onBlur={() => saveField('name', editName, supplier.name)}
+                value={dto?.name || ''}
+                onChange={(e) => updateField('name', e.target.value)}
+                onBlur={() => saveField('name', dto?.name)}
                 disabled={!isEditable || saving}
               />
             </div>
@@ -636,10 +477,10 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               </label>
               <GroupSelect
                 type="supplier"
-                value={editSupplierGroupId}
+                value={dto?.supplierGroupId || null}
                 onChange={(val) => {
-                  setEditSupplierGroupId(val);
-                  saveField('supplierGroupId', val || '', supplier.supplierGroupId);
+                  updateField('supplierGroupId', val || null);
+                  saveField('supplierGroupId', val || null);
                 }}
                 disabled={!isEditable || saving}
                 placeholder={t('placeholders.noGroup')}
@@ -651,20 +492,19 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               </label>
               <select
                 className="input"
-                value={editCountry}
+                value={dto?.address1Country || ''}
                 onChange={(e) => {
                   const val = e.target.value;
-                  setEditCountry(val);
+                  updateField('address1Country', val);
                   const newCurrency = getCurrencyForCountry(val);
-                  if (newCurrency && newCurrency !== editCurrency) {
-                    setEditCurrency(newCurrency);
+                  if (newCurrency && newCurrency !== dto?.currencyCode) {
+                    updateField('currencyCode', newCurrency);
                   }
                 }}
                 onBlur={() => {
-                  saveField('address1Country', editCountry, supplier.address1Country);
-                  const newCurrency = getCurrencyForCountry(editCountry);
-                  if (newCurrency && newCurrency !== supplier.currencyCode) {
-                    saveField('currencyCode', newCurrency, supplier.currencyCode);
+                  saveField('address1Country', dto?.address1Country);
+                  if (dto?.currencyCode !== supplier.currencyCode) {
+                    saveField('currencyCode', dto?.currencyCode);
                   }
                 }}
                 disabled={!isEditable || saving}
@@ -685,9 +525,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <input
                 type="text"
                 className="input w-full"
-                value={editNotes}
-                onChange={(e) => setEditNotes(e.target.value)}
-                onBlur={() => saveField('notes', editNotes, supplier.notes)}
+                value={dto?.notes || ''}
+                onChange={(e) => updateField('notes', e.target.value)}
+                onBlur={() => saveField('notes', dto?.notes)}
                 placeholder={tCommon('notesCardPlaceholder')}
                 disabled={!isEditable || saving}
               />
@@ -711,10 +551,10 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               </label>
               <select
                 className="input"
-                value={editCurrency}
+                value={dto?.currencyCode || ''}
                 onChange={(e) => {
-                  setEditCurrency(e.target.value);
-                  saveField('currencyCode', e.target.value, supplier.currencyCode);
+                  updateField('currencyCode', e.target.value);
+                  saveField('currencyCode', e.target.value);
                 }}
                 disabled={!isEditable || saving}
               >
@@ -773,9 +613,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 <div className="relative w-32 shrink-0">
                   <InheritedNumberInput
                     className="input w-full pr-8"
-                    value={editEarlyPaymentDiscount || ''}
-                    onChange={(val) => setEditEarlyPaymentDiscount(val)}
-                    onBlur={() => saveField('earlyPaymentDiscount', editEarlyPaymentDiscount ? String(editEarlyPaymentDiscount) : null, supplier.earlyPaymentDiscount || null)}
+                    value={dto?.earlyPaymentDiscount || ''}
+                    onChange={(val) => updateField('earlyPaymentDiscount', val)}
+                    onBlur={() => saveField('earlyPaymentDiscount', dto?.earlyPaymentDiscount)}
                     disabled={!isEditable || saving}
                     step="0.01"
                     min="0"
@@ -793,9 +633,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 <div className="relative w-32 shrink-0">
                   <InheritedNumberInput
                     className="input w-full pr-12"
-                    value={editEarlyPaymentDiscountDays || ''}
-                    onChange={(val) => setEditEarlyPaymentDiscountDays(val)}
-                    onBlur={() => saveField('earlyPaymentDiscountDays', editEarlyPaymentDiscountDays ? Number(editEarlyPaymentDiscountDays) : null, supplier.earlyPaymentDiscountDays || null)}
+                    value={dto?.earlyPaymentDiscountDays?.toString() || ''}
+                    onChange={(val) => updateField('earlyPaymentDiscountDays', val ? Number(val) : null)}
+                    onBlur={() => saveField('earlyPaymentDiscountDays', dto?.earlyPaymentDiscountDays)}
                     disabled={!isEditable || saving}
                     step="1"
                     min="0"
@@ -825,9 +665,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 <InheritedNumberInput
                   step="0.01"
                   className="input w-full max-w-xs"
-                  value={editCreditLimit || ""}
-                  onChange={(val) => setEditCreditLimit(val)}
-                  onBlur={() => saveField("creditLimit", editCreditLimit, supplier.creditLimit)}
+                  value={dto?.creditLimit || ""}
+                  onChange={(val) => updateField('creditLimit', val)}
+                  onBlur={() => saveField("creditLimit", dto?.creditLimit)}
                   disabled={!isEditable || saving}
                   placeholder="0.00"
                   inheritedValue={creditLimitInheritance.inheritedValue}
@@ -852,18 +692,18 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 <FrontendEnrichmentDecorator
                   field="supplier.business_number"
                   country={supplier.address1Country || ''}
-                  value={editBusinessNumber}
+                  value={dto?.businessNumber || ''}
                   isSaving={saving}
                   onEnrich={(data: Record<string, unknown>) => {
                     const enriched = data as { name?: string; isTaxRegistered?: boolean };
-                    if (enriched.name && enriched.name !== editName) {
-                      setEditName(enriched.name);
-                      saveField('name', enriched.name, supplier.name);
+                    if (enriched.name && enriched.name !== dto?.name) {
+                      updateField('name', enriched.name);
+                      saveField('name', enriched.name);
                       toast.success(tCommon('enrichment.nameUpdated'));
                     }
-                    if (enriched.isTaxRegistered !== undefined && enriched.isTaxRegistered !== editIsTaxRegistered) {
-                      setEditIsTaxRegistered(enriched.isTaxRegistered);
-                      saveField('isTaxRegistered', enriched.isTaxRegistered, supplier.isTaxRegistered);
+                    if (enriched.isTaxRegistered !== undefined && enriched.isTaxRegistered !== dto?.isTaxRegistered) {
+                      updateField('isTaxRegistered', enriched.isTaxRegistered);
+                      saveField('isTaxRegistered', enriched.isTaxRegistered);
                       toast.success(tCommon('enrichment.taxUpdated'));
                     }
                   }}
@@ -872,10 +712,10 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <input
                 type="text"
                 className="input w-full"
-                value={editBusinessNumber}
-                onChange={(e) => setEditBusinessNumber(e.target.value)}
+                value={dto?.businessNumber || ''}
+                onChange={(e) => updateField('businessNumber', e.target.value)}
                 disabled={!isEditable || saving}
-                onBlur={() => saveField('businessNumber', editBusinessNumber, supplier.businessNumber)}
+                onBlur={() => saveField('businessNumber', dto?.businessNumber)}
                 placeholder="Enter business number..."
               />
             </div>
@@ -890,9 +730,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 style={{ paddingTop: 6, cursor: !isEditable || saving ? 'not-allowed' : 'pointer' }}
                 onClick={() => {
                   if (!isEditable || saving) return;
-                  const newValue = !editIsTaxRegistered;
-                  setEditIsTaxRegistered(newValue);
-                  saveField('isTaxRegistered', newValue, supplier.isTaxRegistered);
+                  const newValue = !dto?.isTaxRegistered;
+                  updateField('isTaxRegistered', newValue);
+                  saveField('isTaxRegistered', newValue);
                 }}
               >
                 <div
@@ -900,7 +740,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     width: 40,
                     height: 22,
                     borderRadius: 11,
-                    background: editIsTaxRegistered ? 'var(--accent)' : 'var(--border)',
+                    background: dto?.isTaxRegistered ? 'var(--accent)' : 'var(--border)',
                     position: 'relative',
                     transition: 'background 0.2s ease',
                     opacity: !isEditable || saving ? 0.5 : 1,
@@ -914,13 +754,13 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                       background: '#fff',
                       position: 'absolute',
                       top: 3,
-                      left: editIsTaxRegistered ? 21 : 3,
+                      left: dto?.isTaxRegistered ? 21 : 3,
                       transition: 'left 0.2s ease',
                     }}
                   />
                 </div>
                 <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  {editIsTaxRegistered ? tCommon('yes') : tCommon('no')}
+                  {dto?.isTaxRegistered ? tCommon('yes') : tCommon('no')}
                 </span>
               </div>
             </div>
@@ -933,10 +773,10 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <InheritedSelect
                 className="input"
                 disabled={!isEditable || saving}
-                value={editTaxPositionId}
+                value={dto?.taxPositionId || ''}
                 onChange={(val) => {
-                  setEditTaxPositionId(val);
-                  saveField('taxPositionId', val, supplier.taxPositionId);
+                  updateField('taxPositionId', val || null);
+                  saveField('taxPositionId', val || null);
                 }}
                 options={taxPositions.map((pos) => ({
                   value: pos.taxPositionId,
@@ -956,13 +796,13 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <InheritedSelect
                 className="input"
                 disabled={!isEditable || saving}
-                value={editTradingTermsId || ''}
+                value={dto?.tradingTermsId || ''}
                 onChange={(val) => {
-                  setEditTradingTermsId(val || null);
-                  saveField('tradingTermsId', val, supplier.tradingTermsId || null);
+                  updateField('tradingTermsId', val || null);
+                  saveField('tradingTermsId', val || null);
                 }}
                 options={availableTradingTerms.map((term) => ({
-                  value: term.id,
+                  value: term.tradingTermsId,
                   label: `${term.code} - ${term.description}`,
                 }))}
                 inheritedValue={tradingTermsInheritance.inheritedValue}
@@ -987,9 +827,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <input
                 type="email"
                 className="input"
-                value={editEmail}
-                onChange={(e) => setEditEmail(e.target.value)}
-                onBlur={() => saveField('emailAddress1', editEmail, supplier.emailAddress1)}
+                value={dto?.emailAddress1 || ''}
+                onChange={(e) => updateField('emailAddress1', e.target.value)}
+                onBlur={() => saveField('emailAddress1', dto?.emailAddress1)}
                 disabled={!isEditable || saving}
               />
             </div>
@@ -1000,9 +840,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <input
                 type="text"
                 className="input"
-                value={editPhone}
-                onChange={(e) => setEditPhone(e.target.value)}
-                onBlur={() => saveField('telephone1', editPhone, supplier.telephone1)}
+                value={dto?.telephone1 || ''}
+                onChange={(e) => updateField('telephone1', e.target.value)}
+                onBlur={() => saveField('telephone1', dto?.telephone1)}
                 disabled={!isEditable || saving}
               />
             </div>
@@ -1013,9 +853,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <input
                 type="text"
                 className="input"
-                value={editStreet}
-                onChange={(e) => setEditStreet(e.target.value)}
-                onBlur={() => saveField('address1Line1', editStreet, supplier.address1Line1)}
+                value={dto?.address1Line1 || ''}
+                onChange={(e) => updateField('address1Line1', e.target.value)}
+                onBlur={() => saveField('address1Line1', dto?.address1Line1)}
                 disabled={!isEditable || saving}
               />
             </div>
@@ -1026,9 +866,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <input
                 type="text"
                 className="input"
-                value={editCity}
-                onChange={(e) => setEditCity(e.target.value)}
-                onBlur={() => saveField('address1City', editCity, supplier.address1City)}
+                value={dto?.address1City || ''}
+                onChange={(e) => updateField('address1City', e.target.value)}
+                onBlur={() => saveField('address1City', dto?.address1City)}
                 disabled={!isEditable || saving}
               />
             </div>
@@ -1050,9 +890,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <input
                 type="text"
                 className="input w-full"
-                value={editBankAccountName}
-                onChange={(e) => setEditBankAccountName(e.target.value)}
-                onBlur={() => saveField('bankAccountName', editBankAccountName, supplier.bankAccountName)}
+                value={dto?.bankAccountName || ''}
+                onChange={(e) => updateField('bankAccountName', e.target.value)}
+                onBlur={() => saveField('bankAccountName', dto?.bankAccountName)}
                 disabled={!isEditable || saving}
                 placeholder="e.g. John Doe Pty Ltd"
               />
@@ -1064,9 +904,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <input
                 type="text"
                 className="input"
-                value={editBankBsb}
-                onChange={(e) => setEditBankBsb(e.target.value)}
-                onBlur={() => saveField('bankBsb', editBankBsb, supplier.bankBsb)}
+                value={dto?.bankBsb || ''}
+                onChange={(e) => updateField('bankBsb', e.target.value)}
+                onBlur={() => saveField('bankBsb', dto?.bankBsb)}
                 disabled={!isEditable || saving}
                 placeholder="e.g. 062-000"
               />
@@ -1078,9 +918,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <input
                 type="text"
                 className="input"
-                value={editBankAccountNumber}
-                onChange={(e) => setEditBankAccountNumber(e.target.value)}
-                onBlur={() => saveField('bankAccountNumber', editBankAccountNumber, supplier.bankAccountNumber)}
+                value={dto?.bankAccountNumber || ''}
+                onChange={(e) => updateField('bankAccountNumber', e.target.value)}
+                onBlur={() => saveField('bankAccountNumber', dto?.bankAccountNumber)}
                 disabled={!isEditable || saving}
                 placeholder="e.g. 12345678"
               />
@@ -1090,7 +930,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
         {/* Activity Timeline — full width */}
         <div id="activity-section" className="card">
-          <ActivityTimeline events={(supplier.events || []) as TimelineEvent[]} />
+          <ActivityTimeline events={((supplier as { events?: unknown[] }).events || []) as TimelineEvent[]} />
         </div>
 
         <div className="flex justify-end pt-2">
@@ -1123,7 +963,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             <div className="flex gap-2 pt-2 pb-4">
               <SupplierStatusBadges 
                 profile={resolveSupplierRiskProfile(supplier)} 
-                stateCode={supplier.stateCode}
+                stateCode={supplier.stateCode || ''}
                 mode="header"
               />
             </div>
@@ -1135,11 +975,11 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   <InheritedSelect
                     className="input"
                     disabled={!isEditable || saving}
-                    value={editIsPurchasingBlocked === true ? 'true' : editIsPurchasingBlocked === false ? 'false' : ''}
+                    value={dto?.isPurchasingBlocked === true ? 'true' : dto?.isPurchasingBlocked === false ? 'false' : ''}
                     onChange={(val) => {
                       const newBlocked = val === 'true' ? true : val === 'false' ? false : null;
-                      setEditIsPurchasingBlocked(newBlocked);
-                      saveField('isPurchasingBlocked', newBlocked, supplier.isPurchasingBlocked ?? null);
+                      updateField('isPurchasingBlocked', newBlocked);
+                      saveField('isPurchasingBlocked', newBlocked);
                     }}
                     options={[
                       { value: 'true', label: 'Yes' },
@@ -1149,14 +989,14 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     inheritedSourceLabel={purchasingBlockInheritance.inheritedSourceLabel}
                   />
                 </div>
-                {editIsPurchasingBlocked && (
+                {dto?.isPurchasingBlocked && (
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('compliance.reason')}</label>
                     <select
                       className="input w-full"
-                      value={editPurchasingBlockReason}
-                      onChange={e => setEditPurchasingBlockReason(e.target.value)}
-                      onBlur={() => saveField('purchasingBlockReason', editPurchasingBlockReason, supplier.purchasingBlockReason || '')}
+                      value={dto?.purchasingBlockReason || ''}
+                      onChange={e => updateField('purchasingBlockReason', e.target.value)}
+                      onBlur={() => saveField('purchasingBlockReason', dto?.purchasingBlockReason)}
                       disabled={!isEditable || saving}
                     >
                       <option value="">{tCommon('selectEllipsis')}</option>
@@ -1181,11 +1021,11 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   <InheritedSelect
                     className="input"
                     disabled={!isEditable || saving}
-                    value={editIsPaymentBlocked === true ? 'true' : editIsPaymentBlocked === false ? 'false' : ''}
+                    value={dto?.isPaymentBlocked === true ? 'true' : dto?.isPaymentBlocked === false ? 'false' : ''}
                     onChange={(val) => {
                       const newBlocked = val === 'true' ? true : val === 'false' ? false : null;
-                      setEditIsPaymentBlocked(newBlocked);
-                      saveField('isPaymentBlocked', newBlocked, supplier.isPaymentBlocked ?? null);
+                      updateField('isPaymentBlocked', newBlocked);
+                      saveField('isPaymentBlocked', newBlocked);
                     }}
                     options={[
                       { value: 'true', label: 'Yes' },
@@ -1195,14 +1035,14 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     inheritedSourceLabel={paymentBlockInheritance.inheritedSourceLabel}
                   />
                 </div>
-                {editIsPaymentBlocked && (
+                {dto?.isPaymentBlocked && (
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('compliance.reason')}</label>
                     <select
                       className="input w-full"
-                      value={editPaymentBlockReason}
-                      onChange={e => setEditPaymentBlockReason(e.target.value)}
-                      onBlur={() => saveField('paymentBlockReason', editPaymentBlockReason, supplier.paymentBlockReason || '')}
+                      value={dto?.paymentBlockReason || ''}
+                      onChange={e => updateField('paymentBlockReason', e.target.value)}
+                      onBlur={() => saveField('paymentBlockReason', dto?.paymentBlockReason)}
                       disabled={!isEditable || saving}
                     >
                       <option value="">{tCommon('selectEllipsis')}</option>
@@ -1229,15 +1069,15 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 type="text"
                 className="input w-full"
                 placeholder={t('compliance.notesPlaceholder')}
-                value={editBlockNotes}
-                onChange={e => setEditBlockNotes(e.target.value)}
-                onBlur={() => saveField('blockNotes', editBlockNotes, supplier.blockNotes || null)}
+                value={dto?.blockNotes || ''}
+                onChange={e => updateField('blockNotes', e.target.value)}
+                onBlur={() => saveField('blockNotes', dto?.blockNotes)}
                 disabled={!isEditable || saving}
               />
             </div>
           </div>
           
-          <SupplierExpiries vendorId={supplier.vendorId} isEditable={isEditable} />
+          <SupplierExpiries vendorId={(supplier as { vendorId?: string }).vendorId || params.id} isEditable={isEditable} />
         </div>
       )}
       </DetailsLayout>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import PageNav from '@/components/shared/PageNav';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { formatAmount } from '@/lib/currency';
 import { formatLocationDisplay } from '@/lib/formatters';
@@ -303,6 +304,12 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
       }
     >
       <div className="flex flex-col gap-3">
+        <PageNav
+          sections={[
+            { id: 'details-section', label: 'Details' },
+            { id: 'lines-section', label: 'Line Items' }
+          ]}
+        />
         {(hasPendingPutaway || hasQuarantined) && ret.stateCode !== RETURN_STATE.PROCESSED && ret.stateCode !== RETURN_STATE.CANCELLED && (
           <EntityBanner 
             type="warning" 
@@ -312,7 +319,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
         )}
 
         {/* Details Card */}
-        <div className="card">
+        <div id="details-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading flex items-center gap-2">
               <span className="material-symbols-outlined shrink-0">info</span>
@@ -458,7 +465,7 @@ export default function SalesReturnDetailContent({ id }: { id: string }) {
         </div>
 
         {/* Lines */}
-        <div className="card">
+        <div id="lines-section" className="card">
           <h3 className="section-heading mb-4 flex items-center gap-2">
             {/* eslint-disable-next-line i18next/no-literal-string -- Material UI Icon */}
             <span className="material-symbols-outlined shrink-0">list</span>

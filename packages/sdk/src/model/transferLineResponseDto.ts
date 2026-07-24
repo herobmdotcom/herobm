@@ -7,7 +7,6 @@
  */
 
 export interface TransferLineResponseDto {
-  id: string;
   transferOrderLineId: string;
   productId: string;
   productNumber?: string;

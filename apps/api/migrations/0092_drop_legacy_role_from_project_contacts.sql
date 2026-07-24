@@ -1,0 +1,2 @@
+UPDATE "herobm_core"."project_contacts" SET roles = ARRAY[role] WHERE role IS NOT NULL AND (roles IS NULL OR array_length(roles, 1) IS NULL);
+ALTER TABLE "herobm_core"."project_contacts" DROP COLUMN IF EXISTS "role";

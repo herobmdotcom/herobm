@@ -9,7 +9,6 @@ import type { TransferLineResponseDto } from './transferLineResponseDto';
 import type { TransferEventResponseDto } from './transferEventResponseDto';
 
 export interface TransferResponseDto {
-  id: string;
   transferOrderId: string;
   orderNumber: string;
   stateCode: string;

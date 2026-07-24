@@ -26,6 +26,8 @@ import {
   customers as coreAccounts,
   customerGroups,
   locations,
+  salesInvoices,
+  actors,
   taxCategories,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
@@ -673,6 +675,7 @@ export class ReturnsWriteService {
               coreAccounts,
               eq(salesOrders.customerId, coreAccounts.customerId),
             )
+            .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
             .leftJoin(
               customerGroups,
               eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),
@@ -928,7 +931,7 @@ export class ReturnsWriteService {
         salesOrderId: salesOrderReturns.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         customerId: salesOrders.customerId,
-        customerName: coreAccounts.name,
+        customerName: actors.name,
         stateCode: salesOrderReturns.stateCode,
         locationId: salesOrderReturns.locationId,
         locationName: locations.name,
@@ -946,6 +949,7 @@ export class ReturnsWriteService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
+      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
       .leftJoin(
         locations,
         eq(salesOrderReturns.locationId, locations.locationId),
@@ -1106,13 +1110,14 @@ export class ReturnsWriteService {
           locationId: salesOrders.fulfillmentLocationId,
           customerId: coreAccounts.customerId,
           customerNumber: coreAccounts.customerNumber,
-          customerName: coreAccounts.name,
+          customerName: actors.name,
         })
         .from(salesOrders)
         .leftJoin(
           coreAccounts,
           eq(salesOrders.customerId, coreAccounts.customerId),
         )
+        .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
         .where(eq(salesOrders.salesOrderId, ret.salesOrderId))
         .limit(1);
 

@@ -38,6 +38,7 @@ The `entityType` field in the payload envelope indicates the domain object that 
 
 - **Sales**: `sales_order`, `sales_invoice`, `sales_return`
 - **Procurement**: `purchase_order`, `purchase_invoice`, `purchase_return`
+- **CRM**: `project`, `actor`, `contact`
 - **Master Data**: `product`, `product_group`, `customer`, `customer_group`, `supplier`, `supplier_group`, `product_supplier`
 - **Warehouse**: `warehouse` (covers receipts, shipments, picking, and putaway), `transfer_order`, `shipment`, `location`, `zone`, `bin`, `inventory_ledger`
 - **Financials**: `payment`, `general_ledger`, `gl_account`, `gl_reconciliation`, `gl_match_group`, `bank_statement_line`, `reconciliation_rule`, `cost_center`, `exchange_rate`, `tax_category`, `tax_position`, `tax_position_mapping`
@@ -72,6 +73,9 @@ The `eventType` is formed by combining the `entityType` and the action (e.g., `s
 | `inventory_ledger` | `entry_posted` |
 | `product` | `created`, `updated`, `deleted`, `archived`, `unarchived`, `status_changed`, `uom_added`, `uom_removed` |
 | `product_group` | `created`, `updated`, `deleted` |
+| `contact` | `created`, `updated`, `deleted` |
+| `project` | `created`, `updated`, `deleted` |
+| `actor` | `created`, `updated`, `deleted` |
 | `customer` | `created`, `updated`, `archived`, `unarchived`, `status_changed` |
 | `customer_group` | `created`, `updated`, `deleted` |
 | `supplier` | `created`, `updated`, `archived`, `unarchived`, `added_expiry`, `deleted_expiry`, `status_changed`, `updated_expiry` |

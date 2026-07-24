@@ -92,7 +92,7 @@ export default function PutawayPage() {
         api.inventoryControllerGetPendingPutaway({ locationId: selectedLocationId })
             .then(response => {
                 const lines = response.data || [];
-                setPendingLines(lines as PutawayLine[]);
+                setPendingLines(lines.map(l => ({ ...l, id: l.putawayId })) as unknown as PutawayLine[]);
             })
             .catch(err => reportError(err, 'Failed to load pending lines'))
             .finally(() => setLoadingLines(false));
@@ -424,9 +424,9 @@ export default function PutawayPage() {
                             </div>
                         ) : (
                             <div className="flex flex-col gap-2">
-                                {pendingLines.map(line => (
+                                {pendingLines.map((line, index) => (
                                     <div 
-                                        key={line.id}
+                                        key={line.id || `${line.referenceNumber}-${line.productId}-${index}`}
                                         onClick={() => setSelectedLine(line)}
                                         className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedLine?.id === line.id ? 'bg-[var(--bg-secondary-hover)] border-[var(--accent)]' : 'border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
                                     >

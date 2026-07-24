@@ -26,6 +26,7 @@ $enableMcp = if ($NoMcp) { 'false' } else { 'true' }
 $envInjection = "`$env:ENV_FILE='$envFile'; `$env:ENABLE_SWAGGER='$enableSwagger'; `$env:ENABLE_MCP='$enableMcp'; "
 $apiPort = 3002
 $fePort = 4301
+$workerPort = 9092
 if (Test-Path $envFile) {
     Write-Host "Loading configuration from: $envFile" -ForegroundColor DarkGray
     foreach ($line in (Get-Content $envFile | Where-Object { $_ -match '^[a-zA-Z_][a-zA-Z0-9_]*=' })) {
@@ -34,6 +35,7 @@ if (Test-Path $envFile) {
         $value = $value.Trim()
         if ($name -eq "API_PORT") { $apiPort = $value }
         if ($name -eq "FE_PORT") { $fePort = $value }
+        if ($name -eq "WORKER_PORT") { $workerPort = $value }
         $valueEscaped = $value.Replace("'", "''")
         $envInjection += "`$env:$name='$valueEscaped'; "
     }
@@ -64,7 +66,7 @@ function Kill-Port {
 }
 Kill-Port $apiPort
 Kill-Port $fePort
-Kill-Port 9092
+Kill-Port $workerPort
 
 # Start API in a new window
 $apiCmd = $envInjection + "`$env:PORT=$apiPort; `$env:PIPELINE_LOG_DIR='$PSScriptRoot\..\logs'; npm run start:dev -w apps/api"
@@ -75,7 +77,7 @@ $feCmd = $envInjection + "`$env:API_URL='http://localhost:$apiPort'; npm run dev
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", "`"$feCmd`""
 
 # Start Worker in a new window
-$workerCmd = $envInjection + "`$env:PORT=9092; npm run dev -w apps/worker"
+$workerCmd = $envInjection + "`$env:PORT=$workerPort; npm run dev -w apps/worker"
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", "`"$workerCmd`""
 
 

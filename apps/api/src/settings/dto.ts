@@ -10,7 +10,19 @@ import {
   IsNumber,
   IsUUID,
   IsEnum,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class OrderedSettingDto {
+  @IsString()
+  @IsNotEmpty()
+  value!: string;
+
+  @IsNumber()
+  order!: number;
+}
 
 export class CreateUomDto {
   @IsString()
@@ -201,19 +213,19 @@ export class UomResponseDto {
   @ApiProperty() description!: string;
 }
 export class ActivityResponseDto {
-  @ApiProperty() id!: string;
+  @ApiProperty() activityId!: string;
   @ApiProperty() code!: string;
   @ApiProperty() name!: string;
   @ApiProperty() isActive!: boolean;
 }
 export class CostCenterResponseDto {
-  @ApiProperty() id!: string;
+  @ApiProperty() costCenterId!: string;
   @ApiProperty() code!: string;
   @ApiProperty() name!: string;
   @ApiProperty() isActive!: boolean;
 }
 export class ExchangeRateResponseDto {
-  @ApiProperty() id!: string;
+  @ApiProperty() exchangeRateId!: string;
   @ApiProperty() currencyCode!: string;
   @ApiProperty() currencyName!: string;
   @ApiProperty() buyRate!: string;
@@ -221,7 +233,7 @@ export class ExchangeRateResponseDto {
   @ApiProperty() effectiveDate!: Date;
 }
 export class OrganizationResponseDto {
-  @ApiProperty() id!: string;
+  @ApiProperty() organizationId!: string;
   @ApiProperty() name!: string;
 }
 export class AppConfigResponseDto {
@@ -250,6 +262,18 @@ export class AppConfigResponseDto {
   @ApiProperty({ required: false }) defaultSupplierTermsId?: string;
   @ApiProperty({ required: false }) defaultCustomerTaxPositionId?: string;
   @ApiProperty({ required: false }) defaultSupplierTaxPositionId?: string;
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  actorTags?: OrderedSettingDto[];
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  actorContactRoles?: OrderedSettingDto[];
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  projectContactRoles?: OrderedSettingDto[];
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  projectActorRoles?: OrderedSettingDto[];
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  projectStatuses?: OrderedSettingDto[];
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  projectTypes?: OrderedSettingDto[];
 }
 export class UpdateAppConfigDto {
   @ApiProperty({ required: false })
@@ -329,9 +353,51 @@ export class UpdateAppConfigDto {
   @IsOptional()
   @IsString()
   smtpFromAddress?: string;
+
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderedSettingDto)
+  actorTags?: OrderedSettingDto[];
+
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderedSettingDto)
+  actorContactRoles?: OrderedSettingDto[];
+
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderedSettingDto)
+  projectContactRoles?: OrderedSettingDto[];
+
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderedSettingDto)
+  projectActorRoles?: OrderedSettingDto[];
+
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderedSettingDto)
+  projectStatuses?: OrderedSettingDto[];
+
+  @ApiProperty({ required: false, type: [OrderedSettingDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderedSettingDto)
+  projectTypes?: OrderedSettingDto[];
 }
 export class TradingTermResponseDto {
-  @ApiProperty() id!: string;
+  @ApiProperty() tradingTermsId!: string;
   @ApiProperty() code!: string;
   @ApiProperty() description!: string;
   @ApiProperty() days!: number;

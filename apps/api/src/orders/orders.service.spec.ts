@@ -11,6 +11,7 @@ import {
   taxCategories,
   products,
   uomDictionary,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 import { SALES_ORDER_STATE } from '@herobm/shared';
@@ -45,12 +46,19 @@ describe('OrdersService', () => {
       name: 'Main Warehouse',
     });
 
+    const [act] = await pg.db
+      .insert(actors)
+      .values({
+        name: 'Acme Corp',
+        headquartersAddressLine1: 'AU',
+      })
+      .returning();
+
     await pg.db.insert(customers).values({
+      actorId: act.actorId,
       customerId: ACCOUNT_ID,
       customerNumber: 'ACC001',
-      name: 'Acme Corp',
       currencyCode: 'EUR',
-      billingAddressCountry: 'AU',
     });
 
     await pg.db.insert(products).values({

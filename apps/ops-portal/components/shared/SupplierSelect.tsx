@@ -1,6 +1,8 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+'use client';
+
 import * as api from '@herobm/sdk';
 import { useTranslations } from 'next-intl';
+import AsyncSelect from './AsyncSelect';
 
 export interface Supplier {
   vendorId: string;
@@ -19,14 +21,6 @@ interface SupplierSelectProps {
   initialSearchTerm?: string;
 }
 
-function useDebounce<T extends unknown[]>(fn: (...args: T) => void, delay: number) {
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  return useCallback((...args: T) => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => fn(...args), delay);
-  }, [fn, delay]);
-}
-
 export default function SupplierSelect({
   value,
   onChange,
@@ -37,127 +31,36 @@ export default function SupplierSelect({
   initialSearchTerm,
 }: SupplierSelectProps) {
   const t = useTranslations('common');
-  const [searchTerm, setSearchTerm] = useState(initialSearchTerm || '');
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Initialize searchTerm if a supplier is already selected but searchTerm is empty.
-  // We'll need to fetch the supplier name if we only have the ID, but for our current use cases
-  // (new PO, new receiving), the value starts as null.
-  useEffect(() => {
-    if (!value) {
-      setSearchTerm('');
-    } else if (initialSearchTerm && !searchTerm) {
-      setSearchTerm(initialSearchTerm);
-    }
-  }, [value, initialSearchTerm]);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const searchSuppliers = useCallback(async (rawTerm: string) => {
-    const term = rawTerm.trim();
-    if (!term || term.length < 2) { 
-      setFilteredSuppliers([]); 
-      return; 
-    }
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      const res = await api.suppliersControllerFindAll({ q: term, limit: 10 } as any);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- External API integration boundaries where exact types are unknown.
-      setFilteredSuppliers(((res.data as any)?.data || res.data || []) );
-    } catch { 
-      setFilteredSuppliers([]); 
-    }
-  }, []);
-
-  const debouncedSearch = useDebounce((term: string) => searchSuppliers(term), 300);
-
-  const handleSelect = (sup: Supplier) => {
-    setSearchTerm(`${sup.vendorNumber} — ${sup.name}`);
-    setShowDropdown(false);
-    onChange(sup);
-  };
-
-  const handleClear = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSearchTerm('');
-    onChange(null);
-  };
 
   return (
-    <div className="relative" ref={containerRef}>
-      <div className="relative flex items-center">
-        <input
-          className={`input ${className || ''}`}
-          autoComplete="off"
-          placeholder={placeholder || t('selectEllipsis')}
-          value={searchTerm}
-          disabled={disabled}
-          required={required && !value}
-          onChange={(e) => {
-            const val = e.target.value.trimStart();
-            setSearchTerm(val);
-            setShowDropdown(true);
-            if (value) onChange(null);
-            debouncedSearch(val);
-          }}
-          onFocus={() => setShowDropdown(true)}
-          onBlur={(e) => setSearchTerm(e.target.value.trim())}
-        />
-        {searchTerm && !disabled && (
-          <button
-            type="button"
-            className="absolute right-3 text-xs cursor-pointer text-gray-400 hover:text-gray-600"
-            onClick={handleClear}
-          >
-            <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-          </button>
-        )}
-      </div>
-
-      {showDropdown && searchTerm && !disabled && (
-        <div
-          className="absolute z-50 w-full mt-1 rounded-lg overflow-hidden max-h-48 scroll-area"
-          style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-          }}
-        >
-          {(Array.isArray(filteredSuppliers) ? filteredSuppliers : []).slice(0, 10).map((s) => (
-            <div
-              key={s.vendorId}
-              className="px-3 py-2 cursor-pointer text-sm"
-              style={{ borderBottom: '1px solid rgba(30,58,95,0.3)' }}
-              onMouseDown={(e) => {
-                e.preventDefault(); // Prevent input blur
-                handleSelect(s);
-              }}
-            >
-              <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                {s.vendorNumber}
-              </span>
-              <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>
-                {s.name}
-              </span>
-            </div>
-          ))}
-          {filteredSuppliers.length === 0 && (
-            <div className="px-3 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
-              {t('noMatchingResults')}
-            </div>
-          )}
+    <AsyncSelect<Supplier>
+      value={value}
+      displayValue={initialSearchTerm}
+      placeholder={placeholder || t('selectEllipsis')}
+      disabled={disabled}
+      required={required}
+      className={className}
+      onSearch={async (term) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
+        const res = await api.suppliersControllerFindAll({ q: term, limit: 10 } as any);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DTO type structure bypass
+        return (res.data as any)?.data || res.data || [];
+      }}
+      onChange={onChange}
+      getKey={(s) => s.vendorId}
+      renderOption={(s) => (
+        <div className="flex flex-col gap-1.5 pt-1 pb-0.5">
+          <div style={{ minWidth: 0 }}>
+            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+              {s.vendorNumber}
+            </span>
+            <span style={{ color: 'var(--text-secondary)', marginLeft: 8, fontSize: 13 }}>
+              {s.name}
+            </span>
+          </div>
         </div>
       )}
-    </div>
+      noResultsText={t('noMatchingResults')}
+    />
   );
 }

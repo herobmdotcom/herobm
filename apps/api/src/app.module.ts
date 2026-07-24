@@ -8,7 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import { RATE_LIMITS } from './common/config/throttler.config';
 import { DrizzleModule } from './drizzle/drizzle.module';
 import { AuthModule } from './auth/auth.module';
-import { AccountsModule } from './customers/customers.module';
+import { CustomersModule } from './customers/customers.module';
 import { ProductsModule } from './products/products.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { OrdersModule } from './orders/orders.module';
@@ -44,6 +44,9 @@ import { RolesModule } from './roles/roles.module';
 import { BusinessReportsModule } from './business-reports/business-reports.module';
 import { UserSettingsModule } from './user-settings/user-settings.module';
 import { ContactsModule } from './contacts/contacts.module';
+import { ActorsModule } from './actors/actors.module';
+import { ProjectsModule } from './projects/projects.module';
+import { extensionModules } from './generated/extension-modules';
 
 import { ReadOnlyGuard } from './common/guards/read-only.guard';
 
@@ -68,7 +71,7 @@ import { ReadOnlyGuard } from './common/guards/read-only.guard';
     DrizzleModule,
     AuthModule,
     RolesModule,
-    AccountsModule,
+    CustomersModule,
     ProductsModule,
     InventoryModule,
     OrdersModule,
@@ -101,6 +104,9 @@ import { ReadOnlyGuard } from './common/guards/read-only.guard';
     UserSettingsModule,
     ContactsModule,
     DeliveryAddressesModule,
+    ActorsModule,
+    ProjectsModule,
+    ...extensionModules,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },

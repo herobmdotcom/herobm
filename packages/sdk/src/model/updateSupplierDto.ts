@@ -11,6 +11,7 @@ import type { UpdateSupplierDtoPaymentBlockReason } from './updateSupplierDtoPay
 export interface UpdateSupplierDto {
   earlyPaymentDiscount?: string;
   earlyPaymentDiscountDays?: number;
+  actorId?: string;
   vendorNumber?: string;
   name?: string;
   address1Line1?: string;

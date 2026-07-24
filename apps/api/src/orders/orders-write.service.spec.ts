@@ -11,7 +11,7 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { AccountsService } from '../customers/customers.service';
+import { CustomersService } from '../customers/customers.service';
 import { CreditAssessmentService } from '../customers/credit-assessment.service';
 import { ProductsService } from '../products/products.service';
 import { SALES_ORDER_STATE } from '@herobm/shared';
@@ -53,7 +53,7 @@ describe('OrdersWriteService', () => {
 
   let mockInventoryService: any;
 
-  let mockAccountsService: any;
+  let mockCustomersService: any;
 
   let mockProductsService: any;
 
@@ -139,7 +139,7 @@ describe('OrdersWriteService', () => {
     mockInventoryService = {
       recordInventoryMovement: jest.fn().mockResolvedValue(undefined),
     };
-    mockAccountsService = {
+    mockCustomersService = {
       findOne: jest.fn().mockResolvedValue({
         customerId: '00000000-0000-4000-8000-000000000001',
         currencyCode: 'EUR',
@@ -193,7 +193,7 @@ describe('OrdersWriteService', () => {
       mockTaxResolutionEngine,
       mockPickingService,
       mockInventoryService,
-      mockAccountsService,
+      mockCustomersService,
       mockCreditAssessmentService,
       mockProductsService,
       mockBackordersService,
@@ -280,8 +280,8 @@ describe('OrdersWriteService', () => {
   //
   // generateOrderNumber() is now called inside the transaction (uses tx.execute).
   // The remaining select calls outside the transaction are:
-  //   - resolveCustomer → AccountsService.findOne (mocked)
-  //   - resolveTaxForLine → AccountsService + ProductsService (mocked)
+  //   - resolveCustomer → CustomersService.findOne (mocked)
+  //   - resolveTaxForLine → CustomersService + ProductsService (mocked)
   //   - validateProduct → ProductsService.findOne (mocked)
   // =========================================================================
 
@@ -298,7 +298,7 @@ describe('OrdersWriteService', () => {
       const currency = opts?.currency ?? 'EUR';
 
       const customer = await createTestCustomer(pg.db);
-      mockAccountsService.findOne.mockResolvedValue({
+      mockCustomersService.findOne.mockResolvedValue({
         customerId: customer.customerId,
         currencyCode: currency,
         taxCategoryId: gstId,
@@ -412,7 +412,7 @@ describe('OrdersWriteService', () => {
 
     it('should use exempt GST for exempt customer (regardless of product)', async () => {
       const { customer, validDto } = await setupCreate();
-      mockAccountsService.findOne.mockResolvedValue({
+      mockCustomersService.findOne.mockResolvedValue({
         customerId: customer.customerId,
         currencyCode: 'EUR',
         taxCategoryId: TAX_EXEMPT.taxCategoryId,
@@ -424,7 +424,7 @@ describe('OrdersWriteService', () => {
 
     it('should reject unknown customer', async () => {
       const { validDto } = await setupCreate();
-      mockAccountsService.findOne.mockRejectedValue(new NotFoundException());
+      mockCustomersService.findOne.mockRejectedValue(new NotFoundException());
       await expect(service.create(validDto, 'admin')).rejects.toThrow(
         BadRequestException,
       );

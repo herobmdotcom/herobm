@@ -4,6 +4,7 @@ import {
   salesOrders,
   customers,
   customerGroups,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { sql, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -16,12 +17,18 @@ describe('orders.sql - getCreditBlockedSql', () => {
     overrides: Partial<typeof customers.$inferInsert> = {},
   ) {
     const customerId = randomUUID();
+    const [act] = await pg.db
+      .insert(actors)
+      .values({
+        name: 'Test Customer',
+      })
+      .returning();
+
     await pg.db.insert(customers).values({
+      actorId: act.actorId,
       customerId,
       customerNumber: `CUST-${customerId.substring(0, 8)}`,
-      name: 'Test Customer',
       currencyCode: 'AUD',
-      billingAddressCountry: 'AU',
       ...overrides,
     });
     return customerId;

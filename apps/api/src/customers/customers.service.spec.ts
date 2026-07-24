@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AccountsService } from './customers.service';
+import { CustomersService } from './customers.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
@@ -13,6 +13,7 @@ import {
   glJournalEntries,
   glJournalLines,
   glAccounts,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { sql } from 'drizzle-orm';
 import {
@@ -24,14 +25,14 @@ import {
 import { CreditAssessmentService } from './credit-assessment.service';
 import { AppConfigService } from '../settings/app-config.service';
 
-describe('AccountsService', () => {
+describe('CustomersService', () => {
   const pg = setupPgliteSuite();
-  let service: AccountsService;
+  let service: CustomersService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AccountsService,
+        CustomersService,
         { provide: DRIZZLE, useValue: pg.db },
         {
           provide: CreditAssessmentService,
@@ -49,7 +50,7 @@ describe('AccountsService', () => {
       ],
     }).compile();
 
-    service = module.get<AccountsService>(AccountsService);
+    service = module.get<CustomersService>(CustomersService);
 
     // Clean tables
     await pg.db.delete(masterDataEvents);
@@ -60,18 +61,24 @@ describe('AccountsService', () => {
 
   describe('findAll', () => {
     it('should return paginated customers', async () => {
+      const acts = await pg.db
+        .insert(actors)
+        .values([
+          { name: 'Customer A', headquartersAddressLine1: 'AU' },
+          { name: 'Customer B', headquartersAddressLine1: 'AU' },
+        ])
+        .returning();
+
       await pg.db.insert(customers).values([
         {
-          name: 'Customer A',
+          actorId: acts[0].actorId,
           customerNumber: 'A1',
           currencyCode: 'USD',
-          billingAddressCountry: 'AU',
         },
         {
-          name: 'Customer B',
+          actorId: acts[1].actorId,
           customerNumber: 'B1',
           currencyCode: 'USD',
-          billingAddressCountry: 'AU',
         },
       ]);
 
@@ -82,18 +89,24 @@ describe('AccountsService', () => {
     });
 
     it('should apply search filter (ilike)', async () => {
+      const acts = await pg.db
+        .insert(actors)
+        .values([
+          { name: 'Acme Corp', headquartersAddressLine1: 'AU' },
+          { name: 'Other Inc', headquartersAddressLine1: 'AU' },
+        ])
+        .returning();
+
       await pg.db.insert(customers).values([
         {
-          name: 'Acme Corp',
+          actorId: acts[0].actorId,
           customerNumber: 'ACME',
           currencyCode: 'USD',
-          billingAddressCountry: 'AU',
         },
         {
-          name: 'Other Inc',
+          actorId: acts[1].actorId,
           customerNumber: 'OTHER',
           currencyCode: 'USD',
-          billingAddressCountry: 'AU',
         },
       ]);
 
@@ -119,11 +132,18 @@ describe('AccountsService', () => {
         })
         .returning();
 
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'VIP Client',
+          headquartersAddressLine1: 'AU',
+        })
+        .returning();
+
       await pg.db.insert(customers).values({
-        name: 'VIP Client',
+        actorId: act.actorId,
         customerNumber: 'VIP-001',
         currencyCode: 'AUD',
-        billingAddressCountry: 'AU',
         customerGroupId: ag.customerGroupId,
         taxPositionId: tc.taxPositionId,
       });
@@ -136,19 +156,25 @@ describe('AccountsService', () => {
     });
 
     it('should exclude archived customers by default', async () => {
+      const acts = await pg.db
+        .insert(actors)
+        .values([
+          { name: 'Active', headquartersAddressLine1: 'AU' },
+          { name: 'Archived', headquartersAddressLine1: 'AU' },
+        ])
+        .returning();
+
       await pg.db.insert(customers).values([
         {
-          name: 'Active',
+          actorId: acts[0].actorId,
           customerNumber: 'ACT',
           currencyCode: 'USD',
-          billingAddressCountry: 'AU',
           stateCode: CUSTOMER_STATE.ACTIVE,
         },
         {
-          name: 'Archived',
+          actorId: acts[1].actorId,
           customerNumber: 'ARC',
           currencyCode: 'USD',
-          billingAddressCountry: 'AU',
           stateCode: CUSTOMER_STATE.ARCHIVED,
         },
       ]);
@@ -166,13 +192,20 @@ describe('AccountsService', () => {
 
   describe('findOne', () => {
     it('should return customer by UUID with its events', async () => {
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'Main Customer',
+          headquartersAddressLine1: 'AU',
+        })
+        .returning();
+
       const [acc] = await pg.db
         .insert(customers)
         .values({
-          name: 'Main Customer',
+          actorId: act.actorId,
           customerNumber: 'MAIN',
           currencyCode: 'GBP',
-          billingAddressCountry: 'AU',
         })
         .returning();
 
@@ -191,11 +224,18 @@ describe('AccountsService', () => {
     });
 
     it('should return customer by sourceId (legacy)', async () => {
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'Legacy Customer',
+          headquartersAddressLine1: 'AU',
+        })
+        .returning();
+
       await pg.db.insert(customers).values({
-        name: 'Legacy Customer',
+        actorId: act.actorId,
         customerNumber: 'LEG1',
         currencyCode: 'USD',
-        billingAddressCountry: 'AU',
         sourceId: 'ABM-999',
       });
 
@@ -213,13 +253,20 @@ describe('AccountsService', () => {
   describe('getAgedBalances', () => {
     it('should compute total outstanding, GL balance, discrepancy, and credit metrics', async () => {
       // 1. Seed Customer
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'Balance Test Customer',
+          headquartersAddressLine1: 'US',
+        })
+        .returning();
+
       const [acc] = await pg.db
         .insert(customers)
         .values({
-          name: 'Balance Test Customer',
+          actorId: act.actorId,
           customerNumber: 'BAL1',
           currencyCode: 'USD',
-          billingAddressCountry: 'US',
           isOnCreditHold: true,
           creditLimit: '5000.00',
         })

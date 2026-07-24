@@ -11,6 +11,8 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
 import { CURRENCIES } from '@/lib/currency';
 import GroupSelect from '@/components/shared/GroupSelect';
+import ActorSelect, { Actor } from '@/components/shared/ActorSelect';
+import { ActorCard } from '@/components/shared/ActorCard';
 import { useSettings } from '@/components/SettingsProvider';
 import InheritedSelect from '@/components/shared/InheritedSelect';
 import { FrontendEnrichmentDecorator } from '@/components/shared/FrontendEnrichmentDecorator';
@@ -29,7 +31,9 @@ export default function NewSupplierPage() {
   const defaultCurrency = getCurrencyForCountry(defaultCountry) || baseCurrency || 'EUR';
 
   const [submitting, setSubmitting] = useState(false);
+  const [selectedActor, setSelectedActor] = useState<Actor | null>(null);
   const [dto, setDto] = useState({
+    actorId: '',
     vendorNumber: '',
     name: '',
     emailAddress1: '',
@@ -95,6 +99,29 @@ export default function NewSupplierPage() {
     { value: selectedGroup?.isPaymentBlocked === true ? 'true' : selectedGroup?.isPaymentBlocked === false ? 'false' : null, sourceLabel: selectedGroup?.groupCode ? `Group ${selectedGroup.groupCode}` : 'Group' }
   ]);
 
+  const handleActorSelect = (actor: Actor | null) => {
+    setSelectedActor(actor);
+    if (actor) {
+      setDto((prev) => ({
+        ...prev,
+        actorId: actor.actorId || '',
+        name: actor.name || prev.name,
+        businessNumber: actor.businessNumber || prev.businessNumber,
+        isTaxRegistered: actor.isTaxRegistered ?? prev.isTaxRegistered,
+        address1Country: actor.headquartersCountry || prev.address1Country,
+      }));
+    } else {
+      setDto((prev) => ({
+        ...prev,
+        actorId: '',
+        name: '',
+        businessNumber: '',
+        isTaxRegistered: false,
+        address1Country: defaultCountry,
+      }));
+    }
+  };
+
   const handleSubmit = async () => {
     if (!isValid || submitting) return;
     setSubmitting(true);
@@ -142,6 +169,26 @@ export default function NewSupplierPage() {
         }
       >
       <div className="max-w-5xl mx-auto flex flex-col gap-3 mb-6">
+        <div className="card">
+          <h3 className="section-heading">
+            {/* eslint-disable-next-line i18next/no-literal-string -- icon */}
+<span className="material-symbols-outlined">link</span>
+            Link to Existing Actor (Optional)
+          </h3>
+          <div className="mb-4">
+            <ActorSelect
+              value={dto.actorId || null}
+              onChange={handleActorSelect}
+              disabled={submitting}
+            />
+          </div>
+          {selectedActor && (
+            <div className="mt-4">
+              <ActorCard actor={selectedActor} />
+            </div>
+          )}
+        </div>
+
         {/* General Info Card */}
         <div className="card">
           <h3 className="section-heading">
@@ -164,340 +211,74 @@ export default function NewSupplierPage() {
                   disabled={submitting}
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('columns.name')} *
-                </label>
-                <input
-                  type="text"
-                  className="input"
-                  value={dto.name}
-                  onChange={(e) => updateField('name', e.target.value)}
-                  placeholder={t('placeholders.name')}
-                  disabled={submitting}
-                />
-              </div>
+              {!selectedActor && (
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('columns.name')} *
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={dto.name}
+                    onChange={(e) => updateField('name', e.target.value)}
+                    placeholder={t('placeholders.name')}
+                    disabled={submitting}
+                  />
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              {(!selectedActor || !(selectedActor as unknown as { headquartersCountry?: string }).headquartersCountry) && (
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {tCommon('columns.country')} *
+                  </label>
+                  <select
+                    className="input"
+                    value={dto.address1Country}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      updateField('address1Country', val);
+                      const newCurrency = getCurrencyForCountry(val);
+                      if (newCurrency) {
+                        updateField('currencyCode', newCurrency);
+                      }
+                    }}
+                    disabled={submitting}
+                  >
+                    <option value="">{tCommon('notConfigured')}</option>
+                    {COUNTRIES.map(c => (
+                      <option key={c.code} value={c.code}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className={selectedActor ? "md:col-span-2" : ""}>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('supplierGroup')}
-                </label>
-                <GroupSelect
-                  type="supplier"
-                  value={dto.supplierGroupId || null}
-                  onChange={(val) => updateField('supplierGroupId', val || '')}
-                  disabled={submitting}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {tCommon('columns.country')} *
+                  {tCommon('columns.currency')} *
                 </label>
                 <select
                   className="input"
-                  value={dto.address1Country}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    updateField('address1Country', val);
-                    const newCurrency = getCurrencyForCountry(val);
-                    if (newCurrency) {
-                      updateField('currencyCode', newCurrency);
-                    }
-                  }}
+                  value={dto.currencyCode}
+                  onChange={(e) => updateField('currencyCode', e.target.value)}
                   disabled={submitting}
                 >
-                  <option value="">{tCommon('notConfigured')}</option>
-                  {COUNTRIES.map(c => (
-                    <option key={c.code} value={c.code}>{c.name}</option>
+                  <option value="" disabled>{t('fields.selectCurrency')}</option>
+                  {CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code} - {c.name}
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {tCommon('notesCardHeading')}
-                </label>
-                <input
-                  type="text"
-                  className="input w-full"
-                  value={dto.notes}
-                  onChange={(e) => updateField('notes', e.target.value)}
-                  placeholder={tCommon('notesCardPlaceholder')}
-                  disabled={submitting}
-                />
-              </div>
-            </div>
-          </div>
+
         </div>
-
-        {/* Financials Card */}
-        <div className="card">
-          <h3 className="section-heading">
-            { }
-            <span className="material-symbols-outlined">payments</span>
-            FINANCIALS
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {/* ── Row 1 ── */}
-            {/* 1. Currency */}
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {tCommon('columns.currency')} *
-              </label>
-              <select
-                className="input"
-                value={dto.currencyCode}
-                onChange={(e) => updateField('currencyCode', e.target.value)}
-                disabled={submitting}
-              >
-                <option value="" disabled>{t('fields.selectCurrency')}</option>
-                {CURRENCIES.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.code} - {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {/* 3. Early Payment Discount */}
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('earlyPaymentDiscount')}
-              </label>
-              <div className="flex items-center gap-3">
-                <div className="relative w-32 shrink-0">
-                  <InheritedNumberInput
-                    className="input w-full pr-8"
-                    value={dto.earlyPaymentDiscount}
-                    onChange={(val) => updateField('earlyPaymentDiscount', val)}
-                    disabled={submitting}
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    placeholder="0.00"
-                    inheritedValue={earlyPaymentDiscountInheritance.inheritedValue}
-                    inheritedSourceLabel={earlyPaymentDiscountInheritance.inheritedSourceLabel}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
-                </div>
-                {/* eslint-disable-next-line i18next/no-literal-string -- The word 'in' is not translatable here */}
-                <span className="text-sm font-medium shrink-0" style={{ color: 'var(--text-muted)' }}>
-                  in
-                </span>
-                <div className="relative w-32 shrink-0">
-                  <InheritedNumberInput
-                    className="input w-full pr-12"
-                    value={dto.earlyPaymentDiscountDays}
-                    onChange={(val) => updateField('earlyPaymentDiscountDays', val)}
-                    disabled={submitting}
-                    step="1"
-                    min="0"
-                    placeholder="10"
-                    inheritedValue={earlyPaymentDiscountDaysInheritance.inheritedValue}
-                    inheritedSourceLabel={earlyPaymentDiscountDaysInheritance.inheritedSourceLabel}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none text-sm">{tCommon('units.days')}</span>
-                </div>
-                {!!earlyPaymentDiscountInheritance.inheritedSourceLabel && !!earlyPaymentDiscountDaysInheritance.inheritedSourceLabel && (
-                  <span className="text-xs italic text-[var(--primary)] ml-2">
-                    {tCommon('options.inheritValue', { 
-                      label: `${earlyPaymentDiscountInheritance.inheritedValue}% in ${earlyPaymentDiscountDaysInheritance.inheritedValue} days`,
-                      source: earlyPaymentDiscountInheritance.inheritedSourceLabel || ''
-                    })}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* ── Row 2 ── */}
-            {/* 4. Business Number */}
-            <div>
-              <label className="flex items-center text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)', minHeight: 16 }}>
-                {t('fields.businessNumber')}
-                <FrontendEnrichmentDecorator
-                  field="supplier.business_number"
-                  country={dto.address1Country || ''}
-                  value={dto.businessNumber}
-                  isSaving={submitting}
-                  onEnrich={(data) => {
-                    if (data.name && data.name !== dto.name) {
-                      updateField('name', data.name);
-                      toast.success(tCommon('enrichment.nameUpdated'));
-                    }
-                    if (data.isTaxRegistered !== undefined && data.isTaxRegistered !== dto.isTaxRegistered) {
-                      updateField('isTaxRegistered', data.isTaxRegistered);
-                      toast.success(tCommon('enrichment.taxUpdated'));
-                    }
-                  }}
-                />
-              </label>
-              <input
-                type="text"
-                className="input w-full"
-                value={dto.businessNumber}
-                onChange={(e) => updateField('businessNumber', e.target.value)}
-                disabled={submitting}
-                placeholder="Enter business number..."
-              />
-            </div>
-
-            {/* 5. Tax Registered */}
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('fields.taxRegistered')}
-              </label>
-              <div
-                className="flex items-center gap-3"
-                style={{ paddingTop: 6, cursor: submitting ? 'not-allowed' : 'pointer' }}
-                onClick={() => {
-                  if (submitting) return;
-                  updateField('isTaxRegistered', !dto.isTaxRegistered);
-                }}
-              >
-                <div
-                  style={{
-                    width: 40,
-                    height: 22,
-                    borderRadius: 11,
-                    background: dto.isTaxRegistered ? 'var(--accent)' : 'var(--border)',
-                    position: 'relative',
-                    transition: 'background 0.2s ease',
-                    opacity: submitting ? 0.5 : 1,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: '50%',
-                      background: '#fff',
-                      position: 'absolute',
-                      top: 3,
-                      left: dto.isTaxRegistered ? 21 : 3,
-                      transition: 'left 0.2s ease',
-                    }}
-                  />
-                </div>
-                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  {dto.isTaxRegistered ? tCommon('yes') : tCommon('no')}
-                </span>
-              </div>
-            </div>
-
-            {/* 6. Tax Position */}
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {tCommon('columns.taxPosition')}
-              </label>
-              <InheritedSelect
-                className="input"
-                value={dto.taxPositionId || ''}
-                onChange={(val) => updateField('taxPositionId', val)}
-                disabled={submitting}
-                options={taxPositions.map((pos) => ({
-                  value: pos.taxPositionId,
-                  label: pos.title,
-                }))}
-                inheritedValue={taxPositionInheritance.inheritedValue}
-                inheritedSourceLabel={taxPositionInheritance.inheritedSourceLabel}
-              />
-            </div>
-
-            {/* 7. Trading Terms */}
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Trading Terms
-              </label>
-              <InheritedSelect
-                className="input"
-                value={dto.tradingTermsId || ''}
-                onChange={(val) => updateField('tradingTermsId', val)}
-                disabled={submitting}
-                options={tradingTerms.map((term) => ({
-                  value: term.id,
-                  label: term.description,
-                }))}
-                inheritedValue={tradingTermsInheritance.inheritedValue}
-                inheritedSourceLabel={tradingTermsInheritance.inheritedSourceLabel}
-              />
-            </div>
-
-            {/* 8. Credit Limit */}
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Credit Limit
-              </label>
-              <div className="flex items-center gap-3">
-                <InheritedNumberInput
-                  step="0.01"
-                  className="input w-full max-w-xs"
-                  value={dto.creditLimit || ""}
-                  onChange={(val) => updateField("creditLimit", val)}
-                  disabled={submitting}
-                  placeholder="0.00"
-                  inheritedValue={creditLimitInheritance.inheritedValue}
-                  inheritedSourceLabel={creditLimitInheritance.inheritedSourceLabel}
-                />
-                {!!creditLimitInheritance.inheritedSourceLabel && (
-                  <span className="text-xs italic text-[var(--primary)] ml-2">
-                    {tCommon('options.inheritValue', {
-                      label: creditLimitInheritance.inheritedValue || '',
-                      source: creditLimitInheritance.inheritedSourceLabel || ''
-                    })}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* 9. Purchasing Blocked */}
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Purchasing Blocked
-              </label>
-              <InheritedSelect
-                className="input"
-                disabled={submitting}
-                value={dto.isPurchasingBlocked === true ? 'true' : dto.isPurchasingBlocked === false ? 'false' : ''}
-                onChange={(val) => {
-                  const boolVal = val === 'true' ? true : val === 'false' ? false : null;
-                  updateField("isPurchasingBlocked", boolVal);
-                }}
-                options={[
-                  { value: 'true', label: 'Yes' },
-                  { value: 'false', label: 'No' }
-                ]}
-                inheritedValue={purchasingBlockInheritance.inheritedValue}
-                inheritedSourceLabel={purchasingBlockInheritance.inheritedSourceLabel}
-              />
-            </div>
-
-            {/* 10. Payment Blocked */}
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Payment Blocked
-              </label>
-              <InheritedSelect
-                className="input"
-                disabled={submitting}
-                value={dto.isPaymentBlocked === true ? 'true' : dto.isPaymentBlocked === false ? 'false' : ''}
-                onChange={(val) => {
-                  const boolVal = val === 'true' ? true : val === 'false' ? false : null;
-                  updateField("isPaymentBlocked", boolVal);
-                }}
-                options={[
-                  { value: 'true', label: 'Yes' },
-                  { value: 'false', label: 'No' }
-                ]}
-                inheritedValue={paymentBlockInheritance.inheritedValue}
-                inheritedSourceLabel={paymentBlockInheritance.inheritedSourceLabel}
-              />
-            </div>
-          </div>
-        </div>
+      </div>
       </div>
       </DetailsLayout>
     </>
   );
 
 }
+

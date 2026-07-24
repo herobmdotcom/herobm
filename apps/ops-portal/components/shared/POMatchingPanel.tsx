@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import * as api from '@herobm/sdk';
 import { formatAmount } from '../../lib/currency';
+import { Button } from './Button';
 import { MATCH_STATUS } from '@herobm/shared';
 
 /* ------------------------------------------------------------------ */
@@ -185,13 +186,14 @@ export default function POMatchingPanel({
           {t('matching.panelTitle')}
         </h3>
         {/* eslint-disable i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={onClose}
-          className="btn btn-secondary btn-sm"
           style={{ padding: '0 8px', height: 28, fontSize: 12 }}
         >
           ✕
-        </button>
+        </Button>
         {/* eslint-enable i18next/no-literal-string */}
       </div>
 
@@ -403,8 +405,9 @@ function POCard({
                 justifyContent: 'flex-end',
               }}
             >
-              <button
-                className="btn btn-secondary btn-sm"
+              <Button
+                variant="secondary"
+                size="sm"
                 style={{ fontSize: 11, padding: '2px 10px', height: 24 }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -412,7 +415,7 @@ function POCard({
                 }}
               >
                 {t('matching.autoMatchAll')}
-              </button>
+              </Button>
             </div>
           )}
 
@@ -528,8 +531,9 @@ function POCard({
                         <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>—</span>
                       ) : (
                         <>
-                          <button
-                            className="btn btn-primary btn-sm"
+                          <Button
+                            variant="primary"
+                            size="sm"
                             style={{
                               padding: '2px 8px',
                               height: 22,
@@ -548,7 +552,7 @@ function POCard({
                             }
                           >
                             {t('matching.matchButton')}
-                          </button>
+                          </Button>
                         </>
                       )}
                     </td>

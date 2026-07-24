@@ -23,11 +23,11 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
-import { AccountGroupsService } from './customer-groups.service';
+import { CustomerGroupsService } from './customer-groups.service';
 import {
-  CreateAccountGroupDto,
-  UpdateAccountGroupDto,
-  AccountGroupResponseDto,
+  CreateCustomerGroupDto,
+  UpdateCustomerGroupDto,
+  CustomerGroupResponseDto,
 } from './dto';
 
 import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
@@ -36,8 +36,8 @@ import { ApiFieldMask } from '../common/decorators/api-field-mask.decorator';
 @Controller('customer-groups')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource(SystemResource.SETTINGS)
-export class AccountGroupsController {
-  constructor(private readonly accountGroupsService: AccountGroupsService) {}
+export class CustomerGroupsController {
+  constructor(private readonly customerGroupsService: CustomerGroupsService) {}
 
   @Get()
   @CasbinAction('read')
@@ -45,10 +45,10 @@ export class AccountGroupsController {
     summary: 'List Customer Groups',
     description: 'Retrieve a list of all customer groups.',
   })
-  @ApiOkResponse({ type: [AccountGroupResponseDto] })
+  @ApiOkResponse({ type: [CustomerGroupResponseDto] })
   @ApiFieldMask()
   findAll() {
-    return this.accountGroupsService.findAll();
+    return this.customerGroupsService.findAll();
   }
 
   @Get(':id')
@@ -58,38 +58,38 @@ export class AccountGroupsController {
     description:
       'Retrieve detailed information about a specific customer group.',
   })
-  @ApiOkResponse({ type: AccountGroupResponseDto })
+  @ApiOkResponse({ type: CustomerGroupResponseDto })
   @ApiFieldMask()
   findOne(@Param('id') id: string) {
-    return this.accountGroupsService.findOne(id);
+    return this.customerGroupsService.findOne(id);
   }
 
   @Post()
-  @ApiBody({ type: CreateAccountGroupDto })
+  @ApiBody({ type: CreateCustomerGroupDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Create Customer Group',
     description: 'Add a new customer group to the system.',
   })
-  @ApiCreatedResponse({ type: AccountGroupResponseDto })
-  create(@Body() dto: CreateAccountGroupDto, @AuthUser() user: JwtUser) {
-    return this.accountGroupsService.create(dto, user?.userId);
+  @ApiCreatedResponse({ type: CustomerGroupResponseDto })
+  create(@Body() dto: CreateCustomerGroupDto, @AuthUser() user: JwtUser) {
+    return this.customerGroupsService.create(dto, user?.userId);
   }
 
   @Patch(':id')
-  @ApiBody({ type: UpdateAccountGroupDto })
+  @ApiBody({ type: UpdateCustomerGroupDto })
   @CasbinAction('write')
   @ApiOperation({
     summary: 'Update Customer Group',
     description: 'Modify the details of an existing customer group.',
   })
-  @ApiOkResponse({ type: AccountGroupResponseDto })
+  @ApiOkResponse({ type: CustomerGroupResponseDto })
   update(
     @Param('id') id: string,
-    @Body() dto: UpdateAccountGroupDto,
+    @Body() dto: UpdateCustomerGroupDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.accountGroupsService.update(id, dto, user?.userId);
+    return this.customerGroupsService.update(id, dto, user?.userId);
   }
 
   @Delete(':id')
@@ -103,6 +103,6 @@ export class AccountGroupsController {
     schema: { type: 'object', properties: { deleted: { type: 'boolean' } } },
   })
   remove(@Param('id') id: string, @AuthUser() user: JwtUser) {
-    return this.accountGroupsService.delete(id, user?.userId);
+    return this.customerGroupsService.delete(id, user?.userId);
   }
 }

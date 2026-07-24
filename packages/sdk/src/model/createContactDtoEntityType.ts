@@ -12,4 +12,6 @@ export type CreateContactDtoEntityType = typeof CreateContactDtoEntityType[keyof
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export const CreateContactDtoEntityType = {
   customer: 'customer',
+  actor: 'actor',
+  project: 'project',
 } as const;

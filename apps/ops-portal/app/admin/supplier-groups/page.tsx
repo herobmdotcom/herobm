@@ -65,7 +65,7 @@ export default function SupplierGroupsAdmin() {
   const costCenterOptions = useMemo(() => costCenters.map((c) => ({ value: (c as unknown as { costCenterId: string }).costCenterId, label: `${c.code} - ${c.name}` })), [costCenters]);
   const activityOptions = useMemo(() => activities.map((a) => ({ value: (a as unknown as { activityId: string }).activityId, label: `${a.code} - ${a.name}` })), [activities]);
   const taxPositionOptions = useMemo(() => taxPositions.map((p: api.TaxPositionResponseDto) => ({ value: p.taxPositionId, label: p.title })), [taxPositions]);
-  const tradingTermsOptions = useMemo(() => tradingTerms.map((t: api.TradingTermResponseDto) => ({ value: t.id, label: `${t.code} - ${t.description}` })), [tradingTerms]);
+  const tradingTermsOptions = useMemo(() => tradingTerms.map((t: api.TradingTermResponseDto) => ({ value: t.tradingTermsId, label: `${t.code} - ${t.description}` })), [tradingTerms]);
 
   const columns: InlineTableColumn<Partial<api.SupplierGroupResponseDto>>[] = useMemo(() => [
     { key: 'groupCode', title: tc('code'), type: 'text', placeholder: t('placeholders.code'), width: 100 },
@@ -151,7 +151,7 @@ export default function SupplierGroupsAdmin() {
           title={<span style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.875rem', fontWeight: 600 }}>{t('definedGroups')}</span>}
           columns={columns}
           data={groups}
-          rowKey={(row) => row.supplierGroupId || row.id || ''}
+          rowKey={(row) => row.supplierGroupId || row.supplierGroupId || ''}
           onSave={handleSave}
           onDelete={handleDelete}
           onAdd={() => ({

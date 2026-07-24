@@ -23,6 +23,7 @@ import {
   backorders,
   glJournalEntries,
   glJournalLines,
+  actors,
 } from '../drizzle/herobm-core-schema';
 
 import { InventoryService } from '../inventory/inventory.service';
@@ -99,11 +100,12 @@ export class GoodsReceivedService {
       const [vendor] = await tx
         .select({
           vendorId: suppliers.vendorId,
-          name: suppliers.name,
+          name: actors.name,
           costCenterId: supplierGroups.defaultCostCenterId,
           activityId: supplierGroups.defaultActivityId,
         })
         .from(suppliers)
+        .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
         .leftJoin(
           supplierGroups,
           eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
@@ -852,8 +854,8 @@ export class GoodsReceivedService {
             WHEN ${goodsReceived.receiptNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
             WHEN ${goodsReceived.packingSlipNumber} ILIKE ${rawSearchTerm} THEN 3
             WHEN ${goodsReceived.packingSlipNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
-            WHEN ${suppliers.name} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${suppliers.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${actors.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${actors.name} ILIKE ${rawSearchTerm + '%'} THEN 2
             ELSE 1
           END
         `
@@ -864,7 +866,7 @@ export class GoodsReceivedService {
         or(
           ilike(goodsReceived.receiptNumber, `%${rawSearchTerm}%`),
           ilike(goodsReceived.packingSlipNumber, `%${rawSearchTerm}%`),
-          ilike(suppliers.name, `%${rawSearchTerm}%`),
+          ilike(actors.name, `%${rawSearchTerm}%`),
         ),
       );
     }
@@ -878,12 +880,13 @@ export class GoodsReceivedService {
     let qb = this.db
       .select({
         receipt: goodsReceived,
-        vendorName: suppliers.name,
+        vendorName: actors.name,
         vendorNumber: suppliers.vendorNumber,
         score: scoreSql,
       })
       .from(goodsReceived)
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
       .$dynamic();
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -1065,8 +1068,8 @@ export class GoodsReceivedService {
             WHEN ${products.alternateProductNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
             WHEN ${products.name} ILIKE ${rawSearchTerm} THEN 3
             WHEN ${products.name} ILIKE ${rawSearchTerm + '%'} THEN 2
-            WHEN ${suppliers.name} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${suppliers.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${actors.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${actors.name} ILIKE ${rawSearchTerm + '%'} THEN 2
             ELSE 1
           END
         `
@@ -1080,7 +1083,7 @@ export class GoodsReceivedService {
           ilike(products.productNumber, `%${rawSearchTerm}%`),
           ilike(products.alternateProductNumber, `%${rawSearchTerm}%`),
           ilike(products.name, `%${rawSearchTerm}%`),
-          ilike(suppliers.name, `%${rawSearchTerm}%`),
+          ilike(actors.name, `%${rawSearchTerm}%`),
         ),
       );
     }
@@ -1097,7 +1100,7 @@ export class GoodsReceivedService {
         receiptNumber: goodsReceived.receiptNumber,
         packingSlipNumber: goodsReceived.packingSlipNumber,
         vendorId: suppliers.vendorId,
-        vendorName: suppliers.name,
+        vendorName: actors.name,
         vendorNumber: suppliers.vendorNumber,
         createdOn: goodsReceived.createdOn,
         locationId: goodsReceived.locationId,
@@ -1115,6 +1118,7 @@ export class GoodsReceivedService {
       )
       .leftJoin(products, eq(goodsReceivedLines.productId, products.productId))
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
       .leftJoin(
         purchaseOrders,
         eq(goodsReceivedLines.purchaseOrderId, purchaseOrders.purchaseOrderId),
@@ -1266,7 +1270,7 @@ export class GoodsReceivedService {
         receiptNumber: goodsReceived.receiptNumber,
         packingSlipNumber: goodsReceived.packingSlipNumber,
         vendorId: goodsReceived.vendorId,
-        vendorName: suppliers.name,
+        vendorName: actors.name,
         createdOn: goodsReceived.createdOn,
         locationId: goodsReceived.locationId,
         locationName: locations.name,
@@ -1283,6 +1287,7 @@ export class GoodsReceivedService {
       )
       .leftJoin(products, eq(goodsReceivedLines.productId, products.productId))
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
       .leftJoin(
         purchaseOrders,
         eq(goodsReceivedLines.purchaseOrderId, purchaseOrders.purchaseOrderId),
@@ -1405,11 +1410,12 @@ export class GoodsReceivedService {
     const receipt = await tx
       .select({
         receipt: goodsReceived,
-        vendorName: suppliers.name,
+        vendorName: actors.name,
         vendorNumber: suppliers.vendorNumber,
       })
       .from(goodsReceived)
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
       .where(eq(goodsReceived.goodsReceivedId, id))
       .limit(1)
       .then(

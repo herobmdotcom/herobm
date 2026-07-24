@@ -188,7 +188,7 @@
     "/customers": {
       "get": {
         "description": "Retrieve a paginated list of customers.",
-        "operationId": "AccountsController_findAll",
+        "operationId": "CustomersController_findAll",
         "parameters": [
           {
             "name": "q",
@@ -303,7 +303,7 @@
                         "data": {
                           "type": "array",
                           "items": {
-                            "$ref": "#/components/schemas/AccountResponseDto"
+                            "$ref": "#/components/schemas/CustomerResponseDto"
                           }
                         }
                       }
@@ -321,14 +321,14 @@
       },
       "post": {
         "description": "Create a new customer.",
-        "operationId": "AccountsController_create",
+        "operationId": "CustomersController_create",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateAccountDto"
+                "$ref": "#/components/schemas/CreateCustomerDto"
               }
             }
           }
@@ -339,7 +339,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccountResponseDto"
+                  "$ref": "#/components/schemas/CustomerResponseDto"
                 }
               }
             }
@@ -354,7 +354,7 @@
     "/customers/aged-balances": {
       "get": {
         "description": "Retrieve aged balances for all customers with outstanding invoices.",
-        "operationId": "AccountsController_getAgedBalances",
+        "operationId": "CustomersController_getAgedBalances",
         "parameters": [
           {
             "name": "agingBasis",
@@ -393,7 +393,7 @@
     "/customers/{id}": {
       "get": {
         "description": "Retrieve a single customer by ID.",
-        "operationId": "AccountsController_findOne",
+        "operationId": "CustomersController_findOne",
         "parameters": [
           {
             "name": "id",
@@ -419,7 +419,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccountResponseDto"
+                  "$ref": "#/components/schemas/CustomerResponseDto"
                 }
               }
             }
@@ -432,7 +432,7 @@
       },
       "patch": {
         "description": "Update an existing customer.",
-        "operationId": "AccountsController_update",
+        "operationId": "CustomersController_update",
         "parameters": [
           {
             "name": "id",
@@ -448,7 +448,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateAccountDto"
+                "$ref": "#/components/schemas/UpdateCustomerDto"
               }
             }
           }
@@ -459,7 +459,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccountResponseDto"
+                  "$ref": "#/components/schemas/CustomerResponseDto"
                 }
               }
             }
@@ -474,7 +474,7 @@
     "/customers/{id}/credit-assessment": {
       "get": {
         "description": "Retrieve the credit assessment for a customer.",
-        "operationId": "AccountsController_getCreditAssessment",
+        "operationId": "CustomersController_getCreditAssessment",
         "parameters": [
           {
             "name": "id",
@@ -506,7 +506,7 @@
     "/customers/{id}/archive": {
       "post": {
         "description": "Archive a customer.",
-        "operationId": "AccountsController_archive",
+        "operationId": "CustomersController_archive",
         "parameters": [
           {
             "name": "id",
@@ -533,7 +533,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccountResponseDto"
+                  "$ref": "#/components/schemas/CustomerResponseDto"
                 }
               }
             }
@@ -548,7 +548,7 @@
     "/customers/{id}/unarchive": {
       "post": {
         "description": "Unarchive a customer.",
-        "operationId": "AccountsController_unarchive",
+        "operationId": "CustomersController_unarchive",
         "parameters": [
           {
             "name": "id",
@@ -575,7 +575,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccountResponseDto"
+                  "$ref": "#/components/schemas/CustomerResponseDto"
                 }
               }
             }
@@ -590,7 +590,7 @@
     "/customer-groups": {
       "get": {
         "description": "Retrieve a list of all customer groups.",
-        "operationId": "AccountGroupsController_findAll",
+        "operationId": "CustomerGroupsController_findAll",
         "parameters": [
           {
             "name": "fields",
@@ -610,7 +610,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/AccountGroupResponseDto"
+                    "$ref": "#/components/schemas/CustomerGroupResponseDto"
                   }
                 }
               }
@@ -624,14 +624,14 @@
       },
       "post": {
         "description": "Add a new customer group to the system.",
-        "operationId": "AccountGroupsController_create",
+        "operationId": "CustomerGroupsController_create",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateAccountGroupDto"
+                "$ref": "#/components/schemas/CreateCustomerGroupDto"
               }
             }
           }
@@ -642,7 +642,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccountGroupResponseDto"
+                  "$ref": "#/components/schemas/CustomerGroupResponseDto"
                 }
               }
             }
@@ -657,7 +657,7 @@
     "/customer-groups/{id}": {
       "get": {
         "description": "Retrieve detailed information about a specific customer group.",
-        "operationId": "AccountGroupsController_findOne",
+        "operationId": "CustomerGroupsController_findOne",
         "parameters": [
           {
             "name": "id",
@@ -683,7 +683,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccountGroupResponseDto"
+                  "$ref": "#/components/schemas/CustomerGroupResponseDto"
                 }
               }
             }
@@ -696,7 +696,7 @@
       },
       "patch": {
         "description": "Modify the details of an existing customer group.",
-        "operationId": "AccountGroupsController_update",
+        "operationId": "CustomerGroupsController_update",
         "parameters": [
           {
             "name": "id",
@@ -712,7 +712,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateAccountGroupDto"
+                "$ref": "#/components/schemas/UpdateCustomerGroupDto"
               }
             }
           }
@@ -723,7 +723,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccountGroupResponseDto"
+                  "$ref": "#/components/schemas/CustomerGroupResponseDto"
                 }
               }
             }
@@ -736,7 +736,7 @@
       },
       "delete": {
         "description": "Remove a customer group from the system.",
-        "operationId": "AccountGroupsController_remove",
+        "operationId": "CustomerGroupsController_remove",
         "parameters": [
           {
             "name": "id",
@@ -16130,6 +16130,139 @@
       }
     },
     "/contacts": {
+      "get": {
+        "description": "Retrieve a paginated list of contacts.",
+        "operationId": "ContactsController_findAll",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ContactResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "List Contacts",
+        "tags": [
+          "Contacts"
+        ]
+      },
       "post": {
         "description": "Create a new contact for a given entity.",
         "operationId": "ContactsController_create",
@@ -16163,6 +16296,36 @@
       }
     },
     "/contacts/{id}": {
+      "get": {
+        "description": "Retrieve a single contact by ID.",
+        "operationId": "ContactsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Contact",
+        "tags": [
+          "Contacts"
+        ]
+      },
       "patch": {
         "description": "Update an existing contact.",
         "operationId": "ContactsController_update",
@@ -16336,6 +16499,1452 @@
         "summary": "Delete a delivery address",
         "tags": [
           "Delivery Addresses"
+        ]
+      }
+    },
+    "/actors": {
+      "post": {
+        "operationId": "ActorsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateActorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create Actor",
+        "tags": [
+          "Actors"
+        ]
+      },
+      "get": {
+        "operationId": "ActorsController_findAll",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "direction",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Object"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "customerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vendorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "purchaseOrderId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "required": false,
+            "in": "query",
+            "description": "Comma separated list of fields to include in the response (e.g. \"id,name\")",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/ActorResponseDto"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all Actors (paginated)",
+        "tags": [
+          "Actors"
+        ]
+      }
+    },
+    "/actors/{id}": {
+      "get": {
+        "operationId": "ActorsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Actor by ID",
+        "tags": [
+          "Actors"
+        ]
+      },
+      "patch": {
+        "operationId": "ActorsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateActorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Actor",
+        "tags": [
+          "Actors"
+        ]
+      },
+      "delete": {
+        "operationId": "ActorsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete Actor",
+        "tags": [
+          "Actors"
+        ]
+      }
+    },
+    "/actors/{id}/contacts/{contactId}": {
+      "patch": {
+        "operationId": "ActorsController_updateContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateActorContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Contact Link on Actor",
+        "tags": [
+          "Actors"
+        ]
+      },
+      "delete": {
+        "operationId": "ActorsController_removeContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove Contact Link from Actor",
+        "tags": [
+          "Actors"
+        ]
+      }
+    },
+    "/actors/{id}/contacts": {
+      "post": {
+        "operationId": "ActorsController_addContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateActorContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Link Contact to Actor",
+        "tags": [
+          "Actors"
+        ]
+      }
+    },
+    "/actors/{id}/notes": {
+      "post": {
+        "operationId": "ActorsController_addNote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateActorNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add Note to Actor",
+        "tags": [
+          "Actors"
+        ]
+      }
+    },
+    "/actors/{id}/notes/{noteId}": {
+      "delete": {
+        "operationId": "ActorsController_removeNote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove Note from Actor",
+        "tags": [
+          "Actors"
+        ]
+      }
+    },
+    "/projects": {
+      "post": {
+        "operationId": "ProjectsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create Project",
+        "tags": [
+          "Projects"
+        ]
+      },
+      "get": {
+        "operationId": "ProjectsController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get all Projects",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/projects/{id}": {
+      "get": {
+        "operationId": "ProjectsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Project by ID",
+        "tags": [
+          "Projects"
+        ]
+      },
+      "patch": {
+        "operationId": "ProjectsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Project",
+        "tags": [
+          "Projects"
+        ]
+      },
+      "delete": {
+        "operationId": "ProjectsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete Project",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/projects/{id}/notes": {
+      "post": {
+        "operationId": "ProjectsController_addNote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectNoteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectNoteResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add Note to Project",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/projects/{id}/notes/{noteId}": {
+      "delete": {
+        "operationId": "ProjectsController_removeNote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "noteId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete Note from Project",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/projects/{id}/contacts": {
+      "post": {
+        "operationId": "ProjectsController_addContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add Contact to Project",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/projects/{id}/contacts/{contactId}": {
+      "delete": {
+        "operationId": "ProjectsController_removeContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove Contact from Project",
+        "tags": [
+          "Projects"
+        ]
+      },
+      "patch": {
+        "operationId": "ProjectsController_updateContact",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contactId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectContactDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Contact Role on Project",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/projects/{id}/actors": {
+      "post": {
+        "operationId": "ProjectsController_addActor",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectActorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add Actor to Project",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/projects/{id}/actors/{actorId}": {
+      "put": {
+        "operationId": "ProjectsController_updateActor",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectActorDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Actor Role on Project",
+        "tags": [
+          "Projects"
+        ]
+      },
+      "delete": {
+        "operationId": "ProjectsController_removeActor",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove Actor from Project",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/projects/{id}/feedback": {
+      "get": {
+        "operationId": "maController_getFeedback",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectFeedbackResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Project Feedback",
+        "tags": [
+          "Projects"
+        ]
+      },
+      "post": {
+        "operationId": "maController_addFeedback",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectFeedbackDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectFeedbackResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add Project Feedback",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/projects/{id}/feedback/{feedbackId}": {
+      "patch": {
+        "operationId": "maController_updateFeedback",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "feedbackId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectFeedbackDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectFeedbackResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Project Feedback",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/actors/{id}/seller-qualifications": {
+      "get": {
+        "operationId": "maGetSellerQualifications",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SellerQualificationResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Seller Qualifications",
+        "tags": [
+          "Actors"
+        ]
+      },
+      "post": {
+        "operationId": "maAddSellerQualification",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSellerQualificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SellerQualificationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add Seller Qualification",
+        "tags": [
+          "Actors"
+        ]
+      }
+    },
+    "/actors/{id}/seller-qualifications/{qualificationId}": {
+      "patch": {
+        "operationId": "maUpdateSellerQualification",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSellerQualificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SellerQualificationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Seller Qualification",
+        "tags": [
+          "Actors"
+        ]
+      }
+    },
+    "/actors/{id}/buyer-qualifications": {
+      "get": {
+        "operationId": "maGetBuyerQualifications",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BuyerQualificationResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Buyer Qualifications",
+        "tags": [
+          "Actors"
+        ]
+      },
+      "post": {
+        "operationId": "maAddBuyerQualification",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBuyerQualificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuyerQualificationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add Buyer Qualification",
+        "tags": [
+          "Actors"
+        ]
+      }
+    },
+    "/actors/{id}/buyer-qualifications/{qualificationId}": {
+      "patch": {
+        "operationId": "maUpdateBuyerQualification",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "qualificationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBuyerQualificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuyerQualificationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Buyer Qualification",
+        "tags": [
+          "Actors"
+        ]
+      }
+    },
+    "/actors/{id}/strategic-intelligence": {
+      "get": {
+        "operationId": "maGetStrategicIntelligence",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StrategicIntelligenceResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get Strategic Intelligence",
+        "tags": [
+          "Actors"
+        ]
+      },
+      "post": {
+        "operationId": "maAddStrategicIntelligence",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateStrategicIntelligenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StrategicIntelligenceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add Strategic Intelligence",
+        "tags": [
+          "Actors"
+        ]
+      }
+    },
+    "/actors/{id}/strategic-intelligence/{intelligenceId}": {
+      "patch": {
+        "operationId": "maUpdateStrategicIntelligence",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "intelligenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStrategicIntelligenceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StrategicIntelligenceResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update Strategic Intelligence",
+        "tags": [
+          "Actors"
         ]
       }
     }
@@ -16600,10 +18209,13 @@
           "limit"
         ]
       },
-      "AccountResponseDto": {
+      "CustomerResponseDto": {
         "type": "object",
         "properties": {
           "customerId": {
+            "type": "string"
+          },
+          "actorId": {
             "type": "string"
           },
           "customerNumber": {
@@ -16640,9 +18252,6 @@
             "type": "string"
           },
           "customerGroupId": {
-            "type": "string"
-          },
-          "parentCustomerId": {
             "type": "string"
           },
           "taxPositionId": {
@@ -16720,6 +18329,20 @@
             "format": "date-time",
             "type": "string"
           },
+          "parentCustomerId": {
+            "type": "string",
+            "nullable": true
+          },
+          "parentCustomerName": {
+            "type": "string",
+            "nullable": true
+          },
+          "childCustomers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerResponseDto"
+            }
+          },
           "events": {
             "type": "array",
             "items": {
@@ -16773,6 +18396,7 @@
         },
         "required": [
           "customerId",
+          "actorId",
           "customerNumber",
           "name",
           "billingAddressCountry",
@@ -16794,7 +18418,7 @@
           "customerName": {
             "type": "string"
           },
-          "accountNumber": {
+          "customerNumber": {
             "type": "string"
           },
           "current": {
@@ -16838,7 +18462,7 @@
         "required": [
           "customerId",
           "customerName",
-          "accountNumber",
+          "customerNumber",
           "current",
           "days1To30",
           "days31To60",
@@ -16876,9 +18500,13 @@
           "isOverdue"
         ]
       },
-      "CreateAccountDto": {
+      "CreateCustomerDto": {
         "type": "object",
         "properties": {
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "customerNumber": {
             "type": "string"
           },
@@ -16914,10 +18542,6 @@
             "format": "email"
           },
           "customerGroupId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "parentCustomerId": {
             "type": "string",
             "format": "uuid"
           },
@@ -16973,9 +18597,13 @@
           "billingAddressCountry"
         ]
       },
-      "UpdateAccountDto": {
+      "UpdateCustomerDto": {
         "type": "object",
         "properties": {
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "customerNumber": {
             "type": "string"
           },
@@ -17011,10 +18639,6 @@
             "format": "email"
           },
           "customerGroupId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "parentCustomerId": {
             "type": "string",
             "format": "uuid"
           },
@@ -17069,7 +18693,7 @@
         "type": "object",
         "properties": {}
       },
-      "AccountGroupResponseDto": {
+      "CustomerGroupResponseDto": {
         "type": "object",
         "properties": {
           "earlyPaymentDiscount": {
@@ -17125,7 +18749,7 @@
           "name"
         ]
       },
-      "CreateAccountGroupDto": {
+      "CreateCustomerGroupDto": {
         "type": "object",
         "properties": {
           "earlyPaymentDiscount": {
@@ -17173,7 +18797,7 @@
           "name"
         ]
       },
-      "UpdateAccountGroupDto": {
+      "UpdateCustomerGroupDto": {
         "type": "object",
         "properties": {
           "earlyPaymentDiscount": {
@@ -17220,7 +18844,7 @@
       "ProductResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "productId": {
             "type": "string"
           },
           "productNumber": {
@@ -17313,7 +18937,7 @@
           }
         },
         "required": [
-          "id",
+          "productId",
           "productNumber",
           "name",
           "productType",
@@ -17595,7 +19219,7 @@
       "ProductGroupResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "productGroupId": {
             "type": "string"
           },
           "groupCode": {
@@ -17641,7 +19265,7 @@
           }
         },
         "required": [
-          "id",
+          "productGroupId",
           "groupCode",
           "name",
           "defaultRevenueAccountId",
@@ -17931,7 +19555,7 @@
       "InventoryLedgerResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "ledgerId": {
             "type": "string"
           },
           "productId": {
@@ -17946,7 +19570,7 @@
           }
         },
         "required": [
-          "id",
+          "ledgerId",
           "productId",
           "quantity",
           "date"
@@ -17955,7 +19579,7 @@
       "InventoryEntryDetailsResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "entryId": {
             "type": "string"
           },
           "productId": {
@@ -17970,7 +19594,7 @@
           }
         },
         "required": [
-          "id",
+          "entryId",
           "productId",
           "quantity",
           "date"
@@ -17979,7 +19603,7 @@
       "PendingPutawayResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "putawayId": {
             "type": "string"
           },
           "sourceType": {
@@ -18015,7 +19639,7 @@
           }
         },
         "required": [
-          "id",
+          "putawayId",
           "sourceType",
           "referenceNumber",
           "productId",
@@ -19556,7 +21180,7 @@
       "ExchangeRateResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "exchangeRateId": {
             "type": "string"
           },
           "currencyCode": {
@@ -19577,7 +21201,7 @@
           }
         },
         "required": [
-          "id",
+          "exchangeRateId",
           "currencyCode",
           "currencyName",
           "buyRate",
@@ -19631,7 +21255,7 @@
       "OrganizationResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "organizationId": {
             "type": "string"
           },
           "name": {
@@ -19639,7 +21263,7 @@
           }
         },
         "required": [
-          "id",
+          "organizationId",
           "name"
         ]
       },
@@ -19708,6 +21332,21 @@
           "name"
         ]
       },
+      "OrderedSettingDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "value",
+          "order"
+        ]
+      },
       "AppConfigResponseDto": {
         "type": "object",
         "properties": {
@@ -19758,6 +21397,42 @@
           },
           "defaultSupplierTaxPositionId": {
             "type": "string"
+          },
+          "actorTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "actorContactRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectContactRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectActorRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectStatuses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
           }
         },
         "required": [
@@ -19820,13 +21495,49 @@
           },
           "smtpFromAddress": {
             "type": "string"
+          },
+          "actorTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "actorContactRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectContactRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectActorRoles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectStatuses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
+          },
+          "projectTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderedSettingDto"
+            }
           }
         }
       },
       "TradingTermResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "tradingTermsId": {
             "type": "string"
           },
           "code": {
@@ -19843,7 +21554,7 @@
           }
         },
         "required": [
-          "id",
+          "tradingTermsId",
           "code",
           "description",
           "days",
@@ -19904,7 +21615,7 @@
       "CostCenterResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "costCenterId": {
             "type": "string"
           },
           "code": {
@@ -19918,7 +21629,7 @@
           }
         },
         "required": [
-          "id",
+          "costCenterId",
           "code",
           "name",
           "isActive"
@@ -19971,7 +21682,7 @@
       "ActivityResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "activityId": {
             "type": "string"
           },
           "code": {
@@ -19985,7 +21696,7 @@
           }
         },
         "required": [
-          "id",
+          "activityId",
           "code",
           "name",
           "isActive"
@@ -20099,7 +21810,7 @@
       "BusinessReportResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "reportId": {
             "type": "string"
           },
           "slug": {
@@ -20122,7 +21833,7 @@
           }
         },
         "required": [
-          "id",
+          "reportId",
           "slug",
           "name",
           "dataSourceHook",
@@ -21678,9 +23389,6 @@
       "TransferLineResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
           "transferOrderLineId": {
             "type": "string"
           },
@@ -21704,7 +23412,6 @@
           }
         },
         "required": [
-          "id",
           "transferOrderLineId",
           "productId",
           "quantity"
@@ -21739,9 +23446,6 @@
       "TransferResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string"
-          },
           "transferOrderId": {
             "type": "string"
           },
@@ -21790,7 +23494,6 @@
           }
         },
         "required": [
-          "id",
           "transferOrderId",
           "orderNumber",
           "stateCode",
@@ -23270,7 +24973,10 @@
             "type": "number",
             "nullable": true
           },
-          "id": {
+          "supplierId": {
+            "type": "string"
+          },
+          "actorId": {
             "type": "string"
           },
           "vendorNumber": {
@@ -23392,7 +25098,8 @@
           }
         },
         "required": [
-          "id",
+          "supplierId",
+          "actorId",
           "vendorNumber",
           "name",
           "address1Line1",
@@ -23497,6 +25204,10 @@
           },
           "earlyPaymentDiscountDays": {
             "type": "number"
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
           },
           "vendorNumber": {
             "type": "string"
@@ -23611,6 +25322,10 @@
           },
           "earlyPaymentDiscountDays": {
             "type": "number"
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
           },
           "vendorNumber": {
             "type": "string"
@@ -23767,7 +25482,7 @@
             "type": "number",
             "nullable": true
           },
-          "id": {
+          "supplierGroupId": {
             "type": "string"
           },
           "groupCode": {
@@ -23835,7 +25550,7 @@
           }
         },
         "required": [
-          "id",
+          "supplierGroupId",
           "groupCode",
           "name",
           "defaultApAccountId",
@@ -24645,7 +26360,7 @@
       "LocationResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "locationId": {
             "type": "string"
           },
           "code": {
@@ -24682,7 +26397,7 @@
           }
         },
         "required": [
-          "id",
+          "locationId",
           "code",
           "name",
           "createdAt",
@@ -24774,7 +26489,7 @@
       "ZoneResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "zoneId": {
             "type": "string"
           },
           "locationId": {
@@ -24796,7 +26511,7 @@
           }
         },
         "required": [
-          "id",
+          "zoneId",
           "locationId",
           "code",
           "name",
@@ -24859,7 +26574,7 @@
       "BinResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "binId": {
             "type": "string"
           },
           "zoneId": {
@@ -24890,7 +26605,7 @@
           }
         },
         "required": [
-          "id",
+          "binId",
           "zoneId",
           "binNumber",
           "createdAt",
@@ -25512,7 +27227,7 @@
       "UserResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "userId": {
             "type": "string"
           },
           "username": {
@@ -25545,7 +27260,7 @@
           }
         },
         "required": [
-          "id",
+          "userId",
           "username",
           "role",
           "isActive",
@@ -25980,13 +27695,72 @@
           }
         }
       },
+      "ContactResponseDto": {
+        "type": "object",
+        "properties": {
+          "contactId": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "mobile": {
+            "type": "string",
+            "nullable": true
+          },
+          "jobTitle": {
+            "type": "string",
+            "nullable": true
+          },
+          "primaryFor": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "modifiedOn": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "contactId",
+          "firstName",
+          "lastName",
+          "createdOn",
+          "modifiedOn"
+        ]
+      },
       "CreateContactDto": {
         "type": "object",
         "properties": {
           "entityType": {
             "type": "string",
             "enum": [
-              "customer"
+              "customer",
+              "actor",
+              "project"
             ]
           },
           "entityId": {
@@ -26004,74 +27778,35 @@
             "format": "email"
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "pattern": "/^\\+?[0-9\\s\\-()]+$/"
           },
           "mobile": {
-            "type": "string"
+            "type": "string",
+            "pattern": "/^\\+?[0-9\\s\\-()]+$/"
           },
           "jobTitle": {
             "type": "string"
           },
           "isPrimary": {
             "type": "boolean"
+          },
+          "primaryFor": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "projectRoles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
-          "entityType",
-          "entityId",
           "firstName",
           "lastName"
-        ]
-      },
-      "ContactResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "firstName": {
-            "type": "string"
-          },
-          "lastName": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string",
-            "nullable": true
-          },
-          "phone": {
-            "type": "string",
-            "nullable": true
-          },
-          "mobile": {
-            "type": "string",
-            "nullable": true
-          },
-          "jobTitle": {
-            "type": "string",
-            "nullable": true
-          },
-          "isPrimary": {
-            "type": "boolean"
-          },
-          "createdOn": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          },
-          "modifiedOn": {
-            "format": "date-time",
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "firstName",
-          "lastName",
-          "isPrimary",
-          "createdOn",
-          "modifiedOn"
         ]
       },
       "UpdateContactDto": {
@@ -26088,16 +27823,27 @@
             "format": "email"
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "pattern": "/^\\+?[0-9\\s\\-()]+$/"
           },
           "mobile": {
-            "type": "string"
+            "type": "string",
+            "pattern": "/^\\+?[0-9\\s\\-()]+$/"
           },
           "jobTitle": {
             "type": "string"
           },
           "isPrimary": {
             "type": "boolean"
+          },
+          "primaryFor": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "projectRole": {
+            "type": "string"
           }
         }
       },
@@ -26160,7 +27906,7 @@
       "DeliveryAddressResponseDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "deliveryAddressId": {
             "type": "string"
           },
           "customerId": {
@@ -26228,7 +27974,7 @@
           }
         },
         "required": [
-          "id",
+          "deliveryAddressId",
           "customerId",
           "addressLine1",
           "country",
@@ -26293,6 +28039,878 @@
         "required": [
           "success"
         ]
+      },
+      "CreateActorDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "legalStatus": {
+            "type": "string"
+          },
+          "headquartersAddressLine1": {
+            "type": "string"
+          },
+          "headquartersAddressLine2": {
+            "type": "string"
+          },
+          "headquartersCity": {
+            "type": "string"
+          },
+          "headquartersStateOrProvince": {
+            "type": "string"
+          },
+          "headquartersPostalCode": {
+            "type": "string"
+          },
+          "headquartersCountry": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          },
+          "industry": {
+            "type": "string"
+          },
+          "telephone": {
+            "type": "string"
+          },
+          "fax": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "businessNumber": {
+            "type": "string"
+          },
+          "isTaxRegistered": {
+            "type": "boolean"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ActorNoteResponseDto": {
+        "type": "object",
+        "properties": {
+          "noteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "content": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdById": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "noteId",
+          "content",
+          "createdOn"
+        ]
+      },
+      "ActorResponseDto": {
+        "type": "object",
+        "properties": {
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "legalStatus": {
+            "type": "string"
+          },
+          "headquartersAddressLine1": {
+            "type": "string"
+          },
+          "headquartersAddressLine2": {
+            "type": "string"
+          },
+          "headquartersCity": {
+            "type": "string"
+          },
+          "headquartersStateOrProvince": {
+            "type": "string"
+          },
+          "headquartersPostalCode": {
+            "type": "string"
+          },
+          "headquartersCountry": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          },
+          "industry": {
+            "type": "string"
+          },
+          "telephone": {
+            "type": "string"
+          },
+          "fax": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "businessNumber": {
+            "type": "string"
+          },
+          "isTaxRegistered": {
+            "type": "boolean"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "modifiedOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActorNoteResponseDto"
+            }
+          },
+          "actorContactLinks": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "actorId",
+          "name",
+          "isTaxRegistered",
+          "createdOn",
+          "modifiedOn"
+        ]
+      },
+      "UpdateActorDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "legalStatus": {
+            "type": "string"
+          },
+          "headquartersAddressLine1": {
+            "type": "string"
+          },
+          "headquartersAddressLine2": {
+            "type": "string"
+          },
+          "headquartersCity": {
+            "type": "string"
+          },
+          "headquartersStateOrProvince": {
+            "type": "string"
+          },
+          "headquartersPostalCode": {
+            "type": "string"
+          },
+          "headquartersCountry": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          },
+          "industry": {
+            "type": "string"
+          },
+          "telephone": {
+            "type": "string"
+          },
+          "fax": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "businessNumber": {
+            "type": "string"
+          },
+          "isTaxRegistered": {
+            "type": "boolean"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "UpdateActorContactDto": {
+        "type": "object",
+        "properties": {
+          "primaryFor": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "primaryFor"
+        ]
+      },
+      "CreateActorContactDto": {
+        "type": "object",
+        "properties": {
+          "contactId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "primaryFor": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "contactId"
+        ]
+      },
+      "CreateActorNoteDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "CreateProjectDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ]
+      },
+      "ProjectNoteResponseDto": {
+        "type": "object",
+        "properties": {
+          "noteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "content": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdById": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "noteId",
+          "content",
+          "createdOn"
+        ]
+      },
+      "ProjectResponseDto": {
+        "type": "object",
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "modifiedOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "owner": {
+            "type": "object"
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProjectNoteResponseDto"
+            }
+          },
+          "projectActors": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "projectContacts": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "projectId",
+          "name",
+          "status",
+          "type",
+          "createdOn",
+          "modifiedOn"
+        ]
+      },
+      "UpdateProjectDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "CreateProjectNoteDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "CreateProjectContactDto": {
+        "type": "object",
+        "properties": {
+          "contactId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "contactId"
+        ]
+      },
+      "UpdateProjectContactDto": {
+        "type": "object",
+        "properties": {
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CreateProjectActorDto": {
+        "type": "object",
+        "properties": {
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "actorId"
+        ]
+      },
+      "UpdateProjectActorDto": {
+        "type": "object",
+        "properties": {
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ProjectFeedbackResponseDto": {
+        "type": "object",
+        "properties": {
+          "feedbackId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "projectId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dealProposalReason": {
+            "type": "string"
+          },
+          "dealRefusalReason": {
+            "type": "string"
+          },
+          "snapshotName": {
+            "type": "string"
+          },
+          "asOfDate": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "feedbackId",
+          "projectId",
+          "actorId"
+        ]
+      },
+      "CreateProjectFeedbackDto": {
+        "type": "object",
+        "properties": {
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dealProposalReason": {
+            "type": "string"
+          },
+          "dealRefusalReason": {
+            "type": "string"
+          },
+          "snapshotName": {
+            "type": "string"
+          },
+          "asOfDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "actorId"
+        ]
+      },
+      "UpdateProjectFeedbackDto": {
+        "type": "object",
+        "properties": {
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dealProposalReason": {
+            "type": "string"
+          },
+          "dealRefusalReason": {
+            "type": "string"
+          },
+          "snapshotName": {
+            "type": "string"
+          },
+          "asOfDate": {
+            "type": "string"
+          }
+        }
+      },
+      "SellerQualificationResponseDto": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "marketContext": {
+            "type": "string"
+          },
+          "competitiveEnvironment": {
+            "type": "string"
+          },
+          "marketTrends": {
+            "type": "string"
+          },
+          "addedValue": {
+            "type": "string"
+          },
+          "specificClients": {
+            "type": "string"
+          },
+          "businessModel": {
+            "type": "string"
+          },
+          "consolidationPerspectives": {
+            "type": "string"
+          },
+          "interestedBuyersExist": {
+            "type": "boolean"
+          },
+          "snapshotName": {
+            "type": "string"
+          },
+          "asOfDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "actorId"
+        ]
+      },
+      "CreateSellerQualificationDto": {
+        "type": "object",
+        "properties": {
+          "marketContext": {
+            "type": "string"
+          },
+          "competitiveEnvironment": {
+            "type": "string"
+          },
+          "marketTrends": {
+            "type": "string"
+          },
+          "addedValue": {
+            "type": "string"
+          },
+          "specificClients": {
+            "type": "string"
+          },
+          "businessModel": {
+            "type": "string"
+          },
+          "consolidationPerspectives": {
+            "type": "string"
+          },
+          "interestedBuyersExist": {
+            "type": "boolean"
+          },
+          "snapshotName": {
+            "type": "string"
+          },
+          "asOfDate": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateSellerQualificationDto": {
+        "type": "object",
+        "properties": {
+          "marketContext": {
+            "type": "string"
+          },
+          "competitiveEnvironment": {
+            "type": "string"
+          },
+          "marketTrends": {
+            "type": "string"
+          },
+          "addedValue": {
+            "type": "string"
+          },
+          "specificClients": {
+            "type": "string"
+          },
+          "businessModel": {
+            "type": "string"
+          },
+          "consolidationPerspectives": {
+            "type": "string"
+          },
+          "interestedBuyersExist": {
+            "type": "boolean"
+          },
+          "snapshotName": {
+            "type": "string"
+          },
+          "asOfDate": {
+            "type": "string"
+          }
+        }
+      },
+      "BuyerQualificationResponseDto": {
+        "type": "object",
+        "properties": {
+          "qualificationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "buyerActivity": {
+            "type": "string"
+          },
+          "businessModel": {
+            "type": "string"
+          },
+          "geography": {
+            "type": "string"
+          },
+          "sizeCriteria": {
+            "type": "string"
+          },
+          "financialCapacity": {
+            "type": "string"
+          },
+          "strategicFit": {
+            "type": "string"
+          },
+          "snapshotName": {
+            "type": "string"
+          },
+          "asOfDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "qualificationId",
+          "actorId"
+        ]
+      },
+      "CreateBuyerQualificationDto": {
+        "type": "object",
+        "properties": {
+          "buyerActivity": {
+            "type": "string"
+          },
+          "businessModel": {
+            "type": "string"
+          },
+          "geography": {
+            "type": "string"
+          },
+          "sizeCriteria": {
+            "type": "string"
+          },
+          "financialCapacity": {
+            "type": "string"
+          },
+          "strategicFit": {
+            "type": "string"
+          },
+          "snapshotName": {
+            "type": "string"
+          },
+          "asOfDate": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateBuyerQualificationDto": {
+        "type": "object",
+        "properties": {
+          "buyerActivity": {
+            "type": "string"
+          },
+          "businessModel": {
+            "type": "string"
+          },
+          "geography": {
+            "type": "string"
+          },
+          "sizeCriteria": {
+            "type": "string"
+          },
+          "financialCapacity": {
+            "type": "string"
+          },
+          "strategicFit": {
+            "type": "string"
+          },
+          "snapshotName": {
+            "type": "string"
+          },
+          "asOfDate": {
+            "type": "string"
+          }
+        }
+      },
+      "StrategicIntelligenceResponseDto": {
+        "type": "object",
+        "properties": {
+          "intelligenceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "actorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "managerIntent": {
+            "type": "string"
+          },
+          "sectorInterests": {
+            "type": "string"
+          },
+          "externalGrowthProjects": {
+            "type": "string"
+          },
+          "futureSaleIntent": {
+            "type": "string"
+          },
+          "timeline": {
+            "type": "string"
+          },
+          "strategicRationale": {
+            "type": "string"
+          },
+          "snapshotName": {
+            "type": "string"
+          },
+          "asOfDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "intelligenceId",
+          "actorId"
+        ]
+      },
+      "CreateStrategicIntelligenceDto": {
+        "type": "object",
+        "properties": {
+          "managerIntent": {
+            "type": "string"
+          },
+          "sectorInterests": {
+            "type": "string"
+          },
+          "externalGrowthProjects": {
+            "type": "string"
+          },
+          "futureSaleIntent": {
+            "type": "string"
+          },
+          "timeline": {
+            "type": "string"
+          },
+          "strategicRationale": {
+            "type": "string"
+          },
+          "snapshotName": {
+            "type": "string"
+          },
+          "asOfDate": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateStrategicIntelligenceDto": {
+        "type": "object",
+        "properties": {
+          "managerIntent": {
+            "type": "string"
+          },
+          "sectorInterests": {
+            "type": "string"
+          },
+          "externalGrowthProjects": {
+            "type": "string"
+          },
+          "futureSaleIntent": {
+            "type": "string"
+          },
+          "timeline": {
+            "type": "string"
+          },
+          "strategicRationale": {
+            "type": "string"
+          },
+          "snapshotName": {
+            "type": "string"
+          },
+          "asOfDate": {
+            "type": "string"
+          }
+        }
       }
     }
   }

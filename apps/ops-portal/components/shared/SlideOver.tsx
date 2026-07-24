@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
+import { Button } from './Button';
 
 interface SlideOverProps {
   isOpen: boolean;
@@ -78,20 +79,23 @@ export default function SlideOver({
             </div>
             <div className="flex items-center gap-2">
               {actions}
-              <button 
+              <Button 
                 type="button" 
-                className="btn btn-sm btn-circle btn-ghost text-gray-500 hover:text-gray-800 hover:bg-gray-100" 
+                variant="ghost"
+                size="sm"
+                className="btn-circle text-gray-500 hover:text-gray-800 hover:bg-gray-100" 
                 onClick={onClose}
               >
                 {/* eslint-disable-next-line i18next/no-literal-string -- Hardcoded string exceptions for standard system IDs, technical constants, or non-translatable symbols (e.g., Material UI Icon). */}
                 <span className="material-symbols-outlined text-[20px]">close</span>
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto w-full p-3 sm:p-6">
+          <div className="flex-1 overflow-y-auto w-full p-3 sm:p-6 relative">
             {children}
+            <div className="h-12 w-full shrink-0"></div>
           </div>
 
           {/* Footer */}

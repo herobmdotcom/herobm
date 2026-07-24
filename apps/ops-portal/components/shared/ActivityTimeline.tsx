@@ -132,6 +132,8 @@ export default function ActivityTimeline({
       <div className="space-y-3" style={{ marginTop: 16 }}>
         {events.map((event) => {
           const hasPayload = event.payload && Object.keys(event.payload).length > 0;
+          const displayType = (event.payload?.action as string) || event.eventType;
+          
           return (
             <details
               key={event.eventId}
@@ -147,9 +149,9 @@ export default function ActivityTimeline({
                 className="flex items-center gap-3"
                 style={{ cursor: hasPayload ? 'pointer' : 'default', userSelect: 'none', listStyle: 'none' }}
               >
-                <EventIcon type={event.eventType} />
+                <EventIcon type={displayType} />
                 <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>
-                  {tDynamic(t, `eventTypes.${event.eventType}`)}
+                  {displayType.replace(/_/g, ' ')}
                 </span>
                 <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
                   {tDynamic(t, 'timeline.by', undefined, { actor: event.actor })}
@@ -166,20 +168,61 @@ export default function ActivityTimeline({
                   className="mt-2 text-xs grid gap-y-1"
                   style={{ marginLeft: 28, color: 'var(--text-secondary)' }}
                 >
-                  {Object.entries(event.payload).map(([key, value]) => (
-                    <div key={key} className="flex gap-2">
-                      <span style={{ color: 'var(--text-muted)', minWidth: 100, fontWeight: 500 }}>
-                        {key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                      </span>
-                      <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                        {typeof value === 'object' && value !== null
-                          ? Object.entries(value as Record<string, unknown>)
-                            .map(([k, v]) => `${k}: ${v}`)
-                            .join(', ')
-                          : String(value)}
-                      </span>
-                    </div>
-                  ))}
+                  {Object.entries(event.payload)
+                    .filter(([key]) => {
+                      if (key.endsWith('Name')) {
+                        const idKey = key.replace(/Name$/, 'Id');
+                        if (event.payload[idKey]) return false; // hide name if we have the ID
+                      }
+                      return true;
+                    })
+                    .map(([key, value]) => {
+                      let displayValue: React.ReactNode = String(value);
+                      let displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                      
+                      if (typeof value === 'object' && value !== null) {
+                        displayValue = Object.entries(value as Record<string, unknown>)
+                          .map(([k, v]) => `${k}: ${v}`)
+                          .join(', ');
+                      } else if (key.endsWith('Id') && typeof value === 'string') {
+                        const baseKey = key.slice(0, -2);
+                        const nameKey = baseKey + 'Name';
+                        const nameVal = event.payload[nameKey];
+                        
+                        if (nameVal && typeof nameVal === 'string') {
+                          displayKey = baseKey.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                          
+                          let href = '';
+                          if (baseKey === 'project') href = `/crm/projects/${value}`;
+                          else if (baseKey === 'actor') href = `/crm/actors/${value}`;
+                          else if (baseKey === 'contact') href = `/crm/contacts/${value}`;
+                          else if (baseKey === 'customer') href = `/customers/${value}`;
+                          else if (baseKey === 'supplier') href = `/suppliers/${value}`;
+                          else if (baseKey === 'product') href = `/products/${value}`;
+                          
+                          if (href) {
+                            displayValue = (
+                              <a href={href} className="text-[var(--accent)] hover:underline">
+                                {nameVal}
+                              </a>
+                            );
+                          } else {
+                            displayValue = nameVal;
+                          }
+                        }
+                      }
+                      
+                      return (
+                        <div key={key} className="flex gap-2">
+                          <span style={{ color: 'var(--text-muted)', minWidth: 100, fontWeight: 500 }}>
+                            {displayKey}
+                          </span>
+                          <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                            {displayValue}
+                          </span>
+                        </div>
+                      );
+                    })}
                 </div>
               )}
             </details>

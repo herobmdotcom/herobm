@@ -32,7 +32,7 @@ These use dbt's `merge` strategy to upsert into Drizzle-managed core tables:
 
 | Model | Target Table | Unique Key | Notes |
 |---|---|---|---|
-| `import_accounts` | `accounts` | `source_id` | Resolves ABM customer_id → UUID |
+| `import_customers` | `customers` | `source_id` | Resolves ABM customer_id → UUID |
 | `import_products` | `products` | `source_id` | Resolves ABM product_id → UUID |
 | `import_suppliers` | `suppliers` | `source_id` | Resolves ABM supplier_id → UUID |
 | `import_sales_orders` | `sales_orders` | `source_id` | Groups line-level rows into headers |

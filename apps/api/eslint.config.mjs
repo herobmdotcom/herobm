@@ -89,7 +89,7 @@ export default tseslint.config(
         {
           // ADV-034: Hardcoded Currency Array in SQL Templates
           selector: "TaggedTemplateExpression[tag.callee.name='sql'] > TemplateLiteral > TemplateElement[value.raw=/'(EUR|USD|GBP|AUD|CAD)'/]",
-          message: "ADV-034: Hardcoded currency value detected in SQL literal. Read from accounts.currencyCode instead."
+          message: "ADV-034: Hardcoded currency value detected in SQL literal. Read from customers.currency_code instead."
         },
         {
           // ADV-045: Drizzle Typed Injection (no any)

@@ -7,7 +7,7 @@
  */
 
 export interface PendingPutawayResponseDto {
-  id: string;
+  putawayId: string;
   sourceType: string;
   referenceNumber: string;
   productId: string;

@@ -1,8 +1,8 @@
-export interface AccountCreditProfile {
+export interface CustomerCreditProfile {
   creditLimit: string | null;
   isOnCreditHold: boolean;
   tradingTermsId: string | null;
-  accountGroup?: {
+  customerGroup?: {
     creditLimit: string | null;
     isOnCreditHold: boolean;
     tradingTermsId: string | null;
@@ -16,7 +16,7 @@ export interface AccountCreditProfile {
  * Logical OR gate: if either the customer OR the customer group is on hold, the resolve is true.
  */
 export function resolveEffectiveCreditHold(
-  customer: AccountCreditProfile,
+  customer: CustomerCreditProfile,
 ): boolean {
   if (
     customer.overrideCreditHoldUntil &&
@@ -25,7 +25,7 @@ export function resolveEffectiveCreditHold(
     return false;
   }
   if (customer.isOnCreditHold) return true;
-  if (customer.accountGroup?.isOnCreditHold) return true;
+  if (customer.customerGroup?.isOnCreditHold) return true;
   return false;
 }
 
@@ -34,16 +34,16 @@ export function resolveEffectiveCreditHold(
  * Order of precedence: Customer limit -> Group limit -> '0' (Cash Basis).
  */
 export function resolveEffectiveCreditLimit(
-  customer: AccountCreditProfile,
+  customer: CustomerCreditProfile,
 ): string {
   if (customer.creditLimit !== null && customer.creditLimit !== undefined) {
     return customer.creditLimit;
   }
   if (
-    customer.accountGroup?.creditLimit !== null &&
-    customer.accountGroup?.creditLimit !== undefined
+    customer.customerGroup?.creditLimit !== null &&
+    customer.customerGroup?.creditLimit !== undefined
   ) {
-    return customer.accountGroup.creditLimit;
+    return customer.customerGroup.creditLimit;
   }
   return '0'; // secure fallback: no credit
 }
@@ -53,7 +53,7 @@ export function resolveEffectiveCreditLimit(
  * Order of precedence: Customer term -> Group term -> System Default.
  */
 export function resolveEffectiveTradingTermsId(
-  customer: AccountCreditProfile,
+  customer: CustomerCreditProfile,
 ): string | null {
   if (
     customer.tradingTermsId !== null &&
@@ -62,10 +62,10 @@ export function resolveEffectiveTradingTermsId(
     return customer.tradingTermsId;
   }
   if (
-    customer.accountGroup?.tradingTermsId !== null &&
-    customer.accountGroup?.tradingTermsId !== undefined
+    customer.customerGroup?.tradingTermsId !== null &&
+    customer.customerGroup?.tradingTermsId !== undefined
   ) {
-    return customer.accountGroup.tradingTermsId;
+    return customer.customerGroup.tradingTermsId;
   }
   if (
     customer.systemDefaultCustomerTermsId !== null &&
@@ -83,7 +83,7 @@ export function resolveEffectiveTradingTermsId(
 export function resolveEffectiveEarlyPaymentDiscount(customer: {
   earlyPaymentDiscount?: string | null;
   earlyPaymentDiscountDays?: number | null;
-  accountGroup?: {
+  customerGroup?: {
     earlyPaymentDiscount?: string | null;
     earlyPaymentDiscountDays?: number | null;
   } | null;
@@ -101,13 +101,13 @@ export function resolveEffectiveEarlyPaymentDiscount(customer: {
     };
   }
   if (
-    customer.accountGroup?.earlyPaymentDiscount !== null &&
-    customer.accountGroup?.earlyPaymentDiscount !== undefined
+    customer.customerGroup?.earlyPaymentDiscount !== null &&
+    customer.customerGroup?.earlyPaymentDiscount !== undefined
   ) {
     return {
-      earlyPaymentDiscount: customer.accountGroup.earlyPaymentDiscount,
+      earlyPaymentDiscount: customer.customerGroup.earlyPaymentDiscount,
       earlyPaymentDiscountDays:
-        customer.accountGroup.earlyPaymentDiscountDays ?? null,
+        customer.customerGroup.earlyPaymentDiscountDays ?? null,
     };
   }
   return {

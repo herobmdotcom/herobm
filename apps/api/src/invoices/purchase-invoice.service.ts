@@ -40,6 +40,7 @@ import {
   glJournalEntries,
   glJournalLines,
   tradingTerms,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { EntityType, EventType } from '../common/event-types';
@@ -111,10 +112,11 @@ export class PurchaseInvoiceService {
     const rows = await db
       .select({
         invoice: purchaseInvoices,
-        vendorName: suppliers.name,
+        vendorName: actors.name,
       })
       .from(purchaseInvoices)
       .leftJoin(suppliers, eq(purchaseInvoices.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
       .where(eq(purchaseInvoices.invoiceId, invoiceId))
       .limit(1);
 
@@ -333,10 +335,11 @@ export class PurchaseInvoiceService {
           resolveEffectiveEarlyPaymentDiscount({
             earlyPaymentDiscount: vendRows[0].earlyPaymentDiscount,
             earlyPaymentDiscountDays: vendRows[0].earlyPaymentDiscountDays,
-            accountGroup: {
-              earlyPaymentDiscount: vendRows[0].groupEarlyPaymentDiscount,
+            customerGroup: {
+              earlyPaymentDiscount:
+                vendRows[0].groupEarlyPaymentDiscount ?? null,
               earlyPaymentDiscountDays:
-                vendRows[0].groupEarlyPaymentDiscountDays,
+                vendRows[0].groupEarlyPaymentDiscountDays ?? null,
             },
           });
         earlyPaymentDiscount =
@@ -404,6 +407,7 @@ export class PurchaseInvoiceService {
       const [invoice] = await tx
         .insert(purchaseInvoices)
         .values({
+          invoiceId: randomUUID(),
           invoiceNumber: internalBillNumber,
           vendorId: dto.vendorId,
           supplierInvoiceNumber: dto.supplierInvoiceNumber,
@@ -1766,8 +1770,8 @@ export class PurchaseInvoiceService {
             WHEN ${purchaseInvoices.invoiceNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
             WHEN ${purchaseInvoices.supplierInvoiceNumber} ILIKE ${rawSearchTerm} THEN 3
             WHEN ${purchaseInvoices.supplierInvoiceNumber} ILIKE ${rawSearchTerm + '%'} THEN 2
-            WHEN ${suppliers.name} ILIKE ${rawSearchTerm} THEN 3
-            WHEN ${suppliers.name} ILIKE ${rawSearchTerm + '%'} THEN 2
+            WHEN ${actors.name} ILIKE ${rawSearchTerm} THEN 3
+            WHEN ${actors.name} ILIKE ${rawSearchTerm + '%'} THEN 2
             ELSE 1
           END
         `
@@ -1778,7 +1782,7 @@ export class PurchaseInvoiceService {
         or(
           ilike(purchaseInvoices.invoiceNumber, `%${rawSearchTerm}%`),
           ilike(purchaseInvoices.supplierInvoiceNumber, `%${rawSearchTerm}%`),
-          ilike(suppliers.name, `%${rawSearchTerm}%`),
+          ilike(actors.name, `%${rawSearchTerm}%`),
         ) as import('drizzle-orm').SQL,
       );
     }
@@ -1790,7 +1794,7 @@ export class PurchaseInvoiceService {
         invoiceId: purchaseInvoices.invoiceId,
         invoiceNumber: purchaseInvoices.invoiceNumber,
         vendorId: purchaseInvoices.vendorId,
-        vendorName: suppliers.name,
+        vendorName: actors.name,
         supplierInvoiceNumber: purchaseInvoices.supplierInvoiceNumber,
         totalAmount: purchaseInvoices.totalAmount,
         taxAmount: purchaseInvoices.taxAmount,
@@ -1804,6 +1808,7 @@ export class PurchaseInvoiceService {
       })
       .from(purchaseInvoices)
       .leftJoin(suppliers, eq(purchaseInvoices.vendorId, suppliers.vendorId))
+      .leftJoin(actors, eq(suppliers.actorId, actors.actorId))
       .$dynamic();
 
     if (whereClause) {

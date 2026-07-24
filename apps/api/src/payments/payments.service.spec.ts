@@ -27,6 +27,7 @@ import {
   glJournalEntries,
   glJournalLines,
   exchangeRates,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { eq, inArray, and } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -55,6 +56,7 @@ describe('PaymentsService', () => {
 
   // Shared party IDs
   let customerId: string;
+  let usdCustomerId: string;
   let supplierId: string;
   let customerGroupId: string;
   let supplierGroupId: string;
@@ -151,16 +153,38 @@ describe('PaymentsService', () => {
       defaultArAccountId: arAccountId,
     });
 
-    // 6. Customer
+    // 6. Customer Actor
     customerId = randomUUID();
+    usdCustomerId = randomUUID();
+    const customerActorId = randomUUID();
+    await pg.db.insert(actors).values({
+      actorId: customerActorId,
+      name: 'Test Customer',
+      headquartersAddressLine1: 'AU',
+    });
+
     await pg.db.insert(customers).values({
       customerId: customerId,
+      actorId: customerActorId,
       customerNumber: 'ACCT-001',
       externalId: 'CUST-001',
-      name: 'Test Customer',
       currencyCode: 'AUD',
       customerGroupId,
-      billingAddressCountry: 'AU',
+    });
+
+    const cActorId = randomUUID();
+    await pg.db.insert(actors).values({
+      actorId: cActorId,
+      name: 'FX Customer',
+      headquartersAddressLine1: 'US',
+    });
+    await pg.db.insert(customers).values({
+      customerId: usdCustomerId,
+      actorId: cActorId,
+      customerNumber: 'FX-CUST-001',
+      currencyCode: 'USD',
+      customerGroupId,
+      stateCode: CUSTOMER_STATE.ACTIVE,
     });
 
     // 6. Supplier Group with AP routing
@@ -172,16 +196,22 @@ describe('PaymentsService', () => {
       defaultApAccountId: apAccountId,
     });
 
-    // 7. Supplier
+    // 7. Supplier Actor
     supplierId = randomUUID();
+    const supplierActorId = randomUUID();
+    await pg.db.insert(actors).values({
+      actorId: supplierActorId,
+      name: 'Test Supplier',
+      headquartersAddressLine1: 'AU',
+    });
+
     await pg.db.insert(suppliers).values({
       vendorId: supplierId,
+      actorId: supplierActorId,
       vendorNumber: 'VEND-001',
       externalId: 'SUPP-001',
-      name: 'Test Supplier',
       currencyCode: 'AUD',
       supplierGroupId,
-      address1Country: 'AU',
     });
   }
 
@@ -464,13 +494,18 @@ describe('PaymentsService', () => {
     it('should fall back to glSettings when group has no AR/AP override', async () => {
       // Create a customer with no customer group
       const ungroupedId = randomUUID();
+      const unActorId = randomUUID();
+      await pg.db.insert(actors).values({
+        actorId: unActorId,
+        name: 'Ungrouped Customer',
+        headquartersAddressLine1: 'AU',
+      });
       await pg.db.insert(customers).values({
         customerId: ungroupedId,
+        actorId: unActorId,
         customerNumber: 'ACCT-UNGROUPED',
         externalId: 'UNGROUPED-001',
-        name: 'Ungrouped Customer',
         currencyCode: 'AUD',
-        billingAddressCountry: 'AU',
         // No customerGroupId
       });
 
@@ -967,11 +1002,16 @@ describe('PaymentsService', () => {
     });
     it('should validate early payment discount successfully', async () => {
       const discCustomerId = randomUUID();
+      const dActorId = randomUUID();
+      await pg.db.insert(actors).values({
+        actorId: dActorId,
+        name: 'Discount Customer',
+        headquartersAddressLine1: 'AU',
+      });
       await pg.db.insert(customers).values({
         customerId: discCustomerId,
+        actorId: dActorId,
         customerNumber: 'CUST-DISC-001',
-        name: 'Discount Customer',
-        billingAddressCountry: 'AU',
         stateCode: CUSTOMER_STATE.ACTIVE,
         currencyCode: 'AUD',
         earlyPaymentDiscount: '5', // 5%
@@ -1041,11 +1081,16 @@ describe('PaymentsService', () => {
 
     it('should reject early payment discount if past the allowed days', async () => {
       const discCustomerId = randomUUID();
+      const dActorId2 = randomUUID();
+      await pg.db.insert(actors).values({
+        actorId: dActorId2,
+        name: 'Discount Customer 2',
+        headquartersAddressLine1: 'AU',
+      });
       await pg.db.insert(customers).values({
         customerId: discCustomerId,
+        actorId: dActorId2,
         customerNumber: 'CUST-DISC-002',
-        name: 'Discount Customer 2',
-        billingAddressCountry: 'AU',
         stateCode: CUSTOMER_STATE.ACTIVE,
         currencyCode: 'AUD',
         earlyPaymentDiscount: '5', // 5%

@@ -36,6 +36,7 @@ import {
   productComponents,
   tradingTerms,
   taxCategories,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import {
   CreateOrderDto,
@@ -55,7 +56,7 @@ import { EnrichmentService } from '../enrichment/enrichment.service';
 import { verifySystemHealth } from '../common/utils/security.util';
 import { PickingService } from './picking.service';
 import { InventoryService } from '../inventory/inventory.service';
-import { AccountsService } from '../customers/customers.service';
+import { CustomersService } from '../customers/customers.service';
 import { CreditAssessmentService } from '../customers/credit-assessment.service';
 import { ProductsService } from '../products/products.service';
 import {
@@ -86,7 +87,7 @@ export class OrdersWriteService {
     private readonly taxResolutionEngine: TaxResolutionEngine,
     private readonly pickingService: PickingService,
     private readonly inventoryService: InventoryService,
-    private readonly accountsService: AccountsService,
+    private readonly customersService: CustomersService,
     private readonly creditAssessmentService: CreditAssessmentService,
     private readonly productsService: ProductsService,
     private readonly backordersService: BackordersService,
@@ -182,7 +183,7 @@ export class OrdersWriteService {
     taxCategoryIdOverride?: string,
     tx?: DrizzleDB,
   ): Promise<{ taxCategoryId: string; rate: number; taxProvider: string }> {
-    const customer = await this.accountsService.findOne(customerId, tx);
+    const customer = await this.customersService.findOne(customerId, tx);
     const mappings = this.appConfig.taxProviderMappings();
     const country = customer.billingAddressCountry || '';
     const taxProvider = mappings[country] || 'internal';
@@ -237,7 +238,7 @@ export class OrdersWriteService {
    */
   private async resolveCustomer(customerId: string, tx?: DrizzleDB) {
     try {
-      const customer = await this.accountsService.findOne(customerId, tx);
+      const customer = await this.customersService.findOne(customerId, tx);
       return customer;
     } catch (err) {
       if (err instanceof NotFoundException) {
@@ -265,7 +266,7 @@ export class OrdersWriteService {
       return; // Order has a valid credit hold override, bypass check
     }
 
-    const risk = await this.accountsService.assessRisk(
+    const risk = await this.customersService.assessRisk(
       customerId,
       additionalExposure,
       operation,
@@ -442,7 +443,7 @@ export class OrdersWriteService {
         creditLimit: customer.creditLimit,
         isOnCreditHold: customer.isOnCreditHold ?? false,
         tradingTermsId: customer.tradingTermsId,
-        accountGroup: accountGroup
+        customerGroup: accountGroup
           ? {
               creditLimit: accountGroup.creditLimit,
               isOnCreditHold: accountGroup.isOnCreditHold ?? false,
@@ -485,7 +486,15 @@ export class OrdersWriteService {
           exchangeRate: fx.rate.toString(),
           notes: dto.notes,
           shippingNotes: dto.shippingNotes,
-          deliveryCompanyName: dto.deliveryCompanyName ?? customer.name,
+          deliveryCompanyName:
+            dto.deliveryCompanyName ??
+            (await tx
+              .select({ name: actors.name })
+              .from(coreAccounts)
+              .innerJoin(actors, eq(coreAccounts.actorId, actors.actorId))
+              .where(eq(coreAccounts.customerId, dto.customerId))
+              .limit(1)
+              .then((r) => r[0]?.name ?? '')),
           deliveryName: dto.deliveryName,
           deliveryPhone: dto.deliveryPhone,
           deliveryAddressLine1: dto.deliveryAddressLine1,
@@ -675,8 +684,9 @@ export class OrdersWriteService {
       }
 
       const [customerObj] = await tx
-        .select({ name: coreAccounts.name })
+        .select({ name: actors.name })
         .from(coreAccounts)
+        .innerJoin(actors, eq(coreAccounts.actorId, actors.actorId))
         .where(eq(coreAccounts.customerId, dto.customerId));
 
       // Audit + outbox
@@ -1045,7 +1055,7 @@ export class OrdersWriteService {
         'Order must have a customer to calculate taxes.',
       );
 
-    const customer = await this.accountsService.findOne(order.customerId);
+    const customer = await this.customersService.findOne(order.customerId);
     const mappings = this.appConfig.taxProviderMappings();
     const country = customer.billingAddressCountry || 'US';
     const taxProvider = mappings[country] || 'internal';
@@ -2124,8 +2134,8 @@ export class OrdersWriteService {
     const rows = await this.db
       .select({
         order: salesOrders,
-        customerName: coreAccounts.name,
-        country: coreAccounts.billingAddressCountry,
+        customerName: actors.name,
+        country: actors.headquartersCountry,
         isCreditBlocked: getCreditBlockedSql(),
       })
       .from(salesOrders)
@@ -2133,6 +2143,7 @@ export class OrdersWriteService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
+      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
       .leftJoin(
         customerGroups,
         eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),

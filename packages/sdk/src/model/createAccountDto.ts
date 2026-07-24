@@ -19,7 +19,6 @@ export interface CreateAccountDto {
   fax?: string;
   emailAddress1?: string;
   customerGroupId?: string;
-  parentCustomerId?: string;
   taxPositionId?: string;
   currencyCode?: string;
   notes?: string;

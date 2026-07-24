@@ -9,4 +9,5 @@
 export type GlobalReturnsControllerFindGlobalReturnsParams = {
 stateCode?: string;
 locationId?: string;
+requireCredit?: boolean;
 };

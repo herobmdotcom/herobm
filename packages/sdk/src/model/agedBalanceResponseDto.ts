@@ -9,7 +9,7 @@
 export interface AgedBalanceResponseDto {
   customerId: string;
   customerName: string;
-  accountNumber: string;
+  customerNumber: string;
   current: number;
   days1To30: number;
   days31To60: number;

@@ -7,7 +7,7 @@
  */
 
 export interface ProductGroupResponseDto {
-  id: string;
+  productGroupId: string;
   groupCode: string;
   name: string;
   /** @nullable */

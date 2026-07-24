@@ -552,7 +552,7 @@ export default function FinancialSettingsPage() {
         await api.tradingTermsControllerCreate(payload as api.CreateTradingTermDto);
         toast.success('Trading Term created');
       } else {
-        await api.tradingTermsControllerUpdate(row.id, payload as api.CreateTradingTermDto);
+        await api.tradingTermsControllerUpdate(row.tradingTermsId, payload as api.CreateTradingTermDto);
         toast.success('Trading Term updated');
       }
       loadTradingTerms();
@@ -565,7 +565,7 @@ export default function FinancialSettingsPage() {
   const handleTradingTermDelete = async (row: api.TradingTermResponseDto) => {
     if (!confirm('Are you sure you want to delete this trading term?')) return;
     try {
-      await api.tradingTermsControllerDelete(row.id);
+      await api.tradingTermsControllerDelete(row.tradingTermsId);
       toast.success('Trading Term deleted');
       loadTradingTerms();
     } catch (err: unknown) {
@@ -747,7 +747,10 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
           ) : (
             <div className="flex justify-end gap-2 flex-nowrap whitespace-nowrap">
               {data.isGroup && <Button variant="secondary" size="xs" onClick={() => coaCreate(data.glAccountId, data.accountType)}>{tSettings('actions.addChild')}</Button>}
-              <Button variant="secondary" size="xs" onClick={() => coaEdit(data)}>{tSettings('actions.edit')}</Button>
+              <Button variant="secondary" size="xs" className="flex items-center justify-center" title={tSettings('actions.edit')} onClick={() => coaEdit(data)}>
+                { }
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
+              </Button>
               {Object.keys(data.metadata || {}).length > 0 && (
                 <Button variant="secondary" size="xs" onClick={() => setViewMetadataObj(data)}>
                   {tSettings('actions.viewMetadata')}
@@ -809,8 +812,14 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
           </div>
         ) : (
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" size="xs" onClick={() => taxEdit(data)}>{tSettings('actions.edit')}</Button>
-            <Button variant="secondary" size="xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => taxDelete(data.taxCategoryId)}>{tSettings('actions.delete')}</Button>
+            <Button variant="secondary" size="xs" className="flex items-center justify-center" title={tSettings('actions.edit')} onClick={() => taxEdit(data)}>
+              { }
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
+            </Button>
+            <Button variant="secondary" size="xs" className="flex items-center justify-center hover:!bg-red-50" style={{ color: '#ef4444', borderColor: '#ef4444' }} title={tSettings('actions.delete')} onClick={() => taxDelete(data.taxCategoryId)}>
+              { }
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+            </Button>
           </div>
         )}
       </td>
@@ -852,8 +861,14 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
           </div>
         ) : (
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" size="xs" onClick={() => rateEdit(data)}>{tSettings('actions.edit')}</Button>
-            <Button variant="secondary" size="xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => rateDelete(data.exchangeRateId)}>{tSettings('actions.delete')}</Button>
+            <Button variant="secondary" size="xs" className="flex items-center justify-center" title={tSettings('actions.edit')} onClick={() => rateEdit(data)}>
+              { }
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
+            </Button>
+            <Button variant="secondary" size="xs" className="flex items-center justify-center hover:!bg-red-50" style={{ color: '#ef4444', borderColor: '#ef4444' }} title={tSettings('actions.delete')} onClick={() => rateDelete(data.exchangeRateId)}>
+              { }
+              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+            </Button>
           </div>
         )}
       </td>
@@ -895,8 +910,14 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
           <div className="flex justify-end gap-2">
             {!data.isSystem && (
               <>
-                <Button variant="secondary" size="xs" onClick={() => ccEdit(data)}>{tSettings('actions.edit')}</Button>
-                <Button variant="secondary" size="xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => ccDelete(data.costCenterId)}>{tSettings('actions.delete')}</Button>
+                <Button variant="secondary" size="xs" className="flex items-center justify-center" title={tSettings('actions.edit')} onClick={() => ccEdit(data)}>
+                  { }
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
+                </Button>
+                <Button variant="secondary" size="xs" className="flex items-center justify-center hover:!bg-red-50" style={{ color: '#ef4444', borderColor: '#ef4444' }} title={tSettings('actions.delete')} onClick={() => ccDelete(data.costCenterId)}>
+                  { }
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+                </Button>
               </>
             )}
             {data.isSystem && <span className="text-xs text-muted italic px-2">{tCommon('system')}</span>}
@@ -941,8 +962,14 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
           <div className="flex justify-end gap-2">
             {!data.isSystem && (
               <>
-                <Button variant="secondary" size="xs" onClick={() => activityEdit(data)}>{tSettings('actions.edit')}</Button>
-                <Button variant="secondary" size="xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => activityDelete(data.activityId)}>{tSettings('actions.delete')}</Button>
+                <Button variant="secondary" size="xs" className="flex items-center justify-center" title={tSettings('actions.edit')} onClick={() => activityEdit(data)}>
+                  { }
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
+                </Button>
+                <Button variant="secondary" size="xs" className="flex items-center justify-center hover:!bg-red-50" style={{ color: '#ef4444', borderColor: '#ef4444' }} title={tSettings('actions.delete')} onClick={() => activityDelete(data.activityId)}>
+                  { }
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+                </Button>
               </>
             )}
             {data.isSystem && <span className="text-xs text-muted italic px-2">{tCommon('system')}</span>}
@@ -1420,7 +1447,7 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
               >
                 <option value="">{tCommon('notConfigured')}</option>
                 {tradingTerms.map(t => (
-                  <option key={t.id} value={t.id}>{t.code} - {t.description}</option>
+                  <option key={t.tradingTermsId} value={t.tradingTermsId}>{t.code} - {t.description}</option>
                 ))}
               </select>
             </div>
@@ -1437,7 +1464,7 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
               >
                 <option value="">{tCommon('notConfigured')}</option>
                 {tradingTerms.map(t => (
-                  <option key={t.id} value={t.id}>{t.code} - {t.description}</option>
+                  <option key={t.tradingTermsId} value={t.tradingTermsId}>{t.code} - {t.description}</option>
                 ))}
               </select>
             </div>
@@ -1458,7 +1485,7 @@ type CoaData = api.GlAccountResponseDto & { depth?: number; metadata?: Record<st
               <InlineSettingsTable
                 columns={tradingTermsColumns}
                 data={tradingTerms}
-                rowKey={(row) => row.id}
+                rowKey={(row) => row.tradingTermsId}
                 onSave={handleTradingTermSave}
                 onDelete={handleTradingTermDelete}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Complex settings state or UI Icon

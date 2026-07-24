@@ -17,6 +17,7 @@ import {
   transferOrders,
   transferOrderLines,
   transferOrderPicks,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import {
   SALES_ORDER_PICK_STATE,
@@ -120,7 +121,7 @@ export class PickingSlipService {
     const orderRows = await this.db
       .select({
         orderNumber: salesOrders.orderNumber,
-        customerName: coreAccounts.name,
+        customerName: actors.name,
         customerOrderNumber: salesOrders.customerOrderNumber,
         createdOn: salesOrders.createdOn,
         locationName: locations.name,
@@ -130,6 +131,7 @@ export class PickingSlipService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
+      .leftJoin(actors, eq(coreAccounts.actorId, actors.actorId))
       .leftJoin(
         locations,
         eq(salesOrders.fulfillmentLocationId, locations.locationId),

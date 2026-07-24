@@ -7,7 +7,7 @@
  */
 
 export interface BinResponseDto {
-  id: string;
+  binId: string;
   zoneId: string;
   binNumber: string;
   binType?: string;

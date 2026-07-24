@@ -4,7 +4,11 @@ import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
-import { suppliers, masterDataEvents } from '../drizzle/herobm-core-schema';
+import {
+  suppliers,
+  masterDataEvents,
+  actors,
+} from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 
 describe('SuppliersWriteService', () => {
@@ -32,6 +36,7 @@ describe('SuppliersWriteService', () => {
     // Clean transactional data
     await pg.db.delete(masterDataEvents);
     await pg.db.delete(suppliers);
+    await pg.db.delete(actors);
   });
 
   describe('create', () => {
@@ -52,11 +57,18 @@ describe('SuppliersWriteService', () => {
     });
 
     it('should throw if vendor number already exists', async () => {
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'Existing',
+          headquartersAddressLine1: 'AU',
+        })
+        .returning();
+
       await pg.db.insert(suppliers).values({
+        actorId: act.actorId,
         vendorNumber: 'V-001',
-        name: 'Existing',
         currencyCode: 'EUR',
-        address1Country: 'AU',
       });
 
       const dto = {
@@ -70,17 +82,26 @@ describe('SuppliersWriteService', () => {
 
   describe('update', () => {
     let existingId: string;
+    let existingActorId: string;
 
     beforeEach(async () => {
+      const [act] = await pg.db
+        .insert(actors)
+        .values({
+          name: 'Old Name',
+          headquartersAddressLine1: 'AU',
+        })
+        .returning();
+
       const [s] = await pg.db
         .insert(suppliers)
         .values({
+          actorId: act.actorId,
           vendorNumber: 'V-EX',
-          name: 'Old Name',
           currencyCode: 'EUR',
-          address1Country: 'AU',
         })
         .returning();
+      existingActorId = act.actorId;
       existingId = s.vendorId;
     });
 
@@ -90,13 +111,11 @@ describe('SuppliersWriteService', () => {
         { name: 'New Name' },
         'test-actor',
       );
-      expect(result.name).toBe('New Name');
-
-      const [row] = await pg.db
+      const [updatedActor] = await pg.db
         .select()
-        .from(suppliers)
-        .where(eq(suppliers.vendorId, existingId));
-      expect(row.name).toBe('New Name');
+        .from(actors)
+        .where(eq(actors.actorId, existingActorId));
+      expect(updatedActor.name).toBe('New Name');
     });
 
     it('should throw NotFoundException if supplier not found', async () => {

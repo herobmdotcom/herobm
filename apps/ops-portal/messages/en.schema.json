@@ -461,6 +461,7 @@
   "bins.title",
   "common",
   "common.actions",
+  "common.unnamedActor",
   "common.activityTimeline",
   "common.add",
   "common.address",

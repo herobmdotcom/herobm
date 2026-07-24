@@ -534,7 +534,7 @@
       "activities": {
         "empty": "No activities defined. Create one to get started."
       },
-      "addRow": "+ Add Row",
+      "addRow": "Add Row",
       "configuration": "Configuration",
       "confirmations": {
         "deleteActivity": "Are you sure you want to delete this activity?",
@@ -929,6 +929,7 @@
       "username": "Username"
     },
     "buttons": {
+      "add": "Add",
       "cancel": "Cancel",
       "clear": "Clear",
       "remove": "Remove",
@@ -1300,6 +1301,7 @@
     },
     "unknown": "Unknown",
     "unknownProduct": "Unknown Product",
+    "unnamedActor": "Unnamed Actor",
     "updated": "Updated",
     "viewDetails": "View Details",
     "yes": "Yes"
@@ -1346,6 +1348,7 @@
       "jobTitle": "Job Title",
       "lastName": "Last Name",
       "mobile": "Mobile",
+      "nonStandardPhone": "Non-standard phone number",
       "phone": "Phone",
       "primaryBadge": "Primary"
     },

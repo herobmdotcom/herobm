@@ -18,6 +18,7 @@ import {
   transferOrders,
   transferOrderLines,
   transferOrderPicks,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import {
   SALES_ORDER_STATE,
@@ -93,13 +94,19 @@ describe('PickingSlipService', () => {
       binType: 'storage',
     });
 
-    // Seed Customer
+    // Seed Customer Actor
+    const customerActorId = '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';
+    await pg.db.insert(actors).values({
+      actorId: customerActorId,
+      name: 'Acme Corp',
+      headquartersAddressLine1: 'AU',
+    });
+
     await pg.db.insert(coreAccounts).values({
       customerId: CUSTOMER_ID,
+      actorId: customerActorId,
       customerNumber: 'CUST01',
-      name: 'Acme Corp',
       currencyCode: 'AUD',
-      billingAddressCountry: 'AU',
       stateCode: CUSTOMER_STATE.ACTIVE,
       source: 'app',
     });

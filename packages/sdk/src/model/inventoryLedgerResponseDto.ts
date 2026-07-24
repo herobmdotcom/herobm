@@ -7,7 +7,7 @@
  */
 
 export interface InventoryLedgerResponseDto {
-  id: string;
+  ledgerId: string;
   productId: string;
   quantity: string;
   date: string;

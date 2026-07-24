@@ -8,13 +8,13 @@ import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { customerGroups, customers } from '../drizzle/herobm-core-schema';
-import { CreateAccountGroupDto, UpdateAccountGroupDto } from './dto';
+import { CreateCustomerGroupDto, UpdateCustomerGroupDto } from './dto';
 import { emitEvent } from '../common/emit-event';
 import { buildUpdatePayload } from '../common/utils/drizzle-utils';
 import { EntityType, EventType } from '../common/event-types';
 
 @Injectable()
-export class AccountGroupsService {
+export class CustomerGroupsService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   async findAll() {
@@ -43,7 +43,7 @@ export class AccountGroupsService {
     return rows[0];
   }
 
-  async create(dto: CreateAccountGroupDto, userId?: string) {
+  async create(dto: CreateCustomerGroupDto, userId?: string) {
     return await this.db.transaction(async (tx) => {
       const rows = await tx
         .insert(customerGroups)
@@ -63,7 +63,7 @@ export class AccountGroupsService {
     });
   }
 
-  async update(id: string, dto: UpdateAccountGroupDto, userId?: string) {
+  async update(id: string, dto: UpdateCustomerGroupDto, userId?: string) {
     return await this.db.transaction(async (tx) => {
       await this.findOne(id, tx); // ensure exists
 

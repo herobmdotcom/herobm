@@ -1,9 +1,9 @@
- 
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
 import * as api from '@herobm/sdk';
 import { toast } from 'react-hot-toast';
+import { Button } from './Button';
 import { getErrorMessage, COUNTRIES } from '@herobm/shared';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -126,7 +126,7 @@ const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> = ({
         };
         await api.deliveryAddressesControllerUpdate(addressId, updatePayload);
         toast.success(t('updatedSuccess'));
-        onSaved({ ...dto, id: addressId } as api.DeliveryAddressResponseDto, true);
+        onSaved({ ...dto, deliveryAddressId: addressId } as api.DeliveryAddressResponseDto, true);
       } else {
         const createPayload: api.CreateDeliveryAddressDto = {
           customerId,
@@ -144,7 +144,7 @@ const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> = ({
         };
         const res = await api.deliveryAddressesControllerCreate(createPayload);
         toast.success(t('createdSuccess'));
-        onSaved({ ...dto, id: res.data.id } as api.DeliveryAddressResponseDto, true);
+        onSaved({ ...dto, deliveryAddressId: res.data.deliveryAddressId } as api.DeliveryAddressResponseDto, true);
       }
       onClose();
     } catch (error) {
@@ -176,15 +176,15 @@ const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> = ({
             )}
           </div>
           <div className="flex justify-end gap-3">
-            <button
-              className="btn btn-outline"
+            <Button
+              variant="secondary"
               onClick={onClose}
               disabled={saving}
             >
               {tCommon('cancel')}
-            </button>
-            <button
-              className="btn btn-primary"
+            </Button>
+            <Button
+              variant="primary"
               onClick={handleSave}
               disabled={saving}
             >
@@ -194,7 +194,7 @@ const DeliveryAddressSlideOver: React.FC<DeliveryAddressSlideOverProps> = ({
                 </span>
               ) : null}
               {tCommon('save')}
-            </button>
+            </Button>
           </div>
         </div>
       }

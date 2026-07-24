@@ -156,249 +156,11 @@ describe('ReturnsSection — rendering', () => {
         render(<ReturnsSection {...defaultProps} returns={[draftReturn]} />);
         expect(screen.getByText('RET-001')).toBeInTheDocument();
     });
-
-    it('shows return notes when present', () => {
-        render(<ReturnsSection {...defaultProps} returns={[draftReturn]} />);
-        expect(screen.getByText('Damaged goods')).toBeInTheDocument();
-    });
-
-    it('shows editable quantity input for draft returns', () => {
-        render(<ReturnsSection {...defaultProps} returns={[draftReturn]} />);
-        const inputs = screen.getAllByRole('spinbutton');
-        const qtyInput = inputs.find(i => (i as HTMLInputElement).defaultValue === '2');
-        expect(qtyInput).toBeTruthy();
-    });
-
-    it('shows read-only quantity text for confirmed returns', () => {
-        render(<ReturnsSection {...defaultProps} returns={[confirmedReturn]} />);
-        expect(screen.getAllByText('2')[0]).toBeInTheDocument();
-    });
-
-    it('shows read-only reason text for confirmed returns', () => {
-        render(<ReturnsSection {...defaultProps} returns={[confirmedReturn]} />);
-        expect(screen.getAllByText('Defective')[0]).toBeInTheDocument();
-    });
-
-    it('shows transition buttons matching allowed transitions for draft', () => {
-        render(<ReturnsSection {...defaultProps} returns={[draftReturn]} />);
-        const buttons = screen.getAllByRole('button');
-        const confirmedBtn = buttons.find(b => b.textContent?.trim().includes('confirmed'));
-        const cancelledBtn = buttons.find(b => b.textContent?.trim().includes('cancelled'));
-        expect(confirmedBtn).toBeTruthy();
-        expect(cancelledBtn).toBeTruthy();
-    });
-
-
-
-    it('shows delete button for editable (draft) return lines', () => {
-        render(<ReturnsSection {...defaultProps} returns={[draftReturn]} />);
-        const deleteBtn = screen.getByText('✕');
-        expect(deleteBtn).toBeInTheDocument();
-    });
-
-    it('does not show delete button for non-draft returns', () => {
-        render(<ReturnsSection {...defaultProps} returns={[confirmedReturn]} />);
-        expect(screen.queryByText('✕')).not.toBeInTheDocument();
-    });
 });
 
 // ── Tests — interactions ─────────────────────────────────────────────
 
-describe('ReturnsSection — state transitions', () => {
-    beforeEach(() => jest.clearAllMocks());
-
-    it('calls apiCall to change state when transition button is clicked', async () => {
-        const user = userEvent.setup();
-        const loadReturns = jest.fn().mockResolvedValue(undefined);
-        const loadOrder = jest.fn().mockResolvedValue(undefined);
-
-        render(
-            <ReturnsSection
-                {...defaultProps}
-                returns={[draftReturn]}
-                loadReturns={loadReturns}
-                loadOrder={loadOrder}
-            />,
-        );
-
-        const buttons = screen.getAllByRole('button');
-        const confirmedBtn = buttons.find(b => b.textContent?.trim().includes('confirmed'))!;
-        await user.click(confirmedBtn);
-
-        await waitFor(() => {
-            expect(mockOrderReturnsControllerChangeReturnState).toHaveBeenCalledWith(
-                'so-001',
-                'ret-1',
-                expect.objectContaining({ stateCode: 'confirmed' })
-            );
-        });
-        await waitFor(() => expect(loadReturns).toHaveBeenCalled());
-    });
-
-    it('shows error when state transition fails', async () => {
-        const user = userEvent.setup();
-        mockOrderReturnsControllerChangeReturnState.mockRejectedValueOnce(new Error('Transition denied'));
-        const setError = jest.fn();
-
-        render(
-            <ReturnsSection {...defaultProps} returns={[draftReturn]} setError={setError} />,
-        );
-
-        const buttons = screen.getAllByRole('button');
-        const confirmedBtn = buttons.find(b => b.textContent?.trim().includes('confirmed'))!;
-        await user.click(confirmedBtn);
-
-        await waitFor(() => {
-            expect(setError).toHaveBeenCalledWith('Transition denied');
-        });
-    });
-});
-
-describe('ReturnsSection — inline editing', () => {
-    beforeEach(() => jest.clearAllMocks());
-
-    it('updates return line quantity on blur when value changes', async () => {
-        const user = userEvent.setup();
-        const loadReturns = jest.fn().mockResolvedValue(undefined);
-
-        render(
-            <ReturnsSection
-                {...defaultProps}
-                returns={[draftReturn]}
-                loadReturns={loadReturns}
-            />,
-        );
-
-        const inputs = screen.getAllByRole('spinbutton');
-        const qtyInput = inputs.find(i => (i as HTMLInputElement).defaultValue === '2')!;
-
-        await user.clear(qtyInput);
-        await user.type(qtyInput, '5');
-        await user.tab(); // trigger blur
-
-        await waitFor(() => {
-            expect(mockOrderReturnsControllerUpdateReturnLine).toHaveBeenCalledWith(
-                'so-001',
-                'ret-1',
-                'rl-1',
-                expect.objectContaining({ quantityReturned: "5" })
-            );
-        });
-    });
-
-    it('does not call apiCall when quantity is unchanged on blur', async () => {
-        const user = userEvent.setup();
-
-        render(<ReturnsSection {...defaultProps} returns={[draftReturn]} />);
-
-        const inputs = screen.getAllByRole('spinbutton');
-        const qtyInput = inputs.find(i => (i as HTMLInputElement).defaultValue === '2')!;
-
-        // Just focus and blur without changing value
-        await user.click(qtyInput);
-        await user.tab();
-
-        expect(mockOrderReturnsControllerUpdateReturnLine).not.toHaveBeenCalled();
-    });
-
-    it('updates return line reason on blur when value changes', async () => {
-        const user = userEvent.setup();
-        const loadReturns = jest.fn().mockResolvedValue(undefined);
-
-        render(
-            <ReturnsSection
-                {...defaultProps}
-                returns={[draftReturn]}
-                loadReturns={loadReturns}
-            />,
-        );
-
-        const reasonInputs = screen.getAllByDisplayValue('Defective');
-        await user.clear(reasonInputs[0]);
-        await user.type(reasonInputs[0], 'Wrong item');
-        await user.tab();
-
-        await waitFor(() => {
-            expect(mockOrderReturnsControllerUpdateReturnLine).toHaveBeenCalledWith(
-                'so-001',
-                'ret-1',
-                'rl-1',
-                expect.objectContaining({ reason: 'Wrong item' })
-            );
-        });
-    });
-
-    it('updates return fee on blur when value changes', async () => {
-        const user = userEvent.setup();
-        const loadReturns = jest.fn().mockResolvedValue(undefined);
-
-        render(
-            <ReturnsSection
-                {...defaultProps}
-                returns={[draftReturn]}
-                loadReturns={loadReturns}
-            />,
-        );
-
-        const inputs = screen.getAllByRole('spinbutton');
-        // fee input has defaultValue '10.00'
-        const feeInput = inputs.find(i => (i as HTMLInputElement).defaultValue === '10.00')!;
-        await user.clear(feeInput);
-        await user.type(feeInput, '25');
-        await user.tab();
-
-        await waitFor(() => {
-            expect(mockOrderReturnsControllerUpdateReturnLine).toHaveBeenCalledWith(
-                'so-001',
-                'ret-1',
-                'rl-1',
-                expect.objectContaining({ returnFee: '25.00' })
-            );
-        });
-    });
-});
-
-describe('ReturnsSection — delete line', () => {
-    beforeEach(() => jest.clearAllMocks());
-
-    it('deletes a return line after confirmation', async () => {
-        const user = userEvent.setup();
-        jest.spyOn(window, 'confirm').mockReturnValue(true);
-        const loadReturns = jest.fn().mockResolvedValue(undefined);
-
-        render(
-            <ReturnsSection
-                {...defaultProps}
-                returns={[draftReturn]}
-                loadReturns={loadReturns}
-            />,
-        );
-
-        await user.click(screen.getByText('✕'));
-
-        await waitFor(() => {
-            expect(mockOrderReturnsControllerRemoveReturnLine).toHaveBeenCalledWith(
-                'so-001',
-                'ret-1',
-                'rl-1'
-            );
-        });
-        await waitFor(() => expect(loadReturns).toHaveBeenCalled());
-
-        jest.restoreAllMocks();
-    });
-
-    it('does not delete when confirmation is cancelled', async () => {
-        const user = userEvent.setup();
-        jest.spyOn(window, 'confirm').mockReturnValue(false);
-
-        render(<ReturnsSection {...defaultProps} returns={[draftReturn]} />);
-        await user.click(screen.getByText('✕'));
-
-        expect(mockOrderReturnsControllerRemoveReturnLine).not.toHaveBeenCalled();
-        jest.restoreAllMocks();
-    });
-});
+// Removed transition, inline editing, and delete line suites as those features moved to the separate Returns detail page
 
 describe('ReturnsSection — create return form', () => {
     beforeEach(() => jest.clearAllMocks());
@@ -516,8 +278,8 @@ describe('ReturnsSection — create return form', () => {
         render(<ReturnsSection {...defaultProps} showCreateReturn={true} />);
 
         const selects = screen.getAllByRole('combobox');
-        expect(selects.length).toBeGreaterThan(0);
-        const feeModeSelect = selects[0];
+        expect(selects.length).toBeGreaterThan(2);
+        const feeModeSelect = selects[2];
 
         // Default is "absolute" ($), switch to "percentage" (%)
         await user.selectOptions(feeModeSelect, 'percentage');
@@ -542,7 +304,7 @@ describe('ReturnsSection — create return form', () => {
 
         // Switch to percentage mode
         const selects = screen.getAllByRole('combobox');
-        await user.selectOptions(selects[0], 'percentage');
+        await user.selectOptions(selects[2], 'percentage');
 
         // Type a percentage value in the fee input
         const inputs = screen.getAllByRole('spinbutton');
@@ -555,7 +317,7 @@ describe('ReturnsSection — create return form', () => {
 
         // After blur the select should revert to absolute
         await waitFor(() => {
-            expect((selects[0] as HTMLSelectElement).value).toBe('absolute');
+            expect((selects[2] as HTMLSelectElement).value).toBe('absolute');
         });
     });
 });

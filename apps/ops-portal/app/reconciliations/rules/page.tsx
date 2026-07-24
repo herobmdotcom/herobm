@@ -69,7 +69,7 @@ export default function RulesEnginePage() {
         api.glControllerGetSettings(),
         api.costCentersControllerFindAll().catch(() => ({ data: [] })),
         api.activitiesControllerFindAll().catch(() => ({ data: [] })),
-        api.accountsControllerFindAll({}).catch(() => ({ data: { data: [] } })),
+        api.customersControllerFindAll({}).catch(() => ({ data: { data: [] } })),
         api.suppliersControllerFindAll({}).catch(() => ({ data: { data: [] } }))
       ]);
       setGlAccounts(accsRes.data || []);

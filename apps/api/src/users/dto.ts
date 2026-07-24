@@ -76,7 +76,7 @@ export class UpdateUserDto {
 }
 
 export class UserResponseDto {
-  id: string;
+  userId: string;
   username: string;
   role: string;
   isActive: boolean;

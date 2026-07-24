@@ -338,6 +338,12 @@ export const PRODUCT_STATE = {
   DRAFT: 'draft',
 } as const;
 
+export const PROJECT_STATE = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  ARCHIVED: 'archived',
+} as const;
+
 export const PRODUCT_TRANSITIONS: Record<string, string[]> = {
   [PRODUCT_STATE.DRAFT]: [PRODUCT_STATE.ACTIVE, PRODUCT_STATE.ARCHIVED],
   [PRODUCT_STATE.ACTIVE]: [

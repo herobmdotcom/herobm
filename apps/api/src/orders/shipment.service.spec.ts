@@ -20,6 +20,7 @@ import {
   taxCategories,
   inventoryEntries,
   inventoryLedger,
+  actors,
 } from '../drizzle/herobm-core-schema';
 import { eq } from 'drizzle-orm';
 import {
@@ -111,16 +112,27 @@ describe('ShipmentService', () => {
     PICKING_ORDER.fulfillmentLocationId =
       '10000000-0000-4000-8000-000000000001';
 
+    const custActorId = '00000000-0000-4000-8000-000000000002';
+    await pg.db
+      .insert(actors)
+      .values([
+        {
+          actorId: custActorId,
+          name: 'Test Customer',
+          headquartersAddressLine1: 'AU',
+        },
+      ])
+      .onConflictDoNothing();
+
     // Since customers isn't seeded with customers by default, let's just insert one or use the org. Let's insert a customer.
     await pg.db
       .insert(customers)
       .values([
         {
           customerId: '00000000-0000-4000-8000-000000000001',
+          actorId: custActorId,
           customerNumber: 'CUST-001',
-          name: 'Test Customer',
           currencyCode: 'AUD',
-          billingAddressCountry: 'AU',
         },
       ])
       .onConflictDoNothing();
